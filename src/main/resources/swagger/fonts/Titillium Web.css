@@ -1,0 +1,22 @@
+@font-face {
+  font-family: 'Titillium Web';
+  font-style: normal;
+  font-weight: 400;
+  src: url(../fonts/Titillium Web/Titillium-Web-Regular.eot);
+  src: local('Titillium Web Regular'), local('TitilliumWeb-Regular'), local('Titillium Web'), url(../fonts/Titillium Web/Titillium-Web-Regular.ttf) format('truetype'), url(../fonts/Titillium Web/Titillium-Web-Regular.eot?#iefix) format('embedded-opentype'), url(../fonts/Titillium Web/Titillium-Web-Regular.woff) format('woff'), url(../fonts/Titillium Web/Titillium-Web-Regular.svg#TitilliumWeb) format('svg'), url(../fonts/Titillium Web/Titillium-Web-Regular.woff2) format('woff2');
+}
+
+@font-face {
+  font-family: 'Titillium Web';
+  font-style: normal;
+  font-weight: 600;
+  src: local('Titillium Web SemiBold'), local('TitilliumWeb-SemiBold'), url(../fonts/Titillium Web/Titillium-Web-SemiBold.ttf) format('truetype'), url(../fonts/Titillium Web/Titillium-Web-SemiBold.woff) format('woff'), url(../fonts/Titillium Web/Titillium-Web-SemiBold.woff2) format('woff2');
+}
+
+@font-face {
+  font-family: 'Titillium Web';
+  font-style: normal;
+  font-weight: 700;
+  src: local('Titillium Web Bold'), local('TitilliumWeb-Bold'), url(../fonts/Titillium Web/Titillium-Web-Bold.ttf) format('truetype'), url(../fonts/Titillium Web/Titillium-Web-Bold.woff) format('woff'), url(../fonts/Titillium Web/Titillium-Web-Bold.woff2) format('woff2');
+}
+

@@ -1,0 +1,23 @@
+{
+"stype": 1,
+  "idPath": "",
+  "iptFunc": "",
+  "iptArgs": [],
+  "timeout": 0,
+  "secureContext": "string",
+  "code": "function write(pm){for(x in pm){shim.setVal(x,pm[x]);}} function read(pn){return shim.getVal(pn);}",
+  "ctype":0
+}
+
+{
+  "stype": 2,
+  "idPath": "",
+  "idName": "ae4f7dc8d4448af747e1adc76d1744809b6c8b96aa5570aefd09f478158092ad",
+  "iptFunc": "write({'account1':2700,'k2':'v2中文测试ssss'});write({'account1':257});read('account1');",
+  "iptArgs": [],
+  "timeout": 0,
+  "secureContext": "string",
+  "code": "string",
+  "ctype":0
+}
+

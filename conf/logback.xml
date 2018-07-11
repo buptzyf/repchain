@@ -1,0 +1,105 @@
+<configuration debug="true">
+    <!--Tips: Appender configuration, more detail ~ https://logback.qos.ch/manual/appenders.html-->
+
+    <!-- Insert the current time formatted as "yyyyMMdd'T'HHmmss" under
+       the key "bySecond" into the logger context. This value will be
+       available to all subsequent configuration elements. -->
+    <!--<timestamp key="bySecond" datePattern="yyyyMMdd'T'HHmmss"/>-->
+
+    <!--Advised：File logging, more configurable-->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <!-- rollover daily -->
+            <fileNamePattern>logs/mylog-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+
+            <!-- each file should be at most 100MB, keep 30 days worth of history, but at most 2GB -->
+            <maxFileSize>100MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>2GB</totalSizeCap>
+
+        </rollingPolicy>
+        <!-- <filter class="ch.qos.logback.classic.filter.LevelFilter"> -->
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>DEBUG</level>
+            <!--Options:ACCEPT,NEUTRAL,DENY-->
+            <!-- <onMatch>ACCEPT</onMatch> -->
+            <!-- <onMismatch>DENY</onMismatch> -->
+        </filter>
+
+        <immediateFlush>false</immediateFlush>
+        <append>false</append>
+        <encoder>
+            <pattern>%date{ISO8601} %-5level %logger{36} %X{akkaSource} - %msg%n</pattern>
+            <!--<pattern>%-4relative [%thread] %-5level %logger{35} - %msg%n</pattern>-->
+        </encoder>
+    </appender>
+
+    <!--For async the logging, drop the info and debug when the block is filled of 80% size by default, maxFlushTime by default-->
+    <!--<appender name="ASYNC" class="ch.qos.logback.classic.AsyncAppender">-->
+        <!--<appender-ref ref="FILE" />-->
+        <!--<nerverBlock>true</nerverBlock>-->
+    <!--</appender>-->
+
+
+    <!--Deprecated ：Basic file appender configure()-->
+    <!--<appender name="FILE" class="ch.qos.logback.core.FileAppender">-->
+        <!--<file>logs/repchain-${bySecond}.log</file>-->
+        <!--<filter class="ch.qos.logback.classic.filter.ThresholdFilter">-->
+            <!--<level>WARN</level>-->
+        <!--</filter>-->
+        <!--&lt;!&ndash; set immediateFlush to false for much higher logging throughput &ndash;&gt;-->
+        <!--<immediateFlush>false</immediateFlush>-->
+        <!--<append>false</append>-->
+        <!--&lt;!&ndash; encoders are assigned the type-->
+             <!--ch.qos.logback.classic.encoder.PatternLayoutEncoder by default &ndash;&gt;-->
+        <!--<encoder>-->
+            <!--&lt;!&ndash;<pattern>%date{ISO8601} %-5level %logger{36} %X{sourceThread} - %msg%n</pattern>&ndash;&gt;-->
+            <!--<pattern>%date{ISO8601} %-5level %logger{36} %X{akkaSource} - %msg%n</pattern>-->
+            <!--&lt;!&ndash;<pattern>%date{yyyy-MM-dd} %X{akkaTimestamp} %-5level[%thread] %logger{1} - %msg%n</pattern>&ndash;&gt;-->
+        <!--</encoder>-->
+    <!--</appender>-->
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <target>System.out</target>
+        <!--level过滤器简化版-->
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>INFO</level>
+        </filter>
+        <!--Java 过滤器-->
+         
+        <filter class="ch.qos.logback.core.filter.EvaluatorFilter">
+            <evaluator> 
+                <expression>return message.contains("Statistic");</expression>
+            </evaluator>
+            <OnMismatch>DENY</OnMismatch>
+            <OnMatch>ACCEPT</OnMatch>
+        </filter>
+        
+        <!--正则表达式过滤器-->
+        <!--<filter class="ch.qos.logback.core.filter.EvaluatorFilter">-->
+            <!--<evaluator>-->
+                <!--<matcher>-->
+                    <!--<Name>pm_1M</Name>-->
+                    <!--&lt;!&ndash; filter out odd numbered statements &ndash;&gt;-->
+                    <!--<regex>block</regex>-->
+                <!--</matcher>-->
+
+                <!--<expression>pm_1M.matches(message)</expression>-->
+            <!--</evaluator>-->
+            <!--<OnMismatch>DENY</OnMismatch>-->
+            <!--<OnMatch>NEUTRAL</OnMatch>-->
+        <!--</filter>-->
+        <encoder>
+            <pattern>%date{ISO8601} %-5level %logger{36} %X{akkaSource} - %msg%n</pattern>
+            <!--<pattern>%X{akkaTimestamp} %-5level %logger{36} %X{akkaSource} - %msg%n</pattern>-->
+            <!--<pattern>%X{akkaTimestamp} %-5level[%thread] %logger{0} - %msg%n</pattern>-->
+        </encoder>
+    </appender>
+
+    <!--<logger name="akka" level="INFO" />-->
+
+    <root level="DEBUG">
+        <appender-ref ref="STDOUT" />
+        
+    </root>
+</configuration>
