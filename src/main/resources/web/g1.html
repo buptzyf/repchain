@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<!--
+  ~ Copyright  2018 Blockchain Technology and Application Joint Lab, Fintech Research Center of ISCAS.
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~      http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BA SIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="author" content="c4w">
+    <title>RepChain Graph</title>
+    <link rel="stylesheet" href="css/bootstrap.min.css" />
+    <link rel="stylesheet" href="css/jquery-ui.css" />
+    <script src="js/d3.v3.min.js"></script>
+    <script src="js/jquery-1.12.4.js"></script>
+    <script src="js/jquery-ui.js"></script>
+    <script src="js/rep_graph.js"></script>
+    <script src="js/protobuf.js"></script>
+    <style>
+    .ui-widget-content a {
+        color: #337ab7;
+    }
+
+    .ui-accordion-content {
+        padding: 1em .2em !important;
+    }
+
+    .back_circle {
+        fill: rgb(31, 119, 180);
+        fill-opacity: .25;
+        stroke: rgb(31, 119, 180);
+        stroke-width: 1px;
+    }
+
+    #svg:not(:root) {
+        float: left;
+        width: 50%;
+        height: 50%;
+    }
+
+    .mulc {
+    	float: right;
+        width: 50%;
+        overflow-y:scroll;
+    }
+
+    #myULContainer {
+        font-size: '12px' list-style: none;
+        -webkit-padding-start: 0;
+        -webkit-margin-after: 0;
+        -webkit-margin-before: 1em;
+        border: 1px solid #000;
+        overflow-y: auto;
+        width: 100%;
+        background: #333;
+        color: #fff;
+    }
+
+    path.slink {
+        fill: none;
+        stroke: #bbb;
+        stroke-width: 1.5px;
+        stroke-opacity: 0.1;
+    }
+
+    .link {
+        stroke: #2E2E2E;
+        stroke-width: 0.1px;
+    }
+
+    .dlink {
+        stroke: #bbb;
+        stroke-width: 1.5px;
+        stroke-opacity: 0.1;
+    }
+
+    .node {
+        stroke: #fff;
+        stroke-width: 2px;
+    }
+
+    .textClass {
+        stroke: #323232;
+        font-family: "Lucida Grande", "Droid Sans", Arial, Helvetica, sans-serif;
+        font-weight: normal;
+        stroke-width: .5;
+        font-size: 14px;
+    }
+    </style>
+</head>
+
+<body>
+    <div style="position:absolute;left:0px;top:0px;">
+        <button id="btn_demo" onclick="drawDemo()">Animation</button>
+    </div>
+    <script>
+    //日志输出
+    var clc = [];
+    var timer_console = false;
+    function clog(message,method, level){
+    	if (typeof message == 'object') {
+    		message = JSON && JSON.stringify ? JSON.stringify(message) : message;
+    	}
+    	var finalMsg = "[" + (new Date()).toLocaleTimeString() + "] "+message;
+    	//保持缓冲池限制
+        var limit = 20;
+    	var target = document.getElementById("myULContainer");
+        if(clc.length ==0 ){
+            	for(var i=0; i<limit; i++){
+                    li = document.createElement("li");
+                    li.setAttribute("data-level", 'log');
+                    li.innerText = '';
+                    target.appendChild(li);                		
+            	}
+        }
+        var cl = {level:level, text:finalMsg};
+        clc.unshift(cl);
+        var len = clc.length;
+        
+        var len_remove = len - limit;
+        //超出限制行数
+        if(len_remove>0){
+        	for(var i=0; i<len_remove; i++){
+        		clc.pop();
+        	}
+        }
+        var clen = Math.min(limit,len);
+        //避免频繁刷新
+        if(!timer_console){
+            //初次调用,创建固定数量输出行
+        	timer_console = setTimeout(function(){
+            	for(var i=0; i<clen; i++){
+             		var li = target.childNodes[i];
+                    li.setAttribute("data-level", method);
+                    li.innerText = finalMsg;
+                    li.setAttribute("class", level);
+            	}
+            	timer_console = false;
+            },500)        	
+        }                    	
+    }	
+    
+    //实时图形
+    var graph;
+    var Message;
+    var Block;
+    var tl_map = {};
+    var SPAN_LINK = 1500;
+    var timer_block=false;
+    var buf_block =[];
+    var buf_h3 =[];
+
+
+    function translateAlong(path) {
+        var l = path.getTotalLength();
+        return function(d, i, a) {
+            return function(t) {
+                var p = path.getPointAtLength(t * l);
+                return "translate(" + p.x + "," + p.y + ")";
+            };
+        };
+    }
+
+    function drawDemo() {
+        var newAccordion = "<h3>Section Block</h3><div><ul><li><a href='#'>块hash</a>:xkjkxjk</li><li>块hash:xkjkxjk</li><li>块hash:xkjkxjk</li><li>块hash:xkjkxjk</li><li>块hash:xkjkxjk</li><li>块hash:xkjkxjk</li><li>块hash:xkjkxjk</li><li>块hash:xkjkxjk</li><li>块hash:xkjkxjk</li><li>块hash:xkjkxjk</li></ul></div>";
+        for (var i = 0; i < 20; i++) {
+            $("#accordion").prepend(newAccordion);
+            $("#accordion").accordion("refresh");
+        }
+        d3.select("svg").remove();
+        drawGraph();
+        graph.addNode('c1');
+        graph.addNode('c2');
+        graph.addNode('c3');
+        graph.addSLink('c1', 'Transaction');
+        graph.addSLink('c1', 'Block');
+        graph.addSLink('c2', 'Transaction');
+        graph.addSLink('c2', 'Block');
+        graph.addSLink('c3', 'Transaction');
+        graph.addSLink('c3', 'Block');
+
+        graph.addDLink('Transaction', 'c1');
+        graph.addDLink('Block', 'c1');
+        graph.addDLink('Transaction', 'c2');
+        graph.addDLink('Block', 'c2');
+        graph.addDLink('Transaction', 'c3');
+        graph.addDLink('Block', 'c3');
+
+        //graph.removeNode('c3');
+        graph.updateNodeSta('Event', 'ssss');
+
+    }
+
+    function drawGraph() {
+        var w = this.w;
+        var h = this.h;
+        var mt = 80;
+
+        graph = new myGraph("#svgdiv");
+        var w = graph.w;
+        var h = graph.h;
+
+        graph.addNode({ "id": 'RepChain', x: w / 2, y: h / 2, fixed: true, color: 'grey', r: 18 });
+        graph.addNode({ "id": 'Transaction', fixed: true, x: w / 2 - mt, y: h / 2 - mt, color: 'lightblue', r: 15 });
+        graph.addNode({ "id": 'Endorsement', fixed: true, x: w / 2 + mt, y: h / 2 - mt, color: 'lightblue', r: 15 });
+        graph.addNode({ "id": 'Block', fixed: true, x: w / 2 + mt, y: h / 2 + mt, color: 'lightblue', r: 15 });
+        //graph.addNode({ "id": 'Event', fixed: true, x: w / 2 - mt, y: h / 2 + mt, color: 'lightblue', r: 15 });
+        graph.addNode({ "id": 'Sync', fixed: true, x: w / 2 - mt, y: h / 2 + mt, color: 'lightblue', r: 15 });
+    }
+
+
+
+    // because of the way the network is created, nodes are created first, and links second,
+    // so the lines were on top of the nodes, this just reorders the DOM to put the svg:g on top
+    function keepNodesOnTop() {
+        $(".nodeStrokeClass").each(function(index) {
+            var gnode = this.parentNode;
+            gnode.parentNode.appendChild(gnode);
+        });
+    }
+
+    function addNodes() {
+        d3.select("svg").remove();
+        drawGraph();
+    }
+
+    function subEvents() {
+        //load Protobuf Message format
+
+        protobuf.load("peer.proto", function(err, root) {
+            if (err)
+                throw err;
+            // Obtain a message type
+            Message = root.lookupType("rep.protos.Event");
+            Block = root.lookupType("rep.protos.Block");
+            //buildWS();
+            connect();
+        });
+    }
+
+    function uintToString(uintArray) {
+        var encodedString = String.fromCharCode.apply(null, uintArray),
+            decodedString = decodeURIComponent(escape(encodedString));
+        return decodedString;
+    }
+
+    function bufferToBase64(buf) {
+        var binstr = Array.prototype.map.call(buf, function(ch) {
+            return String.fromCharCode(ch);
+        }).join('');
+        return btoa(binstr);
+    }
+
+    function connect(){
+		console.log("WebSocketClient: reconnecting...");
+        $.getJSON("/chaininfo").done(function(data) {
+            if (data.result.height) {
+            	addNodes();
+                graph.cout_blocks = parseInt(data.result.height);
+                graph.cout_trans = parseInt(data.result.totalTransactions);
+                graph.updateNodeSta('Block', graph.cout_blocks);
+                graph.updateNodeSta('Transaction', graph.cout_trans);
+            }
+            buildWS();
+        }).fail(function(){
+        	setTimeout(function(){
+        		connect();
+        	},5000);
+        });      		   	
+    }
+    function buildWS() {
+        //Connect to our server: node server.js
+        var ws_url = "ws://" + location.host + "/event";
+        var socket = new WebSocket(ws_url);
+        socket.binaryType = "arraybuffer"; // We are talking binary
+
+        socket.onopen = function() {
+            if (!graph.cout_blocks) {
+                graph.cout_trans = 0;
+                graph.cout_blocks = 0;
+            }
+            graph.cout_nodes = 0;
+            graph.cout_evts = 0;
+            graph.cout_endorsements = 0;
+
+            console.log("Connected\n");
+            $("#btn_demo").hide();
+            graph.svg.select('#node_repChain').transition().duration(2000).style({ "fill": "lawngreen" });
+            //清除所有入网节点
+        };
+
+        socket.onclose = function() {
+            graph.svg.select('#node_repChain').transition().duration(2000).style({ "fill": "red" });
+           	console.log("Disconnected\n");
+           	setTimeout(function(){
+           		connect();
+        	},5000);
+        };
+
+        socket.onmessage = function(evt) {
+            try {
+                var ed = new Uint8Array(evt.data);
+                var msg = Message.decode(ed);
+				//console.log(msg.action)
+				//找到from/to对应的图元
+                var sfrom = brief(msg.from).replace(/\./g, '_').replace(/\:/g, '_').replace(/\%/g, '_');
+                //console.log(brief(sfrom));
+                var sto = brief(msg.to).replace(/\./g, '_').replace(/\:/g, '_').replace(/\%/g, '_');
+                graph.cout_evts++;
+                graph.updateNodeSta('Event', graph.cout_evts);
+                //交易
+                if (msg.action == 1) {
+                    //只统计sendEvent
+                    if (msg.from != 'Transaction')
+                        graph.cout_trans++;
+                    graph.updateNodeSta('Transaction', graph.cout_trans);
+                  //  graph.updateNodeSta('Event', graph.cout_trans);
+                    console.debug("Received: " + msg.action + " from:" + msg.from + " to:" + msg.to + "\n");
+                } //出块              
+                else if (msg.action == 2) {
+                	var limit = 20;
+                    //只统计sendEvent
+                    if (msg.from != 'Block') {
+                    	//初始化block堆栈
+                    	if(buf_block.length==0){
+                    		for(var i=0; i<limit; i++){
+                    			var bi = "<h3></h3><div></div>";
+                    			 $("#accordion").prepend(bi);
+                    		}
+                    		$("#accordion").accordion("refresh");
+                    	}
+                        graph.cout_blocks++;
+                        var blk = msg.blk;
+                        var dt = new Date(blk.timestamp.seconds * 1000 - 8 * 3600 * 1000);
+                        var blk_hash = bufferToBase64(blk.previousBlockHash);
+                        var ts = blk.transactions;
+                        var tstr = "<li>本块交易数: " + ts.length + "<ul>";
+                        for (var i = 0; i < ts.length; i++) {
+                            var t = ts[i];
+                            tstr += "<li><a target='_blank' href='/transaction/" + t.txid + "'>" + t.txid + "</a>"
+                                //+"<br/>by："+bufferToBase64(t.signature)
+                                +
+                                "</li>";
+                        }
+                        tstr += "</li></ul>";
+                        var newH3= "Block" + graph.cout_blocks +
+                        " " + dt.toLocaleString();
+                        var newAccordion = "<ul><li>前块哈希值：<a target='_blank' href='/block/hash/" +
+                            blk_hash +
+                            "'>" +
+                            blk_hash + "</a></li>" +
+                            tstr +
+                            "</ul>";
+                        buf_h3.unshift(newH3);
+                        buf_block.unshift(newAccordion);
+                        //避免过于频繁刷新
+                       	if(!timer_block){
+                       		timer_block = setTimeout(function(){                       			
+                                var len_toremove = buf_block.length - limit;
+                                if (len_toremove > 0){
+                                	for(var i=0; i<len_toremove; i++){
+                                		buf_block.pop();
+                                		buf_h3.pop();
+                                	}
+                                	//buf_block.slice(-len_toremove);
+                                	//buf_h3.slice(-len_toremove);
+                                }                                
+                                var eh3 = $("#accordion  h3");
+                                var ediv = $("#accordion  div");
+                                var clen = Math.min(limit,buf_h3.length);
+                                for(var i=0;i<clen; i++){
+                                	eh3[i].innerText=buf_h3[i];
+                                	ediv[i].innerHTML = buf_block[i];
+                                }
+                                graph.updateNodeSta('Block', graph.cout_blocks);
+                                timer_block = false;
+                       		},500);
+                       	}
+
+                    }
+                    console.info("Received: " + msg.action + " from:" + msg.from + " to:" + msg.to + "\n");
+                } //背书
+                else if (msg.action == 3) {
+                    //只统计sendEvent
+                    if (msg.from != 'Endorsement')
+                        graph.cout_endorsements++;
+                    graph.updateNodeSta('Endorsement', graph.cout_endorsements);
+                    console.info("Received: " + msg.action + " from:" + msg.from + " to:" + msg.to + "\n");
+                } //当前出块人
+                else if (msg.action == 7) {
+                    graph.setBlocker(sfrom);
+                    console.log("Received: " + msg.action + " from:" + msg.from + " to:" + msg.to + "\n");
+                } //同步完成
+                else if (msg.action == 11) {
+                    graph.setNodeSync(sfrom, 1);
+                    console.log("Received: " + msg.action + " from:" + msg.from + " to:" + msg.to + "\n");
+                }
+
+                switch (msg.action) {
+                    //节点入网
+                	case 5:
+                        graph.addNode(sfrom);
+                        console.log("Received: " + msg.action + " from:" + msg.from + " to:" + msg.to + "\n");
+                        graph.addDLink(sfrom, 'Transaction');
+                        graph.addDLink(sfrom, 'Block');
+                        graph.addDLink(sfrom, 'Endorsement');
+                        //graph.addDLink(sfrom, 'Event');
+                        graph.addSLink('Transaction', sfrom);
+                        graph.addSLink('Block', sfrom);
+                        graph.addSLink('Endorsement', sfrom);
+                        //graph.addSLink('Event', sfrom);
+                        graph.cout_nodes++;
+                        graph.updateNodeSta('RepChain', graph.cout_nodes);
+                        break;
+                     //节点离网
+                    case 6:
+                        console.log("Received: " + msg.action + " from:" + msg.from + " to:" + msg.to + "\n");
+                        graph.removeNode(sfrom);
+                        graph.cout_nodes--;
+                        graph.updateNodeSta('RepChain', graph.cout_nodes);
+                        break;
+                     //节点数据同步
+                    case 9:
+                       	graph.addSLink(sto,'Sync');
+                		graph.addSLink('Sync',sfrom);
+                		graph.addDLink(sfrom,sto);
+                		break;
+                	//发送或收到topic消息
+                    case 1:
+                    case 2:
+                    case 3:
+                    	//防止过度频繁刷新,对每条线分别计时
+                    	var tm = new Date().getTime();
+                    	//发送消息
+                    	var sl1_id = "#d_" + sfrom + "-" + sto;
+                        if(!tl_map[sl1_id] || (tm-tl_map[sl1_id])>SPAN_LINK){
+                            var sl1 = graph.svg.select(sl1_id);
+	                        sl1.transition().style({ "stroke-opacity": 1, "stroke": "red" })
+	                            .transition().duration(2000).style({ "stroke-opacity": 0.1, "stroke": "#bbb" });
+	                        tl_map[sl1_id]=tm;
+                        }
+						//接收消息
+						var sl2_id = "#p_" + sfrom + "-" + sto;
+                        if(!tl_map[sl2_id] || (tm-tl_map[sl2_id])>SPAN_LINK){
+                            var sl2 = graph.svg.select(sl2_id);
+	                        sl2.transition().style({ "stroke-opacity": 1, "stroke": "green" })
+	                            .transition().duration(2000).style({ "stroke-opacity": 0.1, "stroke": "#bbb" });
+	                        tl_map[sl2_id]=tm;
+                        }
+                        break;
+                }
+            } catch (err) {
+                console.log("Error: " + err.stack + "\n");
+                //console.trace();
+            }
+        };
+    }
+
+    function brief(ft) {
+        var p0 = ft.indexOf('@');
+        if (p0 < 0)
+            return ft;
+        var p1 = ft.indexOf('/', p0 + 1);
+        if (p1 < 0)
+            return ft.substring(p0 + 1);
+        else
+            return ft.substring(p0 + 1, p1);
+    }
+    
+    $(document).ready(function() {
+        drawGraph();
+        $("#accordion").accordion({
+            collapsible: true,
+            heightStyle: "content"
+        });
+        if (location.host != '') {
+        	subEvents();
+        }
+        //var uow = Math.abs(window.innerWidth-window.innerHeight);
+        //var uow = window.innerWidth;
+        //$('#myULContainer').parent().width(uow).height(window.innerHeight / 2);
+        //$('#myULContainer').addClass("mulc");
+        $('#myULContainer').parent().height(window.innerHeight / 2);
+        $('#div_panel').height(window.innerHeight);
+        
+        var log_level = {
+            error: "text-danger",
+            warn: "text-warning",
+            info: "text-success",
+            debug: "text-info",
+            log: "text-info"
+        };
+        for(var x in log_level){
+        	console[x] = function(message){
+        		clog(message, x, log_level[x]);
+        	}
+        }
+        
+        //ConsoleLogHTML.connect(document.getElementById("myULContainer")); // Redirect log messages
+    });
+    </script>
+    <div id="div_panel" style="float:right; width:50%">
+        <div id="accordion" style="height:50%;overflow-y:scroll;">
+        </div>
+        <div style="overflow-y:scroll;">
+            <ul id="myULContainer"></ul>
+            <!-- I will hold the log messages -->
+        </div>
+    </div>
+</body>
+
+</html>
