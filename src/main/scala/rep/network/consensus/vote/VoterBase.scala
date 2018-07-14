@@ -35,7 +35,7 @@ trait VoterBase {
     * @return
     */
   //def blocker[T](nodes:Set[T], position:Int):Option[T]
-  def blocker(nodes:Set[String], position:Int):Option[String]
+  def blocker(nodes:Array[String], position:Int):String
 
   /**
     * 获取候选人节点
@@ -45,5 +45,5 @@ trait VoterBase {
     * @return
     */
   //def candidators[T](nodes:Set[T], seed:Array[Byte]):Set[T]
-  def candidators(nodes:Set[String], seed:Array[Byte]):Set[String]
+  def candidators(nodes:Set[String], seed:Array[Byte]):Array[String]
 }

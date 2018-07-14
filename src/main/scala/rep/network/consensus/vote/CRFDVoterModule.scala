@@ -78,7 +78,7 @@ class CRFDVoterModule(moduleName: String) extends ModuleBase(moduleName) with CR
 
   def rnd = ThreadLocalRandom.current
 
-  var candidatorCur = Set.empty[ String ]
+  var candidatorCur : Array[ String ] = null
 
   var isWaiting = false
 
@@ -167,15 +167,15 @@ class CRFDVoterModule(moduleName: String) extends ModuleBase(moduleName) with CR
             val seed = pe.getVoteBlockHash//pe.getCurrentBlockHash
             
             candidatorCur = candidators(SystemCertList.getSystemCertList, Sha256.hash(seed))
-            if (!candidatorCur.isEmpty) {
+            if (candidatorCur != null) {
               pe.resetCandidator(candidatorCur)
               if(pe.getCacheHeight() >= 1){
                   val blo = blocker(candidatorCur, pe.getBlker_index)
-                  if (blo != None) {
-                    pe.resetBlocker(blo.get)
+                  if (blo != null) {
+                    pe.resetBlocker(blo)
                     //暂时只找到该方法能够明确标识一个在网络中（有网络地址）的节点，后续发现好方法可以完善
                     logMsg(LOG_TYPE.INFO, s"Select  in getCacheHeight=${pe.getCacheHeight()} Candidates : ${candidatorCur} ~ Blocker : ${blo},currenthash=${pe.getCurrentBlockHash},index=${pe.getBlker_index}")
-                    if (pe.getSysTag == blo.get.toString()) {
+                    if (pe.getSysTag == blo) {
                       getActorRef(ActorType.BLOCK_MODULE) ! (BlockEvent.CREATE_BLOCK, "")
                       logMsg(LOG_TYPE.INFO, s"Select  in getCacheHeight=${pe.getCacheHeight()} Candidates : ${candidatorCur} ,send Create cmd~ Blocker : ${blo},currenthash=${pe.getCurrentBlockHash},index=${pe.getBlker_index}")
                     }
