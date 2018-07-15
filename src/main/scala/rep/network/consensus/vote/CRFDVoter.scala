@@ -84,7 +84,6 @@ trait CRFDVoter extends VoterBase {
       null
     }
     else{
-      //var candidate = mutable.Seq.empty[String]
       var candidate = new Array[String](len)
       var hashSeed:Long = pathUtil.bytesToInt(seed)
       var randomList = getRandomList(hashSeed,len,nodes.size)
@@ -92,11 +91,8 @@ trait CRFDVoter extends VoterBase {
       println(randomList(0).sortPos)
       for(j<-0 to len-1){
         var e = randomList(j)
-        //candidate = (candidate :+ nodesSeq(e.sortPos))
         candidate(j) = nodesSeq(e.sortPos)
-        
       }
-      //candidate.toSet
       candidate
     }
   }
