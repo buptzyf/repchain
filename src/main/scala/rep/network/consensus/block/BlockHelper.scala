@@ -28,6 +28,7 @@ import rep.storage._
 import java.security.cert.{ Certificate}
 import rep.network.PeerHelper
 import rep.utils.SerializeUtils
+import scala.util.control.Breaks
 
 
 /**
@@ -170,4 +171,70 @@ object BlockHelper {
     Sha256.hashstr(blk.toByteArray)
   }
 
+  def isEndorserListSorted(srclist : Array[Endorsement]):Int={
+		var b : Int = 0
+		if (srclist == null || srclist.length < 2){
+		  b
+    }else{
+      if(srclist(0).endorser.toStringUtf8() < srclist(1).endorser.toStringUtf8() ){//升序
+        b = 1
+      }else{//降序
+        b = -1
+      }
+     
+      val loopbreak = new Breaks
+        loopbreak.breakable(
+          for (i <- 1 to srclist.length-1){
+            if(b == 1 && srclist(i).endorser.toStringUtf8() < srclist(i-1).endorser.toStringUtf8()){
+               b = 0
+               loopbreak.break
+            }
+            
+            if(b == -1 && srclist(i).endorser.toStringUtf8() > srclist(i-1).endorser.toStringUtf8()){
+               b = 0
+               loopbreak.break
+            }
+          }
+        )
+      
+    }
+		b
+	}
+  
+  
+  def main(args: Array[String]): Unit = {
+    var eas = new Array[Endorsement](4)
+    var e1 = new Endorsement()
+    e1 = e1.withEndorser(ByteString.copyFromUtf8("sdfsdfseqqooqoq"))
+    e1 = e1.withSignature(ByteString.copyFromUtf8("sdfsdfseqqooqoq"))
+    var e2 = new Endorsement()
+    e2 = e2.withEndorser(ByteString.copyFromUtf8("hkg"))
+    e2 = e2.withSignature(ByteString.copyFromUtf8("hkg"))
+    var e3 = new Endorsement()
+    e3 = e3.withEndorser(ByteString.copyFromUtf8("wre"))
+    e3 = e3.withSignature(ByteString.copyFromUtf8("wre"))
+    var e4 = new Endorsement()
+    e4 = e4.withEndorser(ByteString.copyFromUtf8("yiu"))
+    e4 = e4.withSignature(ByteString.copyFromUtf8("yiu"))
+    
+    eas(0) = e4
+    eas(1) = e1
+    eas(2) = e2
+    eas(3) = e3
+    
+    if(isEndorserListSorted(eas) == -1 || isEndorserListSorted(eas) == 0){
+      println("not sorted")
+    }else{
+      println("sorted")
+    }
+    
+    var tmpeas = eas.sortWith((endorser_left,endorser_right)=> endorser_left.endorser.toStringUtf8() < endorser_right.endorser.toStringUtf8())
+    
+    if(isEndorserListSorted(tmpeas) == -1 || isEndorserListSorted(tmpeas) == 0){
+      println("not sorted")
+    }else{
+      println("sorted")
+    }
+  }
+  
 }

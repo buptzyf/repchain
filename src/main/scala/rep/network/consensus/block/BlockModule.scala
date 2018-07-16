@@ -410,6 +410,10 @@ class BlockModule(moduleName: String) extends ModuleBase(moduleName) {
       if(blc.previousBlockHash.toStringUtf8() != pe.getCurrentBlockHash){
         resetVoteEnv
       }else{
+        //调整确认块中的共识数据的顺序
+        var consensus = blc.consensusMetadata.toArray[Endorsement]
+        var tmpconsensus = consensus.sortWith((endorser_left,endorser_right)=> endorser_left.endorser.toStringUtf8() < endorser_right.endorser.toStringUtf8())
+        blc = blc.withConsensusMetadata(tmpconsensus)
         //广播这个block
         logMsg(LOG_TYPE.INFO, s"new block,nodename=${pe.getSysTag},transaction size=${blc.transactions.size},identifier=${this.blkidentifier_str},${blkidentifier},current height=${dataaccess.getBlockChainInfo().height},previoushash=${blc.previousBlockHash.toStringUtf8()}")
         mediator ! Publish(Topic.Block, new ConfirmedBlock(blc, dataaccess.getBlockChainInfo().height + 1,
@@ -431,7 +435,7 @@ class BlockModule(moduleName: String) extends ModuleBase(moduleName) {
           //TODO kami 这是一个非常耗时的工作？后续需要完善
           if (!BlockHelper.checkBlockContent(endorse, Sha256.hash(blkOutEndorse.toByteArray))) isEndorsed = false
         }
-        if (isEndorsed) {
+        if (isEndorsed && BlockHelper.isEndorserListSorted(endors.toArray[Endorsement])==1) {
           logTime("New block, start to store", CRFD_STEP._13_NEW_BLK_START_STORE,
             getActorRef(ActorType.STATISTIC_COLLECTION))
           //c4w 广播接收到block事件
@@ -452,9 +456,8 @@ class BlockModule(moduleName: String) extends ModuleBase(moduleName) {
           logMsg(LOG_TYPE.INFO, "New block, store opt over ...")
           logTime("New block, store opt over", CRFD_STEP._14_NEW_BLK_STORE_END,
             getActorRef(ActorType.STATISTIC_COLLECTION))
-          
         }
-        else logMsg(LOG_TYPE.WARN, s"The block endorsement info is wrong. Sender : ${sender()}")
+        else logMsg(LOG_TYPE.WARN, s"The block endorsement info is wrong or endorser sort error. Sender : ${sender()}")
       }
       else logMsg(LOG_TYPE.WARN, s"The num of  endorsement in block is not enough. Sender : ${sender()}")
 
