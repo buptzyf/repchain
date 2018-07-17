@@ -46,9 +46,14 @@ object BlockHelper {
     * @return
     */
   def endorseBlock(blkHash:Array[Byte], alise:String):Endorsement ={
-    val (priK, pubK, cert) = ECDSASign.getKeyPair(alise)
-    Endorsement(ByteString.copyFromUtf8(ECDSASign.getBitcoinAddrByCert(cert)),
+    try{
+      val (priK, pubK, cert) = ECDSASign.getKeyPair(alise)
+      Endorsement(ByteString.copyFromUtf8(ECDSASign.getBitcoinAddrByCert(cert)),
       ByteString.copyFrom(ECDSASign.sign(priK, blkHash)))
+    }catch{
+      case e:RuntimeException => throw e
+    }
+    
   }
 
   /**
@@ -58,16 +63,21 @@ object BlockHelper {
     */
   def checkBlockContent(endor:Endorsement, blkHash: Array[Byte]): Boolean = {
     //获取出块人的背书信息
-    val certTx = ECDSASign.getCertByBitcoinAddr(endor.endorser.toStringUtf8)
-    if(certTx.getOrElse(None)!=None){
-      //    val certTx = SerializeUtils.deserialise(endor.endorser.toByteArray).asInstanceOf[Certificate]
-      val alias = ECDSASign.getAliasByCert(certTx.get).getOrElse(None)
-      if (alias == None) false
-      else {
-        ECDSASign.verify(endor.signature.toByteArray, blkHash, certTx.get.getPublicKey)
-      }
+    try{
+        val certTx = ECDSASign.getCertByBitcoinAddr(endor.endorser.toStringUtf8)
+        if(certTx.getOrElse(None)!=None){
+          //    val certTx = SerializeUtils.deserialise(endor.endorser.toByteArray).asInstanceOf[Certificate]
+          val alias = ECDSASign.getAliasByCert(certTx.get).getOrElse(None)
+          if (alias == None) false
+          else {
+            ECDSASign.verify(endor.signature.toByteArray, blkHash, certTx.get.getPublicKey)
+          }
+        }
+        else false
+    }catch{
+      case e  : RuntimeException => false
     }
-    else false
+    
   }
   
   //用于对交易对签名验证
@@ -77,33 +87,21 @@ object BlockHelper {
     val sig = t.signature.toByteArray
     val tOutSig1 = t.withSignature(ByteString.EMPTY)
     val tOutSig  = tOutSig1.withMetadata(ByteString.EMPTY)
-    val certTx = ECDSASign.getCertByBitcoinAddr(t.cert.toStringUtf8)
-    certTx.getOrElse(None) match {
-      case None =>
+    
+    
+    try{
         val cid = ChaincodeID.fromAscii(t.chaincodeID.toStringUtf8).name
         val certKey = IdxPrefix.WorldStateKeyPreFix + cid + "_" + "CERT_" + t.cert.toStringUtf8 // 普通用户证书的key
-        val cert = Option(dataAccess.Get(certKey)) // 从worldstate中取证书,用户注册是以前缀形式写进去的
-        cert.getOrElse(None) match {
-          case None => resultMsg = s"The transaction(${t.txid}) is not trusted"
-          case _ =>
-            if (new String(cert.get) == "null") {
-              //throw new RuntimeException("该用户证书已注销")
-              resultMsg = "该用户证书已注销"
-            }
-            //验证签名和内容hash
-            val kvcert = SerializeUtils.deserialise(cert.get).asInstanceOf[Certificate] //rep序列化与反序列化字节数组
-            result = ECDSASign.verify(sig, PeerHelper.getTxHash(tOutSig), kvcert.getPublicKey) 
+        var cert = ECDSASign.getCertWithCheck(t.cert.toStringUtf8,certKey,dataAccess.getSystemName)
+        if(cert != None){
+          result = ECDSASign.verify(sig, PeerHelper.getTxHash(tOutSig), cert.get.getPublicKey)
+        }else{
+          resultMsg = s"The transaction(${t.txid}) is not trusted"
         }
-      case _ =>
-        val alias = ECDSASign.getAliasByCert(certTx.get).getOrElse(None)
-        alias match {
-          case None => resultMsg = s"The transaction(${t.txid}) is not trusted"
-          case _ =>
-            //验证签名和内容hash
-            result = ECDSASign.verify(sig, PeerHelper.getTxHash(tOutSig), certTx.get.getPublicKey) 
-        }
-    }
-    //CheckedTransactionResult(result, resultMsg)
+      }catch{
+        case e : RuntimeException => resultMsg = s"The transaction(${t.txid}) is not trusted${e.getMessage}"
+      }
+    
     result
   }
 
