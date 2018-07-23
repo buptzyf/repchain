@@ -44,10 +44,9 @@ class NewContract extends IContract{
       }
       null
     }
-    
-        
-    def read(ctx: ContractContext, key: String):Any={
-      ctx.api.getVal(key)
+
+    def read(ctx: ContractContext, key: String):Object={
+      ctx.api.getVal(key).toString
     }
     
     def loadCert(ctx: ContractContext, cert: String): Unit = {
@@ -139,6 +138,9 @@ class NewContract extends IContract{
         case "replaceCert" => 
           println(s"replaceCert")
           replaceCert(ctx, json.extract[ReplaceCert])
+        case "read"=>
+          println(s"read")
+          read(ctx, json.extract[String])
       }
     }
     
