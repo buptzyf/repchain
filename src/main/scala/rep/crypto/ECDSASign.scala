@@ -415,7 +415,7 @@ class ECDSASign extends SignFunc {
             case e : Exception => isValid = false
         }
         var end = System.currentTimeMillis()
-        println("check cert validate,spent time="+(end-start))
+        //println("check cert validate,spent time="+(end-start))
         isValid;
    }
   
