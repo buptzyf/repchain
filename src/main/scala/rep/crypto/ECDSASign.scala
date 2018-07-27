@@ -18,11 +18,11 @@ package rep.crypto
 import java.security._
 import java.io._
 import java.security.cert.{ Certificate, CertificateFactory }
-
+import rep.app.conf.SystemProfile
 import com.google.protobuf.ByteString
 import fastparse.utils.Base64
 import rep.utils.SerializeUtils
-
+import rep.storage._
 import scala.collection.mutable
 import com.fasterxml.jackson.core.Base64Variants
 import java.security.cert.X509Certificate
@@ -128,7 +128,14 @@ object ECDSASign extends ECDSASign {
    * @return
    */
   def getCertByBitcoinAddr(addr: String): Option[Certificate] = {
-    trustkeysPubAddrMap.get(addr)
+    var tmpcert = trustkeysPubAddrMap.get(addr)
+    if(checkCertificate(new java.util.Date(),  tmpcert.get)){
+      tmpcert
+    }else{
+      throw new RuntimeException("证书已经过期")
+    }
+    
+    
   }
 
   /**
@@ -172,8 +179,11 @@ object ECDSASign extends ECDSASign {
   def getKeyPair(alias: String): (PrivateKey, PublicKey, Array[Byte]) = {
     val sk = keyStore(alias).getKey(alias, password(alias).toCharArray)
     val cert = keyStore(alias).getCertificate(alias)
-    //    (sk.asInstanceOf[PrivateKey], cert.getPublicKey(), cert.getEncoded)
-    (sk.asInstanceOf[PrivateKey], cert.getPublicKey(), SerializeUtils.serialise(cert))
+    if(checkCertificate(new java.util.Date(),  cert)){
+      (sk.asInstanceOf[PrivateKey], cert.getPublicKey(), SerializeUtils.serialise(cert))
+    }else{
+      throw new RuntimeException("证书已经过期")
+    }
   }
 
   /**
@@ -346,4 +356,67 @@ class ECDSASign extends SignFunc {
     s2.verify(signature)
   }
 
+  def  getCertWithCheck(certAddr:String,certKey:String,sysTag:String):Option[java.security.cert.Certificate]={
+    val cert = ECDSASign.getCertByBitcoinAddr(certAddr) 
+    if(cert != None) {
+      if(checkCertificate(new java.util.Date(),  cert.get)){
+        cert
+      }else{
+        throw new RuntimeException("证书已经过期")
+      }
+    }else{
+      if(certKey == null || sysTag == null){
+        throw new RuntimeException("没有证书")
+      }else{
+          try{
+              val sr: ImpDataAccess = ImpDataAccess.GetDataAccess(sysTag)
+              val cert = Option(sr.Get(certKey))
+              if (cert != None){
+                if (new String(cert.get) == "null") {
+                    throw new RuntimeException("用户证书已经注销")
+                  }else{ 
+                      val kvcert = SerializeUtils.deserialise(cert.get).asInstanceOf[Certificate]
+                      if(kvcert != null){
+                          if(checkCertificate(new java.util.Date(), kvcert)){
+                            Some(kvcert)
+                          }else{
+                            throw new RuntimeException("证书已经过期")
+                          }
+                      }else{
+                        throw new RuntimeException("证书内容错误")
+                      }
+                  }
+              }else{
+                throw new RuntimeException("没有证书")
+              }
+          }catch{
+            case e : Exception =>throw new RuntimeException("证书获取过程中发生错误",e)
+          }
+        }
+    }
+  }
+  
+  def checkCertificate(date:java.util.Date,  cert:Certificate):Boolean={
+        var isValid :Boolean = false
+        var  start = System.currentTimeMillis()
+        try {
+          if(SystemProfile.getCheckCertValidate == 0){
+            isValid = true
+          }else if(SystemProfile.getCheckCertValidate == 1){
+            if(cert.isInstanceOf[X509Certificate]){
+                var  x509cert :X509Certificate = cert.asInstanceOf[X509Certificate]
+                x509cert.checkValidity(date)
+                isValid = true
+            }
+          }else{
+            isValid = true
+          }
+        } catch{
+            case e : Exception => isValid = false
+        }
+        var end = System.currentTimeMillis()
+        //println("check cert validate,spent time="+(end-start))
+        isValid;
+   }
+  
 }

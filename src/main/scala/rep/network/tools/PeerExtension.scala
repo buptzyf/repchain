@@ -260,7 +260,7 @@ class PeerExtensionImpl extends Extension {
     }
   }
   
-  def resetCandidator(nds: Set[ String ]): Unit = {
+  def resetCandidator(nds: Array[ String ]): Unit = {
     candidatorLock.lock()
     try{
       candidator = immutable.TreeMap.empty[String,String]

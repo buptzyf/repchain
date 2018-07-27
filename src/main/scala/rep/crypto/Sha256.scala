@@ -19,6 +19,7 @@ import com.google.protobuf.ByteString
 
 /**
  * @author c4w
+ * modify by jiangbuyun
  */
 object Sha256 extends CryptographicHash{
   override val DigestSize: Int = 32
@@ -26,9 +27,15 @@ object Sha256 extends CryptographicHash{
   def hashstr(input: Array[Byte]):String ={
     BytesHex.bytes2hex(hash(input))
   }
+  
   def hashstr(input: String):String ={
     val iptb = ByteString.copyFromUtf8(input)
     BytesHex.bytes2hex(hash(iptb.toByteArray()))
+  }
+  
+  def hashToBytes(input: String):Array[Byte] ={
+    val iptb = ByteString.copyFromUtf8(input)
+    hash(iptb.toByteArray())
   }
 
 }

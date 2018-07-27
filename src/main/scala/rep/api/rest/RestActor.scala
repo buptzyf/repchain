@@ -178,35 +178,25 @@ class RestActor extends Actor with ModuleHelper with RepLogging {
       val sig = txr.signature.toByteArray
       val tOutSig1 = txr.withSignature(ByteString.EMPTY)
       val tOutSig  = tOutSig1.withMetadata(ByteString.EMPTY)
-      val peercert = ECDSASign.getCertByBitcoinAddr(txr.cert.toStringUtf8)  // 从信任列表中取得证书
-     // TODO 把节点证书存放在worldstate中，然后再取出来还原，看是否和节点证书一样
-//      val certF = CertificateFactory.getInstance("X.509")
-//      val kvcer = certF.generateCertificate(new ByteArrayInputStream(cer.get)) // 从kv中获得相应的证书
-//      val cid = txr.payload.get.chaincodeID.get.name
+ 
       val cid = ChaincodeID.fromAscii(txr.chaincodeID.toStringUtf8).name
       val certKey = WorldStateKeyPreFix + cid + "_" + PRE_CERT + txr.cert.toStringUtf8
-      val cert = Option(sr.Get(certKey))  // 从worldstate中取证书,用户注册好像是以前缀形式写进去的
-      try {
-        if (peercert != None) {
-          //TODO 验证签名
-          ECDSASign.verify(sig, PeerHelper.getTxHash(tOutSig), peercert.get.getPublicKey) match {
+      
+      try{
+        var cert = ECDSASign.getCertWithCheck(txr.cert.toStringUtf8,certKey,pe.getSysTag)
+        if(cert != None){
+          ECDSASign.verify(sig, PeerHelper.getTxHash(tOutSig), cert.get.getPublicKey) match {
             case true => 
             case false => throw new RuntimeException("验证签名出错")
           }
-        } else if (cert != None){
-          if (new String(cert.get) == "null") {
-            throw new RuntimeException("该用户证书已注销")
-          }   
-          val kvcert = SerializeUtils.deserialise(cert.get).asInstanceOf[Certificate]  //rep序列化与反序列化字节数组
-          ECDSASign.verify(sig, PeerHelper.getTxHash(tOutSig), kvcert.getPublicKey) match {
-            case true => 
-//              ImpDataPreloadMgr.Free(pe.getSysTag, "preload")
-            case false => throw new RuntimeException("验证签名出错")
-          }
-        } else {
-          //TODO 没有找到证书的情况下，是直接抛出错误           
+        }else{
           throw new RuntimeException("没有证书")
         }
+      }catch{
+        case e : RuntimeException => throw e
+      }
+      
+      try {
         val future = sandbox ? PreTransaction(txr)
         val result = Await.result(future, timeout.duration).asInstanceOf[DoTransactionResult]
         val rv = result
@@ -241,7 +231,9 @@ class RestActor extends Actor with ModuleHelper with RepLogging {
       val future = sandbox ? PreTransaction(t)
       val result = Await.result(future, timeout.duration).asInstanceOf[DoTransactionResult]
       val rv = result
-
+      
+      ImpDataPreloadMgr.Free(pe.getDBTag,t.txid)
+      
       rv.err match {
         case None =>
           //预执行正常,提交并广播交易

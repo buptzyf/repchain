@@ -213,12 +213,15 @@ class Shim(system: ActorSystem, cid: String) {
     val sig = tx.signature.toByteArray
     val tOutSig1 = tx.withSignature(ByteString.EMPTY)
     val tOutSig  = tOutSig1.withMetadata(ByteString.EMPTY)
-    val peercer = ECDSASign.getCertByBitcoinAddr(bitcoinaddr)
-    if (peercer == None)
-      throw new Exception(NOT_PERR_CERT)
-    ECDSASign.verify(sig, PeerHelper.getTxHash(tOutSig), peercer.get.getPublicKey) match {
-      case true => 
-      case false => throw new Exception("节点签名验证错误")
+    
+    try{
+        val peercer = ECDSASign.getCertByBitcoinAddr(bitcoinaddr)
+        ECDSASign.verify(sig, PeerHelper.getTxHash(tOutSig), peercer.get.getPublicKey) match {
+          case true => 
+          case false => throw new Exception("节点签名验证错误")
+        }
+    }catch{
+      case e : RuntimeException => throw e
     }
   }
   

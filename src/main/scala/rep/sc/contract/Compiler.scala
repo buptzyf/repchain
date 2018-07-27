@@ -27,9 +27,10 @@ import java.io._
 import org.json4s._
 import org.json4s.jackson.JsonMethods._
 import rep.crypto.Sha256
-
+import rep.app.conf.SystemProfile
 import scala.reflect.runtime.currentMirror
 import scala.tools.reflect.ToolBox
+import rep.storage.util.pathUtil
 
 /**
  * 动态编译工具类的伴生对象，提供静态方法
@@ -37,7 +38,13 @@ import scala.tools.reflect.ToolBox
  */
 object Compiler{
   //建立动态编译工具类实例
-  val cp = new Compiler(None, true)
+  val contractOperationMode = SystemProfile.getContractOperationMode
+  var isDebug = true
+  contractOperationMode match{
+    case 0 => isDebug = true
+    case 1 => isDebug = false
+  }
+  val cp = new Compiler(None, isDebug)
   /** 根据传入的合约代码，以及指定的合约类唯一标识，生成合约类，并动态编译
    * @param pcode 合约代码主体部分
    * @cid 合约类唯一标识
@@ -60,7 +67,7 @@ class Compiler(targetDir: Option[File], bDebug:Boolean) {
   //反射工具对象
   val tb = currentMirror.mkToolBox()
   //源文件路径
-  val path_source = if(bDebug) getSourcePath else null
+  val path_source = if(bDebug) getSourcePath else pathUtil.getPath("custom_contract")
   //目标文件路径
   val target = targetDir match {
     case Some(dir) => AbstractFile.getDirectory(dir)
