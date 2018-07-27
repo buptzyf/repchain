@@ -178,10 +178,8 @@ class RestActor extends Actor with ModuleHelper with RepLogging {
       val sig = txr.signature.toByteArray
       val tOutSig1 = txr.withSignature(ByteString.EMPTY)
       val tOutSig  = tOutSig1.withMetadata(ByteString.EMPTY)
- 
       val cid = ChaincodeID.fromAscii(txr.chaincodeID.toStringUtf8).name
       val certKey = WorldStateKeyPreFix + cid + "_" + PRE_CERT + txr.cert.toStringUtf8
-      
       try{
         var cert = ECDSASign.getCertWithCheck(txr.cert.toStringUtf8,certKey,pe.getSysTag)
         if(cert != None){
@@ -231,9 +229,9 @@ class RestActor extends Actor with ModuleHelper with RepLogging {
       val future = sandbox ? PreTransaction(t)
       val result = Await.result(future, timeout.duration).asInstanceOf[DoTransactionResult]
       val rv = result
-      
+
       ImpDataPreloadMgr.Free(pe.getDBTag,t.txid)
-      
+
       rv.err match {
         case None =>
           //预执行正常,提交并广播交易

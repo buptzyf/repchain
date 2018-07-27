@@ -53,7 +53,6 @@ object BlockHelper {
     }catch{
       case e:RuntimeException => throw e
     }
-    
   }
 
   /**
@@ -77,7 +76,7 @@ object BlockHelper {
     }catch{
       case e  : RuntimeException => false
     }
-    
+
   }
   
   //用于对交易对签名验证
@@ -87,7 +86,6 @@ object BlockHelper {
     val sig = t.signature.toByteArray
     val tOutSig1 = t.withSignature(ByteString.EMPTY)
     val tOutSig  = tOutSig1.withMetadata(ByteString.EMPTY)
-    
     
     try{
         val cid = ChaincodeID.fromAscii(t.chaincodeID.toStringUtf8).name
@@ -101,7 +99,6 @@ object BlockHelper {
       }catch{
         case e : RuntimeException => resultMsg = s"The transaction(${t.txid}) is not trusted${e.getMessage}"
       }
-    
     result
   }
 
@@ -234,5 +231,5 @@ object BlockHelper {
       println("sorted")
     }
   }
-  
+
 }

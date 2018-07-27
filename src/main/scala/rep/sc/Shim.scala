@@ -213,7 +213,7 @@ class Shim(system: ActorSystem, cid: String) {
     val sig = tx.signature.toByteArray
     val tOutSig1 = tx.withSignature(ByteString.EMPTY)
     val tOutSig  = tOutSig1.withMetadata(ByteString.EMPTY)
-    
+
     try{
         val peercer = ECDSASign.getCertByBitcoinAddr(bitcoinaddr)
         ECDSASign.verify(sig, PeerHelper.getTxHash(tOutSig), peercer.get.getPublicKey) match {

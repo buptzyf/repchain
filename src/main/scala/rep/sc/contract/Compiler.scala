@@ -27,6 +27,7 @@ import java.io._
 import org.json4s._
 import org.json4s.jackson.JsonMethods._
 import rep.crypto.Sha256
+
 import rep.app.conf.SystemProfile
 import scala.reflect.runtime.currentMirror
 import scala.tools.reflect.ToolBox
@@ -120,10 +121,20 @@ class Compiler(targetDir: Option[File], bDebug:Boolean) {
    * @return 编译生成的类定义
    */
   def compilef(pcode: String, cid: String): Class[_]= {
-    val p1 = pcode.indexOf("extends IContract{")
+   //去掉package声明,将class放在default路径下
+    var p0 = pcode.indexOf("import")
+     //第一个定位点应加强容错能力,允许空白字符
+    val pattern = "extends\\s+IContract\\s*\\{".r
+    val p1str = pattern.findFirstIn(pcode).get
+    val p1 = pcode.indexOf(p1str)
     val p2 = pcode.lastIndexOf("}")
     val p3 = pcode.lastIndexOf("class ",p1)
     
+    //可能不存在import指令
+    if(p0.equals(-1)) 
+      p0 = p3
+    if(p1.equals(-1) || p1.equals(-1) || p1.equals(-1))
+      throw new RuntimeException("合约语法错误")
     val className = if(cid!=null) PRE_CLS_NAME+cid else classNameForCode(pcode)
     try{
       val cl = Class.forName(className)
@@ -132,7 +143,7 @@ class Compiler(targetDir: Option[File], bDebug:Boolean) {
       case e:Throwable =>     
         findClass(className).getOrElse {
         //替换类名为 hash256
-        val ncode = pcode.substring(0,p3) + "class "+className+ " "+pcode.substring(p1,p2+1)
+        val ncode = pcode.substring(p0,p3) + "class "+className+ " "+pcode.substring(p1,p2+1)
         //+"\nscala.reflect.classTag[ContractAssets2].runtimeClass"
         if(path_source!=null)
           saveCode(className,ncode)

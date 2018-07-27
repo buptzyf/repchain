@@ -56,7 +56,7 @@ object SystemProfile {
   private def SERVERPORT_=(value: Int): Unit = {
     _SERVERPORT = value
   }
-  
+
   private def CHECKCERTVALIDATE_=(value: Int): Unit = {
     _CHECKCERTVALIDATE = value
   }

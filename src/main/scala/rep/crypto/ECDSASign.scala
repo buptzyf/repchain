@@ -418,5 +418,5 @@ class ECDSASign extends SignFunc {
         //println("check cert validate,spent time="+(end-start))
         isValid;
    }
-  
+
 }

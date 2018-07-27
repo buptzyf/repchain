@@ -259,7 +259,7 @@ class PeerExtensionImpl extends Extension {
       candidatorLock.unlock()
     }
   }
-  
+
   def resetCandidator(nds: Array[ String ]): Unit = {
     candidatorLock.lock()
     try{

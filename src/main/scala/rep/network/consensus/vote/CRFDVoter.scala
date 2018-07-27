@@ -97,5 +97,5 @@ trait CRFDVoter extends VoterBase {
     }
   }
   
-  
+
 }

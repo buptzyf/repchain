@@ -93,7 +93,7 @@ class TransactionPool(moduleName: String) extends ModuleBase(moduleName) {
       }catch{
         case e : RuntimeException => throw e
       }
-    
+
     CheckedTransactionResult(result, resultMsg)
   }
 
