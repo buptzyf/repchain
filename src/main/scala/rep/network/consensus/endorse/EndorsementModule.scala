@@ -73,7 +73,29 @@ class EndorsementModule(moduleName: String) extends ModuleBase(moduleName) {
         )
     r
   }
+
+  private  def hasRepeatOfTrans(trans:Seq[Transaction]):Boolean={
+    var isRepeat : Boolean = false
+    val aliaslist = trans.distinct
+    if(aliaslist.size != trans.size){
+      isRepeat = true 
+    }else{
+      val sr: ImpDataAccess = ImpDataAccess.GetDataAccess(pe.getSysTag)
+      val loopbreak = new Breaks
+        loopbreak.breakable(
+            trans.foreach(f=>{
+              if(sr.getBlockByTxId(f.txid) != null){
+                isRepeat = true
+                loopbreak.break
+              }
+            })
+        )
+    }
+    isRepeat
+  }
   
+  
+
   private def endorseForWork(blk:Block, actRef: ActorRef,blkidentifier:String)={
       val dbinstancename = "endorse_"+blk.transactions.head.txid
       val preload: ImpDataPreload = ImpDataPreloadMgr.GetImpDataPreload(pe.getSysTag,dbinstancename)
@@ -81,21 +103,30 @@ class EndorsementModule(moduleName: String) extends ModuleBase(moduleName) {
           val blkData = blk.withConsensusMetadata(Seq())
           val blkInfo = Sha256.hash(blkData.toByteArray)
           if (BlockHelper.checkBlockContent(blk.consensusMetadata.head, blkInfo)) {
-              if(verifyTransSign(blk.transactions)){
-                if(preload.VerifyForEndorsement(blk)){
-                  logMsg(LOG_TYPE.WARN, s"Block endorse success,current height=${pe.getCacheHeight()},identifier=${blkidentifier}")
-                  actRef ! EndorsedBlock(true, blkData, BlockHelper.endorseBlock(blkInfo, pe.getSysTag),blkidentifier)
-                  //广播发送背书信息的事件(背书成功)
-                  sendEvent(EventType.PUBLISH_INFO, mediator, selfAddr, Topic.Block, Event.Action.ENDORSEMENT)
-                }else{
-                  logMsg(LOG_TYPE.WARN, "Transcation preload failed,Block endorse failed")
-                  actRef! EndorsedBlock(false, blkData, BlockHelper.endorseBlock(blkInfo, pe.getSysTag),blkidentifier)
-                }
+              if(!hasRepeatOfTrans(blk.transactions)){
+                  if(verifyTransSign(blk.transactions)){
+                    if(preload.VerifyForEndorsement(blk)){
+                      logMsg(LOG_TYPE.WARN, s"Block endorse success,current height=${pe.getCacheHeight()},identifier=${blkidentifier}")
+                      actRef ! EndorsedBlock(true, blkData, BlockHelper.endorseBlock(blkInfo, pe.getSysTag),blkidentifier)
+                      //广播发送背书信息的事件(背书成功)
+                      sendEvent(EventType.PUBLISH_INFO, mediator, selfAddr, Topic.Block, Event.Action.ENDORSEMENT)
+                    }else{
+                      logMsg(LOG_TYPE.WARN, "Transcation preload failed,Block endorse failed")
+                      actRef! EndorsedBlock(false, blkData, BlockHelper.endorseBlock(blkInfo, pe.getSysTag),blkidentifier)
+                    }
+                  }else{
+                    logMsg(LOG_TYPE.WARN, "Transcation Certification vertified failed")
+                    actRef! EndorsedBlock(false, blkData, BlockHelper.endorseBlock(blkInfo, pe.getSysTag),blkidentifier)
+                  }
               }else{
-                logMsg(LOG_TYPE.WARN, "Transcation Certification vertified failed")
+                    logMsg(LOG_TYPE.WARN, "Transcation vertified failed,found same Transcation")
+                    actRef! EndorsedBlock(false, blkData, BlockHelper.endorseBlock(blkInfo, pe.getSysTag),blkidentifier)
               }
            }
-           else logMsg(LOG_TYPE.WARN, "Blocker Certification vertified failed")
+           else {
+             logMsg(LOG_TYPE.WARN, "Blocker Certification vertified failed")
+             actRef! EndorsedBlock(false, blkData, BlockHelper.endorseBlock(blkInfo, pe.getSysTag),blkidentifier)
+           }
          logTime("Endorse end", CRFD_STEP._9_ENDORSE_END, getActorRef(ActorType.STATISTIC_COLLECTION))
          logMsg(LOG_TYPE.WARN, s"Block endorse finish,current height=${pe.getCacheHeight()},identifier=${blkidentifier}")
       } catch {

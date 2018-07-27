@@ -63,7 +63,7 @@ object SerializeUtils {
   }
 
   /**
-    * Json对象反序列化,由于没有给出造型类型,无法胜任复杂对象
+    * Json对象反序列化
     * @param bytes
     * @return
     */

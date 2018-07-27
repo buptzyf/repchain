@@ -116,7 +116,7 @@ class SandboxSpec(_system: ActorSystem)
     val dbTag = "1"
     //加载合约脚本
     //    val s1 = scala.io.Source.fromFile("src/main/scala/ContractAssetsTPL.scala")
-    val s1 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/NewContract.scala")
+    val s1 = scala.io.Source.fromFile("src/main/scala/NewContract.scala")
     val l1 = try s1.mkString finally s1.close()
 
     //val clazz = Compiler.compilef(l1,null)
@@ -197,4 +197,90 @@ class SandboxSpec(_system: ActorSystem)
       re3 should be("transfer ok")
     }
   }
+
+  //JavaScript的合约实现，同一个合约串行执行测试
+  "sandbox" should "process trasactions Synchronously" in {
+    val sysName = "1"
+    //建立PeerManager实例是为了调用transactionCreator(需要用到密钥签名)，无他
+
+    val f1 =
+      """
+var Thread = Java.type("java.lang.Thread");
+function waitprint(span,output) {
+  Thread.sleep(span);
+  print(output);
+  return output
+}
+      """
+    val s1 =
+      """
+   waitprint(5000,"FirstPrint");
+      """
+    val s2 =
+      """
+   waitprint(5,"SecondPrint");
+      """
+
+    val probe = TestProbe()
+    val db = ImpDataAccess.GetDataAccess(sysName)
+    var sandbox = system.actorOf(TransProcessor.props("sandbox", "", probe.ref))
+    //deploy
+    val t1 = transactionCreator(sysName, rep.protos.peer.Transaction.Type.CHAINCODE_DEPLOY,
+      "", "", List(), f1, None)
+    val msg_send1 = new DoTransaction(t1, probe.ref, "")
+    probe.send(sandbox, msg_send1)
+    val msg_recv1 = probe.expectMsgType[Sandbox.DoTransactionResult](10000.seconds)
+
+    //invoke
+    val cname = t1.payload.get.chaincodeID.get.name
+    val t2 = transactionCreator(sysName, rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE,
+      "", s1, List(), "", Option(cname))
+    val msg_send2 = new DoTransaction(t2, probe.ref, "")
+    probe.send(sandbox, msg_send2)
+    val msg_recv2 = probe.expectMsgType[Sandbox.DoTransactionResult](10000.seconds)
+    val rv2 = msg_recv2.r.asInstanceOf[JValue]
+    val re2 = rv2.extract[String]
+    re2 should be("FirstPrint")
+
+    val t3 = transactionCreator(sysName, rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE,
+      "", s2, List(), "", Option(cname))
+    val msg_send3 = new DoTransaction(t3, probe.ref, "")
+    probe.send(sandbox, msg_send3)
+    val msg_recv3 = probe.expectMsgType[Sandbox.DoTransactionResult](10000.seconds)
+    val rv3 = msg_recv3.r.asInstanceOf[JValue]
+    rv3.extract[String] should be("SecondPrint")
+  }
+
+  //在合约脚本中访问正在处理的签名交易测试
+  "sandbox scripts" should "can access the Trasaction being processed" in {
+    val sysName = "1"
+    val f1 =
+      """
+      print(tx);
+      """
+    val s1 =
+      """
+      r=tx;
+      """
+    val probe = TestProbe()
+    val db = ImpDataAccess.GetDataAccess(sysName)
+    var sandbox = system.actorOf(TransProcessor.props("sandbox", "", probe.ref))
+    //deploy
+    val t1 = transactionCreator(sysName, rep.protos.peer.Transaction.Type.CHAINCODE_DEPLOY,
+      "", "", List(), f1, None)
+    val msg_send1 = new DoTransaction(t1, probe.ref, "")
+    probe.send(sandbox, msg_send1)
+    val msg_recv1 = probe.expectMsgType[Sandbox.DoTransactionResult](10000.seconds)
+    //invoke
+    val cname = t1.payload.get.chaincodeID.get.name
+    val t2 = transactionCreator(sysName, rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE,
+      "", s1, List(), "", Option(cname))
+    val msg_send2 = new DoTransaction(t2, probe.ref, "")
+    probe.send(sandbox, msg_send2)
+    val msg_recv2 = probe.expectMsgType[Sandbox.DoTransactionResult](10000.seconds)
+    val rv2 = msg_recv2.r.asInstanceOf[JValue]
+    val re2 = rv2.extract[Transaction]
+    re2.txid should be(t2.txid)
+  }
+
 }

@@ -62,7 +62,7 @@ libraryDependencies ++= Seq(
   "de.heikoseeberger" % "akka-http-json4s_2.11" % "1.16.1",
   "org.json4s" %% "json4s-native" % "3.5.4",
   "org.json4s" %% "json4s-jackson" % "3.5.4",
-  
+
   "ch.megard" %% "akka-http-cors" % "0.2.2"
 )	
 

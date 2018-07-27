@@ -100,7 +100,7 @@ abstract class Sandbox(cid:String) extends Actor with RepLogging{
       sender ! tr
     //交易预处理请求，指定接收者
     case  PreTransaction(t:Transaction) =>
-      val tr = doTransaction(t,null,null)
+      val tr = doTransaction(t,null,t.txid)
       shim.rollback()
       sender ! tr
     //恢复chainCode,不回消息

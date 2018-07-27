@@ -256,9 +256,21 @@ def testTreeMapclear{
     
     println(tm)
 }
-  
+
+case class myobject(txid:String,name:String)
+
   def  main(args: Array[String]): Unit = {
    //testTreeMap
-   testTreeMapclear
+   //testTreeMapclear
+   var as = new Array[myobject](5)
+   as(0) = new myobject("1","name1")
+   as(1) = new myobject("2","name2")
+   as(2) = new myobject("3","name3")
+   as(3) = new myobject("2","name2")
+   as(4) = new myobject("5","name5")
+  
+   val tmp = as.distinct
+   println("tmpsize="+tmp.length+",assize="+as.length)
+
   }
 }

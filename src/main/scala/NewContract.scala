@@ -14,12 +14,10 @@
  * limitations under the License.
  */
 
-
-
 import org.json4s._
 import org.json4s.jackson.JsonMethods._
 import rep.sc.contract._
-import scala.reflect.ManifestFactory.classType
+import rep.storage.FakeStorage.Key
 
 /**
  * 资产管理合约

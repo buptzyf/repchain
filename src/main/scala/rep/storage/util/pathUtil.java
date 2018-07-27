@@ -119,4 +119,40 @@ public class pathUtil {
 		}
     	return l;
     }
+
+	
+	public static int bytesToInt(byte[] inputs){
+		if(inputs == null) return 0;
+		if(inputs.length < 4) return 0;
+		return  (inputs[0] & 0xff) << 24
+				| (inputs[1] & 0xff) << 16
+				| (inputs[2] & 0xff) << 8
+				| (inputs[3] & 0xff) << 0 ;
+	}
+	
+	public static boolean IsPrime(int n){
+       if (n <= 3) {
+            return n > 1;
+        }
+        
+       for(int i=2;i<=Math.sqrt(n);i++){
+           if(n%i == 0)
+               return false;
+       }
+       return true;
+	}
+	
+	public static String getPath(String spath) {
+		String p = spath;
+		try {
+			File f = new File(spath);
+			if(!f.exists()){
+				MkdirAll(f.getAbsolutePath());
+			}
+			p = f.getAbsolutePath();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return p;
+	}
 }

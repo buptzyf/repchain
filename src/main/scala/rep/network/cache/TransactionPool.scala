@@ -74,45 +74,26 @@ class TransactionPool(moduleName: String) extends ModuleBase(moduleName) {
     var result = false
     val sig = t.signature.toByteArray
     val tOutSig = t.withSignature(ByteString.EMPTY)
-    val certTx = ECDSASign.getCertByBitcoinAddr(t.cert.toStringUtf8)
-    certTx.getOrElse(None) match {
-      case None =>
-        val cid = ChaincodeID.fromAscii(t.chaincodeID.toStringUtf8).name
-        val certKey = WorldStateKeyPreFix + cid + "_" + "CERT_" + t.cert.toStringUtf8 // 普通用户证书的key
-        val cert = Option(dataaccess.Get(certKey)) // 从worldstate中取证书,用户注册是以前缀形式写进去的
-        cert.getOrElse(None) match {
-          case None => resultMsg = s"The transaction(${t.txid}) is not trusted"
-          case _ =>
-            if (new String(cert.get) == "null") {
-              throw new RuntimeException("该用户证书已注销")
-            }
-            //验证签名和内容hash
-            val kvcert = SerializeUtils.deserialise(cert.get).asInstanceOf[Certificate] //rep序列化与反序列化字节数组
-            ECDSASign.verify(sig, PeerHelper.getTxHash(tOutSig), kvcert.getPublicKey) match {
-              case true =>
+    val cid = ChaincodeID.fromAscii(t.chaincodeID.toStringUtf8).name
+    val certKey = WorldStateKeyPreFix + cid + "_" + "CERT_" + t.cert.toStringUtf8 // 普通用户证书的key
+    try{
+        var cert = ECDSASign.getCertWithCheck(t.cert.toStringUtf8,certKey,pe.getSysTag)
+        if(cert != None){
+          ECDSASign.verify(sig, PeerHelper.getTxHash(tOutSig), cert.get.getPublicKey) match {
+            case true =>
                 dataAccess.getBlockByTxId(t.txid) match {
                   case null => result = true
                   case _    => resultMsg = s"The transaction(${t.txid}) is duplicated with txid"
                 }
               case false => resultMsg = s"The transaction(${t.txid}) is not completed"
-            }
+          }
+        }else{
+          throw new RuntimeException("没有证书")
         }
-      case _ =>
-        val alias = ECDSASign.getAliasByCert(certTx.get).getOrElse(None)
-        alias match {
-          case None => resultMsg = s"The transaction(${t.txid}) is not trusted"
-          case _ =>
-            //验证签名和内容hash
-            ECDSASign.verify(sig, PeerHelper.getTxHash(tOutSig), certTx.get.getPublicKey) match {
-              case false => resultMsg = s"The transaction(${t.txid}) is not completed"
-              case true =>
-                dataAccess.getBlockByTxId(t.txid) match {
-                  case null => result = true
-                  case _    => resultMsg = s"The transaction(${t.txid}) is duplicated with txid"
-                }
-            }
-        }
-    }
+      }catch{
+        case e : RuntimeException => throw e
+      }
+
     CheckedTransactionResult(result, resultMsg)
   }
 

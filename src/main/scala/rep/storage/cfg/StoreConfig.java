@@ -156,13 +156,13 @@ public class StoreConfig {
 	
 	public long getFreeDiskSpace(){
 		String bpath = this.getBlockPath();
-		/*try {
+		try {
 			if(pathUtil.FileExists(bpath) == -1){
 				pathUtil.MkdirAll(bpath);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
-		}*/
+		}
 		File f = new File(bpath);
 		long l = f.getFreeSpace();
 		return l;

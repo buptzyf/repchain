@@ -17,6 +17,7 @@ package rep.network.consensus.vote
 
 import rep.crypto.Sha256
 import scala.collection.mutable
+import rep.storage.util.pathUtil
 
 /**
   * 系统默认
@@ -28,23 +29,50 @@ import scala.collection.mutable
   */
 //TODO kami 应该在init的时候载入一个实现函数或者类。然后调用方法。写的更通用一些
 trait CRFDVoter extends VoterBase {
-
-  override def blocker(nodes: Set[String], position:Int): Option[String] = {
-    //if (nodes.nonEmpty&&position<nodes.size) Option(nodes.head) else None
+  case class randomNumber(var number:Long,var generateSerial:Int,var sortPos:Int)
+  
+  override def blocker(nodes: Array[String], position:Int): String = {
     if(nodes.nonEmpty){
       var pos = position
       if(position >= nodes.size){
         pos = position % nodes.size
       }
-      val a = nodes.toList
-      Option(a(pos)) 
+      nodes(pos)
     }else{
-      None
+      null
     }
   }
-
-  override def candidators(nodes: Set[String], seed: Array[Byte]): Set[String] = {
-    var nodesSeq = nodes.toSeq.sortBy(f=>(f.toString()))//nodes.toSeq
+  
+  private def getRandomList(seed:Long,candidatorLen:Int,candidatorTotal:Int):Array[randomNumber]={
+    val m = 2*2*2*2*2*2*2*2*2*2*2*2*2*2*2*2*2*2*2*2
+    val a = 2045
+    val b = 1
+    var randomArray = new Array[randomNumber](candidatorTotal)
+    var hashSeed = seed.abs
+    for(i<-0 to candidatorTotal-1){
+      var tmpSeed = (a * hashSeed + b) % m
+      tmpSeed = tmpSeed.abs
+      if(tmpSeed == hashSeed) tmpSeed = tmpSeed + 1
+      hashSeed = tmpSeed
+      var randomobj = new randomNumber(hashSeed,i,-1)
+      randomArray(i) = randomobj
+    }
+    
+    randomArray = randomArray.sortWith(
+        (randomNumber_left,randomNumber_right)=> randomNumber_left.number < randomNumber_right.number)
+        
+    for(i<-0 to randomArray.size-1){
+       randomArray(i).sortPos = i
+    }
+    
+    randomArray = randomArray.sortWith(
+        (randomNumber_left,randomNumber_right)=> randomNumber_left.generateSerial < randomNumber_right.generateSerial)
+        
+    randomArray
+  }
+  
+  override def candidators(nodes: Set[String], seed: Array[Byte]): Array[String] = {
+    var nodesSeq = nodes.toSeq.sortBy(f=>(f.toString()))
     var len = nodes.size / 2 + 1
     val min_len = 4
     len = if(len<min_len){
@@ -53,27 +81,21 @@ trait CRFDVoter extends VoterBase {
     }
     else len
     if(len<4){
-      Set.empty
+      null
     }
     else{
-      var candidate = mutable.Seq.empty[String]
-      var index = 0
-      var hashSeed = seed
-
-      while (candidate.size < len) {
-        if (index >= hashSeed.size) {
-          hashSeed = Sha256.hash(hashSeed)
-          index = 0
-        }
-        //应该按位来计算
-        if ((hashSeed(index) & 1) == 1) {
-          candidate = (candidate :+ nodesSeq(index % (nodesSeq.size)))
-          nodesSeq = (nodesSeq.toSet - nodesSeq(index % (nodesSeq.size))).toSeq
-        }
-        index += 1
+      var candidate = new Array[String](len)
+      var hashSeed:Long = pathUtil.bytesToInt(seed)
+      var randomList = getRandomList(hashSeed,len,nodes.size)
+      //PrintRandomArray(randomList)
+      println(randomList(0).sortPos)
+      for(j<-0 to len-1){
+        var e = randomList(j)
+        candidate(j) = nodesSeq(e.sortPos)
       }
-      candidate.toSet
+      candidate
     }
   }
   
+
 }
