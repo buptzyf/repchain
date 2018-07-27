@@ -140,4 +140,18 @@ public class pathUtil {
        }
        return true;
 	}
+	
+	public static String getPath(String spath) {
+		String p = spath;
+		try {
+			File f = new File(spath);
+			if(!f.exists()){
+				MkdirAll(f.getAbsolutePath());
+			}
+			p = f.getAbsolutePath();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return p;
+	}
 }
