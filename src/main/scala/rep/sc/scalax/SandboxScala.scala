@@ -72,6 +72,7 @@ class SandboxScala(cid:String) extends Sandbox(cid){
           shim.ol.append(new Oper(key, null, txid))
           encodeJson(cid)
          //新建class实例并执行合约,传参为json数据
+          //TODO case  Transaction.Type.CHAINCODE_DESC 增加对合约描述的处理
         case  Transaction.Type.CHAINCODE_INVOKE =>
           //获得合约action
           val action = cs.ctorMsg.get.function

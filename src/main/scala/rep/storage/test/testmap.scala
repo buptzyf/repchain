@@ -256,7 +256,7 @@ def testTreeMapclear{
     
     println(tm)
 }
-  
+
 case class myobject(txid:String,name:String)
 
   def  main(args: Array[String]): Unit = {
@@ -271,6 +271,6 @@ case class myobject(txid:String,name:String)
   
    val tmp = as.distinct
    println("tmpsize="+tmp.length+",assize="+as.length)
-   
+
   }
 }

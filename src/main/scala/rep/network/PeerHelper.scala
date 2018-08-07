@@ -123,11 +123,15 @@ object PeerHelper {
     }
     t = t.withTxid(txid)
     //Signature
-    val (priKey, pubKey, cert) = ECDSASign.getKeyPair(nodeName)
-    t = t.withCert(ByteString.copyFromUtf8(ECDSASign.getBitcoinAddrByCert(cert)))
-    //Get signature with tx hash（include cert）
-    val sig = ECDSASign.sign(priKey,getTxHash(t))
-    t = t.withSignature(ByteString.copyFrom(sig))
+    try{
+        val (priKey, pubKey, cert) = ECDSASign.getKeyPair(nodeName)
+        t = t.withCert(ByteString.copyFromUtf8(ECDSASign.getBitcoinAddrByCert(cert)))
+        //Get signature with tx hash（include cert）
+        val sig = ECDSASign.sign(priKey,getTxHash(t))
+        t = t.withSignature(ByteString.copyFrom(sig))
+    }catch{
+      case e:RuntimeException => throw e
+    }
     t
   }
 
@@ -191,13 +195,17 @@ class PeerHelper(name: String) extends ModuleBase(name) {
     case TickInvoke =>
       //invoke
 //      val cname = t.payload.get.chaincodeID.get.name
-      val t2 = transactionCreator(pe.getSysTag,rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE,
-        "", li1 ,List(),"", Option(chaincode),rep.protos.peer.ChaincodeSpec.CodeType.CODE_JAVASCRIPT)
-      //getActorRef(ActorType.TRANSACTION_POOL) ! t2  
-      val t3 = transactionCreator(pe.getSysTag,rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE,
-        "", "transfer" ,Seq(li2),"", Option(chaincode),rep.protos.peer.ChaincodeSpec.CodeType.CODE_JAVASCRIPT)  
-      getActorRef(ActorType.TRANSACTION_POOL) ! t3
-      scheduler.scheduleOnce(SystemProfile.getTranCreateDur.millis, self, TickInvoke)
+      try{
+        val t2 = transactionCreator(pe.getSysTag,rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE,
+          "", li1 ,List(),"", Option(chaincode),rep.protos.peer.ChaincodeSpec.CodeType.CODE_JAVASCRIPT)
+        //getActorRef(ActorType.TRANSACTION_POOL) ! t2  
+        val t3 = transactionCreator(pe.getSysTag,rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE,
+          "", "transfer" ,Seq(li2),"", Option(chaincode),rep.protos.peer.ChaincodeSpec.CodeType.CODE_JAVASCRIPT)  
+        getActorRef(ActorType.TRANSACTION_POOL) ! t3
+        scheduler.scheduleOnce(SystemProfile.getTranCreateDur.millis, self, TickInvoke)
+      }catch{
+        case e:RuntimeException => throw e
+      }
 //      println(sdf.format(System.currentTimeMillis())+" ########## "+pe.getSysTag+" ************* ")
   }
 }

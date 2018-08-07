@@ -127,15 +127,25 @@ class PreloadTransactionModule(moduleName: String, transProcessor:ActorRef) exte
       logTime(s"Trans Preload End, Trans size ${transResult.size - errorCount}", CRFD_STEP._6_PRELOAD_END,
         getActorRef(ActorType.STATISTIC_COLLECTION))
       isPreload = false
-      ImpDataPreloadMgr.Free(pe.getDBTag,blk.transactions.head.txid)
-      clearCache() //是否是多余的，确保一定执行了
+      freeSource
       schedulerLink = clearSched()
+  }
+  
+  def freeSource={
+    if(blk != null){
+      if(blk.transactions.size > 0){
+        ImpDataPreloadMgr.Free(pe.getDBTag,blk.transactions.head.txid)
+      }
+    }
+    clearCache() //是否是多余的，确保一定执行了 
   }
   
   override def receive = {
 
     case PreTransBlock(blc, from,blkIdentifier) =>
       val preBlk = dataaccess.getBlockByHash(blk.previousBlockHash.toStringUtf8)
+      freeSource
+      
       if((preBlk!=null && dataaccess.getBlockChainInfo().currentWorldStateHash == getBlkFromByte(preBlk).stateHash.toStringUtf8)
       || blk.previousBlockHash == ByteString.EMPTY){
         blkIdentifier_src = blkIdentifier
@@ -214,10 +224,12 @@ class PreloadTransactionModule(moduleName: String, transProcessor:ActorRef) exte
           preLoadFeedBackInfo(false, blk, preloadFrom, pe.getMerk)
           blkIdentifier_src = ""
           isPreload = false
-          ImpDataPreloadMgr.Free(pe.getDBTag,blk.transactions.head.txid)
-          clearCache() //是否是多余的，确保一定执行了
+          freeSource
           schedulerLink = clearSched()
-        case false => logMsg(LOG_TYPE.INFO, "Preload trans timeout checked, successfully")
+        case false => {
+          freeSource
+          logMsg(LOG_TYPE.INFO, "Preload trans timeout checked, successfully")
+        }
 
       }
 

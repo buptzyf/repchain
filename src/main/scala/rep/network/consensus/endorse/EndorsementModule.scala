@@ -73,7 +73,7 @@ class EndorsementModule(moduleName: String) extends ModuleBase(moduleName) {
         )
     r
   }
-  
+
   private  def hasRepeatOfTrans(trans:Seq[Transaction]):Boolean={
     var isRepeat : Boolean = false
     val aliaslist = trans.distinct
@@ -95,7 +95,7 @@ class EndorsementModule(moduleName: String) extends ModuleBase(moduleName) {
   }
   
   
-  
+
   private def endorseForWork(blk:Block, actRef: ActorRef,blkidentifier:String)={
       val dbinstancename = "endorse_"+blk.transactions.head.txid
       val preload: ImpDataPreload = ImpDataPreloadMgr.GetImpDataPreload(pe.getSysTag,dbinstancename)

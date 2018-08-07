@@ -1,19 +1,3 @@
-
-/*
- * Copyright  2018 Blockchain Technology and Application Joint Lab, Fintech Research Center of ISCAS.
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BA SIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 import org.json4s._
 import org.json4s.jackson.JsonMethods._
 import rep.sc.contract._
@@ -23,7 +7,7 @@ import rep.storage.FakeStorage.Key
  * 资产管理合约
  */
 
-class NewContract extends IContract{
+class sha0bfbe2faf858dd495e712fb0f897dd66082f06b879fa21a80fcc2acbc199b8d7 extends IContract{
   case class Transfer(from:String, to:String, amount:Int)
 //  case class Proof(key:String, content:String)
   case class ReplaceCert(cert:String, addr:String)
@@ -42,9 +26,10 @@ class NewContract extends IContract{
       }
       null
     }
-
-    def read(ctx: ContractContext, key: String):Object={
-      ctx.api.getVal(key).toString
+    
+        
+    def read(ctx: ContractContext, key: String):Any={
+      ctx.api.getVal(key)
     }
     
     def loadCert(ctx: ContractContext, cert: String): Unit = {
@@ -136,9 +121,6 @@ class NewContract extends IContract{
         case "replaceCert" => 
           println(s"replaceCert")
           replaceCert(ctx, json.extract[ReplaceCert])
-        case "read"=>
-          println(s"read")
-          read(ctx, json.extract[String])
       }
     }
     

@@ -119,6 +119,7 @@ public class pathUtil {
 		}
     	return l;
     }
+
 	
 	public static int bytesToInt(byte[] inputs){
 		if(inputs == null) return 0;
@@ -139,5 +140,19 @@ public class pathUtil {
                return false;
        }
        return true;
+	}
+	
+	public static String getPath(String spath) {
+		String p = spath;
+		try {
+			File f = new File(spath);
+			if(!f.exists()){
+				MkdirAll(f.getAbsolutePath());
+			}
+			p = f.getAbsolutePath();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return p;
 	}
 }
