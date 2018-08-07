@@ -29,7 +29,7 @@ import rep.storage.util.pathUtil
   */
 //TODO kami 应该在init的时候载入一个实现函数或者类。然后调用方法。写的更通用一些
 trait CRFDVoter extends VoterBase {
-  case class randomNumber(var number:Long,var generateSerial:Int,var sortPos:Int)
+  case class randomNumber(var number:Long,var generateSerial:Int)
   
   override def blocker(nodes: Array[String], position:Int): String = {
     if(nodes.nonEmpty){
@@ -54,19 +54,12 @@ trait CRFDVoter extends VoterBase {
       tmpSeed = tmpSeed.abs
       if(tmpSeed == hashSeed) tmpSeed = tmpSeed + 1
       hashSeed = tmpSeed
-      var randomobj = new randomNumber(hashSeed,i,-1)
+      var randomobj = new randomNumber(hashSeed,i)
       randomArray(i) = randomobj
     }
     
     randomArray = randomArray.sortWith(
         (randomNumber_left,randomNumber_right)=> randomNumber_left.number < randomNumber_right.number)
-        
-    for(i<-0 to randomArray.size-1){
-       randomArray(i).sortPos = i
-    }
-    
-    randomArray = randomArray.sortWith(
-        (randomNumber_left,randomNumber_right)=> randomNumber_left.generateSerial < randomNumber_right.generateSerial)
         
     randomArray
   }
@@ -88,10 +81,10 @@ trait CRFDVoter extends VoterBase {
       var hashSeed:Long = pathUtil.bytesToInt(seed)
       var randomList = getRandomList(hashSeed,len,nodes.size)
       //PrintRandomArray(randomList)
-      println(randomList(0).sortPos)
+      println(randomList(0).generateSerial)
       for(j<-0 to len-1){
         var e = randomList(j)
-        candidate(j) = nodesSeq(e.sortPos)
+        candidate(j) = nodesSeq(e.generateSerial)
       }
       candidate
     }
