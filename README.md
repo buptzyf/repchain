@@ -33,15 +33,15 @@
 - `eclipse` 
 生成eclipse工程文件
 - 打开 Scala IDE, File->Import->Existing Projects,导入项目
-- 右键单击 rep.app.Repchain.scala,Run As->Scala Application(单机组网5个节点)
+- 右键单击 rep.app.Repchain.scala,Run As->Scala Application(单机组网4个节点)
 - 运行配置VM参数 -Dlogback.configurationFile =conf/logback.xml (使logback配置生效)
 - 查看实时图 http://localhost:8081/web/g1.html 
 - 查看API  http://localhost:8081/swagger/index.html
 
 ## 修改配置
-- 生成RepChain节点密钥对及信任证书列表（见[《RepChain开发者指南》](https://gitee.com/BTAJL/repchain/attach_files/download?i=139093&u=http%3A%2F%2Ffiles.git.oschina.net%2Fgroup1%2FM00%2F03%2FC2%2FPaAvDFsKpAmAZ_AsADE886AOSC0022.pdf%3Ftoken%3Dc101d4c87b90fcf131ef2bf480331ed7%26ts%3D1527425136%26attname%3DRepChain%25E5%25BC%2580%25E5%258F%2591%25E8%2580%2585%25E6%258C%2587%25E5%258D%2597.pdf) 2.1.5）
-- 制作创世区块（见[《RepChain开发者指南》](https://gitee.com/BTAJL/repchain/attach_files/download?i=139093&u=http%3A%2F%2Ffiles.git.oschina.net%2Fgroup1%2FM00%2F03%2FC2%2FPaAvDFsKpAmAZ_AsADE886AOSC0022.pdf%3Ftoken%3Dc101d4c87b90fcf131ef2bf480331ed7%26ts%3D1527425136%26attname%3DRepChain%25E5%25BC%2580%25E5%258F%2591%25E8%2580%2585%25E6%258C%2587%25E5%258D%2597.pdf) 2.1.6）
-- 调整系统配置参数（见[《RepChain开发者指南》](https://gitee.com/BTAJL/repchain/attach_files/download?i=139093&u=http%3A%2F%2Ffiles.git.oschina.net%2Fgroup1%2FM00%2F03%2FC2%2FPaAvDFsKpAmAZ_AsADE886AOSC0022.pdf%3Ftoken%3Dc101d4c87b90fcf131ef2bf480331ed7%26ts%3D1527425136%26attname%3DRepChain%25E5%25BC%2580%25E5%258F%2591%25E8%2580%2585%25E6%258C%2587%25E5%258D%2597.pdf) 2.1.7）
+- 生成RepChain节点密钥对及信任证书列表（见[《RepChain开发者指南》](https://gitee.com/BTAJL/repchain/attach_files/download?i=152687&u=http%3A%2F%2Ffiles.git.oschina.net%2Fgroup1%2FM00%2F04%2F54%2FPaAvDFtX24SAeIxpADEhgca3xCI727.pdf%3Ftoken%3D7afd728970886ea6909f1d49eb2fd081%26ts%3D1532484485%26attname%3DRepChain%25E5%25BC%2580%25E5%258F%2591%25E8%2580%2585%25E6%258C%2587%25E5%258D%2597.pdf) 2.1.5）
+- 制作创世区块（见[《RepChain开发者指南》](https://gitee.com/BTAJL/repchain/attach_files/download?i=152687&u=http%3A%2F%2Ffiles.git.oschina.net%2Fgroup1%2FM00%2F04%2F54%2FPaAvDFtX24SAeIxpADEhgca3xCI727.pdf%3Ftoken%3D7afd728970886ea6909f1d49eb2fd081%26ts%3D1532484485%26attname%3DRepChain%25E5%25BC%2580%25E5%258F%2591%25E8%2580%2585%25E6%258C%2587%25E5%258D%2597.pdf) 2.1.6）
+- 调整系统配置参数（见[《RepChain开发者指南》](https://gitee.com/BTAJL/repchain/attach_files/download?i=152687&u=http%3A%2F%2Ffiles.git.oschina.net%2Fgroup1%2FM00%2F04%2F54%2FPaAvDFtX24SAeIxpADEhgca3xCI727.pdf%3Ftoken%3D7afd728970886ea6909f1d49eb2fd081%26ts%3D1532484485%26attname%3DRepChain%25E5%25BC%2580%25E5%258F%2591%25E8%2580%2585%25E6%258C%2587%25E5%258D%2597.pdf) 2.1.7）
 
 ## 打包
 - assembly 
