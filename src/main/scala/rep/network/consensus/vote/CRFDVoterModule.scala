@@ -111,6 +111,16 @@ class CRFDVoterModule(moduleName: String) extends ModuleBase(moduleName) with CR
   // override postRestart so we don't call preStart and schedule a new Tick
   override def postRestart(reason: Throwable): Unit = ()
 
+  def ArrayToString(a:Array[String]):String={
+    var str = ""
+    if(a != null && a.length>0){
+      a.foreach(f=>{
+        str += f +","
+      })
+    }
+    str
+  }
+  
   override def receive = {
     case NextVote(flag,index,isTimeout) =>
       //println(pe.getSysTag + " vote request")
@@ -174,15 +184,15 @@ class CRFDVoterModule(moduleName: String) extends ModuleBase(moduleName) with CR
                   if (blo != null) {
                     pe.resetBlocker(blo)
                     //暂时只找到该方法能够明确标识一个在网络中（有网络地址）的节点，后续发现好方法可以完善
-                    logMsg(LOG_TYPE.INFO, s"Select  in getCacheHeight=${pe.getCacheHeight()} Candidates : ${candidatorCur} ~ Blocker : ${blo},currenthash=${pe.getCurrentBlockHash},index=${pe.getBlker_index}")
+                    logMsg(LOG_TYPE.INFO, s"Select  in getCacheHeight=${pe.getCacheHeight()} Candidates : ${ArrayToString(candidatorCur)} ~ Blocker : ${blo},currenthash=${pe.getCurrentBlockHash},index=${pe.getBlker_index}")
                     if (pe.getSysTag == blo) {
                       getActorRef(ActorType.BLOCK_MODULE) ! (BlockEvent.CREATE_BLOCK, "")
-                      logMsg(LOG_TYPE.INFO, s"Select  in getCacheHeight=${pe.getCacheHeight()} Candidates : ${candidatorCur} ,send Create cmd~ Blocker : ${blo},currenthash=${pe.getCurrentBlockHash},index=${pe.getBlker_index}")
+                      logMsg(LOG_TYPE.INFO, s"Select  in getCacheHeight=${pe.getCacheHeight()} Candidates : ${ArrayToString(candidatorCur)} ,send Create cmd~ Blocker : ${blo},currenthash=${pe.getCurrentBlockHash},index=${pe.getBlker_index}")
                     }
                     else {
                       //如果不是自己则发送出块人地址
                       getActorRef(ActorType.BLOCK_MODULE) ! (BlockEvent.BLOCKER, selfAddr)
-                      logMsg(LOG_TYPE.INFO, s"Select  in getCacheHeight=${pe.getCacheHeight()} Candidates : ${candidatorCur} ,notice block module,~ Blocker : ${blo},currenthash=${pe.getCurrentBlockHash},index=${pe.getBlker_index}")
+                      logMsg(LOG_TYPE.INFO, s"Select  in getCacheHeight=${pe.getCacheHeight()} Candidates : ${ArrayToString(candidatorCur)} ,notice block module,~ Blocker : ${blo},currenthash=${pe.getCurrentBlockHash},index=${pe.getBlker_index}")
                     }
                   }
                   else {

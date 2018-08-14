@@ -314,24 +314,28 @@ class RestActor extends Actor with ModuleHelper with RepLogging {
 
     case pa: PostAddr =>
       //TODO 从短地址到证书得有信任列表里的，还有就是ws中存储的，两个都得做，如果证书在，返回证书字符串
-      val peercert = ECDSASign.getCertByBitcoinAddr(pa.addr)       
-      val certKey = WorldStateKeyPreFix + pa.cid + "_" + PRE_CERT + pa.addr  
-      val kvcer = Option(sr.Get(certKey))
-      if(peercert != None) {
-        val pemCertPre = new String(Base64.getEncoder.encode(peercert.get.getEncoded))
-        val pemcertstr = cert_begin + LINE_SEPARATOR + pemCertPre + LINE_SEPARATOR + end_cert
-        sender ! QueryCert(pa.addr, pemcertstr, pa.cid, "")
-      } else if (kvcer != None){
-          if (new String(kvcer.get) == "null") {
-            throw new RuntimeException("该用户证书已注销")
-          }  
-          val kvcert = SerializeUtils.deserialise(kvcer.get).asInstanceOf[Certificate]
-          val pemCertPre = new String(Base64.getEncoder.encode(kvcert.getEncoded))
-          val pemcertstr = cert_begin + LINE_SEPARATOR + pemCertPre + LINE_SEPARATOR + end_cert
-          sender ! QueryCert(pa.addr, pemcertstr, pa.cid, "")
-      } else {
-        sender ! QueryCert(pa.addr, "", pa.cid, "不存在证书")
-      }
+      try{
+          val peercert = ECDSASign.getCertByBitcoinAddr(pa.addr)       
+          val certKey = WorldStateKeyPreFix + pa.cid + "_" + PRE_CERT + pa.addr  
+          val kvcer = Option(sr.Get(certKey))
+          if(peercert != None) {
+            val pemCertPre = new String(Base64.getEncoder.encode(peercert.get.getEncoded))
+            val pemcertstr = cert_begin + LINE_SEPARATOR + pemCertPre + LINE_SEPARATOR + end_cert
+            sender ! QueryCert(pa.addr, pemcertstr, pa.cid, "")
+          } else if (kvcer != None){
+              if (new String(kvcer.get) == "null") {
+                throw new RuntimeException("该用户证书已注销")
+              }  
+              val kvcert = SerializeUtils.deserialise(kvcer.get).asInstanceOf[Certificate]
+              val pemCertPre = new String(Base64.getEncoder.encode(kvcert.getEncoded))
+              val pemcertstr = cert_begin + LINE_SEPARATOR + pemCertPre + LINE_SEPARATOR + end_cert
+              sender ! QueryCert(pa.addr, pemcertstr, pa.cid, "")
+          } else {
+            sender ! QueryCert(pa.addr, "", pa.cid, "不存在证书")
+          }
+      }catch{
+            case e : Exception => sender ! QueryCert(pa.addr, "", pa.cid, e.getMessage)
+        }
       
     // TODO 主要是查询hash是否存在
     case ph: PostHash =>

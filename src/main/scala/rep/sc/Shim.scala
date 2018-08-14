@@ -144,7 +144,12 @@ class Shim(system: ActorSystem, cid: String) {
 //  TODO 把二进制的证书转换为明文，看一下,检查该证书是否非节点证书
     val certTx = SerializeUtils.deserialise(bdata).asInstanceOf[Certificate]
     val bitcoinaddr = ECDSASign.getBitcoinAddrByCert(certTx)
-    val peercer = ECDSASign.getCertByBitcoinAddr(bitcoinaddr)
+    var peercer : Option[Certificate] = None
+    try{
+        peercer = ECDSASign.getCertByBitcoinAddr(bitcoinaddr)
+    }catch{
+      case e : Exception => throw new Exception(e.getMessage)
+    }
 //    val addstr = (new code).encodeHex(bdata)
     
     //step2 取二进制数据数据的地址
@@ -215,7 +220,13 @@ class Shim(system: ActorSystem, cid: String) {
     val tOutSig  = tOutSig1.withMetadata(ByteString.EMPTY)
 
     try{
-        val peercer = ECDSASign.getCertByBitcoinAddr(bitcoinaddr)
+        var peercer : Option[Certificate] = None
+        try{
+            peercer = ECDSASign.getCertByBitcoinAddr(bitcoinaddr)
+        }catch{
+          case e : Exception => throw new Exception(e.getMessage)
+        }
+        
         ECDSASign.verify(sig, PeerHelper.getTxHash(tOutSig), peercer.get.getPublicKey) match {
           case true => 
           case false => throw new Exception("节点签名验证错误")

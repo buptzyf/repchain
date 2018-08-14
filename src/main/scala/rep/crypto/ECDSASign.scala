@@ -129,13 +129,14 @@ object ECDSASign extends ECDSASign {
    */
   def getCertByBitcoinAddr(addr: String): Option[Certificate] = {
     var tmpcert = trustkeysPubAddrMap.get(addr)
-    if(checkCertificate(new java.util.Date(),  tmpcert.get)){
+    if(tmpcert ==  null) {
+      throw new RuntimeException("证书不存在")
+    }
+    if(checkCertificate(new java.util.Date(), tmpcert.get )){
       tmpcert
     }else{
       throw new RuntimeException("证书已经过期")
     }
-    
-    
   }
 
   /**
@@ -310,6 +311,15 @@ object ECDSASign extends ECDSASign {
         false
     }
   }
+  
+  def getCertByNodeAddr(addr: String): Option[Certificate] = {
+    if(addr != null){
+      trustkeysPubAddrMap.get(addr)
+    }else{
+      None
+    }
+  }
+  
   def main(args: Array[String]): Unit = {
     println(ByteString.copyFromUtf8(ECDSASign.getBitcoinAddrByCert(ECDSASign.getCertFromJKS(new File("jks/mykeystore_1.jks"), "123", "1"))).toStringUtf8)
     println(ECDSASign.getBitcoinAddrByCert(ECDSASign.getCertFromJKS(new File("jks/mykeystore_2.jks"), "123", "2")))
@@ -356,8 +366,10 @@ class ECDSASign extends SignFunc {
     s2.verify(signature)
   }
 
+  
+  
   def  getCertWithCheck(certAddr:String,certKey:String,sysTag:String):Option[java.security.cert.Certificate]={
-    val cert = ECDSASign.getCertByBitcoinAddr(certAddr) 
+    val cert = ECDSASign.getCertByNodeAddr(certAddr) 
     if(cert != None) {
       if(checkCertificate(new java.util.Date(),  cert.get)){
         cert
@@ -400,16 +412,20 @@ class ECDSASign extends SignFunc {
         var isValid :Boolean = false
         var  start = System.currentTimeMillis()
         try {
-          if(SystemProfile.getCheckCertValidate == 0){
-            isValid = true
-          }else if(SystemProfile.getCheckCertValidate == 1){
-            if(cert.isInstanceOf[X509Certificate]){
-                var  x509cert :X509Certificate = cert.asInstanceOf[X509Certificate]
-                x509cert.checkValidity(date)
+          if(cert == null){
+            isValid = false
+          }else{     
+              if(SystemProfile.getCheckCertValidate == 0){
                 isValid = true
-            }
-          }else{
-            isValid = true
+              }else if(SystemProfile.getCheckCertValidate == 1){
+                if(cert.isInstanceOf[X509Certificate]){
+                    var  x509cert :X509Certificate = cert.asInstanceOf[X509Certificate]
+                    x509cert.checkValidity(date)
+                    isValid = true
+                }
+              }else{
+                isValid = true
+              }
           }
         } catch{
             case e : Exception => isValid = false
