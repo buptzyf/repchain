@@ -21,6 +21,7 @@ import rep.storage.leveldb._
 import rep.storage.merkle._
 import scala.collection.mutable.ArrayBuffer
 import rep.protos.peer._;
+import scala.util.control.Breaks
 
 /**内存数据库的访问类，属于多实例。
  * @constructor	根据SystemName和InstanceName建立实例
@@ -200,11 +201,16 @@ class ImpDataPreload (SystemName:String,InstanceName:String) extends AbstractLev
 		  if(block != null){
 		    var trans = block.transactions
 		    if(trans.length > 0){
-		      trans.foreach(f=>{
-		        if(f.txid.equals(txid)){
-		          rel = f.chaincodeID.toStringUtf8()
-		        }
-		      })
+		       val loopbreak = new Breaks
+           loopbreak.breakable(
+      		      trans.foreach(f=>{
+      		        if(f.txid.equals(txid)){
+      		          val chainspec = f.payload.get
+      		          rel = chainspec.chaincodeID.get.name
+      		          loopbreak.break
+      		        }
+      		      })
+		      )
 		    }
 		  }
 		  rel
@@ -239,6 +245,7 @@ class ImpDataPreload (SystemName:String,InstanceName:String) extends AbstractLev
 	            
 	            if(jobj != null && jobj.length > 0){
 	              jobj.foreach(f=>{
+	                var tmpkeystr = IdxPrefix.WorldStateKeyPreFix+cid+"_"+f.key
 	                this.Put(IdxPrefix.WorldStateKeyPreFix+cid+"_"+f.key, f.newValue.toByteArray())
 	              })  
 	            }
