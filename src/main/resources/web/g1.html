@@ -106,9 +106,9 @@
     </div>
     <script>
     //日志输出
-    var clc = [];
-    var timer_console = false;
-    function clog(message,method, level){
+   var clc = [];
+   var timer_console = false;
+   function clog(message, level){
     	if (typeof message == 'object') {
     		message = JSON && JSON.stringify ? JSON.stringify(message) : message;
     	}
@@ -117,6 +117,7 @@
         var limit = 20;
     	var target = document.getElementById("myULContainer");
         if(clc.length ==0 ){
+        	//初次调用,创建固定数量输出行
             	for(var i=0; i<limit; i++){
                     li = document.createElement("li");
                     li.setAttribute("data-level", 'log');
@@ -138,13 +139,13 @@
         var clen = Math.min(limit,len);
         //避免频繁刷新
         if(!timer_console){
-            //初次调用,创建固定数量输出行
+            
         	timer_console = setTimeout(function(){
             	for(var i=0; i<clen; i++){
              		var li = target.childNodes[i];
-                    li.setAttribute("data-level", method);
-                    li.innerText = finalMsg;
-                    li.setAttribute("class", level);
+                    //li.setAttribute("data-level", method);
+                    li.innerText = clc[i].text;
+                    li.setAttribute("class", clc[i].level);
             	}
             	timer_console = false;
             },500)        	
@@ -263,7 +264,7 @@
     }
 
     function connect(){
-		console.log("WebSocketClient: reconnecting...");
+		console.warn("WebSocketClient: reconnecting...");
         $.getJSON("/chaininfo").done(function(data) {
             if (data.result.height) {
             	addNodes();
@@ -294,15 +295,15 @@
             graph.cout_evts = 0;
             graph.cout_endorsements = 0;
 
-            console.log("Connected\n");
+            console.info("Connected\n");
             $("#btn_demo").hide();
-            graph.svg.select('#node_repChain').transition().duration(2000).style({ "fill": "lawngreen" });
+            graph.svg.select('#node_RepChain').transition().duration(2000).style({ "fill": "lawngreen" });
             //清除所有入网节点
         };
 
         socket.onclose = function() {
-            graph.svg.select('#node_repChain').transition().duration(2000).style({ "fill": "red" });
-           	console.log("Disconnected\n");
+            graph.svg.select('#node_RepChain').transition().duration(2000).style({ "fill": "red" });
+           	console.error("Disconnected\n");
            	setTimeout(function(){
            		connect();
         	},5000);
@@ -312,7 +313,7 @@
             try {
                 var ed = new Uint8Array(evt.data);
                 var msg = Message.decode(ed);
-				//console.log(msg.action)
+				//x.log(msg.action)
 				//找到from/to对应的图元
                 var sfrom = brief(msg.from).replace(/\./g, '_').replace(/\:/g, '_').replace(/\%/g, '_');
                 //console.log(brief(sfrom));
@@ -421,14 +422,14 @@
                         graph.addSLink('Endorsement', sfrom);
                         //graph.addSLink('Event', sfrom);
                         graph.cout_nodes++;
-                        graph.updateNodeSta('RepChain', graph.cout_nodes);
+                        graph.setNodeSta('RepChain', graph.cout_nodes);
                         break;
                      //节点离网
                     case 6:
                         console.log("Received: " + msg.action + " from:" + msg.from + " to:" + msg.to + "\n");
                         graph.removeNode(sfrom);
                         graph.cout_nodes--;
-                        graph.updateNodeSta('RepChain', graph.cout_nodes);
+                        graph.setNodeSta('RepChain', graph.cout_nodes);
                         break;
                      //节点数据同步
                     case 9:
@@ -461,7 +462,7 @@
                         break;
                 }
             } catch (err) {
-                console.log("Error: " + err.stack + "\n");
+                console.error("Error: " + err.stack + "\n");
                 //console.trace();
             }
         };
@@ -484,9 +485,6 @@
             collapsible: true,
             heightStyle: "content"
         });
-        if (location.host != '') {
-        	subEvents();
-        }
         //var uow = Math.abs(window.innerWidth-window.innerHeight);
         //var uow = window.innerWidth;
         //$('#myULContainer').parent().width(uow).height(window.innerHeight / 2);
@@ -495,17 +493,42 @@
         $('#div_panel').height(window.innerHeight);
         
         var log_level = {
-            error: "text-danger",
             warn: "text-warning",
             info: "text-success",
             debug: "text-info",
-            log: "text-info"
+            log: "text-info",
+            error: "text-danger"
         };
-        for(var x in log_level){
-        	console[x] = function(message){
-        		clog(message, x, log_level[x]);
-        	}
-        }
+        
+        (function(){
+        	  var _info = console.info;
+        	  var _log = console.log;
+        	  var _error = console.error;
+        	  var _warning = console.warning;
+
+        	  console.info = function(message){
+        		 clog(message, log_level.info);
+         	 _info.apply(console,arguments);
+          };
+        	  console.error = function(message){
+        		clog(message, log_level.error);
+        	     _error.apply(console,arguments);
+        	  };
+
+        	  console.log = function(message){
+        	      clog(message, log_level.log);
+        	      _log.apply(console,arguments);
+        	  };
+
+        	  console.warning = function(message){
+        	      clog(message, log_level.warn);
+        	     _warning.apply(console,arguments);
+        	  };        	  
+        	})();        
+        
+        if (location.host != '') {
+	    		subEvents();
+	    }
         
         //ConsoleLogHTML.connect(document.getElementById("myULContainer")); // Redirect log messages
     });

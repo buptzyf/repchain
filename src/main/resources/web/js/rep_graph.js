@@ -34,13 +34,18 @@ function myGraph() {
             update();
         };
         //更新node文字描述
-        this.updateNodeSta = function(id,sta){
-        	var tm = new Date().getTime();
-        	//避免过度频繁刷新
-        	if(!tl_map[id] || tm - tl_map[id]>500){
+        this.setNodeSta = function(id,sta){
             	d3.select("#node_sta_"+id).text(sta);
-            	tl_map[id] = tm;
-        	}
+        }
+        
+        //更新node文字描述,避免过度频繁刷新
+        this.updateNodeSta = function(id,sta){
+	        	var tm = new Date().getTime();
+	        	//避免过度频繁刷新
+	        	if(!tl_map[id] || tm - tl_map[id]>500){
+	            	d3.select("#node_sta_"+id).text(sta);
+	            	tl_map[id] = tm;
+	        	}
         }
        //设置当前出块人
         this.setBlocker = function(id){
