@@ -191,7 +191,8 @@ class RestActor extends Actor with ModuleHelper with RepLogging {
           throw new RuntimeException("没有证书")
         }
       }catch{
-        case e : RuntimeException => throw e
+        case e : RuntimeException =>
+          sender ! PostResult(txr.txid, None, null, Option(e.getMessage))
       }
       
       try {
