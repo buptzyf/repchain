@@ -96,6 +96,7 @@ implicit def myExceptionHandler = ExceptionHandler {
     Http().bindAndHandle(
         route_evt       
         ~ cors() {new BlockService(ra).route }
+         ~ cors() {new BlockStreamService(ra).route }
         ~ cors() {new ChainService(ra).route }
         ~ cors() {new TransactionService(ra).route }
         ~ cors() {new CertService(ra).route }
