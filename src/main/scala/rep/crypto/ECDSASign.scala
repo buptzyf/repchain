@@ -402,7 +402,7 @@ class ECDSASign extends SignFunc {
                 throw new RuntimeException("没有证书")
               }
           }catch{
-            case e : Exception =>throw new RuntimeException("证书获取过程中发生错误",e)
+            case e : Exception =>throw new RuntimeException(e.getMessage)
           }
         }
     }
