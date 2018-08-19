@@ -121,9 +121,41 @@ class BlockService(ra: ActorRef)(implicit executionContext: ExecutionContext)
         complete { (ra ? BlockHeight(blockHeight.toInt)).mapTo[QueryResult] }
       }
     }
-
 }
 
+/** 获得指定区块的字节流
+ *  @author c4w
+ */
+
+@Api(value = "/blockstream", description = "获得区块数据", produces = "application/octet-stream")
+@Path("blockstream")
+class BlockStreamService(ra: ActorRef)(implicit executionContext: ExecutionContext)
+  extends Directives {
+  import akka.pattern.ask
+  import scala.concurrent.duration._
+  import akka.util.ByteString
+  import akka.http.scaladsl.model.{HttpResponse, MediaTypes,HttpEntity}
+  import java.nio.file.{Files, Paths}
+
+  implicit val timeout = Timeout(20.seconds)
+  import Json4sSupport._
+  implicit val serialization = jackson.Serialization // or native.Serialization
+  implicit val formats = DefaultFormats
+
+  val route = getBlockStreamByHeight
+  @Path("/{blockHeight}")
+  @ApiOperation(value = "返回指定高度的区块字节流", notes = "", nickname = "getBlockStreamByHeight", httpMethod = "GET")
+  @ApiImplicitParams(Array(
+    new ApiImplicitParam(name = "blockHeight", value = "区块高度", required = true, dataType = "int", paramType = "path")))
+  @ApiResponses(Array(
+    new ApiResponse(code = 200, message = "blockbytes")))
+  def getBlockStreamByHeight =
+    path("blockstream" / Segment) { blockHeight =>
+      get {
+        complete( (ra ? BlockHeightStream(blockHeight.toInt)).mapTo[HttpResponse])
+      }
+    }  
+}
 /** 获得指定交易的详细信息，提交签名交易
  *  @author c4w
  */

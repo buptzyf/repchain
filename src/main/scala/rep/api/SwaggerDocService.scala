@@ -36,8 +36,11 @@ class SwaggerDocService(system: ActorSystem) extends SwaggerHttpService with Has
   override implicit val materializer: ActorMaterializer = ActorMaterializer()
   override val apiTypes = Seq(
     ru.typeOf[ChainService],
-    ru.typeOf[BlockService],ru.typeOf[TransactionService],
-    ru.typeOf[CertService], ru.typeOf[HashVerifyService])
+    ru.typeOf[BlockService],
+    ru.typeOf[BlockStreamService],
+    ru.typeOf[TransactionService],
+    ru.typeOf[CertService], 
+    ru.typeOf[HashVerifyService])
   override val info = Info(version = "0.7")
   override val externalDocs = Some(new ExternalDocs("Developers Guide", "https://repchaindoc.readthedocs.io/zh/latest/index.html"))
   override val securitySchemeDefinitions = Map("basicAuth" -> new BasicAuthDefinition())

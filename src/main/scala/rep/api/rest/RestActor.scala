@@ -82,6 +82,7 @@ object RestActor {
 
   case class BlockId(bid: String)
   case class BlockHeight(h: Int)
+  case class BlockHeightStream(h: Int)
   case class TransactionId(txid: String)
 
   case class PostResult(txid: String, result: Option[JValue], ol: List[Oper], err: Option[String])
@@ -148,6 +149,8 @@ class RestActor extends Actor with ModuleHelper with RepLogging {
 
   import RestActor._
   import spray.json._
+  import akka.http.scaladsl.model.{HttpResponse, MediaTypes,HttpEntity}
+
   //import rep.utils.JsonFormat.AnyJsonFormat
 
   implicit val timeout = Timeout(1000.seconds)
@@ -191,7 +194,8 @@ class RestActor extends Actor with ModuleHelper with RepLogging {
           throw new RuntimeException("没有证书")
         }
       }catch{
-        case e : RuntimeException => throw e
+        case e : RuntimeException =>
+          sender ! PostResult(txr.txid, None, null, Option(e.getMessage))
       }
       
       try {
@@ -280,6 +284,13 @@ class RestActor extends Actor with ModuleHelper with RepLogging {
           QueryResult(Option(JsonFormat.toJson(bl)))
       }
       sender ! r
+      
+    case BlockHeightStream(h) =>
+      val bb = sr.getBlockByHeight(h)
+      val body = akka.util.ByteString(bb)
+      val entity = HttpEntity.Strict(MediaTypes.`application/octet-stream`, body)        
+      val httpResponse = HttpResponse(entity = entity)              
+      sender ! httpResponse
 
     case TransactionId(txId) =>
       var r = loadTransaction(sr, txId) match {
