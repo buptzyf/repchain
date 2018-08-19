@@ -49,7 +49,7 @@ class SupplyTPL extends IContract {
       var addr = ""
       for((k,v)<-data){
         ctx.api.check(ctx.t.cert.toStringUtf8,ctx.t)
-        addr = ctx.api.signUp(k,v)
+        addr = ctx.api.signup(k,v)
       }
       addr
     }
