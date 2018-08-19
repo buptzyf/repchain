@@ -129,7 +129,7 @@ object ECDSASign extends ECDSASign {
    */
   def getCertByBitcoinAddr(addr: String): Option[Certificate] = {
     var tmpcert = trustkeysPubAddrMap.get(addr)
-    if(tmpcert ==  null) {
+    if(tmpcert ==  null && tmpcert != None) {
       throw new RuntimeException("证书不存在")
     }
     if(checkCertificate(new java.util.Date(), tmpcert.get )){
