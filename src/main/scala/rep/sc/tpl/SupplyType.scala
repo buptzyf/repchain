@@ -22,6 +22,7 @@ package object SupplyType {
       val ConfirmSign = "ConfirmSign"
       val CancelSign = "CancelSign"
       val Split = "Split"
+      val SignUp = "SignUp"
       
     }
     

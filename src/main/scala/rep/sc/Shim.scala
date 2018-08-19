@@ -111,7 +111,7 @@ class Shim(system: ActorSystem, cid: String) {
     }
   }
 
-  def signup(pemcert:String, inf:String):String = {
+  def signUp(pemcert:String, inf:String):String = {
 //    val pemcertstr = new String (Base64.Decoder(pemcert).toByteArray)
     val cf = CertificateFactory.getInstance("X.509");
 //    val subpemcert = pemcertstr.replaceAll("\r\n", "").stripPrefix("-----BEGIN CERTIFICATE-----").stripSuffix("-----END CERTIFICATE-----")

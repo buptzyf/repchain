@@ -38,6 +38,22 @@ class SupplyTPL extends IContract {
     def cancelSign(ctx: ContractContext, data:IPTConfirm ):Object={
       null
     }
+
+   /**
+    *
+    * @param ctx
+    * @param data
+    * @return
+    */
+    def SignUp(ctx: ContractContext, data:Map[String,String]):Object = {
+      var addr = ""
+      for((k,v)<-data){
+        ctx.api.check(ctx.t.cert.toStringUtf8,ctx.t)
+        addr = ctx.api.signUp(k,v)
+      }
+      addr
+    }
+
    /**
      * 设计方、原料方、生产方、销售方 签订对销售额的分成合约, 对于销售方账号+产品型号决定唯一的分账合约
      */
@@ -110,6 +126,10 @@ class SupplyTPL extends IContract {
           confirmSign(ctx,json.extract[IPTConfirm])
         case ACTION.CancelSign =>
           cancelSign(ctx, json.extract[IPTConfirm])
+        case ACTION.SignUp =>
+          println(s"SignUp")
+          SignUp(ctx, json.extract[Map[String,String]])
+
       }
     }
     //TODO case  Transaction.Type.CHAINCODE_DESC 增加对合约描述的处理
