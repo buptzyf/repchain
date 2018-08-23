@@ -171,6 +171,10 @@ class TransactionService(ra: ActorRef)(implicit executionContext: ExecutionConte
   implicit val timeout = Timeout(20.seconds)
   import Json4sSupport._
   import ScalaXmlSupport._
+  import akka.stream.scaladsl.FileIO
+  import akka.util.ByteString
+  import java.nio.file.{Paths, Files} 
+  import akka.stream.scaladsl.Framing
 
   implicit val serialization = jackson.Serialization // or native.Serialization
   implicit val formats = DefaultFormats
@@ -198,7 +202,7 @@ class TransactionService(ra: ActorRef)(implicit executionContext: ExecutionConte
     unmarshaller[CSpec].forContentTypes(MediaTypes.`application/json`)   
   ) 
 
-  val route = getTransaction ~ postSignTransaction ~ postTransaction
+  val route = getTransaction ~ postSignTransaction ~ postTransaction  ~ postSignTransactionStream
 
   @Path("/{transactionId}")
   @ApiOperation(value = "返回指定id的交易", notes = "", nickname = "getTransaction", httpMethod = "GET")
@@ -230,7 +234,34 @@ class TransactionService(ra: ActorRef)(implicit executionContext: ExecutionConte
         }
       }
     }
-  
+
+  //以字节流提交签名交易  
+  @Path("/postTranStream")
+  @ApiOperation(value = "提交带签名的交易字节流", notes = "", consumes = "multipart/form-data", nickname = "postSignTransactionStream", httpMethod = "POST")
+  @ApiImplicitParams(Array(
+   // new ApiImplicitParam(name = "signer", value = "签名者", required = true, dataType = "string", paramType = "formData"),
+    new ApiImplicitParam(name = "signedTrans", value = "交易内容", required = true, dataType = "file", paramType = "formData")))
+  @ApiResponses(Array(
+    new ApiResponse(code = 200, message = "返回交易id以及执行结果", response = classOf[PostResult]),
+    new ApiResponse(code = 202, message = "处理存在异常", response = classOf[PostResult])))
+  def postSignTransactionStream =
+    path("transaction" / "postTranStream") {
+      post {
+  extractRequestContext { ctx =>
+    implicit val materializer = ctx.materializer
+
+    fileUpload("signedTrans") {
+        case (fileInfo, fileStream) =>
+          val sink = FileIO.toPath(Paths.get("/tmp") resolve fileInfo.fileName)
+          val writeResult = fileStream.runWith(sink)
+          onSuccess(writeResult) { result =>
+              complete(s"Successfully written ${result.count} bytes")
+          }
+    }
+  }
+        }
+    }
+
    @Path("/postTran")
    @ApiOperation(value = "提交交易", notes = "", nickname = "postTransaction", httpMethod = "POST")
    @ApiImplicitParams(Array(
