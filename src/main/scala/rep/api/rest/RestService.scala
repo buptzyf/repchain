@@ -94,7 +94,7 @@ class BlockService(ra: ActorRef)(implicit executionContext: ExecutionContext)
   implicit val serialization = jackson.Serialization // or native.Serialization
   implicit val formats = DefaultFormats
 
-  val route = getBlockById ~ getBlockByHeight
+  val route = getBlockById ~ getBlockByHeight ~  getBlockStreamByHeight
 
   @Path("/hash/{blockId}")
   @ApiOperation(value = "返回指定id的区块", notes = "", nickname = "getBlockById", httpMethod = "GET")
@@ -121,41 +121,23 @@ class BlockService(ra: ActorRef)(implicit executionContext: ExecutionContext)
         complete { (ra ? BlockHeight(blockHeight.toInt)).mapTo[QueryResult] }
       }
     }
-}
-
-/** 获得指定区块的字节流
- *  @author c4w
- */
-
-@Api(value = "/blockstream", description = "获得区块数据", produces = "application/octet-stream")
-@Path("blockstream")
-class BlockStreamService(ra: ActorRef)(implicit executionContext: ExecutionContext)
-  extends Directives {
-  import akka.pattern.ask
-  import scala.concurrent.duration._
-  import akka.util.ByteString
-  import akka.http.scaladsl.model.{HttpResponse, MediaTypes,HttpEntity}
-  import java.nio.file.{Files, Paths}
-
-  implicit val timeout = Timeout(20.seconds)
-  import Json4sSupport._
-  implicit val serialization = jackson.Serialization // or native.Serialization
-  implicit val formats = DefaultFormats
-
-  val route = getBlockStreamByHeight
-  @Path("/{blockHeight}")
-  @ApiOperation(value = "返回指定高度的区块字节流", notes = "", nickname = "getBlockStreamByHeight", httpMethod = "GET")
+  
+  @Path("/stream/{blockHeight}")
+  @ApiOperation(value = "返回指定高度的区块", notes = "", nickname = "getBlockByHeight", httpMethod = "GET")
   @ApiImplicitParams(Array(
     new ApiImplicitParam(name = "blockHeight", value = "区块高度", required = true, dataType = "int", paramType = "path")))
   @ApiResponses(Array(
     new ApiResponse(code = 200, message = "blockbytes")))
   def getBlockStreamByHeight =
-    path("blockstream" / Segment) { blockHeight =>
+    path("block" / "stream" /Segment) { blockHeight =>
       get {
         complete( (ra ? BlockHeightStream(blockHeight.toInt)).mapTo[HttpResponse])
       }
-    }  
+    }
+  
 }
+
+
 /** 获得指定交易的详细信息，提交签名交易
  *  @author c4w
  */
@@ -167,6 +149,7 @@ class TransactionService(ra: ActorRef)(implicit executionContext: ExecutionConte
 
   import akka.pattern.ask
   import scala.concurrent.duration._
+  import java.io.FileInputStream
 
   implicit val timeout = Timeout(20.seconds)
   import Json4sSupport._
@@ -202,7 +185,7 @@ class TransactionService(ra: ActorRef)(implicit executionContext: ExecutionConte
     unmarshaller[CSpec].forContentTypes(MediaTypes.`application/json`)   
   ) 
 
-  val route = getTransaction ~ postSignTransaction ~ postTransaction  ~ postSignTransactionStream
+  val route = getTransaction ~ getTransactionStream ~ postSignTransaction ~ postTransaction  ~ postSignTransactionStream
 
   @Path("/{transactionId}")
   @ApiOperation(value = "返回指定id的交易", notes = "", nickname = "getTransaction", httpMethod = "GET")
@@ -214,6 +197,18 @@ class TransactionService(ra: ActorRef)(implicit executionContext: ExecutionConte
     path("transaction" / Segment) { transactionId =>
       get {
         complete { (ra ? TransactionId(transactionId)).mapTo[QueryResult] }
+      }
+    }
+  @Path("/stream/{transactionId}")
+  @ApiOperation(value = "返回指定id的交易字节流", notes = "", nickname = "getTransactionStream", httpMethod = "GET", produces = "application/octet-stream")
+  @ApiImplicitParams(Array(
+    new ApiImplicitParam(name = "transactionId", value = "交易id", required = false, dataType = "string", paramType = "path")))
+  @ApiResponses(Array(
+    new ApiResponse(code = 200, message = "返回交易字节流", response = classOf[QueryResult])))
+  def getTransactionStream =
+    path("transaction" /"stream"/ Segment) { transactionId =>
+      get {
+        complete( (ra ? TransactionStreamId(transactionId)).mapTo[HttpResponse])
       }
     }
 //以十六进制字符串提交签名交易  
@@ -252,10 +247,13 @@ class TransactionService(ra: ActorRef)(implicit executionContext: ExecutionConte
 
     fileUpload("signedTrans") {
         case (fileInfo, fileStream) =>
-          val sink = FileIO.toPath(Paths.get("/tmp") resolve fileInfo.fileName)
+          val fp = Paths.get("/tmp") resolve fileInfo.fileName
+          val sink = FileIO.toPath(fp)
           val writeResult = fileStream.runWith(sink)
           onSuccess(writeResult) { result =>
+            //TODO protobuf 反序列化字节流及后续处理
               complete(s"Successfully written ${result.count} bytes")
+              complete { (ra ? Transaction.parseFrom(new FileInputStream(fp.toFile()))).mapTo[PostResult] }
           }
     }
   }

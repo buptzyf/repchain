@@ -84,6 +84,7 @@ object RestActor {
   case class BlockHeight(h: Int)
   case class BlockHeightStream(h: Int)
   case class TransactionId(txid: String)
+  case class TransactionStreamId(txid: String)
 
   case class PostResult(txid: String, result: Option[JValue], ol: List[Oper], err: Option[String])
   case class PostCert(cert: String, cid: String)
@@ -164,6 +165,23 @@ class RestActor extends Actor with ModuleHelper with RepLogging {
   val cert_begin = "-----BEGIN CERTIFICATE-----";
   val end_cert = "-----END CERTIFICATE-----";
   
+  def preTransaction(t:Transaction) : Unit ={
+      val future = sandbox ? PreTransaction(t)
+      val result = Await.result(future, timeout.duration).asInstanceOf[DoTransactionResult]
+      val rv = result
+
+      ImpDataPreloadMgr.Free(pe.getDBTag,t.txid)
+
+      rv.err match {
+        case None =>
+          //预执行正常,提交并广播交易
+          getActorRef(ActorType.TRANSACTION_POOL) ! t // 给交易池发送消息 ！=》告知（getActorRef）
+          sender ! PostResult(t.txid, Option(rv.r.asInstanceOf[JValue]), rv.ol, None) // 发送消息给调用者（sender）
+        case Some(e) =>
+          //预执行异常,废弃交易，向api调用者发送异常
+          sender ! e
+      }
+  }
   
   def receive: Receive = {
     // TODO test_zyf 处理post 带签名交易请求 测试用，添加API
@@ -229,23 +247,10 @@ class RestActor extends Actor with ModuleHelper with RepLogging {
       //构建transaction并通过peer广播
       println(pe.getSysTag) // test_zyf
       val t = buildTranaction(pe.getSysTag, c)
+      preTransaction(t)
 
-      val future = sandbox ? PreTransaction(t)
-      val result = Await.result(future, timeout.duration).asInstanceOf[DoTransactionResult]
-      val rv = result
-
-      ImpDataPreloadMgr.Free(pe.getDBTag,t.txid)
-
-      rv.err match {
-        case None =>
-          //预执行正常,提交并广播交易
-          getActorRef(ActorType.TRANSACTION_POOL) ! t // 给交易池发送消息 ！=》告知（getActorRef）
-          sender ! PostResult(t.txid, Option(rv.r.asInstanceOf[JValue]), rv.ol, None) // 发送消息给调用者（sender）
-        case Some(e) =>
-          //预执行异常,废弃交易，向api调用者发送异常
-          sender ! e
-      }
-
+    case t: Transaction =>
+      preTransaction(t)
     case SystemStart(cout) =>
       val rs = TestMain.startSystem(cout)
       val r = rs match {
@@ -300,6 +305,14 @@ class RestActor extends Actor with ModuleHelper with RepLogging {
           QueryResult(Option(JsonFormat.toJson(t.get)))
       }
       sender ! r
+
+    case TransactionStreamId(txId) =>
+      val r = loadTransaction(sr, txId)
+      val t = r.get
+      val body = akka.util.ByteString(r.get.toByteArray)
+      val entity = HttpEntity.Strict(MediaTypes.`application/octet-stream`, body)        
+      val httpResponse = HttpResponse(entity = entity)              
+      sender ! httpResponse
     case ChainInfo =>
       val cij = JsonFormat.toJson(sr.getBlockChainInfo)
       sender ! QueryResult(Option(cij))
