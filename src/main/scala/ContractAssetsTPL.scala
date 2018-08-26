@@ -45,8 +45,6 @@ case class Transfer(from:String, to:String, amount:Int)
       if(dfrom < data.amount)
         throw new Exception("余额不足")
       var dto = ctx.api.getVal(data.to).toString.toInt
-      //if(dto==null) dto = 0;
-      
       ctx.api.setVal(data.from,dfrom - data.amount)
       ctx.api.setVal(data.to,dto + data.amount)
       "transfer ok"

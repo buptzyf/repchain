@@ -112,7 +112,7 @@ class BlockService(ra: ActorRef)(implicit executionContext: ExecutionContext)
   @Path("/{blockHeight}")
   @ApiOperation(value = "返回指定高度的区块", notes = "", nickname = "getBlockByHeight", httpMethod = "GET")
   @ApiImplicitParams(Array(
-    new ApiImplicitParam(name = "blockHeight", value = "区块高度", required = true, dataType = "int", paramType = "path")))
+    new ApiImplicitParam(name = "blockHeight", value = "区块高度", required = true, dataType = "integer", paramType = "path")))
   @ApiResponses(Array(
     new ApiResponse(code = 200, message = "返回区块json内容", response = classOf[QueryResult])))
   def getBlockByHeight =
@@ -123,9 +123,9 @@ class BlockService(ra: ActorRef)(implicit executionContext: ExecutionContext)
     }
   
   @Path("/stream/{blockHeight}")
-  @ApiOperation(value = "返回指定高度的区块", notes = "", nickname = "getBlockByHeight", httpMethod = "GET")
+  @ApiOperation(value = "返回指定高度的区块字节流", notes = "", nickname = "getBlockStreamByHeight", httpMethod = "GET")
   @ApiImplicitParams(Array(
-    new ApiImplicitParam(name = "blockHeight", value = "区块高度", required = true, dataType = "int", paramType = "path")))
+    new ApiImplicitParam(name = "blockHeight", value = "区块高度", required = true, dataType = "integer", paramType = "path")))
   @ApiResponses(Array(
     new ApiResponse(code = 200, message = "blockbytes")))
   def getBlockStreamByHeight =
@@ -134,7 +134,6 @@ class BlockService(ra: ActorRef)(implicit executionContext: ExecutionContext)
         complete( (ra ? BlockHeightStream(blockHeight.toInt)).mapTo[HttpResponse])
       }
     }
-  
 }
 
 
