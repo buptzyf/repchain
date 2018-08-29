@@ -37,7 +37,6 @@ class SwaggerDocService(system: ActorSystem) extends SwaggerHttpService with Has
   override val apiTypes = Seq(
     ru.typeOf[ChainService],
     ru.typeOf[BlockService],
-    ru.typeOf[BlockStreamService],
     ru.typeOf[TransactionService],
     ru.typeOf[CertService], 
     ru.typeOf[HashVerifyService])
