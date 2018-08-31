@@ -44,12 +44,14 @@ object SystemProfile {
   private[this] var _DISKSPACE_ALARM_NUM:Long=0//磁盘剩余空间预警 单位=M
   private[this] var _SERVERPORT:Int=8081//http服务的端口，默认为8081
   private[this] var _COAPSERVERPORT:Int=5683//http服务的端口，默认为8081
+  private[this] var _COAPSERVERHOST:String="127.0.0.1"//http服务的端口，默认为8081
   private[this] var _CHECKCERTVALIDATE:Int=0//是否检查证书的有效性，0不检查，1检查
   private[this] var _CONTRACTOPERATIONMODE = 0//设置合约的运行方式，0=debug方式，1=deploy，默认为debug方式，如果发布部署，必须使用deploy方式。
   
   
   private def SERVERPORT :Int = _SERVERPORT
   private def COAP_SERVERPORT: Int = _COAPSERVERPORT
+  private def COAP_SERVERHOST: String = _COAPSERVERHOST
   private def CHECKCERTVALIDATE:Int = _CHECKCERTVALIDATE
   private def DISKSPACE_ALARM_NUM :Long = _DISKSPACE_ALARM_NUM
   private def CONTRACTOPERATIONMODE:Int=_CONTRACTOPERATIONMODE
@@ -61,6 +63,10 @@ object SystemProfile {
 
   private def COAPSERVERPORT_=(value: Int): Unit = {
     _COAPSERVERPORT = value
+  }
+
+  private def COAPSERVERHOST_=(value: String): Unit = {
+    _COAPSERVERHOST = value
   }
 
   private def CHECKCERTVALIDATE_=(value: Int): Unit = {
@@ -135,6 +141,7 @@ object SystemProfile {
     DISKSPACE_ALARM_NUM_=(config.getInt("system.diskspaceManager.diskspacealarm"))
     SERVERPORT_=(config.getInt("system.httpServicePort"))
     COAPSERVERPORT_=(config.getInt("system.coapServicePort"))
+    COAPSERVERHOST_=(config.getString("system.coapServiceHost"))
     CHECKCERTVALIDATE_=(config.getInt("system.checkCertValidate"))
     CONTRACTOPERATIONMODE_=(config.getInt("system.contractOperationMode"))
   }
@@ -160,6 +167,8 @@ object SystemProfile {
   def getHttpServicePort = SERVERPORT
 
   def getCoapServicePort = COAP_SERVERPORT
+
+  def getCoapServiceHost = COAP_SERVERHOST
   
   def getCheckCertValidate = CHECKCERTVALIDATE
   

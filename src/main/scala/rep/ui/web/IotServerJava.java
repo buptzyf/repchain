@@ -26,7 +26,7 @@ import java.util.List;
  */
 public class IotServerJava extends AbstractActor {
 
-    public static void start(ActorSystem sys, int port) {
+    public static void start(ActorSystem sys, String hostname, int port) {
         try {
             ActorRef Iot = sys.actorOf(Props.create(RestIot.class), "coap");  // 可能有问题，示范性的，笔记
             Process process = Runtime.getRuntime().exec("cmd /c netstat -ano | findstr \""+ 5683 +"\"");
@@ -44,12 +44,12 @@ public class IotServerJava extends AbstractActor {
             e.printStackTrace();
         }
 
-        System.out.println("Coap Server online at http://localhost:" + port);
+        System.out.println("Coap Server online at coap://" + hostname + ":" + port);
     }
 
     @Override
     public void preStart() {
-        IotServer.start(getContext().getSystem(), SystemProfile.getCoapServicePort());
+        IotServer.start(getContext().getSystem(),SystemProfile.getCoapServiceHost(), SystemProfile.getCoapServicePort());
     }
 
     @Override

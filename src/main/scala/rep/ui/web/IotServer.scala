@@ -1,7 +1,6 @@
 package rep.ui.web
 
 
-import java.io.{BufferedReader, IOException, InputStreamReader}
 import java.net.InetSocketAddress
 
 import akka.actor.{Actor, ActorSystem, Props}
@@ -21,16 +20,16 @@ object IotServer {
     * @param sys
     * @param port
     */
-  def start(sys: ActorSystem, port: Int): Unit = {
+  def start(sys: ActorSystem, hostname: String, port: Int): Unit = {
     implicit val system =sys
     val Iot = sys.actorOf(Props[RestIot], "coap")
     val server = new CoapServer
     val builder = new CoapEndpoint.CoapEndpointBuilder
-    builder.setInetSocketAddress(new InetSocketAddress("localhost", 5683))
+    builder.setInetSocketAddress(new InetSocketAddress(hostname, 5683))
     server.addEndpoint(builder.build)
     server.add(new IotService(Iot).getCoapResource)
     server.start()
-    System.out.println("Coap Server online at http://localhost:" + port)
+    System.out.println("Coap Server online at coap://" + hostname + ":" + port)
   }
 //    try {
       // windows下测试一下单机四个节点，就先这样写吧
@@ -50,7 +49,7 @@ object IotServer {
   */
 class IotServer extends Actor {
   override def preStart(): Unit = {
-    IotServer.start(context.system, SystemProfile.getCoapServicePort)
+    IotServer.start(context.system, SystemProfile.getCoapServiceHost, SystemProfile.getCoapServicePort)
   }
 
   def receive = {
