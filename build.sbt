@@ -54,6 +54,8 @@ libraryDependencies += "org.codehaus.janino" % "janino" % "2.6.1"
 
 libraryDependencies += "org.bouncycastle" % "bcprov-jdk15on" % "1.57"
 
+libraryDependencies += "org.eclipse.californium" % "californium-core" % "2.0.0-M11"
+
 libraryDependencies ++= Seq(
   "io.swagger" % "swagger-jaxrs" % "1.5.13",
   "com.github.swagger-akka-http" %% "swagger-akka-http" % "0.9.1",

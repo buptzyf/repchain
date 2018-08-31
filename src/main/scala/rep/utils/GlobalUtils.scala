@@ -67,6 +67,7 @@ object GlobalUtils {
     val PERSISTENCE_MODULE = 11
     val CONSENSUS_MANAGER = 12
     val STATISTIC_COLLECTION = 13
+    val COAP_API_MODULE = 14
   }
 
   case object EventType{

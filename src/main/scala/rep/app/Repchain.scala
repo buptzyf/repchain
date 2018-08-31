@@ -25,6 +25,8 @@ import rep.app.system.ClusterSystem.InitType
   */
 object Repchain {
 
+  var coapServerNum = 1;
+
   def main(args: Array[String]): Unit = {
 
     //创建系统实例
@@ -51,6 +53,7 @@ object Repchain {
     for(i <- 2 to node_max) {
       Thread.sleep(10000)
       val len = nodes.size
+      coapServerNum += 1;
       val sys = new ClusterSystem(i.toString,InitType.MULTI_INIT,true)
       sys.init
       sys.joinCluster(joinAddress)
