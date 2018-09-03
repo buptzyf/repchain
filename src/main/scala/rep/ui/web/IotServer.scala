@@ -22,7 +22,7 @@ object IotServer {
     */
   def start(sys: ActorSystem, hostname: String, port: Int): Unit = {
     implicit val system =sys
-    val Iot = sys.actorOf(Props[RestIot], "coap")
+    val Iot = sys.actorOf(Props[RestIot], "api")
     val server = new CoapServer
     val builder = new CoapEndpoint.CoapEndpointBuilder
     builder.setInetSocketAddress(new InetSocketAddress(hostname, 5683))
