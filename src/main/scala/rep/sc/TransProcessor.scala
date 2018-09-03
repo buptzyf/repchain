@@ -146,6 +146,7 @@ class TransProcessor(name: String, da:String, parent: ActorRef) extends Actor wi
       try{
         //获得合约对应的actor容器
         val sb_actor = getSandboxActor(m.t,sender,m.t.txid)
+        print(sb_actor)
         val future = sb_actor ? m
         //同步阻塞等待执行结果
         val result = Await.result(future, timeout.duration).asInstanceOf[DoTransactionResult]
@@ -188,7 +189,7 @@ class TransProcessor(name: String, da:String, parent: ActorRef) extends Actor wi
         if(t.`type` != Transaction.Type.CHAINCODE_DEPLOY ){
           println(s"${pe.getSysTag} do invoke")
           //尝试从持久化恢复,找到对应的Deploy交易，并先执行之
-          val sr = ImpDataAccess.GetDataAccess(sTag)
+          val sr = ImpDataAccess.GetDataAccess(pe.getSysTag)
           val tidVal =  sr.Get(WorldStateKeyPreFix+ cid)
           if(tidVal==null)
             throw new SandboxException(ERR_INVOKE_CHAINCODE_NOT_EXIST)

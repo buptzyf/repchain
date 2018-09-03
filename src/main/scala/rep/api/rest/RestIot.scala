@@ -36,7 +36,7 @@ object RestIot {
   */
 class RestIot extends Actor with ModuleHelper with RepLogging{
 
-  val sandbox = context.actorOf(TransProcessor.props("sandbox", "", self), "sandboxPost")
+  val sandbox = context.actorOf(TransProcessor.props("coap_sandbox", "", self), "sandboxCoapPost")
   implicit val timeout = Timeout(1000.seconds)
 
   def preTransaction(t:Transaction) : Any ={
