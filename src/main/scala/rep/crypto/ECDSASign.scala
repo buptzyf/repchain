@@ -26,6 +26,7 @@ import rep.storage._
 import scala.collection.mutable
 import com.fasterxml.jackson.core.Base64Variants
 import java.security.cert.X509Certificate
+import javax.xml.bind.DatatypeConverter
 
 /**
  * 系统密钥相关伴生对象
@@ -129,7 +130,7 @@ object ECDSASign extends ECDSASign {
    */
   def getCertByBitcoinAddr(addr: String): Option[Certificate] = {
     var tmpcert = trustkeysPubAddrMap.get(addr)
-    if(tmpcert ==  null) {
+    if(tmpcert ==  null && tmpcert != None) {
       throw new RuntimeException("证书不存在")
     }
     if(checkCertificate(new java.util.Date(), tmpcert.get )){
@@ -326,6 +327,17 @@ object ECDSASign extends ECDSASign {
     println(ECDSASign.getBitcoinAddrByCert(ECDSASign.getCertFromJKS(new File("jks/mykeystore_3.jks"), "123", "3")))
     println(ECDSASign.getBitcoinAddrByCert(ECDSASign.getCertFromJKS(new File("jks/mykeystore_4.jks"), "123", "4")))
     println(ECDSASign.getBitcoinAddrByCert(ECDSASign.getCertFromJKS(new File("jks/mykeystore_5.jks"), "123", "5")))
+    
+    val (skey1,pkey1) = ECDSASign.getKeyPairFromJKS(new File("jks/mykeystore_1.jks"),"123","1")
+    val plainText = "hello".getBytes
+     val sig1 = ECDSASign.sign(skey1, plainText)
+     
+     val hexString: String = "304502207ed7f7bc4cafb928bf59e73595450364fc69417559a8a0fc19b7c8c9b6a620a5022100e81d0b619da4b92595603fb1316b56ebc94571ee7dec02d673ddf8d5365490e4"
+     val bs = ByteString.copyFrom(DatatypeConverter.parseHexBinary(hexString) )
+     val sig2 = bs.toByteArray
+     val vr1 =  ECDSASign.verify(sig1, plainText, pkey1)
+     val vr2 = ECDSASign.verify(sig2, plainText, pkey1)
+     println(s"vr1: $vr1  vr2: $vr2")
   }
 
 }
@@ -402,7 +414,7 @@ class ECDSASign extends SignFunc {
                 throw new RuntimeException("没有证书")
               }
           }catch{
-            case e : Exception =>throw new RuntimeException("证书获取过程中发生错误",e)
+            case e : Exception =>throw new RuntimeException(e.getMessage)
           }
         }
     }

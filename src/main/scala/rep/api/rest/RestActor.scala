@@ -340,7 +340,12 @@ class RestActor extends Actor with ModuleHelper with RepLogging {
     case pa: PostAddr =>
       //TODO 从短地址到证书得有信任列表里的，还有就是ws中存储的，两个都得做，如果证书在，返回证书字符串
       try{
-          val peercert = ECDSASign.getCertByBitcoinAddr(pa.addr)       
+          var peercert : Option[Certificate]  = None
+          try{
+            peercert = ECDSASign.getCertByBitcoinAddr(pa.addr)    
+          }catch{
+            case el : Exception => 
+          }
           val certKey = WorldStateKeyPreFix + pa.cid + "_" + PRE_CERT + pa.addr  
           val kvcer = Option(sr.Get(certKey))
           if(peercert != None) {

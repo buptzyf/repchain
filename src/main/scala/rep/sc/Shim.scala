@@ -148,7 +148,7 @@ class Shim(system: ActorSystem, cid: String) {
     try{
         peercer = ECDSASign.getCertByBitcoinAddr(bitcoinaddr)
     }catch{
-      case e : Exception => throw new Exception(e.getMessage)
+      case e : Exception => //throw new Exception(e.getMessage)
     }
 //    val addstr = (new code).encodeHex(bdata)
     
