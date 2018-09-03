@@ -18,6 +18,7 @@ import rep.storage.IdxPrefix.WorldStateKeyPreFix
 import rep.utils.GlobalUtils.ActorType
 import rep.utils.RepLogging
 import rep.sc.Shim._
+import rep.storage.ImpDataPreloadMgr
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -41,6 +42,7 @@ class RestIot extends Actor with ModuleHelper with RepLogging{
   def preTransaction(t:Transaction) : Any ={
     val future = sandbox ? PreTransaction(t)
     val result = Await.result(future, timeout.duration).asInstanceOf[DoTransactionResult]
+    ImpDataPreloadMgr.Free(pe.getDBTag,t.txid)
     result.err match {
       case None =>
         //预执行正常,提交并广播交易
