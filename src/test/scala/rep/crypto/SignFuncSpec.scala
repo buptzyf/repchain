@@ -30,6 +30,8 @@ with PropertyChecks
 with GeneratorDrivenPropertyChecks
 with Matchers {
 
+  import java.util.Arrays
+  
   property("signed message should be verifiable with appropriate public key") {
     forAll { (seed1: Array[Byte], seed2: Array[Byte],
               message1: Array[Byte], message2: Array[Byte]) =>
@@ -40,6 +42,11 @@ with Matchers {
         val (skey3,pkey3) = ECDSASign.getKeyPairFromJKS(new File("jks/mytruststore.jks"),"changeme","2")
         
         val sig = ECDSASign.sign(skey1, message1)
+        
+        val m1 = "hello repChain"
+        val sig2 = Arrays.toString(ECDSASign.sign(skey1, m1.getBytes))
+        val sig3 = Arrays.toString(ECDSASign.sign(skey1, m1.getBytes))
+        
         
         ECDSASign.verify(sig, message1, pkey1) should be (true)
         ECDSASign.verify(sig, message1, pkey2) should be (true)
