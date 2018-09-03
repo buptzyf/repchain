@@ -250,7 +250,8 @@ class RestActor extends Actor with ModuleHelper with RepLogging {
       preTransaction(t)
 
     case t: Transaction =>
-      preTransaction(t)
+       val t1  = t.withMetadata(ByteString.EMPTY)
+      preTransaction(t1)
     case SystemStart(cout) =>
       val rs = TestMain.startSystem(cout)
       val r = rs match {
