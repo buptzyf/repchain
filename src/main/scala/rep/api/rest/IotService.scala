@@ -2,12 +2,14 @@ package rep.api.rest
 
 
 import akka.actor.ActorRef
+import akka.util.Timeout
 import org.eclipse.californium.core.server.resources.CoapExchange
-import org.eclipse.californium.core.{CoapResource, CoapServer}
-import rep.api.rest.RestIot.tranSign
-import rep.network.base.ModuleHelper
-import rep.protos.peer.Transaction
-import rep.utils.GlobalUtils.ActorType
+import org.eclipse.californium.core.CoapResource
+import rep.api.rest.RestIot.{tranResult, tranSign}
+
+import scala.concurrent.duration._
+import scala.concurrent.Await
+import akka.pattern.ask
 
 
 object IotService {
@@ -23,10 +25,11 @@ object IotService {
   */
 class IotService (IotRef: ActorRef) {
 
+  implicit val timeout = Timeout(3000.seconds)
   /**
     * 资源即访问路径，coap://172.0.0.1:5683/Transaction
     */
-  private val coapResource: CoapResource = new CoapResource("Transaction") {
+  private val tranResource: CoapResource = new CoapResource("Transaction") {
     implicit val iot = IotRef
 
     /**
@@ -44,11 +47,19 @@ class IotService (IotRef: ActorRef) {
     override def handlePOST(exchange: CoapExchange): Unit = {
       val payload = exchange.getRequestPayload
       val tranSign = new tranSign(payload)
-      iot ! tranSign
-      exchange.respond("Test")  // 后续
+      val future = iot ? tranSign
+      val result = Await.result(future, timeout.duration).asInstanceOf[tranResult]
+      result.err match {
+        case None =>
+          exchange.respond(result.toString)
+        case Some(e) =>
+          //预执行异常,废弃交易，向api调用者发送异常
+          exchange.respond(result.err.toString)
+      }
+//      exchange.respond("Test")  // 后续
       println(exchange.getRequestOptions)
     }
   }
 
-  def getCoapResource : CoapResource  = coapResource
+  def getTranResource : CoapResource  = tranResource
 }

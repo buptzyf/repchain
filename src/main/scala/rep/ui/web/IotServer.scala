@@ -27,7 +27,7 @@ object IotServer {
     val builder = new CoapEndpoint.CoapEndpointBuilder
     builder.setInetSocketAddress(new InetSocketAddress(hostname, 5683))
     server.addEndpoint(builder.build)
-    server.add(new IotService(Iot).getCoapResource)
+    server.add(new IotService(Iot).getTranResource)
     server.start()
     System.out.println("Coap Server online at coap://" + hostname + ":" + port)
   }

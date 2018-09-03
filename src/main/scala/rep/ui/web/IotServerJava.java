@@ -36,7 +36,7 @@ public class IotServerJava extends AbstractActor {
                 CoapEndpoint.CoapEndpointBuilder builder = new CoapEndpoint.CoapEndpointBuilder();
                 builder.setInetSocketAddress(new InetSocketAddress("localhost", 5683));
                 server.addEndpoint(builder.build());
-                server.add(new IotService(Iot).getCoapResource());
+                server.add(new IotService(Iot).getTranResource());
                 server.start();
             }
             reader.close();
