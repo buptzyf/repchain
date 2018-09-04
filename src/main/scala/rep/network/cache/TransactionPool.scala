@@ -102,7 +102,7 @@ class TransactionPool(moduleName: String) extends ModuleBase(moduleName) {
     case t: Transaction =>
       //我们在这里并不缓存该Transaction，在接收到同级别的广播时再进行缓存
       if (ActorUtils.isHelper(sender().path.toString) ||
-        ActorUtils.isAPI(sender().path.toString)) {
+        ActorUtils.isAPI(sender().path.toString) || ActorUtils.isCoapAPI(sender().path.toString)) {
         //广播交易
         mediator ! Publish(Topic.Transaction, t)
         //广播发送交易事件
