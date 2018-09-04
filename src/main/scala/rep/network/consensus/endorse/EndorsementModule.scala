@@ -197,6 +197,11 @@ class EndorsementModule(moduleName: String) extends ModuleBase(moduleName) {
   }
   
   
+  /*override def preStart(): Unit = {
+    logMsg(LOG_TYPE.INFO, "Endorsement module start")
+    SubscribeTopic(mediator, self, selfAddr, Topic.Endorsement, true)
+  }*/
+  
   override def receive = {
     //Endorsement block
     case PrimaryBlock(blk, blocker, voteinedx,blkidentifier) =>

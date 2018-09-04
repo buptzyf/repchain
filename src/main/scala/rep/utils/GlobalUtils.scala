@@ -67,6 +67,7 @@ object GlobalUtils {
     val PERSISTENCE_MODULE = 11
     val CONSENSUS_MANAGER = 12
     val STATISTIC_COLLECTION = 13
+    val ENDORSE_BLOCKER = 14
   }
 
   case object EventType{

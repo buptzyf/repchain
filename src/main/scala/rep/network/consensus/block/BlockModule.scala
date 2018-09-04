@@ -54,7 +54,7 @@ object BlockModule {
     val READY_ENDORSE = "ready"
   }
   
-  
+  case class ReadyEndorsement4Block(blc: Block, blkidentifier:String)
   
   //打包待预执行块
   case class PreTransBlock(blc: Block, from: Int,blcIndentifier:String)
@@ -86,7 +86,7 @@ object BlockModule {
   case object CreateBlockTimeOut
 
   //出块请求
-  case class NewBlock(newblocker:ActorRef,currentIdentifier:String)
+  case class NewBlock(blc:Block,newblocker:ActorRef,currentIdentifier:String)
 
   //创世块请求
   case object GenesisBlock
@@ -145,6 +145,8 @@ class BlockModule(moduleName: String) extends ModuleBase(moduleName) {
     recvedEndorseAddr.clear()
     schedulerLink1 = clearSched1()
     IsFinishedEndorse = EndorseStatus.READY_ENDORSE
+    
+    //BlockTimeStatis4Times.clear
   }
 
   def visitService(sn : Address, actorName:String,p:PrimaryBlock) = {  
@@ -239,7 +241,32 @@ class BlockModule(moduleName: String) extends ModuleBase(moduleName) {
     scheduler.scheduleOnce(TimePolicy.getStableTimeDur millis, context.parent, BlockModuleInitFinished)
   }
 
+  def sort(src: Array[Endorsement]){  
   
+    def swap(i:Integer, j:Integer){  
+      val t = src(i)
+      src(i) = src(j)
+      src(j) = t  
+    }  
+  
+    def sort1(l: Int, r: Int){  
+      val pivot = src((l + r)/2)  
+      var i = l; var j = r;  
+      while (i <= j){  
+        while (src(i).endorser.toStringUtf8() < pivot.endorser.toStringUtf8()) i += 1  
+        while (src(j).endorser.toStringUtf8() > pivot.endorser.toStringUtf8()) j -= 1  
+        if(i <= j){  
+          swap(i, j)  
+          i += 1  
+          j -= 1  
+        }  
+      }  
+      if(l < j) sort1(l, j)  
+      if(j < r) sort1(i, r)  
+    }  
+    sort1(0, src.length - 1)  
+  }  
+
   
   override def receive = {
     //创建块请求（给出块人）
@@ -336,11 +363,20 @@ class BlockModule(moduleName: String) extends ModuleBase(moduleName) {
               //这个块经过预执行之后已经包含了预执行结果和状态
               //mediator ! Publish(BlockEvent.BLOCK_ENDORSEMENT, PrimaryBlock(blc, pe.getBlocker))
               logMsg(LOG_TYPE.INFO, s"node name=${pe.getSysTag},preload finish,self cert=${blc.consensusMetadata(0).endorser.toStringUtf8()}")
-              schedulerLink1 = scheduler1.scheduleOnce(TimePolicy.getTimeoutEndorse seconds, self, ResendEndorseInfo)
+              
+              getActorRef(ActorType.ENDORSE_BLOCKER) ! ReadyEndorsement4Block(blc,blkidentifier_str)
+              
+              
+              /*schedulerLink1 = scheduler1.scheduleOnce(TimePolicy.getTimeoutEndorse seconds, self, ResendEndorseInfo)
               IsFinishedEndorse = EndorseStatus.START_ENDORSE
+              
+              
+              BlockTimeStatis4Times.setStartEndorse(System.currentTimeMillis())
+              
               pe.getStableNodes.foreach(sn=>{
                 visitService(sn , "/user/moduleManager/consensusManager/consensus-CRFD/endorse",PrimaryBlock(blc, pe.getBlocker,pe.getBlker_index,blkidentifier_str))
-              })
+              })*/
+              
               //Endorsement require event
               sendEvent(EventType.PUBLISH_INFO, mediator, selfAddr, Topic.Endorsement, Event.Action.BLOCK_ENDORSEMENT)
             case false => logMsg(LOG_TYPE.INFO, "Receives a wrong trans preload result with timeout error")
@@ -348,18 +384,23 @@ class BlockModule(moduleName: String) extends ModuleBase(moduleName) {
         case false => logMsg(LOG_TYPE.INFO, s"Block preload trans failed, error type : ${errorType} ~ ${error}")
 
       }
-    case ResendEndorseInfo =>
+    /*case ResendEndorseInfo =>
       schedulerLink1 = clearSched1()
       if(blc.previousBlockHash.toStringUtf8() != pe.getCurrentBlockHash){
         resetVoteEnv
       }else{
+        BlockTimeStatis4Times.setIsResendEndorse(true)
+        
         schedulerLink1 = scheduler1.scheduleOnce(TimePolicy.getTimeoutEndorse seconds, self, ResendEndorseInfo)
         resendEndorser("/user/moduleManager/consensusManager/consensus-CRFD/endorse",PrimaryBlock(blc, pe.getBlocker,pe.getBlker_index,blkidentifier_str))
-      }
+      }*/
     //块背书结果
-    case EndorsedBlock(isSuccess, blc_new, endor,blkidentifier) =>
+    /*case EndorsedBlock(isSuccess, blc_new, endor,blkidentifier) =>
       var log_msg = ""
       logMsg(LOG_TYPE.WARN, s"recv endorsed from ${sender().toString()}")
+      if(recvedEndorseAddr.isEmpty){
+         BlockTimeStatis4Times.setFirstRecvEndorse(System.currentTimeMillis())
+      }
       //ClusterHelper.isCandidateNow(sender().toString(), pe.getCandidator) match {
       ClusterHelper.isCandidateNow(pe.getSysTag, pe.getCandidator) match {
         case true =>
@@ -381,6 +422,11 @@ class BlockModule(moduleName: String) extends ModuleBase(moduleName) {
                               logMsg(LOG_TYPE.INFO, s"node name=${pe.getSysTag},identifier=${blkidentifier},recv endorse, cert=${endor.endorser.toStringUtf8()}")
                               if (BlockHelper.checkCandidate(blc.consensusMetadata.length, pe.getCandidator.size)) {
                                 schedulerLink1 = clearSched1()
+                                
+                                BlockTimeStatis4Times.setFinishEndorse(System.currentTimeMillis())
+                                BlockTimeStatis4Times.printStatis4Times("BlockModule", pe.getSysTag)
+                                
+                                
                                 self ! NewBlock(sender,blkidentifier)
                                 recvedEndorseAddr.clear()
                                 IsFinishedEndorse = EndorseStatus.END_ENDORSE
@@ -403,17 +449,31 @@ class BlockModule(moduleName: String) extends ModuleBase(moduleName) {
             case false => logMsg(LOG_TYPE.INFO, "Remote Endorsement of the block is enough, drop it")
           }
         case false => logMsg(LOG_TYPE.INFO, s"The sender is not a candidate this time, drop the endorsement form it. Sender:${sender()}")
-      }
+      }*/
 
     //正式出块
-    case NewBlock(newblocker,blkidentifier) =>
+    case NewBlock(tmpfinishblc,newblocker,blkidentifier) =>
+      blc = tmpfinishblc
       if(blc.previousBlockHash.toStringUtf8() != pe.getCurrentBlockHash){
         resetVoteEnv
       }else{
         //调整确认块中的共识数据的顺序
         var consensus = blc.consensusMetadata.toArray[Endorsement]
+        
+        //var filterstart = System.nanoTime()
         var tmpconsensus = consensus.sortWith((endorser_left,endorser_right)=> endorser_left.endorser.toStringUtf8() < endorser_right.endorser.toStringUtf8())
+        //var filterend = System.nanoTime()
+        //logMsg(LOG_TYPE.INFO, s"filter sort spent time=${filterend-filterstart}")
+        
+        /*var javastart = System.nanoTime()
+        sort(consensus)
+        var javaend = System.nanoTime()
+        logMsg(LOG_TYPE.INFO, s"java sort spent time=${javaend-javastart}")*/
+        
+        //var writestart = System.nanoTime()
         blc = blc.withConsensusMetadata(tmpconsensus)
+        //var writeend = System.nanoTime()
+        //logMsg(LOG_TYPE.INFO, s"write sort spent time=${writeend-writestart}")
         //广播这个block
         logMsg(LOG_TYPE.INFO, s"new block,nodename=${pe.getSysTag},transaction size=${blc.transactions.size},identifier=${this.blkidentifier_str},${blkidentifier},current height=${dataaccess.getBlockChainInfo().height},previoushash=${blc.previousBlockHash.toStringUtf8()}")
         mediator ! Publish(Topic.Block, new ConfirmedBlock(blc, dataaccess.getBlockChainInfo().height + 1,

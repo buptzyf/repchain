@@ -19,6 +19,7 @@ import akka.actor.{ActorRef, Props}
 import rep.network.base.{BaseActor, ModuleHelper}
 import rep.network.consensus.block.BlockModule
 import rep.network.consensus.block.BlockModule.BlockModuleInitFinished
+import rep.network.consensus.endorse.Endorse4Blocker
 import rep.network.consensus.CRFD.{ConsensusInitFinish, InitCRFD, NextConsensus}
 import rep.network.consensus.vote.CRFDVoterModule
 import rep.network.consensus.vote.CRFDVoterModule.NextVote
@@ -70,6 +71,8 @@ class CRFD(name: String) extends BaseConsenter with ModuleHelper with BaseActor 
   import scala.concurrent.duration._
 
   private var blocker: ActorRef = null
+  
+  private var endorseinblocker :ActorRef = null
 
   private var endorse: ActorRef = null
 
@@ -83,12 +86,14 @@ class CRFD(name: String) extends BaseConsenter with ModuleHelper with BaseActor 
   override def init(): Unit = {
 
     blocker = context.actorOf(BlockModule.props("blocker"), "blocker")
+    endorseinblocker = context.actorOf(Endorse4Blocker.props("endorseinblocker"), "endorseinblocker")
     endorse = context.actorOf(EndorsementModule.props("endorse"), "endorse")
     voter = context.actorOf(CRFDVoterModule.props("voter"), "voter")
     transProcess = context.actorOf(TransProcessor.props("sandbox", "", self),"sandboxProcessor")
     preloadTrans = context.actorOf(PreloadTransactionModule.props("preloadTrans",transProcess),"preloadTrans")
 
     registerActorRef(ActorType.BLOCK_MODULE, blocker)
+    registerActorRef(ActorType.ENDORSE_BLOCKER, endorseinblocker)
     registerActorRef(ActorType.ENDORSE_MODULE, endorse)
     registerActorRef(ActorType.VOTER_MODULE, voter)
     registerActorRef(ActorType.PRELOADTRANS_MODULE, preloadTrans)
