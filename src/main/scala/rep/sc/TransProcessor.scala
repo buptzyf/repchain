@@ -146,7 +146,6 @@ class TransProcessor(name: String, da:String, parent: ActorRef) extends Actor wi
       try{
         //获得合约对应的actor容器
         val sb_actor = getSandboxActor(m.t,sender,m.t.txid)
-        print(sb_actor)
         val future = sb_actor ? m
         //同步阻塞等待执行结果
         val result = Await.result(future, timeout.duration).asInstanceOf[DoTransactionResult]
