@@ -66,9 +66,9 @@ object BlockModule {
   case class PreTransBlockResultGensis(blc: Block, result: Boolean, merk: String, errorType: Int, error: String)
 
   //打包块待背书
-  case class PrimaryBlock(blc: Block, blocker: String,voteinedx:Int,blkidentifier:String)
+  case class PrimaryBlock(blc: Block, blocker: String,voteinedx:Int,blkidentifier:String,sendertime:Long)
   
-  case class PrimaryBlock4Cache(blc: Block, blocker: String,voteinedx:Int,actRef: ActorRef,blkidentifier:String)
+  case class PrimaryBlock4Cache(blc: Block, blocker: String,voteinedx:Int,actRef: ActorRef,blkidentifier:String,sendertime:Long)
   
   case object RepeatCheckEndorseCache
   

@@ -29,6 +29,7 @@ import java.security.cert.{ Certificate}
 import rep.network.PeerHelper
 import rep.utils.SerializeUtils
 import scala.util.control.Breaks
+import org.slf4j.LoggerFactory
 
 
 /**
@@ -39,6 +40,8 @@ import scala.util.control.Breaks
   * @update 2018-05 jiangbuyun
   **/
 object BlockHelper {
+  
+  protected def log = LoggerFactory.getLogger(this.getClass)
   /**
     * 背书块
     * @param blkHash
@@ -83,6 +86,7 @@ object BlockHelper {
   def checkTransaction(t: Transaction, dataAccess: ImpDataAccess): Boolean = {
     var resultMsg = ""
     var result = false
+    //val starttime = System.currentTimeMillis()
     val sig = t.signature.toByteArray
     val tOutSig1 = t.withSignature(ByteString.EMPTY)
     val tOutSig  = tOutSig1.withMetadata(ByteString.EMPTY)
@@ -90,15 +94,21 @@ object BlockHelper {
     try{
         val cid = ChaincodeID.fromAscii(t.chaincodeID.toStringUtf8).name
         val certKey = IdxPrefix.WorldStateKeyPreFix + cid + "_" + "CERT_" + t.cert.toStringUtf8 // 普通用户证书的key
+        val readytime = System.currentTimeMillis()
         var cert = ECDSASign.getCertWithCheck(t.cert.toStringUtf8,certKey,dataAccess.getSystemName)
+        //val getkeytime = System.currentTimeMillis()
         if(cert != None){
           result = ECDSASign.verify(sig, PeerHelper.getTxHash(tOutSig), cert.get.getPublicKey)
+          //val verifytime = System.currentTimeMillis()
+          // log.info(s"_______readytime=${readytime-starttime},getkeytime=${getkeytime-readytime},verifytime=${verifytime-getkeytime}")
         }else{
           resultMsg = s"The transaction(${t.txid}) is not trusted"
         }
       }catch{
         case e : RuntimeException => resultMsg = s"The transaction(${t.txid}) is not trusted${e.getMessage}"
       }
+      
+     
     result
   }
 

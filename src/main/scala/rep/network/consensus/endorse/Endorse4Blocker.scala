@@ -119,7 +119,7 @@ class Endorse4Blocker(moduleName: String) extends ModuleBase(moduleName) {
       //BlockTimeStatis4Times.setStartEndorse(System.currentTimeMillis())
               
       pe.getStableNodes.foreach(sn=>{
-        visitService(sn , "/user/moduleManager/consensusManager/consensus-CRFD/endorse",PrimaryBlock(blc, pe.getBlocker,pe.getBlker_index,blkidentifier_str))
+        visitService(sn , "/user/moduleManager/consensusManager/consensus-CRFD/endorse",PrimaryBlock(blc, pe.getBlocker,pe.getBlker_index,blkidentifier_str,System.currentTimeMillis()))
       })
       
       
@@ -131,7 +131,7 @@ class Endorse4Blocker(moduleName: String) extends ModuleBase(moduleName) {
         //BlockTimeStatis4Times.setIsResendEndorse(true)
         
         schedulerLink = scheduler.scheduleOnce(TimePolicy.getTimeoutEndorse seconds, self, ResendEndorseInfo)
-        resendEndorser("/user/moduleManager/consensusManager/consensus-CRFD/endorse",PrimaryBlock(blc, pe.getBlocker,pe.getBlker_index,blkidentifier_str))
+        resendEndorser("/user/moduleManager/consensusManager/consensus-CRFD/endorse",PrimaryBlock(blc, pe.getBlocker,pe.getBlker_index,blkidentifier_str,System.currentTimeMillis()))
       }
       
       
