@@ -28,6 +28,8 @@ import com.fasterxml.jackson.core.Base64Variants
 import java.security.cert.X509Certificate
 import javax.xml.bind.DatatypeConverter
 
+import sun.security.ec.ECPublicKeyImpl
+
 /**
  * 系统密钥相关伴生对象
  * @author shidianyue
@@ -100,9 +102,7 @@ object ECDSASign extends ECDSASign {
    * @param cert 对象
    * @return
    */
-  def getBitcoinAddrByCert(cert: Certificate): String = {
-    BitcoinUtils.calculateBitcoinAddress(cert.getPublicKey.getEncoded)
-  }
+  def getBitcoinAddrByCert(cert: Certificate): String = BitcoinUtils.calculateBitcoinAddress(cert.getPublicKey.asInstanceOf[ECPublicKeyImpl].getEncodedPublicValue)
 
   /**
    * 获取证书的短地址
@@ -111,7 +111,7 @@ object ECDSASign extends ECDSASign {
    */
   def getBitcoinAddrByCert(certByte: Array[Byte]): String = {
     val cert = SerializeUtils.deserialise(certByte).asInstanceOf[Certificate]
-    BitcoinUtils.calculateBitcoinAddress(cert.getPublicKey.getEncoded)
+    BitcoinUtils.calculateBitcoinAddress(cert.getPublicKey.asInstanceOf[ECPublicKeyImpl].getEncodedPublicValue)
   }
 
   /**
