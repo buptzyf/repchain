@@ -9,7 +9,7 @@ import scala.util.control.Breaks._
 object verifySign4Endorment {
     def props(name: String): Props = Props(classOf[ verifySign4Endorment ], name)
     
-    case class verifySign4Transcation(blkhash:String,ts:Array[Transaction],startPos:Integer,len:Integer,actoridex:Integer)
+    case class verifySign4Transcation(blkhash:String,ts:Array[Transaction],startPos:Integer,len:Integer,actoridex:Integer,sendtime:Long)
     case class verifySignResult(blkhash:String,resultflag:Boolean,startPos:Integer,lenght:Integer,actoridex:Integer)
 }
 
@@ -23,7 +23,7 @@ class verifySign4Endorment(moduleName: String) extends ModuleBase(moduleName) {
     val sr: ImpDataAccess = ImpDataAccess.GetDataAccess(pe.getSysTag)
   
     override def receive = {
-      case  verifySign4Endorment.verifySign4Transcation(blkhash,ts,startPos,len,actoridex) =>
+      case  verifySign4Endorment.verifySign4Transcation(blkhash,ts,startPos,len,actoridex,sendtime) =>
         var r : Boolean = true
         var count : Integer = 0
         val tsize = ts.length
@@ -47,5 +47,6 @@ class verifySign4Endorment(moduleName: String) extends ModuleBase(moduleName) {
         }else{
           sender ! verifySign4Endorment.verifySignResult(blkhash,true,startPos,len,actoridex)
         }
+        logMsg(LOG_TYPE.INFO,s"+++++++verify sign time=${System.currentTimeMillis() - sendtime},handle count=${len},actoridex=${actoridex}")
     }
 }
