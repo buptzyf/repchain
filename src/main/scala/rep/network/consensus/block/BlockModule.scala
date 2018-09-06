@@ -249,22 +249,22 @@ class BlockModule(moduleName: String) extends ModuleBase(moduleName) {
       src(j) = t  
     }  
   
-    def sort1(l: Int, r: Int){  
-      val pivot = src((l + r)/2)  
+    def sortSub(l: Int, r: Int){  
+      val half = src((l + r)/2)  
       var i = l; var j = r;  
       while (i <= j){  
-        while (src(i).endorser.toStringUtf8() < pivot.endorser.toStringUtf8()) i += 1  
-        while (src(j).endorser.toStringUtf8() > pivot.endorser.toStringUtf8()) j -= 1  
+        while (src(i).endorser.toStringUtf8() < half.endorser.toStringUtf8()) i += 1  
+        while (src(j).endorser.toStringUtf8() > half.endorser.toStringUtf8()) j -= 1  
         if(i <= j){  
           swap(i, j)  
           i += 1  
           j -= 1  
         }  
       }  
-      if(l < j) sort1(l, j)  
-      if(j < r) sort1(i, r)  
+      if(l < j) sortSub(l, j)  
+      if(j < r) sortSub(i, r)  
     }  
-    sort1(0, src.length - 1)  
+    sortSub(0, src.length - 1)  
   }  
 
   

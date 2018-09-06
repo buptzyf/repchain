@@ -64,7 +64,9 @@ class EndorsementModule(moduleName: String) extends ModuleBase(moduleName) {
   var actRef4Blocker :ActorRef = null
   var recvendorserequesttime : Long = 0
   
-  val childnum = 5
+  var verifyobject = new VerifySign4JavaWork(pe.getSysTag);
+  
+  /*val childnum = 10
   var vgActorRef : Array[ActorRef] = new Array[ActorRef](childnum)
   
   for(i <- 0 to childnum-1){
@@ -85,18 +87,21 @@ class EndorsementModule(moduleName: String) extends ModuleBase(moduleName) {
         var len = size / childnum
         var m = size % childnum
         for(i <- 0 to childnum-1){
+          val startsend = System.currentTimeMillis()
             if(i == childnum-1){
                 verifyresult(i) = 1
-                vgActorRef(i) ! verifySign4Endorment.verifySign4Transcation(this.waitEndorseblockIdentifier,trans,i,len+m,i)
+                vgActorRef(i) ! verifySign4Endorment.verifySign4Transcation(this.waitEndorseblockIdentifier,trans,i,len+m,i,System.currentTimeMillis())
             }else{
                 verifyresult(i) = 1
-                vgActorRef(i) ! verifySign4Endorment.verifySign4Transcation(this.waitEndorseblockIdentifier,trans,i,len,i)
+                vgActorRef(i) ! verifySign4Endorment.verifySign4Transcation(this.waitEndorseblockIdentifier,trans,i,len,i,System.currentTimeMillis())
             }
+          val endsend = System.currentTimeMillis()
+          logMsg(LOG_TYPE.INFO,s"+++++++send sign time=${endsend - startsend}")
         }
     }else{
       for(i <- 0 to size-1){
           verifyresult(i) = 1
-          vgActorRef(i) ! verifySign4Endorment.verifySign4Transcation(this.waitEndorseblockIdentifier,trans,i,1,i)
+          vgActorRef(i) ! verifySign4Endorment.verifySign4Transcation(this.waitEndorseblockIdentifier,trans,i,1,i,System.currentTimeMillis())
       }
     }
   }
@@ -130,7 +135,9 @@ class EndorsementModule(moduleName: String) extends ModuleBase(moduleName) {
                       logMsg(LOG_TYPE.WARN, s"Block endorse success,current height=${pe.getCacheHeight()},identifier=${this.waitEndorseblockIdentifier}")
                       //logMsg(LOG_TYPE.INFO,s"handle time=${checktransresulttime-calltime},hashtime=${hashtime-calltime},checkblocktime=${checkblocktime-hashtime},"+
                       //    s"checktranstime=${checktranstime-checkblocktime},checktranssigntime=${checktranssigntime-checktranstime},checktransresulttime=${checktransresulttime-checktranssigntime}")
-                      logMsg(LOG_TYPE.INFO,s"+++++++endorse handle time=${System.currentTimeMillis() - this.recvendorserequesttime}")
+                      logMsg(LOG_TYPE.INFO,s"+++++++endorse handle time=${System.currentTimeMillis() - this.recvendorserequesttime},endorse other time=${dispathtime-calltime},checkdispatchtime=${dispathtime-checktranstime}")
+                      logMsg(LOG_TYPE.INFO,s"+++++++hashtime=${hashtime-calltime},checkblocktime=${checkblocktime-hashtime},"+
+                          s"checktranstime=${checktranstime-checkblocktime}}")
                       this.actRef4Blocker ! EndorsedBlock(true, this.waitblockdata, BlockHelper.endorseBlock(this.waitblockinfo, pe.getSysTag),this.waitEndorseblockIdentifier)
                       //广播发送背书信息的事件(背书成功)
                       sendEvent(EventType.PUBLISH_INFO, mediator, selfAddr, Topic.Block, Event.Action.ENDORSEMENT)
@@ -140,7 +147,7 @@ class EndorsementModule(moduleName: String) extends ModuleBase(moduleName) {
           }
         }
     }
-  }
+  }*/
   
   
   /*private def verifyTransSign(trans:Seq[Transaction]):Boolean={
@@ -184,7 +191,7 @@ class EndorsementModule(moduleName: String) extends ModuleBase(moduleName) {
   }
   
   
-
+          
   private def endorseForWork(blk:Block, actRef: ActorRef,blkidentifier:String,sendertime:Long,recvtime:Long)={
       val calltime = System.currentTimeMillis()
       val dbinstancename = "endorse_"+blk.transactions.head.txid
@@ -192,21 +199,42 @@ class EndorsementModule(moduleName: String) extends ModuleBase(moduleName) {
       try {
           val blkData = blk.withConsensusMetadata(Seq())
           val blkInfo = Sha256.hash(blkData.toByteArray)
-          val hashtime = System.currentTimeMillis()
+           val hashtime = System.currentTimeMillis()
           if (BlockHelper.checkBlockContent(blk.consensusMetadata.head, blkInfo)) {
             val checkblocktime = System.currentTimeMillis()
               if(!hasRepeatOfTrans(blk.transactions)){
-                val checktranstime = System.currentTimeMillis()
+                 val checktranstime = System.currentTimeMillis()
                   if(preload.VerifyForEndorsement(blk)){
-                    val checktranssigntime = System.currentTimeMillis()
-                    this.waitEndorseblock = blk
+                    
+                    /*this.waitEndorseblock = blk
                     this.waitEndorseblockIdentifier = blkidentifier
                     this.actRef4Blocker = actRef
                     this.waitblockinfo = blkInfo
                     this.waitblockdata = blkData
-                    this.clearVerifyResult
-                    schedulerLink = scheduler.scheduleOnce(1 seconds, self, EndorsementModule.VerifySignTimeout )
-                    dispatchTransSignVerify(blk.transactions.toArray[Transaction])
+                    this.clearVerifyResult*/
+                    val  checkresulttime = System.currentTimeMillis()
+                    /*schedulerLink = scheduler.scheduleOnce(1 seconds, self, EndorsementModule.VerifySignTimeout )
+                    dispatchTransSignVerify(blk.transactions.toArray[Transaction])*/
+                     val b = verifyobject.StartVerify(blk.transactions.toArray[Transaction])
+                     if(b){
+                         val checksignresulttime = System.currentTimeMillis()
+                        logMsg(LOG_TYPE.WARN, s"Block endorse success,current height=${pe.getCacheHeight()},identifier=${blkidentifier}")
+                        //logMsg(LOG_TYPE.INFO,s"handle time=${checktransresulttime-calltime},hashtime=${hashtime-calltime},checkblocktime=${checkblocktime-hashtime},"+
+                        //    s"checktranstime=${checktranstime-checkblocktime},checktranssigntime=${checktranssigntime-checktranstime},checktransresulttime=${checktransresulttime-checktranssigntime}")
+                        logMsg(LOG_TYPE.INFO,s"+++++++endorse handle time=${checksignresulttime - recvtime},endorse other time=${checkresulttime-calltime},sign time=${checksignresulttime-checkresulttime}")
+                        //logMsg(LOG_TYPE.INFO,s"+++++++hashtime=${hashtime-calltime},checkblocktime=${checkblocktime-hashtime},"+
+                        //    s"checktranstime=${checktranstime-checkblocktime}}")
+                        actRef ! EndorsedBlock(true, blkData, BlockHelper.endorseBlock(blkInfo, pe.getSysTag),blkidentifier)
+                        //广播发送背书信息的事件(背书成功)
+                        sendEvent(EventType.PUBLISH_INFO, mediator, selfAddr, Topic.Block, Event.Action.ENDORSEMENT)
+                        val finishtime = System.currentTimeMillis()
+                        //logMsg(LOG_TYPE.INFO,s"------endorse finish time=${finishtime-sendertime},network time=${recvtime-sendertime},condition check time=${calltime-recvtime},handle time=${finishtime-calltime}")
+                     }else{
+                       actRef! EndorsedBlock(false, blkData, BlockHelper.endorseBlock(blkInfo, pe.getSysTag),blkidentifier)
+                     }
+                     //dispathtime = System.currentTimeMillis()
+                    
+                    
                     
                     /*if(verifyTransSign(blk.transactions)){
                       val checktransresulttime = System.currentTimeMillis()
@@ -318,33 +346,33 @@ class EndorsementModule(moduleName: String) extends ModuleBase(moduleName) {
     //Endorsement block
     case PrimaryBlock(blk, blocker, voteinedx,blkidentifier,sendertime) =>
         recvendorserequesttime = sendertime
-        schedulerLink = clearSched()
+        /*schedulerLink = clearSched()
         this.waitEndorseblock = null
         this.waitEndorseblockIdentifier = ""
         this.actRef4Blocker = null
         this.waitblockinfo = null
         this.waitblockdata = null
-        this.clearVerifyResult
+        this.clearVerifyResult*/
         endorseForCheck(blk, blocker, voteinedx, sender(),blkidentifier,sendertime)
 
     case RepeatCheckEndorseCache =>
       if(cacheEndorseBlock != null){
         recvendorserequesttime = cacheEndorseBlock.sendertime
-        schedulerLink = clearSched()
+        /*schedulerLink = clearSched()
         this.waitEndorseblock = null
         this.waitEndorseblockIdentifier = ""
         this.actRef4Blocker = null
         this.waitblockinfo = null
         this.waitblockdata = null
-        this.clearVerifyResult
+        this.clearVerifyResult*/
         endorseForCheck(cacheEndorseBlock.blc, cacheEndorseBlock.blocker, cacheEndorseBlock.voteinedx, cacheEndorseBlock.actRef,cacheEndorseBlock.blkidentifier,cacheEndorseBlock.sendertime)
       }
      
     case verifySign4Endorment.verifySignResult(blkhash,resultflag,startPos,lenght,actoridex) =>
-      RecvVerifyResutl(verifySign4Endorment.verifySignResult(blkhash,resultflag,startPos,lenght,actoridex))
+      //RecvVerifyResutl(verifySign4Endorment.verifySignResult(blkhash,resultflag,startPos,lenght,actoridex))
       
     case EndorsementModule.VerifySignTimeout =>
-        schedulerLink = clearSched()
+        /*schedulerLink = clearSched()
         if(this.actRef4Blocker != null)
             this.actRef4Blocker! EndorsedBlock(false, this.waitblockdata, BlockHelper.endorseBlock(this.waitblockinfo, pe.getSysTag),this.waitEndorseblockIdentifier)
         this.waitEndorseblock = null
@@ -352,7 +380,7 @@ class EndorsementModule(moduleName: String) extends ModuleBase(moduleName) {
         this.actRef4Blocker = null
         this.waitblockinfo = null
         this.waitblockdata = null
-        this.clearVerifyResult
+        this.clearVerifyResult*/
     case _ => //ignore
   }
 

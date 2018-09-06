@@ -116,6 +116,32 @@ class Endorse4Blocker(moduleName: String) extends ModuleBase(moduleName) {
   override def preStart(): Unit = {
     SubscribeTopic(mediator, self, selfAddr, Topic.Block, true)
   }
+  
+  def sort(src: Array[Endorsement]){  
+  
+    def swap(i:Integer, j:Integer){  
+      val t = src(i)
+      src(i) = src(j)
+      src(j) = t  
+    }  
+  
+    def sortSub(l: Int, r: Int){  
+      val half = src((l + r)/2)  
+      var i = l; var j = r;  
+      while (i <= j){  
+        while (src(i).endorser.toStringUtf8() < half.endorser.toStringUtf8()) i += 1  
+        while (src(j).endorser.toStringUtf8() > half.endorser.toStringUtf8()) j -= 1  
+        if(i <= j){  
+          swap(i, j)  
+          i += 1  
+          j -= 1  
+        }  
+      }  
+      if(l < j) sortSub(l, j)  
+      if(j < r) sortSub(i, r)  
+    }  
+    sortSub(0, src.length - 1)  
+  }  
     
   override def receive = {
     case ReadyEndorsement4Block(blc_new,bidentifier) =>
@@ -173,33 +199,35 @@ class Endorse4Blocker(moduleName: String) extends ModuleBase(moduleName) {
                                 //BlockTimeStatis4Times.printStatis4Times("BlockModule", pe.getSysTag)
                                 
                                 
-                                getActorRef(ActorType.BLOCK_MODULE) ! NewBlock(blc,sender,blkidentifier)
+                                //getActorRef(ActorType.BLOCK_MODULE) ! NewBlock(blc,sender,blkidentifier)
                                 //newBlock(blc,sender,blkidentifier)
                                 
                                 
                                 
-        /* var consensus = blc.consensusMetadata.toArray[Endorsement]
+         var consensus = blc.consensusMetadata.toArray[Endorsement]
         //var filterstart = System.nanoTime()
-        var tmpconsensus = consensus.sortWith((endorser_left,endorser_right)=> endorser_left.endorser.toStringUtf8() < endorser_right.endorser.toStringUtf8())
+        //var tmpconsensus = consensus.sortWith((endorser_left,endorser_right)=> endorser_left.endorser.toStringUtf8() < endorser_right.endorser.toStringUtf8())
         //var filterend = System.nanoTime()
         //logMsg(LOG_TYPE.INFO, s"filter sort spent time=${filterend-filterstart}")
         
-        /*var javastart = System.nanoTime()
+        var javastart = System.currentTimeMillis()
         sort(consensus)
-        var javaend = System.nanoTime()
-        logMsg(LOG_TYPE.INFO, s"java sort spent time=${javaend-javastart}")*/
+        var javaend = System.currentTimeMillis()
+        
         
         //var writestart = System.nanoTime()
-        blc = blc.withConsensusMetadata(tmpconsensus)
+        //sort(consensus)
+        blc = blc.withConsensusMetadata(consensus)
         //var writeend = System.nanoTime()
         //logMsg(LOG_TYPE.INFO, s"write sort spent time=${writeend-writestart}")
         //广播这个block
         logMsg(LOG_TYPE.INFO, s"new block,nodename=${pe.getSysTag},transaction size=${blc.transactions.size},identifier=${this.blkidentifier_str},${blkidentifier},current height=${dataaccess.getBlockChainInfo().height},previoushash=${blc.previousBlockHash.toStringUtf8()}")
         mediator ! Publish(Topic.Block, new ConfirmedBlock(blc, dataaccess.getBlockChainInfo().height + 1,
                             sender))
+        logMsg(LOG_TYPE.INFO, s"java sort spent time=${javaend-javastart}")
         logMsg(LOG_TYPE.INFO, s"recv newBlock msg,node number=${pe.getSysTag},new block height=${dataaccess.getBlockChainInfo().height + 1}")                    
           
-        logTime("New block publish", CRFD_STEP._11_NEW_BLK_PUB, getActorRef(ActorType.STATISTIC_COLLECTION))*/
+        logTime("New block publish", CRFD_STEP._11_NEW_BLK_PUB, getActorRef(ActorType.STATISTIC_COLLECTION))
                                 
                                 
                                 

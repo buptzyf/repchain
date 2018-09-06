@@ -196,12 +196,15 @@ class PeerHelper(name: String) extends ModuleBase(name) {
       //invoke
 //      val cname = t.payload.get.chaincodeID.get.name
       try{
-        val t2 = transactionCreator(pe.getSysTag,rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE,
-          "", li1 ,List(),"", Option(chaincode),rep.protos.peer.ChaincodeSpec.CodeType.CODE_JAVASCRIPT)
+        //val start = System.currentTimeMillis()
+        /*val t2 = transactionCreator(pe.getSysTag,rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE,
+          "", li1 ,List(),"", Option(chaincode),rep.protos.peer.ChaincodeSpec.CodeType.CODE_JAVASCRIPT)*/
         //getActorRef(ActorType.TRANSACTION_POOL) ! t2  
         val t3 = transactionCreator(pe.getSysTag,rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE,
           "", "transfer" ,Seq(li2),"", Option(chaincode),rep.protos.peer.ChaincodeSpec.CodeType.CODE_JAVASCRIPT)  
         getActorRef(ActorType.TRANSACTION_POOL) ! t3
+        //val end = System.currentTimeMillis()
+        //println(s"!!!!!!!!!!!!!!!!!!!!auto create trans time=${end-start}")
         scheduler.scheduleOnce(SystemProfile.getTranCreateDur.millis, self, TickInvoke)
       }catch{
         case e:RuntimeException => throw e
