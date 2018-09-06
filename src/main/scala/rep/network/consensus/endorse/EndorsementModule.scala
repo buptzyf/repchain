@@ -94,7 +94,7 @@ class EndorsementModule(moduleName: String) extends ModuleBase(moduleName) {
             }
         }
     }else{
-      for(i <- 0 to size){
+      for(i <- 0 to size-1){
           verifyresult(i) = 1
           vgActorRef(i) ! verifySign4Endorment.verifySign4Transcation(this.waitEndorseblockIdentifier,trans,i,1,i)
       }
