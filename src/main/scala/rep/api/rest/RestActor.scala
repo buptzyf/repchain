@@ -250,8 +250,7 @@ class RestActor extends Actor with ModuleHelper with RepLogging {
       preTransaction(t)
 
     case t: Transaction =>
-       val t1  = t.withMetadata(ByteString.EMPTY)
-      preTransaction(t1)
+      preTransaction(t)
     case SystemStart(cout) =>
       val rs = TestMain.startSystem(cout)
       val r = rs match {
@@ -310,7 +309,8 @@ class RestActor extends Actor with ModuleHelper with RepLogging {
     case TransactionStreamId(txId) =>
       val r = loadTransaction(sr, txId)
       val t = r.get
-      val body = akka.util.ByteString(r.get.toByteArray)
+      val t1  = t.withMetadata(ByteString.EMPTY)
+      val body = akka.util.ByteString(t1.toByteArray)
       val entity = HttpEntity.Strict(MediaTypes.`application/octet-stream`, body)        
       val httpResponse = HttpResponse(entity = entity)              
       sender ! httpResponse
