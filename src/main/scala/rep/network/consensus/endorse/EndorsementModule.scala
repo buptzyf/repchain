@@ -64,7 +64,7 @@ class EndorsementModule(moduleName: String) extends ModuleBase(moduleName) {
   var actRef4Blocker :ActorRef = null
   var recvendorserequesttime : Long = 0
   
-  val childnum = 6
+  val childnum = 5
   var vgActorRef : Array[ActorRef] = new Array[ActorRef](childnum)
   
   for(i <- 0 to childnum-1){
@@ -81,7 +81,7 @@ class EndorsementModule(moduleName: String) extends ModuleBase(moduleName) {
   
   private def dispatchTransSignVerify(trans:Array[Transaction])={
     var size = trans.length
-    if(size >= childnum){
+    if(size > childnum){
         var len = size / childnum
         var m = size % childnum
         for(i <- 0 to childnum-1){

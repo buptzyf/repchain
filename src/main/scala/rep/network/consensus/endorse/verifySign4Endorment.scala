@@ -26,12 +26,17 @@ class verifySign4Endorment(moduleName: String) extends ModuleBase(moduleName) {
       case  verifySign4Endorment.verifySign4Transcation(blkhash,ts,startPos,len,actoridex) =>
         var r : Boolean = true
         var count : Integer = 0
+        val tsize = ts.length
         
         breakable(
             while(count < len) {
-              if(!BlockHelper.checkTransaction(ts(startPos+count), sr)){
-                  r = false
-                  break
+              if(startPos+count < tsize){
+                if(!BlockHelper.checkTransaction(ts(startPos+count), sr)){
+                    r = false
+                    break
+                }
+              }else{
+                break
               }
               count += 1
             }
