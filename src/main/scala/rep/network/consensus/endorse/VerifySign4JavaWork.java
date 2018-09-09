@@ -8,24 +8,33 @@ import java.util.concurrent.CountDownLatch;
 import java.util.Vector;
 
 public class VerifySign4JavaWork {
-	private final static int childnum = 10;
+	private final static int childnum = 40;
 	private java.util.concurrent.Executor executor = Executors.newFixedThreadPool(childnum);
 	private ImpDataAccess sr  = null;
 	private String systag = "";
+	private VerifySignThread[] object4Work = null;
 	
 	//private Transaction[] tls = null;
 	//private boolean[] tresult = null;
 	//private CountDownLatch latch = null;
 	
+	private long[] statis = new long[100];
+	private int count = 0;
 	
 	public VerifySign4JavaWork(String systag) {
 		sr = ImpDataAccess.GetDataAccess(systag);
 		this.systag = systag;
+		this.object4Work = new VerifySignThread[childnum]; 
+		for(int i = 0; i < childnum; i++) {
+			object4Work[i] = new VerifySignThread();
+		}
 	}
 	
 	public boolean StartVerify(Transaction[] itls) {
 		boolean b = true;
 		if(itls == null) return b;
+		
+		long start = System.currentTimeMillis();
 		
 		Transaction[]  tls = itls;
 		int size = tls.length;
@@ -48,17 +57,24 @@ public class VerifySign4JavaWork {
 		if(size > childnum){
 	        	for(int i = 0;  i < childnum; i++) {
 	          //long startsend = System.currentTimeMillis();
+	        		VerifySignThread tmpworker = object4Work[i];
 	            if(i == childnum-1){
-	            		executor.execute(new VerifySignThread(i*len,len+m,latch,tls,tresult,i));
+	            		tmpworker.setInitValue(i*len,len+m,latch,tls,tresult,i);
+	            		//executor.execute(new VerifySignThread(i*len,len+m,latch,tls,tresult,i));
 	            }else{
-	            		executor.execute(new VerifySignThread(i*len,len,latch,tls,tresult,i));
+	            		tmpworker.setInitValue(i*len,len,latch,tls,tresult,i);
+	            		//executor.execute(new VerifySignThread(i*len,len,latch,tls,tresult,i));
 	            }
+	            executor.execute(tmpworker);
 	          //long endsend = System.currentTimeMillis();
 	        	  //System.out.println("+++++++send sign time="+(endsend - startsend));
 	        }
 	    }else{
 	      for(int j = 0 ; j< size; j++){
-	    	  	executor.execute(new VerifySignThread(j,1,latch,tls,tresult,j));
+	    	  	VerifySignThread tmpworker = object4Work[j];
+	    	  	tmpworker.setInitValue(j,1,latch,tls,tresult,j);
+	    	  	//executor.execute(new VerifySignThread(j,1,latch,tls,tresult,j));
+	    	  	executor.execute(tmpworker);
 	      }
 	    }
 		
@@ -77,9 +93,19 @@ public class VerifySign4JavaWork {
 			}
 		}
 		
-		tls = null;
-		tresult = null;
-		latch = null;
+		long end = System.currentTimeMillis();
+		if(count == 100) {
+			StringBuffer sb = new StringBuffer();
+			long avg = 0;
+			for(int i = 0; i < 100; i++) {
+				avg += statis[i];
+				sb.append(statis[i]).append(",");
+			}
+			System.out.println( "avg="+avg/100+" ^^^^^^^^^^real verify time="+sb.toString());
+			count = 0;
+		}
+		statis[count] = end-start;
+		count++;
 		
 		return b;
 	}
@@ -92,7 +118,29 @@ public class VerifySign4JavaWork {
 		Vector<Boolean> tresult = null;
 		int threadnum = -1;
 		
+		public VerifySignThread() {
+			clear();
+		}
+		
+		private void clear() {
+			this.startIdx = 0;
+			this.len = 0;
+			this.latch = null;
+			this.tls = null;
+			this.tresult = null;
+			this.threadnum = -1;
+		}
+		
 		public VerifySignThread(int startIdx,int len,CountDownLatch latch,Transaction[] tls,Vector<Boolean> tresult,int threadnum) {
+			this.startIdx = startIdx;
+			this.len = len;
+			this.latch = latch;
+			this.tls = tls;
+			this.tresult = tresult;
+			this.threadnum = threadnum;
+		}
+		
+		public void setInitValue(int startIdx,int len,CountDownLatch latch,Transaction[] tls,Vector<Boolean> tresult,int threadnum) {
 			this.startIdx = startIdx;
 			this.len = len;
 			this.latch = latch;
