@@ -202,6 +202,11 @@ class Endorse4Blocker(moduleName: String) extends ModuleBase(moduleName) {
                                 //getActorRef(ActorType.BLOCK_MODULE) ! NewBlock(blc,sender,blkidentifier)
                                 //newBlock(blc,sender,blkidentifier)
                                 
+                                recvedEndorseAddr.clear()
+                                IsFinishedEndorse = EndorseStatus.END_ENDORSE
+                                blkidentifier_str = ""
+                                logTime("Endorsement collect end", CRFD_STEP._10_ENDORSE_COLLECTION_END,
+                                  getActorRef(ActorType.STATISTIC_COLLECTION))
                                 
                                 
          var consensus = blc.consensusMetadata.toArray[Endorsement]
@@ -236,11 +241,8 @@ class Endorse4Blocker(moduleName: String) extends ModuleBase(moduleName) {
                                 
                                 
                                 
-                                recvedEndorseAddr.clear()
-                                IsFinishedEndorse = EndorseStatus.END_ENDORSE
-                                blkidentifier_str = ""
-                                logTime("Endorsement collect end", CRFD_STEP._10_ENDORSE_COLLECTION_END,
-                                  getActorRef(ActorType.STATISTIC_COLLECTION))
+                                
+                                
                               }
                               //广播收到背书信息的事件
                               sendEvent(EventType.RECEIVE_INFO, mediator, selfAddr, Topic.Block,
@@ -261,7 +263,7 @@ class Endorse4Blocker(moduleName: String) extends ModuleBase(moduleName) {
   }
   
   
-  private def newBlock(tmpfinishblc:Block,newblocker:ActorRef,blkidentifier:String)={
+  /*private def newBlock(tmpfinishblc:Block,newblocker:ActorRef,blkidentifier:String)={
         var consensus = tmpfinishblc.consensusMetadata.toArray[Endorsement]
         
         //var filterstart = System.nanoTime()
@@ -285,6 +287,6 @@ class Endorse4Blocker(moduleName: String) extends ModuleBase(moduleName) {
         logMsg(LOG_TYPE.INFO, s"recv newBlock msg,node number=${pe.getSysTag},new block height=${dataaccess.getBlockChainInfo().height + 1}")                    
           
         logTime("New block publish", CRFD_STEP._11_NEW_BLK_PUB, getActorRef(ActorType.STATISTIC_COLLECTION))
-  }
+  }*/
   
 }
