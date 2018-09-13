@@ -188,7 +188,7 @@ class TransProcessor(name: String, da:String, parent: ActorRef) extends Actor wi
         if(t.`type` != Transaction.Type.CHAINCODE_DEPLOY ){
           println(s"${pe.getSysTag} do invoke")
           //尝试从持久化恢复,找到对应的Deploy交易，并先执行之
-          val sr = ImpDataAccess.GetDataAccess(pe.getSysTag)
+          val sr = ImpDataAccess.GetDataAccess(sTag)
           val tidVal =  sr.Get(WorldStateKeyPreFix+ cid)
           if(tidVal==null)
             throw new SandboxException(ERR_INVOKE_CHAINCODE_NOT_EXIST)

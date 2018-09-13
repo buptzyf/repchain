@@ -36,6 +36,7 @@ object Repchain {
     sys1.joinCluster(joinAddress)//加入网络
     sys1.enableWS()//开启API接口
     sys1.start//启动系统
+    coapServerNum += 1
 
     val cluster = sys1.getActorSys//获取内部系统SystemActor实例
 
@@ -53,7 +54,7 @@ object Repchain {
     for(i <- 2 to node_max) {
       Thread.sleep(10000)
       val len = nodes.size
-      coapServerNum += 1;
+      coapServerNum += 1
       val sys = new ClusterSystem(i.toString,InitType.MULTI_INIT,true)
       sys.init
       sys.joinCluster(joinAddress)
