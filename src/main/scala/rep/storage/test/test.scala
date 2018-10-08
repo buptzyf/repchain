@@ -24,6 +24,7 @@ import scala.collection.mutable
 import rep.protos.peer._
 import java.io._
 import rep.network.consensus.block.BlockHelper
+import rep.storage.util.pathUtil
 
 /**
  * @author jiangbuyun
@@ -74,8 +75,42 @@ object test {
     dataaccess.getBlock4ObjectByHeight(h)
   }
   
-  def candidators(nodes: Set[String], seed: Array[Byte]): Set[String] = {
-    var nodesSeq = nodes.toSeq.sortBy(f=>(f.toString()))//nodes.toSeq
+  def blocker(nodes: Array[String], position:Int): String = {
+    if(nodes.nonEmpty){
+      var pos = position
+      if(position >= nodes.size){
+        pos = position % nodes.size
+      }
+      nodes(pos)
+    }else{
+      null
+    }
+  }
+  
+  case class randomNumber(var number:Long,var generateSerial:Int)
+  private def getRandomList(seed:Long,candidatorLen:Int,candidatorTotal:Int):Array[randomNumber]={
+    val m = 2*2*2*2*2*2*2*2*2*2*2*2*2*2*2*2*2*2*2*2
+    val a = 2045
+    val b = 1
+    var randomArray = new Array[randomNumber](candidatorTotal)
+    var hashSeed = seed.abs
+    for(i<-0 to candidatorTotal-1){
+      var tmpSeed = (a * hashSeed + b) % m
+      tmpSeed = tmpSeed.abs
+      if(tmpSeed == hashSeed) tmpSeed = tmpSeed + 1
+      hashSeed = tmpSeed
+      var randomobj = new randomNumber(hashSeed,i)
+      randomArray(i) = randomobj
+    }
+    
+    randomArray = randomArray.sortWith(
+        (randomNumber_left,randomNumber_right)=> randomNumber_left.number < randomNumber_right.number)
+        
+    randomArray
+  }
+  
+  def candidators(nodes: Set[String], seed: Array[Byte]): Array[String] = {
+    var nodesSeq = nodes.toSeq.sortBy(f=>(f.toString()))
     var len = nodes.size / 2 + 1
     val min_len = 4
     len = if(len<min_len){
@@ -84,40 +119,19 @@ object test {
     }
     else len
     if(len<4){
-      Set.empty
+      null
     }
     else{
-      var candidate = mutable.Seq.empty[String]
-      var index = 0
-      var hashSeed = seed
-
-      while (candidate.size < len) {
-        if (index >= hashSeed.size) {
-          hashSeed = Sha256.hash(hashSeed)
-          index = 0
-        }
-        //应该按位来计算
-        if ((hashSeed(index) & 1) == 1) {
-          candidate = (candidate :+ nodesSeq(index % (nodesSeq.size)))
-          nodesSeq = (nodesSeq.toSet - nodesSeq(index % (nodesSeq.size))).toSeq
-        }
-        index += 1
+      var candidate = new Array[String](len)
+      var hashSeed:Long = pathUtil.bytesToInt(seed)
+      var randomList = getRandomList(hashSeed,len,nodes.size)
+      //PrintRandomArray(randomList)
+      //println(randomList(0).generateSerial)
+      for(j<-0 to len-1){
+        var e = randomList(j)
+        candidate(j) = nodesSeq(e.generateSerial)
       }
-      candidate.toSet
-    }
-  }
-  
-  def blocker(nodes: Set[String], position:Int): Option[String] = {
-    //if (nodes.nonEmpty&&position<nodes.size) Option(nodes.head) else None
-    if(nodes.nonEmpty){
-      var pos = position
-      if(position >= nodes.size){
-        pos = position % nodes.size
-      }
-      val a = nodes.toList
-      Option(a(pos)) 
-    }else{
-      None
+      candidate
     }
   }
   
@@ -189,6 +203,29 @@ object test {
       throw new Exception("not equal")
     }
     
+  }
+  
+  def printArray(in:Array[String])={
+    print("-----------")
+    if(in != null){
+      in.foreach(f=>{
+            print(f+",")
+          }
+        )
+    }
+  }
+  
+  def printvoteresult(hashvalue:String,pos:Int){
+    var source = Set.empty[String]
+    source += "1"  
+    source += "2"
+    source += "3"
+    source += "4"
+    source += "5"
+    val cs = candidators(source, Sha256.hash(hashvalue))
+    val blo = blocker(cs, pos)
+    println("========"+blo.toString())
+    printArray(cs)
   }
   
   def checkblker(blockhash:String,pos:Int)={
@@ -310,6 +347,7 @@ object test {
   }
   
   def main(args: Array[String]): Unit = {
+    printvoteresult("431c6e619822d2e1e4c47eb3e402b309b22e525bbc7153d10503f6d7d2f56c7f",0)
     //testop1
     //getblockinfo
     
@@ -339,18 +377,21 @@ object test {
     val l22 = b2.toLong
     println(s"l21=${l21},l22=${l22}")*/
     
-    /*val b232360 = getblock("2",32359)
+    /*val b232360 = getblock("2",109)
     println("b232360="+b232360.toString())
     
-    val b132360 = getblock("1",32359)
+    val b132360 = getblock("1",109)
     println("b132360="+b132360.toString())
     
     
-    val b332360 = getblock("3",32359)
+    val b332360 = getblock("3",109)
     println("b332360="+b332360.toString())
     
-    val b432360 = getblock("4",32359)
-    println("b432360="+b432360.toString())*/
+    val b432360 = getblock("4",109)
+    println("b432360="+b432360.toString())
+    
+    val b532360 = getblock("5",109)
+    println("b532360="+b532360.toString())*/
     
     /*val b232360 = getblock("2",33063)
     println("b232360="+b232360.toString())
@@ -383,10 +424,11 @@ object test {
     
     
     
-    getChainInfo("1")
+    /*getChainInfo("1")
     getChainInfo("2")
     getChainInfo("3")
     getChainInfo("4")
+    getChainInfo("5")*/
     
     /*val b1132360 = getblock("1",1179334)
     println("b132360="+b1132360.toString())
@@ -402,7 +444,7 @@ object test {
     println("b432360="+b432360.toString())*/
     
     
-    val b1132360 = getblock("1",1179433)
+    /*val b1132360 = getblock("1",1179433)
     println("b132360="+b1132360.toString())
     
     val b232360 = getblock("2",1179433)
@@ -413,7 +455,7 @@ object test {
     println("b332360="+b332360.toString())
     
     val b432360 = getblock("4",1179433)
-    println("b432360="+b432360.toString())
+    println("b432360="+b432360.toString())*/
     
     
     

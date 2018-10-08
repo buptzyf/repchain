@@ -8,7 +8,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.Vector;
 
 public class VerifySign4JavaWork {
-	private final static int childnum = 40;
+	private final static int childnum = 1;
 	private java.util.concurrent.Executor executor = Executors.newFixedThreadPool(childnum);
 	private ImpDataAccess sr  = null;
 	private String systag = "";

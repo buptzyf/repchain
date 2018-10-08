@@ -194,23 +194,39 @@ class PeerHelper(name: String) extends ModuleBase(name) {
 
     case TickInvoke =>
       //invoke
-//      val cname = t.payload.get.chaincodeID.get.name
+      //      val cname = t.payload.get.chaincodeID.get.name
+      try{
+        //createTransForLoop //在做tps测试到时候，执行该函数，并且注释其他代码
+        //val start = System.currentTimeMillis()
+        val t3 = transactionCreator(pe.getSysTag,rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE,
+          "", "transfer" ,Seq(li2),"", Option(chaincode),rep.protos.peer.ChaincodeSpec.CodeType.CODE_JAVASCRIPT)  
+        getActorRef(ActorType.TRANSACTION_POOL) ! t3
+        //val end = System.currentTimeMillis()
+        //println(s"!!!!!!!!!!!!!!!!!!!!auto create trans time=${end-start}")
+        scheduler.scheduleOnce(SystemProfile.getTranCreateDur.millis, self, TickInvoke)
+      }catch{
+        case e:RuntimeException => throw e
+      }
+      //println(sdf.format(System.currentTimeMillis())+" ########## "+pe.getSysTag+" ************* ")
+  }
+  
+  //自动循环不间断提交交易到系统，用于压力测试或者tps测试时使用。
+  def createTransForLoop={
+    if(pe.getSysTag == "1" )//|| pe.getSysTag == "2")// || pe.getSysTag=="3")
       while(true){
         try{
           //val start = System.currentTimeMillis()
-          /*val t2 = transactionCreator(pe.getSysTag,rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE,
-            "", li1 ,List(),"", Option(chaincode),rep.protos.peer.ChaincodeSpec.CodeType.CODE_JAVASCRIPT)*/
-          //getActorRef(ActorType.TRANSACTION_POOL) ! t2  
           val t3 = transactionCreator(pe.getSysTag,rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE,
             "", "transfer" ,Seq(li2),"", Option(chaincode),rep.protos.peer.ChaincodeSpec.CodeType.CODE_JAVASCRIPT)  
           getActorRef(ActorType.TRANSACTION_POOL) ! t3
+          if(pe.getTransLength() > 20000){
+            Thread.sleep(10000)
+          }
           //val end = System.currentTimeMillis()
           //println(s"!!!!!!!!!!!!!!!!!!!!auto create trans time=${end-start}")
-          //scheduler.scheduleOnce(SystemProfile.getTranCreateDur.millis, self, TickInvoke)
         }catch{
           case e:RuntimeException => throw e
         }
       }
-//      println(sdf.format(System.currentTimeMillis())+" ########## "+pe.getSysTag+" ************* ")
   }
 }
