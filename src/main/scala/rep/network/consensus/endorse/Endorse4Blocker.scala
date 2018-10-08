@@ -143,11 +143,16 @@ class Endorse4Blocker(moduleName: String) extends ModuleBase(moduleName) {
     sortSub(0, src.length - 1)  
   }  
     
+  //case class endorsesendtime(systemName:String,start:Long,identify:String,prevhash:String,sendcount:Int)
+  
+  //var endorsesendtimer = endorsesendtime(pe.getSysTag,0l,"","",0)
+  
   override def receive = {
     case ReadyEndorsement4Block(blc_new,bidentifier) =>
       resetEndorseInfo(blc_new,bidentifier)
       schedulerLink = scheduler.scheduleOnce(TimePolicy.getTimeoutEndorse seconds, self, ResendEndorseInfo)
       IsFinishedEndorse = EndorseStatus.START_ENDORSE
+      //endorsesendtimer = endorsesendtime(pe.getSysTag,System.currentTimeMillis(),blkidentifier_str,blc_new.previousBlockHash.toStringUtf8(),1)
       //BlockTimeStatis4Times.setStartEndorse(System.currentTimeMillis())
               
       pe.getStableNodes.foreach(sn=>{
@@ -161,7 +166,10 @@ class Endorse4Blocker(moduleName: String) extends ModuleBase(moduleName) {
         resetVoteEnv1
       }else{
         //BlockTimeStatis4Times.setIsResendEndorse(true)
-        
+        //println(s"-----resend---sysname=${endorsesendtimer.systemName},${pe.getSysTag};endorestimeout=${TimePolicy.getTimeoutEndorse};start=${endorsesendtimer.start},spend=${System.currentTimeMillis()-endorsesendtimer.start};"+
+        //        s"hash=${endorsesendtimer.prevhash},${blc.previousBlockHash.toStringUtf8()};identify=${endorsesendtimer.identify},${blkidentifier_str}")
+        //logMsg(LOG_TYPE.INFO, s"-----resend---sysname=${endorsesendtimer.systemName},${pe.getSysTag};start=${endorsesendtimer.start},spend=${System.currentTimeMillis()-endorsesendtimer.start};"+
+        //        s"hash=${endorsesendtimer.prevhash},${blc.previousBlockHash.toStringUtf8()};identify=${endorsesendtimer.identify},${blkidentifier_str}")
         schedulerLink = scheduler.scheduleOnce(TimePolicy.getTimeoutEndorse seconds, self, ResendEndorseInfo)
         resendEndorser("/user/moduleManager/consensusManager/consensus-CRFD/endorse",PrimaryBlock(blc, pe.getBlocker,pe.getBlker_index,blkidentifier_str,System.currentTimeMillis()))
       }

@@ -334,7 +334,7 @@ class BlockModule(moduleName: String) extends ModuleBase(moduleName) {
                   IsFinishedEndorse = EndorseStatus.READY_ENDORSE
                   //添加出块定时器
                   schedulerLink = scheduler.scheduleOnce(TimePolicy.getTimeOutBlock seconds, self, CreateBlockTimeOut)
-                  getActorRef(ActorType.ENDORSE_MODULE) ! RepeatCheckEndorseCache
+                  //getActorRef(ActorType.ENDORSE_MODULE) ! RepeatCheckEndorseCache
                   logMsg(LOG_TYPE.INFO, s"vote notice,current is not blocker")
               }
             case true =>
