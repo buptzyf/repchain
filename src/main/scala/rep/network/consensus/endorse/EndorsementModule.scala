@@ -150,23 +150,26 @@ class EndorsementModule(moduleName: String) extends ModuleBase(moduleName) {
   }*/
   
   
-  /*private def verifyTransSign(trans:Seq[Transaction]):Boolean={
+  private def verifyTransSign(trans:Seq[Transaction]):Boolean={
     var r : Boolean = true
     val sr: ImpDataAccess = ImpDataAccess.GetDataAccess(pe.getSysTag)
     //val loopbreak = new Breaks
     //    loopbreak.breakable(
      breakable(
             trans.foreach(f=>{
-              if(!BlockHelper.checkTransaction(f, sr)){
-              //if(!BlockHelper.verifySignForTranscation(f,pe.getSysTag)){
-                r = false
-                //loopbreak.break
-                break
+             //从当前交易池查找该交易，如果存在该交易，不需要校验，已经校验过了
+              if(!pe.findTrans(f.txid)){
+                if(!BlockHelper.checkTransaction(f, sr)){
+                //if(!BlockHelper.verifySignForTranscation(f,pe.getSysTag)){
+                  r = false
+                  //loopbreak.break
+                  break
+                }
               }
             })
         )
     r
-  }*/
+  }
 
   private  def hasRepeatOfTrans(trans:Seq[Transaction]):Boolean={
     var isRepeat : Boolean = false
@@ -215,7 +218,10 @@ class EndorsementModule(moduleName: String) extends ModuleBase(moduleName) {
                     val  checkresulttime = System.currentTimeMillis()
                     /*schedulerLink = scheduler.scheduleOnce(1 seconds, self, EndorsementModule.VerifySignTimeout )
                     dispatchTransSignVerify(blk.transactions.toArray[Transaction])*/
-                     val b = verifyobject.StartVerify(blk.transactions.toArray[Transaction])
+                    //使用多线程来验证签名
+                    // val b = verifyobject.StartVerify(blk.transactions.toArray[Transaction])
+                    //使用对象内的方法来验证签名
+                    val b =  verifyTransSign(blk.transactions.toArray[Transaction])
                      if(b){
                          val checksignresulttime = System.currentTimeMillis()
                         logMsg(LOG_TYPE.WARN, s"Block endorse success,current height=${pe.getCacheHeight()},identifier=${blkidentifier}")
