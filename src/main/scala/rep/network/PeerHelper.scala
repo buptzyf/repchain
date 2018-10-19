@@ -19,7 +19,7 @@ import akka.actor.{Actor, Props}
 import com.google.protobuf.ByteString
 import com.google.protobuf.timestamp.Timestamp
 import rep.app.conf.SystemProfile
-import rep.crypto.{ECDSASign, Sha256}
+import rep.crypto.{ECDSASign, ShaDigest}
 import rep.network.base.ModuleBase
 import rep.network.consensus.block.BlockHelper
 import rep.network.cluster.ClusterActor
@@ -83,11 +83,11 @@ object PeerHelper {
     //invoke时调用者应该知道要调用的 chaincodeId
     val name = chaincodeId match {
       case None =>
-        Sha256.hashstr(spcPackage)
+        ShaDigest.hashstr(spcPackage)
       case Some(g) =>
         //此处hash是针对所有code代码内容,动态加载的类也必须遵循此规则
         if(g.trim().equals(""))
-          Sha256.hashstr(spcPackage) 
+          ShaDigest.hashstr(spcPackage)
         else 
           g
     }
@@ -142,7 +142,7 @@ object PeerHelper {
     * @return
     */
   def getTxHash(t:Transaction) :Array[Byte] ={
-    Sha256.hash(t.toByteArray)
+    ShaDigest.hash(t.toByteArray)
   }
 
 }

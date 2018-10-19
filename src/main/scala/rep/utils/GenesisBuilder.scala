@@ -23,7 +23,7 @@ import com.google.protobuf.ByteString
 import com.google.protobuf.timestamp.Timestamp
 import rep.protos.peer._
 import com.trueaccord.scalapb.json.JsonFormat
-import rep.crypto.{ECDSASign, Sha256}
+import rep.crypto.{ECDSASign, ShaDigest}
 import org.json4s.{DefaultFormats, Formats, jackson}
 import org.json4s.jackson.JsonMethods._
 import org.json4s.DefaultFormats._
@@ -71,7 +71,7 @@ object GenesisBuilder {
     //获得管理员证书和签名
 //    val (priKA, pubKA, certA) = ECDSASign.getKeyPair("super_admin")
 //    val (prik, pubK, cert) = ECDSASign.getKeyPair("1")
-    val blk_hash = Sha256.hash(blk.toByteArray)
+    val blk_hash = ShaDigest.hash(blk.toByteArray)
     //超级管理员背书（角色）
     //创建者背书（1）
     blk = blk.withConsensusMetadata(Seq(BlockHelper.endorseBlock(blk_hash,"super_admin"),

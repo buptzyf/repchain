@@ -145,14 +145,14 @@ class ConfigerHelper(conf: Config, tag: String, dbTag: String) {
   /**
     * Authorization module init
     *
-    * @param jksFilePath
+    * @param storeFilePath
     * @param pwd
-    * @param trustJksFilePath
+    * @param trustStoreFilePath
     * @param trustPwd
     */
-  private def authInit(sysTag: String, jksFilePath: String, pwd: String, trustJksFilePath: String, trustPwd: String): Unit = {
+  private def authInit(sysTag: String, storeFilePath: String, pwd: String, trustStoreFilePath: String, trustPwd: String): Unit = {
     //init the ECDSA param
-    ECDSASign.apply(sysTag, jksFilePath, pwd, trustJksFilePath, trustPwd)
+    ECDSASign.apply(sysTag, storeFilePath, pwd, trustStoreFilePath, trustPwd)
     ECDSASign.preLoadKey(sysTag)
   }
 
@@ -160,10 +160,17 @@ class ConfigerHelper(conf: Config, tag: String, dbTag: String) {
     * 根据配置初始化本地安全配置
     */
   private def authInitByCfg(sysTag: String): Unit = {
-    val mykeyPath = conf.getString("akka.remote.netty.ssl.security.base-path") + "mykeystore_" + sysTag + ".jks"
-    val psw = conf.getString("akka.remote.netty.ssl.security.key-store-password")
-    val trustPath = conf.getString("akka.remote.netty.ssl.security.trust-store")
-    val trustPwd = conf.getString("akka.remote.netty.ssl.security.trust-store-password")
+    val store = SystemProfile.getKeyStore
+    var mykeyPath = conf.getString("akka.remote.netty.ssl.security.base-path") + "mykeystore_" + sysTag + ".jks"
+    var psw = conf.getString("akka.remote.netty.ssl.security.key-store-password")
+    var trustPath = conf.getString("akka.remote.netty.ssl.security.trust-store")
+    var trustPwd = conf.getString("akka.remote.netty.ssl.security.trust-store-password")
+    if (store.equals("pfx")) {
+      mykeyPath = conf.getString("akka.remote.netty.ssl.security.base-path") + "mykeystore_" + sysTag + ".pfx"
+      psw = conf.getString("akka.remote.netty.ssl.security.key-store-password")
+      trustPath = conf.getString("akka.remote.netty.ssl.security.base-path") + "mytruststore" + ".pfx"
+      trustPwd = conf.getString("akka.remote.netty.ssl.security.trust-store-password")
+    }
     authInit(sysTag, mykeyPath, psw, trustPath, trustPwd)
   }
 

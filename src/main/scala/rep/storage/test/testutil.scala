@@ -16,7 +16,7 @@
 package rep.storage.test
 
 import com.google.protobuf.ByteString
-import rep.crypto.Sha256
+import rep.crypto.ShaDigest
 import scala.collection.mutable.ArrayBuffer
 import rep.crypto._
 import rep.utils._

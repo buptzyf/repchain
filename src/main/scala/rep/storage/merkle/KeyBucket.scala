@@ -44,7 +44,7 @@ class KeyBucket(val leveldb : ILevelDB,val CCID : String,val bucketNumber:Intege
         val prefix = IdxPrefix.WorldStateKeyPreFix+ CCID + "_"
         if(key.startsWith(prefix)){
           val key1 = key.substring(prefix.length(),key.length())
-          val sv = Sha256.hash(value)
+          val sv = ShaDigest.hash(value)
           this.LeafHashs += key1 -> sv
           computeMerkel
         }
@@ -68,7 +68,7 @@ class KeyBucket(val leveldb : ILevelDB,val CCID : String,val bucketNumber:Intege
                value = Array.concat(value , source(i))
                i += 1
              }
-             this.bucketMerkle = Sha256.hash(value)
+             this.bucketMerkle = ShaDigest.hash(value)
            }
        }
     }

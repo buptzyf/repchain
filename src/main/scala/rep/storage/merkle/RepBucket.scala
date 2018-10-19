@@ -87,7 +87,7 @@ class RepBucket(val leveldb : ILevelDB) extends RepLogging{
             }
           }
         })
-        if(value != null)  this.MerkleHash = Sha256.hash(value)
+        if(value != null)  this.MerkleHash = ShaDigest.hash(value)
         val end = System.currentTimeMillis()
         log.info("Merkle compute time="+(end - start)+"ms")
       }

@@ -19,6 +19,7 @@ import java.io._
 
 /**
  * @author jiangbuyun
+ * @author zyf modify
  * @version	0.7
  * @category	获取信任的证书列表，抽签时从此文件中获取。
  * */
@@ -27,6 +28,7 @@ object SystemCertList {
   
   //private def InitSystemCertList:Set[String] = {
     var a = new scala.collection.mutable.ArrayBuffer[String]()
+    val store = SystemProfile.getKeyStore
     val fis = new File("jks")
     if(fis.isDirectory()){
       val fs = fis.listFiles()
@@ -34,7 +36,10 @@ object SystemCertList {
         if(fn.isFile()){
           val fname = fn.getName
           val pos = fname.indexOf("mykeystore_")
-          val suffixpos = fname.indexOf(".jks")
+          var suffixpos = fname.indexOf(".jks")
+          if (store == "pfx") {
+            suffixpos = fname.indexOf(s".$store")
+          }
           if(pos >= 0 && suffixpos>0){
             a += fname.substring(pos+11, suffixpos)
           }

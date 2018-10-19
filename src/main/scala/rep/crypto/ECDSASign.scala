@@ -17,22 +17,28 @@ package rep.crypto
 
 import java.security._
 import java.io._
-import java.security.cert.{ Certificate, CertificateFactory }
+import java.security.cert.{Certificate, CertificateFactory}
+
 import rep.app.conf.SystemProfile
 import com.google.protobuf.ByteString
 import fastparse.utils.Base64
 import rep.utils.SerializeUtils
 import rep.storage._
+
 import scala.collection.mutable
 import com.fasterxml.jackson.core.Base64Variants
 import java.security.cert.X509Certificate
 import javax.xml.bind.DatatypeConverter
 
+import cn.com.tsg.jce.provider.TsgJceProvider
+import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPublicKey
+import org.bouncycastle.jce.provider.BouncyCastleProvider
 import sun.security.ec.ECPublicKeyImpl
 
 /**
  * 系统密钥相关伴生对象
  * @author shidianyue
+ * @author zyf modify
  * @version	0.7
  */
 object ECDSASign extends ECDSASign {
@@ -49,27 +55,30 @@ object ECDSASign extends ECDSASign {
   var trustKeyStore = KeyStore.getInstance(KeyStore.getDefaultType)
   var trustkeysPubAddrMap = mutable.HashMap[String, Certificate]()
 
-  def apply(alias: String, jksPath: String, password: String, jksTrustPath: String, passwordTrust: String) = {
-    keyStorePath(alias) = jksPath
+  def apply(alias: String, storePath: String, password: String, storeTrustPath: String, passwordTrust: String) = {
+    keyStorePath(alias) = storePath
     this.password(alias) = password
     //TODO kami 如果与之前路径不同，如何处理？
     if (trustKeyStorePath == "") {
-      trustKeyStorePath = jksTrustPath
+      trustKeyStorePath = storeTrustPath
       this.passwordTrust = passwordTrust
     }
   }
 
+  Security.insertProviderAt(new BouncyCastleProvider(), 1)
+  Security.addProvider(new TsgJceProvider())
+
   /**
    * 通过参数获取相关的密钥对、证书（动态加载）
    *
-   * @param jks_file
+   * @param store_file
    * @param password
    * @param alias
    * @return
    */
-  def getKeyPairFromJKS(jks_file: File, password: String, alias: String): (PrivateKey, PublicKey) = {
+  def getKeyPairFromStore(store_file: File, password: String, alias: String): (PrivateKey, PublicKey) = {
     val store = KeyStore.getInstance(KeyStore.getDefaultType)
-    val fis = new FileInputStream(jks_file)
+    val fis = new FileInputStream(store_file)
     val pwd = password.toCharArray()
     store.load(fis, pwd)
     val sk = store.getKey(alias, pwd)
@@ -94,7 +103,7 @@ object ECDSASign extends ECDSASign {
    * @return
    */
   def getAddrByCert(cert: Certificate): String = {
-    Base58.encode(Sha256.hash(cert.getPublicKey.getEncoded))
+    Base58.encode(ShaDigest.hash(cert.getPublicKey.getEncoded))
   }
 
   /**
@@ -102,7 +111,7 @@ object ECDSASign extends ECDSASign {
    * @param cert 对象
    * @return
    */
-  def getBitcoinAddrByCert(cert: Certificate): String = BitcoinUtils.calculateBitcoinAddress(cert.getPublicKey.asInstanceOf[ECPublicKeyImpl].getEncodedPublicValue)
+  def getBitcoinAddrByCert(cert: Certificate): String = BitcoinUtils.calculateBitcoinAddress(cert.getPublicKey.asInstanceOf[BCECPublicKey].getQ.getEncoded)
 
   /**
    * 获取证书的短地址
@@ -111,7 +120,7 @@ object ECDSASign extends ECDSASign {
    */
   def getBitcoinAddrByCert(certByte: Array[Byte]): String = {
     val cert = SerializeUtils.deserialise(certByte).asInstanceOf[Certificate]
-    BitcoinUtils.calculateBitcoinAddress(cert.getPublicKey.asInstanceOf[ECPublicKeyImpl].getEncodedPublicValue)
+    BitcoinUtils.calculateBitcoinAddress(cert.getPublicKey.asInstanceOf[BCECPublicKey].getQ.getEncoded)
   }
 
   /**
@@ -143,14 +152,14 @@ object ECDSASign extends ECDSASign {
   /**
    * 通过配置信息获取证书（动态加载）
    *
-   * @param jks_file
+   * @param store_file
    * @param password
    * @param alias
    * @return
    */
-  def getCertFromJKS(jks_file: File, password: String, alias: String): Certificate = {
+  def getCertFromStore(store_file: File, password: String, alias: String): Certificate = {
     val store = KeyStore.getInstance(KeyStore.getDefaultType)
-    val fis = new FileInputStream(jks_file)
+    val fis = new FileInputStream(store_file)
     val pwd = password.toCharArray()
     store.load(fis, pwd)
     val sk = store.getKey(alias, pwd)
@@ -160,7 +169,7 @@ object ECDSASign extends ECDSASign {
 
   /**
    * 将pem格式证书字符串转换为certificate
-   * @param pem
+   * @param pemcert
    * @return
    */
   def getCertByPem(pemcert: String): Certificate = {
@@ -322,13 +331,21 @@ object ECDSASign extends ECDSASign {
   }
   
   def main(args: Array[String]): Unit = {
-    println(ByteString.copyFromUtf8(ECDSASign.getBitcoinAddrByCert(ECDSASign.getCertFromJKS(new File("jks/mykeystore_1.jks"), "123", "1"))).toStringUtf8)
-    println(ECDSASign.getBitcoinAddrByCert(ECDSASign.getCertFromJKS(new File("jks/mykeystore_2.jks"), "123", "2")))
-    println(ECDSASign.getBitcoinAddrByCert(ECDSASign.getCertFromJKS(new File("jks/mykeystore_3.jks"), "123", "3")))
-    println(ECDSASign.getBitcoinAddrByCert(ECDSASign.getCertFromJKS(new File("jks/mykeystore_4.jks"), "123", "4")))
-    println(ECDSASign.getBitcoinAddrByCert(ECDSASign.getCertFromJKS(new File("jks/mykeystore_5.jks"), "123", "5")))
-    
-    val (skey1,pkey1) = ECDSASign.getKeyPairFromJKS(new File("jks/mykeystore_1.jks"),"123","1")
+    println(ByteString.copyFromUtf8(ECDSASign.getBitcoinAddrByCert(ECDSASign.getCertFromStore(new File("jks/mykeystore_1.jks"), "123", "1"))).toStringUtf8)
+    println(ECDSASign.getBitcoinAddrByCert(ECDSASign.getCertFromStore(new File("jks/mykeystore_2.jks"), "123", "2")))
+    println(ECDSASign.getBitcoinAddrByCert(ECDSASign.getCertFromStore(new File("jks/mykeystore_3.jks"), "123", "3")))
+    println(ECDSASign.getBitcoinAddrByCert(ECDSASign.getCertFromStore(new File("jks/mykeystore_4.jks"), "123", "4")))
+    println(ECDSASign.getBitcoinAddrByCert(ECDSASign.getCertFromStore(new File("jks/mykeystore_5.jks"), "123", "5")))
+    println(ByteString.copyFromUtf8(ECDSASign.getBitcoinAddrByCert(ECDSASign.getCertFromStore(new File("jks/mykeystore_1.pfx"), "123", "1"))).toStringUtf8)
+    println(ECDSASign.getBitcoinAddrByCert(ECDSASign.getCertFromStore(new File("jks/mykeystore_2.pfx"), "123", "2")))
+    println(ECDSASign.getBitcoinAddrByCert(ECDSASign.getCertFromStore(new File("jks/mykeystore_3.pfx"), "123", "3")))
+    println(ECDSASign.getBitcoinAddrByCert(ECDSASign.getCertFromStore(new File("jks/mykeystore_4.pfx"), "123", "4")))
+    println(ECDSASign.getBitcoinAddrByCert(ECDSASign.getCertFromStore(new File("jks/mykeystore_5.pfx"), "123", "5")))
+
+    println(CryptoFactory.getSignatureAlgorithm)
+    CryptoFactory.setSignatureAlgorithm("SHA1WITHECDSA")
+    println(CryptoFactory.getSignatureAlgorithm)
+    val (skey1,pkey1) = ECDSASign.getKeyPairFromStore(new File("jks/mykeystore_1.jks"),"123","1")
     val plainText = "hello".getBytes
      val sig1 = ECDSASign.sign(skey1, plainText)
      
@@ -357,7 +374,8 @@ class ECDSASign extends SignFunc {
    * @return
    */
   def sign(privateKey: PrivateKey, message: Array[Byte]): Array[Byte] = {
-    val s1 = Signature.getInstance("SHA1withECDSA");
+//    val s1 = Signature.getInstance("SHA1withECDSA");
+    val s1 = new CryptoFactory().getSignatureInstance
     s1.initSign(privateKey)
     s1.update(message)
     s1.sign()
@@ -372,7 +390,8 @@ class ECDSASign extends SignFunc {
    * @return
    */
   def verify(signature: Array[Byte], message: Array[Byte], publicKey: PublicKey): Boolean = {
-    val s2 = Signature.getInstance("SHA1withECDSA");
+//    val s2 = Signature.getInstance("SHA1withECDSA");
+    val s2 = new CryptoFactory().getSignatureInstance
     s2.initVerify(publicKey)
     s2.update(message)
     s2.verify(signature)

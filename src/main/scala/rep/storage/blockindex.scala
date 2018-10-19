@@ -41,7 +41,7 @@ class blockindex() {
     def InitBlockIndex(b : Block)={
       if(b != null){
         val rbb = b.toByteArray
-        this.blockHash = Sha256.hashstr(rbb);
+        this.blockHash = ShaDigest.hashstr(rbb);
         //不能使用statehash作为block的hashid
         //this.blockHash = b.stateHash.toString("UTF-8");
         this.blockPrevHash = b.previousBlockHash.toString("UTF-8");

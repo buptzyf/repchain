@@ -17,12 +17,12 @@ package rep.storage.test
 
 import rep.storage._
 import jnr.ffi.mapper.DataConverter
-import rep.crypto.Sha256
-import akka.actor.{ Address,AddressFromURIString}
-import rep.crypto.Sha256
+import rep.crypto.ShaDigest
+
 import scala.collection.mutable
 import rep.protos.peer._
 import java.io._
+
 import rep.network.consensus.block.BlockHelper
 import rep.storage.util.pathUtil
 
@@ -189,11 +189,11 @@ object test {
   
   def comparevote(hashvalue:String,pos:Int)={
     val c = getStableNodes 
-    val cs = candidators(c, Sha256.hash(hashvalue))
+    val cs = candidators(c, ShaDigest.hash(hashvalue))
     val blo = blocker(cs, pos)
     
      val c1 = getStableNodes 
-    val cs1 = candidators(c1, Sha256.hash(hashvalue))
+    val cs1 = candidators(c1, ShaDigest.hash(hashvalue))
     val blo1 = blocker(cs1, pos)
     
     if(blo.toString() == blo1.toString()){
@@ -222,7 +222,7 @@ object test {
     source += "3"
     source += "4"
     source += "5"
-    val cs = candidators(source, Sha256.hash(hashvalue))
+    val cs = candidators(source, ShaDigest.hash(hashvalue))
     val blo = blocker(cs, pos)
     println("========"+blo.toString())
     printArray(cs)
@@ -230,7 +230,7 @@ object test {
   
   def checkblker(blockhash:String,pos:Int)={
     val c = getStableNodes 
-    val cs = candidators(c, Sha256.hash(blockhash))
+    val cs = candidators(c, ShaDigest.hash(blockhash))
     val blo = blocker(cs, pos)
     println(cs.toString())
     println("blker="+blo.toString())
@@ -264,10 +264,10 @@ object test {
     }
     
     val rbb1 = block1.toByteArray
-    val blockHash1 = Sha256.hashstr(rbb1);
+    val blockHash1 = ShaDigest.hashstr(rbb1);
     
     val rbb2 = block2.toByteArray
-    val blockHash2 = Sha256.hashstr(rbb2);
+    val blockHash2 = ShaDigest.hashstr(rbb2);
     
     if(blockHash1 == blockHash2){
       println("block hash length equal")

@@ -127,9 +127,9 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart:Boolean) extends Rep
     */
   def getConfigBySys(sysName: String): Config = {
     //TODO 将来找个路径也是可配置的
+    val store = SystemProfile.getKeyStore
     val myConfig =
-    ConfigFactory.parseString("akka.remote.netty.ssl.security.key-store = \"jks/mykeystore_" + sysName +
-      ".jks\"")
+      ConfigFactory.parseString("akka.remote.netty.ssl.security.key-store = \"jks/mykeystore_" + sysName + ".jks\"")
     val regularConfig = getUserCombinedConf(USER_CONFIG_PATH)
     val combined =
       myConfig.withFallback(regularConfig)

@@ -15,8 +15,8 @@
 
 package rep.network.consensus.endorse
 
-import akka.actor.{ActorRef,Props,Address}
-import rep.crypto.Sha256
+import akka.actor.{ActorRef, Address, Props}
+import rep.crypto.ShaDigest
 import rep.network.base.ModuleBase
 import rep.network.consensus.block.BlockHelper
 import rep.network.consensus.block.BlockModule._
@@ -198,7 +198,7 @@ class EndorsementModule(moduleName: String) extends ModuleBase(moduleName) {
       val preload: ImpDataPreload = ImpDataPreloadMgr.GetImpDataPreload(pe.getSysTag,dbinstancename)
       try {
           val blkData = blk.withConsensusMetadata(Seq())
-          val blkInfo = Sha256.hash(blkData.toByteArray)
+          val blkInfo = ShaDigest.hash(blkData.toByteArray)
            val hashtime = System.currentTimeMillis()
           if (BlockHelper.checkBlockContent(blk.consensusMetadata.head, blkInfo)) {
             val checkblocktime = System.currentTimeMillis()

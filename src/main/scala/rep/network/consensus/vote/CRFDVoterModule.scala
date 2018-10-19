@@ -16,8 +16,8 @@
 package rep.network.consensus.vote
 
 import akka.actor.{Actor, Address, Props}
-import rep.app.conf.{SystemProfile, TimePolicy,SystemCertList}
-import rep.crypto.Sha256
+import rep.app.conf.{SystemCertList, SystemProfile, TimePolicy}
+import rep.crypto.ShaDigest
 import rep.network.base.ModuleBase
 import rep.network.consensus.CRFD.CRFD_STEP
 import rep.network.consensus.vote.CRFDVoterModule._
@@ -176,7 +176,7 @@ class CRFDVoterModule(moduleName: String) extends ModuleBase(moduleName) with CR
             //各节点执行出块人及候选人抽签
             val seed = pe.getVoteBlockHash//pe.getCurrentBlockHash
             
-            candidatorCur = candidators(SystemCertList.getSystemCertList, Sha256.hash(seed))
+            candidatorCur = candidators(SystemCertList.getSystemCertList, ShaDigest.hash(seed))
             if (candidatorCur != null) {
               pe.resetCandidator(candidatorCur)
               if(pe.getCacheHeight() >= 1){

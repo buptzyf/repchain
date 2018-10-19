@@ -368,7 +368,7 @@ class ImpDataAccess private(SystemName:String) extends IDataAccess(SystemName){
 		   
 		 }else{
 		   val prve = newblock.previousBlockHash.toString("UTF-8")
-		   val cur = Sha256.hashstr(lastblock.toByteArray)
+		   val cur = ShaDigest.hashstr(lastblock.toByteArray)
 		   if(prve.equals(cur)){
 		     b = true
 		   }else{
@@ -629,7 +629,7 @@ class ImpDataAccess private(SystemName:String) extends IDataAccess(SystemName){
   		if(block.previousBlockHash == null) return b 
   		if(blockhsah == null) return b 
   		val rbb = block.toByteArray
-  		val bh = Sha256.hashstr(rbb)
+  		val bh = ShaDigest.hashstr(rbb)
   		val blockhashStr = new String(blockhsah)
   		if(bh.equalsIgnoreCase(blockhashStr)){
   		  b = commitAndAddBlock( block)

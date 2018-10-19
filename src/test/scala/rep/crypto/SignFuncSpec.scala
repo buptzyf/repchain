@@ -37,9 +37,9 @@ with Matchers {
               message1: Array[Byte], message2: Array[Byte]) =>
       whenever(!seed1.sameElements(seed2) && !message1.sameElements(message2)) {
         //c4w for keypair from jks
-        val (skey1,pkey1) = ECDSASign.getKeyPairFromJKS(new File("jks/mykeystore_1.jks"),"123","1")
-        val (skey2,pkey2) = ECDSASign.getKeyPairFromJKS(new File("jks/mytruststore.jks"),"changeme","1")
-        val (skey3,pkey3) = ECDSASign.getKeyPairFromJKS(new File("jks/mytruststore.jks"),"changeme","2")
+        val (skey1,pkey1) = ECDSASign.getKeyPairFromStore(new File("jks/mykeystore_1.jks"),"123","1")
+        val (skey2,pkey2) = ECDSASign.getKeyPairFromStore(new File("jks/mytruststore.jks"),"changeme","1")
+        val (skey3,pkey3) = ECDSASign.getKeyPairFromStore(new File("jks/mytruststore.jks"),"changeme","2")
         
         val sig = ECDSASign.sign(skey1, message1)
         

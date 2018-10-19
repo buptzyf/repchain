@@ -45,12 +45,18 @@ object SystemProfile {
   private[this] var _SERVERPORT:Int=8081//http服务的端口，默认为8081
   private[this] var _CHECKCERTVALIDATE:Int=0//是否检查证书的有效性，0不检查，1检查
   private[this] var _CONTRACTOPERATIONMODE = 0//设置合约的运行方式，0=debug方式，1=deploy，默认为debug方式，如果发布部署，必须使用deploy方式。
-  
-  
+  private[this] var _SIGNATUREALGORITHM = "SM3WITHSM2"// 设置签名算法
+  private[this] var _DIGESTALOGORITHM = "SM3"// 设置散列算法
+  private[this] var _KEYSTORE = "pfx" //设置keystore存储格式
+
+
   private def SERVERPORT :Int = _SERVERPORT
   private def CHECKCERTVALIDATE:Int = _CHECKCERTVALIDATE
   private def DISKSPACE_ALARM_NUM :Long = _DISKSPACE_ALARM_NUM
   private def CONTRACTOPERATIONMODE:Int=_CONTRACTOPERATIONMODE
+  private def SIGNATUREALGORITHM:String = _SIGNATUREALGORITHM
+  private def DIGESTALOGORITHM:String = _DIGESTALOGORITHM
+  private def KEYSTORE:String = _KEYSTORE
   
   
   private def SERVERPORT_=(value: Int): Unit = {
@@ -63,6 +69,18 @@ object SystemProfile {
   
   private def CONTRACTOPERATIONMODE_=(value: Int): Unit = {
     _CONTRACTOPERATIONMODE = value
+  }
+
+  private def SIGNATUREALGORITHM_=(value: String): Unit = {
+    _SIGNATUREALGORITHM = value
+  }
+
+  private def DIGESTALOGORITHM_=(value:String): Unit = {
+    _DIGESTALOGORITHM = value
+  }
+
+  private def KEYSTORE_=(value:String): Unit = {
+    _KEYSTORE = value
   }
   
   private def DISKSPACE_ALARM_NUM_=(value: Long): Unit = {
@@ -130,6 +148,9 @@ object SystemProfile {
     SERVERPORT_=(config.getInt("system.httpServicePort"))
     CHECKCERTVALIDATE_=(config.getInt("system.checkCertValidate"))
     CONTRACTOPERATIONMODE_=(config.getInt("system.contractOperationMode"))
+    SIGNATUREALGORITHM_=(config.getString("system.signAlgorithm"))
+    DIGESTALOGORITHM_=((config.getString("system.digestAlgorithm")))
+    KEYSTORE_=((config.getString("system.keyStore")))
   }
 
   
@@ -155,4 +176,10 @@ object SystemProfile {
   def getCheckCertValidate = CHECKCERTVALIDATE
   
   def getContractOperationMode = CONTRACTOPERATIONMODE
+
+  def getSignatureAlgorithm = SIGNATUREALGORITHM
+
+  def getDigestAlogorithm = DIGESTALOGORITHM
+
+  def getKeyStore = KEYSTORE
 }

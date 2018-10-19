@@ -52,7 +52,7 @@ libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.3"
 
 libraryDependencies += "org.codehaus.janino" % "janino" % "2.6.1"
 
-libraryDependencies += "org.bouncycastle" % "bcprov-jdk15on" % "1.57"
+//libraryDependencies += "org.bouncycastle" % "bcprov-jdk15on" % "1.57"
 
 libraryDependencies ++= Seq(
   "io.swagger" % "swagger-jaxrs" % "1.5.13",

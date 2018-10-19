@@ -21,9 +21,10 @@ import com.google.protobuf.ByteString
  * @author c4w
  * modify by jiangbuyun
  */
-object Sha256 extends CryptographicHash{
+object ShaDigest extends CryptographicHash{
   override val DigestSize: Int = 32
-  def hash(input: Array[Byte]): Array[Byte] = MessageDigest.getInstance("SHA-256").digest(input)
+//  def hash(input: Array[Byte]): Array[Byte] = MessageDigest.getInstance("SHA-256").digest(input)
+  def hash(input: Array[Byte]): Array[Byte] = new CryptoFactory().getDigestInstance.digest(input)
 
   def hashstr(input: Array[Byte]):String ={
     BytesHex.bytes2hex(hash(input))

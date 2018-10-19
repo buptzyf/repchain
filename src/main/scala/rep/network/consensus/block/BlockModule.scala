@@ -19,7 +19,7 @@ import akka.actor.{ActorRef, Address, Props}
 import akka.cluster.pubsub.DistributedPubSubMediator.Publish
 import com.google.protobuf.ByteString
 import rep.app.conf.{SystemProfile, TimePolicy}
-import rep.crypto.Sha256
+import rep.crypto.ShaDigest
 import rep.network.consensus.vote.CRFDVoterModule.NextVote
 import rep.network._
 import rep.network.base.ModuleBase
@@ -32,9 +32,11 @@ import rep.network.sync.SyncModule.SyncResult
 import rep.network.consensus.transaction.PreloadTransactionModule.PreTransFromType
 import rep.protos.peer._
 import rep.storage.ImpDataAccess
-import rep.utils.GlobalUtils.{ActorType, BlockEvent, EventType,BlockChainStatus}
+import rep.utils.GlobalUtils.{ActorType, BlockChainStatus, BlockEvent, EventType}
+
 import scala.collection.mutable
 import com.sun.beans.decoder.FalseElementHandler
+
 import scala.util.control.Breaks
 
 /**
@@ -358,7 +360,7 @@ class BlockModule(moduleName: String) extends ModuleBase(moduleName) {
               logTime("Endorsement publish", CRFD_STEP._7_ENDORSE_PUB, getActorRef(ActorType.STATISTIC_COLLECTION))
               logMsg(LOG_TYPE.INFO, s"PreTransBlockResult ... with transcation,transaction size ${blk.transactions.size},node number=${pe.getSysTag},block identifier=${blkidentifier_str}")
               blc = blk.withStateHash(ByteString.copyFromUtf8(merk))
-              blc = blc.withConsensusMetadata(Seq(BlockHelper.endorseBlock(Sha256.hash(blc.toByteArray), pe.getSysTag)))
+              blc = blc.withConsensusMetadata(Seq(BlockHelper.endorseBlock(ShaDigest.hash(blc.toByteArray), pe.getSysTag)))
               //Broadcast the Block
               //这个块经过预执行之后已经包含了预执行结果和状态
               //mediator ! Publish(BlockEvent.BLOCK_ENDORSEMENT, PrimaryBlock(blc, pe.getBlocker))
@@ -493,7 +495,7 @@ class BlockModule(moduleName: String) extends ModuleBase(moduleName) {
         var isEndorsed = true
         for (endorse <- endors) {
           //TODO kami 这是一个非常耗时的工作？后续需要完善
-          if (!BlockHelper.checkBlockContent(endorse, Sha256.hash(blkOutEndorse.toByteArray))) isEndorsed = false
+          if (!BlockHelper.checkBlockContent(endorse, ShaDigest.hash(blkOutEndorse.toByteArray))) isEndorsed = false
         }
         if (isEndorsed && BlockHelper.isEndorserListSorted(endors.toArray[Endorsement])==1) {
           logTime("New block, start to store", CRFD_STEP._13_NEW_BLK_START_STORE,

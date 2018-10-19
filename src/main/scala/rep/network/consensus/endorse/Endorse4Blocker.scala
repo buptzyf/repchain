@@ -4,16 +4,17 @@ import akka.actor.{ActorRef, Address, Props}
 import akka.cluster.pubsub.DistributedPubSubMediator.Publish
 import com.google.protobuf.ByteString
 import rep.app.conf.{SystemProfile, TimePolicy}
-import rep.crypto.Sha256
+import rep.crypto.ShaDigest
 import rep.network.base.ModuleBase
 import rep.network.cluster.ClusterHelper
 import rep.protos.peer._
 import rep.storage.ImpDataAccess
-import rep.utils.GlobalUtils.{ActorType, BlockEvent, EventType,BlockChainStatus}
+import rep.utils.GlobalUtils.{ActorType, BlockChainStatus, BlockEvent, EventType}
+
 import scala.collection.mutable
 import scala.util.control.Breaks
 import rep.network.consensus.block.BlockTimeStatis4Times
-import rep.network.consensus.block.BlockModule._ 
+import rep.network.consensus.block.BlockModule._
 import rep.network.consensus.block.BlockHelper
 import rep.network.consensus.CRFD.CRFD_STEP
 import rep.network._
@@ -194,7 +195,7 @@ class Endorse4Blocker(moduleName: String) extends ModuleBase(moduleName) {
                   //TODO kami 类似于MD5验证，是否是同一个blk（可以进一步的完善，存在效率问题？）
                   blkidentifier == blkidentifier_str match {
                     case true =>
-                      BlockHelper.checkBlockContent(endor, Sha256.hash(blc_new.toByteArray)) match {
+                      BlockHelper.checkBlockContent(endor, ShaDigest.hash(blc_new.toByteArray)) match {
                         case true =>
                           if(!isExistEndorse(endor)){
                               addEndoserNode(akka.serialization.Serialization.serializedActorPath(sender()).toString(),"/user/moduleManager/consensusManager/consensus-CRFD/endorse")

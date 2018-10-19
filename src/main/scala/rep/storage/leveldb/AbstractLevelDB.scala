@@ -66,7 +66,7 @@ abstract class AbstractLevelDB extends ILevelDB  with RepLogging {
   protected  def PutWorldStateToMerkle(key:String,value:Array[Byte]){
     val prefix = IdxPrefix.WorldStateKeyPreFix
     if(key.startsWith(prefix)){
-      val sv = Sha256.hash(value)
+      val sv = ShaDigest.hash(value)
       this.IncrementWorldState += key -> sv
     }
   }
@@ -97,7 +97,7 @@ abstract class AbstractLevelDB extends ILevelDB  with RepLogging {
          value = Array.concat(value , source(i))
          i += 1
        }
-       rel = Sha256.hash(value)
+       rel = ShaDigest.hash(value)
     }else{
       rel = this.GlobalMerkle
     }

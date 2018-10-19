@@ -18,17 +18,19 @@ package rep.sc.contract
 
 import scala.tools.nsc.{Global, Settings}
 import scala.reflect.internal.util.BatchSourceFile
-import tools.nsc.io.{VirtualDirectory, AbstractFile}
+import tools.nsc.io.{AbstractFile, VirtualDirectory}
 import scala.reflect.internal.util.AbstractFileClassLoader
 import java.security.MessageDigest
 import java.math.BigInteger
+
 import collection.mutable
 import java.io._
+
 import org.json4s._
 import org.json4s.jackson.JsonMethods._
-import rep.crypto.Sha256
-
+import rep.crypto.ShaDigest
 import rep.app.conf.SystemProfile
+
 import scala.reflect.runtime.currentMirror
 import scala.tools.reflect.ToolBox
 import rep.storage.util.pathUtil
@@ -181,7 +183,7 @@ class Compiler(targetDir: Option[File], bDebug:Boolean) {
    *  @return 类名字符串
    */
   protected def classNameForCode(code: String): String = {
-    PRE_CLS_NAME + Sha256.hashstr(code)
+    PRE_CLS_NAME + ShaDigest.hashstr(code)
   }
 
 }

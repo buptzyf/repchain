@@ -78,7 +78,7 @@ object StoreUtil {
 		       }
 		       j += 1
 		    }
-		    value = Sha256.hash(value)
+		    value = ShaDigest.hash(value)
 		    i+=1
 		    nextlist += value
 		  }
@@ -112,7 +112,7 @@ object StoreUtil {
 		       }
 		       j += 1
 		    }
-      value = Sha256.hash(value)
+      value = ShaDigest.hash(value)
       i+=1
       cmerkledata.update(UpdateNextIdx, value)
     }
@@ -153,7 +153,7 @@ object StoreUtil {
 		       }
 		       j += 1
 		    }
-		    value = Sha256.hash(value)
+		    value = ShaDigest.hash(value)
 		    cmerkledata += value
 		    i+=1
 		  }
@@ -203,7 +203,7 @@ object StoreUtil {
 		       }
 		       j += 1
 		    }
-		    value = Sha256.hash(value)
+		    value = ShaDigest.hash(value)
 		    var tmpidx = loop/MaxGroup
 		    if(tmpidx > cmerkledata.size-1){
 		      cmerkledata += value

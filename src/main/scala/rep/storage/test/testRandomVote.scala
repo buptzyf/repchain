@@ -1,7 +1,7 @@
 package rep.storage.test
 
 import scala.collection.mutable
-import rep.crypto.Sha256
+import rep.crypto.ShaDigest
 import rep.storage.util.pathUtil
 
 object testRandomVote {
@@ -62,7 +62,7 @@ object testRandomVote {
     def getRandomSha256String(length:Int): Array[Byte]={
       val s = getRandomString(length)
       //println(Sha256.hashstr(s))
-      Sha256.hashToBytes(s)
+      ShaDigest.hashToBytes(s)
     }
     
   def findIndex(indexs:Array[Int],idx:Int):Boolean={

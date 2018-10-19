@@ -15,7 +15,7 @@
 
 package rep.network.consensus.vote
 
-import rep.crypto.Sha256
+import rep.crypto.ShaDigest
 import scala.collection.mutable
 import rep.storage.util.pathUtil
 

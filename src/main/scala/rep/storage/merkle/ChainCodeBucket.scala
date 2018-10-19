@@ -66,7 +66,7 @@ class ChainCodeBucket(val leveldb : ILevelDB,val CCID : String) {
             }
           }
         }
-        if(value != null)   this.CCMerkle = Sha256.hash(value)
+        if(value != null)   this.CCMerkle = ShaDigest.hash(value)
       }
     }
     

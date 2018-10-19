@@ -258,7 +258,7 @@ class Shim(system: ActorSystem, cid: String) {
   
   /**
    * @author zyf
-   * @param pemcert: pem证书字符串
+   * @param pemCert: pem证书字符串
    * @param certAddr: 证书短地址
    */
   def replaceCert(pemCert: String, certAddr: String) :String = {

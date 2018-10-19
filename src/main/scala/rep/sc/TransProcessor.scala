@@ -23,7 +23,7 @@ import rep.sc.Shim.Oper
 import rep.utils.{GlobalUtils, RepLogging, TimeUtils}
 
 import rep.storage._
-import rep.crypto.Sha256
+import rep.crypto.ShaDigest
 import rep.crypto.BytesHex._
 import _root_.com.google.protobuf.ByteString
 
@@ -92,7 +92,7 @@ object TransProcessor {
   def getChaincodeId(c: ChaincodeSpec): String={
     if(c.codePackage.toStringUtf8().trim().equals(""))
         throw new SandboxException(ERR_DEPLOY_CODE)
-    Sha256.hashstr(c.codePackage.toByteArray())
+    ShaDigest.hashstr(c.codePackage.toByteArray())
   }
   
   /** 从部署合约的交易，获得其部署的合约的链码id

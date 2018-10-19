@@ -19,15 +19,17 @@ import com.google.protobuf.ByteString
 import com.google.protobuf.timestamp.Timestamp
 import com.trueaccord.scalapb.json.JsonFormat
 import rep.app.conf.SystemProfile
-import rep.crypto.{ECDSASign, Sha256}
-import rep.protos.peer.{Block, Endorsement, Transaction,ChaincodeID}
+import rep.crypto.{ECDSASign, ShaDigest}
+import rep.protos.peer.{Block, ChaincodeID, Endorsement, Transaction}
 import rep.utils.TimeUtils
 import rep.storage.IdxPrefix
 import rep.sc.Shim._
 import rep.storage._
-import java.security.cert.{ Certificate}
+import java.security.cert.Certificate
+
 import rep.network.PeerHelper
 import rep.utils.SerializeUtils
+
 import scala.util.control.Breaks
 import org.slf4j.LoggerFactory
 
@@ -173,7 +175,7 @@ object BlockHelper {
     * @return
     */
   def getBlkHash(blk:Block):String = {
-    Sha256.hashstr(blk.toByteArray)
+    ShaDigest.hashstr(blk.toByteArray)
   }
 
   def isEndorserListSorted(srclist : Array[Endorsement]):Int={

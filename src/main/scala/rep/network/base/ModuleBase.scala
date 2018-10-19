@@ -22,7 +22,7 @@ import rep.network.tools.PeerExtension
 import rep.network.tools.register.ActorRegister
 import rep.utils.{RepLogging, TimeUtils}
 import rep.utils.RepLogging.LogTime
-import rep.crypto.Sha256
+import rep.crypto.ShaDigest
 import scala.collection.mutable
 
 
