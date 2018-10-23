@@ -30,6 +30,7 @@ import rep.utils.GlobalUtils.{ActorType, BlockEvent, EventType,BlockChainStatus}
 import rep.network.sync.SyncModule.{ChainDataReqSingleBlk}
 import scala.collection.immutable
 import rep.network.cluster.ClusterHelper
+import rep.trace.time._
 
 /**
   *
@@ -75,6 +76,8 @@ class PersistenceModule(moduleName: String) extends ModuleBase(moduleName) {
   def SaveBlock(blkRestore: BlockRestore):Integer={
     var re : Integer = 0
     try {
+          val tmpprehash = pe.getCurrentBlockHash
+          val tmpcacheight = pe.getCacheHeight()
           logMsg(LOG_TYPE.INFO, moduleName, s"Merk(Before presistence): ${pe.getMerk}", selfAddr)
           dataaccess.restoreBlock(blkRestore.blk)
           logMsg(LOG_TYPE.INFO, moduleName, s"Restore blocks success,node number: ${pe.getSysTag},block number=${blkRestore.height}", selfAddr)
@@ -93,6 +96,7 @@ class PersistenceModule(moduleName: String) extends ModuleBase(moduleName) {
             }
           }
           RefreshCacheBuffer(blkRestore)
+          blockTimeMgr.writeTime(pe.getSysTag,tmpprehash,tmpcacheight,timeType.store_end,System.currentTimeMillis())
           logMsg(LOG_TYPE.INFO, moduleName, s"Merk(After presistence): ${pe.getMerk}", selfAddr)
           logMsg(LOG_TYPE.INFO, moduleName, s"save block success,height=${pe.getCacheHeight()},hash=${pe.getCurrentBlockHash}", selfAddr)
         }

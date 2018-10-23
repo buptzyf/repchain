@@ -212,15 +212,18 @@ class PeerHelper(name: String) extends ModuleBase(name) {
   
   //自动循环不间断提交交易到系统，用于压力测试或者tps测试时使用。
   def createTransForLoop={
-    if(pe.getSysTag == "1" )//|| pe.getSysTag == "2")// || pe.getSysTag=="3")
+    var count : Int = 0;
+    if(pe.getSysTag == "1" || pe.getSysTag == "2" || pe.getSysTag=="3" || pe.getSysTag=="4")
       while(true){
         try{
           //val start = System.currentTimeMillis()
           val t3 = transactionCreator(pe.getSysTag,rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE,
             "", "transfer" ,Seq(li2),"", Option(chaincode),rep.protos.peer.ChaincodeSpec.CodeType.CODE_JAVASCRIPT)  
           getActorRef(ActorType.TRANSACTION_POOL) ! t3
-          if(pe.getTransLength() > SystemProfile.getMaxCacheTransNum){
+          count += 1
+          if(count > 2000){
             Thread.sleep(10000)
+            count = 0
           }
           //val end = System.currentTimeMillis()
           //println(s"!!!!!!!!!!!!!!!!!!!!auto create trans time=${end-start}")

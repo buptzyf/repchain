@@ -393,25 +393,15 @@ class ECDSASign extends SignFunc {
         throw new RuntimeException("没有证书")
       }else{
           try{
-              val sr: ImpDataAccess = ImpDataAccess.GetDataAccess(sysTag)
-              val cert = Option(sr.Get(certKey))
-              if (cert != None){
-                if (new String(cert.get) == "null") {
-                    throw new RuntimeException("用户证书已经注销")
-                  }else{ 
-                      val kvcert = SerializeUtils.deserialise(cert.get).asInstanceOf[Certificate]
-                      if(kvcert != null){
-                          if(checkCertificate(new java.util.Date(), kvcert)){
-                            Some(kvcert)
-                          }else{
-                            throw new RuntimeException("证书已经过期")
-                          }
-                      }else{
-                        throw new RuntimeException("证书内容错误")
-                      }
-                  }
-              }else{
+              val kvcert = certCache.getCertForUser(certKey,sysTag)
+              if(kvcert == null){
                 throw new RuntimeException("没有证书")
+              }else{
+                  if(checkCertificate(new java.util.Date(), kvcert)){
+                      Some(kvcert)
+                    }else{
+                      throw new RuntimeException("证书已经过期")
+                    }
               }
           }catch{
             case e : Exception =>throw new RuntimeException(e.getMessage)

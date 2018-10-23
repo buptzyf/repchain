@@ -18,6 +18,7 @@ import rep.network.consensus.block.BlockHelper
 import rep.network.consensus.CRFD.CRFD_STEP
 import rep.network._
 import rep.network.consensus.vote.CRFDVoterModule.NextVote
+import rep.trace.time._
 
 
 object Endorse4Blocker {
@@ -149,6 +150,7 @@ class Endorse4Blocker(moduleName: String) extends ModuleBase(moduleName) {
   
   override def receive = {
     case ReadyEndorsement4Block(blc_new,bidentifier) =>
+      blockTimeMgr.writeTime(pe.getSysTag,pe.getCurrentBlockHash,pe.getCacheHeight(),timeType.endorse_recv_start,System.currentTimeMillis())
       resetEndorseInfo(blc_new,bidentifier)
       schedulerLink = scheduler.scheduleOnce(TimePolicy.getTimeoutEndorse seconds, self, ResendEndorseInfo)
       IsFinishedEndorse = EndorseStatus.START_ENDORSE
@@ -201,6 +203,7 @@ class Endorse4Blocker(moduleName: String) extends ModuleBase(moduleName) {
                               blc = blc.withConsensusMetadata(blc.consensusMetadata.+:(endor))//在前面添加
                               logMsg(LOG_TYPE.INFO, s"node name=${pe.getSysTag},identifier=${blkidentifier},recv endorse, cert=${endor.endorser.toStringUtf8()}")
                               if (BlockHelper.checkCandidate(blc.consensusMetadata.length, pe.getCandidator.size)) {
+                                blockTimeMgr.writeTime(pe.getSysTag,pe.getCurrentBlockHash,pe.getCacheHeight(),timeType.endorse_recv_end,System.currentTimeMillis())
                                 schedulerLink = clearSched()
                                 
                                 //BlockTimeStatis4Times.setFinishEndorse(System.currentTimeMillis())
@@ -235,22 +238,14 @@ class Endorse4Blocker(moduleName: String) extends ModuleBase(moduleName) {
         //logMsg(LOG_TYPE.INFO, s"write sort spent time=${writeend-writestart}")
         //广播这个block
         logMsg(LOG_TYPE.INFO, s"new block,nodename=${pe.getSysTag},transaction size=${blc.transactions.size},identifier=${this.blkidentifier_str},${blkidentifier},current height=${dataaccess.getBlockChainInfo().height},previoushash=${blc.previousBlockHash.toStringUtf8()}")
+        blockTimeMgr.writeTime(pe.getSysTag,pe.getCurrentBlockHash,pe.getCacheHeight(),timeType.endorse_end,System.currentTimeMillis())
+        blockTimeMgr.writeTime(pe.getSysTag,pe.getCurrentBlockHash,pe.getCacheHeight(),timeType.sendblock_start,System.currentTimeMillis())
         mediator ! Publish(Topic.Block, new ConfirmedBlock(blc, dataaccess.getBlockChainInfo().height + 1,
                             sender))
         logMsg(LOG_TYPE.INFO, s"java sort spent time=${javaend-javastart}")
         logMsg(LOG_TYPE.INFO, s"recv newBlock msg,node number=${pe.getSysTag},new block height=${dataaccess.getBlockChainInfo().height + 1}")                    
           
         logTime("New block publish", CRFD_STEP._11_NEW_BLK_PUB, getActorRef(ActorType.STATISTIC_COLLECTION))
-                                
-                                
-                                
-                                
-                                
-                                
-                                
-                                
-                                
-                                
                               }
                               //广播收到背书信息的事件
                               sendEvent(EventType.RECEIVE_INFO, mediator, selfAddr, Topic.Block,

@@ -36,6 +36,7 @@ import rep.utils.GlobalUtils.{ActorType, BlockEvent, EventType,BlockChainStatus}
 import scala.collection.mutable
 import com.sun.beans.decoder.FalseElementHandler
 import scala.util.control.Breaks
+import rep.trace.time._
 
 /**
   * 出块模块伴生对象
@@ -284,6 +285,7 @@ class BlockModule(moduleName: String) extends ModuleBase(moduleName) {
                   schedulerLink = clearSched()
                   clearCache()
                   //准备出块
+                  
                   logMsg(LOG_TYPE.INFO, "Create Block start in BlockEvent.CREATE_BLOCK")
                   logTime("Create Block start", CRFD_STEP._3_BLK_CREATE_START, getActorRef(ActorType.STATISTIC_COLLECTION))
                   //From memberListener itself
@@ -292,6 +294,7 @@ class BlockModule(moduleName: String) extends ModuleBase(moduleName) {
                   val translist = getTransListFromTransPool(SystemProfile.getLimitBlockTransNum)
                   //交易列表中的交易数量，当前用大于0即可，以后应该可以根据设置SystemProfile.getMinBlockTransNum来进行调整
                   if(translist.size > 0){
+                    blockTimeMgr.writeTime(pe.getSysTag,pe.getCurrentBlockHash,pe.getCacheHeight(),timeType.preblock_start,System.currentTimeMillis())
                     blc = BlockHelper.createPreBlock(pe.getCurrentBlockHash, translist)
                     blkidentifier_str = pe.getSysTag+"_"+System.nanoTime().toString()
                     logTime("Create Block end", CRFD_STEP._4_BLK_CREATE_END, getActorRef(ActorType.STATISTIC_COLLECTION))
@@ -299,6 +302,8 @@ class BlockModule(moduleName: String) extends ModuleBase(moduleName) {
                     pe.setEndorState(false)
                     pe.setIsBlocking(true)
                     logMsg(LOG_TYPE.INFO, s"Create Block with transcation,transaction size ${blc.transactions.size},node number=${pe.getSysTag},block identifier=${blkidentifier_str}")
+                    blockTimeMgr.writeTime(pe.getSysTag,pe.getCurrentBlockHash,pe.getCacheHeight(),timeType.preblock_end,System.currentTimeMillis())
+                    blockTimeMgr.writeTime(pe.getSysTag,pe.getCurrentBlockHash,pe.getCacheHeight(),timeType.preload_start,System.currentTimeMillis())
                     getActorRef(pe.getSysTag, ActorType.PRELOADTRANS_MODULE) ! PreTransBlock(blc, PreTransFromType.BLOCK_CREATOR,blkidentifier_str)
                     schedulerLink = scheduler.scheduleOnce(TimePolicy.getTimeOutBlock seconds, self, CreateBlockTimeOut)
                   }else{
@@ -364,7 +369,8 @@ class BlockModule(moduleName: String) extends ModuleBase(moduleName) {
               //这个块经过预执行之后已经包含了预执行结果和状态
               //mediator ! Publish(BlockEvent.BLOCK_ENDORSEMENT, PrimaryBlock(blc, pe.getBlocker))
               logMsg(LOG_TYPE.INFO, s"node name=${pe.getSysTag},preload finish,self cert=${blc.consensusMetadata(0).endorser.toStringUtf8()}")
-              
+              blockTimeMgr.writeTime(pe.getSysTag,pe.getCurrentBlockHash,pe.getCacheHeight(),timeType.preload_end,System.currentTimeMillis())
+              blockTimeMgr.writeTime(pe.getSysTag,pe.getCurrentBlockHash,pe.getCacheHeight(),timeType.endorse_start,System.currentTimeMillis())
               getActorRef(ActorType.ENDORSE_BLOCKER) ! ReadyEndorsement4Block(blc,blkidentifier_str)
               
               
@@ -501,6 +507,8 @@ class BlockModule(moduleName: String) extends ModuleBase(moduleName) {
             getActorRef(ActorType.STATISTIC_COLLECTION))
           //c4w 广播接收到block事件
           sendEvent(EventType.RECEIVE_INFO, mediator, selfAddr, Topic.Block, Event.Action.BLOCK_NEW)
+          blockTimeMgr.writeTime(pe.getSysTag,pe.getCurrentBlockHash,pe.getCacheHeight(),timeType.sendblock_end,System.currentTimeMillis())
+          blockTimeMgr.writeTime(pe.getSysTag,pe.getCurrentBlockHash,pe.getCacheHeight(),timeType.store_start,System.currentTimeMillis())
           getActorRef(pe.getSysTag, ActorType.PERSISTENCE_MODULE) ! BlockRestore(blk, height, BlockSrc.CONFIRMED_BLOCK, actRef)
           getActorRef(pe.getSysTag, ActorType.PERSISTENCE_MODULE) ! PersistenceModule.LastBlock(BlockHelper.getBlkHash(blk), 0,
             BlockSrc.CONFIRMED_BLOCK, self)

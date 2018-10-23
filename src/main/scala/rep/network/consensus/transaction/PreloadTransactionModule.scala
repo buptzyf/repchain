@@ -31,7 +31,7 @@ import rep.sc.{Sandbox, TransProcessor}
 import rep.storage.{ImpDataAccess, ImpDataPreload, ImpDataPreloadMgr}
 import rep.utils.GlobalUtils.ActorType
 import rep.utils._
-
+import rep.trace.time._
 import scala.collection.mutable
 
 /**
@@ -83,6 +83,7 @@ class PreloadTransactionModule(moduleName: String, transProcessor:ActorRef) exte
   }
 
   def preLoadFeedBackInfo(resultFlag: Boolean, block: rep.protos.peer.Block, from: Int, merk: String): Unit = {
+    blockTimeMgr.writeTime(pe.getSysTag,pe.getCurrentBlockHash,pe.getCacheHeight(),timeType.preload_recv_end,System.currentTimeMillis())
     preloadFrom match {
       case PreTransFromType.BLOCK_CREATOR =>
         getActorRef(ActorType.BLOCK_MODULE) ! PreTransBlockResult(block,
@@ -143,6 +144,7 @@ class PreloadTransactionModule(moduleName: String, transProcessor:ActorRef) exte
   override def receive = {
 
     case PreTransBlock(blc, from,blkIdentifier) =>
+      blockTimeMgr.writeTime(pe.getSysTag,pe.getCurrentBlockHash,pe.getCacheHeight(),timeType.preload_recv_start,System.currentTimeMillis())
       val preBlk = dataaccess.getBlockByHash(blk.previousBlockHash.toStringUtf8)
       freeSource
       

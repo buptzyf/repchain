@@ -84,7 +84,7 @@ class CRFD(name: String) extends BaseConsenter with ModuleHelper with BaseActor 
   private var preloadTrans:ActorRef = null
 
   override def init(): Unit = {
-
+//.withDispatcher("data-crfd-dispatcher")
     blocker = context.actorOf(BlockModule.props("blocker"), "blocker")
     endorseinblocker = context.actorOf(Endorse4Blocker.props("endorseinblocker"), "endorseinblocker")
     endorse = context.actorOf(EndorsementModule.props("endorse"), "endorse")
