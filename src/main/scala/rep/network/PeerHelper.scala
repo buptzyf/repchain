@@ -221,8 +221,8 @@ class PeerHelper(name: String) extends ModuleBase(name) {
             "", "transfer" ,Seq(li2),"", Option(chaincode),rep.protos.peer.ChaincodeSpec.CodeType.CODE_JAVASCRIPT)  
           getActorRef(ActorType.TRANSACTION_POOL) ! t3
           count += 1
-          if(count > 2000){
-            Thread.sleep(10000)
+          if(count > 6000){
+            Thread.sleep(5000)
             count = 0
           }
           //val end = System.currentTimeMillis()

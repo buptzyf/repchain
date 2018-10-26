@@ -32,6 +32,7 @@ import sun.font.TrueTypeFont
 import scala.util.control.Breaks._
 import rep.network.consensus.block.BlockHelper
 import scala.util.control.Exception.Finally
+import java.util.concurrent.ConcurrentHashMap
 
 /**
   * Endorsement handler
@@ -170,6 +171,20 @@ class EndorsementModule(moduleName: String) extends ModuleBase(moduleName) {
         )
     r
   }
+  
+  private def findTransPoolTx(trans:Seq[Transaction]):Array[Int]={
+    var buf : Array[Int] = new Array[Int](trans.size)
+    var i = 0
+    trans.foreach(f=>{
+              if(pe.findTrans(f.txid)){
+                 buf(i) = 1
+              }else{
+                buf(i) = 0
+              }
+              i += 1
+        })
+    buf
+  }
 
   private  def hasRepeatOfTrans(trans:Seq[Transaction]):Boolean={
     var isRepeat : Boolean = false
@@ -218,10 +233,11 @@ class EndorsementModule(moduleName: String) extends ModuleBase(moduleName) {
                     val  checkresulttime = System.currentTimeMillis()
                     /*schedulerLink = scheduler.scheduleOnce(1 seconds, self, EndorsementModule.VerifySignTimeout )
                     dispatchTransSignVerify(blk.transactions.toArray[Transaction])*/
-                    //使用多线程来验证签名
-                    // val b = verifyobject.StartVerify(blk.transactions.toArray[Transaction])
+                    //使用多线程来验证签名 
+                    var findflag = findTransPoolTx(blk.transactions.toArray[Transaction])
+                    val b = verifyobject.StartVerify(blk.transactions.toArray[Transaction],findflag)
                     //使用对象内的方法来验证签名
-                    val b =  verifyTransSign(blk.transactions.toArray[Transaction])
+                    //val b =  verifyTransSign(blk.transactions.toArray[Transaction])
                      if(b){
                          val checksignresulttime = System.currentTimeMillis()
                         logMsg(LOG_TYPE.WARN, s"Block endorse success,current height=${pe.getCacheHeight()},identifier=${blkidentifier}")
