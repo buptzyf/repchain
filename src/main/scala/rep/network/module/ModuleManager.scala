@@ -161,16 +161,20 @@ class ConfigerHelper(conf: Config, tag: String, dbTag: String) {
     */
   private def authInitByCfg(sysTag: String): Unit = {
     val store = SystemProfile.getKeyStore
-    var mykeyPath = conf.getString("akka.remote.netty.ssl.security.base-path") + "mykeystore_" + sysTag + ".jks"
-    var psw = conf.getString("akka.remote.netty.ssl.security.key-store-password")
-    var trustPath = conf.getString("akka.remote.netty.ssl.security.trust-store")
-    var trustPwd = conf.getString("akka.remote.netty.ssl.security.trust-store-password")
-    if (store.equals("pfx")) {
+    var mykeyPath = ""
+    val psw = conf.getString("akka.remote.netty.ssl.security.key-store-password")
+    var trustPath = ""
+    val trustPwd = conf.getString("akka.remote.netty.ssl.security.trust-store-password")
+    if (store.equalsIgnoreCase("pfx")) {
       mykeyPath = conf.getString("akka.remote.netty.ssl.security.base-path") + "mykeystore_" + sysTag + ".pfx"
-      psw = conf.getString("akka.remote.netty.ssl.security.key-store-password")
       trustPath = conf.getString("akka.remote.netty.ssl.security.base-path") + "mytruststore" + ".pfx"
-      trustPwd = conf.getString("akka.remote.netty.ssl.security.trust-store-password")
+    } else if (store.equalsIgnoreCase("jks")) {
+      mykeyPath = conf.getString("akka.remote.netty.ssl.security.base-path") + "mykeystore_" + sysTag + ".jks"
+      trustPath = conf.getString("akka.remote.netty.ssl.security.trust-store")
+    } else {
+      throw new Exception("目前不支持此存储文件")
     }
+
     authInit(sysTag, mykeyPath, psw, trustPath, trustPwd)
   }
 

@@ -375,7 +375,7 @@ class ECDSASign extends SignFunc {
    */
   def sign(privateKey: PrivateKey, message: Array[Byte]): Array[Byte] = {
 //    val s1 = Signature.getInstance("SHA1withECDSA");
-    val s1 = new CryptoFactory().getSignatureInstance
+    val s1 = CryptoFactory.getSignatureInstance
     s1.initSign(privateKey)
     s1.update(message)
     s1.sign()
@@ -391,7 +391,7 @@ class ECDSASign extends SignFunc {
    */
   def verify(signature: Array[Byte], message: Array[Byte], publicKey: PublicKey): Boolean = {
 //    val s2 = Signature.getInstance("SHA1withECDSA");
-    val s2 = new CryptoFactory().getSignatureInstance
+    val s2 = CryptoFactory.getSignatureInstance
     s2.initVerify(publicKey)
     s2.update(message)
     s2.verify(signature)
