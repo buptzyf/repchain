@@ -201,6 +201,7 @@ class PeerHelper(name: String) extends ModuleBase(name) {
         val t3 = transactionCreator(pe.getSysTag,rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE,
           "", "transfer" ,Seq(li2),"", Option(chaincode),rep.protos.peer.ChaincodeSpec.CodeType.CODE_JAVASCRIPT)  
         getActorRef(ActorType.TRANSACTION_POOL) ! t3
+        //logMsg(LOG_TYPE.INFO, name, s"节点 ${pe.getSysTag}在发送交易",selfAddr)
         //val end = System.currentTimeMillis()
         //println(s"!!!!!!!!!!!!!!!!!!!!auto create trans time=${end-start}")
         scheduler.scheduleOnce(SystemProfile.getTranCreateDur.millis, self, TickInvoke)
