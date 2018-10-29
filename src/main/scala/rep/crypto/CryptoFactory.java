@@ -30,7 +30,7 @@ public class CryptoFactory {
      * @return
      * @throws NoSuchAlgorithmException
      */
-    public Signature getSignatureInstance() throws NoSuchAlgorithmException {
+    public static Signature getSignatureInstance() throws NoSuchAlgorithmException {
         return Signature.getInstance(signatureAlgorithm);
     }
 
@@ -40,7 +40,7 @@ public class CryptoFactory {
      * @return
      * @throws NoSuchAlgorithmException
      */
-    public MessageDigest getDigestInstance() throws NoSuchAlgorithmException {
+    public static MessageDigest getDigestInstance() throws NoSuchAlgorithmException {
         return MessageDigest.getInstance(digestAlgorithm);
     }
 

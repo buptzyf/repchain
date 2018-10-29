@@ -68,4 +68,4 @@ libraryDependencies ++= Seq(
 
 javacOptions ++= Seq("-encoding", "UTF-8")
 
-mainClass in (Compile, packageBin) := Some("rep.app.Repchain")
+mainClass in (Compile, packageBin) := Some("rep.app.Repchain_Single")
