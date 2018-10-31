@@ -19,7 +19,7 @@ import java.security.cert.Certificate
 
 import com.google.protobuf.ByteString
 
-import akka.actor.Props
+import akka.actor.{Actor, Address, Props}
 import akka.cluster.pubsub.DistributedPubSubMediator.Publish
 import rep.app.conf.SystemProfile
 import rep.crypto.ECDSASign
@@ -56,13 +56,28 @@ object TransactionPool {
  */
 
 class TransactionPool(moduleName: String) extends ModuleBase(moduleName) {
+  import akka.actor.ActorSelection 
+  
   val dataaccess: ImpDataAccess = ImpDataAccess.GetDataAccess(pe.getSysTag)
 
   override def preStart(): Unit = {
     //注册接收交易的广播
     SubscribeTopic(mediator, self, selfAddr, Topic.Transaction, true)
   }
+  
+   def toAkkaUrl(sn : Address, actorName:String):String = {  
+        return sn.toString + "/"  + actorName;  
+    }
 
+      def visitStoreService(sn : Address, actorName:String,t1:Transaction) = {  
+        try {  
+          val  selection : ActorSelection  = context.actorSelection(toAkkaUrl(sn , actorName));  
+          selection ! t1 
+        } catch  {  
+             case e: Exception => e.printStackTrace()
+        }  
+    }  
+  
   /**
    * 检查交易是否符合规则
    * @param t
@@ -101,10 +116,19 @@ class TransactionPool(moduleName: String) extends ModuleBase(moduleName) {
     //处理接收的交易
     case t: Transaction =>
       //我们在这里并不缓存该Transaction，在接收到同级别的广播时再进行缓存
+      
+     // mediator ! Publish(Topic.Transaction, t)
+        //pe.getStableNodes.foreach(sn=>{
+        //       visitStoreService(sn , "/user/moduleManager/transactionPool",t)                      
+        //})      
+      
       if (ActorUtils.isHelper(sender().path.toString) ||
         ActorUtils.isAPI(sender().path.toString)) {
         //广播交易
         mediator ! Publish(Topic.Transaction, t)
+        
+        
+        
         //广播发送交易事件
         sendEvent(EventType.PUBLISH_INFO, mediator, selfAddr, Topic.Transaction, Event.Action.TRANSACTION)
       } else {

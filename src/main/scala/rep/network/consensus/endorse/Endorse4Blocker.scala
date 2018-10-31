@@ -56,6 +56,15 @@ class Endorse4Blocker(moduleName: String) extends ModuleBase(moduleName) {
         }  
     }  
   
+  def visitStoreService(sn : Address, actorName:String,cb:ConfirmedBlock) = {  
+        try {  
+          val  selection : ActorSelection  = context.actorSelection(toAkkaUrl(sn , actorName));  
+          selection ! cb 
+        } catch  {  
+             case e: Exception => e.printStackTrace()
+        }  
+    }  
+  
   def addEndoserNode(endaddr:String,actorName:String)={
     if(endaddr.indexOf(actorName)>0){
       val addr = endaddr.substring(0, endaddr.indexOf(actorName))
@@ -240,8 +249,18 @@ class Endorse4Blocker(moduleName: String) extends ModuleBase(moduleName) {
         logMsg(LOG_TYPE.INFO, s"new block,nodename=${pe.getSysTag},transaction size=${blc.transactions.size},identifier=${this.blkidentifier_str},${blkidentifier},current height=${dataaccess.getBlockChainInfo().height},previoushash=${blc.previousBlockHash.toStringUtf8()}")
         blockTimeMgr.writeTime(pe.getSysTag,pe.getCurrentBlockHash,pe.getCacheHeight(),timeType.endorse_end,System.currentTimeMillis())
         blockTimeMgr.writeTime(pe.getSysTag,pe.getCurrentBlockHash,pe.getCacheHeight(),timeType.sendblock_start,System.currentTimeMillis())
-        mediator ! Publish(Topic.Block, new ConfirmedBlock(blc, dataaccess.getBlockChainInfo().height + 1,
-                            sender))
+       
+        
+        
+       // mediator ! Publish(Topic.Block, new ConfirmedBlock(blc, dataaccess.getBlockChainInfo().height + 1,
+       //                     sender))
+        
+             pe.getStableNodes.foreach(sn=>{
+                    visitStoreService(sn , "/user/moduleManager/consensusManager/consensus-CRFD/blocker",new ConfirmedBlock(blc, dataaccess.getBlockChainInfo().height + 1,
+                            sender))                      
+        })               
+                    
+        
         logMsg(LOG_TYPE.INFO, s"java sort spent time=${javaend-javastart}")
         logMsg(LOG_TYPE.INFO, s"recv newBlock msg,node number=${pe.getSysTag},new block height=${dataaccess.getBlockChainInfo().height + 1}")                    
           

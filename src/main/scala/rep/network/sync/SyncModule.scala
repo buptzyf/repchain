@@ -285,8 +285,8 @@ class SyncModule(moduleName: String) extends ModuleBase(moduleName) {
               rec ! ChainDataResSingleBlk(blk, height)
               height += 1
             })
-            rec ! PersistenceModule.LastBlock(BlockHelper.getBlkHash(data(data.length - 1)), local.height,
-              BlockSrc.SYNC_START_BLOCK, self)
+           // rec ! PersistenceModule.LastBlock(BlockHelper.getBlkHash(data(data.length - 1)), local.height,
+           //   BlockSrc.SYNC_START_BLOCK, self)
           case BlockSrc.CONFIRMED_BLOCK =>
             //ignore
             rec ! ChainDataResSingleBlk(data(0), infoH + 1)

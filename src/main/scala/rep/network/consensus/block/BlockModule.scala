@@ -510,8 +510,8 @@ class BlockModule(moduleName: String) extends ModuleBase(moduleName) {
           blockTimeMgr.writeTime(pe.getSysTag,pe.getCurrentBlockHash,pe.getCacheHeight(),timeType.sendblock_end,System.currentTimeMillis())
           blockTimeMgr.writeTime(pe.getSysTag,pe.getCurrentBlockHash,pe.getCacheHeight(),timeType.store_start,System.currentTimeMillis())
           getActorRef(pe.getSysTag, ActorType.PERSISTENCE_MODULE) ! BlockRestore(blk, height, BlockSrc.CONFIRMED_BLOCK, actRef)
-          getActorRef(pe.getSysTag, ActorType.PERSISTENCE_MODULE) ! PersistenceModule.LastBlock(BlockHelper.getBlkHash(blk), 0,
-            BlockSrc.CONFIRMED_BLOCK, self)
+          //getActorRef(pe.getSysTag, ActorType.PERSISTENCE_MODULE) ! PersistenceModule.LastBlock(BlockHelper.getBlkHash(blk), 0,
+          //  BlockSrc.CONFIRMED_BLOCK, self)
           if (isThisAddr(selfAddr, pe.getBlocker.toString)) {
             //Thread.sleep(500)
             logMsg(LOG_TYPE.INFO, "block store finish,start new vote ...")

@@ -34,6 +34,9 @@ import rep.storage.cfg._
 import java.io.File
 import scala.collection.mutable
 import rep.app.conf.SystemProfile
+import com.typesafe.config.ConfigValueFactory
+import java.util.List
+import java.util.ArrayList
 
 /**
   * System创建伴生对象
@@ -89,7 +92,7 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart:Boolean) extends Rep
 
   private var enableStatistic = false
 
-  private val sysConf: Config = initSystem(sysTag)
+  private var sysConf: Config = initSystem(sysTag)
 
   private var sysActor:ActorSystem = null
 
@@ -190,6 +193,7 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart:Boolean) extends Rep
     * 初始化
     */
   def init = {
+    initConsensusNodeOfConfig
     sysStart match {
       case true =>
         sysActor = ActorSystem(SystemConf.SYSTEM_NAME, sysConf)
@@ -200,14 +204,25 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart:Boolean) extends Rep
     logMsg(LOG_TYPE.INFO, moduleName, s"System(${sysTag}) init successfully", "s")
   }
 
+  private def initConsensusNodeOfConfig={
+    val nodelist = sysConf.getStringList("system.vote.vote_node_list")
+    if(nodelist.contains(this.sysTag)){
+      //val roles = Array("CRFD-Node")
+      var roles :List[String] = new ArrayList[String]
+      roles.add("CRFD-Node")
+      sysConf = sysConf.withValue("akka.cluster.roles",  ConfigValueFactory.fromAnyRef(roles))
+    }
+  }
+  
   /**
     * 启动系统
     */
   def start = {
         if(enableStatistic) statistics = sysActor.actorOf(Props[StatisticCollection],"statistic")
-         moduleManager = sysActor.actorOf(ModuleManager.props("moduleManager", sysTag),"moduleManager")
-        ModuleBase.registerActorRef(sysTag, ActorType.MODULE_MANAGER, moduleManager)
         SystemProfile.initConfigSystem(sysActor.settings.config)
+        moduleManager = sysActor.actorOf(ModuleManager.props("moduleManager", sysTag),"moduleManager")
+        ModuleBase.registerActorRef(sysTag, ActorType.MODULE_MANAGER, moduleManager)
+        
         if(!hasDiskSpace){
           Cluster(sysActor).down(clusterAddr)
           throw new Exception("not enough disk space")

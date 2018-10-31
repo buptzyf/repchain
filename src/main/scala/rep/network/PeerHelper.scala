@@ -15,7 +15,7 @@
 
 package rep.network
 
-import akka.actor.{Actor, Props}
+import akka.actor.{Actor, Address, Props}
 import com.google.protobuf.ByteString
 import com.google.protobuf.timestamp.Timestamp
 import rep.app.conf.SystemProfile
@@ -27,7 +27,7 @@ import rep.network.tools.PeerExtension
 import rep.protos.peer._
 import rep.utils.GlobalUtils.ActorType
 import rep.utils.{IdUtils, RepLogging, TimeUtils}
-
+import akka.cluster.pubsub.DistributedPubSubMediator.Publish
 import scala.concurrent.forkjoin.ThreadLocalRandom
 import java.text.SimpleDateFormat
 
@@ -166,12 +166,17 @@ class PeerHelper(name: String) extends ModuleBase(name) {
   
   var chaincode = ""
 
-  override def preStart(): Unit =
-  {
+  
+  
+  override def preStart(): Unit = {
+    //注册接收交易的广播
+    SubscribeTopic(mediator, self, selfAddr, Topic.Transaction, true)
     logMsg(LOG_TYPE.INFO,name,"Transaction Creator Start",selfAddr)
     scheduler.scheduleOnce(5.seconds, self, Tick)
   }
 
+
+  
   // override postRestart so we don't call preStart and schedule a new Tick
   override def postRestart(reason: Throwable): Unit = ()
 
@@ -196,14 +201,14 @@ class PeerHelper(name: String) extends ModuleBase(name) {
       //invoke
       //      val cname = t.payload.get.chaincodeID.get.name
       try{
-        createTransForLoop //在做tps测试到时候，执行该函数，并且注释其他代码
+        //createTransForLoop //在做tps测试到时候，执行该函数，并且注释其他代码
         //val start = System.currentTimeMillis()
-        //val t3 = transactionCreator(pe.getSysTag,rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE,
-        //  "", "transfer" ,Seq(li2),"", Option(chaincode),rep.protos.peer.ChaincodeSpec.CodeType.CODE_JAVASCRIPT)  
-        //getActorRef(ActorType.TRANSACTION_POOL) ! t3
+        val t3 = transactionCreator(pe.getSysTag,rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE,
+          "", "transfer" ,Seq(li2),"", Option(chaincode),rep.protos.peer.ChaincodeSpec.CodeType.CODE_JAVASCRIPT)  
+        getActorRef(ActorType.TRANSACTION_POOL) ! t3
         //val end = System.currentTimeMillis()
         //println(s"!!!!!!!!!!!!!!!!!!!!auto create trans time=${end-start}")
-        //scheduler.scheduleOnce(SystemProfile.getTranCreateDur.millis, self, TickInvoke)
+        scheduler.scheduleOnce(SystemProfile.getTranCreateDur.millis, self, TickInvoke)
       }catch{
         case e:RuntimeException => throw e
       }
@@ -213,16 +218,20 @@ class PeerHelper(name: String) extends ModuleBase(name) {
   //自动循环不间断提交交易到系统，用于压力测试或者tps测试时使用。
   def createTransForLoop={
     var count : Int = 0;
-    if(pe.getSysTag == "1" || pe.getSysTag == "2" || pe.getSysTag=="3" || pe.getSysTag=="4")
+    if(pe.getSysTag == "1" )//|| pe.getSysTag == "2" || pe.getSysTag=="3" || pe.getSysTag=="4")
       while(true){
         try{
+          val start=System.currentTimeMillis()
           //val start = System.currentTimeMillis()
           val t3 = transactionCreator(pe.getSysTag,rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE,
             "", "transfer" ,Seq(li2),"", Option(chaincode),rep.protos.peer.ChaincodeSpec.CodeType.CODE_JAVASCRIPT)  
           getActorRef(ActorType.TRANSACTION_POOL) ! t3
+          //mediator ! Publish(Topic.Transaction, t3)
           count += 1
-          if(count > 6000){
-            Thread.sleep(5000)
+          if(count > 1000){
+            val end = System.currentTimeMillis()
+            println("send 1000 trans spent = "+(end-start))
+            Thread.sleep(2000)
             count = 0
           }
           //val end = System.currentTimeMillis()

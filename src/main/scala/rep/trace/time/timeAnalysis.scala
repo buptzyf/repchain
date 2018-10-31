@@ -6,8 +6,8 @@ import org.slf4j.LoggerFactory
 object timeAnalysis {
     protected def log = LoggerFactory.getLogger(this.getClass)
   
-    val  count = 600
-    val  outType = 0 //1=print 0=log
+    val  count = 50
+    val  outType = 1 //1=print 0=log
     var  q : ArrayBuffer[blocktime]  = new ArrayBuffer[blocktime]()
     var  BlockerStart : Long = 0l
     var  BlockerEnd :Long = 0l

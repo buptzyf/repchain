@@ -234,10 +234,10 @@ class EndorsementModule(moduleName: String) extends ModuleBase(moduleName) {
                     /*schedulerLink = scheduler.scheduleOnce(1 seconds, self, EndorsementModule.VerifySignTimeout )
                     dispatchTransSignVerify(blk.transactions.toArray[Transaction])*/
                     //使用多线程来验证签名 
-                    var findflag = findTransPoolTx(blk.transactions.toArray[Transaction])
-                    val b = verifyobject.StartVerify(blk.transactions.toArray[Transaction],findflag)
+                    //var findflag = findTransPoolTx(blk.transactions.toArray[Transaction])
+                    //val b = verifyobject.StartVerify(blk.transactions.toArray[Transaction],findflag)
                     //使用对象内的方法来验证签名
-                    //val b =  verifyTransSign(blk.transactions.toArray[Transaction])
+                    val b =  verifyTransSign(blk.transactions.toArray[Transaction])
                      if(b){
                          val checksignresulttime = System.currentTimeMillis()
                         logMsg(LOG_TYPE.WARN, s"Block endorse success,current height=${pe.getCacheHeight()},identifier=${blkidentifier}")
