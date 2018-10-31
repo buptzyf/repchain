@@ -14,8 +14,8 @@ import java.security.*;
 public class CryptoFactory {
 
     static {
-        Security.insertProviderAt(new TsgJceProvider(), 1);
-        Security.addProvider(new BouncyCastleProvider());
+        Security.insertProviderAt(new BouncyCastleProvider(), 1);
+        Security.addProvider(new TsgJceProvider());
     }
 
     //TODO 算法为配置项
