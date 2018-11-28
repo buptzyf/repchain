@@ -21,7 +21,7 @@ import rep.protos.peer._
 import com.google.protobuf.ByteString
 import com.google.protobuf.timestamp.Timestamp
 import com.trueaccord.scalapb.json.JsonFormat
-import rep.utils.{ GlobalUtils, RepLogging, TimeUtils }
+import rep.utils.{ GlobalUtils,  TimeUtils }
 import rep.network._
 import org.json4s._
 import rep.network._
@@ -64,6 +64,8 @@ import rep.sc.Shim
 import rep.utils.SerializeUtils
 import IdxPrefix._
 import java.util.Base64
+import rep.log.trace.LogTraceOption
+import rep.log.trace.RepTimeTrace
 
 
 /**
@@ -99,6 +101,11 @@ object RestActor {
           iptFunc: String, iptArgs: Seq[String], timeout: Int,
           secureContext: String, code: String, ctype: Int)      
   case class tranSign(tran: String)
+  
+  case class closeOrOpen4Node(nodename:String,status:String)
+  case class closeOrOpen4Package(packagename:String,status:String)
+  case class ColseOrOpenAllLogger(status:String)
+  case class ColseOrOpenTimeTrace(status:String)
 
   /**
    * 根据节点名称和chainCode定义建立交易实例
@@ -146,7 +153,7 @@ object RestActor {
  * RestActor负责处理rest api请求
  *
  */
-class RestActor extends Actor with ModuleHelper with RepLogging {
+class RestActor extends Actor with ModuleHelper {
 
   import RestActor._
   import spray.json._
@@ -279,7 +286,66 @@ class RestActor extends Actor with ModuleHelper with RepLogging {
           QueryResult(Option(JsonFormat.toJson(bl)))
       }
       sender ! r
-
+      
+      
+      
+      case ColseOrOpenTimeTrace(status) =>
+        var remsg = "";
+        var  rtt = RepTimeTrace.getRepTimeTrace()
+        if(status.equalsIgnoreCase("on")){
+          rtt.openTimeTrace()
+          remsg = "已经打开运行时间跟踪"
+        }else if(status.equalsIgnoreCase("off")){
+          rtt.closeTimeTrace()
+          remsg = "已经关闭运行时间跟踪"
+        }else{
+          remsg = "状态只能输入on/off"
+        }
+        sender ! QueryHash(remsg)
+      
+      case ColseOrOpenAllLogger(status) =>
+        var remsg = "";
+        var  lto = LogTraceOption.getLogTraceOption()
+        if(status.equalsIgnoreCase("on")){
+          lto.OpenAll()
+          remsg = "已经打开日志输出"
+        }else if(status.equalsIgnoreCase("off")){
+          lto.CloseAll()
+          remsg = "已经关闭日志输出"
+        }else{
+          remsg = "状态只能输入on/off"
+        }
+        sender ! QueryHash(remsg)
+        
+        case closeOrOpen4Node(nodename,status) =>
+        var remsg = "";
+        var  lto = LogTraceOption.getLogTraceOption()
+        if(status.equalsIgnoreCase("on")){
+          lto.addNodeLogOption(nodename,true)
+          remsg = "节点="+nodename+",已经打开日志输出"
+        }else if(status.equalsIgnoreCase("off")){
+          lto.addNodeLogOption(nodename,false)
+          remsg = "节点="+nodename+",已经关闭日志输出"
+        }else{
+          remsg = "状态只能输入on/off"
+        }
+        sender ! QueryHash(remsg)
+        
+        case closeOrOpen4Package(packagename,status) =>
+        var remsg = "";
+        var  lto = LogTraceOption.getLogTraceOption()
+        if(status.equalsIgnoreCase("on")){
+          lto.addLogOption(packagename,true)
+          remsg = "包名="+packagename+",已经打开日志输出"
+        }else if(status.equalsIgnoreCase("off")){
+          lto.addLogOption(packagename,false)
+          remsg = "包名="+packagename+",已经关闭日志输出"
+        }else{
+          remsg = "状态只能输入on/off"
+        }
+        sender ! QueryHash(remsg)
+        
+        
     case BlockHeight(h) =>
       val bb = sr.getBlockByHeight(h)
       val r = bb match {

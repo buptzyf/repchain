@@ -22,7 +22,6 @@ import rep.protos.peer._
 import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
 import com.google.protobuf.ByteString 
-import rep.utils.RepLogging
 import com.fasterxml.jackson.core.Base64Variants
 import rep.crypto._
 import org.json4s._

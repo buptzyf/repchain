@@ -26,10 +26,11 @@ import rep.network.cluster.ClusterActor
 import rep.network.tools.PeerExtension
 import rep.protos.peer._
 import rep.utils.GlobalUtils.ActorType
-import rep.utils.{IdUtils, RepLogging, TimeUtils}
+import rep.utils.{IdUtils,  TimeUtils}
 import akka.cluster.pubsub.DistributedPubSubMediator.Publish
 import scala.concurrent.forkjoin.ThreadLocalRandom
 import java.text.SimpleDateFormat
+import rep.log.trace.LogType
 
 /**
   *
@@ -171,7 +172,7 @@ class PeerHelper(name: String) extends ModuleBase(name) {
   override def preStart(): Unit = {
     //注册接收交易的广播
     SubscribeTopic(mediator, self, selfAddr, Topic.Transaction, true)
-    logMsg(LOG_TYPE.INFO,name,"Transaction Creator Start",selfAddr)
+    logMsg(LogType.INFO,  name + " ~ "+"Transaction Creator Start")
     scheduler.scheduleOnce(5.seconds, self, Tick)
   }
 

@@ -25,6 +25,9 @@ import rep.storage.util.StoreUtil
 import com.google.protobuf.ByteString
 import scala.math._ 
 import rep.crypto._
+import rep.log.trace.RepLogHelp
+import rep.log.trace.LogType
+import org.slf4j.LoggerFactory
 
 
 /**
@@ -33,7 +36,8 @@ import rep.crypto._
  * @since	2017-09-28
  * @category	该类实现公共方法。
  * */
-abstract class AbstractLevelDB extends ILevelDB  with RepLogging {
+abstract class AbstractLevelDB extends ILevelDB  {
+  protected def log = LoggerFactory.getLogger(this.getClass)
   protected var IncrementWorldState : immutable.TreeMap[String,Array[Byte]] = new immutable.TreeMap[String,Array[Byte]]() 
   protected var GlobalMerkle : Array[Byte] = null
   
@@ -102,9 +106,9 @@ abstract class AbstractLevelDB extends ILevelDB  with RepLogging {
       rel = this.GlobalMerkle
     }
     if(rel != null){
-      println("=========################getmerkle value="+BytesHex.bytes2hex(rel)+"\tsource size="+source.size)
+      //println("=========################getmerkle value="+BytesHex.bytes2hex(rel)+"\tsource size="+source.size)
     }else{
-      println("=========################getmerkle value=null"+"\tsource size="+source.size)
+      //println("=========################getmerkle value=null"+"\tsource size="+source.size)
     }
     rel
   }

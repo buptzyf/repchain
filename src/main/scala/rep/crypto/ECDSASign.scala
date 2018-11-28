@@ -27,7 +27,8 @@ import scala.collection.mutable
 import com.fasterxml.jackson.core.Base64Variants
 import java.security.cert.X509Certificate
 import javax.xml.bind.DatatypeConverter
-
+import java.util.ArrayList
+import java.util.List
 import sun.security.ec.ECPublicKeyImpl
 
 /**
@@ -255,6 +256,16 @@ object ECDSASign extends ECDSASign {
       val cert = trustKeyStore.getCertificate(alias)
       trustkeysPubAddrMap.put(getBitcoinAddrByCert(cert), cert)
     }
+  }
+  
+  def getAliasOfTrustkey:List[String] = {
+    var list:List[String] = new ArrayList[String]
+    val enums = trustKeyStore.aliases()
+    while (enums.hasMoreElements) {
+      val alias = enums.nextElement()
+      list.add(alias)
+    }
+    list
   }
 
   /**

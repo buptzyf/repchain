@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-package rep.storage.test
+package rep.storage.timeAnalysiser
 
 import org.iq80.leveldb._
 import org.fusesource.leveldbjni.JniDBFactory._

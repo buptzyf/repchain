@@ -30,7 +30,7 @@ import rep.utils.GlobalUtils.{ActorType, BlockEvent, EventType,BlockChainStatus}
 import rep.network.sync.SyncModule.{ChainDataReqSingleBlk}
 import scala.collection.immutable
 import rep.network.cluster.ClusterHelper
-import rep.trace.time._
+import rep.log.trace.LogType
 
 /**
   *
@@ -78,9 +78,9 @@ class PersistenceModule(moduleName: String) extends ModuleBase(moduleName) {
     try {
           val tmpprehash = pe.getCurrentBlockHash
           val tmpcacheight = pe.getCacheHeight()
-          logMsg(LOG_TYPE.INFO, moduleName, s"Merk(Before presistence): ${pe.getMerk}", selfAddr)
+          logMsg(LogType.INFO, moduleName+"~"+ s"Merk(Before presistence): ${pe.getMerk}"+"~"+selfAddr)
           dataaccess.restoreBlock(blkRestore.blk)
-          logMsg(LOG_TYPE.INFO, moduleName, s"Restore blocks success,node number: ${pe.getSysTag},block number=${blkRestore.height}", selfAddr)
+          logMsg(LogType.INFO, moduleName+"~"+ s"Restore blocks success,node number: ${pe.getSysTag},block number=${blkRestore.height}"+"~"+selfAddr)
           
           ClearPreCache
           
@@ -96,14 +96,14 @@ class PersistenceModule(moduleName: String) extends ModuleBase(moduleName) {
             }
           }
           RefreshCacheBuffer(blkRestore)
-          blockTimeMgr.writeTime(pe.getSysTag,tmpprehash,tmpcacheight,timeType.store_end,System.currentTimeMillis())
-          logMsg(LOG_TYPE.INFO, moduleName, s"Merk(After presistence): ${pe.getMerk}", selfAddr)
-          logMsg(LOG_TYPE.INFO, moduleName, s"save block success,height=${pe.getCacheHeight()},hash=${pe.getCurrentBlockHash}", selfAddr)
+          logTime("create block storeblock time", System.currentTimeMillis(),false)
+          logMsg(LogType.INFO, moduleName+"~"+ s"Merk(After presistence): ${pe.getMerk}"+"~"+selfAddr)
+          logMsg(LogType.INFO, moduleName+"~"+ s"save block success,height=${pe.getCacheHeight()},hash=${pe.getCurrentBlockHash}"+"~"+selfAddr)
         }
         catch {
           case e: Exception =>
             re = 1
-            logMsg(LOG_TYPE.INFO, moduleName, s"Restore blocks error : ${e.toString}", selfAddr)
+            logMsg(LogType.INFO, moduleName+"~"+ s"Restore blocks error : ${e.toString}"+"~"+selfAddr)
           //TODO kami 将来需要处理restore失败的情况
           case _ => //ignore
             re = 2
@@ -171,7 +171,7 @@ class PersistenceModule(moduleName: String) extends ModuleBase(moduleName) {
             blockersyncActor ! ChainDataReqSingleBlk(getActorRef(pe.getSysTag, ActorType.SYNC_MODULE),first+i)
             //context.parent ! TargetBlock(first+i, blockersyncActor)
             syncprecache += (first+i).asInstanceOf[Long] -> System.currentTimeMillis()
-            logMsg(LOG_TYPE.INFO, moduleName, s"node number:${pe.getSysTag},send single block data req,blocker= ${akka.serialization.Serialization.serializedActorPath(tempblk.blker).toString()}", selfAddr)
+            logMsg(LogType.INFO, moduleName+"~"+ s"node number:${pe.getSysTag},send single block data req,blocker= ${akka.serialization.Serialization.serializedActorPath(tempblk.blker).toString()}"+"~"+selfAddr)
           }
         }
       }
@@ -211,7 +211,7 @@ class PersistenceModule(moduleName: String) extends ModuleBase(moduleName) {
   
   override def receive = {
     case blkRestore: BlockRestore =>
-      logMsg(LOG_TYPE.INFO, moduleName, s"node number:${pe.getSysTag},restore single block,height:${blkRestore.height}", selfAddr)
+      logMsg(LogType.INFO, moduleName+"~"+ s"node number:${pe.getSysTag},restore single block,height:${blkRestore.height}"+"~"+selfAddr)
       var bb = blkRestore
       val re = RestoreBlock(bb)
       if(!precache.isEmpty){
@@ -262,7 +262,7 @@ class PersistenceModule(moduleName: String) extends ModuleBase(moduleName) {
     }
     if (blkRestore.blk.previousBlockHash.toStringUtf8 == pe.getCurrentBlockHash ||
         (local.height == 0 && blkRestore.blk.previousBlockHash == ByteString.EMPTY)) {
-      logMsg(LOG_TYPE.INFO, moduleName, s"node number:${pe.getSysTag},entry save,height:${blkRestore.height}", selfAddr)
+      logMsg(LogType.INFO, moduleName+"~"+ s"node number:${pe.getSysTag},entry save,height:${blkRestore.height}"+"~"+selfAddr)
       if(SaveBlock(blkRestore) == 0){
         //success
         re = 1
@@ -272,15 +272,15 @@ class PersistenceModule(moduleName: String) extends ModuleBase(moduleName) {
         throw new Exception("block restore is failed")
       }
     }else{
-      logMsg(LOG_TYPE.INFO, moduleName, s"node number:${pe.getSysTag},entry error procedure,height:${blkRestore.height},local height:${local.height}", selfAddr)
+      logMsg(LogType.INFO, moduleName+"~"+ s"node number:${pe.getSysTag},entry error procedure,height:${blkRestore.height},local height:${local.height}"+"~"+selfAddr)
       if(blkRestore.height <= local.height){
         RefreshCacheBuffer(blkRestore)
-        logMsg(LOG_TYPE.INFO, moduleName, s"Block has already been stored", selfAddr)
+        logMsg(LogType.INFO, moduleName+"~"+ s"Block has already been stored"+"~"+selfAddr)
         re = 1
         //NoticeVoteModule()
       }else{
         precache += blkRestore.height -> blkRestore
-        logMsg(LOG_TYPE.INFO, moduleName, s"node number:${pe.getSysTag},add block to precache,height= ${blkRestore.height}", selfAddr)
+        logMsg(LogType.INFO, moduleName+"~"+ s"node number:${pe.getSysTag},add block to precache,height= ${blkRestore.height}"+"~"+selfAddr)
         re = 1
         CheckSync
       }
@@ -289,11 +289,11 @@ class PersistenceModule(moduleName: String) extends ModuleBase(moduleName) {
   }
   
   def NoticeVoteModule()={
-    logMsg(LOG_TYPE.INFO, moduleName, s"Merk(After presistence): ${pe.getMerk}", selfAddr)
+    logMsg(LogType.INFO, moduleName+"~"+ s"Merk(After presistence): ${pe.getMerk}"+"~"+selfAddr)
     if (pe.getCacheBlkNum() == 0){
-      logMsg(LOG_TYPE.INFO, moduleName, s"presistence is over", selfAddr)
+      logMsg(LogType.INFO, moduleName+"~"+ s"presistence is over"+"~"+selfAddr)
       if(!pe.getIsSync()){
-        logMsg(LOG_TYPE.INFO, moduleName, s"presistence is over,this is startup vote", selfAddr)
+        logMsg(LogType.INFO, moduleName+"~"+ s"presistence is over,this is startup vote"+"~"+selfAddr)
         pe.setIsBlocking(false)
         pe.setEndorState(false)
         pe.setIsBlockVote(false)

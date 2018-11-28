@@ -39,6 +39,7 @@ class SwaggerDocService(system: ActorSystem) extends SwaggerHttpService with Has
     ru.typeOf[BlockService],
     ru.typeOf[TransactionService],
     ru.typeOf[CertService], 
+    ru.typeOf[LogMgrService],
     ru.typeOf[HashVerifyService])
   override val info = Info(version = "0.7")
   override val externalDocs = Some(new ExternalDocs("Developers Guide", "https://repchaindoc.readthedocs.io/zh/latest/index.html"))

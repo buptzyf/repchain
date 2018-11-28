@@ -24,7 +24,9 @@ import java.util.concurrent.Executors
 import java.lang.Exception
 import java.lang.Thread._
 import java.io.File._
-
+import rep.log.trace.RepLogHelp
+import rep.log.trace.LogType
+import org.slf4j.LoggerFactory
 import org.json4s.{DefaultFormats, Formats, jackson}
 import de.heikoseeberger.akkahttpjson4s.Json4sSupport
 import org.json4s._
@@ -78,13 +80,15 @@ object Sandbox {
  * @constructor 以合约在区块链上的链码id作为合约容器id建立实例
  * @param cid 链码id
  */
-abstract class Sandbox(cid:String) extends Actor with RepLogging{
+abstract class Sandbox(cid:String) extends Actor {
   import TransProcessor._
   import Sandbox._
   import spray.json._
+  protected def log = LoggerFactory.getLogger(this.getClass)
   //与存储交互的实例
   val pe = PeerExtension(context.system)
   val sTag =pe.getSysTag
+   
 
   //与底层交互的api实例
   val shim = new Shim(context.system, cid)

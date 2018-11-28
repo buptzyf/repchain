@@ -32,6 +32,7 @@ import rep.network.sync.SyncModule.{ChainDataReqSingleBlk, SetupSync}
 import rep.storage.ImpDataAccess
 import rep.utils.ActorUtils
 import rep.utils.GlobalUtils.ActorType
+import rep.log.trace.LogType
 
 /**
   * Created by shidianyue on 2017/9/22.
@@ -90,7 +91,7 @@ class ModuleManager(moduleName: String, sysTag: String) extends ModuleBase(modul
     registerActorRef(ActorType.TRANSACTION_POOL, transactionPool)
     registerActorRef(ActorType.CONSENSUS_MANAGER, consensus)
 
-    logMsg(LOG_TYPE.INFO, moduleName, s"ModuleManager ${sysTag} start", selfAddr)
+    logMsg(LogType.INFO, moduleName+"~"+ s"ModuleManager ${sysTag} start")
 
     SystemProfile.getTransCreateType match {
       case Trans_Create_Type_Enum.AUTO =>
@@ -103,7 +104,7 @@ class ModuleManager(moduleName: String, sysTag: String) extends ModuleBase(modul
     (isClusterJoined && isConsensusFinished) match {
       case true =>
         getActorRef(ActorType.SYNC_MODULE) ! SetupSync
-        logMsg(LOG_TYPE.INFO, "Sync Start Ticket")
+        logMsg(LogType.INFO, "Sync Start Ticket")
       case false => // ignore
     }
   }

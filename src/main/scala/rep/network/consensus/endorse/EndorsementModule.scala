@@ -33,6 +33,7 @@ import scala.util.control.Breaks._
 import rep.network.consensus.block.BlockHelper
 import scala.util.control.Exception.Finally
 import java.util.concurrent.ConcurrentHashMap
+import rep.log.trace.LogType
 
 /**
   * Endorsement handler
@@ -97,7 +98,7 @@ class EndorsementModule(moduleName: String) extends ModuleBase(moduleName) {
                 vgActorRef(i) ! verifySign4Endorment.verifySign4Transcation(this.waitEndorseblockIdentifier,trans,i,len,i,System.currentTimeMillis())
             }
           val endsend = System.currentTimeMillis()
-          logMsg(LOG_TYPE.INFO,s"+++++++send sign time=${endsend - startsend}")
+          logMsg(LogType.INFO,s"+++++++send sign time=${endsend - startsend}")
         }
     }else{
       for(i <- 0 to size-1){
@@ -133,17 +134,17 @@ class EndorsementModule(moduleName: String) extends ModuleBase(moduleName) {
             setRecvVerify(result.actoridex)
             if(IsFinishSignVerify){
               val checktransresulttime = System.currentTimeMillis()
-                      logMsg(LOG_TYPE.WARN, s"Block endorse success,current height=${pe.getCacheHeight()},identifier=${this.waitEndorseblockIdentifier}")
-                      //logMsg(LOG_TYPE.INFO,s"handle time=${checktransresulttime-calltime},hashtime=${hashtime-calltime},checkblocktime=${checkblocktime-hashtime},"+
+                      logMsg(LogType.WARN, s"Block endorse success,current height=${pe.getCacheHeight()},identifier=${this.waitEndorseblockIdentifier}")
+                      //logMsg(LogType.INFO,s"handle time=${checktransresulttime-calltime},hashtime=${hashtime-calltime},checkblocktime=${checkblocktime-hashtime},"+
                       //    s"checktranstime=${checktranstime-checkblocktime},checktranssigntime=${checktranssigntime-checktranstime},checktransresulttime=${checktransresulttime-checktranssigntime}")
-                      logMsg(LOG_TYPE.INFO,s"+++++++endorse handle time=${System.currentTimeMillis() - this.recvendorserequesttime},endorse other time=${dispathtime-calltime},checkdispatchtime=${dispathtime-checktranstime}")
-                      logMsg(LOG_TYPE.INFO,s"+++++++hashtime=${hashtime-calltime},checkblocktime=${checkblocktime-hashtime},"+
+                      logMsg(LogType.INFO,s"+++++++endorse handle time=${System.currentTimeMillis() - this.recvendorserequesttime},endorse other time=${dispathtime-calltime},checkdispatchtime=${dispathtime-checktranstime}")
+                      logMsg(LogType.INFO,s"+++++++hashtime=${hashtime-calltime},checkblocktime=${checkblocktime-hashtime},"+
                           s"checktranstime=${checktranstime-checkblocktime}}")
                       this.actRef4Blocker ! EndorsedBlock(true, this.waitblockdata, BlockHelper.endorseBlock(this.waitblockinfo, pe.getSysTag),this.waitEndorseblockIdentifier)
                       //广播发送背书信息的事件(背书成功)
                       sendEvent(EventType.PUBLISH_INFO, mediator, selfAddr, Topic.Block, Event.Action.ENDORSEMENT)
                       val finishtime = System.currentTimeMillis()
-                      //logMsg(LOG_TYPE.INFO,s"------endorse finish time=${finishtime-sendertime},network time=${recvtime-sendertime},condition check time=${calltime-recvtime},handle time=${finishtime-calltime}")
+                      //logMsg(LogType.INFO,s"------endorse finish time=${finishtime-sendertime},network time=${recvtime-sendertime},condition check time=${calltime-recvtime},handle time=${finishtime-calltime}")
             }
           }
         }
@@ -240,17 +241,17 @@ class EndorsementModule(moduleName: String) extends ModuleBase(moduleName) {
                     val b =  verifyTransSign(blk.transactions.toArray[Transaction])
                      if(b){
                          val checksignresulttime = System.currentTimeMillis()
-                        logMsg(LOG_TYPE.WARN, s"Block endorse success,current height=${pe.getCacheHeight()},identifier=${blkidentifier}")
-                        //logMsg(LOG_TYPE.INFO,s"handle time=${checktransresulttime-calltime},hashtime=${hashtime-calltime},checkblocktime=${checkblocktime-hashtime},"+
+                        logMsg(LogType.WARN, s"Block endorse success,current height=${pe.getCacheHeight()},identifier=${blkidentifier}")
+                        //logMsg(LogType.INFO,s"handle time=${checktransresulttime-calltime},hashtime=${hashtime-calltime},checkblocktime=${checkblocktime-hashtime},"+
                         //    s"checktranstime=${checktranstime-checkblocktime},checktranssigntime=${checktranssigntime-checktranstime},checktransresulttime=${checktransresulttime-checktranssigntime}")
-                        logMsg(LOG_TYPE.INFO,s"+++++++endorse handle time=${checksignresulttime - recvtime},endorse other time=${checkresulttime-calltime},sign time=${checksignresulttime-checkresulttime}")
-                        //logMsg(LOG_TYPE.INFO,s"+++++++hashtime=${hashtime-calltime},checkblocktime=${checkblocktime-hashtime},"+
+                        logMsg(LogType.INFO,s"+++++++endorse handle time=${checksignresulttime - recvtime},endorse other time=${checkresulttime-calltime},sign time=${checksignresulttime-checkresulttime}")
+                        //logMsg(LogType.INFO,s"+++++++hashtime=${hashtime-calltime},checkblocktime=${checkblocktime-hashtime},"+
                         //    s"checktranstime=${checktranstime-checkblocktime}}")
                         actRef ! EndorsedBlock(true, blkData, BlockHelper.endorseBlock(blkInfo, pe.getSysTag),blkidentifier)
                         //广播发送背书信息的事件(背书成功)
                         sendEvent(EventType.PUBLISH_INFO, mediator, selfAddr, Topic.Block, Event.Action.ENDORSEMENT)
                         val finishtime = System.currentTimeMillis()
-                        //logMsg(LOG_TYPE.INFO,s"------endorse finish time=${finishtime-sendertime},network time=${recvtime-sendertime},condition check time=${calltime-recvtime},handle time=${finishtime-calltime}")
+                        //logMsg(LogType.INFO,s"------endorse finish time=${finishtime-sendertime},network time=${recvtime-sendertime},condition check time=${calltime-recvtime},handle time=${finishtime-calltime}")
                      }else{
                        actRef! EndorsedBlock(false, blkData, BlockHelper.endorseBlock(blkInfo, pe.getSysTag),blkidentifier)
                      }
@@ -260,36 +261,36 @@ class EndorsementModule(moduleName: String) extends ModuleBase(moduleName) {
                     
                     /*if(verifyTransSign(blk.transactions)){
                       val checktransresulttime = System.currentTimeMillis()
-                      logMsg(LOG_TYPE.WARN, s"Block endorse success,current height=${pe.getCacheHeight()},identifier=${blkidentifier}")
-                      logMsg(LOG_TYPE.INFO,s"handle time=${checktransresulttime-calltime},hashtime=${hashtime-calltime},checkblocktime=${checkblocktime-hashtime},"+
+                      logMsg(LogType.WARN, s"Block endorse success,current height=${pe.getCacheHeight()},identifier=${blkidentifier}")
+                      logMsg(LogType.INFO,s"handle time=${checktransresulttime-calltime},hashtime=${hashtime-calltime},checkblocktime=${checkblocktime-hashtime},"+
                           s"checktranstime=${checktranstime-checkblocktime},checktranssigntime=${checktranssigntime-checktranstime},checktransresulttime=${checktransresulttime-checktranssigntime}")
                       actRef ! EndorsedBlock(true, blkData, BlockHelper.endorseBlock(blkInfo, pe.getSysTag),blkidentifier)
                       //广播发送背书信息的事件(背书成功)
                       sendEvent(EventType.PUBLISH_INFO, mediator, selfAddr, Topic.Block, Event.Action.ENDORSEMENT)
                       val finishtime = System.currentTimeMillis()
-                      logMsg(LOG_TYPE.INFO,s"------endorse finish time=${finishtime-sendertime},network time=${recvtime-sendertime},condition check time=${calltime-recvtime},handle time=${finishtime-calltime}")
+                      logMsg(LogType.INFO,s"------endorse finish time=${finishtime-sendertime},network time=${recvtime-sendertime},condition check time=${calltime-recvtime},handle time=${finishtime-calltime}")
                     }else{
-                      logMsg(LOG_TYPE.WARN, "Transcation Certification vertified failed")
+                      logMsg(LogType.WARN, "Transcation Certification vertified failed")
                       actRef! EndorsedBlock(false, blkData, BlockHelper.endorseBlock(blkInfo, pe.getSysTag),blkidentifier)
                     }*/
                   }else{
                       val finishtime = System.currentTimeMillis()
-                      logMsg(LOG_TYPE.WARN, "Transcation preload failed,Block endorse failed")
-                      logMsg(LOG_TYPE.INFO,s"---failed---endorse finish time=${finishtime},network time=${recvtime-sendertime},condition check time=${calltime-recvtime},handle time=${finishtime-calltime}")
+                      logMsg(LogType.WARN, "Transcation preload failed,Block endorse failed")
+                      logMsg(LogType.INFO,s"---failed---endorse finish time=${finishtime},network time=${recvtime-sendertime},condition check time=${calltime-recvtime},handle time=${finishtime-calltime}")
                       actRef! EndorsedBlock(false, blkData, BlockHelper.endorseBlock(blkInfo, pe.getSysTag),blkidentifier)
                     
                   }
               }else{
-                    logMsg(LOG_TYPE.WARN, "Transcation vertified failed,found same Transcation")
+                    logMsg(LogType.WARN, "Transcation vertified failed,found same Transcation")
                     actRef! EndorsedBlock(false, blkData, BlockHelper.endorseBlock(blkInfo, pe.getSysTag),blkidentifier)
               }
            }
            else {
-             logMsg(LOG_TYPE.WARN, "Blocker Certification vertified failed")
+             logMsg(LogType.WARN, "Blocker Certification vertified failed")
              actRef! EndorsedBlock(false, blkData, BlockHelper.endorseBlock(blkInfo, pe.getSysTag),blkidentifier)
            }
-         logTime("Endorse end", CRFD_STEP._9_ENDORSE_END, getActorRef(ActorType.STATISTIC_COLLECTION))
-         logMsg(LOG_TYPE.WARN, s"Block endorse finish,current height=${pe.getCacheHeight()},identifier=${blkidentifier}")
+         //logTime("Endorse end", CRFD_STEP._9_ENDORSE_END, getActorRef(ActorType.STATISTIC_COLLECTION))
+         logMsg(LogType.WARN, s"Block endorse finish,current height=${pe.getCacheHeight()},identifier=${blkidentifier}")
       } catch {
       case e: Exception =>
         e.printStackTrace()
@@ -315,12 +316,12 @@ class EndorsementModule(moduleName: String) extends ModuleBase(moduleName) {
     if (!pe.getIsSync()) {
       var recvtime = System.currentTimeMillis()
       //开始背书
-        logTime("Endorse start", CRFD_STEP._8_ENDORSE_START, getActorRef(ActorType.STATISTIC_COLLECTION))
-        println(pe.getSysTag + " " + pe.getPort + " request vote result for endorsement")
+        //logTime("Endorse start", CRFD_STEP._8_ENDORSE_START, getActorRef(ActorType.STATISTIC_COLLECTION))
+        //println(pe.getSysTag + " " + pe.getPort + " request vote result for endorsement")
         //Check it's a candidate or not
         if (ClusterHelper.isCandidateNow(pe.getSysTag, pe.getCandidator)) {
             //Check the blocker
-            println(" blk.previousBlockHash=" + blk.previousBlockHash.toStringUtf8  + "\t pe.getCurrentBlockHash="+pe.getCurrentBlockHash)
+            //println(" blk.previousBlockHash=" + blk.previousBlockHash.toStringUtf8  + "\t pe.getCurrentBlockHash="+pe.getCurrentBlockHash)
             if (blk.previousBlockHash.toStringUtf8 == pe.getCurrentBlockHash) {
               
                 if (!ClusterHelper.isBlocker(pe.getSysTag, pe.getBlocker.toString)) {
@@ -333,34 +334,34 @@ class EndorsementModule(moduleName: String) extends ModuleBase(moduleName) {
                   }else {
                     cacheEndorseBlock = PrimaryBlock4Cache(blk, blocker, voteinedx, actRef,blkidentifier,sendertime)
                     NoticeVoteModule(voteinedx)
-                    logMsg(LOG_TYPE.WARN, "endorse add to cache")
-                    logMsg(LOG_TYPE.WARN, s"${blocker} is not the current blocker(${pe.getBlocker})")
+                    logMsg(LogType.WARN, "endorse add to cache")
+                    logMsg(LogType.WARN, s"${blocker} is not the current blocker(${pe.getBlocker})")
                   }
                 }else{ 
                   cacheEndorseBlock = null
-                  logMsg(LOG_TYPE.WARN, s"Endorsement is from itself, dropped,systag=${pe.getSysTag},identifier=${blkidentifier},blocker=${pe.getBlocker},isBlocker=${ClusterHelper.isBlocker(pe.getSysTag, pe.getBlocker.toString)},current height=${pe.getCacheHeight()}")
+                  logMsg(LogType.WARN, s"Endorsement is from itself, dropped,systag=${pe.getSysTag},identifier=${blkidentifier},blocker=${pe.getBlocker},isBlocker=${ClusterHelper.isBlocker(pe.getSysTag, pe.getBlocker.toString)},current height=${pe.getCacheHeight()}")
                 }
             }else{
                   //clear pe endorse cache
                   cacheEndorseBlock = PrimaryBlock4Cache(blk, blocker, voteinedx, actRef,blkidentifier,sendertime)
-                  logMsg(LOG_TYPE.WARN, "endorse add to cache")
-                  logMsg(LOG_TYPE.WARN, s"Chain in this node is not complete,this current heigh=${pe.getCacheHeight()},before=${blk.previousBlockHash.toStringUtf8},local=${pe.getCurrentBlockHash},blocker=${pe.getBlocker})")
+                  logMsg(LogType.WARN, "endorse add to cache")
+                  logMsg(LogType.WARN, s"Chain in this node is not complete,this current heigh=${pe.getCacheHeight()},before=${blk.previousBlockHash.toStringUtf8},local=${pe.getCurrentBlockHash},blocker=${pe.getBlocker})")
               }
         }
         else {
             cacheEndorseBlock = PrimaryBlock4Cache(blk, blocker, voteinedx, actRef,blkidentifier,sendertime)
             //NoticeVoteModule(voteinedx)
-          logMsg(LOG_TYPE.WARN, "It is not a candidate this time, endorsement requirement dropped")
+          logMsg(LogType.WARN, "It is not a candidate this time, endorsement requirement dropped")
         }
     }else{
       cacheEndorseBlock = null
-      logMsg(LOG_TYPE.WARN, "Syncing, waiting for next endorsement request")
+      logMsg(LogType.WARN, "Syncing, waiting for next endorsement request")
     }
   }
   
   
   /*override def preStart(): Unit = {
-    logMsg(LOG_TYPE.INFO, "Endorsement module start")
+    logMsg(LogType.INFO, "Endorsement module start")
     SubscribeTopic(mediator, self, selfAddr, Topic.Endorsement, true)
   }*/
   
