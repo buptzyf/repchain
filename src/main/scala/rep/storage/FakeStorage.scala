@@ -14,15 +14,19 @@
  */
 
 package rep.storage
-import rep.utils.RepLogging
+
 import rep.protos._
+import rep.log.trace.RepLogHelp
+import rep.log.trace.LogType
+import org.slf4j.LoggerFactory
 
 
 /** 
  *  @author c4w
  */
-class FakeStorage() extends Storage[String,Array[Byte]] with RepLogging { 
+class FakeStorage() extends Storage[String,Array[Byte]]  { 
   import FakeStorage._
+  protected def log = LoggerFactory.getLogger(this.getClass)
   
   private val m = scala.collection.mutable.Map[Key,Value]()
   

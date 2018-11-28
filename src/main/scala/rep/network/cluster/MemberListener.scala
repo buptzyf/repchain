@@ -26,8 +26,10 @@ import rep.network.cluster.MemberListener.{MemberDown, Recollection}
 import rep.network.module.ModuleManager.ClusterJoined
 import rep.network.tools.PeerExtension
 import rep.utils.GlobalUtils.ActorType
-import rep.utils.{RepLogging, TimeUtils}
-
+import rep.utils.{ TimeUtils}
+import rep.log.trace.RepLogHelp
+import rep.log.trace.LogType
+import org.slf4j.LoggerFactory
 import scala.collection.mutable
 
 
@@ -54,12 +56,14 @@ object MemberListener {
   * @since 1.0
   **/
 
-class MemberListener extends Actor with ClusterActor with ModuleHelper with RepLogging {
+class MemberListener extends Actor with ClusterActor with ModuleHelper {
 
   import context.dispatcher
 
   import scala.concurrent.duration._
 
+  protected def log = LoggerFactory.getLogger(this.getClass)
+  
   val addr_self = akka.serialization.Serialization.serializedActorPath(self)
 
   val cluster = Cluster(context.system)
@@ -114,24 +118,36 @@ class MemberListener extends Actor with ClusterActor with ModuleHelper with RepL
       //成员入网
     case MemberUp(member) =>
       nodes += member.address
-      log.info("Member is Up: {}. {} nodes in cluster",
-        member.address, nodes.size)
+      /*if(member.roles == null || member.roles.isEmpty){
+        print()
+      }*/
+      //log.info("Member is Up: {}. {} nodes in cluster",
+      //  member.address, nodes.size)
+      RepLogHelp.logMsg(log,LogType.INFO, "Member is Up: {}. {} nodes in cluster"+"~"+member.address+"~"+nodes.size)
       if (nodes.size == 1) pe.resetSeedNode(member.address)
-      pe.putNode(member.address)
-      preloadNodesMap.put(member.address, TimeUtils.getCurrentTime())
+      
+      if(member.roles != null && !member.roles.isEmpty && member.roles.contains("CRFD-Node")){
+        pe.putNode(member.address)
+        preloadNodesMap.put(member.address, TimeUtils.getCurrentTime())
+      }
+      
       scheduler.scheduleOnce(TimePolicy.getSysNodeStableDelay millis,
         self, Recollection)
+        
       //判断自己是否已经join到网络中
       addr_self.contains(member.address.toString) match {
         case true =>
           getActorRef(ActorType.MODULE_MANAGER) ! ClusterJoined
         case false => //ignore
       }
+      
+      
       //成员离网
     case MemberRemoved(member, _) =>
       nodes -= member.address
-      log.info("Member is Removed: {}. {} nodes cluster",
-        member.address, nodes.size)
+      //log.info("Member is Removed: {}. {} nodes cluster",
+        //member.address, nodes.size)
+        RepLogHelp.logMsg(log,LogType.INFO, "Member is Removed: {}. {} nodes cluster"+"~"+member.address+"~"+nodes.size)
       preloadNodesMap.remove(member.address)
       pe.removeNode(member.address)
       pe.removeStableNode(member.address)
@@ -176,8 +192,9 @@ class MemberListener extends Actor with ClusterActor with ModuleHelper with RepL
    
     case MemberLeft(member) => //ignore
       nodes -= member.address
-      log.info("Member is Removed: {}. {} nodes cluster",
-        member.address, nodes.size)
+      //log.info("Member is Removed: {}. {} nodes cluster",
+      //  member.address, nodes.size)
+        RepLogHelp.logMsg(log,LogType.INFO, "Member is Removed: {}. {} nodes cluster"+"~"+member.address+"~"+nodes.size)
       preloadNodesMap.remove(member.address)
       pe.removeNode(member.address)
       pe.removeStableNode(member.address)
@@ -186,8 +203,9 @@ class MemberListener extends Actor with ClusterActor with ModuleHelper with RepL
       
       case MemberExited(member) => //ignore
       nodes -= member.address
-      log.info("Member is Removed: {}. {} nodes cluster",
-        member.address, nodes.size)
+      //log.info("Member is Removed: {}. {} nodes cluster",
+      //  member.address, nodes.size)
+       RepLogHelp.logMsg(log,LogType.INFO, "Member is Removed: {}. {} nodes cluster"+"~"+member.address+"~"+nodes.size)
       preloadNodesMap.remove(member.address)
       pe.removeNode(member.address)
       pe.removeStableNode(member.address)

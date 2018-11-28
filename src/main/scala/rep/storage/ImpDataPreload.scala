@@ -295,10 +295,11 @@ class ImpDataPreload (SystemName:String,InstanceName:String) extends AbstractLev
  * @since	2017-09-28
  * @category	某个系统的多实例管理类，管理某个系统所有的多实例，包含自动释放超时的实例。
  * */
-private class  MultiDBMgr (val SystemName:String)  extends RepLogging{
+private class  MultiDBMgr (val SystemName:String) {
+    import org.slf4j.LoggerFactory
     private val  checktime = 60*1000//如果某个实例超过60s没有使用，就自动清理
     private var  DBOps  =  new scala.collection.mutable.HashMap[String,ImpDataPreload]()
-    
+    protected def log = LoggerFactory.getLogger(this.getClass)
     /**
 	 * @author jiangbuyun
 	 * @version	0.7
@@ -392,7 +393,9 @@ private class  MultiDBMgr (val SystemName:String)  extends RepLogging{
  * @since	2017-09-28
  * @category	系统管理类，管理每个系统中的多实例管理器。
  * */
-object ImpDataPreloadMgr extends RepLogging{
+object ImpDataPreloadMgr{
+    import org.slf4j.LoggerFactory
+    protected def log = LoggerFactory.getLogger(this.getClass)
     private var  singleobjs  =  new scala.collection.mutable.HashMap[String,MultiDBMgr]()
     /**
 	 * @author jiangbuyun

@@ -23,7 +23,9 @@ import rep.protos.peer._
 import akka.actor.{Actor, ActorRef, Props, actorRef2Scala}
 import rep.storage._
 import rep.storage.IdxPrefix.WorldStateKeyPreFix
-
+import rep.log.trace.RepLogHelp
+import rep.log.trace.LogType
+import org.slf4j.LoggerFactory
 import rep.sc.Shim.Oper
 import rep.utils.Json4s._
 import com.google.protobuf.ByteString
@@ -81,7 +83,7 @@ class SandboxScala(cid:String) extends Sandbox(cid){
           encodeJson(cobj.onAction(ctx,action,data.head))
       }
       val span2 = System.currentTimeMillis()-tm_start
-      println(s"container span2:$span2")
+      //println(s"container span2:$span2")
       
       //modify by jiangbuyun 20170802
       //TODO 有必要每笔交易都计算Merkle根吗？？？
@@ -106,7 +108,8 @@ class SandboxScala(cid:String) extends Sandbox(cid){
           Option(akka.actor.Status.Failure(e1)))           
     }finally{
       val span = System.currentTimeMillis()-tm_start
-        logMsg(LOG_TYPE.INFO, Sandbox.log_prefix, s"Span doTransaction:$span", "")
+      RepLogHelp.logMsg(log,LogType.INFO,Sandbox.log_prefix+"~"+ s"Span doTransaction:$span")
+       // logMsg(LOG_TYPE.INFO, Sandbox.log_prefix, s"Span doTransaction:$span", "")
     }
   }  
 }

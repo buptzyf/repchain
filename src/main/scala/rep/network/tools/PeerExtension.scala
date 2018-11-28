@@ -115,6 +115,14 @@ class PeerExtensionImpl extends Extension {
       transLock.unlock()
     }
   }
+  
+  def findTrans(txid:String):Boolean = {
+    var b :Boolean = false
+    if(transactions.contains(txid)){
+        b = true
+    }
+    b
+  }
 
   //TODO kami 需要清空之前所有的block的Transaction
   def removeTrans(trans: Seq[ Transaction ]): Unit = {

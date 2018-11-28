@@ -48,6 +48,87 @@ import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import scala.xml.NodeSeq
 
 
+/** 日志信息动态管理
+ *  @author jiangbuyun
+ */
+
+@Api(value = "/logmgr", description = "日志信息管理", produces = "application/json")
+@Path("logmgr")
+class LogMgrService(ra: ActorRef)(implicit executionContext: ExecutionContext)
+  extends Directives {
+  import akka.pattern.ask
+  import scala.concurrent.duration._
+
+  implicit val timeout = Timeout(20.seconds)
+  import Json4sSupport._
+  implicit val serialization = jackson.Serialization // or native.Serialization
+  implicit val formats = DefaultFormats
+
+  val route = openOrCloseLogger ~ openorclose4node ~ openorclose4package ~ openorclosestatistime
+
+  @Path("/openorclose4all/{status}")
+  @ApiOperation(value = "打开或者关闭日志", notes = "", nickname = "openOrCloseLogger", httpMethod = "GET")
+  @ApiImplicitParams(Array(
+    new ApiImplicitParam(name = "status", value = "on/off", required = true, dataType = "string", paramType = "path")
+    ))
+  @ApiResponses(Array(
+    new ApiResponse(code = 200, message = "返回日志打开关闭结果", response = classOf[QueryHash])))
+  def openOrCloseLogger =
+    path("logmgr"/"openorclose4all"/ Segment) { status =>
+      get {
+        complete { (ra ? ColseOrOpenAllLogger(status)).mapTo[QueryHash] }
+      }
+    }
+  
+  @Path("/openorclosestatistime/{status}")
+  @ApiOperation(value = "打开或者关闭系统运行时间跟踪", notes = "", nickname = "openorclosestatistime", httpMethod = "GET")
+  @ApiImplicitParams(Array(
+    new ApiImplicitParam(name = "status", value = "on/off", required = true, dataType = "string", paramType = "path")
+    ))
+  @ApiResponses(Array(
+    new ApiResponse(code = 200, message = "打开或者关闭系统运行时间跟踪", response = classOf[QueryHash])))
+  def openorclosestatistime =
+    path("logmgr"/"openorclosestatistime"/ Segment) { status =>
+      get {
+        complete { (ra ? ColseOrOpenTimeTrace(status)).mapTo[QueryHash] }
+      }
+    }
+  
+  @Path("/openorclose4node")
+  @ApiOperation(value = "打开或者关闭某个节点的日志", notes = "", nickname = "openorclose4node", httpMethod = "POST")
+  @ApiImplicitParams(Array(
+    new ApiImplicitParam(name = "body", value = "打开/关闭某个节点的日志", required = true, dataTypeClass = classOf[closeOrOpen4Node], paramType = "body")))
+  @ApiResponses(Array(
+  new ApiResponse(code = 200, message = "该节点已经打开或关闭", response = classOf[QueryHash])))
+    def openorclose4node =
+    path("logmgr" / "openorclose4node") {
+      post {
+         entity(as[closeOrOpen4Node]) { closeOrOpen4Node =>
+          complete { (ra ? closeOrOpen4Node).mapTo[QueryHash] }
+        }
+      }
+    }
+  
+  
+  @Path("/openorclose4package")
+  @ApiOperation(value = "打开或者关闭某个包的日志", notes = "", nickname = "openorclose4package", httpMethod = "POST")
+  @ApiImplicitParams(Array(
+    new ApiImplicitParam(name = "body", value = "打开/关闭某个包的日志", required = true, dataTypeClass = classOf[closeOrOpen4Package], paramType = "body")))
+  @ApiResponses(Array(
+  new ApiResponse(code = 200, message = "该包已经打开或关闭", response = classOf[QueryHash])))
+    def openorclose4package =
+    path("logmgr" / "openorclose4package") {
+      post {
+         entity(as[closeOrOpen4Package]) { closeOrOpen4Package =>
+          complete { (ra ? closeOrOpen4Package).mapTo[QueryHash] }
+        }
+      }
+    }
+  
+}
+
+
+
 /** 获得区块链的概要信息
  *  @author c4w
  */

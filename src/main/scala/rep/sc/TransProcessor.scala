@@ -20,7 +20,7 @@ import delight.nashornsandbox._
 import rep.protos.peer._
 import rep.sc.Sandbox._
 import rep.sc.Shim.Oper
-import rep.utils.{GlobalUtils, RepLogging, TimeUtils}
+import rep.utils.{GlobalUtils,  TimeUtils}
 
 import rep.storage._
 import rep.crypto.Sha256
@@ -121,7 +121,7 @@ object TransProcessor {
  * @param da 数据访问实例标示
  * @param parent 父actor指向
  */
-class TransProcessor(name: String, da:String, parent: ActorRef) extends Actor with RepLogging{
+class TransProcessor(name: String, da:String, parent: ActorRef) extends Actor {
   import TransProcessor._
   
   //获得所属于的actor system
@@ -186,7 +186,7 @@ class TransProcessor(name: String, da:String, parent: ActorRef) extends Actor wi
         r
       case None =>
         if(t.`type` != Transaction.Type.CHAINCODE_DEPLOY ){
-          println(s"${pe.getSysTag} do invoke")
+          //println(s"${pe.getSysTag} do invoke")
           //尝试从持久化恢复,找到对应的Deploy交易，并先执行之
           val sr = ImpDataAccess.GetDataAccess(sTag)
           val tidVal =  sr.Get(WorldStateKeyPreFix+ cid)

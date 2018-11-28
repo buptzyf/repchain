@@ -27,7 +27,8 @@ import scala.collection.mutable
 import com.fasterxml.jackson.core.Base64Variants
 import java.security.cert.X509Certificate
 import javax.xml.bind.DatatypeConverter
-
+import java.util.ArrayList
+import java.util.List
 import sun.security.ec.ECPublicKeyImpl
 
 /**
@@ -256,6 +257,16 @@ object ECDSASign extends ECDSASign {
       trustkeysPubAddrMap.put(getBitcoinAddrByCert(cert), cert)
     }
   }
+  
+  def getAliasOfTrustkey:List[String] = {
+    var list:List[String] = new ArrayList[String]
+    val enums = trustKeyStore.aliases()
+    while (enums.hasMoreElements) {
+      val alias = enums.nextElement()
+      list.add(alias)
+    }
+    list
+  }
 
   /**
    * 获取本地证书，得到证书类和其序列化的字节序列
@@ -393,25 +404,15 @@ class ECDSASign extends SignFunc {
         throw new RuntimeException("没有证书")
       }else{
           try{
-              val sr: ImpDataAccess = ImpDataAccess.GetDataAccess(sysTag)
-              val cert = Option(sr.Get(certKey))
-              if (cert != None){
-                if (new String(cert.get) == "null") {
-                    throw new RuntimeException("用户证书已经注销")
-                  }else{ 
-                      val kvcert = SerializeUtils.deserialise(cert.get).asInstanceOf[Certificate]
-                      if(kvcert != null){
-                          if(checkCertificate(new java.util.Date(), kvcert)){
-                            Some(kvcert)
-                          }else{
-                            throw new RuntimeException("证书已经过期")
-                          }
-                      }else{
-                        throw new RuntimeException("证书内容错误")
-                      }
-                  }
-              }else{
+              val kvcert = certCache.getCertForUser(certKey,sysTag)
+              if(kvcert == null){
                 throw new RuntimeException("没有证书")
+              }else{
+                  if(checkCertificate(new java.util.Date(), kvcert)){
+                      Some(kvcert)
+                    }else{
+                      throw new RuntimeException("证书已经过期")
+                    }
               }
           }catch{
             case e : Exception =>throw new RuntimeException(e.getMessage)
