@@ -1,4 +1,6 @@
-<configuration debug="true">
+<configuration DEBUG="true">
+
+	<turboFilter class="rep.log.trace.repTurboLogFilter"/> 
     <!--Tips: Appender configuration, more detail ~ https://logback.qos.ch/manual/appenders.html-->
 
     <!-- Insert the current time formatted as "yyyyMMdd'T'HHmmss" under
@@ -63,17 +65,17 @@
         <target>System.out</target>
         <!--level过滤器简化版-->
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>INFO</level>
+            <level>DEBUG</level>
         </filter>
         <!--Java 过滤器-->
          
-        <filter class="ch.qos.logback.core.filter.EvaluatorFilter">
+        <!--filter class="ch.qos.logback.core.filter.EvaluatorFilter">
             <evaluator> 
                 <expression>return message.contains("Statistic");</expression>
             </evaluator>
             <OnMismatch>DENY</OnMismatch>
             <OnMatch>ACCEPT</OnMatch>
-        </filter>
+        </filter-->
         
         <!--正则表达式过滤器-->
         <!--<filter class="ch.qos.logback.core.filter.EvaluatorFilter">-->
@@ -101,5 +103,6 @@
     <root level="DEBUG">
         <appender-ref ref="STDOUT" />
         <appender-ref ref="FILE" />
+        
     </root>
 </configuration>

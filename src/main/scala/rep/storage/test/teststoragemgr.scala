@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-package rep.storage.test
+package rep.storage.timeAnalysiser
 
 import rep.storage._;
 import rep.storage.leveldb._;

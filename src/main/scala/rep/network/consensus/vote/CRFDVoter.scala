@@ -81,7 +81,7 @@ trait CRFDVoter extends VoterBase {
       var hashSeed:Long = pathUtil.bytesToInt(seed)
       var randomList = getRandomList(hashSeed,len,nodes.size)
       //PrintRandomArray(randomList)
-      println(randomList(0).generateSerial)
+      //println(randomList(0).generateSerial)
       for(j<-0 to len-1){
         var e = randomList(j)
         candidate(j) = nodesSeq(e.generateSerial)

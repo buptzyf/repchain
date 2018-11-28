@@ -28,7 +28,9 @@ import rep.network.sync.SyncModule.SetupSync
 import rep.network.consensus.transaction.PreloadTransactionModule
 import rep.sc.TransProcessor
 import rep.utils.GlobalUtils.ActorType
-import rep.utils.RepLogging
+import rep.log.trace.RepLogHelp
+import rep.log.trace.LogType
+import org.slf4j.LoggerFactory
 
 /**
   * Consensus handle and message dispatcher
@@ -66,9 +68,11 @@ object CRFD {
 
 }
 
-class CRFD(name: String) extends BaseConsenter with ModuleHelper with BaseActor with RepLogging {
+class CRFD(name: String) extends BaseConsenter with ModuleHelper with BaseActor  {
 
   import scala.concurrent.duration._
+  
+  protected def log = LoggerFactory.getLogger(this.getClass)
 
   private var blocker: ActorRef = null
   
@@ -84,7 +88,7 @@ class CRFD(name: String) extends BaseConsenter with ModuleHelper with BaseActor 
   private var preloadTrans:ActorRef = null
 
   override def init(): Unit = {
-
+//.withDispatcher("data-crfd-dispatcher")
     blocker = context.actorOf(BlockModule.props("blocker"), "blocker")
     endorseinblocker = context.actorOf(Endorse4Blocker.props("endorseinblocker"), "endorseinblocker")
     endorse = context.actorOf(EndorsementModule.props("endorse"), "endorse")
@@ -98,7 +102,8 @@ class CRFD(name: String) extends BaseConsenter with ModuleHelper with BaseActor 
     registerActorRef(ActorType.VOTER_MODULE, voter)
     registerActorRef(ActorType.PRELOADTRANS_MODULE, preloadTrans)
 
-    logMsg(LOG_TYPE.INFO,name,"CRFD init finished",selfAddr)
+    //logMsg(LOG_TYPE.INFO,name,"CRFD init finished",selfAddr)
+    RepLogHelp.logMsg(log,LogType.INFO, "CRFD init finished"+"~"+selfAddr)
   }
 
   override def initFinished(): Unit = {
@@ -114,7 +119,8 @@ class CRFD(name: String) extends BaseConsenter with ModuleHelper with BaseActor 
   }
 
   override def preStart(): Unit = {
-    logMsg(LOG_TYPE.INFO,name,"CRFD Actor Start",selfAddr)
+    //logMsg(LOG_TYPE.INFO,name,"CRFD Actor Start",selfAddr)
+    RepLogHelp.logMsg(log,LogType.INFO, "CRFD Actor Start"+"~"+selfAddr)
   }
 
   override def receive: Receive = {

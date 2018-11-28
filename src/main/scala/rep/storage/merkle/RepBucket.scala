@@ -22,13 +22,17 @@ import rep.storage.IdxPrefix
 import rep.utils._
 import rep.crypto._
 import rep.storage.util.StoreUtil
+import rep.log.trace.RepLogHelp
+import rep.log.trace.LogType
+import org.slf4j.LoggerFactory
 
 /**
  * @author jiangbuyun
  * @version	0.7
  * @since	2017-09-28
  * */
-class RepBucket(val leveldb : ILevelDB) extends RepLogging{
+class RepBucket(val leveldb : ILevelDB){
+  protected def log = LoggerFactory.getLogger(this.getClass)
   private var ccids : mutable.ArrayBuffer[String] = new mutable.ArrayBuffer[String]()
   private var MerkleHash : Array[Byte] = null
   private var ccbucket : mutable.HashMap[String,ChainCodeBucket] = new mutable.HashMap[String,ChainCodeBucket]()

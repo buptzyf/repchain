@@ -29,11 +29,16 @@ import rep.network.tools.Statistic.StatisticCollection
 import rep.network.tools.register.ActorRegister
 import rep.ui.web.EventServer
 import rep.utils.GlobalUtils.ActorType
-import rep.utils.RepLogging
 import rep.storage.cfg._ 
 import java.io.File
 import scala.collection.mutable
 import rep.app.conf.SystemProfile
+import com.typesafe.config.ConfigValueFactory
+import java.util.List
+import java.util.ArrayList
+import rep.log.trace.RepLogHelp
+import rep.log.trace.LogType
+import org.slf4j.LoggerFactory
 
 /**
   * System创建伴生对象
@@ -69,8 +74,9 @@ object ClusterSystem {
   * @param initType 初始化类型
   * @param sysStart 是否开启system（不开启仅用于初始化）
   * */
-class ClusterSystem(sysTag: String, initType: Int, sysStart:Boolean) extends RepLogging {
-
+class ClusterSystem(sysTag: String, initType: Int, sysStart:Boolean) {
+  protected def log = LoggerFactory.getLogger(this.getClass)
+  
   private val USER_CONFIG_PATH = "conf/system.conf"
 
   private val modulePrefix = "RepCluster"
@@ -89,7 +95,7 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart:Boolean) extends Rep
 
   private var enableStatistic = false
 
-  private val sysConf: Config = initSystem(sysTag)
+  private var sysConf: Config = initSystem(sysTag)
 
   private var sysActor:ActorSystem = null
 
@@ -114,7 +120,7 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart:Boolean) extends Rep
         val final_conf = ConfigFactory.load(combined_conf)
         final_conf
       case false =>
-        logMsg(LOG_TYPE.WARN, moduleName, "Couldn't find the user config file", "")
+        RepLogHelp.logMsg(log,LogType.WARN, moduleName +  " ~ " + "Couldn't find the user config file" + " ~ " )
         innerConf
     }
   }
@@ -157,7 +163,7 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart:Boolean) extends Rep
     */
   def initSystem(sysName: String): Config = {
     val conf = getConfigBySys(sysName)
-    logMsg(LOG_TYPE.INFO, moduleName, "System configuration successfully", "")
+    RepLogHelp.logMsg(log,LogType.INFO, moduleName +  " ~ " + "System configuration successfully" + " ~ " )
     enableWebSocket = conf.getInt("system.ws_enable") match {
       case 0 => false
       case 1 => true
@@ -190,6 +196,7 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart:Boolean) extends Rep
     * 初始化
     */
   def init = {
+    initConsensusNodeOfConfig
     sysStart match {
       case true =>
         sysActor = ActorSystem(SystemConf.SYSTEM_NAME, sysConf)
@@ -197,17 +204,28 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart:Boolean) extends Rep
       case false => //ignore
     }
     ClusterSystem.register(sysTag, new ActorRegister)
-    logMsg(LOG_TYPE.INFO, moduleName, s"System(${sysTag}) init successfully", "s")
+    RepLogHelp.logMsg(log,LogType.INFO, "System" +  " ~ " + s"System(${sysTag}) init successfully" + " ~ " ,sysTag)
   }
 
+  private def initConsensusNodeOfConfig={
+    val nodelist = sysConf.getStringList("system.vote.vote_node_list")
+    if(nodelist.contains(this.sysTag)){
+      //val roles = Array("CRFD-Node")
+      var roles :List[String] = new ArrayList[String]
+      roles.add("CRFD-Node")
+      sysConf = sysConf.withValue("akka.cluster.roles",  ConfigValueFactory.fromAnyRef(roles))
+    }
+  }
+  
   /**
     * 启动系统
     */
   def start = {
         if(enableStatistic) statistics = sysActor.actorOf(Props[StatisticCollection],"statistic")
-         moduleManager = sysActor.actorOf(ModuleManager.props("moduleManager", sysTag),"moduleManager")
-        ModuleBase.registerActorRef(sysTag, ActorType.MODULE_MANAGER, moduleManager)
         SystemProfile.initConfigSystem(sysActor.settings.config)
+        moduleManager = sysActor.actorOf(ModuleManager.props("moduleManager", sysTag),"moduleManager")
+        ModuleBase.registerActorRef(sysTag, ActorType.MODULE_MANAGER, moduleManager)
+        
         if(!hasDiskSpace){
           Cluster(sysActor).down(clusterAddr)
           throw new Exception("not enough disk space")
@@ -218,7 +236,7 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart:Boolean) extends Rep
         if (enableWebSocket) ModuleBase.registerActorRef(sysTag, ActorType.API_MODULE, webSocket)
         if(enableStatistic) ModuleBase.registerActorRef(sysTag,ActorType.STATISTIC_COLLECTION, statistics)
     
-        logMsg(LOG_TYPE.INFO,"system",s"ClusterSystem ${sysTag} start", "")
+        RepLogHelp.logMsg(log,LogType.INFO, "System" +  " ~ " + s"ClusterSystem ${sysTag} start" + " ~ " ,sysTag)
   }
 
   /**

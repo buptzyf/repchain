@@ -34,6 +34,7 @@ import scala.collection.immutable
 import scala.collection.mutable
 import rep.network.Topic
 import scala.util.control.Breaks
+import rep.log.trace.LogType
 
 
 
@@ -152,14 +153,14 @@ class SyncModule(moduleName: String) extends ModuleBase(moduleName) {
       isSyncReq = true
       val re = syncResults(syncheight)
       val h = dataaccess.getBlockChainInfo().height
-      logMsg(LOG_TYPE.INFO, moduleName, s"node number:${pe.getSysTag},start request data from height:${h},Get a data request from  $sender", selfAddr)
+      logMsg(LogType.INFO, moduleName+"~"+ s"node number:${pe.getSysTag},start request data from height:${h},Get a data request from  $sender"+"～"+selfAddr)
       re.head.addActor ! ChainDataReq(self,
         h, BlockSrc.SYNC_START_BLOCK)
     }
   }
   
   def syncFinishHandle(src: BlockchainInfo) = {
-    logMsg(LOG_TYPE.INFO, moduleName, s"The chaininfo is same as most of nodes", selfAddr)
+    logMsg(LogType.INFO, moduleName+"~"+ s"The chaininfo is same as most of nodes"+"～"+selfAddr)
     pe.setIsSync(false)
     pe.resetSystemCurrentChainStatus(new BlockChainStatus(src.currentBlockHash.toStringUtf8(),src.currentWorldStateHash.toStringUtf8(),src.height))
     //pe.setCurrentBlockHash(src.currentBlockHash.toStringUtf8)
@@ -172,24 +173,24 @@ class SyncModule(moduleName: String) extends ModuleBase(moduleName) {
   override def receive: Receive = {
     case SetupSync =>
       //系统启动，开始同步      
-      logMsg(LOG_TYPE.INFO, moduleName, "Start sync setup", selfAddr)
+      logMsg(LogType.INFO, moduleName+"~"+ "Start sync setup"+"～"+selfAddr)
       clearCache
       val info = dataaccess.getBlockChainInfo()
       //pe.setCacheHeight(info.height)
       pe.resetSystemCurrentChainStatus(new BlockChainStatus(info.currentBlockHash.toStringUtf8(),info.currentWorldStateHash.toStringUtf8(),info.height))
       IsFinishedChainInfo = ChainInfoStatus.START_CHAININFO
-      mediator ! Publish(BlockEvent.CHAIN_INFO_SYNC, ChainInfoReq(info, selfAddr))
+      mediator ! Publish(BlockEvent.CHAIN_INFO_SYNC, ChainInfoReq(info,selfAddr))
       //添加初始化同步定时器
       schedulerLink = scheduler.scheduleOnce(TimePolicy.getTimeoutSync seconds, self, SyncTimeOut)
       isStart = true
 
     case ChainInfoReq(info, actorAddr) =>
-      logMsg(LOG_TYPE.INFO, moduleName, s"Get sync req from $actorAddr", selfAddr)
+      logMsg(LogType.INFO, moduleName+"~"+ s"Get sync req from $actorAddr"+"～"+selfAddr)
       val responseInfo = dataaccess.getBlockChainInfo()
       var isSame = false
       if (responseInfo.currentWorldStateHash.toStringUtf8 == info.currentWorldStateHash.toStringUtf8)
         isSame = true
-      sender() ! ChainInfoRes(info, responseInfo, isSame, selfAddr, self)
+      sender() ! ChainInfoRes(info, responseInfo, isSame,selfAddr, self)
 
     case ChainInfoRes(src, response, isSame, addr, act) =>
       pe.getIsSync() match {
@@ -197,10 +198,10 @@ class SyncModule(moduleName: String) extends ModuleBase(moduleName) {
           if(IsFinishedChainInfo == ChainInfoStatus.START_CHAININFO){
             sender() == self match {
               case true =>
-                logMsg(LOG_TYPE.INFO, moduleName, s"Sync Res from itself", selfAddr)
+                logMsg(LogType.INFO, moduleName+"~"+ s"Sync Res from itself"+"～"+selfAddr)
                 pe.getNodes.size match {
                   case 1 =>
-                    logMsg(LOG_TYPE.INFO, moduleName, s"Just one node in cluster", selfAddr)
+                    logMsg(LogType.INFO, moduleName+"~"+ s"Just one node in cluster"+"～"+selfAddr)
                     getActorRef(pe.getSysTag, ActorType.VOTER_MODULE) ! SeedNode
                     getActorRef(pe.getSysTag, ActorType.BLOCK_MODULE) ! SyncResult(true, isStart, true,
                       src.currentBlockHash.toStringUtf8)
@@ -213,7 +214,7 @@ class SyncModule(moduleName: String) extends ModuleBase(moduleName) {
   
                 }
               case false =>
-                logMsg(LOG_TYPE.INFO, moduleName, s"Get a chaininfo from $addr", selfAddr)
+                logMsg(LogType.INFO, moduleName+"~"+ s"Get a chaininfo from $addr"+"～"+selfAddr)
                 syncResults.contains(response.height) match {
                   case true =>
                     syncResults += response.height -> (syncResults(response.height) :+ (ChainInfoRes(src, response, isSame, addr, act)))
@@ -230,7 +231,7 @@ class SyncModule(moduleName: String) extends ModuleBase(moduleName) {
                       if(syncResults.contains(1)){
                         IsFinishedChainInfo = ChainInfoStatus.END_CHAININFO
                         sendSyncDataReq(1)
-                        logMsg(LOG_TYPE.INFO, moduleName, s"node number:${pe.getSysTag},sync data for height 1", selfAddr)
+                        logMsg(LogType.INFO, moduleName+"~"+ s"node number:${pe.getSysTag},sync data for height 1"+"～"+selfAddr)
                       }
                       else{
                         //继续等待更多的chaininfo
@@ -239,17 +240,17 @@ class SyncModule(moduleName: String) extends ModuleBase(moduleName) {
                       //可以终止同步
                       IsFinishedChainInfo = ChainInfoStatus.END_CHAININFO
                       syncFinishHandle(src)
-                      logMsg(LOG_TYPE.INFO, moduleName, s"node number:${pe.getSysTag},sync is finished,local same", selfAddr)
+                      logMsg(LogType.INFO, moduleName+"~"+ s"node number:${pe.getSysTag},sync is finished,local same"+"～"+selfAddr)
                     }
                   }else if(syncMaxHight > cheight){
                     IsFinishedChainInfo = ChainInfoStatus.END_CHAININFO
                     sendSyncDataReq(syncMaxHight)
-                    logMsg(LOG_TYPE.INFO, moduleName, s"node number:${pe.getSysTag},sync data,localheight=${cheight},max=${syncMaxHight}", selfAddr)
+                    logMsg(LogType.INFO, moduleName+"~"+ s"node number:${pe.getSysTag},sync data,localheight=${cheight},max=${syncMaxHight}"+"～"+selfAddr)
                   }else{
                     //小于本地高度，可以终止同步
                     IsFinishedChainInfo = ChainInfoStatus.END_CHAININFO
                     syncFinishHandle(src)
-                    logMsg(LOG_TYPE.INFO, moduleName, s"node number:${pe.getSysTag},sync is finished,local big", selfAddr)
+                    logMsg(LogType.INFO, moduleName+"~"+ s"node number:${pe.getSysTag},sync is finished,local big"+"～"+selfAddr)
                   }
                 }else{
                   //继续等待更多的chaininfo
@@ -257,11 +258,11 @@ class SyncModule(moduleName: String) extends ModuleBase(moduleName) {
             }
           }
         case false =>
-          logMsg(LOG_TYPE.INFO, moduleName, s"Sync is over", selfAddr)
+          logMsg(LogType.INFO, moduleName+"~"+ s"Sync is over"+"～"+selfAddr)
       }
 
     case ChainDataReq(rec, infoH, blkType) =>
-      logMsg(LOG_TYPE.INFO, moduleName, s"node number:${pe.getSysTag},start block number:${infoH+1},Get a data request from  $sender", selfAddr)
+      logMsg(LogType.INFO, moduleName+"~"+ s"node number:${pe.getSysTag},start block number:${infoH+1},Get a data request from  $sender"+"～"+selfAddr)
       // TODO 广播同步 --test
       println("#############")
       println(sender.path.toString());
@@ -275,27 +276,27 @@ class SyncModule(moduleName: String) extends ModuleBase(moduleName) {
       if (local.height > infoH) {
         data = dataaccess.getBlocks4ObjectFromHeight((infoH + 1).toInt)
       }
-      logMsg(LOG_TYPE.INFO, moduleName, s"node number:${pe.getSysTag},data lenght:${data.size},Get a data request from  $sender", selfAddr)
+      logMsg(LogType.INFO, moduleName+"~"+ s"node number:${pe.getSysTag},data lenght:${data.size},Get a data request from  $sender"+"～"+selfAddr)
       if (data != null && data.size > 0) {
         blkType match {
           case BlockSrc.SYNC_START_BLOCK =>
             var height = infoH + 1
             data.foreach(blk => {
-              logMsg(LOG_TYPE.INFO, moduleName, s"node number:${pe.getSysTag},loop send data,height:${height},send to  $rec", selfAddr)
+              logMsg(LogType.INFO, moduleName+"~"+ s"node number:${pe.getSysTag},loop send data,height:${height},send to  $rec"+"～"+selfAddr)
               rec ! ChainDataResSingleBlk(blk, height)
               height += 1
             })
-            rec ! PersistenceModule.LastBlock(BlockHelper.getBlkHash(data(data.length - 1)), local.height,
-              BlockSrc.SYNC_START_BLOCK, self)
+           // rec ! PersistenceModule.LastBlock(BlockHelper.getBlkHash(data(data.length - 1)), local.height,
+           //   BlockSrc.SYNC_START_BLOCK, self)
           case BlockSrc.CONFIRMED_BLOCK =>
             //ignore
             rec ! ChainDataResSingleBlk(data(0), infoH + 1)
         }
-        logMsg(LOG_TYPE.INFO, moduleName, s"node number:${pe.getSysTag},ChainDataReq,Sync data send successfully", selfAddr)
+        logMsg(LogType.INFO, moduleName+"~"+ s"node number:${pe.getSysTag},ChainDataReq,Sync data send successfully"+"～"+selfAddr)
       }
 
     case chainDataReqSB: ChainDataReqSingleBlk =>
-      logMsg(LOG_TYPE.INFO, moduleName, s"Get a data request from  $sender", selfAddr)
+      logMsg(LogType.INFO, moduleName+"~"+ s"Get a data request from  $sender"+"～"+selfAddr)
       val local = dataaccess.getBlockChainInfo()
       var data: Block = null
       if (local.height > chainDataReqSB.targetHeight) {
@@ -304,7 +305,7 @@ class SyncModule(moduleName: String) extends ModuleBase(moduleName) {
       if (data != null) {
         chainDataReqSB.receiver ! ChainDataResSingleBlk(data, chainDataReqSB.targetHeight)
       }
-      logMsg(LOG_TYPE.INFO, moduleName, s"node number:${pe.getSysTag},ChainDataReqSingleBlk,Sync data send successfully,send to ${akka.serialization.Serialization.serializedActorPath(chainDataReqSB.receiver).toString()}", selfAddr)
+      logMsg(LogType.INFO, moduleName+"~"+ s"node number:${pe.getSysTag},ChainDataReqSingleBlk,Sync data send successfully,send to ${akka.serialization.Serialization.serializedActorPath(chainDataReqSB.receiver).toString()}"+"～"+selfAddr)
 
     case ChainDataResSingleBlk(data, targetHeight) =>
       //收到同步区块数据
@@ -316,9 +317,9 @@ class SyncModule(moduleName: String) extends ModuleBase(moduleName) {
       // TODO 收到同步 --test
       sendEvent(EventType.RECEIVE_INFO, mediator, sender.path.toString(), selfAddr, Event.Action.BLOCK_SYNC)
       sendEventSync(EventType.RECEIVE_INFO, mediator,sender.path.toString(), selfAddr,  Event.Action.BLOCK_SYNC)  
-      logMsg(LOG_TYPE.INFO, moduleName, s"Get a data from $sender", selfAddr)
+      logMsg(LogType.INFO, moduleName+"~"+ s"Get a data from $sender"+"～"+selfAddr)
       //TODO kami 验证信息和数据合法性，现阶段不考虑;验证创世块的合法性
-      logMsg(LOG_TYPE.INFO, moduleName, s"node number:${pe.getSysTag},get single block data,height:${targetHeight},Get a data request from  $sender", selfAddr)
+      logMsg(LogType.INFO, moduleName+"~"+ s"node number:${pe.getSysTag},get single block data,height:${targetHeight},Get a data request from  $sender"+"～"+selfAddr)
       getActorRef(ActorType.PERSISTENCE_MODULE) ! BlockRestore(data,
         targetHeight, BlockSrc.SYNC_START_BLOCK, sender())
       //pe.addCacheBlkNum()
@@ -333,7 +334,7 @@ class SyncModule(moduleName: String) extends ModuleBase(moduleName) {
     case SyncTimeOut =>
       pe.getIsSync() match {
         case true =>
-          logMsg(LOG_TYPE.INFO, moduleName, s"Sync timeout checked, failed", selfAddr)
+          logMsg(LogType.INFO, moduleName+"~"+ s"Sync timeout checked, failed"+"～"+selfAddr)
           //重新请求一遍
           if(syncMaxHight <= 0 ){
             self !  SetupSync
@@ -347,14 +348,14 @@ class SyncModule(moduleName: String) extends ModuleBase(moduleName) {
                   BlockSrc.SYNC_START_BLOCK)
                   schedulerLink = scheduler.scheduleOnce(TimePolicy.getTimeoutSync seconds, self, SyncTimeOut)
             }else{
-                logMsg(LOG_TYPE.INFO, moduleName, s"System is not stable with useful nodes of chain data", selfAddr)
+                logMsg(LogType.INFO, moduleName+"~"+ s"System is not stable with useful nodes of chain data"+"～"+selfAddr)
                 if (isStart) clearCache()
                 getActorRef(ActorType.BLOCK_MODULE) ! SyncResult(true, isStart, false,
                 dataaccess.getBlockChainInfo().currentBlockHash.toStringUtf8)
             }
           }
         case false =>
-          logMsg(LOG_TYPE.INFO, moduleName, s"Sync finished", selfAddr)
+          logMsg(LogType.INFO, moduleName+"~"+ s"Sync finished"+"～"+selfAddr)
 
       }
 

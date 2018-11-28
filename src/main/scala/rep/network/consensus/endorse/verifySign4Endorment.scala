@@ -5,6 +5,8 @@ import akka.cluster.pubsub.DistributedPubSubMediator.Publish
 import rep.network.base.ModuleBase
 import rep.protos.peer.{Transaction}
 import scala.util.control.Breaks._
+import rep.log.trace.LogType
+
 
 object verifySign4Endorment {
     def props(name: String): Props = Props(classOf[ verifySign4Endorment ], name)
@@ -47,6 +49,6 @@ class verifySign4Endorment(moduleName: String) extends ModuleBase(moduleName) {
         }else{
           sender ! verifySign4Endorment.verifySignResult(blkhash,true,startPos,len,actoridex)
         }
-        logMsg(LOG_TYPE.INFO,s"+++++++verify sign time=${System.currentTimeMillis() - sendtime},handle count=${len},actoridex=${actoridex}")
+        logMsg(LogType.INFO,s"+++++++verify sign time=${System.currentTimeMillis() - sendtime},handle count=${len},actoridex=${actoridex}")
     }
 }
