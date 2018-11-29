@@ -1,5 +1,5 @@
 /*
- * Copyright  2018 Blockchain Technology and Application Joint Lab, Fintech Research Center of ISCAS.
+ * Copyright  2018 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -11,12 +11,16 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package rep.app.conf
 
 import com.typesafe.config.Config
-
+//import collection.JavaConversions._
+//import scala.collection.immutable._
+import java.util.List
+import java.util.ArrayList
 
 /**
   * 系统配置信息缓存对象
@@ -48,7 +52,8 @@ object SystemProfile {
   private[this] var _SIGNATUREALGORITHM = "SHA1WITHECDSA"// 设置签名算法，默认用开源
   private[this] var _DIGESTALOGORITHM = "SHA-256"// 设置散列算法，默认用开源
   private[this] var _KEYSTORE = "jks" //设置keystore存储格式，默认用开源
-
+  private[this] var _VOTENODELIST : List[String] = new ArrayList[String]
+  
 
   private def SERVERPORT :Int = _SERVERPORT
   private def CHECKCERTVALIDATE:Int = _CHECKCERTVALIDATE
@@ -57,6 +62,12 @@ object SystemProfile {
   private def SIGNATUREALGORITHM:String = _SIGNATUREALGORITHM
   private def DIGESTALOGORITHM:String = _DIGESTALOGORITHM
   private def KEYSTORE:String = _KEYSTORE
+  
+  private def VOTENODELIST : List[String] = _VOTENODELIST
+  
+  private def VOTENODELIST_=(value: List[String]): Unit = {
+      _VOTENODELIST = value
+  }
   
   
   private def SERVERPORT_=(value: Int): Unit = {
@@ -141,6 +152,7 @@ object SystemProfile {
     MIN_BLOCK_TRANS_NUM_=(config.getInt("system.block.trans_num_min"))
     RETRY_TIME_=(config.getInt("system.block.retry_time"))
     VOTE_NOTE_MIN_=(config.getInt("system.vote.vote_note_min"))
+    VOTENODELIST_=(config.getStringList("system.vote.vote_node_list"))
     TRAN_CREATE_DUR_=(config.getInt("system.transaction.tran_create_dur"))
     MAX_CATCH_TRANS_NUM_=(config.getInt("system.transaction.max_cache_num"))
     TRANS_CREATE_TYPE_=(config.getInt("system.trans_create_type"))
@@ -152,8 +164,6 @@ object SystemProfile {
     DIGESTALOGORITHM_=((config.getString("system.digestAlgorithm")))
     KEYSTORE_=((config.getString("system.keyStore")))
   }
-
-  
   
   def getLimitBlockTransNum = LIMIT_BLOCK_TRANS_NUM
 
@@ -182,4 +192,7 @@ object SystemProfile {
   def getDigestAlogorithm = DIGESTALOGORITHM
 
   def getKeyStore = KEYSTORE
+  
+  def getVoteNodeList = VOTENODELIST
+
 }

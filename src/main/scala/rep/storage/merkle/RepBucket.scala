@@ -1,5 +1,5 @@
 /*
- * Copyright  2018 Blockchain Technology and Application Joint Lab, Fintech Research Center of ISCAS.
+ * Copyright  2018 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -11,6 +11,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package rep.storage.merkle
@@ -22,13 +23,17 @@ import rep.storage.IdxPrefix
 import rep.utils._
 import rep.crypto._
 import rep.storage.util.StoreUtil
+import rep.log.trace.RepLogHelp
+import rep.log.trace.LogType
+import org.slf4j.LoggerFactory
 
 /**
  * @author jiangbuyun
  * @version	0.7
  * @since	2017-09-28
  * */
-class RepBucket(val leveldb : ILevelDB) extends RepLogging{
+class RepBucket(val leveldb : ILevelDB){
+  protected def log = LoggerFactory.getLogger(this.getClass)
   private var ccids : mutable.ArrayBuffer[String] = new mutable.ArrayBuffer[String]()
   private var MerkleHash : Array[Byte] = null
   private var ccbucket : mutable.HashMap[String,ChainCodeBucket] = new mutable.HashMap[String,ChainCodeBucket]()

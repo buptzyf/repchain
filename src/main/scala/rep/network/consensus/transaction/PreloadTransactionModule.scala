@@ -1,5 +1,5 @@
 /*
- * Copyright  2018 Blockchain Technology and Application Joint Lab, Fintech Research Center of ISCAS.
+ * Copyright  2018 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -11,6 +11,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package rep.network.consensus.transaction
@@ -31,8 +32,8 @@ import rep.sc.{Sandbox, TransProcessor}
 import rep.storage.{ImpDataAccess, ImpDataPreload, ImpDataPreloadMgr}
 import rep.utils.GlobalUtils.ActorType
 import rep.utils._
-
 import scala.collection.mutable
+import rep.log.trace.LogType
 
 /**
   * Transaction handler
@@ -83,6 +84,7 @@ class PreloadTransactionModule(moduleName: String, transProcessor:ActorRef) exte
   }
 
   def preLoadFeedBackInfo(resultFlag: Boolean, block: rep.protos.peer.Block, from: Int, merk: String): Unit = {
+    logTime("create block preload inner time", System.currentTimeMillis(),false)
     preloadFrom match {
       case PreTransFromType.BLOCK_CREATOR =>
         getActorRef(ActorType.BLOCK_MODULE) ! PreTransBlockResult(block,
@@ -103,7 +105,7 @@ class PreloadTransactionModule(moduleName: String, transProcessor:ActorRef) exte
   }
 
   override def preStart(): Unit = {
-    logMsg(LOG_TYPE.INFO,"PreloadTransaction Module Start")
+    logMsg(LogType.INFO,"PreloadTransaction Module Start")
   }
 
   def AssembleTransResult(merkle:Option[String])={
@@ -118,14 +120,14 @@ class PreloadTransactionModule(moduleName: String, transProcessor:ActorRef) exte
         val nohash = NonHashData(Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)),
           transResult)
         blk = blk.withNonHashData(nohash)
-        println(s"Merk ${pe.getSysTag} : ~ preload after " + merkle.getOrElse(""))
+        //println(s"Merk ${pe.getSysTag} : ~ preload after " + merkle.getOrElse(""))
         preLoadFeedBackInfo(true, blk, preloadFrom, merkle.getOrElse(""))
       }else{
         preLoadFeedBackInfo(false, blk, preloadFrom, pe.getMerk)
       }
       blkIdentifier_src = ""
-      logTime(s"Trans Preload End, Trans size ${transResult.size - errorCount}", CRFD_STEP._6_PRELOAD_END,
-        getActorRef(ActorType.STATISTIC_COLLECTION))
+      //logTime(s"Trans Preload End, Trans size ${transResult.size - errorCount}", CRFD_STEP._6_PRELOAD_END,
+      //  getActorRef(ActorType.STATISTIC_COLLECTION))
       isPreload = false
       freeSource
       schedulerLink = clearSched()
@@ -143,6 +145,7 @@ class PreloadTransactionModule(moduleName: String, transProcessor:ActorRef) exte
   override def receive = {
 
     case PreTransBlock(blc, from,blkIdentifier) =>
+      logTime("create block preload inner time", System.currentTimeMillis(),true)
       val preBlk = dataaccess.getBlockByHash(blk.previousBlockHash.toStringUtf8)
       freeSource
       
@@ -153,9 +156,9 @@ class PreloadTransactionModule(moduleName: String, transProcessor:ActorRef) exte
         clearCache() //是否是多余的，确保一定执行了
         schedulerLink = clearSched()
         //开始预执行
-        logTime("TransPreloadStart",CRFD_STEP._5_PRELOAD_START,getActorRef(ActorType.STATISTIC_COLLECTION))
+        //logTime("TransPreloadStart",CRFD_STEP._5_PRELOAD_START,getActorRef(ActorType.STATISTIC_COLLECTION))
         //预执行并收集结果
-        logMsg(LOG_TYPE.INFO, s"Get a preload req, form ${sender()}")
+        logMsg(LogType.INFO, s"Get a preload req, form ${sender()}")
         preLoadTrans = blc.transactions.map(trans => (trans.txid, trans))(breakOut): mutable.HashMap[ String, Transaction ]
         val preload :ImpDataPreload = ImpDataPreloadMgr.GetImpDataPreload(pe.getDBTag,blc.transactions.head.txid)
         //确保提交的时候顺序执行
@@ -168,12 +171,12 @@ class PreloadTransactionModule(moduleName: String, transProcessor:ActorRef) exte
         //TODO kami 超时在这里，如果超时算是错误类型中的一种
         schedulerLink = scheduler.scheduleOnce(TimePolicy.getTimeoutPreload seconds, self, PreLoadTransTimeout)
       }
-      else logMsg(LOG_TYPE.WARN, "Preload Transcations input consensus failed")
+      else logMsg(LogType.WARN, "Preload Transcations input consensus failed")
 
     case Sandbox.DoTransactionResult(t,from, r, merkle, ol, mb, err) =>
       //是否在当前交易列表中
       preLoadTrans.getOrElse(t.txid, None) match {
-        case None => logMsg(LOG_TYPE.WARN, s"${t.txid} does exist in the block this time, size is ${preLoadTrans.size}")
+        case None => logMsg(LogType.WARN, s"${t.txid} does exist in the block this time, size is ${preLoadTrans.size}")
         case _ =>
           err match {
             case None =>
@@ -206,11 +209,11 @@ class PreloadTransactionModule(moduleName: String, transProcessor:ActorRef) exte
                 AssembleTransResult(merkle)
               }
             case _ =>
-              logMsg(LOG_TYPE.WARN, s"${t.txid} preload error, error: ${err.get}")
+              logMsg(LogType.WARN, s"${t.txid} preload error, error: ${err.get}")
               //TODO kami 删除出错的交易，如果全部出错，则返回false
               preLoadTrans.remove(t.txid)
               errorCount += 1
-              println("ErrCount:" + errorCount)
+              //println("ErrCount:" + errorCount)
               if ((transResult.size + errorCount) == blk.transactions.size) {
                 AssembleTransResult(merkle)
               }
@@ -220,7 +223,7 @@ class PreloadTransactionModule(moduleName: String, transProcessor:ActorRef) exte
     case PreLoadTransTimeout =>
       isPreload match {
         case true =>
-          logMsg(LOG_TYPE.WARN, "Preload trans timeout checked, unfinished")
+          logMsg(LogType.WARN, "Preload trans timeout checked, unfinished")
           preLoadFeedBackInfo(false, blk, preloadFrom, pe.getMerk)
           blkIdentifier_src = ""
           isPreload = false
@@ -228,7 +231,7 @@ class PreloadTransactionModule(moduleName: String, transProcessor:ActorRef) exte
           schedulerLink = clearSched()
         case false => {
           freeSource
-          logMsg(LOG_TYPE.INFO, "Preload trans timeout checked, successfully")
+          logMsg(LogType.INFO, "Preload trans timeout checked, successfully")
         }
 
       }

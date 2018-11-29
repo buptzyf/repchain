@@ -1,5 +1,5 @@
 /*
- * Copyright  2018 Blockchain Technology and Application Joint Lab, Fintech Research Center of ISCAS.
+ * Copyright  2018 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -11,6 +11,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package rep.storage.leveldb
@@ -25,6 +26,9 @@ import rep.storage.util.StoreUtil
 import com.google.protobuf.ByteString
 import scala.math._ 
 import rep.crypto._
+import rep.log.trace.RepLogHelp
+import rep.log.trace.LogType
+import org.slf4j.LoggerFactory
 
 
 /**
@@ -33,7 +37,8 @@ import rep.crypto._
  * @since	2017-09-28
  * @category	该类实现公共方法。
  * */
-abstract class AbstractLevelDB extends ILevelDB  with RepLogging {
+abstract class AbstractLevelDB extends ILevelDB  {
+  protected def log = LoggerFactory.getLogger(this.getClass)
   protected var IncrementWorldState : immutable.TreeMap[String,Array[Byte]] = new immutable.TreeMap[String,Array[Byte]]() 
   protected var GlobalMerkle : Array[Byte] = null
   
@@ -102,9 +107,9 @@ abstract class AbstractLevelDB extends ILevelDB  with RepLogging {
       rel = this.GlobalMerkle
     }
     if(rel != null){
-      println("=========################getmerkle value="+BytesHex.bytes2hex(rel)+"\tsource size="+source.size)
+      //println("=========################getmerkle value="+BytesHex.bytes2hex(rel)+"\tsource size="+source.size)
     }else{
-      println("=========################getmerkle value=null"+"\tsource size="+source.size)
+      //println("=========################getmerkle value=null"+"\tsource size="+source.size)
     }
     rel
   }

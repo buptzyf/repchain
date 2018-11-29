@@ -1,5 +1,5 @@
 /*
- * Copyright  2018 Blockchain Technology and Application Joint Lab, Fintech Research Center of ISCAS.
+ * Copyright  2018 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -11,6 +11,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package rep.storage
@@ -295,10 +296,11 @@ class ImpDataPreload (SystemName:String,InstanceName:String) extends AbstractLev
  * @since	2017-09-28
  * @category	某个系统的多实例管理类，管理某个系统所有的多实例，包含自动释放超时的实例。
  * */
-private class  MultiDBMgr (val SystemName:String)  extends RepLogging{
+private class  MultiDBMgr (val SystemName:String) {
+    import org.slf4j.LoggerFactory
     private val  checktime = 60*1000//如果某个实例超过60s没有使用，就自动清理
     private var  DBOps  =  new scala.collection.mutable.HashMap[String,ImpDataPreload]()
-    
+    protected def log = LoggerFactory.getLogger(this.getClass)
     /**
 	 * @author jiangbuyun
 	 * @version	0.7
@@ -392,7 +394,9 @@ private class  MultiDBMgr (val SystemName:String)  extends RepLogging{
  * @since	2017-09-28
  * @category	系统管理类，管理每个系统中的多实例管理器。
  * */
-object ImpDataPreloadMgr extends RepLogging{
+object ImpDataPreloadMgr{
+    import org.slf4j.LoggerFactory
+    protected def log = LoggerFactory.getLogger(this.getClass)
     private var  singleobjs  =  new scala.collection.mutable.HashMap[String,MultiDBMgr]()
     /**
 	 * @author jiangbuyun

@@ -1,5 +1,5 @@
 /*
- * Copyright  2018 Blockchain Technology and Application Joint Lab, Fintech Research Center of ISCAS.
+ * Copyright  2018 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -11,6 +11,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package rep.network.consensus.block
@@ -32,12 +33,11 @@ import rep.network.sync.SyncModule.SyncResult
 import rep.network.consensus.transaction.PreloadTransactionModule.PreTransFromType
 import rep.protos.peer._
 import rep.storage.ImpDataAccess
-import rep.utils.GlobalUtils.{ActorType, BlockChainStatus, BlockEvent, EventType}
-
+import rep.utils.GlobalUtils.{ActorType, BlockEvent, EventType,BlockChainStatus}
 import scala.collection.mutable
 import com.sun.beans.decoder.FalseElementHandler
-
 import scala.util.control.Breaks
+import rep.log.trace.LogType
 
 /**
   * 出块模块伴生对象
@@ -237,7 +237,7 @@ class BlockModule(moduleName: String) extends ModuleBase(moduleName) {
   }
     
   override def preStart(): Unit = {
-    logMsg(LOG_TYPE.INFO, "Block module start")
+    logMsg(LogType.INFO, "Block module start")
     //TODO kami 这里值得注意：整个订阅过s程也是一个gossip过程，并不是立即生效。需要等到gossip一致性成功之后才能够receive到注册信息。
     SubscribeTopic(mediator, self, selfAddr, Topic.Block, true)
     scheduler.scheduleOnce(TimePolicy.getStableTimeDur millis, context.parent, BlockModuleInitFinished)
@@ -286,34 +286,41 @@ class BlockModule(moduleName: String) extends ModuleBase(moduleName) {
                   schedulerLink = clearSched()
                   clearCache()
                   //准备出块
-                  logMsg(LOG_TYPE.INFO, "Create Block start in BlockEvent.CREATE_BLOCK")
-                  logTime("Create Block start", CRFD_STEP._3_BLK_CREATE_START, getActorRef(ActorType.STATISTIC_COLLECTION))
+                  
+                  logMsg(LogType.INFO, "Create Block start in BlockEvent.CREATE_BLOCK")
+                  logTime("Create Block time", System.currentTimeMillis(),true)
+                  logTime("blocker，from create to finish time", System.currentTimeMillis(),true)
                   //From memberListener itself
                   //发送候选人事件
                   sendEvent(EventType.PUBLISH_INFO, mediator, selfAddr, Topic.Block, Event.Action.CANDIDATOR)
                   val translist = getTransListFromTransPool(SystemProfile.getLimitBlockTransNum)
                   //交易列表中的交易数量，当前用大于0即可，以后应该可以根据设置SystemProfile.getMinBlockTransNum来进行调整
                   if(translist.size > 0){
+                    
+                    logTime("create block select Trans time", System.currentTimeMillis(),true)
                     blc = BlockHelper.createPreBlock(pe.getCurrentBlockHash, translist)
                     blkidentifier_str = pe.getSysTag+"_"+System.nanoTime().toString()
-                    logTime("Create Block end", CRFD_STEP._4_BLK_CREATE_END, getActorRef(ActorType.STATISTIC_COLLECTION))
-                    logMsg(LOG_TYPE.INFO,s"Create Block end in BlockEvent.CREATE_BLOCK,current height=${pe.getCacheHeight()},current hash=${pe.getCurrentBlockHash},identifier=${blkidentifier_str}")
+                    
+                    logMsg(LogType.INFO,s"Create Block end in BlockEvent.CREATE_BLOCK,current height=${pe.getCacheHeight()},current hash=${pe.getCurrentBlockHash},identifier=${blkidentifier_str}")
                     pe.setEndorState(false)
                     pe.setIsBlocking(true)
-                    logMsg(LOG_TYPE.INFO, s"Create Block with transcation,transaction size ${blc.transactions.size},node number=${pe.getSysTag},block identifier=${blkidentifier_str}")
+                    logMsg(LogType.INFO, s"Create Block with transcation,transaction size ${blc.transactions.size},node number=${pe.getSysTag},block identifier=${blkidentifier_str}")
+                    logTime("create block select Trans time", System.currentTimeMillis(),false)
+                    logTime("create block preload Trans time", System.currentTimeMillis(),true)
                     getActorRef(pe.getSysTag, ActorType.PRELOADTRANS_MODULE) ! PreTransBlock(blc, PreTransFromType.BLOCK_CREATOR,blkidentifier_str)
                     schedulerLink = scheduler.scheduleOnce(TimePolicy.getTimeOutBlock seconds, self, CreateBlockTimeOut)
                   }else{
-                    logMsg(LOG_TYPE.INFO, "Blocking, transaction number is not enough,waiting for next block request in BlockEvent.CREATE_BLOCK")
+                    logMsg(LogType.INFO, "Blocking, transaction number is not enough,waiting for next block request in BlockEvent.CREATE_BLOCK")
                     getActorRef(pe.getSysTag, ActorType.VOTER_MODULE) ! NextVote(true,0,false)
                   }
+                  logTime("Create Block time", System.currentTimeMillis(),false)
               }
             case true =>
-             logMsg(LOG_TYPE.INFO, "Blocking, waiting for next block request in BlockEvent.CREATE_BLOCK")
+             logMsg(LogType.INFO, "Blocking, waiting for next block request in BlockEvent.CREATE_BLOCK")
               getActorRef(pe.getSysTag, ActorType.VOTER_MODULE) ! NextVote(true,0,false)
           }
       case true =>
-          logMsg(LOG_TYPE.INFO, "Syncing, waiting for next block request")
+          logMsg(LogType.INFO, "Syncing, waiting for next block request")
           getActorRef(pe.getSysTag, ActorType.VOTER_MODULE) ! NextVote(true,0,false)
       }
     //系统开始出块通知（给非出块人）
@@ -326,7 +333,7 @@ class BlockModule(moduleName: String) extends ModuleBase(moduleName) {
                 IsFinishedEndorse == EndorseStatus.END_ENDORSE && blc.previousBlockHash.toStringUtf8() == pe.getCurrentBlockHash match{
                 case true => 
                   pe.setIsBlocking(true)
-                  logMsg(LOG_TYPE.INFO, s"vote notice,current is not blocker,previous is blocker,and is endorsing")
+                  logMsg(LogType.INFO, s"vote notice,current is not blocker,previous is blocker,and is endorsing")
                 case false=>
                   //背书获取当前出块人（更新出块状态）
                   //isBlocking = true
@@ -336,20 +343,21 @@ class BlockModule(moduleName: String) extends ModuleBase(moduleName) {
                   IsFinishedEndorse = EndorseStatus.READY_ENDORSE
                   //添加出块定时器
                   schedulerLink = scheduler.scheduleOnce(TimePolicy.getTimeOutBlock seconds, self, CreateBlockTimeOut)
-                  //getActorRef(ActorType.ENDORSE_MODULE) ! RepeatCheckEndorseCache
-                  logMsg(LOG_TYPE.INFO, s"vote notice,current is not blocker")
+                  //如果不是出块人，发送消息通知背书模块，是否有背书缓存请求，如果有，检查缓存的请求，进行背书。
+                  getActorRef(ActorType.ENDORSE_MODULE) ! RepeatCheckEndorseCache
+                  logMsg(LogType.INFO, s"vote notice,current is not blocker")
               }
             case true =>
-              logMsg(LOG_TYPE.INFO, "Blocking, waiting for next block request in BlockEvent.BLOCKER")
+              logMsg(LogType.INFO, "Blocking, waiting for next block request in BlockEvent.BLOCKER")
               getActorRef(pe.getSysTag, ActorType.VOTER_MODULE) ! NextVote(true,0,false)
           }
         case true =>
-          logMsg(LOG_TYPE.INFO, "Syncing, waiting for next block request")
+          logMsg(LogType.INFO, "Syncing, waiting for next block request")
           getActorRef(pe.getSysTag, ActorType.VOTER_MODULE) ! NextVote(true,0,false)
       }
     //出块预执行结果
     case PreTransBlockResult(blk, result, merk, errorType, error,blkIdentifier) =>
-      println("blk.previoushash="+blk.previousBlockHash.toStringUtf8()+"\tpe.currentbhash="+pe.getCurrentBlockHash)
+      //println("blk.previoushash="+blk.previousBlockHash.toStringUtf8()+"\tpe.currentbhash="+pe.getCurrentBlockHash)
       if(blk.previousBlockHash.toStringUtf8() != pe.getCurrentBlockHash){
         resetVoteEnv
       }else
@@ -357,14 +365,15 @@ class BlockModule(moduleName: String) extends ModuleBase(moduleName) {
         case true =>
           blkidentifier_str == blkidentifier_str match {
             case true =>
-              logTime("Endorsement publish", CRFD_STEP._7_ENDORSE_PUB, getActorRef(ActorType.STATISTIC_COLLECTION))
-              logMsg(LOG_TYPE.INFO, s"PreTransBlockResult ... with transcation,transaction size ${blk.transactions.size},node number=${pe.getSysTag},block identifier=${blkidentifier_str}")
+              logTime("create block preload Trans time", System.currentTimeMillis(),false)
+              logMsg(LogType.INFO, s"PreTransBlockResult ... with transcation,transaction size ${blk.transactions.size},node number=${pe.getSysTag},block identifier=${blkidentifier_str}")
               blc = blk.withStateHash(ByteString.copyFromUtf8(merk))
               blc = blc.withConsensusMetadata(Seq(BlockHelper.endorseBlock(ShaDigest.hash(blc.toByteArray), pe.getSysTag)))
               //Broadcast the Block
               //这个块经过预执行之后已经包含了预执行结果和状态
               //mediator ! Publish(BlockEvent.BLOCK_ENDORSEMENT, PrimaryBlock(blc, pe.getBlocker))
-              logMsg(LOG_TYPE.INFO, s"node name=${pe.getSysTag},preload finish,self cert=${blc.consensusMetadata(0).endorser.toStringUtf8()}")
+              logMsg(LogType.INFO, s"node name=${pe.getSysTag},preload finish,self cert=${blc.consensusMetadata(0).endorser.toStringUtf8()}")
+              logTime("create block endorse time", System.currentTimeMillis(),true)
               
               getActorRef(ActorType.ENDORSE_BLOCKER) ! ReadyEndorsement4Block(blc,blkidentifier_str)
               
@@ -381,9 +390,9 @@ class BlockModule(moduleName: String) extends ModuleBase(moduleName) {
               
               //Endorsement require event
               sendEvent(EventType.PUBLISH_INFO, mediator, selfAddr, Topic.Endorsement, Event.Action.BLOCK_ENDORSEMENT)
-            case false => logMsg(LOG_TYPE.INFO, "Receives a wrong trans preload result with timeout error")
+            case false => logMsg(LogType.INFO, "Receives a wrong trans preload result with timeout error")
           }
-        case false => logMsg(LOG_TYPE.INFO, s"Block preload trans failed, error type : ${errorType} ~ ${error}")
+        case false => logMsg(LogType.INFO, s"Block preload trans failed, error type : ${errorType} ~ ${error}")
 
       }
     /*case ResendEndorseInfo =>
@@ -416,7 +425,7 @@ class BlockModule(moduleName: String) extends ModuleBase(moduleName) {
                   //TODO kami 类似于MD5验证，是否是同一个blk（可以进一步的完善，存在效率问题？）
                   blkidentifier == blkidentifier_str match {
                     case true =>
-                      BlockHelper.checkBlockContent(endor, Sha256.hash(blc_new.toByteArray)) match {
+                      BlockHelper.checkBlockContent(endor, ShaDigest.hash(blc_new.toByteArray)) match {
                         case true =>
                           if(!isExistEndorse(endor)){
                               addEndoserNode(akka.serialization.Serialization.serializedActorPath(sender()).toString(),"/user/moduleManager/consensusManager/consensus-CRFD/endorse")
@@ -477,18 +486,18 @@ class BlockModule(moduleName: String) extends ModuleBase(moduleName) {
         //var writeend = System.nanoTime()
         //logMsg(LOG_TYPE.INFO, s"write sort spent time=${writeend-writestart}")
         //广播这个block
-        logMsg(LOG_TYPE.INFO, s"new block,nodename=${pe.getSysTag},transaction size=${blc.transactions.size},identifier=${this.blkidentifier_str},${blkidentifier},current height=${dataaccess.getBlockChainInfo().height},previoushash=${blc.previousBlockHash.toStringUtf8()}")
+        logMsg(LogType.INFO, s"new block,nodename=${pe.getSysTag},transaction size=${blc.transactions.size},identifier=${this.blkidentifier_str},${blkidentifier},current height=${dataaccess.getBlockChainInfo().height},previoushash=${blc.previousBlockHash.toStringUtf8()}")
         mediator ! Publish(Topic.Block, new ConfirmedBlock(blc, dataaccess.getBlockChainInfo().height + 1,
                             newblocker))
-        logMsg(LOG_TYPE.INFO, s"recv newBlock msg,node number=${pe.getSysTag},new block height=${dataaccess.getBlockChainInfo().height + 1}")                    
+        logMsg(LogType.INFO, s"recv newBlock msg,node number=${pe.getSysTag},new block height=${dataaccess.getBlockChainInfo().height + 1}")                    
           
-        logTime("New block publish", CRFD_STEP._11_NEW_BLK_PUB, getActorRef(ActorType.STATISTIC_COLLECTION))
+        //logTime("New block publish", CRFD_STEP._11_NEW_BLK_PUB, getActorRef(ActorType.STATISTIC_COLLECTION))
       }
     //接收广播的正式块数据
     case ConfirmedBlock(blk, height, actRef) =>
       //确认，接受新块（满足最基本的条件）
-      logTime("New block get and check", CRFD_STEP._12_NEW_BLK_GET_CHECK,
-        getActorRef(ActorType.STATISTIC_COLLECTION))
+      //logTime("New block get and check", CRFD_STEP._12_NEW_BLK_GET_CHECK,
+      //  getActorRef(ActorType.STATISTIC_COLLECTION))
       val endors = blk.consensusMetadata
       val blkOutEndorse = blk.withConsensusMetadata(Seq())
       if (BlockHelper.checkCandidate(endors.size, pe.getCandidator.size)) {
@@ -498,34 +507,37 @@ class BlockModule(moduleName: String) extends ModuleBase(moduleName) {
           if (!BlockHelper.checkBlockContent(endorse, ShaDigest.hash(blkOutEndorse.toByteArray))) isEndorsed = false
         }
         if (isEndorsed && BlockHelper.isEndorserListSorted(endors.toArray[Endorsement])==1) {
-          logTime("New block, start to store", CRFD_STEP._13_NEW_BLK_START_STORE,
-            getActorRef(ActorType.STATISTIC_COLLECTION))
+          //logTime("New block, start to store", CRFD_STEP._13_NEW_BLK_START_STORE,
+          //  getActorRef(ActorType.STATISTIC_COLLECTION))
           //c4w 广播接收到block事件
           sendEvent(EventType.RECEIVE_INFO, mediator, selfAddr, Topic.Block, Event.Action.BLOCK_NEW)
+          logTime("create block sendblock time", System.currentTimeMillis(),false)
+          logTime("create block storeblock time", System.currentTimeMillis(),true)
           getActorRef(pe.getSysTag, ActorType.PERSISTENCE_MODULE) ! BlockRestore(blk, height, BlockSrc.CONFIRMED_BLOCK, actRef)
-          getActorRef(pe.getSysTag, ActorType.PERSISTENCE_MODULE) ! PersistenceModule.LastBlock(BlockHelper.getBlkHash(blk), 0,
-            BlockSrc.CONFIRMED_BLOCK, self)
+          //getActorRef(pe.getSysTag, ActorType.PERSISTENCE_MODULE) ! PersistenceModule.LastBlock(BlockHelper.getBlkHash(blk), 0,
+          //  BlockSrc.CONFIRMED_BLOCK, self)
           if (isThisAddr(selfAddr, pe.getBlocker.toString)) {
             //Thread.sleep(500)
-            logMsg(LOG_TYPE.INFO, "block store finish,start new vote ...")
+            logMsg(LogType.INFO, "block store finish,start new vote ...")
           }else{
-            logMsg(LOG_TYPE.INFO, s"blocker=${pe.getBlocker.toString},self=${selfAddr}")
+            logMsg(LogType.INFO, s"blocker=${pe.getBlocker.toString},self=${selfAddr}")
           }
+          logTime("blocker，from create to finish time", System.currentTimeMillis(),false)
           //接收到新块之后重新vote
           schedulerLink = clearSched()
           //状态设置改到持久化之后
           clearCache()
-          logMsg(LOG_TYPE.INFO, "New block, store opt over ...")
-          logTime("New block, store opt over", CRFD_STEP._14_NEW_BLK_STORE_END,
-            getActorRef(ActorType.STATISTIC_COLLECTION))
+          logMsg(LogType.INFO, "New block, store opt over ...")
+          //logTime("New block, store opt over", CRFD_STEP._14_NEW_BLK_STORE_END,
+          //  getActorRef(ActorType.STATISTIC_COLLECTION))
         }
-        else logMsg(LOG_TYPE.WARN, s"The block endorsement info is wrong or endorser sort error. Sender : ${sender()}")
+        else logMsg(LogType.WARN, s"The block endorsement info is wrong or endorser sort error. Sender : ${sender()}")
       }
-      else logMsg(LOG_TYPE.WARN, s"The num of  endorsement in block is not enough. Sender : ${sender()}")
+      else logMsg(LogType.WARN, s"The num of  endorsement in block is not enough. Sender : ${sender()}")
 
     //创世块创建
     case GenesisBlock =>
-      logMsg(LOG_TYPE.INFO, "Create genesis block")
+      logMsg(LogType.INFO, "Create genesis block")
       blc = BlockHelper.genesisBlockCreator()
       isGensis = true
       getActorRef(pe.getSysTag, ActorType.PRELOADTRANS_MODULE) ! PreTransBlock(blc, PreTransFromType.BLOCK_GENSIS,"")
@@ -556,16 +568,16 @@ class BlockModule(moduleName: String) extends ModuleBase(moduleName) {
         }
         catch {
           case e: Exception =>
-            logMsg(LOG_TYPE.ERROR, s"Commit error : ${e.toString}")
-            logMsg(LOG_TYPE.ERROR, "GensisBlock create failed, preload transaction error")
+            logMsg(LogType.ERROR, s"Commit error : ${e.toString}")
+            logMsg(LogType.ERROR, "GensisBlock create failed, preload transaction error")
             clearCache()
             self ! GenesisBlock
-          case _ => logMsg(LOG_TYPE.ERROR, "Commit Error : Unknown")
+          case _ => logMsg(LogType.ERROR, "Commit Error : Unknown")
         }
         finally {}
       }
       else {
-        logMsg(LOG_TYPE.WARN, "GensisBlock create failed, preload transaction error")
+        logMsg(LogType.WARN, "GensisBlock create failed, preload transaction error")
         self ! GenesisBlock
       }
 
@@ -583,7 +595,7 @@ class BlockModule(moduleName: String) extends ModuleBase(moduleName) {
                   getActorRef(pe.getSysTag, ActorType.VOTER_MODULE) ! NextVote(true,0,false)
               }
             case false =>
-              if (!result) logMsg(LOG_TYPE.WARN,
+              if (!result) logMsg(LogType.WARN,
                 "System isn't start with sync successfully! Please shutdown and check it")
               else getActorRef(pe.getSysTag, ActorType.VOTER_MODULE) ! NextVote(true,0,false)
           }
@@ -594,7 +606,7 @@ class BlockModule(moduleName: String) extends ModuleBase(moduleName) {
       //isBlocking match {
       pe.getIsBlocking() match {
         case true =>
-          logMsg(LOG_TYPE.WARN, "Create new block timeout check, failed")
+          logMsg(LogType.WARN, "Create new block timeout check, failed")
           clearCache()
           schedulerLink = clearSched()
           getActorRef(pe.getSysTag, ActorType.VOTER_MODULE) ! NextVote(false,0,true)
@@ -602,7 +614,7 @@ class BlockModule(moduleName: String) extends ModuleBase(moduleName) {
           schedulerLink1 = clearSched1()
           schedulerLink = clearSched()
           //getActorRef(pe.getSysTag, ActorType.VOTER_MODULE) ! NextVote(false,0,true)
-          logMsg(LOG_TYPE.INFO, "Create block timeout check. successfully")
+          logMsg(LogType.INFO, "Create block timeout check. successfully")
       }
 
     case _ => //ignore

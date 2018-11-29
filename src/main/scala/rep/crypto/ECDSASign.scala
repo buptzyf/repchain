@@ -1,5 +1,5 @@
 /*
- * Copyright  2018 Blockchain Technology and Application Joint Lab, Fintech Research Center of ISCAS.
+ * Copyright  2018 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -11,6 +11,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package rep.crypto
@@ -33,6 +34,9 @@ import javax.xml.bind.DatatypeConverter
 import cn.com.tsg.jce.provider.TsgJceProvider
 import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPublicKey
 import org.bouncycastle.jce.provider.BouncyCastleProvider
+
+import java.util.ArrayList
+import java.util.List
 import sun.security.ec.ECPublicKeyImpl
 
 /**
@@ -265,6 +269,16 @@ object ECDSASign extends ECDSASign {
       trustkeysPubAddrMap.put(getBitcoinAddrByCert(cert), cert)
     }
   }
+  
+  def getAliasOfTrustkey:List[String] = {
+    var list:List[String] = new ArrayList[String]
+    val enums = trustKeyStore.aliases()
+    while (enums.hasMoreElements) {
+      val alias = enums.nextElement()
+      list.add(alias)
+    }
+    list
+  }
 
   /**
    * 获取本地证书，得到证书类和其序列化的字节序列
@@ -412,25 +426,15 @@ class ECDSASign extends SignFunc {
         throw new RuntimeException("没有证书")
       }else{
           try{
-              val sr: ImpDataAccess = ImpDataAccess.GetDataAccess(sysTag)
-              val cert = Option(sr.Get(certKey))
-              if (cert != None){
-                if (new String(cert.get) == "null") {
-                    throw new RuntimeException("用户证书已经注销")
-                  }else{ 
-                      val kvcert = SerializeUtils.deserialise(cert.get).asInstanceOf[Certificate]
-                      if(kvcert != null){
-                          if(checkCertificate(new java.util.Date(), kvcert)){
-                            Some(kvcert)
-                          }else{
-                            throw new RuntimeException("证书已经过期")
-                          }
-                      }else{
-                        throw new RuntimeException("证书内容错误")
-                      }
-                  }
-              }else{
+              val kvcert = certCache.getCertForUser(certKey,sysTag)
+              if(kvcert == null){
                 throw new RuntimeException("没有证书")
+              }else{
+                  if(checkCertificate(new java.util.Date(), kvcert)){
+                      Some(kvcert)
+                    }else{
+                      throw new RuntimeException("证书已经过期")
+                    }
               }
           }catch{
             case e : Exception =>throw new RuntimeException(e.getMessage)

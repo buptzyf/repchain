@@ -1,5 +1,5 @@
 /*
- * Copyright  2018 Blockchain Technology and Application Joint Lab, Fintech Research Center of ISCAS.
+ * Copyright  2018 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -11,6 +11,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package rep.sc
@@ -24,7 +25,9 @@ import java.util.concurrent.Executors
 import java.lang.Exception
 import java.lang.Thread._
 import java.io.File._
-
+import rep.log.trace.RepLogHelp
+import rep.log.trace.LogType
+import org.slf4j.LoggerFactory
 import org.json4s.{DefaultFormats, Formats, jackson}
 import de.heikoseeberger.akkahttpjson4s.Json4sSupport
 import org.json4s._
@@ -78,13 +81,15 @@ object Sandbox {
  * @constructor 以合约在区块链上的链码id作为合约容器id建立实例
  * @param cid 链码id
  */
-abstract class Sandbox(cid:String) extends Actor with RepLogging{
+abstract class Sandbox(cid:String) extends Actor {
   import TransProcessor._
   import Sandbox._
   import spray.json._
+  protected def log = LoggerFactory.getLogger(this.getClass)
   //与存储交互的实例
   val pe = PeerExtension(context.system)
   val sTag =pe.getSysTag
+   
 
   //与底层交互的api实例
   val shim = new Shim(context.system, cid)

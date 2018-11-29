@@ -1,5 +1,5 @@
 /*
- * Copyright  2018 Blockchain Technology and Application Joint Lab, Fintech Research Center of ISCAS.
+ * Copyright  2018 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -11,6 +11,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package rep.network.cache
@@ -19,7 +20,7 @@ import java.security.cert.Certificate
 
 import com.google.protobuf.ByteString
 
-import akka.actor.Props
+import akka.actor.{Actor, Address, Props}
 import akka.cluster.pubsub.DistributedPubSubMediator.Publish
 import rep.app.conf.SystemProfile
 import rep.crypto.ECDSASign
@@ -34,6 +35,7 @@ import rep.storage.ImpDataAccess
 import rep.utils.{ ActorUtils, GlobalUtils }
 import rep.utils.GlobalUtils.EventType
 import rep.utils.SerializeUtils
+import rep.log.trace.LogType
 
 /**
  * 交易缓冲池伴生对象
@@ -56,13 +58,28 @@ object TransactionPool {
  */
 
 class TransactionPool(moduleName: String) extends ModuleBase(moduleName) {
+  import akka.actor.ActorSelection 
+  
   val dataaccess: ImpDataAccess = ImpDataAccess.GetDataAccess(pe.getSysTag)
 
   override def preStart(): Unit = {
     //注册接收交易的广播
     SubscribeTopic(mediator, self, selfAddr, Topic.Transaction, true)
   }
+  
+   def toAkkaUrl(sn : Address, actorName:String):String = {  
+        return sn.toString + "/"  + actorName;  
+    }
 
+      def visitStoreService(sn : Address, actorName:String,t1:Transaction) = {  
+        try {  
+          val  selection : ActorSelection  = context.actorSelection(toAkkaUrl(sn , actorName));  
+          selection ! t1 
+        } catch  {  
+             case e: Exception => e.printStackTrace()
+        }  
+    }  
+  
   /**
    * 检查交易是否符合规则
    * @param t
@@ -101,10 +118,19 @@ class TransactionPool(moduleName: String) extends ModuleBase(moduleName) {
     //处理接收的交易
     case t: Transaction =>
       //我们在这里并不缓存该Transaction，在接收到同级别的广播时再进行缓存
+      
+     // mediator ! Publish(Topic.Transaction, t)
+        //pe.getStableNodes.foreach(sn=>{
+        //       visitStoreService(sn , "/user/moduleManager/transactionPool",t)                      
+        //})      
+      
       if (ActorUtils.isHelper(sender().path.toString) ||
         ActorUtils.isAPI(sender().path.toString)) {
         //广播交易
         mediator ! Publish(Topic.Transaction, t)
+        
+        
+        
         //广播发送交易事件
         sendEvent(EventType.PUBLISH_INFO, mediator, selfAddr, Topic.Transaction, Event.Action.TRANSACTION)
       } else {
@@ -117,7 +143,7 @@ class TransactionPool(moduleName: String) extends ModuleBase(moduleName) {
           case true =>
             //签名验证成功
             if(pe.getTransLength() < 100)
-              logMsg(LOG_TYPE.INFO,s"<<<<<<<<<<<<<>>>>>>>>>transaction=${pe.getTransLength()}" )
+              logMsg(LogType.INFO,s"<<<<<<<<<<<<<>>>>>>>>>transaction=${pe.getTransLength()}" )
             if (SystemProfile.getMaxCacheTransNum == 0 || pe.getTransLength() < SystemProfile.getMaxCacheTransNum) {
               pe.putTran(t)
               //广播接收交易事件
