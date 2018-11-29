@@ -1,5 +1,5 @@
 /*
- * Copyright  2018 Blockchain Technology and Application Joint Lab, Fintech Research Center of ISCAS.
+ * Copyright  2018 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -11,6 +11,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package rep.sc.js
@@ -23,7 +24,9 @@ import rep.protos.peer._
 import akka.actor.{Actor, ActorRef, Props, actorRef2Scala}
 import rep.storage._
 import rep.storage.IdxPrefix.WorldStateKeyPreFix
-
+import rep.log.trace.RepLogHelp
+import rep.log.trace.LogType
+import org.slf4j.LoggerFactory
 import rep.sc.Shim.Oper
 import rep.utils.Json4s._
 import com.google.protobuf.ByteString
@@ -78,7 +81,7 @@ class SandboxJS(cid:String) extends Sandbox(cid){
           val r2 = encodeJson(r1)
          
           val span1 = System.currentTimeMillis()-tm_start1
-            println(s"****container span1:$span1")
+            //println(s"****container span1:$span1")
             r2
           //需自行递归处理所有层次的ScriptObjectMirror 二则akka默认的消息java序列化无法处理ScriptObjectMirror
           //json.callMember("stringify", r1).asInstanceOf[Any].toJson;
@@ -96,6 +99,7 @@ class SandboxJS(cid:String) extends Sandbox(cid){
       case e: Exception => 
         shim.rollback        
         log.error(t.txid, e)
+        
         //val e1 = new Exception(e.getMessage, e.getCause)
         //akka send 无法序列化原始异常,简化异常信息
         val e1 = new SandboxException(e.getMessage)
@@ -105,7 +109,8 @@ class SandboxJS(cid:String) extends Sandbox(cid){
           Option(akka.actor.Status.Failure(e1)))           
     }finally{
       val span = System.currentTimeMillis()-tm_start
-        logMsg(LOG_TYPE.INFO, Sandbox.log_prefix, s"Span doTransaction:$span", "")
+      RepLogHelp.logMsg(log,LogType.INFO,Sandbox.log_prefix+"~"+ s"Span doTransaction:$span")
+      //  logMsg(LOG_TYPE.INFO, Sandbox.log_prefix, s"Span doTransaction:$span", "")
     }
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright  2018 Blockchain Technology and Application Joint Lab, Fintech Research Center of ISCAS.
+ * Copyright  2018 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -11,11 +11,14 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package rep.app.conf
 
 import java.io._
+import rep.crypto.ECDSASign
+
 
 /**
  * @author jiangbuyun
@@ -25,30 +28,29 @@ import java.io._
 object SystemCertList {
   private var mySystemCertList:Set[String] = (new scala.collection.mutable.ArrayBuffer[String]()).toSet[String]
   
-  //private def InitSystemCertList:Set[String] = {
-    var a = new scala.collection.mutable.ArrayBuffer[String]()
-    val fis = new File("jks")
-    if(fis.isDirectory()){
-      val fs = fis.listFiles()
-      for(fn<-fs){
-        if(fn.isFile()){
-          val fname = fn.getName
-          val pos = fname.indexOf("mykeystore_")
-          val suffixpos = fname.indexOf(".jks")
-          if(pos >= 0 && suffixpos>0){
-            a += fname.substring(pos+11, suffixpos)
-          }
+  private  def loadVoteNodeListForCert = {
+    synchronized{
+      if(this.mySystemCertList.isEmpty){
+        val list = SystemProfile.getVoteNodeList
+        val clist = ECDSASign.getAliasOfTrustkey
+        var rlist : scala.collection.mutable.ArrayBuffer[String] = new scala.collection.mutable.ArrayBuffer[String]()
+        var i = 0
+        for( i <- 1 to clist.size()-1){
+           val alias = clist.get(i)
+           if(list.contains(alias)){
+             rlist += alias
+           }
         }
+        this.mySystemCertList = rlist.toSet[String]
       }
     }
-    mySystemCertList = a.toSet[String]
-  //}
+  }
   
   def getSystemCertList:Set[String] = {
-    //if(this.mySystemCertList.size <=0 ){
-    //  mySystemCertList = InitSystemCertList:Set[String]
-    //}
-    mySystemCertList
+    if(this.mySystemCertList.isEmpty){
+      loadVoteNodeListForCert
+    }
+    this.mySystemCertList
   }
   
 }

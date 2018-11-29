@@ -1,3 +1,19 @@
+/*
+ * Copyright  2018 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BA SIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 package rep.network.consensus.endorse
 
 import akka.actor.{ActorRef, Address, Props}
@@ -18,6 +34,7 @@ import rep.network.consensus.block.BlockHelper
 import rep.network.consensus.CRFD.CRFD_STEP
 import rep.network._
 import rep.network.consensus.vote.CRFDVoterModule.NextVote
+import rep.log.trace.LogType
 
 
 object Endorse4Blocker {
@@ -50,6 +67,15 @@ class Endorse4Blocker(moduleName: String) extends ModuleBase(moduleName) {
         try {  
           val  selection : ActorSelection  = context.actorSelection(toAkkaUrl(sn , actorName));  
           selection ! p 
+        } catch  {  
+             case e: Exception => e.printStackTrace()
+        }  
+    }  
+  
+  def visitStoreService(sn : Address, actorName:String,cb:ConfirmedBlock) = {  
+        try {  
+          val  selection : ActorSelection  = context.actorSelection(toAkkaUrl(sn , actorName));  
+          selection ! cb 
         } catch  {  
              case e: Exception => e.printStackTrace()
         }  
@@ -149,6 +175,8 @@ class Endorse4Blocker(moduleName: String) extends ModuleBase(moduleName) {
   
   override def receive = {
     case ReadyEndorsement4Block(blc_new,bidentifier) =>
+      logTime("create block endorse recv time", System.currentTimeMillis(),true)
+      
       resetEndorseInfo(blc_new,bidentifier)
       schedulerLink = scheduler.scheduleOnce(TimePolicy.getTimeoutEndorse seconds, self, ResendEndorseInfo)
       IsFinishedEndorse = EndorseStatus.START_ENDORSE
@@ -178,7 +206,7 @@ class Endorse4Blocker(moduleName: String) extends ModuleBase(moduleName) {
     //块背书结果
     case EndorsedBlock(isSuccess, blc_new, endor,blkidentifier) =>
       var log_msg = ""
-      logMsg(LOG_TYPE.WARN, s"recv endorsed from ${sender().toString()}")
+      logMsg(LogType.WARN, s"recv endorsed from ${sender().toString()}")
      // if(recvedEndorseAddr.isEmpty){
          //BlockTimeStatis4Times.setFirstRecvEndorse(System.currentTimeMillis())
       //}
@@ -199,8 +227,10 @@ class Endorse4Blocker(moduleName: String) extends ModuleBase(moduleName) {
                           if(!isExistEndorse(endor)){
                               addEndoserNode(akka.serialization.Serialization.serializedActorPath(sender()).toString(),"/user/moduleManager/consensusManager/consensus-CRFD/endorse")
                               blc = blc.withConsensusMetadata(blc.consensusMetadata.+:(endor))//在前面添加
-                              logMsg(LOG_TYPE.INFO, s"node name=${pe.getSysTag},identifier=${blkidentifier},recv endorse, cert=${endor.endorser.toStringUtf8()}")
+                              logMsg(LogType.INFO, s"node name=${pe.getSysTag},identifier=${blkidentifier},recv endorse, cert=${endor.endorser.toStringUtf8()}")
                               if (BlockHelper.checkCandidate(blc.consensusMetadata.length, pe.getCandidator.size)) {
+                                
+                                logTime("create block endorse recv time", System.currentTimeMillis(),false)
                                 schedulerLink = clearSched()
                                 
                                 //BlockTimeStatis4Times.setFinishEndorse(System.currentTimeMillis())
@@ -213,8 +243,8 @@ class Endorse4Blocker(moduleName: String) extends ModuleBase(moduleName) {
                                 recvedEndorseAddr.clear()
                                 IsFinishedEndorse = EndorseStatus.END_ENDORSE
                                 blkidentifier_str = ""
-                                logTime("Endorsement collect end", CRFD_STEP._10_ENDORSE_COLLECTION_END,
-                                  getActorRef(ActorType.STATISTIC_COLLECTION))
+                                //logTime("Endorsement collect end", CRFD_STEP._10_ENDORSE_COLLECTION_END,
+                                //  getActorRef(ActorType.STATISTIC_COLLECTION))
                                 
                                 
          var consensus = blc.consensusMetadata.toArray[Endorsement]
@@ -234,39 +264,41 @@ class Endorse4Blocker(moduleName: String) extends ModuleBase(moduleName) {
         //var writeend = System.nanoTime()
         //logMsg(LOG_TYPE.INFO, s"write sort spent time=${writeend-writestart}")
         //广播这个block
-        logMsg(LOG_TYPE.INFO, s"new block,nodename=${pe.getSysTag},transaction size=${blc.transactions.size},identifier=${this.blkidentifier_str},${blkidentifier},current height=${dataaccess.getBlockChainInfo().height},previoushash=${blc.previousBlockHash.toStringUtf8()}")
-        mediator ! Publish(Topic.Block, new ConfirmedBlock(blc, dataaccess.getBlockChainInfo().height + 1,
-                            sender))
-        logMsg(LOG_TYPE.INFO, s"java sort spent time=${javaend-javastart}")
-        logMsg(LOG_TYPE.INFO, s"recv newBlock msg,node number=${pe.getSysTag},new block height=${dataaccess.getBlockChainInfo().height + 1}")                    
+        logMsg(LogType.INFO, s"new block,nodename=${pe.getSysTag},transaction size=${blc.transactions.size},identifier=${this.blkidentifier_str},${blkidentifier},current height=${dataaccess.getBlockChainInfo().height},previoushash=${blc.previousBlockHash.toStringUtf8()}")
+        logTime("create block endorse time", System.currentTimeMillis(),false)
+        logTime("create block sendblock time", System.currentTimeMillis(),true)
+       
+        
+        
+       // mediator ! Publish(Topic.Block, new ConfirmedBlock(blc, dataaccess.getBlockChainInfo().height + 1,
+       //                     sender))
+        
+             pe.getStableNodes.foreach(sn=>{
+                    visitStoreService(sn , "/user/moduleManager/consensusManager/consensus-CRFD/blocker",new ConfirmedBlock(blc, dataaccess.getBlockChainInfo().height + 1,
+                            sender))                      
+        })               
+                    
+        
+        logMsg(LogType.INFO, s"java sort spent time=${javaend-javastart}")
+        logMsg(LogType.INFO, s"recv newBlock msg,node number=${pe.getSysTag},new block height=${dataaccess.getBlockChainInfo().height + 1}")                    
           
-        logTime("New block publish", CRFD_STEP._11_NEW_BLK_PUB, getActorRef(ActorType.STATISTIC_COLLECTION))
-                                
-                                
-                                
-                                
-                                
-                                
-                                
-                                
-                                
-                                
+        //logTime("New block publish", CRFD_STEP._11_NEW_BLK_PUB, getActorRef(ActorType.STATISTIC_COLLECTION))
                               }
                               //广播收到背书信息的事件
                               sendEvent(EventType.RECEIVE_INFO, mediator, selfAddr, Topic.Block,
                                 Event.Action.ENDORSEMENT)
                           }else{
-                            logMsg(LOG_TYPE.INFO, s"recv Block endorse,this endorse exist,recver is = ${pe.getSysTag}")
+                            logMsg(LogType.INFO, s"recv Block endorse,this endorse exist,recver is = ${pe.getSysTag}")
                           }
-                        case false => logMsg(LOG_TYPE.INFO, "Block endorse request data checked by cert failed")
+                        case false => logMsg(LogType.INFO, "Block endorse request data checked by cert failed")
                       }
-                    case false => logMsg(LOG_TYPE.INFO, "Drop a endorsement by wrong block")
+                    case false => logMsg(LogType.INFO, "Drop a endorsement by wrong block")
                   }
-                case false => logMsg(LOG_TYPE.INFO, "Endorsement failed by trans checking")
+                case false => logMsg(LogType.INFO, "Endorsement failed by trans checking")
               }
-            case false => logMsg(LOG_TYPE.INFO, "Remote Endorsement of the block is enough, drop it")
+            case false => logMsg(LogType.INFO, "Remote Endorsement of the block is enough, drop it")
           }
-        case false => logMsg(LOG_TYPE.INFO, s"The sender is not a candidate this time, drop the endorsement form it. Sender:${sender()}")
+        case false => logMsg(LogType.INFO, s"The sender is not a candidate this time, drop the endorsement form it. Sender:${sender()}")
       }
   }
   

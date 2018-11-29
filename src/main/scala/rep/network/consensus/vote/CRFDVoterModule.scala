@@ -1,5 +1,5 @@
 /*
- * Copyright  2018 Blockchain Technology and Application Joint Lab, Fintech Research Center of ISCAS.
+ * Copyright  2018 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -11,6 +11,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package rep.network.consensus.vote
@@ -25,6 +26,7 @@ import rep.protos.peer.BlockchainInfo
 import rep.storage.ImpDataAccess
 import rep.utils.GlobalUtils.{ActorType, BlockEvent}
 import com.sun.beans.decoder.FalseElementHandler
+import rep.log.trace.LogType
 
 /**
   *
@@ -156,23 +158,23 @@ class CRFDVoterModule(moduleName: String) extends ModuleBase(moduleName) with CR
           pe.setVoteBlockHash("0")
           self ! NextVote(flag,0,false)
         }
-        logMsg(LOG_TYPE.WARN, "Block voting now, waitting for next vote request")
+        logMsg(LogType.WARN, "Block voting now, waitting for next vote request")
       }
 
     case TickBlock =>
-      logMsg(LOG_TYPE.INFO, "Prepare vote")
+      logMsg(LogType.INFO, "Prepare vote")
       if (pe.getCacheBlkNum() > 0) {
         schedulerLink = clearSched()
         schedulerLink = scheduler.scheduleOnce(TimePolicy.getVoteRetryDelay millis,
           self, TickBlock)
-        logMsg(LOG_TYPE.INFO, "RetryDelay vote")
+        logMsg(LogType.INFO, "RetryDelay vote")
       }
       else {
         checkTranNumCondition(SystemProfile.getTransCreateType, pe.getTransLength(),
           trans_num_threshold, retryCount) match {
           case TransCheckResult.SUC =>
-            logMsg(LOG_TYPE.INFO, "Start vote")
-            logTime("Vote Start", CRFD_STEP._1_VOTE_START, getActorRef(ActorType.STATISTIC_COLLECTION))
+            logMsg(LogType.INFO, "Start vote")
+            logTime("Vote time",System.currentTimeMillis(),true)
             //各节点执行出块人及候选人抽签
             val seed = pe.getVoteBlockHash//pe.getCurrentBlockHash
             
@@ -184,20 +186,20 @@ class CRFDVoterModule(moduleName: String) extends ModuleBase(moduleName) with CR
                   if (blo != null) {
                     pe.resetBlocker(blo)
                     //暂时只找到该方法能够明确标识一个在网络中（有网络地址）的节点，后续发现好方法可以完善
-                    logMsg(LOG_TYPE.INFO, s"Select  in getCacheHeight=${pe.getCacheHeight()} Candidates : ${ArrayToString(candidatorCur)} ~ Blocker : ${blo},currenthash=${pe.getCurrentBlockHash},index=${pe.getBlker_index}")
+                    logMsg(LogType.INFO, s"Select  in getCacheHeight=${pe.getCacheHeight()} Candidates : ${ArrayToString(candidatorCur)} ~ Blocker : ${blo},currenthash=${pe.getCurrentBlockHash},index=${pe.getBlker_index}")
                     if (pe.getSysTag == blo) {
                       getActorRef(ActorType.BLOCK_MODULE) ! (BlockEvent.CREATE_BLOCK, "")
-                      logMsg(LOG_TYPE.INFO, s"Select  in getCacheHeight=${pe.getCacheHeight()} Candidates : ${ArrayToString(candidatorCur)} ,send Create cmd~ Blocker : ${blo},currenthash=${pe.getCurrentBlockHash},index=${pe.getBlker_index}")
+                      logMsg(LogType.INFO, s"Select  in getCacheHeight=${pe.getCacheHeight()} Candidates : ${ArrayToString(candidatorCur)} ,send Create cmd~ Blocker : ${blo},currenthash=${pe.getCurrentBlockHash},index=${pe.getBlker_index}")
                     }
                     else {
                       //如果不是自己则发送出块人地址
                       getActorRef(ActorType.BLOCK_MODULE) ! (BlockEvent.BLOCKER, selfAddr)
-                      logMsg(LOG_TYPE.INFO, s"Select  in getCacheHeight=${pe.getCacheHeight()} Candidates : ${ArrayToString(candidatorCur)} ,notice block module,~ Blocker : ${blo},currenthash=${pe.getCurrentBlockHash},index=${pe.getBlker_index}")
+                      logMsg(LogType.INFO, s"Select  in getCacheHeight=${pe.getCacheHeight()} Candidates : ${ArrayToString(candidatorCur)} ,notice block module,~ Blocker : ${blo},currenthash=${pe.getCurrentBlockHash},index=${pe.getBlker_index}")
                     }
                   }
                   else {
                     //未选出候选人，是否需要避免该情况
-                    logMsg(LOG_TYPE.ERROR, "No Blocker selected")
+                    logMsg(LogType.ERROR, "No Blocker selected")
                     //TODO kami 是否需要重新选举？
                     pe.resetBlker_index
                     schedulerLink = clearSched()
@@ -209,24 +211,24 @@ class CRFDVoterModule(moduleName: String) extends ModuleBase(moduleName) with CR
               //voteblockhash = ""
               pe.setVoteBlockHash("0")
               resetTransThreshold(SystemProfile.getMinBlockTransNum)
-              logTime("Vote End", CRFD_STEP._2_VOTE_END, getActorRef(ActorType.STATISTIC_COLLECTION))
+              logTime("Vote time",System.currentTimeMillis(),false)
             }
             else {
-              logMsg(LOG_TYPE.INFO, "Not enough candidates")
+              logMsg(LogType.INFO, "Not enough candidates")
               schedulerLink = clearSched()
               schedulerLink = scheduler.scheduleOnce(TimePolicy.getVoteRetryDelay millis,
                 self, TickBlock)
             }
           case TransCheckResult.RETRY =>
-            logMsg(LOG_TYPE.INFO, "Not enough trans")
-            println("Not enough trans")
+            logMsg(LogType.INFO, "Not enough trans")
+            //println("Not enough trans")
             retryCount += 1
             schedulerLink = clearSched()
             schedulerLink = scheduler.scheduleOnce(TimePolicy.getVoteRetryDelay millis,
               self, TickBlock)
 
           case TransCheckResult.WAITING =>
-            logMsg(LOG_TYPE.INFO, "Not enough trans, waiting for long time")
+            logMsg(LogType.INFO, "Not enough trans, waiting for long time")
             isWaiting = true
             pe.setIsBlockVote(false)
             pe.setVoteBlockHash("0")
@@ -238,7 +240,7 @@ class CRFDVoterModule(moduleName: String) extends ModuleBase(moduleName) with CR
 
     case SeedNode =>
       isSeedNode = true
-      logMsg(LOG_TYPE.INFO, "This is Seed Node")
+      logMsg(LogType.INFO, "This is Seed Node")
 
     case VoteConditionRecheck =>
       if (isWaiting) {

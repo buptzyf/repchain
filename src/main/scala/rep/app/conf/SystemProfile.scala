@@ -1,5 +1,5 @@
 /*
- * Copyright  2018 Blockchain Technology and Application Joint Lab, Fintech Research Center of ISCAS.
+ * Copyright  2018 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -11,12 +11,16 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package rep.app.conf
 
 import com.typesafe.config.Config
-
+//import collection.JavaConversions._
+//import scala.collection.immutable._
+import java.util.List
+import java.util.ArrayList
 
 /**
   * 系统配置信息缓存对象
@@ -45,12 +49,19 @@ object SystemProfile {
   private[this] var _SERVERPORT:Int=8081//http服务的端口，默认为8081
   private[this] var _CHECKCERTVALIDATE:Int=0//是否检查证书的有效性，0不检查，1检查
   private[this] var _CONTRACTOPERATIONMODE = 0//设置合约的运行方式，0=debug方式，1=deploy，默认为debug方式，如果发布部署，必须使用deploy方式。
+  private[this] var _VOTENODELIST : List[String] = new ArrayList[String]
   
   
   private def SERVERPORT :Int = _SERVERPORT
   private def CHECKCERTVALIDATE:Int = _CHECKCERTVALIDATE
   private def DISKSPACE_ALARM_NUM :Long = _DISKSPACE_ALARM_NUM
   private def CONTRACTOPERATIONMODE:Int=_CONTRACTOPERATIONMODE
+  
+  private def VOTENODELIST : List[String] = _VOTENODELIST
+  
+  private def VOTENODELIST_=(value: List[String]): Unit = {
+      _VOTENODELIST = value
+  }
   
   
   private def SERVERPORT_=(value: Int): Unit = {
@@ -123,6 +134,7 @@ object SystemProfile {
     MIN_BLOCK_TRANS_NUM_=(config.getInt("system.block.trans_num_min"))
     RETRY_TIME_=(config.getInt("system.block.retry_time"))
     VOTE_NOTE_MIN_=(config.getInt("system.vote.vote_note_min"))
+    VOTENODELIST_=(config.getStringList("system.vote.vote_node_list"))
     TRAN_CREATE_DUR_=(config.getInt("system.transaction.tran_create_dur"))
     MAX_CATCH_TRANS_NUM_=(config.getInt("system.transaction.max_cache_num"))
     TRANS_CREATE_TYPE_=(config.getInt("system.trans_create_type"))
@@ -131,8 +143,6 @@ object SystemProfile {
     CHECKCERTVALIDATE_=(config.getInt("system.checkCertValidate"))
     CONTRACTOPERATIONMODE_=(config.getInt("system.contractOperationMode"))
   }
-
-  
   
   def getLimitBlockTransNum = LIMIT_BLOCK_TRANS_NUM
 
@@ -155,4 +165,6 @@ object SystemProfile {
   def getCheckCertValidate = CHECKCERTVALIDATE
   
   def getContractOperationMode = CONTRACTOPERATIONMODE
+  
+  def getVoteNodeList = VOTENODELIST
 }

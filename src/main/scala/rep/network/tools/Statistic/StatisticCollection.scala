@@ -1,5 +1,5 @@
 /*
- * Copyright  2018 Blockchain Technology and Application Joint Lab, Fintech Research Center of ISCAS.
+ * Copyright  2018 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -11,6 +11,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package rep.network.tools.Statistic
@@ -23,8 +24,6 @@ import rep.network.Topic
 import rep.network.consensus.block.BlockModule.ConfirmedBlock
 import rep.network.tools.PeerExtension
 import rep.network.tools.Statistic.StatisticCollection.{PerformanceCollection, TPSCollection}
-import rep.utils.RepLogging.LogTime
-import rep.utils.{RepLogging, TimeUtils}
 
 /**
   * Created by shidianyue on 2017/9/26.
@@ -37,7 +36,7 @@ object StatisticCollection {
 
 }
 
-class StatisticCollection extends Actor with RepLogging {
+class StatisticCollection extends Actor  {
 
   import akka.cluster.pubsub.DistributedPubSub
   import context.dispatcher
@@ -73,7 +72,7 @@ class StatisticCollection extends Actor with RepLogging {
   }
 
   override def preStart(): Unit = {
-    logMsg(LOG_TYPE.INFO, moduleName, "Statistic module start", "")
+    //logMsg(LOG_TYPE.INFO, moduleName, "Statistic module start", "")
     //TODO kami 这里值得注意：整个订阅过s程也是一个gossip过程，并不是立即生效。需要等到gossip一致性成功之后才能够receive到注册信息。
     mediator ! Subscribe(Topic.Block, self)
     scheduler.scheduleOnce(1 seconds, self, TPSCollection)
@@ -93,25 +92,25 @@ class StatisticCollection extends Actor with RepLogging {
 
 
     case TPSCollection =>
-      logMsg(LOG_TYPE.INFO, moduleName, s"Statistic instant TPS is $count in ${TimeUtils.getCurrentTime()} " +
-        s" ~ Rest Trans is ${pe.getTransLength()}", "")
+      //logMsg(LOG_TYPE.INFO, moduleName, s"Statistic instant TPS is $count in ${TimeUtils.getCurrentTime()} " +
+       // s" ~ Rest Trans is ${pe.getTransLength()}", "")
       if (isReady) {
         secondCount += 1
-        logMsg(LOG_TYPE.INFO, moduleName, s"Statistic AVG TPS is ${totalTranCount / secondCount} " +
-          s"in ${TimeUtils.getCurrentTime()} ~ Rest Trans is ${pe.getTransLength()}", "")
+       // logMsg(LOG_TYPE.INFO, moduleName, s"Statistic AVG TPS is ${totalTranCount / secondCount} " +
+         // s"in ${TimeUtils.getCurrentTime()} ~ Rest Trans is ${pe.getTransLength()}", "")
       }
       count = 0
       scheduler.scheduleOnce(1 seconds, self, TPSCollection)
 
     case PerformanceCollection =>
       if (isReady) {
-        logMsg(LOG_TYPE.INFO, moduleName, s"Statistic AVG Blk（exclusive trans and trans result） Size  is ${(totalBlkSize - totalTranSize - totalResultSize) / totalBlkCount} in ${TimeUtils.getCurrentTime()}", "")
-        logMsg(LOG_TYPE.INFO, moduleName, s"Statistic AVG Trans Size  is ${totalTranSize / totalTranCount} in ${TimeUtils.getCurrentTime()}", "")
-        logMsg(LOG_TYPE.INFO, moduleName, s"Statistic AVG Trans Result Size  is ${totalResultSize / totalTranCount} in ${TimeUtils.getCurrentTime()}", "")
+        //logMsg(LOG_TYPE.INFO, moduleName, s"Statistic AVG Blk（exclusive trans and trans result） Size  is ${(totalBlkSize - totalTranSize - totalResultSize) / totalBlkCount} in ${TimeUtils.getCurrentTime()}", "")
+        //logMsg(LOG_TYPE.INFO, moduleName, s"Statistic AVG Trans Size  is ${totalTranSize / totalTranCount} in ${TimeUtils.getCurrentTime()}", "")
+        //logMsg(LOG_TYPE.INFO, moduleName, s"Statistic AVG Trans Result Size  is ${totalResultSize / totalTranCount} in ${TimeUtils.getCurrentTime()}", "")
       }
       scheduler.scheduleOnce(10 seconds, self, PerformanceCollection)
 
-    case lt: LogTime =>
-      logTime(lt.module, lt.msg, lt.time, lt.cluster_addr)
+    //case lt: LogTime =>
+      //logTime(lt.module, lt.msg, lt.time, lt.cluster_addr)
   }
 }

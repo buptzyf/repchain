@@ -1,5 +1,5 @@
 /*
- * Copyright  2018 Blockchain Technology and Application Joint Lab, Fintech Research Center of ISCAS.
+ * Copyright  2018 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -11,6 +11,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package rep.network.base
@@ -20,10 +21,12 @@ import rep.app.system.ClusterSystem
 import rep.network.cluster.ClusterActor
 import rep.network.tools.PeerExtension
 import rep.network.tools.register.ActorRegister
-import rep.utils.{RepLogging, TimeUtils}
-import rep.utils.RepLogging.LogTime
 import rep.crypto.Sha256
 import scala.collection.mutable
+import rep.log.trace.RepLogHelp
+import rep.log.trace.LogType
+import org.slf4j.LoggerFactory
+import rep.log.trace.RepTimeTrace
 
 
 /**
@@ -55,17 +58,18 @@ object ModuleBase {
   * @param name 模块名称
   **/
 
-abstract class ModuleBase(name: String) extends Actor with ModuleHelper with ClusterActor with BaseActor with RepLogging {
+abstract class ModuleBase(name: String) extends Actor with ModuleHelper with ClusterActor with BaseActor{
   val logPrefix = name
-
+  protected def log = LoggerFactory.getLogger(this.getClass)
+  val ptt :RepTimeTrace = RepTimeTrace.getRepTimeTrace()
   /**
     * 日志封装
     *
     * @param lOG_TYPE
     * @param msg
     */
-  def logMsg(lOG_TYPE: Int, msg: String): Unit = {
-    super.logMsg(lOG_TYPE, pe.getSysTag + "-" + name, msg, selfAddr)
+  def logMsg(lOG_TYPE: LogType, msg: String): Unit = {
+    RepLogHelp.logMsg(log,lOG_TYPE, pe.getSysTag + "-"  + msg + " ~ " + selfAddr, pe.getSysTag)
   }
 
   /**
@@ -75,8 +79,8 @@ abstract class ModuleBase(name: String) extends Actor with ModuleHelper with Clu
     * @param step
     * @param actorRef
     */
-  def logTime(msg: String, step: Int, actorRef: ActorRef): Unit = {
-    actorRef ! LogTime(pe.getSysTag + "-" + name, s"Step_${step} - " + msg, TimeUtils.getCurrentTime(), selfAddr)
+  def logTime(timetag:String,time:Long,isstart:Boolean): Unit = {
+    ptt.addTimeTrace(pe.getSysTag, timetag, time, isstart)
   }
 }
 
