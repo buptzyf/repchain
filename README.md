@@ -24,6 +24,7 @@
 - install [Scala IDE](http://scala-ide.org/)
 - install [keystore-explorer](http://keystore-explorer.org/) ——用于生成密钥对的工具,非必须
 - install [protobuf editor](https://github.com/Enide/polyglot-maven-editors)——编辑protobuf定义工具，非必须
+- 国密包由《中宇万通》提供
 
 ## 运行
 - `git clone https://gitee.com/BTAJL/repchain.git`
