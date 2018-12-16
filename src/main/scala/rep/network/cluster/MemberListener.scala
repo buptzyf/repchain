@@ -127,8 +127,8 @@ class MemberListener extends Actor with ClusterActor with ModuleHelper {
       RepLogHelp.logMsg(log,LogType.INFO, "Member is Up: {}. {} nodes in cluster"+"~"+member.address+"~"+nodes.size)
       if (nodes.size == 1) pe.resetSeedNode(member.address)
       
+      pe.putNode(member.address)
       if(member.roles != null && !member.roles.isEmpty && member.roles.contains("CRFD-Node")){
-        pe.putNode(member.address)
         preloadNodesMap.put(member.address, TimeUtils.getCurrentTime())
       }
       
