@@ -182,27 +182,26 @@ class MemberListener extends Actor with ClusterActor with ModuleHelper {
       if (preloadNodesMap.size > 0) self ! Recollection
 
     case event: akka.remote.DisassociatedEvent => //ignore
-      /*nodes -= event.remoteAddress
-      log.info("Member is Removed: {}. {} nodes cluster",
-        event.remoteAddress, nodes.size)
+      nodes -= event.remoteAddress
+      log.info("Member is Removed: {}. {} nodes cluster", event.remoteAddress, nodes.size)
       preloadNodesMap.remove(event.remoteAddress)
       pe.removeNode(event.remoteAddress)
       pe.removeStableNode(event.remoteAddress)
       //Tell itself voter actor to judge if the downer is blocker or not
-      getActorRef(ActorType.VOTER_MODULE) ! MemberDown(event.remoteAddress)*/
+      getActorRef(ActorType.VOTER_MODULE) ! MemberDown(event.remoteAddress)
    
     case MemberLeft(member) => //ignore
       nodes -= member.address
       //log.info("Member is Removed: {}. {} nodes cluster",
       //  member.address, nodes.size)
-        RepLogHelp.logMsg(log,LogType.INFO, "Member is Removed: {}. {} nodes cluster"+"~"+member.address+"~"+nodes.size)
+      RepLogHelp.logMsg(log,LogType.INFO, "Member is Removed: {}. {} nodes cluster"+"~"+member.address+"~"+nodes.size)
       preloadNodesMap.remove(member.address)
       pe.removeNode(member.address)
       pe.removeStableNode(member.address)
       //Tell itself voter actor to judge if the downer is blocker or not
       getActorRef(ActorType.VOTER_MODULE) ! MemberDown(member.address)
       
-      case MemberExited(member) => //ignore
+    case MemberExited(member) => //ignore
       nodes -= member.address
       //log.info("Member is Removed: {}. {} nodes cluster",
       //  member.address, nodes.size)

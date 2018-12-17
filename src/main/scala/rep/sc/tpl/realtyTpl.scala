@@ -55,7 +55,7 @@ package object realtyType {
     * @param pemCert   pem格式证书字符串，Base64
     * @param certInfo  证书信息(用户名，手机号，邮箱)，Base64
     */
-  case class signCertData(memberId: Int, pemCert: String, certInfo: String)
+  case class signCertData(memberId: String, pemCert: String, certInfo: String)
 
   /**
     *
@@ -150,7 +150,7 @@ class realtyTpl extends IContract {
         throw new Exception(ERR_CERT_EXIST)
     }
     //保存证书
-    ctx.api.setVal(PRE_CERT_ID, data.memberId)
+    ctx.api.setVal(PRE_CERT_ID  + certAddr, data.memberId)
     ctx.api.setState(certkey, serialCert)
     ctx.api.setVal(PRE_CERT_INFO + certAddr, data.certInfo)
     println("证书短地址： "+ certAddr)
@@ -177,9 +177,7 @@ class realtyTpl extends IContract {
       case "retrieval" =>
         retrieval(ctx, json.extract[Retrieval])
       case "signUp" =>
-        println(s"signUp")
         signUp(ctx, json.extract[signCertData])
-      case _ => None
     }
   }
 
