@@ -270,13 +270,13 @@ class Endorse4Blocker(moduleName: String) extends ModuleBase(moduleName) {
        
         
         
-       // mediator ! Publish(Topic.Block, new ConfirmedBlock(blc, dataaccess.getBlockChainInfo().height + 1,
-       //                     sender))
+        mediator ! Publish(Topic.Block, new ConfirmedBlock(blc, dataaccess.getBlockChainInfo().height + 1,
+                            sender))
         
-             pe.getStableNodes.foreach(sn=>{
+     /*        pe.getStableNodes.foreach(sn=>{
                     visitStoreService(sn , "/user/moduleManager/consensusManager/consensus-CRFD/blocker",new ConfirmedBlock(blc, dataaccess.getBlockChainInfo().height + 1,
                             sender))                      
-        })               
+        })   */            
                     
         
         logMsg(LogType.INFO, s"java sort spent time=${javaend-javastart}")
