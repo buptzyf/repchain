@@ -137,6 +137,7 @@ class TransactionPool(moduleName: String) extends ModuleBase(moduleName) {
         //交易缓存,这里默认各个节点的交易缓存都是一致的。但是因为入网时间不一致，所有可能会有区别。最终以出块人的交易为准
         //TODO kami 验证交易签名和证书
         //val checkedTransactionResult = CheckedTransactionResult(true, "")
+        sendEvent(EventType.RECEIVE_INFO, mediator, selfAddr, Topic.Transaction, Event.Action.TRANSACTION)
         val checkedTransactionResult = checkTransaction(t, dataaccess)
         checkedTransactionResult.result match {
           case false => //ignore
@@ -147,10 +148,10 @@ class TransactionPool(moduleName: String) extends ModuleBase(moduleName) {
             if (SystemProfile.getMaxCacheTransNum == 0 || pe.getTransLength() < SystemProfile.getMaxCacheTransNum) {
               pe.putTran(t)
               //广播接收交易事件
-              sendEvent(EventType.RECEIVE_INFO, mediator, selfAddr, Topic.Transaction, Event.Action.TRANSACTION)
               if (pe.getTransLength() <= SystemProfile.getMinBlockTransNum)
                 getActorRef(pe.getSysTag, GlobalUtils.ActorType.VOTER_MODULE) ! VoteRecover
             }
+            
         }
       }
     case _ => //ignore
