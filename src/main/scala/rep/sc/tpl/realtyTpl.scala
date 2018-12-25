@@ -158,6 +158,20 @@ class realtyTpl extends IContract {
   }
 
   /**
+    * 注销用户证书
+    *
+    * @param ctx
+    * @param certAddr 证书短地址
+    * @return
+    */
+  def destroyCert(ctx: ContractContext, certAddr: String): Object = {
+    println(s"destroy cert->addr:$certAddr")
+    ctx.api.check(ctx.t.cert.toStringUtf8,ctx.t)    //ctx中自带交易内容
+    ctx.api.destroyCert(certAddr);
+    "destory scuccess"
+  }
+
+  /**
     * 合约入口
     *
     * @param ctx
@@ -178,6 +192,8 @@ class realtyTpl extends IContract {
         retrieval(ctx, json.extract[Retrieval])
       case "signUp" =>
         signUp(ctx, json.extract[signCertData])
+      case "destroyCert" =>
+        destroyCert(ctx, json.extract[String])
     }
   }
 
