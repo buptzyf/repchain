@@ -222,7 +222,9 @@ class Endorse4Blocker(moduleName: String) extends ModuleBase(moduleName) {
                   //TODO kami 类似于MD5验证，是否是同一个blk（可以进一步的完善，存在效率问题？）
                   blkidentifier == blkidentifier_str match {
                     case true =>
-                      BlockHelper.checkBlockContent(endor, Sha256.hash(blc_new.toByteArray)) match {
+                      BlockHelper.checkBlockContent(endor, blc_new.toByteArray) match {
+                      //验证签名之前不再使用hash
+                        //BlockHelper.checkBlockContent(endor, Sha256.hash(blc_new.toByteArray)) match {
                         case true =>
                           if(!isExistEndorse(endor)){
                               addEndoserNode(akka.serialization.Serialization.serializedActorPath(sender()).toString(),"/user/moduleManager/consensusManager/consensus-CRFD/endorse")

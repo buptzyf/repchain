@@ -218,7 +218,9 @@ class EndorsementModule(moduleName: String) extends ModuleBase(moduleName) {
       val preload: ImpDataPreload = ImpDataPreloadMgr.GetImpDataPreload(pe.getSysTag,dbinstancename)
       try {
           val blkData = blk.withConsensusMetadata(Seq())
-          val blkInfo = Sha256.hash(blkData.toByteArray)
+          val blkInfo = blkData.toByteArray
+          //验证签名和签名之前不再使用hash
+          //val blkInfo = Sha256.hash(blkData.toByteArray)
            val hashtime = System.currentTimeMillis()
           if (BlockHelper.checkBlockContent(blk.consensusMetadata.head, blkInfo)) {
             val checkblocktime = System.currentTimeMillis()
@@ -248,13 +250,17 @@ class EndorsementModule(moduleName: String) extends ModuleBase(moduleName) {
                         logMsg(LogType.INFO,s"+++++++endorse handle time=${checksignresulttime - recvtime},endorse other time=${checkresulttime-calltime},sign time=${checksignresulttime-checkresulttime}")
                         //logMsg(LogType.INFO,s"+++++++hashtime=${hashtime-calltime},checkblocktime=${checkblocktime-hashtime},"+
                         //    s"checktranstime=${checktranstime-checkblocktime}}")
-                        actRef ! EndorsedBlock(true, blkData, BlockHelper.endorseBlock(blkInfo, pe.getSysTag),blkidentifier)
+                        actRef ! EndorsedBlock(true, blkData, BlockHelper.endorseBlock4NonHash(blkInfo, pe.getSysTag),blkidentifier)
+                        //签名之前不再使用hash
+                        //actRef ! EndorsedBlock(true, blkData, BlockHelper.endorseBlock(blkInfo, pe.getSysTag),blkidentifier)
                         //广播发送背书信息的事件(背书成功)
                         sendEvent(EventType.PUBLISH_INFO, mediator, selfAddr, Topic.Block, Event.Action.ENDORSEMENT)
                         val finishtime = System.currentTimeMillis()
                         //logMsg(LogType.INFO,s"------endorse finish time=${finishtime-sendertime},network time=${recvtime-sendertime},condition check time=${calltime-recvtime},handle time=${finishtime-calltime}")
                      }else{
-                       actRef! EndorsedBlock(false, blkData, BlockHelper.endorseBlock(blkInfo, pe.getSysTag),blkidentifier)
+                       actRef! EndorsedBlock(false, blkData, BlockHelper.endorseBlock4NonHash(blkInfo, pe.getSysTag),blkidentifier)
+                       //签名之前不再使用hash
+                       //actRef! EndorsedBlock(false, blkData, BlockHelper.endorseBlock(blkInfo, pe.getSysTag),blkidentifier)
                      }
                      //dispathtime = System.currentTimeMillis()
                     
@@ -278,17 +284,23 @@ class EndorsementModule(moduleName: String) extends ModuleBase(moduleName) {
                       val finishtime = System.currentTimeMillis()
                       logMsg(LogType.WARN, "Transcation preload failed,Block endorse failed")
                       logMsg(LogType.INFO,s"---failed---endorse finish time=${finishtime},network time=${recvtime-sendertime},condition check time=${calltime-recvtime},handle time=${finishtime-calltime}")
-                      actRef! EndorsedBlock(false, blkData, BlockHelper.endorseBlock(blkInfo, pe.getSysTag),blkidentifier)
+                      actRef! EndorsedBlock(false, blkData, BlockHelper.endorseBlock4NonHash(blkInfo, pe.getSysTag),blkidentifier)
+                      //签名之前不再使用hash
+                      //actRef! EndorsedBlock(false, blkData, BlockHelper.endorseBlock(blkInfo, pe.getSysTag),blkidentifier)
                     
                   }
               }else{
                     logMsg(LogType.WARN, "Transcation vertified failed,found same Transcation")
-                    actRef! EndorsedBlock(false, blkData, BlockHelper.endorseBlock(blkInfo, pe.getSysTag),blkidentifier)
+                    actRef! EndorsedBlock(false, blkData, BlockHelper.endorseBlock4NonHash(blkInfo, pe.getSysTag),blkidentifier)
+                    //签名之前不再使用hash
+                    //actRef! EndorsedBlock(false, blkData, BlockHelper.endorseBlock(blkInfo, pe.getSysTag),blkidentifier)
               }
            }
            else {
              logMsg(LogType.WARN, "Blocker Certification vertified failed")
-             actRef! EndorsedBlock(false, blkData, BlockHelper.endorseBlock(blkInfo, pe.getSysTag),blkidentifier)
+             actRef! EndorsedBlock(false, blkData, BlockHelper.endorseBlock4NonHash(blkInfo, pe.getSysTag),blkidentifier)
+             //签名之前不再使用hash
+             //actRef! EndorsedBlock(false, blkData, BlockHelper.endorseBlock(blkInfo, pe.getSysTag),blkidentifier)
            }
          //logTime("Endorse end", CRFD_STEP._9_ENDORSE_END, getActorRef(ActorType.STATISTIC_COLLECTION))
          logMsg(LogType.WARN, s"Block endorse finish,current height=${pe.getCacheHeight()},identifier=${blkidentifier}")

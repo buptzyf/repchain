@@ -144,7 +144,9 @@ object PeerHelper {
     * @return
     */
   def getTxHash(t:Transaction) :Array[Byte] ={
-    Sha256.hash(t.toByteArray)
+    t.toByteArray
+    //验证签名不需要求hash
+    //Sha256.hash(t.toByteArray)
   }
 
 }

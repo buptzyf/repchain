@@ -49,7 +49,7 @@ object BlockHelper {
     * @param alise
     * @return
     */
-  def endorseBlock(blkHash:Array[Byte], alise:String):Endorsement ={
+  def endorseBlock4NonHash(blkHash:Array[Byte], alise:String):Endorsement ={
     try{
       val (priK, pubK, cert) = ECDSASign.getKeyPair(alise)
       Endorsement(ByteString.copyFromUtf8(ECDSASign.getBitcoinAddrByCert(cert)),

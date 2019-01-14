@@ -72,11 +72,13 @@ object GenesisBuilder {
     //获得管理员证书和签名
 //    val (priKA, pubKA, certA) = ECDSASign.getKeyPair("super_admin")
 //    val (prik, pubK, cert) = ECDSASign.getKeyPair("1")
-    val blk_hash = Sha256.hash(blk.toByteArray)
+    val blk_hash = blk.toByteArray
+    //签名之前不再使用hash
+    //val blk_hash = Sha256.hash(blk.toByteArray)
     //超级管理员背书（角色）
     //创建者背书（1）
-    blk = blk.withConsensusMetadata(Seq(BlockHelper.endorseBlock(blk_hash,"super_admin"),
-      BlockHelper.endorseBlock(blk_hash,"1")))
+    blk = blk.withConsensusMetadata(Seq(BlockHelper.endorseBlock4NonHash(blk_hash,"super_admin"),
+      BlockHelper.endorseBlock4NonHash(blk_hash,"1")))
 //    blk = blk.withConsensusMetadata(Seq(Endorsement(ByteString.copyFromUtf8(ECDSASign.getBitcoinAddrByCert(certA)),
 //      ByteString.copyFrom(ECDSASign.sign(priKA, blk_hash))),
 //      Endorsement(ByteString.copyFromUtf8(ECDSASign.getBitcoinAddrByCert(cert)),ByteString.copyFrom(ECDSASign.sign(prik,blk_hash)))))

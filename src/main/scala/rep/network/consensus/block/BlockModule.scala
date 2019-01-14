@@ -368,7 +368,9 @@ class BlockModule(moduleName: String) extends ModuleBase(moduleName) {
               logTime("create block preload Trans time", System.currentTimeMillis(),false)
               logMsg(LogType.INFO, s"PreTransBlockResult ... with transcation,transaction size ${blk.transactions.size},node number=${pe.getSysTag},block identifier=${blkidentifier_str}")
               blc = blk.withStateHash(ByteString.copyFromUtf8(merk))
-              blc = blc.withConsensusMetadata(Seq(BlockHelper.endorseBlock(Sha256.hash(blc.toByteArray), pe.getSysTag)))
+              blc = blc.withConsensusMetadata(Seq(BlockHelper.endorseBlock4NonHash(blc.toByteArray, pe.getSysTag)))
+              //签名之前不用获取hash
+              //blc = blc.withConsensusMetadata(Seq(BlockHelper.endorseBlock(Sha256.hash(blc.toByteArray), pe.getSysTag)))
               //Broadcast the Block
               //这个块经过预执行之后已经包含了预执行结果和状态
               //mediator ! Publish(BlockEvent.BLOCK_ENDORSEMENT, PrimaryBlock(blc, pe.getBlocker))
@@ -504,7 +506,9 @@ class BlockModule(moduleName: String) extends ModuleBase(moduleName) {
         var isEndorsed = true
         for (endorse <- endors) {
           //TODO kami 这是一个非常耗时的工作？后续需要完善
-          if (!BlockHelper.checkBlockContent(endorse, Sha256.hash(blkOutEndorse.toByteArray))) isEndorsed = false
+          if (!BlockHelper.checkBlockContent(endorse, blkOutEndorse.toByteArray)) isEndorsed = false
+          //验证签名之前不再使用hash
+          //if (!BlockHelper.checkBlockContent(endorse, Sha256.hash(blkOutEndorse.toByteArray))) isEndorsed = false
         }
         if (isEndorsed && BlockHelper.isEndorserListSorted(endors.toArray[Endorsement])==1) {
           //logTime("New block, start to store", CRFD_STEP._13_NEW_BLK_START_STORE,
