@@ -174,21 +174,44 @@ class RestActor extends Actor with ModuleHelper {
   val end_cert = "-----END CERTIFICATE-----";
   
   def preTransaction(t:Transaction) : Unit ={
-      val future = sandbox ? PreTransaction(t)
-      val result = Await.result(future, timeout.duration).asInstanceOf[DoTransactionResult]
-      val rv = result
-
-      ImpDataPreloadMgr.Free(pe.getDBTag,t.txid)
-
-      rv.err match {
-        case None =>
-          //预执行正常,提交并广播交易
-          getActorRef(ActorType.TRANSACTION_POOL) ! t // 给交易池发送消息 ！=》告知（getActorRef）
-          sender ! PostResult(t.txid, Option(rv.r.asInstanceOf[JValue]), rv.ol, None) // 发送消息给调用者（sender）
-        case Some(e) =>
-          //预执行异常,废弃交易，向api调用者发送异常
-          sender ! e
+    
+      val sig = t.signature.toByteArray
+      val tOutSig1 = t.withSignature(ByteString.EMPTY)
+      val tOutSig  = tOutSig1.withMetadata(ByteString.EMPTY)
+      val cid = ChaincodeID.fromAscii(t.chaincodeID.toStringUtf8).name
+      val certKey = WorldStateKeyPreFix + cid + "_" + PRE_CERT + t.cert.toStringUtf8
+      try{
+        var cert = ECDSASign.getCertWithCheck(t.cert.toStringUtf8,certKey,pe.getSysTag)
+        if(cert != None){
+          ECDSASign.verify(sig, PeerHelper.getTxHash(tOutSig), cert.get.getPublicKey) match {
+            case true => 
+              val future = sandbox ? PreTransaction(t)
+              val result = Await.result(future, timeout.duration).asInstanceOf[DoTransactionResult]
+              val rv = result
+        
+              ImpDataPreloadMgr.Free(pe.getDBTag,t.txid)
+        
+              rv.err match {
+                case None =>
+                  //预执行正常,提交并广播交易
+                  getActorRef(ActorType.TRANSACTION_POOL) ! t // 给交易池发送消息 ！=》告知（getActorRef）
+                  sender ! PostResult(t.txid, Option(rv.r.asInstanceOf[JValue]), rv.ol, None) // 发送消息给调用者（sender）
+                case Some(e) =>
+                  //预执行异常,废弃交易，向api调用者发送异常
+                  sender ! e
+              }
+            case false => throw new RuntimeException("验证签名出错")
+          }
+        }else{
+          throw new RuntimeException("没有证书")
+        }
+      }catch{
+        case e : RuntimeException =>
+          sender ! PostResult(t.txid, None, null, Option(e.getMessage))
       }
+    
+    
+      
   }
   
   def receive: Receive = {
@@ -197,14 +220,16 @@ class RestActor extends Actor with ModuleHelper {
       val tr1 = BytesHex.hex2bytes(tr) // 解析交易编码后的16进制字符串,进行解码16进制反解码decode
       try {
          val txr = Transaction.parseFrom(tr1)
+         preTransaction(txr)
       } catch {
         case e:Exception =>
-          println (e.getMessage)
-          throw e
+          //println (e.getMessage)
+          //throw e
+          sender ! PostResult("", None, null, Option("transcation parser error!"))
       }
-      val txr = Transaction.parseFrom(tr1)
+      
      //TODO 做交易的签名验证，是否能在信任列表或kv中找到证书，如果找到验证一下，如果没有找到，则返回错误
-      val sig = txr.signature.toByteArray
+      /*val sig = txr.signature.toByteArray
       val tOutSig1 = txr.withSignature(ByteString.EMPTY)
       val tOutSig  = tOutSig1.withMetadata(ByteString.EMPTY)
       val cid = ChaincodeID.fromAscii(txr.chaincodeID.toStringUtf8).name
@@ -248,7 +273,7 @@ class RestActor extends Actor with ModuleHelper {
          sender ! PostResult(txr.txid, None, null, Option(e.getMessage))
        case _:Exception  =>
          sender ! PostResult(txr.txid, None, null, Option("未知错误"))
-     }
+     }*/
 
     //处理post CSpec构造交易的请求
     case c: CSpec =>
