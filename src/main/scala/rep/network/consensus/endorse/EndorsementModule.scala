@@ -215,6 +215,7 @@ class EndorsementModule(moduleName: String) extends ModuleBase(moduleName) {
   private def endorseForWork(blk:Block, actRef: ActorRef,blkidentifier:String,sendertime:Long,recvtime:Long)={
       val calltime = System.currentTimeMillis()
       val dbinstancename = "endorse_"+blk.transactions.head.txid
+      logMsg(LogType.WARN, s"+++++===>dbinstancename=${dbinstancename}")
       val preload: ImpDataPreload = ImpDataPreloadMgr.GetImpDataPreload(pe.getSysTag,dbinstancename)
       try {
           val blkData = blk.withConsensusMetadata(Seq())
