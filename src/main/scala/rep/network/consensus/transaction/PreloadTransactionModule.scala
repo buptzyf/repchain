@@ -136,7 +136,7 @@ class PreloadTransactionModule(moduleName: String, transProcessor:ActorRef) exte
   def freeSource={
     if(blk != null){
       if(blk.transactions.size > 0){
-        ImpDataPreloadMgr.Free(pe.getDBTag,blk.transactions.head.txid)
+        ImpDataPreloadMgr.Free(pe.getDBTag,"preload_"+blk.transactions.head.txid)
       }
     }
     clearCache() //是否是多余的，确保一定执行了 
@@ -160,10 +160,11 @@ class PreloadTransactionModule(moduleName: String, transProcessor:ActorRef) exte
         //预执行并收集结果
         logMsg(LogType.INFO, s"Get a preload req, form ${sender()}")
         preLoadTrans = blc.transactions.map(trans => (trans.txid, trans))(breakOut): mutable.HashMap[ String, Transaction ]
-        val preload :ImpDataPreload = ImpDataPreloadMgr.GetImpDataPreload(pe.getDBTag,blc.transactions.head.txid)
+        //modify by jby 2019-01-16 这个实例的获取没有任何意义
+        //val preload :ImpDataPreload = ImpDataPreloadMgr.GetImpDataPreload(pe.getDBTag,blc.transactions.head.txid)
         //确保提交的时候顺序执行
         blc.transactions.map(t => {
-          transProcessor ! new DoTransaction(t,self,blc.transactions.head.txid)
+          transProcessor ! new DoTransaction(t,self,"preload_"+blc.transactions.head.txid)
         })
         blk = blc
         preloadFrom = from
