@@ -1,0 +1,310 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+    <!--<script type="text/javascript" src="${pageContext.request.contextPath}/test/jquery.min.js"></script>-->
+    <!--<script type="text/javascript" src="${pageContext.request.contextPath}/test/jquery-ui.js"></script>-->
+    <script src="js/jquery-1.12.4.js"></script>
+    <script src="js/jquery-ui.js"></script>
+    <meta http-equiv="X-UA-Compatible" content="IE=EmulateIE8" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>区块链验证</title>
+    <style type="text/css">
+        .titlename{
+            text-align: center;
+            margin-top: 6px;
+            color: #66CCFF;
+            font-size:30px;
+        }
+        .page_row_left{
+            padding-left:50px;
+
+        }
+        .my-btn {
+            width: 100%;
+            height: 40px;
+            color: #fff;
+            letter-spacing: 1px;
+            background: #3385ff;
+            border-bottom: 1px solid #2d78f4;
+            border-radius: 5px;
+            mapping-right: 250px;
+            text-align: center;
+            font-size: 16px;
+            padding: 3px 10px 3px 10px;
+        }
+        span{
+            vertical-align:middle;
+        }
+        .showzone {
+            align:center;
+            font-size:18px;
+            color:#333333;
+        }
+
+        .td_left {
+            width: 25%;
+        }
+        .td_left img{
+            width:18px;
+            height: 18px;
+            margin-top: 5px;
+            float:right;
+        }
+        .td_right span{
+            color: #bbb;
+        }
+        .line {
+            align:center;
+            width: 100%;
+            height: 2px;
+            background-color: #ddd;
+            margin-top: 5px;
+        }
+    </style>
+    <script type="text/javascript">
+        var grid,form,perm = false;
+        var txid = "";
+        var winWidth = 0;
+        // 初始化函数
+        $(document).ready(function() {
+            debugger;
+            var url = window.location.href;
+            if(url.indexOf("?") != -1){
+                txid  = url.split("=")[1];
+                $('.input').val(txid);
+            }
+            exeQryDataGridEvent();
+        });
+
+       var webContext ="/mlwe";
+        // 查询列表是否在页面加载时，加载。默认为true 加载， false 不加载。
+        var onLoadQryData=false;
+
+        var a = "";
+        var b = "";
+        var c = "";
+        var d = "";
+        var e = "";
+        var q = "";
+        var g = "";
+        //ajax获取区块链数据
+        function exeQryDataGridEvent(){
+                txid = $('.input').val();
+
+            if(txid != "") {
+                $.ajax({
+                    url: "http://" + location.host + "/transaction/" + txid,
+                    //data:{"id":txid},
+                    type: 'GET',
+//                    async: false,
+//                    xhrFields: {withCredentials: true},
+//                    crossDomain: true,
+
+                    //dataType:"text",
+                    dataType: 'json',
+                    success: function (data1) {
+                        var m = data1.result;
+                        if (m != null) {
+                            a = m.txid;
+                            b = m.timestamp;
+                            c = m.payload.ctorMsg.function;
+                            d = m.chaincodeID;
+                            e = m.cert;
+                            q = m.signature;
+                            g = m.payload.ctorMsg.args;
+
+
+                        }
+                    }
+                });
+            }else{
+                a = "";
+                 b = "";
+                 c = "";
+                 d = "";
+                 e = "";
+                 q = "";
+                 g = "";
+            }
+            document.getElementById('a').innerHTML = a;
+            document.getElementById('b').innerHTML = b;
+            document.getElementById('c').innerHTML = c;
+            document.getElementById('d').innerHTML = d;
+            document.getElementById('e').innerHTML = e;
+            document.getElementById('q').innerHTML = q;
+            document.getElementById('g').innerHTML = g;
+            if (a == null || a == "") {
+                $('#img1').css('display', 'none');
+                $('#a').css('display', 'none');
+            }else{
+                $('#img1').css('display', '');
+                $('#a').css('display', '');
+            }
+            if (b == null || b == "") {
+                $('#b').css('display', 'none');
+                $('#img2').css('display', 'none');
+            }else{
+                $('#img2').css('display', '');
+                $('#b').css('display', '');
+            }
+            if (c == null || c == "") {
+                $('#c').css('display', 'none');
+                $('#img3').css('display', 'none');
+            }else{
+                $('#img3').css('display', '');
+                $('#c').css('display', '');
+            }
+            if (d == null || d == "") {
+                $('#d').css('display', 'none');
+                $('#img4').css('display', 'none');
+            }else{
+                $('#img4').css('display', '');
+                $('#d').css('display', '');
+            }
+            if (e == null || e == "") {
+                $('#e').css('display', 'none');
+                $('#img5').css('display', 'none');
+            }else{
+                $('#img5').css('display', '');
+                $('#e').css('display', '');
+            }
+            if (q == null || q == "") {
+                $('#q').css('display', 'none');
+                $('#img6').css('display', 'none');
+            }else{
+                $('#img6').css('display', '');
+                $('#q').css('display', '');
+            }
+            if (g == null || g == "") {
+                $('#g').css('display', 'none');
+                $('#img7').css('display', 'none');
+            }else{
+                $('#img7').css('display', '');
+                $('#g').css('display', '');
+            }
+
+        }
+        function myMouseOver() {
+          //  document.getElementById('aaa').innerHTML = "已验证！";
+        }
+    </script>
+</head>
+<body>
+<div id="qryForm" style="padding: 0; margin: 0;" align="center" expandable=false closable=false>
+    <div class="div-panel">
+        <div class="titlename"><span>区块链验证</span></div>
+        <div id='searchPanel' style="padding: 10px;">
+            <table align="center" width="70%" cellpadding="2" border="0"  align="center" style="margin-top: 6px;margin-right: 100px;">
+                <tr>
+                    <td align="right" class="page_row_left"  width="20%">交易ID：</td>
+                    <td class="page_row_center" align="left" width="40%">
+                        <input class="input"  type="text" style="width:350px;height:20px;" />
+                    </td>
+
+                    <td></td>
+                    <td	class="page_row_right" width="20%"  align="left">
+                        <a  class="my-btn" onclick="exeQryDataGridEvent()">查&nbsp;询</a>
+                    </td>
+                    <td>
+                        <span id="result"></span>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+</div>
+<div id="pagePanel" class="des-survey-eidtwin sino-panel"  expandable=false closable=false>
+    <div id='pageForm' align="center">
+        <table style="width:70%;table-layout:fixed;word-wrap:break-word;" class='showzone' align="center" id="table">
+            <tr class="page_row_th1 lightColor" id="tr1">
+                <td class="td_left" align="center">
+                    <span></span>
+                    <span>交易ID</span>
+                    <img id="img1" alt="" src="images/icon_right.png" >
+                    <span id="aaa"></span>
+                </td>
+            </tr>
+            <tr class="page_row_th1 lightColor" id="tr2">
+                <td class="td_right" align="center">
+                    <span id="a"> </span>
+                    <div class="line"></div>
+                </td>
+            </tr>
+            <tr class="page_row_th1 lightColor" id="tr3">
+                <td class="td_left" align="center">
+                    <span >交易时间</span>
+                    <img id="img2" alt="" src="images/icon_right.png">
+                </td>
+            </tr>
+            <tr class="page_row_th1 lightColor" id="tr4">
+                <td class="td_right" align="center">
+                    <span id="b"></span>
+                    <div class="line"></div>
+                </td>
+            </tr>
+            <tr class="page_row_th1 lightColor" id="tr5">
+                <td class="td_left" align="center">
+                    <span>交易类型</span>
+                    <img id="img3" alt="" src="images/icon_right.png" >
+                </td>
+            </tr>
+            <tr class="page_row_th1 lightColor" id="tr6">
+                <td class="td_right" align="center">
+                    <span id="c"></span>
+                    <div class="line"></div>
+                </td>
+            <tr class="page_row_th1 lightColor" id="tr7">
+                <td class="td_left" align="center">
+                    <span>合约ID</span>
+                    <img id="img4" alt="" src="images/icon_right.png">
+                </td>
+            </tr>
+            <tr class="page_row_th1 lightColor" id="tr8">
+                <td class="td_right" align="center">
+                    <span id="d"></span>
+                    <div class="line"></div>
+                </td>
+            </tr>
+            <tr class="page_row_th1 lightColor" id="tr9">
+                <td class="td_left" align="center">
+                    <span>交易证书</span>
+                    <img id="img5" alt="" src="images/icon_right.png">
+                </td>
+            </tr>
+            <tr class="page_row_th1 lightColor" id="tr10">
+                <td class="td_right" align="center">
+                    <span id="e"></span>
+                    <div class="line"></div>
+                </td>
+            </tr>
+            <tr class="page_row_th1 lightColor" id="tr11">
+                <td class="td_left" align="center">
+                    <span>交易的签名</span>
+                    <img id="img6" alt="" src="images/icon_right.png">
+                </td>
+            </tr>
+            <tr class="page_row_th1 lightColor" id="tr12">
+                <td class="td_right" align="center">
+                    <span id="q"></span>
+                    <div class="line"></div>
+                </td>
+            </tr>
+            <tr class="page_row_th1 lightColor" id="tr13">
+                <td class="td_left" align="center">
+                    <span>交易数据</span>
+                    <img id="img7" id=alt="" src="images/icon_right.png">
+                </td>
+            </tr>
+            <tr class="page_row_th1 lightColor" id="tr14">
+                <td class="td_right" align="center">
+                    <span id="g"></span>
+                </td>
+            </tr>
+
+        </table>
+    </div>
+</div>
+
+</body>
+</html>
