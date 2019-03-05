@@ -54,7 +54,7 @@ message CertId {
 message Certificate {
     string 	certificate = 1; //内含签发机构
     string 	alg_type = 2;//直接填写具体算法，如:ECDSA下的SHA1withECDSA,SHA512withECDSA等
-    bool   	cert_valid = 3;//证书是否有效，true 有效；false 无效；默认为true
+    bool   	cert_valid = 3;//证书是否有效，true 有效；false 无效；protobuf默认该值为false
     google.protobuf.Timestamp reg_Time = 4; //注册时间
     google.protobuf.Timestamp unreg_Time = 5; //注销时间
 }
