@@ -102,7 +102,7 @@ message ChaincodeDeploy {
 * 交易
 */
 message Transaction {
-    string id = 5;
+    string id = 1;
     enum Type {
         UNDEFINED = 0;
         // deploy a chaincode to the network and call `Init` function
@@ -111,13 +111,13 @@ message Transaction {
         CHAINCODE_INVOKE = 2;
         CHAINCODE_SET_STATE = 3;
     }
-    Type type = 1;
+    Type type = 2;
     //store ChaincodeID as bytes so its encrypted value can be stored
-    chaincodeID cid = 2;
+    chaincodeID cid = 3;
     oneof para {
-        ChaincodeDeploy spec = 3;
-        ChaincodeInput ipt = 4; 
-        boolean state = 5;
+        ChaincodeDeploy spec = 4;
+        ChaincodeInput ipt = 5; 
+        bool state = 6;
     }
     Signature signature = 7;
 }
@@ -130,13 +130,13 @@ message Block {
     //顺序排列的交易
     repeated Transaction transactions = 3;
     //交易执行日志及输出指令
-    repeated TransactionResult transactionResults = 2;
+    repeated TransactionResult transactionResults = 4;
     //输出指令集合hash
-    bytes operHash = 4;
+    bytes operHash = 5;
     // previousBlockHash - The hash of the previous block in the chain.
-    bytes previousBlockHash = 5;
+    bytes previousBlockHash = 6;
     //背书签名集合,必须包含出块人签名
-    repeated Signature endorsements=6;
+    repeated Signature endorsements=7;
 }
 
 //交易执行增量日志
