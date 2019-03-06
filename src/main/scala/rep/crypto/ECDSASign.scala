@@ -391,7 +391,7 @@ class ECDSASign extends SignFunc {
   }
 
   
-  
+  //TODO get cert by account credit_No & cert name
   def  getCertWithCheck(certAddr:String,certKey:String,sysTag:String):Option[java.security.cert.Certificate]={
     val cert = ECDSASign.getCertByNodeAddr(certAddr) 
     if(cert != None) {

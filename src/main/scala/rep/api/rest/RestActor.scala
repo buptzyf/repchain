@@ -36,7 +36,7 @@ import rep.sc.TransProcessor._
 import rep.sc.Sandbox._
 import rep.protos.peer._
 import rep.protos.peer.Transaction._
-import rep.protos.peer.ChaincodeID._
+import rep.protos.peer.ChaincodeId._
 import com.google.protobuf.ByteString
 import com.google.protobuf.timestamp.Timestamp
 import rep.crypto._
@@ -124,9 +124,9 @@ object RestActor {
     }
     val ctype = c.ctype match{
       case 1 =>
-         rep.protos.peer.ChaincodeSpec.CodeType.CODE_SCALA
+         rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA
       case _ =>
-        rep.protos.peer.ChaincodeSpec.CodeType.CODE_JAVASCRIPT
+        rep.protos.peer.ChaincodeDeploy.CodeType.CODE_JAVASCRIPT
     }
     transactionCreator(nodeName,stype,c.idPath, c.iptFunc, c.iptArgs, c.code, c.idName, ctype)
   }  
@@ -145,7 +145,7 @@ object RestActor {
         //交易所在的块
         val bl = Block.parseFrom(bb)
         //bl.transactions.foreach(f=>println(s"---${f.txid}"))
-        bl.transactions.find(_.txid == txId)
+        bl.transactions.find(_.id == txId)
     }
   }
 }
@@ -175,13 +175,11 @@ class RestActor extends Actor with ModuleHelper {
   
   def preTransaction(t:Transaction) : Unit ={
     
-      val sig = t.signature.toByteArray
-      val tOutSig1 = t.withSignature(ByteString.EMPTY)
-      val tOutSig  = tOutSig1.withMetadata(ByteString.EMPTY)
-      val cid = ChaincodeID.fromAscii(t.chaincodeID.toStringUtf8).name
-      val certKey = WorldStateKeyPreFix + cid + "_" + PRE_CERT + t.cert.toStringUtf8
+      val sig = t.signature.get.signature.toByteArray
+      val tOutSig = t.clearSignature
+      val certId = t.signature.get.certId.get
       try{
-        var cert = ECDSASign.getCertWithCheck(t.cert.toStringUtf8,certKey,pe.getSysTag)
+        var cert = ECDSASign.getCertWithCheck(certId.creditCode,certId.certName,pe.getSysTag)
         if(cert != None){
           ECDSASign.verify(sig, PeerHelper.getTxHash(tOutSig), cert.get.getPublicKey) match {
             case true => 
@@ -189,13 +187,13 @@ class RestActor extends Actor with ModuleHelper {
               val result = Await.result(future, timeout.duration).asInstanceOf[DoTransactionResult]
               val rv = result
         
-              ImpDataPreloadMgr.Free(pe.getDBTag,t.txid)
+              ImpDataPreloadMgr.Free(pe.getDBTag,t.id)
         
               rv.err match {
                 case None =>
                   //预执行正常,提交并广播交易
                   getActorRef(ActorType.TRANSACTION_POOL) ! t // 给交易池发送消息 ！=》告知（getActorRef）
-                  sender ! PostResult(t.txid, Option(rv.r.asInstanceOf[JValue]), rv.ol, None) // 发送消息给调用者（sender）
+                  sender ! PostResult(t.id, Option(rv.r.asInstanceOf[JValue]), rv.ol, None) // 发送消息给调用者（sender）
                 case Some(e) =>
                   //预执行异常,废弃交易，向api调用者发送异常
                   sender ! e
@@ -207,7 +205,7 @@ class RestActor extends Actor with ModuleHelper {
         }
       }catch{
         case e : RuntimeException =>
-          sender ! PostResult(t.txid, None, null, Option(e.getMessage))
+          sender ! PostResult(t.id, None, null, Option(e.getMessage))
       }
     
     
@@ -401,8 +399,7 @@ class RestActor extends Actor with ModuleHelper {
     case TransactionStreamId(txId) =>
       val r = loadTransaction(sr, txId)
       val t = r.get
-      val t1  = t.withMetadata(ByteString.EMPTY)
-      val body = akka.util.ByteString(t1.toByteArray)
+      val body = akka.util.ByteString(t.toByteArray)
       val entity = HttpEntity.Strict(MediaTypes.`application/octet-stream`, body)        
       val httpResponse = HttpResponse(entity = entity)              
       sender ! httpResponse

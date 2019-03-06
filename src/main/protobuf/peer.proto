@@ -74,7 +74,7 @@ message ChaincodeInput {
     repeated string args  = 2;
 }
 //指定合约名称和版本,确定唯一的合约代码
-message chaincodeID {
+message ChaincodeId {
     string chaincodeName = 1;
     int32 version = 2;
 }
@@ -109,7 +109,7 @@ message Transaction {
     }
     Type type = 2;
     //store ChaincodeID as bytes so its encrypted value can be stored
-    chaincodeID cid = 3;
+    ChaincodeId cid = 3;
     oneof para {
         ChaincodeDeploy spec = 4;
         ChaincodeInput ipt = 5; 

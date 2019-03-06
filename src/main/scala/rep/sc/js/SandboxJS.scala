@@ -47,7 +47,7 @@ class SandboxJS(cid:String) extends Sandbox(cid){
     sandbox.put("tx", t)
     //for test print sandbox id
     sandbox.put("addr_self", this.addr_self)
-    sandbox.put("tx_account", t.cert.toStringUtf8)
+    sandbox.put("tx_account", t.signature.get.certId.get.creditCode)
     //每次执行脚本之前重置 
     //shim.reset() 由于DoTransactionResult依赖此两项,不能直接clear,要么clone一份给result,
     //要么上一份给result，重新建一份
@@ -56,17 +56,17 @@ class SandboxJS(cid:String) extends Sandbox(cid){
     shim.ol = scala.collection.mutable.ListBuffer.empty[Oper]
     //如果执行中出现异常,返回异常
     try{
-      val cs = t.payload.get
-      val cid = cs.chaincodeID.get.name
+      val cs = t.para.spec.get.codePackage
+      val cid = getTXCId(t)
 //      println(s"doTransaction  type:${t.`type`}  cid:$cid addr:$addr_self")
       val r:JValue = t.`type` match {
         //部署合约时执行整个合约脚本，驻留funcs
         case Transaction.Type.CHAINCODE_DEPLOY => 
           //执行并加载functions
-          sandbox.eval(cs.codePackage.toStringUtf8())
+          sandbox.eval(cs)
           //deploy返回chancode.name
           //利用kv记住cid对应的txid,并增加kv操作日志
-          val txid = ByteString.copyFromUtf8(t.txid).toByteArray()
+          val txid = ByteString.copyFromUtf8(t.id).toByteArray()
           val key = WorldStateKeyPreFix+ cid
           shim.sr.Put(key,txid)
           //ol value改为byte array
@@ -76,7 +76,7 @@ class SandboxJS(cid:String) extends Sandbox(cid){
         case  Transaction.Type.CHAINCODE_INVOKE =>
           var tm_start1 = System.currentTimeMillis()  
 
-          val r1 = sandbox.eval(cs.ctorMsg.get.function)
+          val r1 = sandbox.eval(t.para.ipt.get.function)
           //val r2 = r1.asInstanceOf[Any]
           val r2 = encodeJson(r1)
          
@@ -98,7 +98,7 @@ class SandboxJS(cid:String) extends Sandbox(cid){
     }catch{
       case e: Exception => 
         shim.rollback        
-        log.error(t.txid, e)
+        log.error(t.id, e)
         
         //val e1 = new Exception(e.getMessage, e.getCause)
         //akka send 无法序列化原始异常,简化异常信息

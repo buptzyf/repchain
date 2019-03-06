@@ -54,13 +54,12 @@ class SandboxScala(cid:String) extends Sandbox(cid){
    val ctx = new ContractContext(shim,t)
     //如果执行中出现异常,返回异常
     try{
-      val cs = t.payload.get
-      val cid = cs.chaincodeID.get.name
+      val cid = getTXCId(t)
       val r:JValue = t.`type` match {
         //如果cid对应的合约class不存在，根据code生成并加载该class
         case Transaction.Type.CHAINCODE_DEPLOY => 
           //TODO 热加载code对应的class
-          val code = cs.codePackage.toStringUtf8()
+          val code = t.para.spec.get.codePackage
 
           val clazz = Compiler.compilef(code,pcid)
           cobj = clazz.getConstructor().newInstance().asInstanceOf[IContract]
@@ -68,7 +67,7 @@ class SandboxScala(cid:String) extends Sandbox(cid){
           cobj.init(ctx)
           //deploy返回chancode.name
           //利用kv记住cid对应的txid,并增加kv操作日志,以便恢复deploy时能根据cid找到当时deploy的tx及其代码内容
-          val txid = ByteString.copyFromUtf8(t.txid).toByteArray()
+          val txid = ByteString.copyFromUtf8(t.id).toByteArray()
           val key = WorldStateKeyPreFix+ cid
           shim.sr.Put(key,txid)
           //ol value改为byte array
@@ -78,9 +77,10 @@ class SandboxScala(cid:String) extends Sandbox(cid){
           //TODO case  Transaction.Type.CHAINCODE_DESC 增加对合约描述的处理
         case  Transaction.Type.CHAINCODE_INVOKE =>
           //获得合约action
-          val action = cs.ctorMsg.get.function
+          val ipt = t.para.ipt.get
+          val action = ipt.function
           //获得传入参数
-          val data = cs.ctorMsg.get.args
+          val data = ipt.args
           encodeJson(cobj.onAction(ctx,action,data.head))
       }
       val span2 = System.currentTimeMillis()-tm_start
@@ -99,7 +99,7 @@ class SandboxScala(cid:String) extends Sandbox(cid){
     }catch{
       case e: Exception => 
         shim.rollback        
-        log.error(t.txid, e)
+        log.error(t.id, e)
         //val e1 = new Exception(e.getMessage, e.getCause)
         //akka send 无法序列化原始异常,简化异常信息
         val e1 = new SandboxException(e.getMessage)

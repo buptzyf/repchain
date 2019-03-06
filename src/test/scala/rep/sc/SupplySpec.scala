@@ -23,6 +23,7 @@ import akka.testkit.TestKit
 import scala.concurrent.Await
 import scala.concurrent.duration._
 import rep.protos.peer._
+import rep.sc.Sandbox._
 import rep.app.system.ClusterSystem
 import rep.app.system.ClusterSystem.InitType
 
@@ -106,7 +107,7 @@ class SupplySpec(_system: ActorSystem)
     var sandbox = system.actorOf(TransProcessor.props("sandbox", "", probe.ref))
     //生成deploy交易
     val t1 = transactionCreator(sysName, rep.protos.peer.Transaction.Type.CHAINCODE_DEPLOY,
-      "", "", List(), l1, None, rep.protos.peer.ChaincodeSpec.CodeType.CODE_SCALA)
+      "", "", List(), l1, None, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
 
     val msg_send1 = new DoTransaction(t1, probe.ref, "")
     probe.send(sandbox, msg_send1)
@@ -117,7 +118,7 @@ class SupplySpec(_system: ActorSystem)
     //生成invoke交易
     //获取deploy生成的chainCodeId
     //初始化资产
-    val cname = t1.payload.get.chaincodeID.get.name
+    val cname = getTXCId(t1)
     val t2 = transactionCreator(sysName, rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE,
       "", ACTION.SignFixed, Seq(l2), "", Option(cname))
       

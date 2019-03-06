@@ -78,7 +78,7 @@ object PeerHelper {
     */
   def transactionCreator(nodeName:String,tranType:rep.protos.peer.Transaction.Type,chainCodeIdPath:String,
                          chaincodeInputFunc:String,params:Seq[String], spcPackage:String,chaincodeId:Option[String],
-                         ctype:rep.protos.peer.ChaincodeSpec.CodeType= rep.protos.peer.ChaincodeSpec.CodeType.CODE_JAVASCRIPT): 
+                         ctype:rep.protos.peer.ChaincodeDeploy.CodeType= rep.protos.peer.ChaincodeDeploy.CodeType.CODE_JAVASCRIPT): 
                          Transaction ={
     val millis = TimeUtils.getCurrentTime()
     //deploy时取脚本内容hash作为 chaincodeId/name

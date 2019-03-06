@@ -23,6 +23,8 @@ import akka.testkit.TestKit
 import scala.concurrent.Await
 import scala.concurrent.duration._
 import rep.protos.peer._
+import rep.sc.Sandbox._
+
 import rep.app.system.ClusterSystem
 import rep.app.system.ClusterSystem.InitType
 
@@ -164,7 +166,7 @@ class SandboxSpec(_system: ActorSystem)
     }
 
     val t1 = transactionCreator(sysName, rep.protos.peer.Transaction.Type.CHAINCODE_DEPLOY,
-      "", "", List(), l1, None, rep.protos.peer.ChaincodeSpec.CodeType.CODE_SCALA)
+      "", "", List(), l1, None, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
 
     val msg_send1 = new DoTransaction(t1, probe.ref, "")
     probe.send(sandbox, msg_send1)
@@ -175,7 +177,7 @@ class SandboxSpec(_system: ActorSystem)
     //生成invoke交易
     //获取deploy生成的chainCodeId
     //初始化资产
-    val cname = t1.payload.get.chaincodeID.get.name
+    val cname = getTXCId(t1)
     val t2 = transactionCreator(sysName, rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE,
       "", "set", Seq(l2), "", Option(cname))
     val msg_send2 = new DoTransaction(t2, probe.ref, "")
@@ -281,7 +283,7 @@ function waitprint(span,output) {
     val msg_recv2 = probe.expectMsgType[Sandbox.DoTransactionResult](10000.seconds)
     val rv2 = msg_recv2.r.asInstanceOf[JValue]
     val re2 = rv2.extract[Transaction]
-    re2.txid should be(t2.txid)
+    re2.id should be(t2.txid)
   }
 
 }

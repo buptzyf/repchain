@@ -86,32 +86,6 @@ object TransProcessor {
    */
   def props(name: String, da:String, parent: ActorRef): Props = Props(classOf[TransProcessor], name, da, parent)
   
-  /** 根据合约的链码定义获得其唯一标示
-   *  @param c 链码定义
-   *  @return 链码id
-   */
-  def getChaincodeId(c: ChaincodeSpec): String={
-    if(c.codePackage.toStringUtf8().trim().equals(""))
-        throw new SandboxException(ERR_DEPLOY_CODE)
-    Sha256.hashstr(c.codePackage.toByteArray())
-  }
-  
-  /** 从部署合约的交易，获得其部署的合约的链码id
-   *  @param t 交易对象
-   *  @return 链码id
-   */
-  def getTXCId(t: Transaction): String = {
-    val cs = t.payload.get
-    val cname = cs.chaincodeID.get.name
-     t.`type` match {
-        case Transaction.Type.CHAINCODE_DEPLOY => 
-          getChaincodeId(cs)
-        case _ =>
-         if(cname.trim().equals(""))
-            throw new SandboxException(ERR_INVOKE_CHAINCODEID_EMPTY)
-          cname
-    }
-  }  
 }
 
 
@@ -146,7 +120,7 @@ class TransProcessor(name: String, da:String, parent: ActorRef) extends Actor {
       val st = m.t.`type`
       try{
         //获得合约对应的actor容器
-        val sb_actor = getSandboxActor(m.t,sender,m.t.txid)
+        val sb_actor = getSandboxActor(m.t,sender,m.t.id)
         val future = sb_actor ? m
         //同步阻塞等待执行结果
         val result = Await.result(future, timeout.duration).asInstanceOf[DoTransactionResult]
@@ -197,8 +171,8 @@ class TransProcessor(name: String, da:String, parent: ActorRef) extends Actor {
           val tx_deploy = loadTransaction(sr, txId).get
           // acto新建之后需要从持久化恢复的chainCode
           // 根据tx_deploy的类型决定采用js合约容器或者scala合约容器          
-          val actor = tx_deploy.payload.get.ctype match{
-            case rep.protos.peer.ChaincodeSpec.CodeType.CODE_SCALA => 
+          val actor = tx_deploy.para.spec.get.ctype match{
+            case rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA => 
               context.actorOf(Props(new SandboxScala(cid)), sn)
             //默认采用jdk内置的javascript作为合约容器
             case _ => context.actorOf(Props(new SandboxJS(cid)), sn)
@@ -207,8 +181,8 @@ class TransProcessor(name: String, da:String, parent: ActorRef) extends Actor {
           actor
         }else
           //新执行的deploy交易,新建actor
-          t.payload.get.ctype match{
-            case rep.protos.peer.ChaincodeSpec.CodeType.CODE_SCALA => 
+          t.para.spec.get.ctype match{
+            case rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA => 
               context.actorOf(Props(new SandboxScala(cid)), sn)
             //默认采用jdk内置的javascript作为合约容器
             case _ => context.actorOf(Props(new SandboxJS(cid)), sn)

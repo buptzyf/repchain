@@ -71,6 +71,21 @@ object Sandbox {
                            private val cause: Throwable = None.orNull)
                       extends Exception(message, cause) 
 
+  /** 根据合约的链码定义获得其唯一标示
+   *  @param c 链码Id
+   *  @return 链码id字符串
+   */
+  def getChaincodeId(c: ChaincodeId): String={
+    c.chaincodeName + c.version
+  }  
+  /** 从部署合约的交易，获得其部署的合约的链码id
+   *  @param t 交易对象
+   *  @return 链码id
+   */
+  def getTXCId(t: Transaction): String = {
+    val t_cid = t.cid.get
+    getChaincodeId(t_cid)
+  }    
 }
 
 /** 合约容器的抽象类，提供与底层进行API交互的shim实例，用于与存储交互的实例pe
@@ -105,7 +120,7 @@ abstract class Sandbox(cid:String) extends Actor {
       sender ! tr
     //交易预处理请求，指定接收者
     case  PreTransaction(t:Transaction) =>
-      val tr = doTransaction(t,null,t.txid)
+      val tr = doTransaction(t,null,t.id)
       shim.rollback()
       sender ! tr
     //恢复chainCode,不回消息
