@@ -16,22 +16,27 @@
 
 package rep.network.cluster
 
-import akka.actor.{Actor, Address}
+import akka.actor.{Actor, ActorPath, Address}
 import akka.cluster.ClusterEvent._
 import akka.cluster.pubsub.DistributedPubSub
-import akka.cluster.{Cluster, MemberStatus}
+import akka.cluster.{Cluster, ClusterEvent, MemberStatus}
+import akka.util.Timeout
+import akka.pattern.ask
 import rep.app.conf.TimePolicy
 import rep.network.Topic
 import rep.network.base.ModuleHelper
-import rep.network.cluster.MemberListener.{MemberDown, Recollection}
+import rep.network.cluster.MemberListener.{MemberDown, Recollection, askTheClockOffset, clockOffset}
 import rep.network.module.ModuleManager.ClusterJoined
 import rep.network.tools.PeerExtension
 import rep.utils.GlobalUtils.ActorType
-import rep.utils.{ TimeUtils}
+import rep.utils.TimeUtils
 import rep.log.trace.RepLogHelp
 import rep.log.trace.LogType
 import org.slf4j.LoggerFactory
+import rep.app.system.ClusterSystem
+
 import scala.collection.mutable
+import scala.concurrent.{Await, Future}
 
 
 /**
@@ -47,6 +52,11 @@ object MemberListener {
   case class MemberDown(address: Address)
   //稳定节点回收请求
   case object Recollection
+
+  // 查询该节点时间
+  case class askTheClockOffset(time: Long)
+
+  case class clockOffset(offset: Long)
 
 }
 /**
@@ -138,6 +148,25 @@ class MemberListener extends Actor with ClusterActor with ModuleHelper {
       //判断自己是否已经join到网络中
       addr_self.contains(member.address.toString) match {
         case true =>
+          implicit val timeout = Timeout(5 seconds)
+          val seedsPathList = context.system.settings.config.getStringList("akka.cluster.seed-nodes")
+          if (!seedsPathList.isEmpty) {
+            val seedPath = seedsPathList.get(0) + "/user/" + self.path.name
+            val selectionSeed = context.actorSelection(seedPath)
+            val future = selectionSeed ? askTheClockOffset(TimeUtils.getCurrentTime())
+            val result = Await.result(future, timeout.duration).asInstanceOf[String]
+            print(result)
+          } else {
+            val future = self ? askTheClockOffset(System.currentTimeMillis())
+//            val future: Future[String] = ask(self, askTheClockOffset(System.currentTimeMillis())).mapTo[String]
+            val result = Await.result(future, timeout.duration).asInstanceOf[clockOffset]
+            print(result)
+          }
+//          val seedsPathList = context.system.settings.config.getStringList("akka.cluster.seed-nodes")
+//          if (!seedsPathList.isEmpty) {
+//            val seedPath = seedsPathList.get(0)
+//            val selection = context.actorSelection(seedPath)
+//          }
           getActorRef(ActorType.MODULE_MANAGER) ! ClusterJoined
         case false => //ignore
       }
@@ -211,6 +240,10 @@ class MemberListener extends Actor with ClusterActor with ModuleHelper {
       pe.removeStableNode(member.address)
       //Tell itself voter actor to judge if the downer is blocker or not
       getActorRef(ActorType.VOTER_MODULE) ! MemberDown(member.address)
+
+
+    case askTheClockOffset(time: Long) =>
+      sender() ! clockOffset(System.currentTimeMillis() - time)
 
     case _: MemberEvent => // ignore
   }

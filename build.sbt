@@ -54,6 +54,8 @@ libraryDependencies += "org.codehaus.janino" % "janino" % "2.6.1"
 
 libraryDependencies += "org.bouncycastle" % "bcprov-jdk15on" % "1.57"
 
+libraryDependencies += "commons-net" % "commons-net" % "3.6"
+
 libraryDependencies ++= Seq(
   "io.swagger" % "swagger-jaxrs" % "1.5.13",
   "com.github.swagger-akka-http" %% "swagger-akka-http" % "0.9.1",

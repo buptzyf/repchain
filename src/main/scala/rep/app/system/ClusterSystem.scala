@@ -32,14 +32,20 @@ import rep.ui.web.EventServer
 import rep.utils.GlobalUtils.ActorType
 import rep.storage.cfg._ 
 import java.io.File
+import java.net.InetAddress
+
 import scala.collection.mutable
 import rep.app.conf.SystemProfile
 import com.typesafe.config.ConfigValueFactory
 import java.util.List
 import java.util.ArrayList
+
+import org.apache.commons.net.ntp.NTPUDPClient
 import rep.log.trace.RepLogHelp
 import rep.log.trace.LogType
 import org.slf4j.LoggerFactory
+
+import util.control.Breaks._
 
 /**
   * System创建伴生对象
@@ -156,6 +162,42 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart:Boolean) {
     }
     b
   }
+
+  /**
+    * 各个时区一般只能算偏移量，不能确认对方是哪个时区，这一点是否需要考虑呢？
+    * @return
+    */
+  def checkClockOffset: Boolean={
+    val client = new NTPUDPClient()
+    var offsetValue = 0L
+    var offset = ""
+    client.open()
+    // 种子地址,seed-node要保证可达
+    val seedsPathList = sysConf.getStringList("akka.cluster.seed-nodes")
+    if (seedsPathList == null || seedsPathList.size() == 0) return true
+    breakable {
+      for (i <- 0 to seedsPathList.size - 1) {
+        val seedPath = seedsPathList.get(i)
+        val hostIpPort = seedPath.split("@")(1)
+        val hostIp = hostIpPort.split(":")(0)
+        val hostAddr = InetAddress.getByName(hostIp)
+        val info = client.getTime(hostAddr)
+        // compute offset
+        info.computeDetails()
+        offsetValue = info.getOffset()
+        if (offsetValue != null) {
+          offset = offsetValue.toString
+          break()   // 直接break
+        } else {
+          offset = "N/A"
+        }
+      }
+    }
+    client.close()
+    // TODO 日志以及误差控制写到配置文件中
+    if (offset == "N/A") throw new Exception("没收到回应,请查看并确认NTP服务")
+    if (math.abs(offsetValue) < 0.1*1000) true else false
+  }
   
   /**
     * 初始化系统参数
@@ -222,6 +264,12 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart:Boolean) {
     * 启动系统
     */
   def start = {
+
+//        if (!checkClockOffset){
+//          Cluster(sysActor).down(clusterAddr)
+//          throw new RuntimeException("与种子节点的时差超出设置值")
+//        }
+
         if(enableStatistic) statistics = sysActor.actorOf(Props[StatisticCollection],"statistic")
         SystemProfile.initConfigSystem(sysActor.settings.config)
         moduleManager = sysActor.actorOf(ModuleManager.props("moduleManager", sysTag),"moduleManager")
