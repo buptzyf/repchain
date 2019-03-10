@@ -24,17 +24,16 @@ import akka.actor.{Actor, Address, Props}
 import akka.cluster.pubsub.DistributedPubSubMediator.Publish
 import rep.app.conf.SystemProfile
 import rep.crypto.ECDSASign
-import rep.network.{ PeerHelper, Topic }
+import rep.network.{PeerHelper, Topic}
 import rep.network.base.ModuleBase
 import rep.network.cache.TransactionPool.CheckedTransactionResult
 import rep.network.consensus.vote.CRFDVoterModule.VoteRecover
 import rep.protos.peer.ChaincodeID
-import rep.protos.peer.{ Event, Transaction }
+import rep.protos.peer.{Event, Transaction}
 import rep.storage.IdxPrefix.WorldStateKeyPreFix
 import rep.storage.ImpDataAccess
-import rep.utils.{ ActorUtils, GlobalUtils }
+import rep.utils.{ActorUtils, GlobalUtils, SerializeUtils, TimeUtils}
 import rep.utils.GlobalUtils.EventType
-import rep.utils.SerializeUtils
 import rep.log.trace.LogType
 
 /**
@@ -126,13 +125,19 @@ class TransactionPool(moduleName: String) extends ModuleBase(moduleName) {
       
       if (ActorUtils.isHelper(sender().path.toString) ||
         ActorUtils.isAPI(sender().path.toString)) {
-        //广播交易
-        mediator ! Publish(Topic.Transaction, t)
-        
-        
-        
-        //广播发送交易事件
-        sendEvent(EventType.PUBLISH_INFO, mediator, selfAddr, Topic.Transaction, Event.Action.TRANSACTION)
+        // TODO 根据配置文件，判断交易是否超时
+        val trTimeCct = t.getTimestamp.seconds * 1000  // 中国沿海时间（北京）
+        val offset =  TimeUtils.getCurrentTime() - trTimeCct
+        // 误差在10秒之内，仅判断接口进来的交易即可，其他节点过来的肯定是过滤后得。
+        (offset.abs/1000) < 10 match {
+          case true =>
+            //广播交易
+            mediator ! Publish(Topic.Transaction, t)
+            //广播发送交易事件
+            sendEvent(EventType.PUBLISH_INFO, mediator, selfAddr, Topic.Transaction, Event.Action.TRANSACTION)
+
+          case false => logMsg(LogType.WARN, s"误差超过设定的门限值，误差/ms：$offset")
+        }
       } else {
         //交易缓存,这里默认各个节点的交易缓存都是一致的。但是因为入网时间不一致，所有可能会有区别。最终以出块人的交易为准
         //TODO kami 验证交易签名和证书

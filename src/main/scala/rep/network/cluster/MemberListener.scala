@@ -152,20 +152,21 @@ class MemberListener extends Actor with ClusterActor with ModuleHelper {
           val seedsPathList = context.system.settings.config.getStringList("akka.cluster.seed-nodes")
           if (!seedsPathList.isEmpty) {
             val seedPath = seedsPathList.get(0) + "/user/" + self.path.name
-            val selectionSeed = context.actorSelection(seedPath)
-            val future = selectionSeed ? askTheClockOffset(TimeUtils.getCurrentTime())
-            val result = Await.result(future, timeout.duration).asInstanceOf[String]
-            print(result)
-          } else {
-            val future = self ? askTheClockOffset(System.currentTimeMillis())
-//            val future: Future[String] = ask(self, askTheClockOffset(System.currentTimeMillis())).mapTo[String]
+            val selectionSeed = context.system.actorSelection(seedPath)
+            val future = selectionSeed ? askTheClockOffset(System.currentTimeMillis())
             val result = Await.result(future, timeout.duration).asInstanceOf[clockOffset]
             print(result)
+            // 此处误差改成可配置项，还是？？？
+            if (result.offset/1000 < 10)
+              cluster.down(cluster.selfAddress)
+              RepLogHelp.logMsg(log,LogType.WARN,"该节点与种子节点的时间误差超过了门限值")
+              throw new Exception("该节点与种子节点的时间误差超过了门限值")
           }
-//          val seedsPathList = context.system.settings.config.getStringList("akka.cluster.seed-nodes")
-//          if (!seedsPathList.isEmpty) {
-//            val seedPath = seedsPathList.get(0)
-//            val selection = context.actorSelection(seedPath)
+//          else {
+//            val future = self ? askTheClockOffset(System.currentTimeMillis())
+////            val future: Future[String] = ask(self, askTheClockOffset(System.currentTimeMillis())).mapTo[String]
+//            val result = Await.result(future, timeout.duration).asInstanceOf[clockOffset]
+//            print(result)
 //          }
           getActorRef(ActorType.MODULE_MANAGER) ! ClusterJoined
         case false => //ignore
