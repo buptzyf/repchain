@@ -316,7 +316,7 @@ object test {
       val b = dataaccess.getBlock4ObjectByHeight(i.asInstanceOf[Long])
       val trans = b.transactions
       trans.foreach(f=>{
-        txids += f.txid
+        txids += f.id
         //println(f.txid)
       })
     }

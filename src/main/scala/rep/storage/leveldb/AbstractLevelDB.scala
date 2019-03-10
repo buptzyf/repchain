@@ -26,9 +26,10 @@ import rep.storage.util.StoreUtil
 import com.google.protobuf.ByteString
 import scala.math._ 
 import rep.crypto._
-import rep.log.trace.RepLogHelp
 import rep.log.trace.LogType
 import org.slf4j.LoggerFactory
+import rep.log.trace._
+import rep.protos.peer.ChaincodeID
 
 
 /**
@@ -37,10 +38,14 @@ import org.slf4j.LoggerFactory
  * @since	2017-09-28
  * @category	该类实现公共方法。
  * */
-abstract class AbstractLevelDB extends ILevelDB  {
-  protected def log = LoggerFactory.getLogger(this.getClass)
+abstract class AbstractLevelDB(SystemName:String) extends ILevelDB  {
+  //protected def log = LoggerFactory.getLogger(this.getClass)
   protected var IncrementWorldState : immutable.TreeMap[String,Array[Byte]] = new immutable.TreeMap[String,Array[Byte]]() 
   protected var GlobalMerkle : Array[Byte] = null
+  
+  protected def getCid(chaincodeid:ChaincodeID):String={
+    chaincodeid.chaincodeName+"_"+chaincodeid.version.toString()
+  }
   
   /**
 	 * @author jiangbuyun
@@ -164,7 +169,8 @@ abstract class AbstractLevelDB extends ILevelDB  {
   			l = str.toLong
   		}catch{
   			case e:Exception =>{
-  				    log.error( s"DBOP toLong failed, error info= "+e.getMessage)
+  			  RepLogger.logError(SystemName, ModuleType.storager,
+  			      s"DBOP toLong failed, error info= "+e.getMessage)
 			  }
   		}
 		}
@@ -187,7 +193,8 @@ abstract class AbstractLevelDB extends ILevelDB  {
   			l = str.toInt
   		}catch{
   			case e:Exception =>{
-  				    log.error( s"DBOP toInt failed, error info= "+e.getMessage)
+  			  RepLogger.logError(SystemName, ModuleType.storager,
+  			      s"DBOP toInt failed, error info= "+e.getMessage)
 			  }
   		}
 		}
@@ -221,7 +228,8 @@ abstract class AbstractLevelDB extends ILevelDB  {
 	def printlnHashMap(map : mutable.HashMap[String,Array[Byte]])={
 	  if(map != null){
 	    map.foreach(f=>{
-	      log.warn("\tkey="+f._1 + "\tvalue=" +toString(f._2))
+	      RepLogger.logWarn(SystemName, ModuleType.storager,
+  			      "\tkey="+f._1 + "\tvalue=" +toString(f._2))
 	    })
 	  }
 	}

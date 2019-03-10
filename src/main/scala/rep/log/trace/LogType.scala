@@ -13,16 +13,18 @@
  * limitations under the License.
  *
  */
-
-package rep.crypto
-
-import java.security._
+package rep.log.trace
 
 /**
- * @author c4w
+ * 定义日志的类型
+ * @author jiangbuyun
+ * @version	1.0
  */
-trait SignFunc {
-  def sign(privateKey: PrivateKey, message: Array[Byte]): Array[Byte] 
-  def verify(signature: Array[Byte], message: Array[Byte], publicKey: PublicKey): Boolean
-  def  getCertWithCheck(certAddr:String,certKey:String,sysTag:String):Option[java.security.cert.Certificate]
-}
+
+object LogType extends Enumeration{
+    type LogType = Value  
+    val INFO = Value(1)
+    val WARN = Value(2)
+    val DEBUG = Value(3)
+    val ERROR = Value(4)
+  }
