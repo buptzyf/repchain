@@ -29,7 +29,6 @@ import rep.crypto._
 import rep.log.trace.LogType
 import org.slf4j.LoggerFactory
 import rep.log.trace._
-import rep.protos.peer.ChaincodeID
 
 
 /**
@@ -42,10 +41,6 @@ abstract class AbstractLevelDB(SystemName:String) extends ILevelDB  {
   //protected def log = LoggerFactory.getLogger(this.getClass)
   protected var IncrementWorldState : immutable.TreeMap[String,Array[Byte]] = new immutable.TreeMap[String,Array[Byte]]() 
   protected var GlobalMerkle : Array[Byte] = null
-  
-  protected def getCid(chaincodeid:ChaincodeID):String={
-    chaincodeid.chaincodeName+"_"+chaincodeid.version.toString()
-  }
   
   /**
 	 * @author jiangbuyun

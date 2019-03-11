@@ -211,7 +211,7 @@ class ImpDataPreload (SystemName:String,InstanceName:String) extends AbstractLev
            loopbreak.breakable(
       		      trans.foreach(f=>{
       		        if(f.id.equals(txid)){
-      		          rel = this.getCid(f.cid.get)
+      		          rel = IdTool.getCid(f.cid.get)
       		          //val chainspec = f.payload.get
       		          //rel = chainspec.chaincodeID.get.name
       		          loopbreak.break

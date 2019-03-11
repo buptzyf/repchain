@@ -76,7 +76,7 @@ object BlockModule {
   
 
   //块背书结果
-  case class EndorsedBlock(isSuccess: Boolean, blc: Block, endor: Endorsement,blkidentifier:String)
+  case class EndorsedBlock(isSuccess: Boolean, blc: Block, endor: Signature,blkidentifier:String)
 
   //正式块
   case class ConfirmedBlock(blc: Block, height: Long, actRef: ActorRef)
@@ -192,9 +192,9 @@ class BlockModule(moduleName: String) extends ModuleBase(moduleName) {
         getActorRef(pe.getSysTag, ActorType.VOTER_MODULE) ! NextVote(true,0,false)
     }
     
-    def isExistEndorse(endor: Endorsement):Boolean={
+    def isExistEndorse(endor: Signature):Boolean={
       var r = false
-      val es = blc.consensusMetadata
+      val es = blc.endorsements
       if(es.length > 0){
         val loopbreak = new Breaks
         loopbreak.breakable(
@@ -223,7 +223,7 @@ class BlockModule(moduleName: String) extends ModuleBase(moduleName) {
             pe.removeTranscation(f.t)
           }else{
             //判断交易是否已经被打包入块，如果已经打包入块需要删除
-            if(sr.getBlockByTxId(f.t.txid) != null){
+            if(sr.getBlockByTxId(f.t.id) != null){
               pe.removeTranscation(f.t)
             }else{
               f.t +=: result
@@ -243,7 +243,7 @@ class BlockModule(moduleName: String) extends ModuleBase(moduleName) {
     scheduler.scheduleOnce(TimePolicy.getStableTimeDur millis, context.parent, BlockModuleInitFinished)
   }
 
-  def sort(src: Array[Endorsement]){  
+  def sort(src: Array[Signature]){  
   
     def swap(i:Integer, j:Integer){  
       val t = src(i)

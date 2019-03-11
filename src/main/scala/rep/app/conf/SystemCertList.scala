@@ -17,6 +17,7 @@
 package rep.app.conf
 
 import java.io._
+import rep.utils.IdTool
 
 
 /**

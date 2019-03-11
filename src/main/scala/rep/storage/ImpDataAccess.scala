@@ -425,7 +425,7 @@ class ImpDataAccess private(SystemName:String) extends IDataAccess(SystemName){
 		      trans.foreach(f=>{
 		        if(f.id.equals(txid)){
 		          //rel = f.getPayload.getChaincodeID.name
-		          rel = this.getCid(f.cid.get)
+		          rel = IdTool.getCid(f.cid.get)
 		          //rel = f.chaincodeID.toStringUtf8()
 		        }
 		      })
