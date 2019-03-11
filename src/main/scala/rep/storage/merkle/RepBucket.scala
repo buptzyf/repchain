@@ -23,7 +23,6 @@ import rep.storage.IdxPrefix
 import rep.utils._
 import rep.crypto._
 import rep.storage.util.StoreUtil
-import rep.log.trace.RepLogHelp
 import rep.log.trace.LogType
 import org.slf4j.LoggerFactory
 

@@ -14,8 +14,20 @@
  *
  */
 
-package rep.log.trace;
+package rep.crypto.cert
 
-public enum LogType {
-	INFO,DEBUG,WARN,ERROR
+import java.security.{PrivateKey,PublicKey}
+import java.security.cert.{ Certificate, CertificateFactory }
+
+
+/**
+ * 系统签名相关提交给外部的接口，第三方使用不需要直接调用该类
+ * @author jiangbuyun
+ * @version	1.0
+ */
+
+trait ISigner {
+  def sign(privateKey: PrivateKey, message: Array[Byte]): Array[Byte] 
+  def verify(signature: Array[Byte], message: Array[Byte], publicKey: PublicKey): Boolean
+  def CertificateIsValid(date:java.util.Date,  cert:Certificate):Boolean
 }

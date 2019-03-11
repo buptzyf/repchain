@@ -1,6 +1,4 @@
 <configuration DEBUG="true">
-
-	<turboFilter class="rep.log.trace.repTurboLogFilter"/> 
     <!--Tips: Appender configuration, more detail ~ https://logback.qos.ch/manual/appenders.html-->
 
     <!-- Insert the current time formatted as "yyyyMMdd'T'HHmmss" under

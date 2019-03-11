@@ -13,28 +13,31 @@
  * limitations under the License.
  *
  */
+package rep.log.trace
 
-package rep.log;
+import java.util.concurrent.ConcurrentHashMap
+import scala.collection.JavaConverters._
 
 /**
- * Created by User on 2017/7/23.
- */
-import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.core.filter.Filter;
-import ch.qos.logback.core.spi.FilterReply;
-/**
- * log过滤类实现
- * @author shidianyue
+ * RepChain系统运行时间跟踪工具，需要跟踪运行时间的程序统一调用该对象
+ * @author jiangbuyun
  * @version	1.0
- * */
-public class LogFilterExp extends Filter<ILoggingEvent> {
+ */
 
-    @Override
-    public FilterReply decide(ILoggingEvent event) {
-        if (event.getMessage().contains("Opt Time")) {
-            return FilterReply.ACCEPT;
-        } else {
-            return FilterReply.DENY;
-        }
-    }
+object RepTimeTracer {
+  private implicit var times  = new ConcurrentHashMap[String, Long] asScala
+  
+  
+  def setStartTime(nodeName:String,flag:String,t:Long)={
+    this.times.put(nodeName+"-"+flag, t);
+  }
+  
+  def setEndTime(nodeName:String,flag:String,t:Long)={
+    val key = nodeName+"-"+flag;
+		if(this.times.contains(key)) {
+			val tl = t - this.times(key);
+			RepLogger.logInfo(nodeName, ModuleType.timeTracer, key+"="+tl)
+		}
+  }
+  
 }

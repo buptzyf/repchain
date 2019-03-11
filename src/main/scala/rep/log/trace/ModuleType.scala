@@ -13,20 +13,23 @@
  * limitations under the License.
  *
  */
-
-package rep.storage
+package rep.log.trace
 
 /**
- * @author c4w
+ * 定义输出日志的模块
+ * @author jiangbuyun
+ * @version	1.0
  */
-trait Storage[Key, Value] {
 
-  def set(key: Key, value: Value): Unit
-
-  def get(key: Key): Option[Value]
-
-  def containsKey(key: Key): Boolean = get(key).isDefined
-  
-  def commit(): Unit
-  def merkle():Array[Byte]
-}
+object ModuleType extends Enumeration{
+    type ModuleType = Value  
+    val blocker = Value("blocker")
+    val endorser = Value("endorser")
+    val timeTracer = Value("timeTracer")
+    val storager = Value("storager")
+    val preloadTrans = Value("preloadTrans")
+    val contract = Value("contract")
+    val others = Value("others")
+    
+    def checkExists(t:String) = this.values.exists(_.toString==t) 
+  }

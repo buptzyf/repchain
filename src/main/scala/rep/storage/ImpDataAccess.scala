@@ -33,6 +33,7 @@ import java.io._
 import rep.storage.merkle._
 import rep.protos.peer.OperLog
 import scala.collection.mutable._
+import rep.log.trace._
 
 /**
  * @author jiangbuyun
@@ -65,7 +66,8 @@ class ImpDataAccess private(SystemName:String) extends IDataAccess(SystemName){
 		    rb = getBlockByHash(bh)
 		    }catch{
 		      case e:Exception =>{
-  		          log.info("base64 is invalidate") 
+		        RepLogger.logError(SystemName, ModuleType.storager,
+  			      "base64 is invalidate")
   		    }
 		    }
 		  }
@@ -421,8 +423,9 @@ class ImpDataAccess private(SystemName:String) extends IDataAccess(SystemName){
 		    var trans = block.transactions
 		    if(trans.length > 0){
 		      trans.foreach(f=>{
-		        if(f.txid.equals(txid)){
-		          rel = f.getPayload.getChaincodeID.name
+		        if(f.id.equals(txid)){
+		          //rel = f.getPayload.getChaincodeID.name
+		          rel = this.getCid(f.cid.get)
 		          //rel = f.chaincodeID.toStringUtf8()
 		        }
 		      })
@@ -442,7 +445,7 @@ class ImpDataAccess private(SystemName:String) extends IDataAccess(SystemName){
 		override def  restoreBlock(block:Block):Boolean={
 		  var b : Boolean = false
 		  if(block == null) return b
-  		if(block.stateHash == null) return b
+  		if(block.operHash == null) return b
   		synchronized{
   		  val oldh = getBlockHeight()
   		  val oldno = this.getMaxFileNo()
@@ -457,9 +460,9 @@ class ImpDataAccess private(SystemName:String) extends IDataAccess(SystemName){
   		  
   		  if(isLastBlock(block,prevblock)){
   		    
-  		    val txresults = block.getNonHashData.transactionResults
+  		    val txresults = block.transactionResults
   		    txresults.foreach(f=>{
-  		         list += f.txid -> f.ol.seq
+  		         list += f.txId -> f.ol.seq
   		        }
   		      )
   		      try{
@@ -531,14 +534,16 @@ class ImpDataAccess private(SystemName:String) extends IDataAccess(SystemName){
   		var b : Boolean = false
   		var block = _block
   		if(block == null) return b 
-  		if(block.stateHash == null) return b 
+  		if(block.operHash == null) return b 
   		if(block.previousBlockHash == null) return b 
-  		this.log.info("system_name="+this.SystemName+"\t store a block")
+  		RepLogger.logInfo(SystemName, ModuleType.storager,
+  			      "system_name="+this.SystemName+"\t store a block")
   		synchronized{
   		  val oldh = getBlockHeight() 
   		  val oldno = this.getMaxFileNo() 
   		  val oldtxnumber = this.getBlockAllTxNumber() 
-  		  this.log.info("system_name="+this.SystemName+"\t old height="+oldh+"\t old file no="+oldno+"\t old tx number="+oldtxnumber)
+  		  RepLogger.logInfo(SystemName, ModuleType.storager,
+  			      "system_name="+this.SystemName+"\t old height="+oldh+"\t old file no="+oldno+"\t old tx number="+oldtxnumber)
   		  //检查要保存的块的上一块是否是当前块
   		  var prevblock : Block = null
   		  if(oldh > 0){
@@ -575,11 +580,13 @@ class ImpDataAccess private(SystemName:String) extends IDataAccess(SystemName){
 		      bidx.setBlockFilePos(startpos+8) 
 		      bidx.setBlockLength(blenght) 
 		      
-		      this.log.info("system_name="+this.SystemName+"\t new height="+newh+"\t new file no="+newno+"\t new tx number="+newtxnumber)
+		      RepLogger.logInfo(SystemName, ModuleType.storager,
+  			      "system_name="+this.SystemName+"\t new height="+newh+"\t new file no="+newno+"\t new tx number="+newtxnumber)
   		  
 		      
 		      this.Put(IdxPrefix.IdxBlockPrefix+bidx.getBlockHash(), bidx.toArrayByte()) 
-		      this.log.info("system_name="+this.SystemName+"\t blockhash="+bidx.getBlockHash())
+		      RepLogger.logInfo(SystemName, ModuleType.storager,
+  			      "system_name="+this.SystemName+"\t blockhash="+bidx.getBlockHash())
   		  
 		      
 		      this.Put(IdxPrefix.IdxBlockHeight+newh, bidx.getBlockHash().getBytes()) 
@@ -596,7 +603,8 @@ class ImpDataAccess private(SystemName:String) extends IDataAccess(SystemName){
 		      bhelp.writeBlock(bidx.getBlockFileNo(), bidx.getBlockFilePos()-8, BlockHelp.longToByte(blenght)++rbb) 
 		      
 		      b = true
-		      this.log.info("system_name="+this.SystemName+"\t blockhash="+bidx.getBlockHash()+"\tcommited success")
+		      RepLogger.logInfo(SystemName, ModuleType.storager,
+  			      "system_name="+this.SystemName+"\t blockhash="+bidx.getBlockHash()+"\tcommited success")
   		  }catch{
   		    case e:Exception =>{
   		      this.setBlockHeight(oldh) 
@@ -625,7 +633,7 @@ class ImpDataAccess private(SystemName:String) extends IDataAccess(SystemName){
   	private def commitAndAddBlock( block:Block,blockhsah:Array[Byte]):Boolean={
   		var b : Boolean = false 
   		if(block == null) return b 
-  		if(block.stateHash == null) return b 
+  		if(block.operHash == null) return b 
   		if(block.previousBlockHash == null) return b 
   		if(blockhsah == null) return b 
   		val rbb = block.toByteArray

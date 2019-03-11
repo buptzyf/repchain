@@ -51,7 +51,7 @@ class blockindex() {
           txids = new Array[String](ts.length);
           var i = 0;
           ts.foreach(f =>{
-              txids(i) = f.txid;
+              txids(i) = f.id;
               i += 1;
           })
         }
