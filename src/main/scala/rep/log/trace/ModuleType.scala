@@ -27,6 +27,8 @@ object ModuleType extends Enumeration{
     val endorser = Value("endorser")
     val timeTracer = Value("timeTracer")
     val storager = Value("storager")
+    val preloadTrans = Value("preloadTrans")
+    val contract = Value("contract")
     val others = Value("others")
     
     def checkExists(t:String) = this.values.exists(_.toString==t) 
