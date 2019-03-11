@@ -43,7 +43,6 @@ import rep.crypto._
 import rep.sc.Shim._
 import rep.network.PeerHelper._
 import rep.storage._
-import rep.storage.FakeStorage._
 import spray.json._
 import com.trueaccord.scalapb.json.JsonFormat
 import rep.app.TestMain
@@ -65,8 +64,8 @@ import rep.sc.Shim
 import rep.utils.SerializeUtils
 import IdxPrefix._
 import java.util.Base64
-import rep.log.trace.LogTraceOption
-import rep.log.trace.RepTimeTrace
+import rep.crypto.cert.SignTool
+import rep.log.trace._
 
 
 /**
@@ -104,7 +103,7 @@ object RestActor {
   case class tranSign(tran: String)
   
   case class closeOrOpen4Node(nodename:String,status:String)
-  case class closeOrOpen4Package(packagename:String,status:String)
+  case class closeOrOpen4Package(nodename:String,packagename:String,status:String)
   case class ColseOrOpenAllLogger(status:String)
   case class ColseOrOpenTimeTrace(status:String)
 
@@ -179,9 +178,9 @@ class RestActor extends Actor with ModuleHelper {
       val tOutSig = t.clearSignature
       val certId = t.signature.get.certId.get
       try{
-        var cert = ECDSASign.getCertWithCheck(certId.creditCode,certId.certName,pe.getSysTag)
-        if(cert != None){
-          ECDSASign.verify(sig, PeerHelper.getTxHash(tOutSig), cert.get.getPublicKey) match {
+        
+        
+          SignTool.verify(sig, PeerHelper.getTxHash(tOutSig), certId) match {
             case true => 
               val future = sandbox ? PreTransaction(t)
               val result = Await.result(future, timeout.duration).asInstanceOf[DoTransactionResult]
@@ -200,9 +199,7 @@ class RestActor extends Actor with ModuleHelper {
               }
             case false => throw new RuntimeException("验证签名出错")
           }
-        }else{
-          throw new RuntimeException("没有证书")
-        }
+        
       }catch{
         case e : RuntimeException =>
           sender ! PostResult(t.id, None, null, Option(e.getMessage))
@@ -315,12 +312,12 @@ class RestActor extends Actor with ModuleHelper {
       
       case ColseOrOpenTimeTrace(status) =>
         var remsg = "";
-        var  rtt = RepTimeTrace.getRepTimeTrace()
+        
         if(status.equalsIgnoreCase("on")){
-          rtt.openTimeTrace()
+          RepTimeTracer.openTimeTrace
           remsg = "已经打开运行时间跟踪"
         }else if(status.equalsIgnoreCase("off")){
-          rtt.closeTimeTrace()
+          RepTimeTracer.closeTimeTrace
           remsg = "已经关闭运行时间跟踪"
         }else{
           remsg = "状态只能输入on/off"
@@ -329,12 +326,12 @@ class RestActor extends Actor with ModuleHelper {
       
       case ColseOrOpenAllLogger(status) =>
         var remsg = "";
-        var  lto = LogTraceOption.getLogTraceOption()
+        
         if(status.equalsIgnoreCase("on")){
-          lto.OpenAll()
+          LogOption.openAllTrace
           remsg = "已经打开日志输出"
         }else if(status.equalsIgnoreCase("off")){
-          lto.CloseAll()
+          LogOption.closeAllTrace
           remsg = "已经关闭日志输出"
         }else{
           remsg = "状态只能输入on/off"
@@ -343,26 +340,25 @@ class RestActor extends Actor with ModuleHelper {
         
         case closeOrOpen4Node(nodename,status) =>
         var remsg = "";
-        var  lto = LogTraceOption.getLogTraceOption()
+        
         if(status.equalsIgnoreCase("on")){
-          lto.addNodeLogOption(nodename,true)
+          LogOption.openNodeLog(nodename)
           remsg = "节点="+nodename+",已经打开日志输出"
         }else if(status.equalsIgnoreCase("off")){
-          lto.addNodeLogOption(nodename,false)
+          LogOption.closeNodeLog(nodename)
           remsg = "节点="+nodename+",已经关闭日志输出"
         }else{
           remsg = "状态只能输入on/off"
         }
         sender ! QueryHash(remsg)
         
-        case closeOrOpen4Package(packagename,status) =>
+        case closeOrOpen4Package(nodename,packagename,status) =>
         var remsg = "";
-        var  lto = LogTraceOption.getLogTraceOption()
         if(status.equalsIgnoreCase("on")){
-          lto.addLogOption(packagename,true)
+          LogOption.setModuleLogOption(nodename, packagename, true)
           remsg = "包名="+packagename+",已经打开日志输出"
         }else if(status.equalsIgnoreCase("off")){
-          lto.addLogOption(packagename,false)
+          LogOption.setModuleLogOption(nodename, packagename, false)
           remsg = "包名="+packagename+",已经关闭日志输出"
         }else{
           remsg = "状态只能输入on/off"
@@ -417,8 +413,9 @@ class RestActor extends Actor with ModuleHelper {
         )
         println(cert.toString())
         val certByte = SerializeUtils.serialise(cert)
-        val certaddr = ECDSASign.getBitcoinAddrByCert(certByte)
-        sender ! QueryAddr(certaddr, "")
+        //todo 不知道是否需要返回
+        //val certaddr = ECDSASign.getBitcoinAddrByCert(certByte)
+        //sender ! QueryAddr(certaddr, "")
       } catch {
         case e:Exception =>
           sender ! QueryAddr("", "证书字符串错误")
@@ -427,8 +424,9 @@ class RestActor extends Actor with ModuleHelper {
 
 
     case pa: PostAddr =>
+      //todo 不知道是否需要返回
       //TODO 从短地址到证书得有信任列表里的，还有就是ws中存储的，两个都得做，如果证书在，返回证书字符串
-      try{
+      /*try{
           var peercert : Option[Certificate]  = None
           try{
             peercert = ECDSASign.getCertByBitcoinAddr(pa.addr)    
@@ -454,7 +452,7 @@ class RestActor extends Actor with ModuleHelper {
           }
       }catch{
             case e : Exception => sender ! QueryCert(pa.addr, "", pa.cid, e.getMessage)
-        }
+        }*/
       
     // TODO 主要是查询hash是否存在
     case ph: PostHash =>

@@ -22,7 +22,6 @@ import java.security.cert.CertificateFactory
 import fastparse.utils.Base64
 import org.json4s.DefaultFormats
 import org.json4s.jackson.JsonMethods.parse
-import rep.crypto.ECDSASign
 import rep.sc.Shim.{ERR_CERT_EXIST, PRE_CERT, PRE_CERT_INFO}
 import rep.sc.contract.{ContractContext, IContract}
 import rep.utils.SerializeUtils

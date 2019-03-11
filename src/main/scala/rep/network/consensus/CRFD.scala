@@ -29,9 +29,8 @@ import rep.network.sync.SyncModule.SetupSync
 import rep.network.consensus.transaction.PreloadTransactionModule
 import rep.sc.TransProcessor
 import rep.utils.GlobalUtils.ActorType
-import rep.log.trace.RepLogHelp
-import rep.log.trace.LogType
 import org.slf4j.LoggerFactory
+import rep.log.trace._
 
 /**
   * Consensus handle and message dispatcher
@@ -104,7 +103,7 @@ class CRFD(name: String) extends BaseConsenter with ModuleHelper with BaseActor 
     registerActorRef(ActorType.PRELOADTRANS_MODULE, preloadTrans)
 
     //logMsg(LOG_TYPE.INFO,name,"CRFD init finished",selfAddr)
-    RepLogHelp.logMsg(log,LogType.INFO, "CRFD init finished"+"~"+selfAddr)
+    RepLogger.logInfo(pe.getSysTag, ModuleType.crfd, "CRFD init finished"+"~"+selfAddr)
   }
 
   override def initFinished(): Unit = {
@@ -121,7 +120,7 @@ class CRFD(name: String) extends BaseConsenter with ModuleHelper with BaseActor 
 
   override def preStart(): Unit = {
     //logMsg(LOG_TYPE.INFO,name,"CRFD Actor Start",selfAddr)
-    RepLogHelp.logMsg(log,LogType.INFO, "CRFD Actor Start"+"~"+selfAddr)
+    RepLogger.logInfo(pe.getSysTag, ModuleType.crfd, "CRFD Actor Start"+"~"+selfAddr)
   }
 
   override def receive: Receive = {

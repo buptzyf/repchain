@@ -87,7 +87,7 @@ class StatisticCollection extends Actor  {
       totalBlkCount += 1
       totalTranCount += blk.transactions.size
       totalBlkSize += blk.toByteArray.size
-      blk.nonHashData.get.transactionResults.foreach(trans => totalResultSize += trans.toByteArray.size)
+      //blk.nonHashData.get.transactionResults.foreach(trans => totalResultSize += trans.toByteArray.size)
       blk.transactions.foreach(trans => totalTranSize += trans.toByteArray.size)
 
 

@@ -18,21 +18,35 @@ package rep.log.trace
 import java.util.concurrent.ConcurrentHashMap
 import scala.collection.JavaConverters._
 import rep.log.trace.ModuleType.ModuleType;
+import java.util.concurrent.atomic._
 
 object LogOption {
   private implicit var options  = new ConcurrentHashMap[String, Boolean] asScala
+  private var isOpenTrace:AtomicBoolean = new AtomicBoolean(true) 
+  
+  def openAllTrace={
+    this.isOpenTrace.set(true)
+  }
+  
+  def closeAllTrace={
+    this.isOpenTrace.set(false)
+  }
   
   def isPrintLog(nodeName:String,mt:ModuleType):Boolean={
     var b = true
-    if(options.contains(nodeName)){
-      if(options(nodeName)){
-        val k = nodeName+"_"+mt.toString()
-        if(options.contains(k)){
-          b = options(k)
+    if(this.isOpenTrace.get){
+      if(options.contains(nodeName)){
+        if(options(nodeName)){
+          val k = nodeName+"_"+mt.toString()
+          if(options.contains(k)){
+            b = options(k)
+          }
+        }else{
+          b = false
         }
-      }else{
-        b = false
       }
+    }else{
+      b = false
     }
     b
 	}

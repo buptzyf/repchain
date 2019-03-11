@@ -35,6 +35,8 @@ import rep.network.consensus.CRFD.CRFD_STEP
 import rep.network._
 import rep.network.consensus.vote.CRFDVoterModule.NextVote
 import rep.log.trace.LogType
+import rep.utils.IdTool
+import rep.crypto.cert.SignTool
 
 
 object Endorse4Blocker {
@@ -104,15 +106,15 @@ class Endorse4Blocker(moduleName: String) extends ModuleBase(moduleName) {
         return sn.toString + "/"  + actorName;  
     }
     
-    def isExistEndorse(endor: Endorsement):Boolean={
+    def isExistEndorse(endor: Signature):Boolean={
       var r = false
-      val es = blc.consensusMetadata
+      val es = blc.endorsements
       if(es.length > 0){
         val loopbreak = new Breaks
         loopbreak.breakable(
             for(i <- 0 to (es.length-1) ){
               val h = es(i)
-              if(h.endorser.toStringUtf8() == endor.endorser.toStringUtf8()){
+              if(IdTool.getSigner4String(h.getCertId) == IdTool.getSigner4String(endor.getCertId)){
                 r = true
                 loopbreak.break
               }
@@ -143,7 +145,7 @@ class Endorse4Blocker(moduleName: String) extends ModuleBase(moduleName) {
     SubscribeTopic(mediator, self, selfAddr, Topic.Block, true)
   }
   
-  def sort(src: Array[Endorsement]){  
+  def sort(src: Array[Signature]){  
   
     def swap(i:Integer, j:Integer){  
       val t = src(i)
@@ -155,8 +157,8 @@ class Endorse4Blocker(moduleName: String) extends ModuleBase(moduleName) {
       val half = src((l + r)/2)  
       var i = l; var j = r;  
       while (i <= j){  
-        while (src(i).endorser.toStringUtf8() < half.endorser.toStringUtf8()) i += 1  
-        while (src(j).endorser.toStringUtf8() > half.endorser.toStringUtf8()) j -= 1  
+        while (IdTool.getSigner4String(src(i).getCertId) < IdTool.getSigner4String(half.getCertId)) i += 1  
+        while (IdTool.getSigner4String(src(j).getCertId) > IdTool.getSigner4String(half.getCertId)) j -= 1  
         if(i <= j){  
           swap(i, j)  
           i += 1  
@@ -218,7 +220,7 @@ class Endorse4Blocker(moduleName: String) extends ModuleBase(moduleName) {
               isSuccess match {
                 case true =>
                   //Endorsement collection
-                  val blcEn = blc.withConsensusMetadata(Seq())
+                  val blcEn = blc.withEndorsements(Seq())
                   //TODO kami 类似于MD5验证，是否是同一个blk（可以进一步的完善，存在效率问题？）
                   blkidentifier == blkidentifier_str match {
                     case true =>
@@ -228,9 +230,9 @@ class Endorse4Blocker(moduleName: String) extends ModuleBase(moduleName) {
                         case true =>
                           if(!isExistEndorse(endor)){
                               addEndoserNode(akka.serialization.Serialization.serializedActorPath(sender()).toString(),"/user/moduleManager/consensusManager/consensus-CRFD/endorse")
-                              blc = blc.withConsensusMetadata(blc.consensusMetadata.+:(endor))//在前面添加
-                              logMsg(LogType.INFO, s"node name=${pe.getSysTag},identifier=${blkidentifier},recv endorse, cert=${endor.endorser.toStringUtf8()}")
-                              if (BlockHelper.checkCandidate(blc.consensusMetadata.length, pe.getCandidator.size)) {
+                              blc = blc.withEndorsements(blc.endorsements.+:(endor))//在前面添加
+                              logMsg(LogType.INFO, s"node name=${pe.getSysTag},identifier=${blkidentifier},recv endorse, cert=${IdTool.getSigner4String(endor.getCertId)}")
+                              if (BlockHelper.checkCandidate(blc.endorsements.length, pe.getCandidator.size)) {
                                 
                                 logTime("create block endorse recv time", System.currentTimeMillis(),false)
                                 schedulerLink = clearSched()
@@ -249,7 +251,7 @@ class Endorse4Blocker(moduleName: String) extends ModuleBase(moduleName) {
                                 //  getActorRef(ActorType.STATISTIC_COLLECTION))
                                 
                                 
-         var consensus = blc.consensusMetadata.toArray[Endorsement]
+         var consensus = blc.endorsements.toArray[Signature]
         //var filterstart = System.nanoTime()
         //var tmpconsensus = consensus.sortWith((endorser_left,endorser_right)=> endorser_left.endorser.toStringUtf8() < endorser_right.endorser.toStringUtf8())
         //var filterend = System.nanoTime()
@@ -262,7 +264,7 @@ class Endorse4Blocker(moduleName: String) extends ModuleBase(moduleName) {
         
         //var writestart = System.nanoTime()
         //sort(consensus)
-        blc = blc.withConsensusMetadata(consensus)
+        blc = blc.withEndorsements(consensus)
         //var writeend = System.nanoTime()
         //logMsg(LOG_TYPE.INFO, s"write sort spent time=${writeend-writestart}")
         //广播这个block

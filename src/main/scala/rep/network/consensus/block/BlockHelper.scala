@@ -20,8 +20,8 @@ import com.google.protobuf.ByteString
 import com.google.protobuf.timestamp.Timestamp
 import com.trueaccord.scalapb.json.JsonFormat
 import rep.app.conf.SystemProfile
-import rep.crypto.{ECDSASign, Sha256}
-import rep.protos.peer.{Block, Endorsement, Transaction,ChaincodeID}
+import rep.crypto.{ Sha256}
+import rep.protos.peer.{Block, Signature, Transaction,ChaincodeId,CertId}
 import rep.utils.TimeUtils
 import rep.storage.IdxPrefix
 import rep.sc.Shim._
@@ -31,6 +31,8 @@ import rep.network.PeerHelper
 import rep.utils.SerializeUtils
 import scala.util.control.Breaks
 import org.slf4j.LoggerFactory
+import rep.crypto.cert.SignTool
+import rep.utils.IdTool
 
 
 /**
@@ -49,11 +51,14 @@ object BlockHelper {
     * @param alise
     * @return
     */
-  def endorseBlock4NonHash(blkHash:Array[Byte], alise:String):Endorsement ={
+  def endorseBlock4NonHash(blkHash:Array[Byte], alise:String):Signature ={
     try{
-      val (priK, pubK, cert) = ECDSASign.getKeyPair(alise)
-      Endorsement(ByteString.copyFromUtf8(ECDSASign.getBitcoinAddrByCert(cert)),
-      ByteString.copyFrom(ECDSASign.sign(priK, blkHash)))
+      
+      val millis = TimeUtils.getCurrentTime()
+      val certid = CertId(alise,"1")
+      Signature(Option(certid),
+          Option(Timestamp(millis/1000 , ((millis % 1000) * 1000000).toInt)),
+          ByteString.copyFrom(SignTool.sign(certid, blkHash)))
     }catch{
       case e:RuntimeException => throw e
     }
@@ -64,19 +69,11 @@ object BlockHelper {
     * @param blkHash
     * @return
     */
-  def checkBlockContent(endor:Endorsement, blkHash: Array[Byte]): Boolean = {
+  def checkBlockContent(endor:Signature, blkHash: Array[Byte]): Boolean = {
     //获取出块人的背书信息
     try{
-        val certTx = ECDSASign.getCertByBitcoinAddr(endor.endorser.toStringUtf8)
-        if(certTx.getOrElse(None)!=None){
-          //    val certTx = SerializeUtils.deserialise(endor.endorser.toByteArray).asInstanceOf[Certificate]
-          val alias = ECDSASign.getAliasByCert(certTx.get).getOrElse(None)
-          if (alias == None) false
-          else {
-            ECDSASign.verify(endor.signature.toByteArray, blkHash, certTx.get.getPublicKey)
-          }
-        }
-        else false
+      val certid = endor.getCertId
+      SignTool.verify(endor.signature.toByteArray, blkHash, certid)
     }catch{
       case e  : RuntimeException => false
     }
@@ -88,25 +85,15 @@ object BlockHelper {
     var resultMsg = ""
     var result = false
     //val starttime = System.currentTimeMillis()
-    val sig = t.signature.toByteArray
-    val tOutSig1 = t.withSignature(ByteString.EMPTY)
-    val tOutSig  = tOutSig1.withMetadata(ByteString.EMPTY)
+    val sig = t.signature
+    val tOutSig = t.withSignature(null)
+    
     
     try{
-        val cid = ChaincodeID.fromAscii(t.chaincodeID.toStringUtf8).name
-        val certKey = IdxPrefix.WorldStateKeyPreFix + cid + "_" + "CERT_" + t.cert.toStringUtf8 // 普通用户证书的key
-        val readytime = System.currentTimeMillis()
-        var cert = ECDSASign.getCertWithCheck(t.cert.toStringUtf8,certKey,dataAccess.getSystemName)
-        //val getkeytime = System.currentTimeMillis()
-        if(cert != None){
-          result = ECDSASign.verify(sig, PeerHelper.getTxHash(tOutSig), cert.get.getPublicKey)
-          //val verifytime = System.currentTimeMillis()
-          // log.info(s"_______readytime=${readytime-starttime},getkeytime=${getkeytime-readytime},verifytime=${verifytime-getkeytime}")
-        }else{
-          resultMsg = s"The transaction(${t.txid}) is not trusted"
-        }
+      SignTool.verify(sig.get.signature.toByteArray(), PeerHelper.getTxHash(tOutSig), sig.get.getCertId)
+       
       }catch{
-        case e : RuntimeException => resultMsg = s"The transaction(${t.txid}) is not trusted${e.getMessage}"
+        case e : RuntimeException => resultMsg = s"The transaction(${t.id}) is not trusted${e.getMessage}"
       }
       
      
@@ -132,14 +119,20 @@ object BlockHelper {
     * @param trans
     * @return
     */
-  def createPreBlock(preBlkHash: String, trans: Seq[Transaction]): Block = {
+  def createPreBlock(preBlkHash: String, h:Long,trans: Seq[Transaction]): Block = {
     val millis = TimeUtils.getCurrentTime()
     //TODO kami 不应该一刀切，应该针对不同情况采用不同的整合trans的策略
     //TODO kami 出块的时候需要验证交易是否符合要求么？（在内部节点接收的时候已经进行了验证）
     //先这样做确保出块的时候不超出规格
-    val blk = new Block(1, Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)),
-      trans, _root_.com.google.protobuf.ByteString.EMPTY, _root_.com.google.protobuf.ByteString.EMPTY, Seq())
-    blk.withPreviousBlockHash(ByteString.copyFromUtf8(preBlkHash))
+    
+    new Block(1, 
+        h,
+      trans,
+     null , 
+      _root_.com.google.protobuf.ByteString.EMPTY, 
+      ByteString.copyFromUtf8(preBlkHash), 
+      Seq())
+
   }
 
   /**
@@ -177,12 +170,12 @@ object BlockHelper {
     Sha256.hashstr(blk.toByteArray)
   }
 
-  def isEndorserListSorted(srclist : Array[Endorsement]):Int={
+  def isEndorserListSorted(srclist : Array[Signature]):Int={
 		var b : Int = 0
 		if (srclist == null || srclist.length < 2){
 		  b
     }else{
-      if(srclist(0).endorser.toStringUtf8() < srclist(1).endorser.toStringUtf8() ){//升序
+      if(IdTool.getSigner4String(srclist(0).getCertId) < IdTool.getSigner4String(srclist(1).getCertId) ){//升序
         b = 1
       }else{//降序
         b = -1
@@ -191,12 +184,12 @@ object BlockHelper {
       val loopbreak = new Breaks
         loopbreak.breakable(
           for (i <- 1 to srclist.length-1){
-            if(b == 1 && srclist(i).endorser.toStringUtf8() < srclist(i-1).endorser.toStringUtf8()){
+            if(b == 1 && IdTool.getSigner4String(srclist(i).getCertId) < IdTool.getSigner4String(srclist(i-1).getCertId)){
                b = 0
                loopbreak.break
             }
             
-            if(b == -1 && srclist(i).endorser.toStringUtf8() > srclist(i-1).endorser.toStringUtf8()){
+            if(b == -1 && IdTool.getSigner4String(srclist(i).getCertId) > IdTool.getSigner4String(srclist(i-1).getCertId)){
                b = 0
                loopbreak.break
             }
@@ -209,38 +202,7 @@ object BlockHelper {
   
   
   def main(args: Array[String]): Unit = {
-    var eas = new Array[Endorsement](4)
-    var e1 = new Endorsement()
-    e1 = e1.withEndorser(ByteString.copyFromUtf8("sdfsdfseqqooqoq"))
-    e1 = e1.withSignature(ByteString.copyFromUtf8("sdfsdfseqqooqoq"))
-    var e2 = new Endorsement()
-    e2 = e2.withEndorser(ByteString.copyFromUtf8("hkg"))
-    e2 = e2.withSignature(ByteString.copyFromUtf8("hkg"))
-    var e3 = new Endorsement()
-    e3 = e3.withEndorser(ByteString.copyFromUtf8("wre"))
-    e3 = e3.withSignature(ByteString.copyFromUtf8("wre"))
-    var e4 = new Endorsement()
-    e4 = e4.withEndorser(ByteString.copyFromUtf8("yiu"))
-    e4 = e4.withSignature(ByteString.copyFromUtf8("yiu"))
     
-    eas(0) = e4
-    eas(1) = e1
-    eas(2) = e2
-    eas(3) = e3
-    
-    if(isEndorserListSorted(eas) == -1 || isEndorserListSorted(eas) == 0){
-      println("not sorted")
-    }else{
-      println("sorted")
-    }
-    
-    var tmpeas = eas.sortWith((endorser_left,endorser_right)=> endorser_left.endorser.toStringUtf8() < endorser_right.endorser.toStringUtf8())
-    
-    if(isEndorserListSorted(tmpeas) == -1 || isEndorserListSorted(tmpeas) == 0){
-      println("not sorted")
-    }else{
-      println("sorted")
-    }
   }
 
 }

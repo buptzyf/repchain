@@ -24,14 +24,13 @@ import rep.protos.peer._
 import akka.actor.{Actor, ActorRef, Props, actorRef2Scala}
 import rep.storage._
 import rep.storage.IdxPrefix.WorldStateKeyPreFix
-import rep.log.trace.RepLogHelp
 import rep.log.trace.LogType
 import org.slf4j.LoggerFactory
 import rep.sc.Shim.Oper
 import rep.utils.Json4s._
 import com.google.protobuf.ByteString
 import org.json4s._
-
+import rep.log.trace.{RepLogger,ModuleType}
 import rep.sc.contract._
 
 /**
@@ -109,8 +108,9 @@ class SandboxScala(cid:String) extends Sandbox(cid){
           Option(akka.actor.Status.Failure(e1)))           
     }finally{
       val span = System.currentTimeMillis()-tm_start
-      RepLogHelp.logMsg(log,LogType.INFO,Sandbox.log_prefix+"~"+ s"Span doTransaction:$span")
-       // logMsg(LOG_TYPE.INFO, Sandbox.log_prefix, s"Span doTransaction:$span", "")
+      RepLogger.logInfo(pe.getSysTag, ModuleType.sandbox, 
+          Sandbox.log_prefix+"~"+ s"Span doTransaction:$span")
+      
     }
   }  
 }

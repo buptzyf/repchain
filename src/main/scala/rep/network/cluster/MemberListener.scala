@@ -28,10 +28,10 @@ import rep.network.module.ModuleManager.ClusterJoined
 import rep.network.tools.PeerExtension
 import rep.utils.GlobalUtils.ActorType
 import rep.utils.{ TimeUtils}
-import rep.log.trace.RepLogHelp
 import rep.log.trace.LogType
 import org.slf4j.LoggerFactory
 import scala.collection.mutable
+import rep.log.trace._
 
 
 /**
@@ -124,7 +124,7 @@ class MemberListener extends Actor with ClusterActor with ModuleHelper {
       }*/
       //log.info("Member is Up: {}. {} nodes in cluster",
       //  member.address, nodes.size)
-      RepLogHelp.logMsg(log,LogType.INFO, "Member is Up: {}. {} nodes in cluster"+"~"+member.address+"~"+nodes.size)
+      RepLogger.logInfo(pe.getSysTag, ModuleType.memberlistener, "Member is Up: {}. {} nodes in cluster"+"~"+member.address+"~"+nodes.size)
       if (nodes.size == 1) pe.resetSeedNode(member.address)
       
       pe.putNode(member.address)
@@ -148,7 +148,7 @@ class MemberListener extends Actor with ClusterActor with ModuleHelper {
       nodes -= member.address
       //log.info("Member is Removed: {}. {} nodes cluster",
         //member.address, nodes.size)
-        RepLogHelp.logMsg(log,LogType.INFO, "Member is Removed: {}. {} nodes cluster"+"~"+member.address+"~"+nodes.size)
+      RepLogger.logInfo(pe.getSysTag, ModuleType.memberlistener, "Member is Removed: {}. {} nodes cluster"+"~"+member.address+"~"+nodes.size)
       preloadNodesMap.remove(member.address)
       pe.removeNode(member.address)
       pe.removeStableNode(member.address)
@@ -194,7 +194,7 @@ class MemberListener extends Actor with ClusterActor with ModuleHelper {
       nodes -= member.address
       //log.info("Member is Removed: {}. {} nodes cluster",
       //  member.address, nodes.size)
-      RepLogHelp.logMsg(log,LogType.INFO, "Member is Removed: {}. {} nodes cluster"+"~"+member.address+"~"+nodes.size)
+      RepLogger.logInfo(pe.getSysTag, ModuleType.memberlistener, "Member is Removed: {}. {} nodes cluster"+"~"+member.address+"~"+nodes.size)
       preloadNodesMap.remove(member.address)
       pe.removeNode(member.address)
       pe.removeStableNode(member.address)
@@ -205,7 +205,7 @@ class MemberListener extends Actor with ClusterActor with ModuleHelper {
       nodes -= member.address
       //log.info("Member is Removed: {}. {} nodes cluster",
       //  member.address, nodes.size)
-       RepLogHelp.logMsg(log,LogType.INFO, "Member is Removed: {}. {} nodes cluster"+"~"+member.address+"~"+nodes.size)
+      RepLogger.logInfo(pe.getSysTag, ModuleType.memberlistener, "Member is Removed: {}. {} nodes cluster"+"~"+member.address+"~"+nodes.size)
       preloadNodesMap.remove(member.address)
       pe.removeNode(member.address)
       pe.removeStableNode(member.address)

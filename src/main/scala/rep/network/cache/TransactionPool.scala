@@ -23,12 +23,10 @@ import com.google.protobuf.ByteString
 import akka.actor.{Actor, Address, Props}
 import akka.cluster.pubsub.DistributedPubSubMediator.Publish
 import rep.app.conf.SystemProfile
-import rep.crypto.ECDSASign
 import rep.network.{ PeerHelper, Topic }
 import rep.network.base.ModuleBase
 import rep.network.cache.TransactionPool.CheckedTransactionResult
 import rep.network.consensus.vote.CRFDVoterModule.VoteRecover
-import rep.protos.peer.ChaincodeID
 import rep.protos.peer.{ Event, Transaction }
 import rep.storage.IdxPrefix.WorldStateKeyPreFix
 import rep.storage.ImpDataAccess
@@ -89,7 +87,7 @@ class TransactionPool(moduleName: String) extends ModuleBase(moduleName) {
   def checkTransaction(t: Transaction, dataAccess: ImpDataAccess): CheckedTransactionResult = {
     var resultMsg = ""
     var result = false
-    val sig = t.signature.toByteArray
+    /*val sig = t.signature.toByteArray
     val tOutSig = t.withSignature(ByteString.EMPTY)
     val cid = ChaincodeID.fromAscii(t.chaincodeID.toStringUtf8).name
     val certKey = WorldStateKeyPreFix + cid + "_" + "CERT_" + t.cert.toStringUtf8 // 普通用户证书的key
@@ -109,7 +107,7 @@ class TransactionPool(moduleName: String) extends ModuleBase(moduleName) {
         }
       }catch{
         case e : RuntimeException => throw e
-      }
+      }*/
 
     CheckedTransactionResult(result, resultMsg)
   }
@@ -144,7 +142,7 @@ class TransactionPool(moduleName: String) extends ModuleBase(moduleName) {
           case true =>
             //签名验证成功
             if(pe.getTransLength() < 100)
-              logMsg(LogType.INFO,s"<<<<<<<<<<<<<>>>>>>>>>transaction=${pe.getTransLength()}" )
+              logMsg(s"<<<<<<<<<<<<<>>>>>>>>>transaction=${pe.getTransLength()}" )
             if (SystemProfile.getMaxCacheTransNum == 0 || pe.getTransLength() < SystemProfile.getMaxCacheTransNum) {
               pe.putTran(t)
               //广播接收交易事件

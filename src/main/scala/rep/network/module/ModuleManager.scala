@@ -20,7 +20,6 @@ import akka.actor.{ActorRef, Props}
 import com.typesafe.config.{Config}
 import rep.app.conf.SystemProfile.Trans_Create_Type_Enum
 import rep.app.conf.{SystemProfile, TimePolicy}
-import rep.crypto.ECDSASign
 import rep.network.PeerHelper
 import rep.network.base.ModuleBase
 import rep.network.cache.TransactionPool
@@ -34,6 +33,7 @@ import rep.storage.ImpDataAccess
 import rep.utils.ActorUtils
 import rep.utils.GlobalUtils.ActorType
 import rep.log.trace.LogType
+import rep.crypto.cert.SignTool
 
 /**
   * Created by shidianyue on 2017/9/22.
@@ -154,8 +154,10 @@ class ConfigerHelper(conf: Config, tag: String, dbTag: String) {
     */
   private def authInit(sysTag: String, jksFilePath: String, pwd: String, trustJksFilePath: String, trustPwd: String): Unit = {
     //init the ECDSA param
-    ECDSASign.apply(sysTag, jksFilePath, pwd, trustJksFilePath, trustPwd)
-    ECDSASign.preLoadKey(sysTag)
+    SignTool.InitNodePrivateKey(sysTag, pwd, jksFilePath)
+    SignTool.InitNodePublicKey(trustPwd, trustJksFilePath)
+    //ECDSASign.apply(sysTag, jksFilePath, pwd, trustJksFilePath, trustPwd)
+    //ECDSASign.preLoadKey(sysTag)
   }
 
   /**

@@ -37,8 +37,8 @@ import rep.app.conf.SystemProfile
 import com.typesafe.config.ConfigValueFactory
 import java.util.List
 import java.util.ArrayList
-import rep.log.trace.LogType
 import org.slf4j.LoggerFactory
+import rep.log.trace._
 
 /**
   * System创建伴生对象
@@ -120,7 +120,7 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart:Boolean) {
         val final_conf = ConfigFactory.load(combined_conf)
         final_conf
       case false =>
-        RepLogHelp.logMsg(log,LogType.WARN, moduleName +  " ~ " + "Couldn't find the user config file" + " ~ " )
+        RepLogger.logWarn(sysTag, ModuleType.clustersystem, moduleName +  " ~ " + "Couldn't find the user config file" + " ~ ")
         innerConf
     }
   }
@@ -163,7 +163,7 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart:Boolean) {
     */
   def initSystem(sysName: String): Config = {
     val conf = getConfigBySys(sysName)
-    RepLogHelp.logMsg(log,LogType.INFO, moduleName +  " ~ " + "System configuration successfully" + " ~ " )
+    RepLogger.logInfo(sysTag, ModuleType.clustersystem, moduleName +  " ~ " + "System configuration successfully" + " ~ " )
     enableWebSocket = conf.getInt("system.ws_enable") match {
       case 0 => false
       case 1 => true
@@ -204,7 +204,7 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart:Boolean) {
       case false => //ignore
     }
     ClusterSystem.register(sysTag, new ActorRegister)
-    RepLogHelp.logMsg(log,LogType.INFO, "System" +  " ~ " + s"System(${sysTag}) init successfully" + " ~ " ,sysTag)
+    RepLogger.logInfo(sysTag, ModuleType.clustersystem, "System" +  " ~ " + s"System(${sysTag}) init successfully" + " ~ " )
   }
 
   private def initConsensusNodeOfConfig={
@@ -235,8 +235,7 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart:Boolean) {
         ModuleBase.registerActorRef(sysTag, ActorType.MEMBER_LISTENER, memberLis)
         if (enableWebSocket) ModuleBase.registerActorRef(sysTag, ActorType.API_MODULE, webSocket)
         if(enableStatistic) ModuleBase.registerActorRef(sysTag,ActorType.STATISTIC_COLLECTION, statistics)
-    
-        RepLogHelp.logMsg(log,LogType.INFO, "System" +  " ~ " + s"ClusterSystem ${sysTag} start" + " ~ " ,sysTag)
+    RepLogger.logInfo(sysTag, ModuleType.clustersystem, "System" +  " ~ " + s"ClusterSystem ${sysTag} start" + " ~ ")
   }
 
   /**

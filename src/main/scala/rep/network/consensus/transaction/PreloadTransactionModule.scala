@@ -26,7 +26,7 @@ import rep.network.tools.PeerExtension
 import rep.network.consensus.transaction.PreloadTransactionModule.{PreLoadTransTimeout, PreTransFromType}
 import rep.network.Topic
 import rep.network.consensus.CRFD.CRFD_STEP
-import rep.protos.peer.{Block, NonHashData, OperLog, Transaction}
+import rep.protos.peer.{Block, OperLog, Transaction}
 import rep.sc.TransProcessor.DoTransaction
 import rep.sc.{Sandbox, TransProcessor}
 import rep.storage.{ImpDataAccess, ImpDataPreload, ImpDataPreloadMgr}
@@ -111,15 +111,12 @@ class PreloadTransactionModule(moduleName: String, transProcessor:ActorRef) exte
   def AssembleTransResult(merkle:Option[String])={
       var newTranList = mutable.Seq.empty[ Transaction ]
       for (tran <- blk.transactions) {
-        if (preLoadTrans.getOrElse(tran.txid, None) != None)
-          newTranList = newTranList :+ preLoadTrans(tran.txid)
+        if (preLoadTrans.getOrElse(tran.id, None) != None)
+          newTranList = newTranList :+ preLoadTrans(tran.id)
       }
       if(newTranList.size > 0){
         blk = blk.withTransactions(newTranList)
         val millis = TimeUtils.getCurrentTime()
-        val nohash = NonHashData(Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)),
-          transResult)
-        blk = blk.withNonHashData(nohash)
         //println(s"Merk ${pe.getSysTag} : ~ preload after " + merkle.getOrElse(""))
         preLoadFeedBackInfo(true, blk, preloadFrom, merkle.getOrElse(""))
       }else{
@@ -136,7 +133,7 @@ class PreloadTransactionModule(moduleName: String, transProcessor:ActorRef) exte
   def freeSource={
     if(blk != null){
       if(blk.transactions.size > 0){
-        ImpDataPreloadMgr.Free(pe.getDBTag,"preload_"+blk.transactions.head.txid)
+        ImpDataPreloadMgr.Free(pe.getDBTag,"preload_"+blk.transactions.head.id)
       }
     }
     clearCache() //是否是多余的，确保一定执行了 
@@ -149,7 +146,7 @@ class PreloadTransactionModule(moduleName: String, transProcessor:ActorRef) exte
       val preBlk = dataaccess.getBlockByHash(blk.previousBlockHash.toStringUtf8)
       freeSource
       
-      if((preBlk!=null && dataaccess.getBlockChainInfo().currentWorldStateHash == getBlkFromByte(preBlk).stateHash.toStringUtf8)
+      if((preBlk!=null && dataaccess.getBlockChainInfo().currentWorldStateHash == getBlkFromByte(preBlk).operHash.toStringUtf8)
       || blk.previousBlockHash == ByteString.EMPTY){
         blkIdentifier_src = blkIdentifier
         //先清空缓存
@@ -159,12 +156,12 @@ class PreloadTransactionModule(moduleName: String, transProcessor:ActorRef) exte
         //logTime("TransPreloadStart",CRFD_STEP._5_PRELOAD_START,getActorRef(ActorType.STATISTIC_COLLECTION))
         //预执行并收集结果
         logMsg(LogType.INFO, s"Get a preload req, form ${sender()}")
-        preLoadTrans = blc.transactions.map(trans => (trans.txid, trans))(breakOut): mutable.HashMap[ String, Transaction ]
+        preLoadTrans = blc.transactions.map(trans => (trans.id, trans))(breakOut): mutable.HashMap[ String, Transaction ]
         //modify by jby 2019-01-16 这个实例的获取没有任何意义
         //val preload :ImpDataPreload = ImpDataPreloadMgr.GetImpDataPreload(pe.getDBTag,blc.transactions.head.txid)
         //确保提交的时候顺序执行
         blc.transactions.map(t => {
-          transProcessor ! new DoTransaction(t,self,"preload_"+blc.transactions.head.txid)
+          transProcessor ! new DoTransaction(t,self,"preload_"+blc.transactions.head.id)
         })
         blk = blc
         preloadFrom = from
@@ -176,8 +173,8 @@ class PreloadTransactionModule(moduleName: String, transProcessor:ActorRef) exte
 
     case Sandbox.DoTransactionResult(t,from, r, merkle, ol, mb, err) =>
       //是否在当前交易列表中
-      preLoadTrans.getOrElse(t.txid, None) match {
-        case None => logMsg(LogType.WARN, s"${t.txid} does exist in the block this time, size is ${preLoadTrans.size}")
+      preLoadTrans.getOrElse(t.id, None) match {
+        case None => logMsg(LogType.WARN, s"${t.id} does exist in the block this time, size is ${preLoadTrans.size}")
         case _ =>
           err match {
             case None =>
@@ -196,10 +193,11 @@ class PreloadTransactionModule(moduleName: String, transProcessor:ActorRef) exte
                 olist += new OperLog(l.key, bso, bsn)
               }
 
-              val result = new rep.protos.peer.TransactionResult(t.txid,
+              val result = new rep.protos.peer.TransactionResult(t.id,
                 olist, 0, "")
-
-              preLoadTrans(t.txid) = t.withMetadata(ByteString.copyFrom(SerializeUtils.serialise(mb)))
+                
+              //与执行之后需要记录当前交易执行之后的merkle值，目前结构中没有产生
+              //preLoadTrans(t.id) = t.withMetadata(ByteString.copyFrom(SerializeUtils.serialise(mb)))
 
 
               transResult = (transResult :+ result)
@@ -210,9 +208,9 @@ class PreloadTransactionModule(moduleName: String, transProcessor:ActorRef) exte
                 AssembleTransResult(merkle)
               }
             case _ =>
-              logMsg(LogType.WARN, s"${t.txid} preload error, error: ${err.get}")
+              logMsg(LogType.WARN, s"${t.id} preload error, error: ${err.get}")
               //TODO kami 删除出错的交易，如果全部出错，则返回false
-              preLoadTrans.remove(t.txid)
+              preLoadTrans.remove(t.id)
               errorCount += 1
               //println("ErrCount:" + errorCount)
               if ((transResult.size + errorCount) == blk.transactions.size) {

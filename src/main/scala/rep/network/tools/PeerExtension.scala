@@ -108,10 +108,10 @@ class PeerExtensionImpl extends Extension {
   def putTran(tran: Transaction): Unit = {
     transLock.lock()
     try{
-      if (transactions.contains(tran.txid)) {
-        println(s"${tran.txid} exists in cache")
+      if (transactions.contains(tran.id)) {
+        println(s"${tran.id} exists in cache")
       }
-      else transactions.put(tran.txid, new TranscationPoolPackage(tran,System.currentTimeMillis()/1000))
+      else transactions.put(tran.id, new TranscationPoolPackage(tran,System.currentTimeMillis()/1000))
     }finally {
       transLock.unlock()
     }
@@ -130,7 +130,7 @@ class PeerExtensionImpl extends Extension {
     transLock.lock()
     try{
       for (curT <- trans) {
-          if (transactions.contains(curT.txid)) transactions.remove(curT.txid)
+          if (transactions.contains(curT.id)) transactions.remove(curT.id)
       }
     }finally{
         transLock.unlock()
@@ -140,7 +140,7 @@ class PeerExtensionImpl extends Extension {
   def removeTranscation(tran:Transaction):Unit={
     transLock.lock()
     try{
-       if (transactions.contains(tran.txid)) transactions.remove(tran.txid)
+       if (transactions.contains(tran.id)) transactions.remove(tran.id)
     }finally{
         transLock.unlock()
     }

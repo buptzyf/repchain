@@ -25,7 +25,6 @@ import java.util.concurrent.Executors
 import java.lang.Exception
 import java.lang.Thread._
 import java.io.File._
-import rep.log.trace.RepLogHelp
 import rep.log.trace.LogType
 import org.slf4j.LoggerFactory
 import org.json4s.{DefaultFormats, Formats, jackson}
@@ -36,7 +35,6 @@ import com.google.protobuf.ByteString
 import akka.util.Timeout
 import Shim._
 import rep.crypto.BytesHex
-import rep.crypto.ECDSASign
 import rep.network.tools.PeerExtension
 import rep.storage.IdxPrefix.WorldStateKeyPreFix
 

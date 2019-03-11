@@ -24,12 +24,12 @@ import com.google.protobuf.ByteString
 import com.google.protobuf.timestamp.Timestamp
 import rep.protos.peer._
 import com.trueaccord.scalapb.json.JsonFormat
-import rep.crypto.{ECDSASign, Sha256}
+import rep.crypto.{ Sha256}
 import org.json4s.{DefaultFormats, Formats, jackson}
 import org.json4s.jackson.JsonMethods._
 import org.json4s.DefaultFormats._
 import rep.network.consensus.block.BlockHelper
-
+import rep.crypto.cert.SignTool
 import scala.collection.mutable
 
 /**
@@ -43,26 +43,25 @@ object GenesisBuilder {
   implicit val formats       = DefaultFormats
 
   def main(args: Array[String]): Unit = {
-    ECDSASign.apply("1", "jks/mykeystore_1.jks",  "123", "jks/mytruststore.jks", "changeme")
-    ECDSASign.apply("super_admin", "jks/keystore_admin.jks",  "super_admin", "jks/mytruststore.jks", "changeme")
-    ECDSASign.preLoadKey("1")
-    ECDSASign.preLoadKey("super_admin")
-    //println(ECDSASign.getAddr("1"))
-    //println(ECDSASign.getAddr("super_admin"))
+    SignTool.InitNodePrivateKey("1", "123", "jks/mykeystore_1.jks")
+    SignTool.InitNodePublicKey("changeme", "jks/mytruststore.jks")
+    SignTool.InitNodePrivateKey("1", "super_admin", "jks/keystore_admin.jks")
+    
+   
      
     //交易发起人是超级管理员
     //增加scala的资产管理合约   
     // read deploy funcs
-    val s1 = scala.io.Source.fromFile("src/main/scala/ContractAssetsTPL.scala")
+    /*val s1 = scala.io.Source.fromFile("src/main/scala/ContractAssetsTPL.scala")
     val l1 = try s1.mkString finally s1.close()
     val t1 = transactionCreator("super_admin", rep.protos.peer.Transaction.Type.CHAINCODE_DEPLOY,
-      "", "", List(), l1, None, rep.protos.peer.ChaincodeSpec.CodeType.CODE_SCALA)
+      "", "", List(), l1, None, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
 
     // read invoke scala contract
     val s2 = scala.io.Source.fromFile("scripts/set.json")
     val l2 = try s2.mkString finally s2.close()
     val t2 = transactionCreator("super_admin",rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE,
-        "", "set" ,Seq(l2),"", Option(t1.payload.get.chaincodeID.get.name))  
+        "", "set" ,Seq(l2),"", Option(ChaincodeId("sdf",1)))  
     
     //create gensis block
     val millis = ConfigFactory.load().getLong("akka.genesisblock.creationBlockTime")
@@ -91,5 +90,5 @@ object GenesisBuilder {
 //    println(t.cert.toStringUtf8)
     val t_ = blk2.consensusMetadata.tail.head
 //    println(t_.endorser.toStringUtf8)
-  }
+*/  }
 }

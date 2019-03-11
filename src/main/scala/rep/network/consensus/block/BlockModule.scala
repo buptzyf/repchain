@@ -38,6 +38,7 @@ import scala.collection.mutable
 import com.sun.beans.decoder.FalseElementHandler
 import scala.util.control.Breaks
 import rep.log.trace.LogType
+import rep.utils.IdTool
 
 /**
   * 出块模块伴生对象
@@ -200,7 +201,7 @@ class BlockModule(moduleName: String) extends ModuleBase(moduleName) {
         loopbreak.breakable(
             for(i <- 0 to (es.length-1) ){
               val h = es(i)
-              if(h.endorser.toStringUtf8() == endor.endorser.toStringUtf8()){
+              if(IdTool.getSigner4String(h.certId.get) == IdTool.getSigner4String(endor.certId.get)){
                 r = true
                 loopbreak.break
               }
@@ -255,8 +256,8 @@ class BlockModule(moduleName: String) extends ModuleBase(moduleName) {
       val half = src((l + r)/2)  
       var i = l; var j = r;  
       while (i <= j){  
-        while (src(i).endorser.toStringUtf8() < half.endorser.toStringUtf8()) i += 1  
-        while (src(j).endorser.toStringUtf8() > half.endorser.toStringUtf8()) j -= 1  
+        while ( IdTool.getSigner4String(src(i).certId.get) < IdTool.getSigner4String(half.certId.get)) i += 1  
+        while (IdTool.getSigner4String(src(j).certId.get) > IdTool.getSigner4String(half.certId.get)) j -= 1  
         if(i <= j){  
           swap(i, j)  
           i += 1  
@@ -298,7 +299,7 @@ class BlockModule(moduleName: String) extends ModuleBase(moduleName) {
                   if(translist.size > 0){
                     
                     logTime("create block select Trans time", System.currentTimeMillis(),true)
-                    blc = BlockHelper.createPreBlock(pe.getCurrentBlockHash, translist)
+                    blc = BlockHelper.createPreBlock(pe.getCurrentBlockHash,dataaccess.getBlockChainInfo().height + 1, translist)
                     blkidentifier_str = pe.getSysTag+"_"+System.nanoTime().toString()
                     
                     logMsg(LogType.INFO,s"Create Block end in BlockEvent.CREATE_BLOCK,current height=${pe.getCacheHeight()},current hash=${pe.getCurrentBlockHash},identifier=${blkidentifier_str}")
@@ -367,14 +368,14 @@ class BlockModule(moduleName: String) extends ModuleBase(moduleName) {
             case true =>
               logTime("create block preload Trans time", System.currentTimeMillis(),false)
               logMsg(LogType.INFO, s"PreTransBlockResult ... with transcation,transaction size ${blk.transactions.size},node number=${pe.getSysTag},block identifier=${blkidentifier_str}")
-              blc = blk.withStateHash(ByteString.copyFromUtf8(merk))
-              blc = blc.withConsensusMetadata(Seq(BlockHelper.endorseBlock4NonHash(blc.toByteArray, pe.getSysTag)))
+              blc = blk.withOperHash(ByteString.copyFromUtf8(merk))
+              blc = blc.withEndorsements(Seq(BlockHelper.endorseBlock4NonHash(blc.toByteArray, pe.getSysTag)))
               //签名之前不用获取hash
               //blc = blc.withConsensusMetadata(Seq(BlockHelper.endorseBlock(Sha256.hash(blc.toByteArray), pe.getSysTag)))
               //Broadcast the Block
               //这个块经过预执行之后已经包含了预执行结果和状态
               //mediator ! Publish(BlockEvent.BLOCK_ENDORSEMENT, PrimaryBlock(blc, pe.getBlocker))
-              logMsg(LogType.INFO, s"node name=${pe.getSysTag},preload finish,self cert=${blc.consensusMetadata(0).endorser.toStringUtf8()}")
+              logMsg(LogType.INFO, s"node name=${pe.getSysTag},preload finish,self cert=${IdTool.getSigner4String(blc.endorsements(0).getCertId)}")
               logTime("create block endorse time", System.currentTimeMillis(),true)
               
               getActorRef(ActorType.ENDORSE_BLOCKER) ! ReadyEndorsement4Block(blc,blkidentifier_str)
@@ -471,10 +472,10 @@ class BlockModule(moduleName: String) extends ModuleBase(moduleName) {
         resetVoteEnv
       }else{
         //调整确认块中的共识数据的顺序
-        var consensus = blc.consensusMetadata.toArray[Endorsement]
+        var consensus = blc.endorsements.toArray[Signature]
         
         //var filterstart = System.nanoTime()
-        var tmpconsensus = consensus.sortWith((endorser_left,endorser_right)=> endorser_left.endorser.toStringUtf8() < endorser_right.endorser.toStringUtf8())
+        var tmpconsensus = consensus.sortWith((endorser_left,endorser_right)=> IdTool.getSigner4String(endorser_left.getCertId) < IdTool.getSigner4String(endorser_right.getCertId))
         //var filterend = System.nanoTime()
         //logMsg(LOG_TYPE.INFO, s"filter sort spent time=${filterend-filterstart}")
         
@@ -484,7 +485,7 @@ class BlockModule(moduleName: String) extends ModuleBase(moduleName) {
         logMsg(LOG_TYPE.INFO, s"java sort spent time=${javaend-javastart}")*/
         
         //var writestart = System.nanoTime()
-        blc = blc.withConsensusMetadata(tmpconsensus)
+        blc = blc.withEndorsements(tmpconsensus)
         //var writeend = System.nanoTime()
         //logMsg(LOG_TYPE.INFO, s"write sort spent time=${writeend-writestart}")
         //广播这个block
@@ -500,8 +501,8 @@ class BlockModule(moduleName: String) extends ModuleBase(moduleName) {
       //确认，接受新块（满足最基本的条件）
       //logTime("New block get and check", CRFD_STEP._12_NEW_BLK_GET_CHECK,
       //  getActorRef(ActorType.STATISTIC_COLLECTION))
-      val endors = blk.consensusMetadata
-      val blkOutEndorse = blk.withConsensusMetadata(Seq())
+      val endors = blk.endorsements
+      val blkOutEndorse = blk.withEndorsements(Seq())
       if (BlockHelper.checkCandidate(endors.size, pe.getCandidator.size)) {
         var isEndorsed = true
         for (endorse <- endors) {
@@ -510,7 +511,7 @@ class BlockModule(moduleName: String) extends ModuleBase(moduleName) {
           //验证签名之前不再使用hash
           //if (!BlockHelper.checkBlockContent(endorse, Sha256.hash(blkOutEndorse.toByteArray))) isEndorsed = false
         }
-        if (isEndorsed && BlockHelper.isEndorserListSorted(endors.toArray[Endorsement])==1) {
+        if (isEndorsed && BlockHelper.isEndorserListSorted(endors.toArray[Signature])==1) {
           //logTime("New block, start to store", CRFD_STEP._13_NEW_BLK_START_STORE,
           //  getActorRef(ActorType.STATISTIC_COLLECTION))
           //c4w 广播接收到block事件
@@ -550,7 +551,7 @@ class BlockModule(moduleName: String) extends ModuleBase(moduleName) {
     //创世块预执行结果
     case PreTransBlockResultGensis(blk, result, merk, errorType, error) =>
       if (result) {
-        blc = blk.withStateHash(ByteString.copyFromUtf8(merk))
+        blc = blk.withOperHash(ByteString.copyFromUtf8(merk))
         try {
           println(logPrefix + s"${pe.getSysTag} ~ Merk(Before Gensis): " + pe.getMerk)
           dataaccess.restoreBlocks(Array(blc))

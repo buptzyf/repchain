@@ -161,7 +161,7 @@ class EndorsementModule(moduleName: String) extends ModuleBase(moduleName) {
      breakable(
             trans.foreach(f=>{
              //从当前交易池查找该交易，如果存在该交易，不需要校验，已经校验过了
-              if(!pe.findTrans(f.txid)){
+              if(!pe.findTrans(f.id)){
                 if(!BlockHelper.checkTransaction(f, sr)){
                 //if(!BlockHelper.verifySignForTranscation(f,pe.getSysTag)){
                   r = false
@@ -178,7 +178,7 @@ class EndorsementModule(moduleName: String) extends ModuleBase(moduleName) {
     var buf : Array[Int] = new Array[Int](trans.size)
     var i = 0
     trans.foreach(f=>{
-              if(pe.findTrans(f.txid)){
+              if(pe.findTrans(f.id)){
                  buf(i) = 1
               }else{
                 buf(i) = 0
@@ -199,7 +199,7 @@ class EndorsementModule(moduleName: String) extends ModuleBase(moduleName) {
      //   loopbreak.breakable(
       breakable(
             trans.foreach(f=>{
-              if(sr.getBlockByTxId(f.txid) != null){
+              if(sr.getBlockByTxId(f.id) != null){
                 isRepeat = true
                 //loopbreak.break
                 break
@@ -214,16 +214,16 @@ class EndorsementModule(moduleName: String) extends ModuleBase(moduleName) {
           
   private def endorseForWork(blk:Block, actRef: ActorRef,blkidentifier:String,sendertime:Long,recvtime:Long)={
       val calltime = System.currentTimeMillis()
-      val dbinstancename = "endorse_"+blk.transactions.head.txid
+      val dbinstancename = "endorse_"+blk.transactions.head.id
       logMsg(LogType.WARN, s"+++++===>dbinstancename=${dbinstancename}")
       val preload: ImpDataPreload = ImpDataPreloadMgr.GetImpDataPreload(pe.getSysTag,dbinstancename)
       try {
-          val blkData = blk.withConsensusMetadata(Seq())
+          val blkData = blk.withEndorsements(Seq())
           val blkInfo = blkData.toByteArray
           //验证签名和签名之前不再使用hash
           //val blkInfo = Sha256.hash(blkData.toByteArray)
            val hashtime = System.currentTimeMillis()
-          if (BlockHelper.checkBlockContent(blk.consensusMetadata.head, blkInfo)) {
+          if (BlockHelper.checkBlockContent(blk.endorsements.head, blkInfo)) {
             val checkblocktime = System.currentTimeMillis()
               if(!hasRepeatOfTrans(blk.transactions)){
                  val checktranstime = System.currentTimeMillis()

@@ -23,10 +23,8 @@ import rep.network.tools.PeerExtension
 import rep.network.tools.register.ActorRegister
 import rep.crypto.Sha256
 import scala.collection.mutable
-import rep.log.trace.RepLogHelp
-import rep.log.trace.LogType
 import org.slf4j.LoggerFactory
-import rep.log.trace.RepTimeTrace
+import rep.log.trace.{ModuleType,RepLogger,RepTimeTracer}
 
 
 /**
@@ -60,18 +58,20 @@ object ModuleBase {
 
 abstract class ModuleBase(name: String) extends Actor with ModuleHelper with ClusterActor with BaseActor{
   val logPrefix = name
-  protected def log = LoggerFactory.getLogger(this.getClass)
-  val ptt :RepTimeTrace = RepTimeTrace.getRepTimeTrace()
   /**
     * 日志封装
     *
     * @param lOG_TYPE
     * @param msg
     */
-  def logMsg(lOG_TYPE: LogType, msg: String): Unit = {
-    RepLogHelp.logMsg(log,lOG_TYPE, pe.getSysTag + "-"  + msg + " ~ " + selfAddr, pe.getSysTag)
+  def logMsg( msg: String): Unit = {
+    RepLogger.logInfo(pe.getSysTag, ModuleType.modulebase,  msg + " ~ " + selfAddr)
   }
 
+  
+  def logMsg(logtype: rep.log.trace.LogType.LogType, msg: String): Unit = {
+    RepLogger.logInfo(pe.getSysTag, ModuleType.modulebase,  msg + " ~ " + selfAddr)
+  }
   /**
     * 事件时间戳封装
     *
@@ -80,7 +80,11 @@ abstract class ModuleBase(name: String) extends Actor with ModuleHelper with Clu
     * @param actorRef
     */
   def logTime(timetag:String,time:Long,isstart:Boolean): Unit = {
-    ptt.addTimeTrace(pe.getSysTag, timetag, time, isstart)
+    if(isstart){
+      RepTimeTracer.setStartTime(pe.getSysTag, timetag, time)
+    }else{
+      RepTimeTracer.setEndTime(pe.getSysTag, timetag, time)
+    }
   }
 }
 

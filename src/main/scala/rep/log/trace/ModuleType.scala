@@ -29,6 +29,12 @@ object ModuleType extends Enumeration{
     val storager = Value("storager")
     val preloadTrans = Value("preloadTrans")
     val contract = Value("contract")
+    val sandbox = Value("sandbox")
+    val shim = Value("shim")
+    val clustersystem = Value("clustersystem")
+    val modulebase = Value("modulebase")
+    val memberlistener = Value("memberlistener")
+    val crfd = Value("crfd")
     val others = Value("others")
     
     def checkExists(t:String) = this.values.exists(_.toString==t) 

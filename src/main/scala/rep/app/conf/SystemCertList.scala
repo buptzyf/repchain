@@ -18,6 +18,7 @@ package rep.app.conf
 
 import java.io._
 import rep.utils.IdTool
+import rep.crypto.cert.SignTool
 
 
 /**
@@ -32,7 +33,7 @@ object SystemCertList {
     synchronized{
       if(this.mySystemCertList.isEmpty){
         val list = SystemProfile.getVoteNodeList
-        val clist = ECDSASign.getAliasOfTrustkey
+        val clist = SignTool.getAliasOfTrustkey
         var rlist : scala.collection.mutable.ArrayBuffer[String] = new scala.collection.mutable.ArrayBuffer[String]()
         var i = 0
         for( i <- 1 to clist.size()-1){

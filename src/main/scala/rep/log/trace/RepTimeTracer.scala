@@ -17,6 +17,7 @@ package rep.log.trace
 
 import java.util.concurrent.ConcurrentHashMap
 import scala.collection.JavaConverters._
+import java.util.concurrent.atomic._
 
 /**
  * RepChain系统运行时间跟踪工具，需要跟踪运行时间的程序统一调用该对象
@@ -25,19 +26,30 @@ import scala.collection.JavaConverters._
  */
 
 object RepTimeTracer {
-  private implicit var times  = new ConcurrentHashMap[String, Long] asScala
-  
-  
-  def setStartTime(nodeName:String,flag:String,t:Long)={
-    this.times.put(nodeName+"-"+flag, t);
+  private implicit var times = new ConcurrentHashMap[String, Long] asScala
+  private var isOpenTrace: AtomicBoolean = new AtomicBoolean(false)
+
+  def openTimeTrace = {
+    this.isOpenTrace.set(true)
   }
-  
-  def setEndTime(nodeName:String,flag:String,t:Long)={
-    val key = nodeName+"-"+flag;
-		if(this.times.contains(key)) {
-			val tl = t - this.times(key);
-			RepLogger.logInfo(nodeName, ModuleType.timeTracer, key+"="+tl)
-		}
+
+  def closeTimeTrace = {
+    this.isOpenTrace.set(false)
   }
-  
+
+  def setStartTime(nodeName: String, flag: String, t: Long) = {
+    if (this.isOpenTrace.get)
+      this.times.put(nodeName + "-" + flag, t);
+  }
+
+  def setEndTime(nodeName: String, flag: String, t: Long) = {
+    if (this.isOpenTrace.get) {
+      val key = nodeName + "-" + flag;
+      if (this.times.contains(key)) {
+        val tl = t - this.times(key);
+        RepLogger.logInfo(nodeName, ModuleType.timeTracer, key + "=" + tl)
+      }
+    }
+  }
+
 }

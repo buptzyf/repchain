@@ -20,18 +20,19 @@ import akka.actor.{Actor, Address, Props}
 import com.google.protobuf.ByteString
 import com.google.protobuf.timestamp.Timestamp
 import rep.app.conf.SystemProfile
-import rep.crypto.{ECDSASign, Sha256}
+import rep.crypto.{ Sha256}
 import rep.network.base.ModuleBase
 import rep.network.consensus.block.BlockHelper
 import rep.network.cluster.ClusterActor
 import rep.network.tools.PeerExtension
 import rep.protos.peer._
 import rep.utils.GlobalUtils.ActorType
-import rep.utils.{IdUtils,  TimeUtils}
+import rep.utils.{IdTool,  TimeUtils}
 import akka.cluster.pubsub.DistributedPubSubMediator.Publish
 import scala.concurrent.forkjoin.ThreadLocalRandom
 import java.text.SimpleDateFormat
 import rep.log.trace.LogType
+import rep.crypto.cert.SignTool
 
 /**
   *
@@ -80,7 +81,7 @@ object PeerHelper {
                          chaincodeInputFunc:String,params:Seq[String], spcPackage:String,chaincodeId:Option[String],
                          ctype:rep.protos.peer.ChaincodeDeploy.CodeType= rep.protos.peer.ChaincodeDeploy.CodeType.CODE_JAVASCRIPT): 
                          Transaction ={
-    val millis = TimeUtils.getCurrentTime()
+    /*val millis = TimeUtils.getCurrentTime()
     //deploy时取脚本内容hash作为 chaincodeId/name
     //invoke时调用者应该知道要调用的 chaincodeId
     val name = chaincodeId match {
@@ -94,7 +95,7 @@ object PeerHelper {
           g
     }
     //TODO kami name = path.hash（目前是用code package的hash）
-    val cid = new ChaincodeID(chainCodeIdPath,name)
+    val cid = new ChaincodeId("",name)
     //构建运行代码
     val cip = new ChaincodeInput(chaincodeInputFunc, params)
     //初始化链码
@@ -133,7 +134,8 @@ object PeerHelper {
         t = t.withSignature(ByteString.copyFrom(sig))
     }catch{
       case e:RuntimeException => throw e
-    }
+    }*/
+    var t = null
     t
   }
 
@@ -175,7 +177,7 @@ class PeerHelper(name: String) extends ModuleBase(name) {
   override def preStart(): Unit = {
     //注册接收交易的广播
     SubscribeTopic(mediator, self, selfAddr, Topic.Transaction, true)
-    logMsg(LogType.INFO,  name + " ~ "+"Transaction Creator Start")
+    logMsg( name + " ~ "+"Transaction Creator Start")
     scheduler.scheduleOnce(5.seconds, self, Tick)
   }
 
@@ -188,7 +190,7 @@ class PeerHelper(name: String) extends ModuleBase(name) {
 
     case Tick =>
       val blk = BlockHelper.genesisBlockCreator()
-      chaincode = blk.transactions(0).payload.get.getChaincodeID.name
+      chaincode = IdTool.getCid(blk.transactions(0).getCid)
       scheduler.scheduleOnce(10.seconds, self, TickInit)
 
     case TickInit =>
@@ -207,8 +209,9 @@ class PeerHelper(name: String) extends ModuleBase(name) {
       try{
         //createTransForLoop //在做tps测试到时候，执行该函数，并且注释其他代码
         //val start = System.currentTimeMillis()
-        val t3 = transactionCreator(pe.getSysTag,rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE,
-          "", "transfer" ,Seq(li2),"", Option(chaincode),rep.protos.peer.ChaincodeSpec.CodeType.CODE_JAVASCRIPT)  
+        val t3 = /*transactionCreator(pe.getSysTag,rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE,
+          "", "transfer" ,Seq(li2),"", Option(chaincode),rep.protos.peer.ChaincodeSpec.CodeType.CODE_JAVASCRIPT)  */
+        null
         getActorRef(ActorType.TRANSACTION_POOL) ! t3
         //val end = System.currentTimeMillis()
         //println(s"!!!!!!!!!!!!!!!!!!!!auto create trans time=${end-start}")
@@ -227,8 +230,8 @@ class PeerHelper(name: String) extends ModuleBase(name) {
         try{
           val start=System.currentTimeMillis()
           //val start = System.currentTimeMillis()
-          val t3 = transactionCreator(pe.getSysTag,rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE,
-            "", "transfer" ,Seq(li2),"", Option(chaincode),rep.protos.peer.ChaincodeSpec.CodeType.CODE_JAVASCRIPT)  
+          val t3 = /*transactionCreator(pe.getSysTag,rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE,
+            "", "transfer" ,Seq(li2),"", Option(chaincode),rep.protos.peer.ChaincodeSpec.CodeType.CODE_JAVASCRIPT)  */null
           getActorRef(ActorType.TRANSACTION_POOL) ! t3
           //mediator ! Publish(Topic.Transaction, t3)
           count += 1
