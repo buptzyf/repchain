@@ -6,7 +6,7 @@ import org.json4s.jackson.JsonMethods._
 import scala.collection.mutable.Map
 import org.json4s.{DefaultFormats, Formats, jackson}
 
-class BaseContract  extends IContract {
+class ContractCert  extends IContract {
     implicit val formats = DefaultFormats   
   
     object ACTION {

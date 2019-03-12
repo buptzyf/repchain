@@ -28,7 +28,7 @@ import rep.sc.Sandbox._
 import rep.app.system.ClusterSystem
 import rep.app.system.ClusterSystem.InitType
 
-import rep.network.PeerHelper.transactionCreator
+import rep.network.PeerHelper
 import org.json4s.{ DefaultFormats, jackson }
 import de.heikoseeberger.akkahttpjson4s.Json4sSupport
 import org.json4s._
@@ -68,6 +68,7 @@ class SandboxSpec(_system: ActorSystem)
   override def afterAll: Unit = Await.ready(system.terminate(), Duration.Inf)
 
   //JavaScript实现的存证合约测试, 包括合约部署、调用、返回结果测试
+  /*
   "sandbox" should "deploy functions and call them then" in {
     val sysName = "1"
     val dbTag = "1"
@@ -84,8 +85,8 @@ class SandboxSpec(_system: ActorSystem)
     val db = ImpDataAccess.GetDataAccess(sysName)
     var sandbox = system.actorOf(TransProcessor.props("sandbox", "", probe.ref))
     //生成deploy交易
-    val t1 = transactionCreator(sysName, rep.protos.peer.Transaction.Type.CHAINCODE_DEPLOY,
-      "", "", List(), l1, None)
+    val cid = new ChaincodeId("Transfer",1)
+    val t1 = PeerHelper.createTransaction4Deploy(sysName, cid, l1, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_JAVASCRIPT)
     val msg_send1 = new DoTransaction(t1, probe.ref, "")
     probe.send(sandbox, msg_send1)
     val msg_recv1 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
@@ -94,9 +95,7 @@ class SandboxSpec(_system: ActorSystem)
 
     //生成invoke交易
     //获取deploy生成的chainCodeId
-    val cname = t1.payload.get.chaincodeID.get.name
-    val t2 = transactionCreator(sysName, rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE,
-      "", l2, List(), "", Option(cname))
+    val t2 = PeerHelper.createTransaction4Invoke(sysName, cid, l2, List())
     val msg_send2 = new DoTransaction(t2, probe.ref, "")
 
     for (i <- 1 to 10) {
@@ -112,7 +111,7 @@ class SandboxSpec(_system: ActorSystem)
 
     }
   }
-
+*/
   //Scala实现的资产管理合约测试，包括合约的部署、调用、结果返回验证
   "container" should "deploy scala contract and call it then" in {
     val sysName = "1"
@@ -164,10 +163,9 @@ class SandboxSpec(_system: ActorSystem)
       }
       return stringBuilder.toString()
     }
-
-    val t1 = transactionCreator(sysName, rep.protos.peer.Transaction.Type.CHAINCODE_DEPLOY,
-      "", "", List(), l1, None, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
-
+    val cid = new ChaincodeId("Supply",1)
+    val t1 = PeerHelper.createTransaction4Deploy(sysName, cid,
+       l1, "",5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
     val msg_send1 = new DoTransaction(t1, probe.ref, "")
     probe.send(sandbox, msg_send1)
     val msg_recv1 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
@@ -177,15 +175,12 @@ class SandboxSpec(_system: ActorSystem)
     //生成invoke交易
     //获取deploy生成的chainCodeId
     //初始化资产
-    val cname = getTXCId(t1)
-    val t2 = transactionCreator(sysName, rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE,
-      "", "set", Seq(l2), "", Option(cname))
+    val t2 = PeerHelper.createTransaction4Invoke(sysName,cid, "set", Seq(l2))
     val msg_send2 = new DoTransaction(t2, probe.ref, "")
     probe.send(sandbox, msg_send2)
     val msg_recv2 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
 
-    val t3 = transactionCreator(sysName, rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE,
-      "", "transfer", Seq(l3), "", Option(cname))
+    val t3 = PeerHelper.createTransaction4Invoke(sysName,cid, "transfer", Seq(l3))
     val msg_send3 = new DoTransaction(t3, probe.ref, "")
 
     for (i <- 1 to 10) {
@@ -202,7 +197,7 @@ class SandboxSpec(_system: ActorSystem)
   }
 
   //JavaScript的合约实现，同一个合约串行执行测试
-  "sandbox" should "process trasactions Synchronously" in {
+/*  "sandbox" should "process trasactions Synchronously" in {
     val sysName = "1"
     //建立PeerManager实例是为了调用transactionCreator(需要用到密钥签名)，无他
 
@@ -285,5 +280,5 @@ function waitprint(span,output) {
     val re2 = rv2.extract[Transaction]
     re2.id should be(t2.txid)
   }
-
+*/
 }
