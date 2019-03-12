@@ -90,7 +90,7 @@ object BlockHelper {
     
     
     try{
-      SignTool.verify(sig.get.signature.toByteArray(), PeerHelper.getTxHash(tOutSig), sig.get.getCertId)
+      SignTool.verify(sig.get.signature.toByteArray(), tOutSig.toByteArray, sig.get.getCertId)
        
       }catch{
         case e : RuntimeException => resultMsg = s"The transaction(${t.id}) is not trusted${e.getMessage}"

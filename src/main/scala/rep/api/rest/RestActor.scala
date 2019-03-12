@@ -97,9 +97,12 @@ object RestActor {
   case class QueryCert(addr: String, cert: String, cid: String, err: String)
   case class QueryResult(result: Option[JValue])
   case class QueryCertAddr(addr: String)
-  case class CSpec(stype: Int, idPath: String, idName: Option[String], 
+  /*case class CSpec(stype: Int, idPath: String, idName: Option[String], 
           iptFunc: String, iptArgs: Seq[String], timeout: Int,
-          secureContext: String, code: String, ctype: Int)      
+          secureContext: String, code: String, ctype: Int)    */  
+   case class CSpec(stype: Int, chaincodename: String, chaincodeversion: Int, 
+          iptFunc: String, iptArgs: Seq[String], timeout: Int,legal_prose:String,
+           code: String, ctype: Int)   
   case class tranSign(tran: String)
   
   case class closeOrOpen4Node(nodename:String,status:String)
@@ -127,7 +130,16 @@ object RestActor {
       case _ =>
         rep.protos.peer.ChaincodeDeploy.CodeType.CODE_JAVASCRIPT
     }
-    transactionCreator(nodeName,stype,c.idPath, c.iptFunc, c.iptArgs, c.code, c.idName, ctype)
+    
+    
+    val chaincodeId = new ChaincodeId(c.chaincodename,c.chaincodeversion)
+    if(stype==Transaction.Type.CHAINCODE_DEPLOY){
+      PeerHelper.createTransaction4Deploy(nodeName, chaincodeId, c.code, c.legal_prose, c.timeout, ctype)
+    }else if(stype==Transaction.Type.CHAINCODE_INVOKE){
+      PeerHelper.createTransaction4Invoke(nodeName, chaincodeId, c.iptFunc, c.iptArgs)
+    }else{
+      null
+    }
   }  
   
   /** 根据存储实例和交易id检索并返回交易Transaction
@@ -180,7 +192,7 @@ class RestActor extends Actor with ModuleHelper {
       try{
         
         
-          SignTool.verify(sig, PeerHelper.getTxHash(tOutSig), certId) match {
+          SignTool.verify(sig, tOutSig.toByteArray, certId) match {
             case true => 
               val future = sandbox ? PreTransaction(t)
               val result = Await.result(future, timeout.duration).asInstanceOf[DoTransactionResult]

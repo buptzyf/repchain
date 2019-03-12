@@ -17,8 +17,7 @@
 package rep.utils
 
 import java.io.File
-
-import rep.network.PeerHelper.transactionCreator
+import rep.network.PeerHelper
 import com.typesafe.config.ConfigFactory
 import com.google.protobuf.ByteString
 import com.google.protobuf.timestamp.Timestamp
@@ -52,21 +51,29 @@ object GenesisBuilder {
     //交易发起人是超级管理员
     //增加scala的资产管理合约   
     // read deploy funcs
-    /*val s1 = scala.io.Source.fromFile("src/main/scala/ContractAssetsTPL.scala")
+    val s1 = scala.io.Source.fromFile("src/main/scala/ContractAssetsTPL.scala")
     val l1 = try s1.mkString finally s1.close()
-    val t1 = transactionCreator("super_admin", rep.protos.peer.Transaction.Type.CHAINCODE_DEPLOY,
-      "", "", List(), l1, None, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
+    //todo 运行时请定义名称
+    val chaincodeId = new ChaincodeId("chaincodename_1",1)
+    val t1 = PeerHelper.createTransaction4Deploy("super_admin", chaincodeId, l1, "", 
+        100, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
+    //val t1 = transactionCreator("super_admin", rep.protos.peer.Transaction.Type.CHAINCODE_DEPLOY,
+    //  "", "", List(), l1, None, rep.protos.peer.ChaincodeSpec.CodeType.CODE_SCALA)
 
     // read invoke scala contract
     val s2 = scala.io.Source.fromFile("scripts/set.json")
     val l2 = try s2.mkString finally s2.close()
-    val t2 = transactionCreator("super_admin",rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE,
-        "", "set" ,Seq(l2),"", Option(ChaincodeId("sdf",1)))  
+    
+    val t2 = PeerHelper.createTransaction4Invoke("super_admin", chaincodeId, "set",Seq(l2))
+    
+    //val t2 = transactionCreator("super_admin",rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE,
+    //    "", "set" ,Seq(l2),"", Option(t1.payload.get.chaincodeID.get.name))  
     
     //create gensis block
     val millis = ConfigFactory.load().getLong("akka.genesisblock.creationBlockTime")
-    var blk = new Block(1, Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)),
+    var blk = new Block(1, 1,
       List(t1,t2),
+      Seq(),
       _root_.com.google.protobuf.ByteString.EMPTY, _root_.com.google.protobuf.ByteString.EMPTY)
     //获得管理员证书和签名
 //    val (priKA, pubKA, certA) = ECDSASign.getKeyPair("super_admin")
@@ -76,7 +83,7 @@ object GenesisBuilder {
     //val blk_hash = Sha256.hash(blk.toByteArray)
     //超级管理员背书（角色）
     //创建者背书（1）
-    blk = blk.withConsensusMetadata(Seq(BlockHelper.endorseBlock4NonHash(blk_hash,"super_admin"),
+    blk = blk.withEndorsements(Seq(BlockHelper.endorseBlock4NonHash(blk_hash,"super_admin"),
       BlockHelper.endorseBlock4NonHash(blk_hash,"1")))
 //    blk = blk.withConsensusMetadata(Seq(Endorsement(ByteString.copyFromUtf8(ECDSASign.getBitcoinAddrByCert(certA)),
 //      ByteString.copyFrom(ECDSASign.sign(priKA, blk_hash))),
@@ -88,7 +95,7 @@ object GenesisBuilder {
     val blk2 = JsonFormat.fromJsonString[Block](rstr)
     val t = blk2.transactions.head
 //    println(t.cert.toStringUtf8)
-    val t_ = blk2.consensusMetadata.tail.head
+    val t_ = blk2.endorsements.tail.head
 //    println(t_.endorser.toStringUtf8)
-*/  }
+  }
 }

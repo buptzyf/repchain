@@ -252,12 +252,12 @@ class TransactionService(ra: ActorRef)(implicit executionContext: ExecutionConte
       case x =>
         CSpec(
           (x \ "stype").text.toInt,
-          (x \ "idPath").text,
-          Some((x \ "idName").text),
+          (x \ "chaincodename").text,
+          (x \ "chaincodeversion").text.toInt,
           (x \ "iptFunc").text,
           Seq((x \ "iptArgs").text),
           (x \ "timeout").text.toInt,
-          (x \ "secureContext").text,
+          (x \ "legal_prose").text,
           (x \ "code").text,
           (x \ "ctype").text.toInt
         )
