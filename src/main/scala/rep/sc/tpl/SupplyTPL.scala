@@ -56,18 +56,13 @@ class SupplyTPL extends IContract {
     }
 
    /**
-    *
+    * TODO
     * @param ctx
-    * @param data
+    * @param data 
     * @return
     */
     def SignUp(ctx: ContractContext, data:Map[String,String]):Object = {
-      var addr = ""
-      for((k,v)<-data){
-        ctx.api.check(ctx.t.cert.toStringUtf8,ctx.t)
-        addr = ctx.api.signup(k,v)
-      }
-      addr
+      ""
     }
 
    /**

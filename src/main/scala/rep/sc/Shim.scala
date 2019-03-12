@@ -43,6 +43,10 @@ import rep.storage.ImpDataAccess
  * 
  */
 object Shim {
+  
+  type Key = String  
+  type Value = Array[Byte]
+
   /** 用于记录合约对worldState的写入日志
    *  @param key 键名
    *  @param oldValue 旧键值
@@ -92,86 +96,7 @@ class Shim(system: ActorSystem, cid: String) {
   var mb = scala.collection.mutable.Map[Key, Array[Byte]]()
   //记录状态修改日志
   var ol = scala.collection.mutable.ListBuffer.empty[Oper]
-  
-  /**
-    * 更新系统信任列表，添加证书
-    *
-    * @param cert 从Transaction中获取，需要用base58进行转化
-    */
-  def loadCert(cert:String): Unit = {
-    //TODO 实现本地加载证书到信任证书列表，从而通过交易完成入网许可
-    if(pe.getSysTag=="1"){
-      ECDSASign.loadTrustedCertBase64(cert, "2") match {
-        case true =>
-          println("True")
-        case false =>
-          println("False")
-      }
-    }
-  }
-
-  def signup(pemcert:String, inf:String):String = {
-//    val pemcertstr = new String (Base64.Decoder(pemcert).toByteArray)
-    val cf = CertificateFactory.getInstance("X.509");
-//    val subpemcert = pemcertstr.replaceAll("\r\n", "").stripPrefix("-----BEGIN CERTIFICATE-----").stripSuffix("-----END CERTIFICATE-----")
-    val cert = cf.generateCertificate(
-      new ByteArrayInputStream(
-        Base64.Decoder(pemcert).toByteArray()
-      )
-    )
-    val bdata = SerializeUtils.serialise(cert)
-    //step2 取二进制数据数据的地址
-    val addr = ECDSASign.getBitcoinAddrByCert(bdata)
-    val key = PRE_CERT+addr
-    val dert = getVal(key)
-    if( dert!= null){
-      val dert = new String(getState(key))
-      println(dert)
-      if(dert != "null") 
-        throw new Exception(ERR_CERT_EXIST)
-    }
-    //保存证书
-    setState(key,bdata)
-    setVal(PRE_CERT_INFO+addr,inf)
-    println("证书短地址： "+addr)
-    addr
-  }
-  
-  def signupback(cert:String,inf:String):String ={
-    //step1 从base64编码字符串获得二进制数据
-    val bdata = Base64Variants.getDefaultVariant.decode(cert)
-//  TODO 把二进制的证书转换为明文，看一下,检查该证书是否非节点证书
-    val certTx = SerializeUtils.deserialise(bdata).asInstanceOf[Certificate]
-    val bitcoinaddr = ECDSASign.getBitcoinAddrByCert(certTx)
-    var peercer : Option[Certificate] = None
-    try{
-        peercer = ECDSASign.getCertByBitcoinAddr(bitcoinaddr)
-    }catch{
-      case e : Exception => //throw new Exception(e.getMessage)
-    }
-//    val addstr = (new code).encodeHex(bdata)
     
-    //step2 取二进制数据数据的地址
-    val addr = ECDSASign.getBitcoinAddrByCert(bdata)
-    val key = PRE_CERT+addr
-    val dert = getVal(key)
-    if( dert!= null){
-      throw new Exception(ERR_CERT_EXIST)
-    }
-    //保存证书
-    setState(key,bdata)
-    setVal(PRE_CERT_INFO+addr,inf)
-    addr
-  }
-  
-  
-  def certAddr(cert:String):String = {
-    //step1 从base64编码字符串获得二进制数据
-    val bdata = Base64Variants.getDefaultVariant.decode(cert)
-    //step2 取二进制数据数据的地址
-    return ECDSASign.getBitcoinAddrByCert(bdata)
-  }
-  
   def setVal(key: Key, value: Any):Unit ={
     setState(key,serialiseJson(value))
   }
@@ -211,68 +136,5 @@ class Shim(system: ActorSystem, cid: String) {
     //回滚仍然保留操作日志,否则api拿不到操作日志
     // ol.clear()
   }
-  
-  // 进行是否为非节点签名验证
-  def check(bitcoinaddr: String, tx: Transaction) : Unit = {
-    val sig = tx.signature.toByteArray
-    val tOutSig1 = tx.withSignature(ByteString.EMPTY)
-    val tOutSig  = tOutSig1.withMetadata(ByteString.EMPTY)
-
-    try{
-        var peercer : Option[Certificate] = None
-        try{
-            peercer = ECDSASign.getCertByBitcoinAddr(bitcoinaddr)
-        }catch{
-          case e : Exception => throw new Exception(e.getMessage)
-        }
-        
-        ECDSASign.verify(sig, PeerHelper.getTxHash(tOutSig), peercer.get.getPublicKey) match {
-          case true => 
-          case false => throw new Exception("节点签名验证错误")
-        }
-    }catch{
-      case e : RuntimeException => throw e
-    }
-  }
-  
-  /**
-   * @author zyf
-   * @param certAddr: 证书短地址
-   * 
-   */
-  def destroyCert(certAddr: String): Unit = {
-    //TODO 判断下下该证书是列表里的还是ws里的，然后如何销毁？  赋个空值？
-    val key = PRE_CERT+certAddr
-//    val pkey = pre_key + key
-    val cert = Option(getVal(key))
-    if (cert == None) {
-      throw new Exception("不存在该用户证书")
-    } else {
-      val dert = new String(getState(key))
-      if(dert == "null") 
-        throw new Exception("该证书已经注销")
-    }
-    setState(key,"null".getBytes)  // 注销证书，置空
-  }
-  
-  /**
-   * @author zyf
-   * @param pemcert: pem证书字符串
-   * @param certAddr: 证书短地址
-   */
-  def replaceCert(pemCert: String, certAddr: String) :String = {
-    val cf = CertificateFactory.getInstance("X.509");
-    val cert = cf.generateCertificate(
-      new ByteArrayInputStream(
-        Base64.Decoder(pemCert).toByteArray()
-      )
-    )
-    val bdata = SerializeUtils.serialise(cert)
-    val key = PRE_CERT+certAddr
-    setState(key,bdata)
-    val addr = ECDSASign.getBitcoinAddrByCert(bdata)
-    println(addr)
-    addr
-  }
-  
+    
 }
