@@ -81,13 +81,13 @@ object Shim {
  * @param system 所属的actorSystem
  * @param cid 合约的链码id
  */
-class Shim(system: ActorSystem, cid: String) {
+class Shim(system: ActorSystem, cName: String) {
 
   import Shim._
   import rep.storage.IdxPrefix._
 
   //本chaincode的 key前缀
-  val pre_key = WorldStateKeyPreFix + cid + "_"
+  val pre_key = WorldStateKeyPreFix + cName + "_"
   //存储模块提供的system单例
   val pe = PeerExtension(system)
   //从交易传入, 内存中的worldState快照
@@ -124,6 +124,10 @@ class Shim(system: ActorSystem, cid: String) {
     get(pre_key + key)
   }
 
+  def getStateEx(pre:String, key: Key): Array[Byte] = {
+    get(pre_key + key)
+  }
+  
   //禁止脚本内调用此方法, 上下文应严密屏蔽不必要的方法和变量
   private def reset() = {
     mb.clear()

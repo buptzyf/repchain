@@ -15,9 +15,13 @@
  *
  */
 
+package rep.sc.tpl
+
 import org.json4s._
 import org.json4s.jackson.JsonMethods._
 import rep.sc.contract._
+import rep.sc.contract.ContractContext
+import rep.sc.contract.IContract
 
 /**
  * 资产管理合约
@@ -32,28 +36,28 @@ case class Transfer(from:String, to:String, amount:Int)
       println(s"tid: $ctx.t.txid")
     }
     
-    def set(ctx: ContractContext, data:Map[String,Int]):Object={
+    def set(ctx: ContractContext, data:Map[String,Int]) :ActionResult={
       println(s"set data:$data")
       for((k,v)<-data){
         ctx.api.setVal(k, v)
       }
-      null
+      new ActionResult(1,None)
     }
     
-    def transfer(ctx: ContractContext, data:Transfer):Object={
+    def transfer(ctx: ContractContext, data:Transfer) :ActionResult={
       val sfrom =  ctx.api.getVal(data.from)
       var dfrom =sfrom.toString.toInt
       if(dfrom < data.amount)
-        throw new Exception("余额不足")
+        new ActionResult(-1, Some("余额不足"))
       var dto = ctx.api.getVal(data.to).toString.toInt
       ctx.api.setVal(data.from,dfrom - data.amount)
       ctx.api.setVal(data.to,dto + data.amount)
-      "transfer ok"
+       new ActionResult(1,None)
     }
     /**
      * 根据action,找到对应的method，并将传入的json字符串parse为method需要的传入参数
      */
-    def onAction(ctx: ContractContext,action:String, sdata:String ):Object={
+    def onAction(ctx: ContractContext,action:String, sdata:String ):ActionResult={
       //println(s"onAction---")
       //return "transfer ok"
       val json = parse(sdata)

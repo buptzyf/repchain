@@ -21,6 +21,7 @@ import rep.sc.Sandbox.DoTransactionResult
 import rep.sc.Shim
 
 class ContractContext(val api:Shim, val t:Transaction)
+case class ActionResult(code:Int, reason:Option[String])
 
 /**
  * @author c4w
@@ -32,6 +33,7 @@ trait IContract {
 }
 
 abstract class Contract {
+  
   def init(ctx: ContractContext)
-  def onAction(ctx: ContractContext ,action:String, sdata:String):Object
+  def onAction(ctx: ContractContext ,action:String, sdata:String):ActionResult
 }
