@@ -32,10 +32,11 @@ import scala.util.control.Breaks._
 object SignTool {
   private var signer: ISigner = null
   private var SignType: String = "ECDSA"
-  private var key_password = mutable.HashMap[String, String]()
+  private var keypassword = mutable.HashMap[String, String]()
   private var keyStores = mutable.HashMap[String, KeyStore]()
   private var PublickeyCerts = mutable.HashMap[String, Certificate]()
-  private var thirdPublicKeyCerts = mutable.HashMap[String, Certificate]()
+  private var TrustNodelist: List[String] = new ArrayList[String]
+  private var isAddPublicKey = false
 
   synchronized {
     if (this.signer == null) {
@@ -43,42 +44,37 @@ object SignTool {
     }
   }
 
-  private def getNodePrivateKey(alias: String): PrivateKey = {
-    val sk = keyStores(alias).getKey(alias, key_password(alias).toCharArray())
+  private def getPrivateKey(pkeyname: String): PrivateKey = {
+    val sk = keyStores(pkeyname).getKey(pkeyname, keypassword(pkeyname).toCharArray())
     sk.asInstanceOf[PrivateKey]
   }
 
-  //根据CertId实现签名
-  def sign4Node(nodeName: String, message: Array[Byte]): Array[Byte] = {
+  def sign(pkeyname: String, message: Array[Byte]): Array[Byte] = {
     var pk: PrivateKey = null
-    if (this.keyStores.contains(nodeName)) {
-      pk = getNodePrivateKey(nodeName)
+    if (this.keyStores.contains(pkeyname)) {
+      pk = getPrivateKey(pkeyname)
     }
     this.signer.sign(pk, message)
   }
 
+  //根据CertId实现签名
+  def sign4CertId(certinfo: CertId, message: Array[Byte]): Array[Byte] = {
+    val pkeyname = certinfo.creditCode + "." + certinfo.certName
+    sign(pkeyname, message)
+  }
+
   //根据私钥实现签名
-  private def sign(privateKey: PrivateKey, message: Array[Byte]): Array[Byte] = {
+  private def sign4PrivateKey(privateKey: PrivateKey, message: Array[Byte]): Array[Byte] = {
     this.signer.sign(privateKey, message)
   }
 
-  private def getNodePublicKeyByName(alias: String): Certificate = {
-    PublickeyCerts.get(alias).get
-  }
-
-  private def getThirdPublicKeyByName(certinfo: CertId): Certificate = {
-    //todo
-    null
-  }
-
-  private def getVerifyCert(certinfo: CertId): PublicKey = {
+  private def getVerifyCert(pubkeyname: String, sysName: String): PublicKey = {
     var pkcert: Certificate = null
-    if (certinfo.certName.equalsIgnoreCase("")) {
-      pkcert = getNodePublicKeyByName(certinfo.creditCode)
-    }
 
-    if (pkcert == null) {
-      pkcert = getThirdPublicKeyByName(certinfo)
+    if (PublickeyCerts.contains(pubkeyname)) {
+      pkcert = PublickeyCerts.get(pubkeyname).get
+    } else {
+      pkcert = certCache.getCertForUser(pubkeyname, sysName)
     }
 
     if (pkcert == null) {
@@ -92,8 +88,9 @@ object SignTool {
   }
 
   //根据CertId实现验签
-  def verify(signature: Array[Byte], message: Array[Byte], certinfo: CertId): Boolean = {
-    var pk = getVerifyCert(certinfo)
+  def verify(signature: Array[Byte], message: Array[Byte], certinfo: CertId, sysName: String): Boolean = {
+    val k = certinfo.creditCode + "." + certinfo.certName
+    var pk = getVerifyCert(k, sysName)
     this.signer.verify(signature, message, pk)
   }
 
@@ -103,25 +100,30 @@ object SignTool {
   }
 
   //节点启动时需要调用该函数初始化节点私钥
-  def loadNodePrivateKey(nodeName: String, password: String, path: String) = {
+  def loadPrivateKey(pkeyname: String, password: String, path: String) = {
     synchronized {
-      key_password(nodeName) = password
+      keypassword(pkeyname) = password
       val fis = new FileInputStream(new File(path))
       val pwd = password.toCharArray()
-      if (keyStores.contains(nodeName)) {
-        keyStores(nodeName).load(fis, pwd)
+      if (keyStores.contains(pkeyname)) {
+        keyStores(pkeyname).load(fis, pwd)
       } else {
         val pkeys = KeyStore.getInstance(KeyStore.getDefaultType)
         pkeys.load(fis, pwd)
-        keyStores(nodeName) = pkeys
+        keyStores(pkeyname) = pkeys
       }
     }
   }
 
+  def loadPrivateKey4CertId(certinfo: CertId, password: String, path: String) = {
+    val pkeyname = certinfo.creditCode + "." + certinfo.certName
+    loadPrivateKey(pkeyname, password, path)
+  }
+
   //节点启动时需要调用该函数初始化节点公钥
-  def loadNodePublicKey(password: String, path: String) = {
+  def loadNodeCertList(password: String, path: String) = {
     synchronized {
-      if (this.PublickeyCerts.isEmpty) {
+      if (!this.isAddPublicKey) {
         val fis = new FileInputStream(new File(path))
         val pwd = password.toCharArray()
         var trustKeyStore = KeyStore.getInstance(KeyStore.getDefaultType)
@@ -130,35 +132,40 @@ object SignTool {
         while (enums.hasMoreElements) {
           val alias = enums.nextElement()
           val cert = trustKeyStore.getCertificate(alias)
+          this.TrustNodelist.add(alias)
           PublickeyCerts.put(alias, cert)
         }
+        this.isAddPublicKey = true
       }
     }
   }
 
   //提供给共识获取证书列表
   def getAliasOfTrustkey: List[String] = {
-    var list: List[String] = new ArrayList[String]
+    this.TrustNodelist
+    /*var list: List[String] = new ArrayList[String]
     val enums = PublickeyCerts.iterator
     while (enums.hasNext) {
       val alias = enums.next()
       list.add(alias._1)
     }
-    list
+    list*/
   }
 
   //判断某个名称是否是共识节点
   def isNode4Credit(credit: String): Boolean = {
     var r: Boolean = false
     val n = credit + "."
+    val size = this.TrustNodelist.size() - 1
+    var i : Int = 0
     breakable(
-      this.PublickeyCerts.foreach(f => {
-        val name = f._1
-        if (name.indexOf(n) == 0) {
+      while (i <= size) {
+        if (TrustNodelist.get(i).indexOf(n) == 0) {
           r = true
           break
         }
-      }))
+        i = i + 1
+      })
     r
   }
 }

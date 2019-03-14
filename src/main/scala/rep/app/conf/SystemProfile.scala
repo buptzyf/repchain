@@ -50,6 +50,7 @@ object SystemProfile {
   private[this] var _CHECKCERTVALIDATE:Int=0//是否检查证书的有效性，0不检查，1检查
   private[this] var _CONTRACTOPERATIONMODE = 0//设置合约的运行方式，0=debug方式，1=deploy，默认为debug方式，如果发布部署，必须使用deploy方式。
   private[this] var _VOTENODELIST : List[String] = new ArrayList[String]
+  private[this] var _ACCOUNTCHAINCODENAEM : String = "ACCOUNTCHAINCODENAME"
   
   
   private def SERVERPORT :Int = _SERVERPORT
@@ -58,11 +59,15 @@ object SystemProfile {
   private def CONTRACTOPERATIONMODE:Int=_CONTRACTOPERATIONMODE
   
   private def VOTENODELIST : List[String] = _VOTENODELIST
+  private def ACCOUNTCHAINCODENAEM = _ACCOUNTCHAINCODENAEM
   
   private def VOTENODELIST_=(value: List[String]): Unit = {
       _VOTENODELIST = value
   }
   
+  private def ACCOUNTCHAINCODENAEM_=(value:String):Unit={
+    _ACCOUNTCHAINCODENAEM = value
+  }
   
   private def SERVERPORT_=(value: Int): Unit = {
     _SERVERPORT = value
@@ -142,6 +147,7 @@ object SystemProfile {
     SERVERPORT_=(config.getInt("system.httpServicePort"))
     CHECKCERTVALIDATE_=(config.getInt("system.checkCertValidate"))
     CONTRACTOPERATIONMODE_=(config.getInt("system.contractOperationMode"))
+    ACCOUNTCHAINCODENAEM_= (config.getString("system.account.chaincodename"))
   }
   
   def getLimitBlockTransNum = LIMIT_BLOCK_TRANS_NUM
@@ -167,4 +173,6 @@ object SystemProfile {
   def getContractOperationMode = CONTRACTOPERATIONMODE
   
   def getVoteNodeList = VOTENODELIST
+  
+  def getAccountChaincodeName = ACCOUNTCHAINCODENAEM
 }

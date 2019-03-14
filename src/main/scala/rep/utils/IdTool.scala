@@ -21,7 +21,21 @@ object IdTool {
   }
   
   def getSigner4String(certid:CertId):String={
-   certid.certName + "_" + certid.creditCode
+   certid.certName + "." + certid.creditCode
+  }
+  
+  def getCertIdFromName(name:String):CertId={
+    if(name != null){
+      if(name.indexOf(".")> 0){
+        CertId(name.substring(0,name.indexOf(".")),
+            name.substring(name.indexOf(".")+1,name.length()))
+      }else{
+        null
+      }
+    }else{
+      null
+    }
+   
   }
   
 }

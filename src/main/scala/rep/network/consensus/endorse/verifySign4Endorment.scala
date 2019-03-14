@@ -49,7 +49,7 @@ class verifySign4Endorment(moduleName: String) extends ModuleBase(moduleName) {
         breakable(
             while(count < len) {
               if(startPos+count < tsize){
-                if(!BlockHelper.checkTransaction(ts(startPos+count), sr)){
+                if(!BlockHelper.checkTransaction(ts(startPos+count), pe.getSysTag)){
                     r = false
                     break
                 }

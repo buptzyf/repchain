@@ -192,7 +192,7 @@ class RestActor extends Actor with ModuleHelper {
       try{
         
         
-          SignTool.verify(sig, tOutSig.toByteArray, certId) match {
+          SignTool.verify(sig, tOutSig.toByteArray, certId,pe.getSysTag) match {
             case true => 
               val future = sandbox ? PreTransaction(t)
               val result = Await.result(future, timeout.duration).asInstanceOf[DoTransactionResult]

@@ -82,7 +82,7 @@ object PeerHelper {
 
     val certid = new CertId(nodeName, "")
     var sobj = Signature(Option(certid), Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)))
-    sobj = sobj.withSignature(ByteString.copyFrom(SignTool.sign4Node(nodeName, t.toByteArray)))
+    sobj = sobj.withSignature(ByteString.copyFrom(SignTool.sign(nodeName, t.toByteArray)))
 
     t = t.withSignature(sobj)
 
@@ -105,7 +105,7 @@ object PeerHelper {
 
     val certid = new CertId(nodeName, "")
     var sobj = Signature(Option(certid), Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)))
-    sobj = sobj.withSignature(ByteString.copyFrom(SignTool.sign4Node(nodeName, t.toByteArray)))
+    sobj = sobj.withSignature(ByteString.copyFrom(SignTool.sign(nodeName, t.toByteArray)))
 
     t = t.withSignature(sobj)
 

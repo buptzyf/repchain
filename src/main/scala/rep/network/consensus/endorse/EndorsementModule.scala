@@ -162,7 +162,7 @@ class EndorsementModule(moduleName: String) extends ModuleBase(moduleName) {
             trans.foreach(f=>{
              //从当前交易池查找该交易，如果存在该交易，不需要校验，已经校验过了
               if(!pe.findTrans(f.id)){
-                if(!BlockHelper.checkTransaction(f, sr)){
+                if(!BlockHelper.checkTransaction(f, pe.getSysTag)){
                 //if(!BlockHelper.verifySignForTranscation(f,pe.getSysTag)){
                   r = false
                   //loopbreak.break
@@ -223,7 +223,7 @@ class EndorsementModule(moduleName: String) extends ModuleBase(moduleName) {
           //验证签名和签名之前不再使用hash
           //val blkInfo = Sha256.hash(blkData.toByteArray)
            val hashtime = System.currentTimeMillis()
-          if (BlockHelper.checkBlockContent(blk.endorsements.head, blkInfo)) {
+          if (BlockHelper.checkBlockContent(blk.endorsements.head, blkInfo,pe.getSysTag)) {
             val checkblocktime = System.currentTimeMillis()
               if(!hasRepeatOfTrans(blk.transactions)){
                  val checktranstime = System.currentTimeMillis()

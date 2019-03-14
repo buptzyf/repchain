@@ -55,10 +55,10 @@ object BlockHelper {
     try{
       
       val millis = TimeUtils.getCurrentTime()
-      val certid = CertId(alise,"")
+      val certid = IdTool.getCertIdFromName(alise)
       Signature(Option(certid),
           Option(Timestamp(millis/1000 , ((millis % 1000) * 1000000).toInt)),
-          ByteString.copyFrom(SignTool.sign4Node(alise, blkHash)))
+          ByteString.copyFrom(SignTool.sign4CertId(certid, blkHash)))
     }catch{
       case e:RuntimeException => throw e
     }
@@ -69,11 +69,11 @@ object BlockHelper {
     * @param blkHash
     * @return
     */
-  def checkBlockContent(endor:Signature, blkHash: Array[Byte]): Boolean = {
+  def checkBlockContent(endor:Signature, blkHash: Array[Byte],sysName:String): Boolean = {
     //获取出块人的背书信息
     try{
       val certid = endor.getCertId
-      SignTool.verify(endor.signature.toByteArray, blkHash, certid)
+      SignTool.verify(endor.signature.toByteArray, blkHash, certid,sysName)
     }catch{
       case e  : RuntimeException => false
     }
@@ -81,7 +81,7 @@ object BlockHelper {
   }
   
   //用于对交易对签名验证
-  def checkTransaction(t: Transaction, dataAccess: ImpDataAccess): Boolean = {
+  def checkTransaction(t: Transaction, sysName:String): Boolean = {
     var resultMsg = ""
     var result = false
     //val starttime = System.currentTimeMillis()
@@ -90,7 +90,7 @@ object BlockHelper {
     
     
     try{
-      SignTool.verify(sig.get.signature.toByteArray(), tOutSig.toByteArray, sig.get.getCertId)
+      SignTool.verify(sig.get.signature.toByteArray(), tOutSig.toByteArray, sig.get.getCertId,sysName)
        
       }catch{
         case e : RuntimeException => resultMsg = s"The transaction(${t.id}) is not trusted${e.getMessage}"

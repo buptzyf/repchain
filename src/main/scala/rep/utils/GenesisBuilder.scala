@@ -42,9 +42,9 @@ object GenesisBuilder {
   implicit val formats       = DefaultFormats
 
   def main(args: Array[String]): Unit = {
-    SignTool.loadNodePrivateKey("1", "123", "jks/mykeystore_1.jks")
-    SignTool.loadNodePublicKey("changeme", "jks/mytruststore.jks")
-    SignTool.loadNodePrivateKey("1", "super_admin", "jks/keystore_admin.jks")
+    SignTool.loadPrivateKey("121000005L35120456.node1", "123", "jks/121000005L35120456.node1.jks")
+    SignTool.loadNodeCertList("changeme", "jks/mytruststore.jks")
+    SignTool.loadPrivateKey("951002007L78123233.super_admin", "super_admin", "jks/951002007L78123233.super_admin.jks")
     
    
      

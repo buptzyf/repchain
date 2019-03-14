@@ -27,6 +27,7 @@ public class VerifySign4JavaWork {
 	private final static int childnum = 10;
 	private java.util.concurrent.Executor executor = Executors.newFixedThreadPool(childnum);
 	private ImpDataAccess sr  = null;
+	private String sysName = "";
 	//private String systag = "";
 	private VerifySignThread[] object4Work = null;
 	
@@ -38,6 +39,7 @@ public class VerifySign4JavaWork {
 	//private int count = 0;
 	
 	public VerifySign4JavaWork(String systag) {
+		sysName = systag;
 		sr = ImpDataAccess.GetDataAccess(systag);
 		//this.systag = systag;
 		this.object4Work = new VerifySignThread[childnum]; 
@@ -175,7 +177,7 @@ public class VerifySign4JavaWork {
             while(count < len) {
               if(startIdx+count < tsize){
 	            	  if(findflag[startIdx+count] == 0) {
-		                if(!BlockHelper.checkTransaction(tls[startIdx+count], sr)){
+		                if(!BlockHelper.checkTransaction(tls[startIdx+count], sysName)){
 		                		//System.out.println("thread-"+systag+"-"+threadnum+"-run error in "+(startIdx+count)+"!");
 		                    break;
 		                }else {

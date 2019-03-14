@@ -507,7 +507,7 @@ class BlockModule(moduleName: String) extends ModuleBase(moduleName) {
         var isEndorsed = true
         for (endorse <- endors) {
           //TODO kami 这是一个非常耗时的工作？后续需要完善
-          if (!BlockHelper.checkBlockContent(endorse, blkOutEndorse.toByteArray)) isEndorsed = false
+          if (!BlockHelper.checkBlockContent(endorse, blkOutEndorse.toByteArray,pe.getSysTag)) isEndorsed = false
           //验证签名之前不再使用hash
           //if (!BlockHelper.checkBlockContent(endorse, Sha256.hash(blkOutEndorse.toByteArray))) isEndorsed = false
         }
