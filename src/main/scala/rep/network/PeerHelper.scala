@@ -80,9 +80,9 @@ object PeerHelper {
     t = t.withIpt(cip)
     t = t.withType(rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE)
 
-    val certid = new CertId(nodeName, "1")
+    val certid = new CertId(nodeName, "")
     var sobj = Signature(Option(certid), Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)))
-    sobj = sobj.withSignature(ByteString.copyFrom(SignTool.sign(certid, t.toByteArray)))
+    sobj = sobj.withSignature(ByteString.copyFrom(SignTool.sign4Node(nodeName, t.toByteArray)))
 
     t = t.withSignature(sobj)
 
@@ -103,9 +103,9 @@ object PeerHelper {
     t = t.withSpec(cip)
     t = t.withType(rep.protos.peer.Transaction.Type.CHAINCODE_DEPLOY)
 
-    val certid = new CertId(nodeName, "1")
+    val certid = new CertId(nodeName, "")
     var sobj = Signature(Option(certid), Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)))
-    sobj = sobj.withSignature(ByteString.copyFrom(SignTool.sign(certid, t.toByteArray)))
+    sobj = sobj.withSignature(ByteString.copyFrom(SignTool.sign4Node(nodeName, t.toByteArray)))
 
     t = t.withSignature(sobj)
 

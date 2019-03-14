@@ -41,6 +41,7 @@ class ImpECDSASigner extends ISigner {
 
   override def sign(privateKey: PrivateKey, message: Array[Byte]): Array[Byte] = {
     if(privateKey == null) throw new RuntimeException("签名时私钥为空！") 
+    if(message == null || message.length <= 0 ) throw new RuntimeException("待签名内容为空！")
     val s1 = Signature.getInstance(alg);
     s1.initSign(privateKey)
     s1.update(message)
@@ -49,6 +50,8 @@ class ImpECDSASigner extends ISigner {
 
   override def verify(signature: Array[Byte], message: Array[Byte], publicKey: PublicKey): Boolean = {
     if(publicKey == null) throw new RuntimeException("验证签名时公钥为空！") 
+    if(signature == null || signature.length <= 0) throw new RuntimeException("待验证的签名信息为空！") 
+    if(message == null || message.length <= 0 ) throw new RuntimeException("待签名内容为空！")
     val s2 = Signature.getInstance(alg);
     s2.initVerify(publicKey)
     s2.update(message)

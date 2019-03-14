@@ -44,6 +44,18 @@ object test extends Object{
       if(i == 37){
         RepTimeTracer.setEndTime("1", "test", System.currentTimeMillis())
       }
+      
+      if(i == 40){
+        RepTimeTracer.openTimeTrace
+      }
+      
+      if(i == 45){
+        RepTimeTracer.setStartTime("1", "test", System.currentTimeMillis())
+      }
+      if(i == 48){
+        RepTimeTracer.setEndTime("1", "test", System.currentTimeMillis())
+      }
+      
       i = i+1
     }
     

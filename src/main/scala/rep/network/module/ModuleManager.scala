@@ -154,8 +154,8 @@ class ConfigerHelper(conf: Config, tag: String, dbTag: String) {
     */
   private def authInit(sysTag: String, jksFilePath: String, pwd: String, trustJksFilePath: String, trustPwd: String): Unit = {
     //init the ECDSA param
-    SignTool.InitNodePrivateKey(sysTag, pwd, jksFilePath)
-    SignTool.InitNodePublicKey(trustPwd, trustJksFilePath)
+    SignTool.loadNodePrivateKey(sysTag, pwd, jksFilePath)
+    SignTool.loadNodePublicKey(trustPwd, trustJksFilePath)
     //ECDSASign.apply(sysTag, jksFilePath, pwd, trustJksFilePath, trustPwd)
     //ECDSASign.preLoadKey(sysTag)
   }

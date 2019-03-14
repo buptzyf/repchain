@@ -55,10 +55,10 @@ object BlockHelper {
     try{
       
       val millis = TimeUtils.getCurrentTime()
-      val certid = CertId(alise,"1")
+      val certid = CertId(alise,"")
       Signature(Option(certid),
           Option(Timestamp(millis/1000 , ((millis % 1000) * 1000000).toInt)),
-          ByteString.copyFrom(SignTool.sign(certid, blkHash)))
+          ByteString.copyFrom(SignTool.sign4Node(alise, blkHash)))
     }catch{
       case e:RuntimeException => throw e
     }
