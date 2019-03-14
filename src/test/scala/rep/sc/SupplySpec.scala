@@ -34,7 +34,7 @@ import org.json4s._
 import rep.network.module.ModuleManager
 import rep.storage.ImpDataAccess
 import rep.utils.Json4s._
-import rep.utils.SerializeUtils.deserialiseJson
+import rep.utils.SerializeUtils.deserialise
 
 import java.nio.ByteBuffer
 
@@ -152,9 +152,9 @@ class SupplySpec(_system: ActorSystem)
       var total = 0
       ol4.foreach { 
         ol => 
-          total += deserialiseJson(ol.newValue).asInstanceOf[BigInt].intValue()
+          total += deserialise(ol.newValue).asInstanceOf[Int]
           if(ol.oldValue!= null)        
-            total -= deserialiseJson(ol.oldValue).asInstanceOf[BigInt].intValue()          
+            total -= deserialise(ol.oldValue).asInstanceOf[Int]        
       }
       total should be(el)
     }
@@ -175,9 +175,9 @@ class SupplySpec(_system: ActorSystem)
       var total = 0
       ol4.foreach { 
         ol => 
-          total += deserialiseJson(ol.newValue).asInstanceOf[BigInt].intValue()
+          total += deserialise(ol.newValue).asInstanceOf[Int]
           if(ol.oldValue!= null)        
-            total -= deserialiseJson(ol.oldValue).asInstanceOf[BigInt].intValue()          
+            total -= deserialise(ol.oldValue).asInstanceOf[Int]       
       }
       total should be(el)
     }

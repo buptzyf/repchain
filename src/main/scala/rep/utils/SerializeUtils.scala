@@ -34,7 +34,7 @@ object SerializeUtils {
     val stream: ByteArrayOutputStream = new ByteArrayOutputStream()
     val oos = new ObjectOutputStream(stream)
     oos.writeObject(value)
-    oos.close
+    oos.close()
     stream.toByteArray
   }
 
@@ -44,9 +44,11 @@ object SerializeUtils {
     * @return
     */
   def deserialise(bytes: Array[Byte]): Any = {
+    if(bytes == null)
+      return null;
     val ois = new ObjectInputStream(new ByteArrayInputStream(bytes))
     val value = ois.readObject
-    ois.close
+    ois.close()
     value
   }
 
@@ -67,21 +69,9 @@ object SerializeUtils {
     * @return
     */
   def deserialiseJson(bytes: Array[Byte]): Any = {
-    if(bytes==null)
-      return null;
+    if(bytes.isEmpty)
+      return None;
     val json = new String(bytes)
     parseAny(json)
   }
-
-  def main(args: Array[String]): Unit = {
-    import rep.sc.Shim.Oper
-    
-   /* ECDSASign.apply("1", "jks/mykeystore_1.jks", "123", "jks/mytruststore.jks", "changeme")
-    ECDSASign.preLoadKey("1")
-    val c = ECDSASign.getCert("1")
-    val cA = serialise(c)
-    val cert = deserialise(cA).asInstanceOf[Certificate]
-    println(cert.getPublicKey==c.getPublicKey)*/
-  }
-
 }

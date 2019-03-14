@@ -24,8 +24,8 @@ import rep.network.tools.PeerExtension
 import rep.protos.peer.Transaction
 import rep.storage.ImpDataPreload
 import rep.utils.SerializeUtils
-import rep.utils.SerializeUtils.deserialiseJson
-import rep.utils.SerializeUtils.serialiseJson
+import rep.utils.SerializeUtils.deserialise
+import rep.utils.SerializeUtils.serialise
 import java.security.cert.CertificateFactory
 import java.io.FileInputStream
 import java.io.ByteArrayInputStream
@@ -96,10 +96,10 @@ class Shim(system: ActorSystem, cName: String) {
   var ol = scala.collection.mutable.ListBuffer.empty[Oper]
     
   def setVal(key: Key, value: Any):Unit ={
-    setState(key,serialiseJson(value))
+    setState(key,serialise(value))
   }
    def getVal(key: Key):Any ={
-    deserialiseJson(getState(key))
+    deserialise(getState(key))
   }
  
   def setState(key: Key, value: Array[Byte]): Unit = {
