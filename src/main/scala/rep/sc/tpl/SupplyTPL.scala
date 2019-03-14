@@ -45,14 +45,14 @@ class SupplyTPL extends IContract {
     /**
      * 追加确认签名 TODO 逻辑实现
      */
-    def confirmSign(ctx: ContractContext, data:IPTConfirm ):Object={
-      null
+    def confirmSign(ctx: ContractContext, data:IPTConfirm ):ActionResult={
+       ActionResult(1,None)
     }
      /**
      * 取消追加确认签名 TODO 逻辑实现
      */
-    def cancelSign(ctx: ContractContext, data:IPTConfirm ):Object={
-      null
+    def cancelSign(ctx: ContractContext, data:IPTConfirm ):ActionResult={
+       ActionResult(1,None)
     }
 
    /**
@@ -61,35 +61,35 @@ class SupplyTPL extends IContract {
     * @param data 
     * @return
     */
-    def SignUp(ctx: ContractContext, data:Map[String,String]):Object = {
-      ""
+    def SignUp(ctx: ContractContext, data:Map[String,String]):ActionResult = {
+      ActionResult(1,None)
     }
 
    /**
      * 设计方、原料方、生产方、销售方 签订对销售额的分成合约, 对于销售方账号+产品型号决定唯一的分账合约
      */
-    def signShare(ctx: ContractContext, data:IPTSignShare ):Object={
+    def signShare(ctx: ContractContext, data:IPTSignShare ):ActionResult={
       val sid = data.account_sale +SPLIT_CHAR + data.product_id
       val pid = sid+TPL_MODE
       //签约输入持久化,默认的类型转换无法胜任，以json字符串形式持久化
       ctx.api.setVal(sid, write(data))
       ctx.api.setVal(pid, TPL.Share)
-      sid
+       ActionResult(1,None)
     }
 
-    def signFixed(ctx: ContractContext, data:IPTSignFixed ):Object={
+    def signFixed(ctx: ContractContext, data:IPTSignFixed ):ActionResult={
       val sid = data.account_sale +SPLIT_CHAR + data.product_id
       val pid = sid+TPL_MODE
       //签约输入持久化
       ctx.api.setVal(sid, write(data))
       ctx.api.setVal(pid, TPL.Fixed)
-      sid
+       ActionResult(1,None)
     }
     
     /**
      * 分账的调度方法，负责根据调用相应的分账模版, 传入模版定制参数和销售数据,进行分账
      */
-    def split(ctx: ContractContext, data:IPTSplit ):Object={
+    def split(ctx: ContractContext, data:IPTSplit ):ActionResult={
       //根据销售方账号和产品Id获得分账脚本
       val sid = data.account_sale +SPLIT_CHAR + data.product_id
       val pid = sid + TPL_MODE
@@ -107,7 +107,7 @@ class SupplyTPL extends IContract {
       }
       //返回分账计算结果
       addToAccount(ctx, mr)
-      mr
+       ActionResult(1,None)
     }
     
     /**
@@ -123,7 +123,7 @@ class SupplyTPL extends IContract {
     /**
      * 合约方法入口
      */
-    def onAction(ctx: ContractContext,action:String, sdata:String ):Object={
+    def onAction(ctx: ContractContext,action:String, sdata:String ):ActionResult={
       val json = parse(sdata)
       
       action match {

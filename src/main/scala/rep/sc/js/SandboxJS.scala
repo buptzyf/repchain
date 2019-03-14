@@ -31,7 +31,7 @@ import rep.utils.Json4s._
 import com.google.protobuf.ByteString
 import org.json4s._
 import rep.log.trace.{RepLogger,ModuleType}
-
+import rep.sc.contract.ActionResult
 
 /**
  * @author c4w
@@ -42,24 +42,19 @@ class SandboxJS(cid:String) extends Sandbox(cid){
   sandbox.put("shim",shim)
   
   override def doTransaction(t:Transaction,from:ActorRef, da:String):DoTransactionResult ={
-   val tm_start = System.currentTimeMillis()
     //上下文可获得交易
     sandbox.put("tx", t)
     //for test print sandbox id
     sandbox.put("addr_self", this.addr_self)
     sandbox.put("tx_account", t.signature.get.certId.get.creditCode)
-    //每次执行脚本之前重置 
-    //shim.reset() 由于DoTransactionResult依赖此两项,不能直接clear,要么clone一份给result,
     //要么上一份给result，重新建一份
-    shim.sr = ImpDataPreloadMgr.GetImpDataPreload(sTag, da)
-    shim.mb = scala.collection.mutable.Map[String,Array[Byte]]()
-    shim.ol = scala.collection.mutable.ListBuffer.empty[Oper]
+    val sr = ImpDataPreloadMgr.GetImpDataPreload(sTag, da)
+    val ol = scala.collection.mutable.ListBuffer.empty[Oper]
     //如果执行中出现异常,返回异常
     try{
       val cs = t.para.spec.get.codePackage
       val cid = getTXCId(t)
-//      println(s"doTransaction  type:${t.`type`}  cid:$cid addr:$addr_self")
-      val r:JValue = t.`type` match {
+      val r:ActionResult = t.`type` match {
         //部署合约时执行整个合约脚本，驻留funcs
         case Transaction.Type.CHAINCODE_DEPLOY => 
           //执行并加载functions
@@ -68,32 +63,18 @@ class SandboxJS(cid:String) extends Sandbox(cid){
           //利用kv记住cid对应的txid,并增加kv操作日志
           val txid = ByteString.copyFromUtf8(t.id).toByteArray()
           val key = WorldStateKeyPreFix+ cid
-          shim.sr.Put(key,txid)
+          sr.Put(key,txid)
           //ol value改为byte array
-          shim.ol.append(new Oper(key, null, txid))
-          encodeJson(cid)
+          ol.append(new Oper(key, null, txid))
+          new ActionResult(1,None)
          //调用方法时只需要执行function
         case  Transaction.Type.CHAINCODE_INVOKE =>
           var tm_start1 = System.currentTimeMillis()  
-
           val r1 = sandbox.eval(t.para.ipt.get.function)
-          //val r2 = r1.asInstanceOf[Any]
-          val r2 = encodeJson(r1)
-         
-          val span1 = System.currentTimeMillis()-tm_start1
-            //println(s"****container span1:$span1")
-            r2
-          //需自行递归处理所有层次的ScriptObjectMirror 二则akka默认的消息java序列化无法处理ScriptObjectMirror
-          //json.callMember("stringify", r1).asInstanceOf[Any].toJson;
-      }
-      //modify by jiangbuyun 20170802
-      val mb = shim.sr.GetComputeMerkle4String//sr.GetComputeMerkle  //mh.computeWorldState4Byte()
-      val mbstr = mb match {
-        case null => None
-        case _ => Option(mb)  //Option(BytesHex.bytes2hex(mb))
+          r1.asInstanceOf[ActionResult]
       }
       new DoTransactionResult(t,from, r, 
-          mbstr,
+          None,
          shim.ol.toList,shim.mb,None)
     }catch{
       case e: Exception => 
@@ -107,11 +88,6 @@ class SandboxJS(cid:String) extends Sandbox(cid){
            None,
           shim.ol.toList,shim.mb, 
           Option(akka.actor.Status.Failure(e1)))           
-    }finally{
-      val span = System.currentTimeMillis()-tm_start
-      RepLogger.logInfo(pe.getSysTag, ModuleType.sandbox, 
-          Sandbox.log_prefix+"~"+ s"Span doTransaction:$span")
-      
     }
   }
 }

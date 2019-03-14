@@ -37,6 +37,7 @@ import Shim._
 import rep.crypto.BytesHex
 import rep.network.tools.PeerExtension
 import rep.storage.IdxPrefix.WorldStateKeyPreFix
+import rep.sc.contract.ActionResult
 
 /** 合约容器的抽象类伴生对象,定义了交易执行结果的case类
  * 
@@ -56,7 +57,7 @@ object Sandbox {
    * @param mb 合约执行涉及的key-value集合
    * @param err 执行中抛出的异常信息
    */
-  case class DoTransactionResult(t:Transaction,from:ActorRef, r:JValue,merkle:Option[String],
+  case class DoTransactionResult(t:Transaction,from:ActorRef, r:ActionResult,merkle:Option[String],
     ol:List[Oper],
     mb:scala.collection.mutable.Map[String,Array[Byte]],
     err:Option[akka.actor.Status.Failure])

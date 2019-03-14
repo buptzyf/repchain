@@ -29,7 +29,7 @@ case class ActionResult(code:Int, reason:Option[String])
 
 trait IContract {
   def init(ctx: ContractContext)
-  def onAction(ctx: ContractContext,action:String, sdata:String ):Object
+  def onAction(ctx: ContractContext,action:String, sdata:String ):ActionResult
 }
 
 abstract class Contract {

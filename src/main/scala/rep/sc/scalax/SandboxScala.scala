@@ -41,23 +41,19 @@ class SandboxScala(cid:String) extends Sandbox(cid){
   val pcid = cid
   
   def doTransaction(t:Transaction,from:ActorRef, da:String):DoTransactionResult ={
-   val tm_start = System.currentTimeMillis()
     //上下文可获得交易
-    //每次执行脚本之前重置 
-    //shim.reset() 由于DoTransactionResult依赖此两项,不能直接clear,要么clone一份给result,
     //要么上一份给result，重新建一份
-    shim.sr = ImpDataPreloadMgr.GetImpDataPreload(sTag, da)
-    shim.mb = scala.collection.mutable.Map[String,Array[Byte]]()
-    shim.ol = scala.collection.mutable.ListBuffer.empty[Oper]
+    val sr = ImpDataPreloadMgr.GetImpDataPreload(sTag, da)
+    val ol = scala.collection.mutable.ListBuffer.empty[Oper]
    //构造和传入ctx
    val ctx = new ContractContext(shim,t)
     //如果执行中出现异常,返回异常
     try{
       val cid = getTXCId(t)
-      val r:JValue = t.`type` match {
+      val r: ActionResult = t.`type` match {
         //如果cid对应的合约class不存在，根据code生成并加载该class
         case Transaction.Type.CHAINCODE_DEPLOY => 
-          //TODO 热加载code对应的class
+          //热加载code对应的class
           val code = t.para.spec.get.codePackage
 
           val clazz = Compiler.compilef(code,pcid)
@@ -68,10 +64,10 @@ class SandboxScala(cid:String) extends Sandbox(cid){
           //利用kv记住cid对应的txid,并增加kv操作日志,以便恢复deploy时能根据cid找到当时deploy的tx及其代码内容
           val txid = ByteString.copyFromUtf8(t.id).toByteArray()
           val key = WorldStateKeyPreFix+ cid
-          shim.sr.Put(key,txid)
+          sr.Put(key,txid)
           //ol value改为byte array
-          shim.ol.append(new Oper(key, null, txid))
-          encodeJson(cid)
+          ol.append(new Oper(key, null, txid))
+          new ActionResult(1,None)
          //新建class实例并执行合约,传参为json数据
           //TODO case  Transaction.Type.CHAINCODE_DESC 增加对合约描述的处理
         case  Transaction.Type.CHAINCODE_INVOKE =>
@@ -80,20 +76,11 @@ class SandboxScala(cid:String) extends Sandbox(cid){
           val action = ipt.function
           //获得传入参数
           val data = ipt.args
-          encodeJson(cobj.onAction(ctx,action,data.head))
+          cobj.onAction(ctx,action,data.head)
       }
-      val span2 = System.currentTimeMillis()-tm_start
-      //println(s"container span2:$span2")
       
-      //modify by jiangbuyun 20170802
-      //TODO 有必要每笔交易都计算Merkle根吗？？？
-      val mb = shim.sr.GetComputeMerkle4String//sr.GetComputeMerkle  //mh.computeWorldState4Byte()
-      val mbstr = mb match {
-        case null => None
-        case _ => Option(mb)  //Option(BytesHex.bytes2hex(mb))
-      }
       new DoTransactionResult(t,from, r, 
-          mbstr,
+          None,
          shim.ol.toList,shim.mb,None)
     }catch{
       case e: Exception => 
@@ -106,11 +93,6 @@ class SandboxScala(cid:String) extends Sandbox(cid){
            None,
           shim.ol.toList,shim.mb, 
           Option(akka.actor.Status.Failure(e1)))           
-    }finally{
-      val span = System.currentTimeMillis()-tm_start
-      RepLogger.logInfo(pe.getSysTag, ModuleType.sandbox, 
-          Sandbox.log_prefix+"~"+ s"Span doTransaction:$span")
-      
     }
   }  
 }
