@@ -142,7 +142,7 @@ class Shim(system: ActorSystem, cName: String) {
   }
   
   //判断账号是否节点账号 TODO
-  def bNodeCreditCode() : Boolean ={
+  def bNodeCreditCode(credit_code: String) : Boolean ={
     true
   }
 }
