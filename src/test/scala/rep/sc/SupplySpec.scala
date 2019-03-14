@@ -34,6 +34,10 @@ import org.json4s._
 import rep.network.module.ModuleManager
 import rep.storage.ImpDataAccess
 import rep.utils.Json4s._
+import rep.utils.SerializeUtils.deserialiseJson
+
+import java.nio.ByteBuffer
+
 import rep.sc.contract._
 import java.io.IOException
 import java.io.PrintWriter
@@ -144,14 +148,13 @@ class SupplySpec(_system: ActorSystem)
       val ol4 = msg_recv4.ol
       val ol4str = compactJson(ol4)
       println(s"oper log:${ol4str}")
-      //获得交易返回值
-      val jv4 = msg_recv4.r.asInstanceOf[JValue]
-      val rv4 = jv4.extract[Map[String,Int]]
-      println(rv4)
       //分账之后总额应保持一致
       var total = 0
-      for ((k, v) <- rv4) {   
-        total += v       
+      ol4.foreach { 
+        ol => 
+          total += deserialiseJson(ol.newValue).asInstanceOf[BigInt].intValue()
+          if(ol.oldValue!= null)        
+            total -= deserialiseJson(ol.oldValue).asInstanceOf[BigInt].intValue()          
       }
       total should be(el)
     }
@@ -168,15 +171,13 @@ class SupplySpec(_system: ActorSystem)
       val ol4 = msg_recv4.ol
       val ol4str = compactJson(ol4)
       println(s"oper log:${ol4str}")
-      //获得交易返回值
-      //获得交易返回值
-      val jv4 = msg_recv4.r.asInstanceOf[JValue]
-      val rv4 = jv4.extract[Map[String,Int]]
-      println(rv4)
       //分账之后总额应保持一致
       var total = 0
-      for ((k, v) <- rv4) {   
-        total += v       
+      ol4.foreach { 
+        ol => 
+          total += deserialiseJson(ol.newValue).asInstanceOf[BigInt].intValue()
+          if(ol.oldValue!= null)        
+            total -= deserialiseJson(ol.oldValue).asInstanceOf[BigInt].intValue()          
       }
       total should be(el)
     }

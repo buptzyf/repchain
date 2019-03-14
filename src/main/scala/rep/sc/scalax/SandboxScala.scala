@@ -43,8 +43,9 @@ class SandboxScala(cid:String) extends Sandbox(cid){
   def doTransaction(t:Transaction,from:ActorRef, da:String):DoTransactionResult ={
     //上下文可获得交易
     //要么上一份给result，重新建一份
-    val sr = ImpDataPreloadMgr.GetImpDataPreload(sTag, da)
-    val ol = scala.collection.mutable.ListBuffer.empty[Oper]
+    shim.sr = ImpDataPreloadMgr.GetImpDataPreload(sTag, da)
+    shim.mb = scala.collection.mutable.Map[String,Array[Byte]]()
+    shim.ol = scala.collection.mutable.ListBuffer.empty[Oper]
    //构造和传入ctx
    val ctx = new ContractContext(shim,t)
     //如果执行中出现异常,返回异常
@@ -64,9 +65,9 @@ class SandboxScala(cid:String) extends Sandbox(cid){
           //利用kv记住cid对应的txid,并增加kv操作日志,以便恢复deploy时能根据cid找到当时deploy的tx及其代码内容
           val txid = ByteString.copyFromUtf8(t.id).toByteArray()
           val key = WorldStateKeyPreFix+ cid
-          sr.Put(key,txid)
+          shim.sr.Put(key,txid)
           //ol value改为byte array
-          ol.append(new Oper(key, null, txid))
+          shim.ol.append(new Oper(key, null, txid))
           new ActionResult(1,None)
          //新建class实例并执行合约,传参为json数据
           //TODO case  Transaction.Type.CHAINCODE_DESC 增加对合约描述的处理

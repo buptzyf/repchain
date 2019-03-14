@@ -140,5 +140,9 @@ class Shim(system: ActorSystem, cName: String) {
     //回滚仍然保留操作日志,否则api拿不到操作日志
     // ol.clear()
   }
-    
+  
+  //判断账号是否节点账号 TODO
+  def bNodeCreditCode() : Boolean ={
+    true
+  }
 }

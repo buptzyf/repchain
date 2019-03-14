@@ -27,11 +27,12 @@ import org.json4s.native.Serialization
 import org.json4s.native.Serialization.{read, write}
 import org.json4s.{DefaultFormats, Formats, jackson}
 
+import rep.sc.tpl.SupplyType._
+
 /**
  * 供应链分账合约
  */
 class SupplyTPL extends IContract {
-    import rep.sc.tpl.SupplyType._
     
     val SPLIT_CHAR  = "_";
     val TPL_MODE  = "_PM";

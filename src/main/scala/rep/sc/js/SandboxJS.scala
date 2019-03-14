@@ -48,8 +48,9 @@ class SandboxJS(cid:String) extends Sandbox(cid){
     sandbox.put("addr_self", this.addr_self)
     sandbox.put("tx_account", t.signature.get.certId.get.creditCode)
     //要么上一份给result，重新建一份
-    val sr = ImpDataPreloadMgr.GetImpDataPreload(sTag, da)
-    val ol = scala.collection.mutable.ListBuffer.empty[Oper]
+    shim.sr = ImpDataPreloadMgr.GetImpDataPreload(sTag, da)
+    shim.mb = scala.collection.mutable.Map[String,Array[Byte]]()
+    shim.ol = scala.collection.mutable.ListBuffer.empty[Oper]
     //如果执行中出现异常,返回异常
     try{
       val cs = t.para.spec.get.codePackage
@@ -63,13 +64,12 @@ class SandboxJS(cid:String) extends Sandbox(cid){
           //利用kv记住cid对应的txid,并增加kv操作日志
           val txid = ByteString.copyFromUtf8(t.id).toByteArray()
           val key = WorldStateKeyPreFix+ cid
-          sr.Put(key,txid)
+          shim.sr.Put(key,txid)
           //ol value改为byte array
-          ol.append(new Oper(key, null, txid))
+          shim.ol.append(new Oper(key, null, txid))
           new ActionResult(1,None)
          //调用方法时只需要执行function
         case  Transaction.Type.CHAINCODE_INVOKE =>
-          var tm_start1 = System.currentTimeMillis()  
           val r1 = sandbox.eval(t.para.ipt.get.function)
           r1.asInstanceOf[ActionResult]
       }

@@ -31,7 +31,7 @@ trait ISupplySplit {
 }
 
 
-package object SupplyType {
+object SupplyType {
     object ACTION {
       val SignShare = "SignShare"
       val SignFixed = "SignFixed"
