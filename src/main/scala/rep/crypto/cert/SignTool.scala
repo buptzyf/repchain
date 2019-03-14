@@ -22,6 +22,7 @@ import scala.collection.mutable
 import java.io._
 import java.util.{ ArrayList, List }
 import rep.app.conf.SystemProfile
+import scala.util.control.Breaks._
 
 /**
  * 负责签名和验签的工具了，所有相关的功能都调用该类
@@ -42,13 +43,13 @@ object SignTool {
     }
   }
 
-  private def getNodePrivateKey(alias:String): PrivateKey = {
+  private def getNodePrivateKey(alias: String): PrivateKey = {
     val sk = keyStores(alias).getKey(alias, key_password(alias).toCharArray())
     sk.asInstanceOf[PrivateKey]
   }
 
   //根据CertId实现签名
-  def sign4Node(nodeName:String, message: Array[Byte]): Array[Byte] = {
+  def sign4Node(nodeName: String, message: Array[Byte]): Array[Byte] = {
     var pk: PrivateKey = null
     if (this.keyStores.contains(nodeName)) {
       pk = getNodePrivateKey(nodeName)
@@ -69,24 +70,24 @@ object SignTool {
     //todo
     null
   }
-  
-  private def getVerifyCert(certinfo:CertId):PublicKey={
-    var pkcert : Certificate = null
-    if(certinfo.certName.equalsIgnoreCase("")){
+
+  private def getVerifyCert(certinfo: CertId): PublicKey = {
+    var pkcert: Certificate = null
+    if (certinfo.certName.equalsIgnoreCase("")) {
       pkcert = getNodePublicKeyByName(certinfo.creditCode)
     }
-    
-    if(pkcert == null){
+
+    if (pkcert == null) {
       pkcert = getThirdPublicKeyByName(certinfo)
     }
-    
-    if(pkcert == null){
-      throw  new RuntimeException("验证签名时证书为空！") 
+
+    if (pkcert == null) {
+      throw new RuntimeException("验证签名时证书为空！")
     }
-    
+
     if (!this.signer.CertificateIsValid(new java.util.Date(), pkcert)) {
-        throw  new RuntimeException("验证签名时证书已经过期！") 
-      }
+      throw new RuntimeException("验证签名时证书已经过期！")
+    }
     pkcert.getPublicKey
   }
 
@@ -101,9 +102,8 @@ object SignTool {
     this.signer.verify(signature, message, publicKey)
   }
 
-  
   //节点启动时需要调用该函数初始化节点私钥
-  def loadNodePrivateKey(nodeName:String, password: String, path: String) = {
+  def loadNodePrivateKey(nodeName: String, password: String, path: String) = {
     synchronized {
       key_password(nodeName) = password
       val fis = new FileInputStream(new File(path))
@@ -121,7 +121,7 @@ object SignTool {
   //节点启动时需要调用该函数初始化节点公钥
   def loadNodePublicKey(password: String, path: String) = {
     synchronized {
-      if(this.PublickeyCerts.isEmpty){
+      if (this.PublickeyCerts.isEmpty) {
         val fis = new FileInputStream(new File(path))
         val pwd = password.toCharArray()
         var trustKeyStore = KeyStore.getInstance(KeyStore.getDefaultType)
@@ -145,5 +145,20 @@ object SignTool {
       list.add(alias._1)
     }
     list
+  }
+
+  //判断某个名称是否是共识节点
+  def isNode4Credit(credit: String): Boolean = {
+    var r: Boolean = false
+    val n = credit + "."
+    breakable(
+      this.PublickeyCerts.foreach(f => {
+        val name = f._1
+        if (name.indexOf(n) == 0) {
+          r = true
+          break
+        }
+      }))
+    r
   }
 }
