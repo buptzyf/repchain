@@ -94,6 +94,7 @@ class ContractCert  extends IContract {
         val signer = SerializeUtils.deserialise(signerContent).asInstanceOf[Signer]
         if (!signer.certNames.contains(data.name))
           signer.addCertNames(data.name)
+          ctx.api.setVal(signerKey, signer)
       }
       ActionResult(1, None)
     } else {
@@ -105,7 +106,7 @@ class ContractCert  extends IContract {
   def rollback(map: Map[String, Byte]): Unit = {}
 
   /**
-    * 用户证书禁用
+    * 用户证书禁用、启用
     * @param ctx
     * @param data
     * @return
@@ -121,7 +122,7 @@ class ContractCert  extends IContract {
       ActionResult(0,Some(certNotExists))
     } else {
       val cert = SerializeUtils.deserialise(certInfo).asInstanceOf[Certificate]
-      cert.withCertValid(false)
+      cert.withCertValid(data.status)
       ctx.api.setVal(certKey, cert)
       ActionResult(1,None)
     }
