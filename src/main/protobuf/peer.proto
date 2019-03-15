@@ -41,7 +41,8 @@ message Signer{
     string name = 1;    //姓名或机构名, 用于填充合约文本
     string credit_code = 2; //社会信用代码, 与个人或机构唯一绑定
     string mobile = 3;  // 手机号码,用于接收通知
-    map<string, Certificate> certs = 4; //签名者证书标识，可用于下载证书
+    repeated string cert_names  = 4;//存放用户所有证书的名称，用户具体的证书单独存放，方便证书的操作，用户在增加证书的时候，在这个列表中增加证书的名称。
+    //map<string, Certificate> certs = 4; //签名者证书标识，可用于下载证书
 }
 
 //账户证书标示
