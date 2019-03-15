@@ -120,7 +120,7 @@ class DeploySpec(_system: ActorSystem)
     
     val cid4 = new ChaincodeId("Assets",3)
     
-/*
+
     val sysName2 = "12110107bi45jh675g.node2"
     //建立PeerManager实例是为了调用transactionCreator(需要用到密钥签名)，无他
     //val pm2 = system.actorOf(ModuleManager.props("pm2", sysName2))
@@ -131,6 +131,6 @@ class DeploySpec(_system: ActorSystem)
     probe.send(sandbox, msg_send4)
     val msg_recv4 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
     msg_recv4.r.code should be (-2)
-    */
+    
   }
 }
