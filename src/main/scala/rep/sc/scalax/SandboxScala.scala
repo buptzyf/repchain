@@ -50,30 +50,38 @@ class SandboxScala(cid:ChaincodeId) extends Sandbox(cid){
     //如果执行中出现异常,返回异常
     try{
       val tx_cid = getTXCId(t)
+
       val r: ActionResult = t.`type` match {
         //如果cid对应的合约class不存在，根据code生成并加载该class
         case Transaction.Type.CHAINCODE_DEPLOY => 
-          //热加载code对应的class
-          val code = t.para.spec.get.codePackage
-
-          val clazz = Compiler.compilef(code,tx_cid)
-          cobj = clazz.getConstructor().newInstance().asInstanceOf[IContract]
-          //cobj = new ContractAssets()
-          cobj.init(ctx)
-          //deploy返回chancode.name
-          //利用kv记住cid对应的txid,并增加kv操作日志,以便恢复deploy时能根据cid找到当时deploy的tx及其代码内容
-          val txid = ByteString.copyFromUtf8(t.id).toByteArray()
+          //当：1.已存在同样的cid; 2.coder并非本人; 否决部署请求
           val key_tx = WorldStateKeyPreFix+ tx_cid
-          shim.sr.Put(key_tx,txid)
-          shim.ol.append(new Oper(key_tx, null, txid))
-          
-          //利用kv记住合约的开发者
-          val coder =  ByteString.copyFromUtf8(t.signature.get.certId.get.creditCode).toByteArray()
           val key_code =  WorldStateKeyPreFix+ cid.chaincodeName  
-          shim.sr.Put(key_code,coder)
-          shim.ol.append(new Oper(key_code, null, coder))
+          val coder = shim.sr.Get(key_code)
           
-          new ActionResult(1,None)
+          if(shim.sr.Get(key_tx) != null)
+            ActionResult(-1, Some("存在重复的合约Id"))
+          else if(coder!= null && !t.signature.get.certId.get.creditCode.equals(new String(coder))){
+                ActionResult(-2, Some("合约只能由部署者升级更新"))
+          }else{          
+            //热加载code对应的class
+            val code = t.para.spec.get.codePackage
+            val clazz = Compiler.compilef(code,tx_cid)
+            cobj = clazz.getConstructor().newInstance().asInstanceOf[IContract]
+            //cobj = new ContractAssets()
+            cobj.init(ctx)
+            //deploy返回chancode.name
+            //利用kv记住cid对应的txid,并增加kv操作日志,以便恢复deploy时能根据cid找到当时deploy的tx及其代码内容
+            val txid = ByteString.copyFromUtf8(t.id).toByteArray()
+            shim.sr.Put(key_tx,txid)
+            shim.ol.append(new Oper(key_tx, null, txid))
+            
+            //利用kv记住合约的开发者
+            val coder =  ByteString.copyFromUtf8(t.signature.get.certId.get.creditCode).toByteArray()
+            shim.sr.Put(key_code,coder)
+            shim.ol.append(new Oper(key_code, null, coder))            
+            new ActionResult(1,None)
+          }
          //新建class实例并执行合约,传参为json数据
           //TODO case  Transaction.Type.CHAINCODE_DESC 增加对合约描述的处理
         case  Transaction.Type.CHAINCODE_INVOKE =>

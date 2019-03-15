@@ -65,7 +65,7 @@ object Compiler{
  */
 class Compiler(targetDir: Option[File], bDebug:Boolean) {
   //合约类名前缀
-  val PRE_CLS_NAME = "sha"
+  val PRE_CLS_NAME = "SC_"
   //反射工具对象
   val tb = currentMirror.mkToolBox()
   //源文件路径

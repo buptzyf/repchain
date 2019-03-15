@@ -151,9 +151,9 @@ class TransProcessor(name: String, da:String, parent: ActorRef) extends Actor {
    */
   def getSandboxActor(t: Transaction,from:ActorRef, da:String): ActorRef = {
     //如果已经有对应的actor实例，复用之，否则建实例,actor name加字母前缀
-    val cid = getTXCId(t)
-    val sn = PRE_SUB_ACTOR+cid
-    //log.info(s"idstr:$sn")
+    val tx_cid = getTXCId(t)
+    val cid = t.cid.get
+    val sn = PRE_SUB_ACTOR+tx_cid
     //如果已经有对应的actor实例，复用之，否则建实例,actor name加字母前缀
     val cref = context.child(sn)
     cref match {
@@ -164,7 +164,7 @@ class TransProcessor(name: String, da:String, parent: ActorRef) extends Actor {
           //println(s"${pe.getSysTag} do invoke")
           //尝试从持久化恢复,找到对应的Deploy交易，并先执行之
           val sr = ImpDataAccess.GetDataAccess(sTag)
-          val tidVal =  sr.Get(WorldStateKeyPreFix+ cid)
+          val tidVal =  sr.Get(WorldStateKeyPreFix+ tx_cid)
           if(tidVal==null)
             throw new SandboxException(ERR_INVOKE_CHAINCODE_NOT_EXIST)
           val txId = SerializeUtils.deserialiseJson(tidVal).asInstanceOf[String]
