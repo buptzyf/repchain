@@ -50,6 +50,8 @@ import org.json4s.native.Serialization.writePretty
 import org.json4s.native.Serialization
 import org.json4s.native.Serialization.{read, write}
 
+import rep.crypto.cert.SignTool
+
 /** 合约容器实现的单元测试
  *  @author c4w
  *  @param _system 测试用例所在的actor System.
@@ -97,13 +99,13 @@ class DeploySpec(_system: ActorSystem)
     val t1 = PeerHelper.createTransaction4Deploy(sysName, cid,
        l1, "",5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
 
-    val msg_send1 = new DoTransaction(t1, probe.ref, "")
+    val msg_send1 = new DoTransaction(t1, probe.ref, "dbnumber")
     probe.send(sandbox, msg_send1)
     val msg_recv1 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
     msg_recv1.r.code should be (1)
     
     //同样合约id不允许重复部署
-    val msg_send2 = new DoTransaction(t1, probe.ref, "")
+    val msg_send2 = new DoTransaction(t1, probe.ref, "dbnumber")
     probe.send(sandbox, msg_send1)
     val msg_recv2 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
     msg_recv2.r.code should be (-1)
@@ -112,7 +114,7 @@ class DeploySpec(_system: ActorSystem)
     //不同合约部署者不允许部署同样名称不同版本合约
     val t3 = PeerHelper.createTransaction4Deploy(sysName, cid3,
        l1, "",5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
-    val msg_send3 = new DoTransaction(t3, probe.ref, "")
+    val msg_send3 = new DoTransaction(t3, probe.ref, "dbnumber")
     probe.send(sandbox, msg_send3)
     val msg_recv3 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
     msg_recv3.r.code should be (1)
@@ -121,13 +123,17 @@ class DeploySpec(_system: ActorSystem)
     val cid4 = new ChaincodeId("Assets",3)
     
 
+    
+    
     val sysName2 = "12110107bi45jh675g.node2"
     //建立PeerManager实例是为了调用transactionCreator(需要用到密钥签名)，无他
     //val pm2 = system.actorOf(ModuleManager.props("pm2", sysName2))
+    //在这里添加一个私钥的装载，因为系统默认只装载自己的节点私钥
+    SignTool.loadPrivateKey("12110107bi45jh675g.node2", "123", "jks/12110107bi45jh675g.node2.jks")
     //同一合约部署者允许部署同样名称不同版本合约
     val t4 = PeerHelper.createTransaction4Deploy(sysName2, cid4,
        l1, "",5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
-    val msg_send4 = new DoTransaction(t4, probe.ref, "")
+    val msg_send4 = new DoTransaction(t4, probe.ref, "dbnumber")
     probe.send(sandbox, msg_send4)
     val msg_recv4 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
     msg_recv4.r.code should be (-2)
