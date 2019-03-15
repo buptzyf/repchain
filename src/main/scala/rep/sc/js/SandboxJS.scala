@@ -36,7 +36,7 @@ import rep.sc.contract.ActionResult
 /**
  * @author c4w
  */
-class SandboxJS(cid:String) extends Sandbox(cid){
+class SandboxJS(cid:ChaincodeId) extends Sandbox(cid){
  
   val sandbox= new ScriptEngineManager().getEngineByName("nashorn")
   sandbox.put("shim",shim)
