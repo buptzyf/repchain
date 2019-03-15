@@ -58,16 +58,11 @@ case class Transfer(from:String, to:String, amount:Int)
      * 根据action,找到对应的method，并将传入的json字符串parse为method需要的传入参数
      */
     def onAction(ctx: ContractContext,action:String, sdata:String ):ActionResult={
-      //println(s"onAction---")
-      //return "transfer ok"
-      val json = parse(sdata)
-      
+      val json = parse(sdata)      
       action match {
         case "transfer" => 
-          println(s"transfer oook")
           transfer(ctx,json.extract[Transfer])
         case "set" => 
-          println(s"set") 
           set(ctx, json.extract[Map[String,Int]])
       }
     }

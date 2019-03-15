@@ -45,6 +45,7 @@ import rep.sc.contract.ActionResult
  * 
  */
 object Sandbox {
+  val SplitChainCodeId = "_"
   //日志前缀
   val log_prefix = "Sandbox-"
   //t:中含txid可以找到原始交易; r:执行结果; merkle:执行完worldstate的hash; err:执行异常
@@ -75,7 +76,7 @@ object Sandbox {
    *  @return 链码id字符串
    */
   def getChaincodeId(c: ChaincodeId): String={
-    c.chaincodeName + c.version
+    c.chaincodeName + SplitChainCodeId + c.version
   }  
   /** 从部署合约的交易，获得其部署的合约的链码id
    *  @param t 交易对象
@@ -95,7 +96,7 @@ object Sandbox {
  * @constructor 以合约在区块链上的链码id作为合约容器id建立实例
  * @param cid 链码id
  */
-abstract class Sandbox(cid:String) extends Actor {
+abstract class Sandbox(cid:ChaincodeId) extends Actor {
   import TransProcessor._
   import Sandbox._
   import spray.json._
@@ -105,8 +106,8 @@ abstract class Sandbox(cid:String) extends Actor {
   val sTag =pe.getSysTag
    
 
-  //与底层交互的api实例
-  val shim = new Shim(context.system, cid)
+  //与底层交互的api实例,不同版本的合约KV空间重叠
+  val shim = new Shim(context.system, cid.chaincodeName)
   val addr_self = akka.serialization.Serialization.serializedActorPath(self)
 
   /** 消息处理主流程,包括对交易处理请求、交易的预执行处理请求、从存储恢复合约的请求
