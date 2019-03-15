@@ -73,14 +73,14 @@ class SupplySpec(_system: ActorSystem)
   // or native.Serialization
   implicit val formats = DefaultFormats
 
-  def this() = this(ActorSystem("SandBoxSpec", new ClusterSystem("1", InitType.MULTI_INIT, false).getConf))
+  def this() = this(ActorSystem("SandBoxSpec", new ClusterSystem("121000005l35120456.node1", InitType.MULTI_INIT, false).getConf))
 
   override def afterAll: Unit = Await.ready(system.terminate(), Duration.Inf)
 
   //Scala实现的资产管理合约测试，包括合约的部署、调用、结果返回验证
   "container" should "deploy supply contract and call it for splitting then" in {
-    val sysName = "1"
-    val dbTag = "1"
+    val sysName = "121000005l35120456.node1"
+    val dbTag = "121000005l35120456.node1"
     //建立PeerManager实例是为了调用transactionCreator(需要用到密钥签名)，无他
     val pm = system.actorOf(ModuleManager.props("pm", sysName))
     //加载合约脚本
