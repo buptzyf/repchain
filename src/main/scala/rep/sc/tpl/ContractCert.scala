@@ -122,6 +122,7 @@ class ContractCert  extends IContract {
     } else {
       val cert = SerializeUtils.deserialise(certInfo).asInstanceOf[Certificate]
       cert.withCertValid(false)
+      ctx.api.setVal(certKey, cert)
       ActionResult(1,None)
     }
   }
