@@ -123,8 +123,8 @@ class Shim(system: ActorSystem, cName: String) {
     get(pre_key + key)
   }
 
-  def getStateEx(pre:String, key: Key): Array[Byte] = {
-    get(pre +PRE_SPLIT+ key)
+  def getStateEx(cName:String, key: Key): Array[Byte] = {
+    get(WorldStateKeyPreFix + cName + PRE_SPLIT + key)
   }
   
   //禁止脚本内调用此方法, 上下文应严密屏蔽不必要的方法和变量
