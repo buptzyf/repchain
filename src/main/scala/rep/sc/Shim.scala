@@ -84,8 +84,9 @@ class Shim(system: ActorSystem, cName: String) {
   import Shim._
   import rep.storage.IdxPrefix._
 
+  val PRE_SPLIT = "_"
   //本chaincode的 key前缀
-  val pre_key = WorldStateKeyPreFix + cName + "_"
+  val pre_key = WorldStateKeyPreFix + cName + PRE_SPLIT
   //存储模块提供的system单例
   val pe = PeerExtension(system)
   //从交易传入, 内存中的worldState快照
@@ -123,7 +124,7 @@ class Shim(system: ActorSystem, cName: String) {
   }
 
   def getStateEx(pre:String, key: Key): Array[Byte] = {
-    get(pre + key)
+    get(pre +PRE_SPLIT+ key)
   }
   
   //禁止脚本内调用此方法, 上下文应严密屏蔽不必要的方法和变量
