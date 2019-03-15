@@ -123,7 +123,7 @@ class Shim(system: ActorSystem, cName: String) {
   }
 
   def getStateEx(pre:String, key: Key): Array[Byte] = {
-    get(pre_key + key)
+    get(pre + key)
   }
   
   //禁止脚本内调用此方法, 上下文应严密屏蔽不必要的方法和变量

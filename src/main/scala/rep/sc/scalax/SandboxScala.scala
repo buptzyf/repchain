@@ -36,9 +36,8 @@ import rep.sc.contract._
 /**
  * @author c4w
  */
-class SandboxScala(cid:String) extends Sandbox(cid){
+class SandboxScala(cid:ChaincodeId) extends Sandbox(cid){
   var cobj:IContract = null
-  val pcid = cid
   
   def doTransaction(t:Transaction,from:ActorRef, da:String):DoTransactionResult ={
     //上下文可获得交易
@@ -50,24 +49,30 @@ class SandboxScala(cid:String) extends Sandbox(cid){
    val ctx = new ContractContext(shim,t)
     //如果执行中出现异常,返回异常
     try{
-      val cid = getTXCId(t)
+      val tx_cid = getTXCId(t)
       val r: ActionResult = t.`type` match {
         //如果cid对应的合约class不存在，根据code生成并加载该class
         case Transaction.Type.CHAINCODE_DEPLOY => 
           //热加载code对应的class
           val code = t.para.spec.get.codePackage
 
-          val clazz = Compiler.compilef(code,pcid)
+          val clazz = Compiler.compilef(code,tx_cid)
           cobj = clazz.getConstructor().newInstance().asInstanceOf[IContract]
           //cobj = new ContractAssets()
           cobj.init(ctx)
           //deploy返回chancode.name
           //利用kv记住cid对应的txid,并增加kv操作日志,以便恢复deploy时能根据cid找到当时deploy的tx及其代码内容
           val txid = ByteString.copyFromUtf8(t.id).toByteArray()
-          val key = WorldStateKeyPreFix+ cid
-          shim.sr.Put(key,txid)
-          //ol value改为byte array
-          shim.ol.append(new Oper(key, null, txid))
+          val key_tx = WorldStateKeyPreFix+ tx_cid
+          shim.sr.Put(key_tx,txid)
+          shim.ol.append(new Oper(key_tx, null, txid))
+          
+          //利用kv记住合约的开发者
+          val coder =  ByteString.copyFromUtf8(t.signature.get.certId.get.creditCode).toByteArray()
+          val key_code =  WorldStateKeyPreFix+ cid.chaincodeName  
+          shim.sr.Put(key_code,coder)
+          shim.ol.append(new Oper(key_code, null, coder))
+          
           new ActionResult(1,None)
          //新建class实例并执行合约,传参为json数据
           //TODO case  Transaction.Type.CHAINCODE_DESC 增加对合约描述的处理
