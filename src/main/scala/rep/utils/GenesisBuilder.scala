@@ -62,7 +62,7 @@ object GenesisBuilder {
                l1, "",5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
     translist(0) = dep_trans
     
-    System.out.println(Json4s.compactJson(dep_trans))
+    //System.out.println(Json4s.compactJson(dep_trans))
     
     var signers : Array[Signer] = new Array[Signer](6)
     signers(0) = Signer("node1","121000005l35120456","18912345678",List("node1")) 
@@ -76,20 +76,20 @@ object GenesisBuilder {
     
     for(i<-0 to 5){
         translist(i+1) = PeerHelper.createTransaction4Invoke("951002007l78123233.super_admin", cid,
-                    "signUpSigner", Seq(Json4s.compactJson(signers(i))))
+                    "SignUpSigner", Seq(Json4s.compactJson(signers(i))))
     }
     
     
     for(i<-0 to 5){
-      //val certfile = scala.io.Source.fromFile("jks/"+signers(i).creditCode+"."+signers(i).name+".cer")
-      //val certstr = try certfile.mkString finally certfile.close()
-      val cert = SignTool.getCertByFile("jks/"+signers(i).creditCode+"."+signers(i).name+".cer")
+      val certfile = scala.io.Source.fromFile("jks/"+signers(i).creditCode+"."+signers(i).name+".cer")
+      val certstr = try certfile.mkString finally certfile.close()
+     // val cert = SignTool.getCertByFile("jks/"+signers(i).creditCode+"."+signers(i).name+".cer")
       val millis = System.currentTimeMillis()
       
-      val tmp = rep.protos.peer.Certificate(Json4s.compactJson(cert),"SHA1withECDSA",true,Option(Timestamp(millis/1000 , ((millis % 1000) * 1000000).toInt)))
+      val tmp = rep.protos.peer.Certificate(certstr,"SHA1withECDSA",true,Option(Timestamp(millis/1000 , ((millis % 1000) * 1000000).toInt)))
       val a : CertInfo = CertInfo(signers(i).creditCode,signers(i).name,tmp)
       translist(i+7) = PeerHelper.createTransaction4Invoke("951002007l78123233.super_admin", cid,
-                    "signUpSigner", Seq(Json4s.compactJson(a)))
+                    "SignUpCert", Seq(Json4s.compactJson(a)))
     }
     
     

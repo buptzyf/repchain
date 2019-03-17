@@ -1,56 +1,268 @@
 {
   "version" : 1,
-  "timestamp" : "2017-05-22T11:07:32.086Z",
+  "height" : "1",
   "transactions" : [ {
+    "id" : "a222ed10-488c-11e9-8ccb-0928b55d1500",
     "type" : "CHAINCODE_DEPLOY",
-    "chaincodeID" : "cGF0aDogIiIKbmFtZTogIjhhNDNmMzVmZGRjZWYwMjY4ZGI1YmNlMWY4M2U3ZGNkYTQzOWM3MzRiYmQxYjk5ODI0MTEyNDY5NDgzNWU1YjMiCg==",
-    "payload" : {
-      "chaincodeID" : {
-        "name" : "8a43f35fddcef0268db5bce1f83e7dcda439c734bbd1b998241124694835e5b3"
-      },
-      "ctorMsg" : { },
-      "timeout" : 1000,
-      "secureContext" : "secureContext",
-      "codePackage" : "DQovKg0KICogQ29weXJpZ2h0ICAyMDE4IEJsb2NrY2hhaW4gVGVjaG5vbG9neSBhbmQgQXBwbGljYXRpb24gSm9pbnQgTGFiLCBMaW5rZWwgVGVjaG5vbG9neSBDby4sIEx0ZCwgQmVpamluZywgRmludGVjaCBSZXNlYXJjaCBDZW50ZXIgb2YgSVNDQVMuDQogKiBMaWNlbnNlZCB1bmRlciB0aGUgQXBhY2hlIExpY2Vuc2UsIFZlcnNpb24gMi4wICh0aGUgIkxpY2Vuc2UiKTsNCiAqIHlvdSBtYXkgbm90IHVzZSB0aGlzIGZpbGUgZXhjZXB0IGluIGNvbXBsaWFuY2Ugd2l0aCB0aGUgTGljZW5zZS4NCiAqIFlvdSBtYXkgb2J0YWluIGEgY29weSBvZiB0aGUgTGljZW5zZSBhdA0KICoNCiAqICAgICAgaHR0cDovL3d3dy5hcGFjaGUub3JnL2xpY2Vuc2VzL0xJQ0VOU0UtMi4wDQogKg0KICogVW5sZXNzIHJlcXVpcmVkIGJ5IGFwcGxpY2FibGUgbGF3IG9yIGFncmVlZCB0byBpbiB3cml0aW5nLCBzb2Z0d2FyZQ0KICogZGlzdHJpYnV0ZWQgdW5kZXIgdGhlIExpY2Vuc2UgaXMgZGlzdHJpYnV0ZWQgb24gYW4gIkFTIElTIiBCQSBTSVMsDQogKiBXSVRIT1VUIFdBUlJBTlRJRVMgT1IgQ09ORElUSU9OUyBPRiBBTlkgS0lORCwgZWl0aGVyIGV4cHJlc3Mgb3IgaW1wbGllZC4NCiAqIFNlZSB0aGUgTGljZW5zZSBmb3IgdGhlIHNwZWNpZmljIGxhbmd1YWdlIGdvdmVybmluZyBwZXJtaXNzaW9ucyBhbmQNCiAqIGxpbWl0YXRpb25zIHVuZGVyIHRoZSBMaWNlbnNlLg0KICoNCiAqLw0KDQppbXBvcnQgb3JnLmpzb240cy5fDQppbXBvcnQgb3JnLmpzb240cy5qYWNrc29uLkpzb25NZXRob2RzLl8NCmltcG9ydCByZXAuc2MuY29udHJhY3QuXw0KDQovKioNCiAqIOi1hOS6p+euoeeQhuWQiOe6pg0KICovDQoNCmNsYXNzIENvbnRyYWN0QXNzZXRzVFBMIGV4dGVuZHMgSUNvbnRyYWN0ew0KY2FzZSBjbGFzcyBUcmFuc2Zlcihmcm9tOlN0cmluZywgdG86U3RyaW5nLCBhbW91bnQ6SW50KQ0KDQogIGltcGxpY2l0IHZhbCBmb3JtYXRzID0gRGVmYXVsdEZvcm1hdHMNCiAgDQogICAgZGVmIGluaXQoY3R4OiBDb250cmFjdENvbnRleHQpeyAgICAgIA0KICAgICAgcHJpbnRsbihzInRpZDogJGN0eC50LnR4aWQiKQ0KICAgIH0NCiAgICANCiAgICBkZWYgc2V0KGN0eDogQ29udHJhY3RDb250ZXh0LCBkYXRhOk1hcFtTdHJpbmcsSW50XSk6T2JqZWN0PXsNCiAgICAgIHByaW50bG4ocyJzZXQgZGF0YTokZGF0YSIpDQogICAgICBmb3IoKGssdik8LWRhdGEpew0KICAgICAgICBjdHguYXBpLnNldFZhbChrLCB2KQ0KICAgICAgfQ0KICAgICAgbnVsbA0KICAgIH0NCiAgICANCiAgICBkZWYgdHJhbnNmZXIoY3R4OiBDb250cmFjdENvbnRleHQsIGRhdGE6VHJhbnNmZXIpOk9iamVjdD17DQogICAgICB2YWwgc2Zyb20gPSAgY3R4LmFwaS5nZXRWYWwoZGF0YS5mcm9tKQ0KICAgICAgdmFyIGRmcm9tID1zZnJvbS50b1N0cmluZy50b0ludA0KICAgICAgaWYoZGZyb20gPCBkYXRhLmFtb3VudCkNCiAgICAgICAgdGhyb3cgbmV3IEV4Y2VwdGlvbigi5L2Z6aKd5LiN6LazIikNCiAgICAgIHZhciBkdG8gPSBjdHguYXBpLmdldFZhbChkYXRhLnRvKS50b1N0cmluZy50b0ludA0KICAgICAgY3R4LmFwaS5zZXRWYWwoZGF0YS5mcm9tLGRmcm9tIC0gZGF0YS5hbW91bnQpDQogICAgICBjdHguYXBpLnNldFZhbChkYXRhLnRvLGR0byArIGRhdGEuYW1vdW50KQ0KICAgICAgInRyYW5zZmVyIG9rIg0KICAgIH0NCiAgICAvKioNCiAgICAgKiDmoLnmja5hY3Rpb24s5om+5Yiw5a+55bqU55qEbWV0aG9k77yM5bm25bCG5Lyg5YWl55qEanNvbuWtl+espuS4snBhcnNl5Li6bWV0aG9k6ZyA6KaB55qE5Lyg5YWl5Y+C5pWwDQogICAgICovDQogICAgZGVmIG9uQWN0aW9uKGN0eDogQ29udHJhY3RDb250ZXh0LGFjdGlvbjpTdHJpbmcsIHNkYXRhOlN0cmluZyApOk9iamVjdD17DQogICAgICAvL3ByaW50bG4ocyJvbkFjdGlvbi0tLSIpDQogICAgICAvL3JldHVybiAidHJhbnNmZXIgb2siDQogICAgICB2YWwganNvbiA9IHBhcnNlKHNkYXRhKQ0KICAgICAgDQogICAgICBhY3Rpb24gbWF0Y2ggew0KICAgICAgICBjYXNlICJ0cmFuc2ZlciIgPT4gDQogICAgICAgICAgcHJpbnRsbihzInRyYW5zZmVyIG9vb2siKQ0KICAgICAgICAgIHRyYW5zZmVyKGN0eCxqc29uLmV4dHJhY3RbVHJhbnNmZXJdKQ0KICAgICAgICBjYXNlICJzZXQiID0+IA0KICAgICAgICAgIHByaW50bG4ocyJzZXQiKSANCiAgICAgICAgICBzZXQoY3R4LCBqc29uLmV4dHJhY3RbTWFwW1N0cmluZyxJbnRdXSkNCiAgICAgIH0NCiAgICB9DQogICAgDQp9DQo=",
+    "cid" : {
+      "chaincodeName" : "REPCHAINACCOUNTMGR",
+      "version" : 1
+    },
+    "spec" : {
+      "timeout" : 5000,
+      "codePackage" : "package rep.sc.tpl\n\nimport java.io.{ByteArrayInputStream, StringReader}\nimport java.security.cert.{CertificateFactory, X509Certificate}\n\nimport org.bouncycastle.util.io.pem.PemReader\nimport rep.sc.contract._\nimport rep.protos.peer._\nimport org.json4s.jackson.JsonMethods._\n\nimport scala.collection.mutable.Map\nimport org.json4s.{DefaultFormats, Formats, jackson}\nimport org.json4s.DefaultFormats\nimport rep.app.conf.SystemProfile\nimport rep.utils.{IdTool, SerializeUtils}\n\n/**\n  * @author zyf\n  */\n// 证书状态\n  case class CertStatus(credit_code: String, name: String, status: Boolean)\n  case class CertInfo(credit_code: String,name: String, cert: Certificate)\n\nclass ContractCert  extends IContract {\n  implicit val formats = DefaultFormats\n\n  val notNodeCert = \"非管理员操作\"\n  val signerExists = \"账户已存在\"\n  val signerNotExists = \"账户不存在\"\n  val certExists = \"证书已存在\"\n  val certNotExists = \"证书不存在\"\n  val unknownError = \"未知错误\"\n  val chaincodeName = SystemProfile.getAccountChaincodeName\n  val chaincodeVersion = SystemProfile.getAccountChaincodeVersion\n  val prefix = IdTool.getCid(ChaincodeId.apply(chaincodeName, chaincodeVersion))\n  val underline = \"_\"\n  val dot = \".\"\n  // 锚点，错误回退\n  var anchor: Map[String, Any] = Map()\n\n  object ACTION {\n    val SignUpSigner = \"SignUpSigner\"\n    val SignUpCert = \"SignUpCert\"\n    val UpdateCertStatus = \"UpdateCertStatus\"\n    val UpdateSigner = \"UpdateSigner\"\n  }\n\n  \n\n  /**\n    * 注册Signer账户\n    * @param ctx\n    * @param data\n    * @return\n    */\n  def signUpSigner(ctx: ContractContext, data:Signer):ActionResult = {\n    val isNodeCert = ctx.api.bNodeCreditCode(ctx.t.getSignature.getCertId.creditCode)\n    if (!isNodeCert) {\n      return ActionResult(0,Some(notNodeCert))\n    }\n    // 存Signer账户\n    val signerKey = prefix + underline + data.creditCode\n    val signer = ctx.api.getState(signerKey)\n    // 如果是null，表示已注销，如果不是null，则判断是否有值\n    if (signer == null || new String(signer).equalsIgnoreCase(\"null\")){\n      ctx.api.setVal(signerKey, data)\n      ActionResult(1,None)\n    } else {\n      ActionResult(0,Some(signerExists))\n    }\n  }\n\n  /**\n    * 注册用户证书：1、将name加到账户中；2、将Certificate保存\n    * @param ctx\n    * @param data\n    * @return\n    */\n  def signUpCert(ctx: ContractContext, data:CertInfo): ActionResult = {\n    val isNodeCert = ctx.api.bNodeCreditCode(ctx.t.getSignature.getCertId.creditCode)\n    if (!isNodeCert) {\n      return ActionResult(0,Some(notNodeCert))\n    }\n    val certKey = prefix + underline + data.credit_code + dot + data.name\n    val certInfo = ctx.api.getState(certKey)\n    val signerKey = prefix + underline + data.credit_code\n    val signerContent = ctx.api.getState(signerKey)\n    // 先判断证书，若证书不存在，则向账户添加name\n    if (certInfo == null || new String(certInfo).equalsIgnoreCase(\"null\")) {\n      val certificate = generateX509Cert(data.cert.certificate)\n      if (certificate.isEmpty) {\n        return ActionResult(0, Some(unknownError))\n      }\n      if (signerContent == null || new String(signerContent).equalsIgnoreCase(\"null\")){\n        return ActionResult(0,Some(signerNotExists))\n      } else {\n        ctx.api.setVal(certKey, certificate.get)\n        val signer = SerializeUtils.deserialise(signerContent).asInstanceOf[Signer]\n        if (!signer.certNames.contains(data.name))\n          signer.addCertNames(data.name)\n          ctx.api.setVal(signerKey, signer)\n      }\n      ActionResult(1, None)\n    } else {\n      ActionResult(0, Some(certExists))\n    }\n  }\n\n  // TODO\n  def rollback(map: Map[String, Byte]): Unit = {}\n\n  /**\n    * 用户证书禁用、启用\n    * @param ctx\n    * @param data\n    * @return\n    */\n  def updateCertStatus(ctx: ContractContext, data: CertStatus): ActionResult = {\n    val isNodeCert = ctx.api.bNodeCreditCode(ctx.t.getSignature.getCertId.creditCode)\n    if (!isNodeCert) {\n      return ActionResult(0,Some(notNodeCert))\n    }\n    val certKey = prefix + underline + data.credit_code + dot + data.name\n    val certInfo = ctx.api.getState(certKey)\n    if (certInfo == null || new String(certInfo).equalsIgnoreCase(\"null\")) {\n      ActionResult(0,Some(certNotExists))\n    } else {\n      val cert = SerializeUtils.deserialise(certInfo).asInstanceOf[Certificate]\n      cert.withCertValid(data.status)\n      ctx.api.setVal(certKey, cert)\n      ActionResult(1,None)\n    }\n  }\n\n  /**\n    * TODO 更新账户相关信息\n    * @param ctx\n    * @param data\n    * @return\n    */\n  def updateSigner(ctx: ContractContext, data: Signer): ActionResult = {\n    null\n  }\n\n\n  /**\n    * 根据pem字符串生成证书\n    * @param certPem\n    * @return\n    */\n  def generateX509Cert(certPem: String): Option[X509Certificate] = {\n    try {\n      val cf = CertificateFactory.getInstance(\"X.509\")\n      val pemReader = new PemReader(new StringReader(certPem))\n      val certByte = pemReader.readPemObject().getContent()\n      val x509Cert = cf.generateCertificate(new ByteArrayInputStream(certByte))\n      Some(x509Cert.asInstanceOf[X509Certificate])\n    } catch {\n      case ex: Exception =>\n        None\n    }\n  }\n\n  def init(ctx: ContractContext){\n    println(s\"tid: $ctx.t.txid\")\n  }\n\n\n  /**\n    * 合约方法入口\n    */\n  def onAction(ctx: ContractContext,action:String, sdata:String ): ActionResult={\n    val json = parse(sdata)\n\n    action match {\n      case ACTION.SignUpSigner =>\n        println(\"SignUpSigner\")\n        signUpSigner(ctx, json.extract[Signer])\n      case ACTION.SignUpCert =>\n        println(\"SignUpCert\")\n        signUpCert(ctx, json.extract[CertInfo])\n      case ACTION.UpdateCertStatus =>\n        println(\"UpdateCertStatus\")\n        updateCertStatus(ctx, json.extract[CertStatus])\n      case ACTION.UpdateSigner =>\n        println(\"UpdateSigner\")\n        updateSigner(ctx, json.extract[Signer])\n    }\n  }\n\n}",
       "ctype" : "CODE_SCALA"
     },
-    "txid" : "8a43f35fddcef0268db5bce1f83e7dcda439c734bbd1b998241124694835e5b3",
-    "timestamp" : "2018-11-29T14:38:45.076Z",
-    "confidentialityLevel" : "PUBLIC",
-    "confidentialityProtocolVersion" : "confidentialityProtocolVersion-1.0",
-    "nonce" : "bm9uY2U=",
-    "toValidators" : "dG9WYWxpZGF0b3Jz",
-    "cert" : "MURYOFBjSnVOOXBNdVY0andtYlE2ZnZWYnYzZ1BhV282OA==",
-    "signature" : "MEUCIQCR5tP4omkroZ5tojPM0cRZLBbgvR9VAubR/7Lj6kwqHQIgR8tEavffYs9R8A8zzvy6fCR6n/49fi2Ide2YK6Ok9bs="
+    "signature" : {
+      "certId" : {
+        "creditCode" : "121000005l35120456",
+        "certName" : "node1"
+      },
+      "tmLocal" : "2019-03-17T16:14:06.012Z",
+      "signature" : "MEQCICvF+5c5eK3HXI+jms+0/4a/NtRWTFi/Ma2KjTW2icQ7AiA+lozIunFuHhlqn/1mVNrkMGHJqcS1gR1050uORAYvDA=="
+    }
   }, {
+    "id" : "a29a6700-488c-11e9-8ccb-0928b55d1500",
     "type" : "CHAINCODE_INVOKE",
-    "chaincodeID" : "cGF0aDogIiIKbmFtZTogIjhhNDNmMzVmZGRjZWYwMjY4ZGI1YmNlMWY4M2U3ZGNkYTQzOWM3MzRiYmQxYjk5ODI0MTEyNDY5NDgzNWU1YjMiCg==",
-    "payload" : {
-      "chaincodeID" : {
-        "name" : "8a43f35fddcef0268db5bce1f83e7dcda439c734bbd1b998241124694835e5b3"
-      },
-      "ctorMsg" : {
-        "function" : "set",
-        "args" : [ "{\r\n  \"1AqZs6vhcLiiTvFxqS5CEqMw6xWuX9xqyi\" : 1000000,\r\n  \"1GvvHCFZPajq5yVY44n7bdmSfv2MJ5LyLs\" : 1000000,\r\n  \"16SrzMbzdLyGEUKY5FsdE8SVt5tQV1qmBY\" : 1000000,\r\n  \"12kAzqqhuq7xYgm9YTph1b9zmCpZPyUWxf\" : 1000000,\r\n  \"1MH9xedPTkWThJUgT8ZYehiGCM7bEZTVGN\" : 1000000\r\n}" ]
-      },
-      "timeout" : 1000,
-      "secureContext" : "secureContext",
-      "ctype" : "CODE_JAVASCRIPT"
+    "cid" : {
+      "chaincodeName" : "REPCHAINACCOUNTMGR",
+      "version" : 1
     },
-    "txid" : "6ba8d0f0-f3a1-11e8-9ca8-65457d6acc4c",
-    "timestamp" : "2018-11-29T14:38:45.555Z",
-    "confidentialityLevel" : "PUBLIC",
-    "confidentialityProtocolVersion" : "confidentialityProtocolVersion-1.0",
-    "nonce" : "bm9uY2U=",
-    "toValidators" : "dG9WYWxpZGF0b3Jz",
-    "cert" : "MURYOFBjSnVOOXBNdVY0andtYlE2ZnZWYnYzZ1BhV282OA==",
-    "signature" : "MEQCIHiRle45bE8QnbaHLmpxC98dF4RMbbJ6ZSD7HS/AAca+AiBK+v+5zWa2HwFDZ8jcKOhyF6911+6gHE5KOzW727QLBA=="
-  } ],
-  "consensusMetadata" : [ {
-    "endorser" : "MURYOFBjSnVOOXBNdVY0andtYlE2ZnZWYnYzZ1BhV282OA==",
-    "signature" : "MEYCIQDqw7IzZ0RFbY/WjIjZ+QOS25TUeK86lgyXcKQ+IVBkzAIhAMbEoeE7FMDQV4SB9wGy95JF0R7Yzc32vZT0BuErmnSK"
+    "ipt" : {
+      "function" : "SignUpSigner",
+      "args" : [ "{\"name\":\"node1\",\"creditCode\":\"121000005l35120456\",\"mobile\":\"18912345678\",\"certNames\":[\"node1\"]}" ]
+    },
+    "signature" : {
+      "certId" : {
+        "creditCode" : "951002007l78123233",
+        "certName" : "super_admin"
+      },
+      "tmLocal" : "2019-03-17T16:14:07.216Z",
+      "signature" : "MEUCIQDE5pVhbMjE6GICFF+0Did0ejoXjGZr4eBZUIDYCkIELAIgdWx6PiR9aWRGKktBK+G0BZq989wX9ycahjD1jLTNN2o="
+    }
   }, {
-    "endorser" : "MUx1djV2cTR2MUNSa1ROOThZTWhxUVYxRjE4bkd2MTFnWA==",
-    "signature" : "MEQCIBa3RtejmNrhi2txyTkCOxRwpdvl0b9C8y+zS85IpMraAiA2zRifigY2/I248JWw+0VKJNWi8OiQ/pIejs5RPvO/YA=="
+    "id" : "a29b7870-488c-11e9-8ccb-0928b55d1500",
+    "type" : "CHAINCODE_INVOKE",
+    "cid" : {
+      "chaincodeName" : "REPCHAINACCOUNTMGR",
+      "version" : 1
+    },
+    "ipt" : {
+      "function" : "SignUpSigner",
+      "args" : [ "{\"name\":\"node2\",\"creditCode\":\"12110107bi45jh675g\",\"mobile\":\"18912345678\",\"certNames\":[\"node2\"]}" ]
+    },
+    "signature" : {
+      "certId" : {
+        "creditCode" : "951002007l78123233",
+        "certName" : "super_admin"
+      },
+      "tmLocal" : "2019-03-17T16:14:07.223Z",
+      "signature" : "MEUCIHMHQa3Tr47WiY/+fWe0EBLqulR52r39akGeUIwGEzErAiEAz9qUo8SchnI9R3ChGm0ATpsDeHTaJnxqhbs0f1hZr7Y="
+    }
+  }, {
+    "id" : "a29b9f80-488c-11e9-8ccb-0928b55d1500",
+    "type" : "CHAINCODE_INVOKE",
+    "cid" : {
+      "chaincodeName" : "REPCHAINACCOUNTMGR",
+      "version" : 1
+    },
+    "ipt" : {
+      "function" : "SignUpSigner",
+      "args" : [ "{\"name\":\"node3\",\"creditCode\":\"122000002n00123567\",\"mobile\":\"18912345678\",\"certNames\":[\"node3\"]}" ]
+    },
+    "signature" : {
+      "certId" : {
+        "creditCode" : "951002007l78123233",
+        "certName" : "super_admin"
+      },
+      "tmLocal" : "2019-03-17T16:14:07.224Z",
+      "signature" : "MEQCICDdYUFiuvZOdFe4uOodcH7QNbqpWS71AcGZfwv/mp7tAiBD8j7iheQQzaMFi0xZv6PaP6+Or+rVGI+Zdc4cFMaWHA=="
+    }
+  }, {
+    "id" : "a29beda0-488c-11e9-8ccb-0928b55d1500",
+    "type" : "CHAINCODE_INVOKE",
+    "cid" : {
+      "chaincodeName" : "REPCHAINACCOUNTMGR",
+      "version" : 1
+    },
+    "ipt" : {
+      "function" : "SignUpSigner",
+      "args" : [ "{\"name\":\"node4\",\"creditCode\":\"921000005k36123789\",\"mobile\":\"18912345678\",\"certNames\":[\"node4\"]}" ]
+    },
+    "signature" : {
+      "certId" : {
+        "creditCode" : "951002007l78123233",
+        "certName" : "super_admin"
+      },
+      "tmLocal" : "2019-03-17T16:14:07.226Z",
+      "signature" : "MEYCIQCfNKGiKSJPVesEnhuEDbaEFMraMbLnAh0qnG23qUqtpAIhAL79MyS8ae58nULcca6k9LePpCBCNcB9IKo529GyQ5ep"
+    }
+  }, {
+    "id" : "a29c62d0-488c-11e9-8ccb-0928b55d1500",
+    "type" : "CHAINCODE_INVOKE",
+    "cid" : {
+      "chaincodeName" : "REPCHAINACCOUNTMGR",
+      "version" : 1
+    },
+    "ipt" : {
+      "function" : "SignUpSigner",
+      "args" : [ "{\"name\":\"node5\",\"creditCode\":\"921000006e0012v696\",\"mobile\":\"18912345678\",\"certNames\":[\"node5\"]}" ]
+    },
+    "signature" : {
+      "certId" : {
+        "creditCode" : "951002007l78123233",
+        "certName" : "super_admin"
+      },
+      "tmLocal" : "2019-03-17T16:14:07.229Z",
+      "signature" : "MEUCIQCq0lOkSHjrEEDePWHe2T1lYmZPOAznsmPXiLPar7OGNQIgW13KqwLgiLKuLE2yt7kws2bm4bIrqLxVZeCH/QgfPLo="
+    }
+  }, {
+    "id" : "a29c89e0-488c-11e9-8ccb-0928b55d1500",
+    "type" : "CHAINCODE_INVOKE",
+    "cid" : {
+      "chaincodeName" : "REPCHAINACCOUNTMGR",
+      "version" : 1
+    },
+    "ipt" : {
+      "function" : "SignUpSigner",
+      "args" : [ "{\"name\":\"super_admin\",\"creditCode\":\"951002007l78123233\",\"mobile\":\"18912345678\",\"certNames\":[\"super_admin\"]}" ]
+    },
+    "signature" : {
+      "certId" : {
+        "creditCode" : "951002007l78123233",
+        "certName" : "super_admin"
+      },
+      "tmLocal" : "2019-03-17T16:14:07.230Z",
+      "signature" : "MEUCICkqJ2lPhs3RQI7n/7XPyjeAcL0Gnka1c7GP2KwUc7HEAiEA8QRyJaQbcVAFWVNhTDObyx/LfgJFXl52qTBtnm+aY3I="
+    }
+  }, {
+    "id" : "a29f4900-488c-11e9-8ccb-0928b55d1500",
+    "type" : "CHAINCODE_INVOKE",
+    "cid" : {
+      "chaincodeName" : "REPCHAINACCOUNTMGR",
+      "version" : 1
+    },
+    "ipt" : {
+      "function" : "SignUpCert",
+      "args" : [ "{\"credit_code\":\"121000005l35120456\",\"name\":\"node1\",\"cert\":{\"certificate\":\"-----BEGIN CERTIFICATE-----\\nMIIBmjCCAT+gAwIBAgIEXIn07TAKBggqhkjOPQQDAjBWMQswCQYDVQQGEwJjbjEL\\nMAkGA1UECAwCYmoxCzAJBgNVBAcMAmJqMREwDwYDVQQKDAhyZXBjaGFpbjEOMAwG\\nA1UECwwFaXNjYXMxCjAIBgNVBAMMATEwHhcNMTkwMzE0MDYzMDA1WhcNMjAwMzEz\\nMDYzMDA1WjBWMQswCQYDVQQGEwJjbjELMAkGA1UECAwCYmoxCzAJBgNVBAcMAmJq\\nMREwDwYDVQQKDAhyZXBjaGFpbjEOMAwGA1UECwwFaXNjYXMxCjAIBgNVBAMMATEw\\nVjAQBgcqhkjOPQIBBgUrgQQACgNCAASlh+oDBPdwHEkpQT4/g4RX9ubP7jMM2Qod\\niFtsnv+ObQ3dxfQN/S515ePssn3HjPCwfzR3S1KY4O9vFtH1Jql9MAoGCCqGSM49\\nBAMCA0kAMEYCIQCG2NFkYx06oWahUDflmXDkoXyTBIvjnA/M2yJlou3RIQIhAJcA\\n1X1djf5oGPc+6GYh9g4YhQ59HxV3p6kAEuRI13PP\\n-----END CERTIFICATE-----\\n\",\"algType\":\"SHA1withECDSA\",\"certValid\":true,\"regTime\":{\"seconds\":1552810447,\"nanos\":233000000}}}" ]
+    },
+    "signature" : {
+      "certId" : {
+        "creditCode" : "951002007l78123233",
+        "certName" : "super_admin"
+      },
+      "tmLocal" : "2019-03-17T16:14:07.248Z",
+      "signature" : "MEQCIAklbBssr/DAm99j+KqQqOJauSqk2VmkI5OPu0w/lFdCAiA6pF51rTR0bqj+7LqltcTzpwWfB9Ydc4rEy9qcm/inzQ=="
+    }
+  }, {
+    "id" : "a29f9720-488c-11e9-8ccb-0928b55d1500",
+    "type" : "CHAINCODE_INVOKE",
+    "cid" : {
+      "chaincodeName" : "REPCHAINACCOUNTMGR",
+      "version" : 1
+    },
+    "ipt" : {
+      "function" : "SignUpCert",
+      "args" : [ "{\"credit_code\":\"12110107bi45jh675g\",\"name\":\"node2\",\"cert\":{\"certificate\":\"-----BEGIN CERTIFICATE-----\\nMIIBmTCCAT+gAwIBAgIEXIn2LzAKBggqhkjOPQQDAjBWMQswCQYDVQQGEwJjbjEL\\nMAkGA1UECAwCYmoxCzAJBgNVBAcMAmJqMREwDwYDVQQKDAhyZXBjaGFpbjEOMAwG\\nA1UECwwFaXNjYXMxCjAIBgNVBAMMATIwHhcNMTkwMzE0MDYzNTI3WhcNMjAwMzEz\\nMDYzNTI3WjBWMQswCQYDVQQGEwJjbjELMAkGA1UECAwCYmoxCzAJBgNVBAcMAmJq\\nMREwDwYDVQQKDAhyZXBjaGFpbjEOMAwGA1UECwwFaXNjYXMxCjAIBgNVBAMMATIw\\nVjAQBgcqhkjOPQIBBgUrgQQACgNCAAQbGHprzZj8UABd4LFvAoFVPFc/xDkWybEJ\\noF3iey/BvIVvBrB92xskV8ULlOt+qjQGIz0SdRiCrqs+YacCAo/xMAoGCCqGSM49\\nBAMCA0gAMEUCIDdarnwrREWGu3YQMvcFItU3e5X9J7kwgVw3uvZg77r0AiEAgIhG\\nTTVwdvjjewyeOXoVT/emsGz314jZJTYbtzoZiv8=\\n-----END CERTIFICATE-----\\n\",\"algType\":\"SHA1withECDSA\",\"certValid\":true,\"regTime\":{\"seconds\":1552810447,\"nanos\":250000000}}}" ]
+    },
+    "signature" : {
+      "certId" : {
+        "creditCode" : "951002007l78123233",
+        "certName" : "super_admin"
+      },
+      "tmLocal" : "2019-03-17T16:14:07.250Z",
+      "signature" : "MEYCIQDOQBu6oIMStNtzd6wMpo7JOAjCfkLxjyriuKmU/RTvBgIhAOHNuODGP2+KQiEFWaugp6G1TE8pAN3YATCXwioK50np"
+    }
+  }, {
+    "id" : "a2a00c50-488c-11e9-8ccb-0928b55d1500",
+    "type" : "CHAINCODE_INVOKE",
+    "cid" : {
+      "chaincodeName" : "REPCHAINACCOUNTMGR",
+      "version" : 1
+    },
+    "ipt" : {
+      "function" : "SignUpCert",
+      "args" : [ "{\"credit_code\":\"122000002n00123567\",\"name\":\"node3\",\"cert\":{\"certificate\":\"-----BEGIN CERTIFICATE-----\\nMIIBmTCCAT+gAwIBAgIEXIn6vTAKBggqhkjOPQQDAjBWMQswCQYDVQQGEwJjbjEL\\nMAkGA1UECAwCYmoxCzAJBgNVBAcMAmJqMREwDwYDVQQKDAhyZXBjaGFpbjEOMAwG\\nA1UECwwFaXNjYXMxCjAIBgNVBAMMATMwHhcNMTkwMzE0MDY1NDUzWhcNMjAwMzEz\\nMDY1NDUzWjBWMQswCQYDVQQGEwJjbjELMAkGA1UECAwCYmoxCzAJBgNVBAcMAmJq\\nMREwDwYDVQQKDAhyZXBjaGFpbjEOMAwGA1UECwwFaXNjYXMxCjAIBgNVBAMMATMw\\nVjAQBgcqhkjOPQIBBgUrgQQACgNCAASdBDKlL7mW1NEfYDDb63d6O3/MueUT0Czr\\nbzcmLhrDvRyIO2fHl/zR/qrNy76cuRi7EednNO/G7qTemnJQqC9oMAoGCCqGSM49\\nBAMCA0gAMEUCIEXfvQcCZsnBiCWEPV0gWmxnhBbRRXE9oirBwb4J0Tu+AiEAk7Z8\\n3MRWR022p7AYeshwIXpaDlIu3N4VxatMHh3rs5I=\\n-----END CERTIFICATE-----\\n\",\"algType\":\"SHA1withECDSA\",\"certValid\":true,\"regTime\":{\"seconds\":1552810447,\"nanos\":253000000}}}" ]
+    },
+    "signature" : {
+      "certId" : {
+        "creditCode" : "951002007l78123233",
+        "certName" : "super_admin"
+      },
+      "tmLocal" : "2019-03-17T16:14:07.253Z",
+      "signature" : "MEUCIDSQrveTk+jks6yOCL8kQrVCBF9nSJl+yM2et29C3zH7AiEA3p3Vd04jx15Q7WIX6wDtw7XjE1TxhbtTmoKhfe6Fgjs="
+    }
+  }, {
+    "id" : "a2a08180-488c-11e9-8ccb-0928b55d1500",
+    "type" : "CHAINCODE_INVOKE",
+    "cid" : {
+      "chaincodeName" : "REPCHAINACCOUNTMGR",
+      "version" : 1
+    },
+    "ipt" : {
+      "function" : "SignUpCert",
+      "args" : [ "{\"credit_code\":\"921000005k36123789\",\"name\":\"node4\",\"cert\":{\"certificate\":\"-----BEGIN CERTIFICATE-----\\nMIIBmjCCAT+gAwIBAgIEXIn75TAKBggqhkjOPQQDAjBWMQswCQYDVQQGEwJjbjEL\\nMAkGA1UECAwCYmoxCzAJBgNVBAcMAmJqMREwDwYDVQQKDAhyZXBjaGFpbjEOMAwG\\nA1UECwwFaXNjYXMxCjAIBgNVBAMMATQwHhcNMTkwMzE0MDY1OTQ5WhcNMjAwMzEz\\nMDY1OTQ5WjBWMQswCQYDVQQGEwJjbjELMAkGA1UECAwCYmoxCzAJBgNVBAcMAmJq\\nMREwDwYDVQQKDAhyZXBjaGFpbjEOMAwGA1UECwwFaXNjYXMxCjAIBgNVBAMMATQw\\nVjAQBgcqhkjOPQIBBgUrgQQACgNCAAQy8jrMgX4TF/iuA42wEpYr82qIzBVFZmoJ\\ndyQTu2Pu5Ot4Jfg1sa/ibY4fxXX/Rc2bN8U0+88A7JiEqa0pRAQUMAoGCCqGSM49\\nBAMCA0kAMEYCIQDLBrE3v62ztcucfxZ27M0JqcgKWKT1Cow3JyCLZnhAQwIhANaQ\\nIv1SgKX7fnhR3lga4IKdaFK6bpW/9YnDUsQ22kFL\\n-----END CERTIFICATE-----\\n\",\"algType\":\"SHA1withECDSA\",\"certValid\":true,\"regTime\":{\"seconds\":1552810447,\"nanos\":255000000}}}" ]
+    },
+    "signature" : {
+      "certId" : {
+        "creditCode" : "951002007l78123233",
+        "certName" : "super_admin"
+      },
+      "tmLocal" : "2019-03-17T16:14:07.256Z",
+      "signature" : "MEYCIQDNlM1BXu75zgdXTtKVQG2WoTupHLZTjMQk1ynIjNWvGwIhAMLs5jXFzm9BhojwXYyjIuP+eZYyhdSz1uMdrLZB7fUq"
+    }
+  }, {
+    "id" : "a2a0cfa0-488c-11e9-8ccb-0928b55d1500",
+    "type" : "CHAINCODE_INVOKE",
+    "cid" : {
+      "chaincodeName" : "REPCHAINACCOUNTMGR",
+      "version" : 1
+    },
+    "ipt" : {
+      "function" : "SignUpCert",
+      "args" : [ "{\"credit_code\":\"921000006e0012v696\",\"name\":\"node5\",\"cert\":{\"certificate\":\"-----BEGIN CERTIFICATE-----\\nMIIBmTCCAT+gAwIBAgIEXIn8QzAKBggqhkjOPQQDAjBWMQswCQYDVQQGEwJjbjEL\\nMAkGA1UECAwCYmoxCzAJBgNVBAcMAmJqMREwDwYDVQQKDAhyZXBjaGFpbjEOMAwG\\nA1UECwwFaXNjYXMxCjAIBgNVBAMMATUwHhcNMTkwMzE0MDcwMTIzWhcNMjAwMzEz\\nMDcwMTIzWjBWMQswCQYDVQQGEwJjbjELMAkGA1UECAwCYmoxCzAJBgNVBAcMAmJq\\nMREwDwYDVQQKDAhyZXBjaGFpbjEOMAwGA1UECwwFaXNjYXMxCjAIBgNVBAMMATUw\\nVjAQBgcqhkjOPQIBBgUrgQQACgNCAASRkmXqNawcVmoRYCRbxxuGMEhBkNi7mB6E\\nTHeC+CzOw/G7spOXst4AEEcZwNwnu4yBsTI61O59+wWWoVzJMCfHMAoGCCqGSM49\\nBAMCA0gAMEUCIDUg9XvYS5gYplD2XpQIs2yYyG9yC3CYDVU3oHEbAhmgAiEA0857\\njWV0BsnABl2+s/P/WYEuZWixQuO2YNGpwVG/u7g=\\n-----END CERTIFICATE-----\\n\",\"algType\":\"SHA1withECDSA\",\"certValid\":true,\"regTime\":{\"seconds\":1552810447,\"nanos\":257000000}}}" ]
+    },
+    "signature" : {
+      "certId" : {
+        "creditCode" : "951002007l78123233",
+        "certName" : "super_admin"
+      },
+      "tmLocal" : "2019-03-17T16:14:07.258Z",
+      "signature" : "MEYCIQCcQ6BjPfkm+AWJiolwfj1QTwl6kP0ERH49Tgm7IHUG8AIhAMagTSosakepMSCe2+KcTEV2/NRP/lxKaYJKPaJj/+Cl"
+    }
+  }, {
+    "id" : "a2a11dc0-488c-11e9-8ccb-0928b55d1500",
+    "type" : "CHAINCODE_INVOKE",
+    "cid" : {
+      "chaincodeName" : "REPCHAINACCOUNTMGR",
+      "version" : 1
+    },
+    "ipt" : {
+      "function" : "SignUpCert",
+      "args" : [ "{\"credit_code\":\"951002007l78123233\",\"name\":\"super_admin\",\"cert\":{\"certificate\":\"-----BEGIN CERTIFICATE-----\\nMIIBrjCCAVOgAwIBAgIEXIn9HTAKBggqhkjOPQQDAjBgMQswCQYDVQQGEwJjbjEL\\nMAkGA1UECAwCYmoxCzAJBgNVBAcMAmJqMREwDwYDVQQKDAhyZXBjaGFpbjEOMAwG\\nA1UECwwFaXNjYXMxFDASBgNVBAMMC3N1cGVyX2FkbWluMB4XDTE5MDMxNDA3MDUw\\nMVoXDTIwMDMxMzA3MDUwMVowYDELMAkGA1UEBhMCY24xCzAJBgNVBAgMAmJqMQsw\\nCQYDVQQHDAJiajERMA8GA1UECgwIcmVwY2hhaW4xDjAMBgNVBAsMBWlzY2FzMRQw\\nEgYDVQQDDAtzdXBlcl9hZG1pbjBWMBAGByqGSM49AgEGBSuBBAAKA0IABBLsxfk6\\nB86BFI3ij2YJylNGzxXNRQb45mZPNfVAkQf0hImHJMP+EgCK7UfJqa1U970ZslSC\\nVTDxNyrb5wfLOIMwCgYIKoZIzj0EAwIDSQAwRgIhANUOIZN0YmYxbtmUlJeMaeEe\\nb2STEd2Z07l1WBUN+mN9AiEAqKXR2Z/F+t0lWELgO4I+fxHiw+GIBYYLlsRVy4zZ\\nvvU=\\n-----END CERTIFICATE-----\\n\",\"algType\":\"SHA1withECDSA\",\"certValid\":true,\"regTime\":{\"seconds\":1552810447,\"nanos\":259000000}}}" ]
+    },
+    "signature" : {
+      "certId" : {
+        "creditCode" : "951002007l78123233",
+        "certName" : "super_admin"
+      },
+      "tmLocal" : "2019-03-17T16:14:07.260Z",
+      "signature" : "MEQCIDOMqkuB5xBzvO7qIpkkdPL7A0EoE1NMjZuKiNUbIk++AiA49G90gf6hASVbsov/352yllfSMijbKHsX9TAzD7pyGw=="
+    }
+  } ],
+  "endorsements" : [ {
+    "certId" : {
+      "creditCode" : "951002007l78123233",
+      "certName" : "super_admin"
+    },
+    "tmLocal" : "2019-03-17T16:14:07.409Z",
+    "signature" : "MEUCIQDHPlFkTUr6o+0ylG/Ta0/UkHTxLFDKJFEa5r2MgVkR3AIgTPj/bDwvSr9zNDxPKL9JSLKGbDWpyfwat2Z3SndQEu0="
+  }, {
+    "certId" : {
+      "creditCode" : "121000005l35120456",
+      "certName" : "node1"
+    },
+    "tmLocal" : "2019-03-17T16:14:07.411Z",
+    "signature" : "MEUCIHkPcEHUad/qeLaGO1hEAdRau2YGe4F5bYngKPY2RxlLAiEAx8fQ0EqyNGqCvq8GvYQdKeZ5YQ7GNKus3Gfp4+mM5HM="
   } ]
 }
