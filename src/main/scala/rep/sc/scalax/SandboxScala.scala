@@ -86,6 +86,22 @@ class SandboxScala(cid:ChaincodeId) extends Sandbox(cid){
           //TODO case  Transaction.Type.CHAINCODE_DESC 增加对合约描述的处理
         case  Transaction.Type.CHAINCODE_INVOKE =>
           //获得合约action
+          if(cobj == null){
+            val dataaccess: ImpDataAccess = ImpDataAccess.GetDataAccess(pe.getSysTag)
+            val key_tx = WorldStateKeyPreFix+ tx_cid
+            val tx_id = ByteString.copyFrom(dataaccess.Get(key_tx)).toStringUtf8() 
+            val block = Block.parseFrom(dataaccess.getBlockByTxId(tx_id))
+            val ts = block.transactions
+            for(t <- ts){
+              if(tx_id.equalsIgnoreCase(t.id)){
+                val code = t.para.spec.get.codePackage
+                val clazz = Compiler.compilef(code,tx_cid)
+                cobj = clazz.getConstructor().newInstance().asInstanceOf[IContract]
+                //cobj = new ContractAssets()
+                cobj.init(ctx)
+              }
+            }
+          }
           val ipt = t.para.ipt.get
           val action = ipt.function
           //获得传入参数
@@ -93,8 +109,14 @@ class SandboxScala(cid:ChaincodeId) extends Sandbox(cid){
           cobj.onAction(ctx,action,data.head)
       }
       
+       val mb = shim.sr.GetComputeMerkle4String
+      val mbstr = mb match {
+        case null => None
+        case _ => Option(mb)  //Option(BytesHex.bytes2hex(mb))
+      }
+      
       new DoTransactionResult(t,from, r, 
-          None,
+          mbstr,
          shim.ol.toList,shim.mb,None)
     }catch{
       case e: Exception => 

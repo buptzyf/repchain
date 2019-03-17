@@ -117,6 +117,9 @@ class PreloadTransactionModule(moduleName: String, transProcessor:ActorRef) exte
       if(newTranList.size > 0){
         blk = blk.withTransactions(newTranList)
         val millis = TimeUtils.getCurrentTime()
+        
+        blk = blk.withTransactionResults(transResult)
+        
         //println(s"Merk ${pe.getSysTag} : ~ preload after " + merkle.getOrElse(""))
         preLoadFeedBackInfo(true, blk, preloadFrom, merkle.getOrElse(""))
       }else{
