@@ -82,17 +82,17 @@ message ChaincodeId {
 // 合约定义,部署/升级
 message ChaincodeDeploy {
 	//Type only support javascript 
-    int32 timeout = 3;
+    int32 timeout = 1;
     //完整的代码内容
-    string code_package = 4;
+    string code_package = 2;
     //合约规则的法律描述文本
-    string legal_prose =5;
+    string legal_prose =3;
     enum CodeType {
 	CODE_UNDEFINED = 0;
         CODE_JAVASCRIPT = 1;
         CODE_SCALA = 2;
     }
-    CodeType ctype = 6;
+    CodeType ctype = 4;
 } 
 
 /*

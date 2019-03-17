@@ -76,7 +76,7 @@ object Sandbox {
    *  @return 链码id字符串
    */
   def getChaincodeId(c: ChaincodeId): String={
-    c.chaincodeName + SplitChainCodeId + c.version
+    IdTool.getCid(c)
   }  
   /** 从部署合约的交易，获得其部署的合约的链码id
    *  @param t 交易对象

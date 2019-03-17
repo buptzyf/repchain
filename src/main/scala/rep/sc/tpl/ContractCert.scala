@@ -17,6 +17,10 @@ import rep.utils.{IdTool, SerializeUtils}
 /**
   * @author zyf
   */
+// 证书状态
+  case class CertStatus(credit_code: String, name: String, status: Boolean)
+  case class CertInfo(credit_code: String,name: String, cert: Certificate)
+
 class ContractCert  extends IContract {
   implicit val formats = DefaultFormats
 
@@ -41,9 +45,7 @@ class ContractCert  extends IContract {
     val UpdateSigner = "UpdateSigner"
   }
 
-  // 证书状态
-  case class CertStatus(credit_code: String, name: String, status: Boolean)
-  case class CertInfo(credit_code: String,name: String, cert: Certificate)
+  
 
   /**
     * 注册Signer账户
