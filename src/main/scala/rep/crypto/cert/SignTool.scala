@@ -23,6 +23,7 @@ import java.io._
 import java.util.{ ArrayList, List }
 import rep.app.conf.SystemProfile
 import scala.util.control.Breaks._
+import fastparse.utils.Base64
 
 /**
  * 负责签名和验签的工具了，所有相关的功能都调用该类
@@ -168,4 +169,19 @@ object SignTool {
       })
     r
   }
+  
+  def getCertByPem(pemcert: String): Certificate = {
+    val cf = CertificateFactory.getInstance("X.509")
+    val cert = cf.generateCertificate(
+      new ByteArrayInputStream(
+        Base64.Decoder(pemcert.replaceAll("\r\n", "").stripPrefix("-----BEGIN CERTIFICATE-----").stripSuffix("-----END CERTIFICATE-----")).toByteArray))
+    cert
+  }
+  
+  def getCertByFile(path:String):Certificate = {
+    val certF = CertificateFactory.getInstance("X.509")
+    val fileInputStream = new FileInputStream(path)
+    certF.generateCertificate(fileInputStream)
+  }
+  
 }
