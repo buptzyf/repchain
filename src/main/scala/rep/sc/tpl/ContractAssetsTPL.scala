@@ -23,13 +23,20 @@ import rep.sc.contract._
 import rep.sc.contract.ContractContext
 import rep.sc.contract.IContract
 import rep.app.conf.SystemProfile
+import rep.protos.peer.ChaincodeId
+import rep.utils.IdTool
 /**
  * 资产管理合约
  */
 
-class ContractAssetsTPL extends IContract{
 case class Transfer(from:String, to:String, amount:Int)
-  val prefix = SystemProfile.getAccountChaincodeName
+
+class ContractAssetsTPL extends IContract{
+
+  // 需要跨合约读账户
+  val cName = "ContractCert"
+  val version = 1
+  val prefix = IdTool.getCid(ChaincodeId(cName,version))
 
   implicit val formats = DefaultFormats
   
@@ -49,7 +56,8 @@ case class Transfer(from:String, to:String, amount:Int)
       if(!data.from.equals(ctx.t.getSignature.getCertId.creditCode))
         return new ActionResult(-1, Some("只允许从本人账户转出"))      
       val signerKey = prefix + "_" + data.to
-      if(ctx.api.getVal(signerKey)==null)
+      // 跨合约读账户，该处并未反序列化
+      if(ctx.api.getStateEx(cName,signerKey)==null)
         return new ActionResult(-2, Some("目标账户不存在"))
       val sfrom =  ctx.api.getVal(data.from)
       var dfrom =sfrom.asInstanceOf[Int]

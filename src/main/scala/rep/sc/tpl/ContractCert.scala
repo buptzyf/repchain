@@ -18,8 +18,8 @@ import rep.utils.{IdTool, SerializeUtils}
   * @author zyf
   */
 // 证书状态
-  case class CertStatus(credit_code: String, name: String, status: Boolean)
-  case class CertInfo(credit_code: String,name: String, cert: Certificate)
+case class CertStatus(credit_code: String, name: String, status: Boolean)
+case class CertInfo(credit_code: String,name: String, cert: Certificate)
 
 class ContractCert  extends IContract {
   implicit val formats = DefaultFormats
@@ -30,9 +30,9 @@ class ContractCert  extends IContract {
   val certExists = "证书已存在"
   val certNotExists = "证书不存在"
   val unknownError = "未知错误"
-  val chaincodeName = SystemProfile.getAccountChaincodeName
-  val chaincodeVersion = SystemProfile.getAccountChaincodeVersion
-  val prefix = IdTool.getCid(ChaincodeId.apply(chaincodeName, chaincodeVersion))
+  val chaincodeName = "ContractCert"// SystemProfile.getAccountChaincodeName
+  val chaincodeVersion = 1 //SystemProfile.getAccountChaincodeVersion
+  val prefix = IdTool.getCid(ChaincodeId(chaincodeName, chaincodeVersion))
   val underline = "_"
   val dot = "."
   // 锚点，错误回退
@@ -96,9 +96,10 @@ class ContractCert  extends IContract {
       } else {
         ctx.api.setVal(certKey, certificate.get)
         val signer = SerializeUtils.deserialise(signerContent).asInstanceOf[Signer]
-        if (!signer.certNames.contains(data.name))
+        if (!signer.certNames.contains(data.name)){
           signer.addCertNames(data.name)
           ctx.api.setVal(signerKey, signer)
+        }
       }
       ActionResult(1, None)
     } else {
