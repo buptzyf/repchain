@@ -23,10 +23,12 @@ import com.google.protobuf.ByteString
 import akka.actor.{Actor, Address, Props}
 import akka.cluster.pubsub.DistributedPubSubMediator.Publish
 import rep.app.conf.SystemProfile
+import rep.crypto.cert.SignTool
 import rep.network.{ PeerHelper, Topic }
 import rep.network.base.ModuleBase
 import rep.network.cache.TransactionPool.CheckedTransactionResult
 import rep.network.consensus.vote.CRFDVoterModule.VoteRecover
+import rep.protos.peer.ChaincodeId
 import rep.protos.peer.{ Event, Transaction }
 import rep.storage.IdxPrefix.WorldStateKeyPreFix
 import rep.storage.ImpDataAccess
@@ -87,27 +89,25 @@ class TransactionPool(moduleName: String) extends ModuleBase(moduleName) {
   def checkTransaction(t: Transaction, dataAccess: ImpDataAccess): CheckedTransactionResult = {
     var resultMsg = ""
     var result = false
-    /*val sig = t.signature.toByteArray
-    val tOutSig = t.withSignature(ByteString.EMPTY)
-    val cid = ChaincodeID.fromAscii(t.chaincodeID.toStringUtf8).name
-    val certKey = WorldStateKeyPreFix + cid + "_" + "CERT_" + t.cert.toStringUtf8 // 普通用户证书的key
+    val sig = t.getSignature
+    val tOutSig = t.clearSignature//t.withSignature(null)
+    val cert = sig.getCertId
+    
     try{
-        var cert = ECDSASign.getCertWithCheck(t.cert.toStringUtf8,certKey,pe.getSysTag)
-        if(cert != None){
-          ECDSASign.verify(sig, PeerHelper.getTxHash(tOutSig), cert.get.getPublicKey) match {
+          val siginfo = sig.signature.toByteArray()
+          
+          SignTool.verify(siginfo, tOutSig.toByteArray, cert, pe.getSysTag) match {
             case true =>
-                dataAccess.getBlockByTxId(t.txid) match {
+                dataAccess.getBlockByTxId(t.id) match {
                   case null => result = true
-                  case _    => resultMsg = s"The transaction(${t.txid}) is duplicated with txid"
+                  case _    => resultMsg = s"The transaction(${t.id}) is duplicated with txid"
                 }
-              case false => resultMsg = s"The transaction(${t.txid}) is not completed"
+              case false => resultMsg = s"The transaction(${t.id}) is not completed"
           }
-        }else{
-          throw new RuntimeException("没有证书")
-        }
+        
       }catch{
         case e : RuntimeException => throw e
-      }*/
+      }
 
     CheckedTransactionResult(result, resultMsg)
   }
@@ -142,7 +142,7 @@ class TransactionPool(moduleName: String) extends ModuleBase(moduleName) {
           case true =>
             //签名验证成功
             if(pe.getTransLength() < 100)
-              logMsg(s"<<<<<<<<<<<<<>>>>>>>>>transaction=${pe.getTransLength()}" )
+              logMsg(LogType.INFO,s"<<<<<<<<<<<<<>>>>>>>>>transaction=${pe.getTransLength()}" )
             if (SystemProfile.getMaxCacheTransNum == 0 || pe.getTransLength() < SystemProfile.getMaxCacheTransNum) {
               pe.putTran(t)
               //广播接收交易事件

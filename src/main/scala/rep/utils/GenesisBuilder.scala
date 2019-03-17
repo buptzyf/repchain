@@ -55,7 +55,7 @@ object GenesisBuilder {
     
     val cid = new ChaincodeId("REPCHAINACCOUNTMGR",1)
     
-    var translist : Array[Transaction] = new Array[Transaction] (13)
+    var translist : Array[Transaction] = new Array[Transaction] (15)
     
     
     val dep_trans = PeerHelper.createTransaction4Deploy(sysName, cid,
@@ -91,6 +91,22 @@ object GenesisBuilder {
       translist(i+7) = PeerHelper.createTransaction4Invoke("951002007l78123233.super_admin", cid,
                     "SignUpCert", Seq(Json4s.compactJson(a)))
     }
+    
+    
+     val s2 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/ContractAssetsTPL.scala")
+    val c2 = try s2.mkString finally s2.close()
+    val cid2 = new ChaincodeId("ContractAssetsTPL",1)
+    val dep_asserts_trans = PeerHelper.createTransaction4Deploy(sysName, cid2,
+               c2, "",5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
+    translist(13) = dep_asserts_trans
+    
+    // read invoke scala contract
+    val s3 = scala.io.Source.fromFile("scripts/set.json")
+    val ct1 = try s3.mkString finally s3.close()
+    
+    translist(14) = PeerHelper.createTransaction4Invoke("951002007l78123233.super_admin", cid2,
+                    "set", Seq(ct1))
+    
     
     
     //create gensis block

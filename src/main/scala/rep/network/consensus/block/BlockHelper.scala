@@ -86,7 +86,7 @@ object BlockHelper {
     var result = false
     //val starttime = System.currentTimeMillis()
     val sig = t.signature
-    val tOutSig = t.withSignature(null)
+    val tOutSig = t.clearSignature
     
     
     try{

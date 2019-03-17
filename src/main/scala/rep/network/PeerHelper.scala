@@ -124,13 +124,13 @@ class PeerHelper(name: String) extends ModuleBase(name) {
 
   def rnd = ThreadLocalRandom.current
 
-  val si1 = scala.io.Source.fromFile("scripts/example_invoke_" + pe.getSysTag + ".js")
-  val li1 = try si1.mkString finally si1.close()
+  //val si1 = scala.io.Source.fromFile("scripts/example_invoke_" + pe.getSysTag + ".js")
+  //val li1 = try si1.mkString finally si1.close()
   val si2 = scala.io.Source.fromFile("scripts/transfer_" + pe.getSysTag + ".json")
   val li2 = try si2.mkString finally si2.close()
-  val sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+  //val sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-  var chaincode = ""
+  var chaincode:ChaincodeId = new ChaincodeId("ContractAssetsTPL",1)
 
   override def preStart(): Unit = {
     //注册接收交易的广播
@@ -145,8 +145,9 @@ class PeerHelper(name: String) extends ModuleBase(name) {
   override def receive = {
 
     case Tick =>
-      val blk = BlockHelper.genesisBlockCreator()
-      chaincode = IdTool.getCid(blk.transactions(0).getCid)
+      //val blk = BlockHelper.genesisBlockCreator()
+      //chaincode = IdTool.getCid(blk.transactions(0).getCid)
+      
       scheduler.scheduleOnce(10.seconds, self, TickInit)
 
     case TickInit =>
@@ -166,8 +167,8 @@ class PeerHelper(name: String) extends ModuleBase(name) {
         //createTransForLoop //在做tps测试到时候，执行该函数，并且注释其他代码
         //val start = System.currentTimeMillis()
         //todo 在运行时需要传送正确的chaincodename
-        val chaincodeId = new ChaincodeId("chaincode-name", 1)
-        val t3 = createTransaction4Invoke(pe.getSysTag, chaincodeId,
+        //val chaincodeId = new ChaincodeId("chaincode-name", 1)
+        val t3 = createTransaction4Invoke(pe.getSysTag, chaincode,
           "transfer", Seq(li2))
         //val t3 = transactionCreator(pe.getSysTag,rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE,
         //  "", "transfer" ,Seq(li2),"", Option(chaincode),rep.protos.peer.ChaincodeSpec.CodeType.CODE_JAVASCRIPT)
@@ -190,8 +191,8 @@ class PeerHelper(name: String) extends ModuleBase(name) {
           val start = System.currentTimeMillis()
           //val start = System.currentTimeMillis()
           //todo 在运行时需要传送正确的chaincodename
-          val chaincodeId = new ChaincodeId("chaincode-name", 1)
-          val t3 = createTransaction4Invoke(pe.getSysTag, chaincodeId,
+          //val chaincodeId = new ChaincodeId("chaincode-name", 1)
+          val t3 = createTransaction4Invoke(pe.getSysTag, chaincode,
             "transfer", Seq(li2))
           getActorRef(ActorType.TRANSACTION_POOL) ! t3
           //mediator ! Publish(Topic.Transaction, t3)
