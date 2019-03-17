@@ -4,16 +4,15 @@ import java.io.{ByteArrayInputStream, StringReader}
 import java.security.cert.{CertificateFactory, X509Certificate}
 
 import org.bouncycastle.util.io.pem.PemReader
-
 import rep.sc.contract._
 import rep.protos.peer._
 import org.json4s.jackson.JsonMethods._
+
 import scala.collection.mutable.Map
 import org.json4s.{DefaultFormats, Formats, jackson}
-
 import org.json4s.DefaultFormats
 import rep.app.conf.SystemProfile
-import rep.utils.SerializeUtils
+import rep.utils.{IdTool, SerializeUtils}
 
 /**
   * @author zyf
@@ -27,7 +26,9 @@ class ContractCert  extends IContract {
   val certExists = "证书已存在"
   val certNotExists = "证书不存在"
   val unknownError = "未知错误"
-  val prefix = SystemProfile.getAccountChaincodeName
+  val chaincodeName = SystemProfile.getAccountChaincodeName
+  val chaincodeVersion = SystemProfile.getAccountChaincodeVersion
+  val prefix = IdTool.getCid(ChaincodeId.apply(chaincodeName, chaincodeVersion))
   val underline = "_"
   val dot = "."
   // 锚点，错误回退
@@ -37,6 +38,7 @@ class ContractCert  extends IContract {
     val SignUpSigner = "SignUpSigner"
     val SignUpCert = "SignUpCert"
     val UpdateCertStatus = "UpdateCertStatus"
+    val UpdateSigner = "UpdateSigner"
   }
 
   // 证书状态
@@ -128,6 +130,16 @@ class ContractCert  extends IContract {
     }
   }
 
+  /**
+    * TODO 更新账户相关信息
+    * @param ctx
+    * @param data
+    * @return
+    */
+  def updateSigner(ctx: ContractContext, data: Signer): ActionResult = {
+    null
+  }
+
 
   /**
     * 根据pem字符串生成证书
@@ -168,6 +180,9 @@ class ContractCert  extends IContract {
       case ACTION.UpdateCertStatus =>
         println("UpdateCertStatus")
         updateCertStatus(ctx, json.extract[CertStatus])
+      case ACTION.UpdateSigner =>
+        println("UpdateSigner")
+        updateSigner(ctx, json.extract[Signer])
     }
   }
 

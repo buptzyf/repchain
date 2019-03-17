@@ -51,6 +51,7 @@ object SystemProfile {
   private[this] var _CONTRACTOPERATIONMODE = 0//设置合约的运行方式，0=debug方式，1=deploy，默认为debug方式，如果发布部署，必须使用deploy方式。
   private[this] var _VOTENODELIST : List[String] = new ArrayList[String]
   private[this] var _ACCOUNTCHAINCODENAEM : String = "ACCOUNTCHAINCODENAME"
+  private[this] var _ACCOUNTCHAINCODEVERSION: Int = 1
   
   
   private def SERVERPORT :Int = _SERVERPORT
@@ -60,6 +61,7 @@ object SystemProfile {
   
   private def VOTENODELIST : List[String] = _VOTENODELIST
   private def ACCOUNTCHAINCODENAEM = _ACCOUNTCHAINCODENAEM
+  private def ACCOUNTCHAINCODVERSION = _ACCOUNTCHAINCODEVERSION
   
   private def VOTENODELIST_=(value: List[String]): Unit = {
       _VOTENODELIST = value
@@ -67,6 +69,10 @@ object SystemProfile {
   
   private def ACCOUNTCHAINCODENAEM_=(value:String):Unit={
     _ACCOUNTCHAINCODENAEM = value
+  }
+
+  private def ACCOUNTCHAINCODEVERSION_=(value:Int):Unit={
+    _ACCOUNTCHAINCODEVERSION = value
   }
   
   private def SERVERPORT_=(value: Int): Unit = {
@@ -148,6 +154,7 @@ object SystemProfile {
     CHECKCERTVALIDATE_=(config.getInt("system.checkCertValidate"))
     CONTRACTOPERATIONMODE_=(config.getInt("system.contractOperationMode"))
     ACCOUNTCHAINCODENAEM_= (config.getString("system.account.chaincodename"))
+    ACCOUNTCHAINCODEVERSION_=(config.getInt("system.account.chaincodeversion"))
   }
   
   def getLimitBlockTransNum = LIMIT_BLOCK_TRANS_NUM
@@ -175,4 +182,6 @@ object SystemProfile {
   def getVoteNodeList = VOTENODELIST
   
   def getAccountChaincodeName = ACCOUNTCHAINCODENAEM
+
+  def getAccountChaincodeVersion = ACCOUNTCHAINCODVERSION
 }
