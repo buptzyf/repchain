@@ -97,7 +97,10 @@ object PeerHelper {
     if (chaincodeId == null) t
 
     val txid = IdTool.getUUID()
-    val cip = new ChaincodeDeploy(timeout, spcPackage, legal_prose, ctype)
+    var cip = new ChaincodeDeploy(timeout)
+    cip = cip.withCodePackage(spcPackage)
+    cip = cip.withLegalProse(legal_prose)
+    cip = cip.withCtype(ctype)
     t = t.withId(txid)
     t = t.withCid(chaincodeId)
     t = t.withSpec(cip)
