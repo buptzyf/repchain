@@ -75,10 +75,13 @@ class TransferSpec(_system: ActorSystem)
     val l2 = try s2.mkString finally  s2.close()
     val sm: SetMap = Map("121000005l35120456" -> 50, "12110107bi45jh675g" -> 50, "122000002n00123567" -> 50)
     val sms = write(sm)
-    val z2c = Transfer("121000005l35120456", "12110107bi45jh675g", 5)
-    val z2cs = write(z2c)
-    val c2j = Transfer("12110107bi45jh675g", "122000002n00123567", 5)
-    val c2js = writePretty(c2j)
+    
+    val tcs = Array(
+          Transfer("121000005l35120456", "12110107bi45jh675g", 5),
+          Transfer("121000005l35120456", "12110107bi45jh675g0", 5),
+           Transfer("121000005l35120456", "12110107bi45jh675g", 500))
+    val rcs = Array(1, -2 , -3)
+    
     val signer = Signer("node2", "12110107bi45jh675g", "13856789234", Seq("node2"))
     val cert = scala.io.Source.fromFile("jks/certs/12110107bi45jh675g.node2.cer")
     val certStr = try cert.mkString finally  cert.close()
@@ -86,57 +89,56 @@ class TransferSpec(_system: ActorSystem)
     //准备探针以验证调用返回结果
     val probe = TestProbe()
     val db = ImpDataAccess.GetDataAccess(sysName)
-    var sandbox = system.actorOf(TransProcessor.props("sandbox", "", probe.ref))
+    val sandbox = system.actorOf(TransProcessor.props("sandbox", "", probe.ref))
 
+    val cid2 =  ChaincodeId("ContractCert",1)
+    val cid1 = ChaincodeId("ContractAssetsTPL",1)
     //生成deploy交易
-    val t1 = PeerHelper.createTransaction4Deploy(sysName, ChaincodeId("ContractAssetsTPL",1),
+    val t1 = PeerHelper.createTransaction4Deploy(sysName,cid1 ,
       l1, "",5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
 
     val msg_send1 = DoTransaction(t1, probe.ref, "")
     probe.send(sandbox, msg_send1)
     val msg_recv1 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-    val ol1 = msg_recv1.ol
-    val ol1str = compactJson(ol1)
+    msg_recv1.r.code should be (1)
 
-    val t2 = PeerHelper.createTransaction4Deploy(sysName, ChaincodeId("ContractCert",1),
+    val t2 = PeerHelper.createTransaction4Deploy(sysName,cid2,
       l2, "",5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
 
     val msg_send2 = DoTransaction(t2, probe.ref, "")
     probe.send(sandbox, msg_send2)
     val msg_recv2 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-    val ol2 = msg_recv2.ol
-    val ol2str = compactJson(ol2)
+     msg_recv2.r.code should be (1)
 
     // 生成invoke交易
     // 注册账户
-    val t3 =  PeerHelper.createTransaction4Invoke(sysName,ChaincodeId("ContractCert",1), ACTION.SignUpSigner, Seq(write(signer)))
+    val t3 =  PeerHelper.createTransaction4Invoke(sysName,cid2, ACTION.SignUpSigner, Seq(write(signer)))
     val msg_send3 = DoTransaction(t3, probe.ref, "")
     probe.send(sandbox, msg_send3)
     val msg_recv3 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-    val ol3 = msg_recv3.ol
-    val ol3str = compactJson(ol3)
+    msg_recv3.r.code should be (1)
 
     // 注册证书
-    val t4 =  PeerHelper.createTransaction4Invoke(sysName,ChaincodeId("ContractCert",1), ACTION.SignUpCert, Seq(writePretty(certinfo)))
+    val t4 =  PeerHelper.createTransaction4Invoke(sysName,cid2, ACTION.SignUpCert, Seq(writePretty(certinfo)))
     val msg_send4 = DoTransaction(t4, probe.ref, "")
     probe.send(sandbox, msg_send4)
     val msg_recv4 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-    val ol4 = msg_recv4.ol
-    val ol4str = compactJson(ol4)
+    msg_recv4.r.code should be (1)
 
 
     //生成invoke交易
-    val t5 = PeerHelper.createTransaction4Invoke(sysName,ChaincodeId("ContractAssetsTPL",1), ACTION.set, Seq(sms))
+    val t5 = PeerHelper.createTransaction4Invoke(sysName,cid1, ACTION.set, Seq(sms))
     val msg_send5 = DoTransaction(t5, probe.ref, "")
     probe.send(sandbox, msg_send5)
     val msg_recv5 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
+    msg_recv5.r.code should be (1)
 
-    val t6 = PeerHelper.createTransaction4Invoke(sysName, ChaincodeId("ContractAssetsTPL",1), ACTION.transfer, Seq(z2cs))
-    val msg_send6 = DoTransaction(t6, probe.ref, "")
-    probe.send(sandbox, msg_send6)
-    val msg_recv6 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-
-    println(msg_recv5.r)
-    println(msg_recv6.r)
+    for (i <- 0 until tcs.length){
+        val t6 = PeerHelper.createTransaction4Invoke(sysName, cid1, ACTION.transfer, Seq(write(tcs(i))))
+        val msg_send6 = DoTransaction(t6, probe.ref, "")
+        probe.send(sandbox, msg_send6)
+        val msg_recv6 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
+        msg_recv6.r.code should be (rcs(i))
+    }    
   }
 }

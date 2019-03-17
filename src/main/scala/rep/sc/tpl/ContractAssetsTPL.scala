@@ -34,9 +34,9 @@ case class Transfer(from:String, to:String, amount:Int)
 class ContractAssetsTPL extends IContract{
 
   // 需要跨合约读账户
-  val cName = "ContractCert"
-  val version = 1
-  val prefix = IdTool.getCid(ChaincodeId(cName,version))
+  val chaincodeName = "ContractCert"// SystemProfile.getAccountChaincodeName
+  val chaincodeVersion = 1 //SystemProfile.getAccountChaincodeVersion
+  val prefix = IdTool.getCid(ChaincodeId(chaincodeName, chaincodeVersion))
 
   implicit val formats = DefaultFormats
   
@@ -57,12 +57,12 @@ class ContractAssetsTPL extends IContract{
         return new ActionResult(-1, Some("只允许从本人账户转出"))      
       val signerKey = prefix + "_" + data.to
       // 跨合约读账户，该处并未反序列化
-      if(ctx.api.getStateEx(cName,signerKey)==null)
+      if(ctx.api.getStateEx(chaincodeName,signerKey)==null)
         return new ActionResult(-2, Some("目标账户不存在"))
       val sfrom =  ctx.api.getVal(data.from)
       var dfrom =sfrom.asInstanceOf[Int]
       if(dfrom < data.amount)
-        new ActionResult(-3, Some("余额不足"))
+        return new ActionResult(-3, Some("余额不足"))
       var dto = ctx.api.getVal(data.to).toString.toInt
       ctx.api.setVal(data.from,dfrom - data.amount)
       ctx.api.setVal(data.to,dto + data.amount)
