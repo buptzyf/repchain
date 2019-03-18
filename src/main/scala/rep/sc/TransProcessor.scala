@@ -76,7 +76,7 @@ object TransProcessor {
    *  @param from 来源actor指向
    *  @param da 数据访问标示
    */
-  case class DeployTransaction(t:Transaction, from:ActorRef, da:String)
+  case class DeployTransaction(t:Transaction, from:ActorRef, da:String,isForInvoke:Boolean)
  
   /** 根据传入参数返回actor的Props
    *  @param name actor的命名
@@ -163,12 +163,14 @@ class TransProcessor(name: String, da:String, parent: ActorRef) extends Actor {
         if(t.`type` != Transaction.Type.CHAINCODE_DEPLOY ){
           //println(s"${pe.getSysTag} do invoke")
           //尝试从持久化恢复,找到对应的Deploy交易，并先执行之
+          
           val sr = ImpDataAccess.GetDataAccess(sTag)
-          val tidVal =  sr.Get(WorldStateKeyPreFix+ tx_cid)
-          if(tidVal==null)
+          val key_tx = WorldStateKeyPreFix+ tx_cid
+          val tx_id =sr.Get(key_tx) 
+          if(tx_id==null)
             throw new SandboxException(ERR_INVOKE_CHAINCODE_NOT_EXIST)
-          val txId = SerializeUtils.deserialiseJson(tidVal).asInstanceOf[String]
-          val tx_deploy = loadTransaction(sr, txId).get
+          
+          val tx_deploy = loadTransaction(sr, ByteString.copyFrom(tx_id).toStringUtf8()).get
           // acto新建之后需要从持久化恢复的chainCode
           // 根据tx_deploy的类型决定采用js合约容器或者scala合约容器          
           val actor = tx_deploy.para.spec.get.ctype match{

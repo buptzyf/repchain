@@ -86,7 +86,7 @@ class SandboxScala(cid:ChaincodeId) extends Sandbox(cid){
           //TODO case  Transaction.Type.CHAINCODE_DESC 增加对合约描述的处理
         case  Transaction.Type.CHAINCODE_INVOKE =>
           //获得合约action
-          if(cobj == null){
+          /*if(cobj == null){
             val dataaccess: ImpDataAccess = ImpDataAccess.GetDataAccess(pe.getSysTag)
             val key_tx = WorldStateKeyPreFix+ tx_cid
             val tx_id = ByteString.copyFrom(dataaccess.Get(key_tx)).toStringUtf8() 
@@ -101,7 +101,7 @@ class SandboxScala(cid:ChaincodeId) extends Sandbox(cid){
                 cobj.init(ctx)
               }
             }
-          }
+          }*/
           val ipt = t.para.ipt.get
           val action = ipt.function
           //获得传入参数
