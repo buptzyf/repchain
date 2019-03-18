@@ -41,7 +41,7 @@ class SandboxJS(cid:ChaincodeId) extends Sandbox(cid){
   val sandbox= new ScriptEngineManager().getEngineByName("nashorn")
   sandbox.put("shim",shim)
   
-  override def doTransaction(t:Transaction,from:ActorRef, da:String):DoTransactionResult ={
+  override def doTransaction(t:Transaction,from:ActorRef, da:String, isForInvoke:Boolean):DoTransactionResult ={
     //上下文可获得交易
     sandbox.put("tx", t)
     //for test print sandbox id

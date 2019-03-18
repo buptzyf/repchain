@@ -124,8 +124,8 @@ abstract class Sandbox(cid:ChaincodeId) extends Actor {
       shim.rollback()
       sender ! tr
     //恢复chainCode,不回消息
-    case  DeployTransaction(t:Transaction,from:ActorRef, da:String) =>
-      val tr = doTransaction(t,from,da)
+    case  DeployTransaction(t:Transaction,from:ActorRef, da:String,isForInvoke:Boolean) =>
+      val tr = doTransaction(t,from,da,isForInvoke)
       shim.rollback()
   }
   /** 交易处理抽象方法，接受待处理交易，返回处理结果
@@ -134,6 +134,6 @@ abstract class Sandbox(cid:ChaincodeId) extends Actor {
    * 	@param da 存储访问标示
    *  @return 交易执行结果
    */
-  def doTransaction(t:Transaction,from:ActorRef, da:String):DoTransactionResult 
+  def doTransaction(t:Transaction,from:ActorRef, da:String,isForInvoke:Boolean=false):DoTransactionResult 
   
 }

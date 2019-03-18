@@ -76,7 +76,7 @@ object TransProcessor {
    *  @param from 来源actor指向
    *  @param da 数据访问标示
    */
-  case class DeployTransaction(t:Transaction, from:ActorRef, da:String,isForInvoke:Boolean)
+  case class DeployTransaction(t:Transaction, from:ActorRef, da:String, isForInvoke:Boolean=false)
  
   /** 根据传入参数返回actor的Props
    *  @param name actor的命名
@@ -179,7 +179,7 @@ class TransProcessor(name: String, da:String, parent: ActorRef) extends Actor {
             //默认采用jdk内置的javascript作为合约容器
             case _ => context.actorOf(Props(new SandboxJS(cid)), sn)
           }
-          actor ! DeployTransaction(tx_deploy, from, da)
+          actor ! DeployTransaction(tx_deploy, from, da, true)
           actor
         }else
           //新执行的deploy交易,新建actor
