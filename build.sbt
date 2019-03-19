@@ -5,7 +5,7 @@ version := "0.1"
 scalaVersion := "2.11.11"
 
 lazy val akkaVersion = "2.5.3"
-val akkaHttpVersion   = "10.0.9"
+val akkaHttpVersion   = "10.0.11"
 
 
 
@@ -55,8 +55,8 @@ libraryDependencies += "org.codehaus.janino" % "janino" % "2.6.1"
 libraryDependencies += "org.bouncycastle" % "bcprov-jdk15on" % "1.57"
 
 libraryDependencies ++= Seq(
-  "io.swagger" % "swagger-jaxrs" % "1.5.13",
-  "com.github.swagger-akka-http" %% "swagger-akka-http" % "0.9.1",
+  "io.swagger" % "swagger-jaxrs" % "1.5.21",
+  "com.github.swagger-akka-http" %% "swagger-akka-http" % "0.13.0",
   "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
   "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpVersion,
   "de.heikoseeberger" % "akka-http-json4s_2.11" % "1.16.1",

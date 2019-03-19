@@ -51,15 +51,15 @@ import rep.app.conf.SystemProfile
  */
 object EventServer {
 
-implicit def myExceptionHandler = ExceptionHandler {
-  //合约执行异常，回送HTTP 200，包容chrome的跨域尝试
-  case e: SandboxException =>
-    extractUri { uri =>
-      complete(HttpResponse(Accepted, 
+  implicit def myExceptionHandler = ExceptionHandler {
+    //合约执行异常，回送HTTP 200，包容chrome的跨域尝试
+    case e: SandboxException =>
+      extractUri { uri =>
+        complete(HttpResponse(Accepted,
           entity = HttpEntity(ContentTypes.`application/json`,
-              s"""{"err": "${e.getMessage}"}"""))
-      )
-    }
+            s"""{"err": "${e.getMessage}"}"""))
+        )
+      }
 }  
 
 /** 启动Event服务
@@ -69,9 +69,9 @@ implicit def myExceptionHandler = ExceptionHandler {
  *  @param port 指定侦听的端口
  */
   def start(sys:ActorSystem ,port:Int) {
-    implicit val _ = sys.dispatcher
     implicit val system =sys
     implicit val materializer = ActorMaterializer()
+    implicit val executionContext = system.dispatcher
     
     //提供静态文件的web访问服务
     val route_evt =
@@ -95,16 +95,14 @@ implicit def myExceptionHandler = ExceptionHandler {
     val ra = sys.actorOf(Props[RestActor],"api")
     //允许跨域访问,以支持在应用中发起请求
     Http().bindAndHandle(
-        route_evt       
-        ~ cors() {new BlockService(ra).route }
-        ~ cors() {new LogMgrService(ra).route }
-        ~ cors() {new ChainService(ra).route }
-        ~ cors() {new TransactionService(ra).route }
-        ~ cors() {new CertService(ra).route }
-        ~ cors() {new HashVerifyService(ra).route }
-        ~ new SwaggerDocService(sys).routes
-        
-        ,"0.0.0.0", port)
+      route_evt
+        ~ cors() (
+            new BlockService(ra).route ~
+            new LogMgrService(ra).route ~
+            new ChainService(ra).route ~
+            new TransactionService(ra).route ~
+            SwaggerDocService.routes),
+      "0.0.0.0", port)
     println(s"Event Server online at http://localhost:$port")
   }
   

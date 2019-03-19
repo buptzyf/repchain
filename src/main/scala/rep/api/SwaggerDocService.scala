@@ -16,33 +16,28 @@
 
 package rep.api
 
-import scala.reflect.runtime.{universe=>ru}
-import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
-import com.github.swagger.akka._
-import com.github.swagger.akka.model.`package`.Info
+import com.github.swagger.akka.SwaggerHttpService
+import com.github.swagger.akka.model.Info
 import rep.api.rest._
 import io.swagger.models.ExternalDocs
 import io.swagger.models.auth.BasicAuthDefinition
-import rep.app.conf.SystemProfile
 
 /**集成Swagger到AKKA HTTP
- * @author c4w
- * @constructor 创建提供Swagger文档服务的实例
- * @param system 传入的AKKA系统实例 
- * 
+  * @author c4w
+  * @constructor 创建提供Swagger文档服务的实例
+  * @param system 传入的AKKA系统实例
+  * @author zyf
+  * @since 1.0
+  *
  */
-class SwaggerDocService(system: ActorSystem) extends SwaggerHttpService with HasActorSystem {
-  override implicit val actorSystem: ActorSystem = system
-  override implicit val materializer: ActorMaterializer = ActorMaterializer()
-  override val apiTypes = Seq(
-    ru.typeOf[ChainService],
-    ru.typeOf[BlockService],
-    ru.typeOf[TransactionService],
-    ru.typeOf[CertService], 
-    ru.typeOf[LogMgrService],
-    ru.typeOf[HashVerifyService])
-  override val info = Info(version = "0.7")
+object SwaggerDocService extends SwaggerHttpService {
+  override val apiClasses: Set[Class[_]] = Set(
+    classOf[ChainService],
+    classOf[BlockService],
+    classOf[TransactionService],
+    classOf[LogMgrService]
+  )
+  override val info = Info(version = "1.0")
   override val externalDocs = Some(new ExternalDocs("Developers Guide", "https://repchaindoc.readthedocs.io/zh/latest/index.html"))
   override val securitySchemeDefinitions = Map("basicAuth" -> new BasicAuthDefinition())
 }

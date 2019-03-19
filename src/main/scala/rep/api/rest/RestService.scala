@@ -73,11 +73,11 @@ class LogMgrService(ra: ActorRef)(implicit executionContext: ExecutionContext)
     new ApiImplicitParam(name = "status", value = "on/off", required = true, dataType = "string", paramType = "path")
     ))
   @ApiResponses(Array(
-    new ApiResponse(code = 200, message = "返回日志打开关闭结果", response = classOf[QueryHash])))
+    new ApiResponse(code = 200, message = "返回日志打开关闭结果", response = classOf[resultMsg])))
   def openOrCloseLogger =
     path("logmgr"/"openorclose4all"/ Segment) { status =>
       get {
-        complete { (ra ? ColseOrOpenAllLogger(status)).mapTo[QueryHash] }
+        complete { (ra ? ColseOrOpenAllLogger(status)).mapTo[resultMsg] }
       }
     }
   
@@ -87,11 +87,11 @@ class LogMgrService(ra: ActorRef)(implicit executionContext: ExecutionContext)
     new ApiImplicitParam(name = "status", value = "on/off", required = true, dataType = "string", paramType = "path")
     ))
   @ApiResponses(Array(
-    new ApiResponse(code = 200, message = "打开或者关闭系统运行时间跟踪", response = classOf[QueryHash])))
+    new ApiResponse(code = 200, message = "打开或者关闭系统运行时间跟踪", response = classOf[resultMsg])))
   def openorclosestatistime =
     path("logmgr"/"openorclosestatistime"/ Segment) { status =>
       get {
-        complete { (ra ? ColseOrOpenTimeTrace(status)).mapTo[QueryHash] }
+        complete { (ra ? ColseOrOpenTimeTrace(status)).mapTo[resultMsg] }
       }
     }
   
@@ -100,12 +100,12 @@ class LogMgrService(ra: ActorRef)(implicit executionContext: ExecutionContext)
   @ApiImplicitParams(Array(
     new ApiImplicitParam(name = "body", value = "打开/关闭某个节点的日志", required = true, dataTypeClass = classOf[closeOrOpen4Node], paramType = "body")))
   @ApiResponses(Array(
-  new ApiResponse(code = 200, message = "该节点已经打开或关闭", response = classOf[QueryHash])))
+  new ApiResponse(code = 200, message = "该节点已经打开或关闭", response = classOf[resultMsg])))
     def openorclose4node =
     path("logmgr" / "openorclose4node") {
       post {
          entity(as[closeOrOpen4Node]) { closeOrOpen4Node =>
-          complete { (ra ? closeOrOpen4Node).mapTo[QueryHash] }
+          complete { (ra ? closeOrOpen4Node).mapTo[resultMsg] }
         }
       }
     }
@@ -116,12 +116,12 @@ class LogMgrService(ra: ActorRef)(implicit executionContext: ExecutionContext)
   @ApiImplicitParams(Array(
     new ApiImplicitParam(name = "body", value = "打开/关闭某个包的日志", required = true, dataTypeClass = classOf[closeOrOpen4Package], paramType = "body")))
   @ApiResponses(Array(
-  new ApiResponse(code = 200, message = "该包已经打开或关闭", response = classOf[QueryHash])))
+  new ApiResponse(code = 200, message = "该包已经打开或关闭", response = classOf[resultMsg])))
     def openorclose4package =
     path("logmgr" / "openorclose4package") {
       post {
          entity(as[closeOrOpen4Package]) { closeOrOpen4Package =>
-          complete { (ra ? closeOrOpen4Package).mapTo[QueryHash] }
+          complete { (ra ? closeOrOpen4Package).mapTo[resultMsg] }
         }
       }
     }
@@ -133,7 +133,6 @@ class LogMgrService(ra: ActorRef)(implicit executionContext: ExecutionContext)
 /** 获得区块链的概要信息
  *  @author c4w
  */
-
 @Api(value = "/chaininfo", description = "获得当前区块链信息", produces = "application/json")
 @Path("chaininfo")
 class ChainService(ra: ActorRef)(implicit executionContext: ExecutionContext)
@@ -222,7 +221,6 @@ class BlockService(ra: ActorRef)(implicit executionContext: ExecutionContext)
 /** 获得指定交易的详细信息，提交签名交易
  *  @author c4w
  */
-
 @Api(value = "/transaction", description = "获得交易数据", consumes = "application/json,application/xml", produces = "application/json,application/xml")
 @Path("transaction")
 class TransactionService(ra: ActorRef)(implicit executionContext: ExecutionContext)
@@ -280,6 +278,7 @@ class TransactionService(ra: ActorRef)(implicit executionContext: ExecutionConte
         complete { (ra ? TransactionId(transactionId)).mapTo[QueryResult] }
       }
     }
+
   @Path("/stream/{transactionId}")
   @ApiOperation(value = "返回指定id的交易字节流", notes = "", nickname = "getTransactionStream", httpMethod = "GET", produces = "application/octet-stream")
   @ApiImplicitParams(Array(
@@ -292,6 +291,7 @@ class TransactionService(ra: ActorRef)(implicit executionContext: ExecutionConte
         complete( (ra ? TransactionStreamId(transactionId)).mapTo[HttpResponse])
       }
     }
+
 //以十六进制字符串提交签名交易  
   @Path("/postTranByString")
   @ApiOperation(value = "提交带签名的交易", notes = "", nickname = "postSignTransaction", httpMethod = "POST")
@@ -304,8 +304,6 @@ class TransactionService(ra: ActorRef)(implicit executionContext: ExecutionConte
     path("transaction" / "postTranByString") {
       post {
         entity(as[String]) { trans =>
-          //str=>
-          //complete(OK, trans) 
           complete { (ra ? tranSign(trans)).mapTo[PostResult] }
         }
       }
@@ -358,81 +356,4 @@ class TransactionService(ra: ActorRef)(implicit executionContext: ExecutionConte
          }
        }
      }
-  }
-
-@Api(value = "/certAddr", description = "获得证书短地址", produces = "application/json")
-@Path("certAddr")
-class CertService(ra: ActorRef)(implicit executionContext: ExecutionContext)
-  extends Directives {
-
-  import akka.pattern.ask
-  import scala.concurrent.duration._
-
-  import Json4sSupport._
-  implicit val serialization = jackson.Serialization // or native.Serialization
-  implicit val formats = DefaultFormats
-  implicit val timeout = Timeout(20.seconds)
-
-  val route = getAddrByCert ~ getCertByAddr
-  
-  @Path("/getAddrByCert")
-  @ApiOperation(value = "返回证书短地址", notes = "", nickname = "getAddrByCert", httpMethod = "POST")
-  @ApiImplicitParams(Array(
-    new ApiImplicitParam(name = "body", value = "证书", required = true, dataTypeClass = classOf[PostCert], paramType = "body")))
-  @ApiResponses(Array(
-  new ApiResponse(code = 200, message = "查询证书短地址", response = classOf[QueryAddr])))
-  def getAddrByCert =
-    path("certAddr" / "getAddrByCert") {
-      post {
-         entity(as[PostCert]) { PostCert =>
-          complete { (ra ? PostCert).mapTo[QueryAddr] }
-        }
-      }
-    }
-
-  @Path("/getCertByAddr")
-  @ApiOperation(value = "返回证书字符串", notes = "", nickname = "getCertByAddr", httpMethod = "POST")
-  @ApiImplicitParams(Array(
-    new ApiImplicitParam(name = "body", value = "短地址", required = true, dataTypeClass = classOf[PostAddr], paramType = "body")))
-  @ApiResponses(Array(
-  new ApiResponse(code = 200, message = "查询证书字符串", response = classOf[QueryCert])))
-    def getCertByAddr =
-    path("certAddr" / "getCertByAddr") {
-      post {
-         entity(as[PostAddr]) { PostAddr =>
-          complete { (ra ? PostAddr).mapTo[QueryCert] }
-        }
-      }
-    }
-  }
-
-
-@Api(value = "/hash", description = "验证hash是否存在", produces = "application/json")
-@Path("hash")
-class HashVerifyService(ra: ActorRef)(implicit executionContext: ExecutionContext)
-  extends Directives {
-
-  import akka.pattern.ask
-  import scala.concurrent.duration._
-
-  import Json4sSupport._
-  implicit val serialization = jackson.Serialization // or native.Serialization
-  implicit val formats = DefaultFormats
-  implicit val timeout = Timeout(20.seconds)
-
-  val route = verifyImageHash
-  
-  @Path("/verifyHash")
-  @ApiOperation(value = "返回hash是否存在", notes = "", nickname = "verifyHash", httpMethod = "POST")
-  @ApiImplicitParams(Array(
-    new ApiImplicitParam(name = "body", value = "hash值与cid", required = true, dataTypeClass = classOf[PostHash], paramType = "body")))
-  @ApiResponses(Array(new ApiResponse(code = 200, message = "验证hash值", response = classOf[QueryHash])))
-  def verifyImageHash =
-    path("hash" / "verifyHash") {
-      post {
-         entity(as[PostHash]) { PostHash =>
-          complete { (ra ? PostHash).mapTo[QueryHash] }
-        }
-      }
-    }
   }

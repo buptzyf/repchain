@@ -15,15 +15,20 @@
  */
 package rep.crypto.cert
 
-import java.security.{ PrivateKey, PublicKey, KeyStore }
-import java.security.cert.{ Certificate, CertificateFactory }
+import java.security.{KeyStore, PrivateKey, PublicKey}
+import java.security.cert.{Certificate, CertificateFactory, X509Certificate}
+
 import rep.protos.peer.CertId
+
 import scala.collection.mutable
 import java.io._
-import java.util.{ ArrayList, List }
+import java.util.{ArrayList, List}
+
 import rep.app.conf.SystemProfile
+
 import scala.util.control.Breaks._
 import fastparse.utils.Base64
+import org.bouncycastle.util.io.pem.PemReader
 
 /**
  * 负责签名和验签的工具了，所有相关的功能都调用该类
@@ -176,6 +181,24 @@ object SignTool {
       new ByteArrayInputStream(
         Base64.Decoder(pemcert.replaceAll("\r\n", "").stripPrefix("-----BEGIN CERTIFICATE-----").stripSuffix("-----END CERTIFICATE-----")).toByteArray))
     cert
+  }
+
+  /**
+    * 根据pem字符串生成证书
+    * @param certPem
+    * @return
+    */
+  def generateX509CertByPem(certPem: String): Option[X509Certificate] = {
+    try {
+      val cf = CertificateFactory.getInstance("X.509")
+      val pemReader = new PemReader(new StringReader(certPem))
+      val certByte = pemReader.readPemObject().getContent()
+      val x509Cert = cf.generateCertificate(new ByteArrayInputStream(certByte))
+      Some(x509Cert.asInstanceOf[X509Certificate])
+    } catch {
+      case ex: Exception =>
+        None
+    }
   }
   
   def getCertByFile(path:String):Certificate = {
