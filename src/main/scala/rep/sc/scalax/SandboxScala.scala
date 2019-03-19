@@ -39,7 +39,7 @@ import rep.sc.contract._
 class SandboxScala(cid:ChaincodeId) extends Sandbox(cid){
   var cobj:IContract = null
   
-  def doTransaction(t:Transaction,from:ActorRef, da:String):DoTransactionResult ={
+  def doTransaction(t:Transaction,from:ActorRef, da:String, isForInvoke:Boolean):DoTransactionResult ={
     //上下文可获得交易
     //要么上一份给result，重新建一份
     shim.sr = ImpDataPreloadMgr.GetImpDataPreload(sTag, da)
@@ -59,7 +59,8 @@ class SandboxScala(cid:ChaincodeId) extends Sandbox(cid){
           val key_code =  WorldStateKeyPreFix+ cid.chaincodeName  
           val coder = shim.sr.Get(key_code)
           
-          if(shim.sr.Get(key_tx) != null)
+          //isForInvoke是恢复已部署的合约而不是新部署合约
+          if(!isForInvoke && shim.sr.Get(key_tx) != null)
             ActionResult(-1, Some("存在重复的合约Id"))
           else if(coder!= null && !t.signature.get.certId.get.creditCode.equals(new String(coder))){
                 ActionResult(-2, Some("合约只能由部署者升级更新"))
@@ -86,6 +87,22 @@ class SandboxScala(cid:ChaincodeId) extends Sandbox(cid){
           //TODO case  Transaction.Type.CHAINCODE_DESC 增加对合约描述的处理
         case  Transaction.Type.CHAINCODE_INVOKE =>
           //获得合约action
+          /*if(cobj == null){
+            val dataaccess: ImpDataAccess = ImpDataAccess.GetDataAccess(pe.getSysTag)
+            val key_tx = WorldStateKeyPreFix+ tx_cid
+            val tx_id = ByteString.copyFrom(dataaccess.Get(key_tx)).toStringUtf8() 
+            val block = Block.parseFrom(dataaccess.getBlockByTxId(tx_id))
+            val ts = block.transactions
+            for(t <- ts){
+              if(tx_id.equalsIgnoreCase(t.id)){
+                val code = t.para.spec.get.codePackage
+                val clazz = Compiler.compilef(code,tx_cid)
+                cobj = clazz.getConstructor().newInstance().asInstanceOf[IContract]
+                //cobj = new ContractAssets()
+                cobj.init(ctx)
+              }
+            }
+          }*/
           val ipt = t.para.ipt.get
           val action = ipt.function
           //获得传入参数
@@ -93,8 +110,14 @@ class SandboxScala(cid:ChaincodeId) extends Sandbox(cid){
           cobj.onAction(ctx,action,data.head)
       }
       
+       val mb = shim.sr.GetComputeMerkle4String
+      val mbstr = mb match {
+        case null => None
+        case _ => Option(mb)  //Option(BytesHex.bytes2hex(mb))
+      }
+      
       new DoTransactionResult(t,from, r, 
-          None,
+          mbstr,
          shim.ol.toList,shim.mb,None)
     }catch{
       case e: Exception => 
