@@ -225,10 +225,12 @@ class EndorsementModule(moduleName: String) extends ModuleBase(moduleName) {
            val hashtime = System.currentTimeMillis()
           if (BlockHelper.checkBlockContent(blk.endorsements.head, blkInfo,pe.getSysTag)) {
             val checkblocktime = System.currentTimeMillis()
+              logMsg(LogType.WARN, "+++++===>endorser check content is succuss")
               if(!hasRepeatOfTrans(blk.transactions)){
                  val checktranstime = System.currentTimeMillis()
+                 logMsg(LogType.WARN, "+++++===>endorser check repeat trans is succuss")
                   if(preload.VerifyForEndorsement(blk)){
-                    
+                    logMsg(LogType.WARN, "+++++===>endorser verify endor is succuss")
                     /*this.waitEndorseblock = blk
                     this.waitEndorseblockIdentifier = blkidentifier
                     this.actRef4Blocker = actRef
@@ -244,6 +246,7 @@ class EndorsementModule(moduleName: String) extends ModuleBase(moduleName) {
                     //使用对象内的方法来验证签名
                     val b =  verifyTransSign(blk.transactions.toArray[Transaction])
                      if(b){
+                       logMsg(LogType.WARN, "+++++===>endorser trans verify is succuss")
                          val checksignresulttime = System.currentTimeMillis()
                         logMsg(LogType.WARN, s"Block endorse success,current height=${pe.getCacheHeight()},identifier=${blkidentifier}")
                         //logMsg(LogType.INFO,s"handle time=${checktransresulttime-calltime},hashtime=${hashtime-calltime},checkblocktime=${checkblocktime-hashtime},"+
@@ -259,6 +262,7 @@ class EndorsementModule(moduleName: String) extends ModuleBase(moduleName) {
                         val finishtime = System.currentTimeMillis()
                         //logMsg(LogType.INFO,s"------endorse finish time=${finishtime-sendertime},network time=${recvtime-sendertime},condition check time=${calltime-recvtime},handle time=${finishtime-calltime}")
                      }else{
+                       logMsg(LogType.WARN, "~~~~~~~~~~~~~~~~~~~~~endorser trans verify is failed")
                        actRef! EndorsedBlock(false, blkData, BlockHelper.endorseBlock4NonHash(blkInfo, pe.getSysTag),blkidentifier)
                        //签名之前不再使用hash
                        //actRef! EndorsedBlock(false, blkData, BlockHelper.endorseBlock(blkInfo, pe.getSysTag),blkidentifier)
@@ -283,7 +287,7 @@ class EndorsementModule(moduleName: String) extends ModuleBase(moduleName) {
                     }*/
                   }else{
                       val finishtime = System.currentTimeMillis()
-                      logMsg(LogType.WARN, "Transcation preload failed,Block endorse failed")
+                      logMsg(LogType.WARN, "~~~~~~~~~~~~~~~~~~~~~Transcation preload failed,Block endorse failed")
                       logMsg(LogType.INFO,s"---failed---endorse finish time=${finishtime},network time=${recvtime-sendertime},condition check time=${calltime-recvtime},handle time=${finishtime-calltime}")
                       actRef! EndorsedBlock(false, blkData, BlockHelper.endorseBlock4NonHash(blkInfo, pe.getSysTag),blkidentifier)
                       //签名之前不再使用hash
@@ -291,14 +295,14 @@ class EndorsementModule(moduleName: String) extends ModuleBase(moduleName) {
                     
                   }
               }else{
-                    logMsg(LogType.WARN, "Transcation vertified failed,found same Transcation")
+                    logMsg(LogType.WARN, "~~~~~~~~~~~~~~~~~~~~~Transcation vertified failed,found same Transcation")
                     actRef! EndorsedBlock(false, blkData, BlockHelper.endorseBlock4NonHash(blkInfo, pe.getSysTag),blkidentifier)
                     //签名之前不再使用hash
                     //actRef! EndorsedBlock(false, blkData, BlockHelper.endorseBlock(blkInfo, pe.getSysTag),blkidentifier)
               }
            }
            else {
-             logMsg(LogType.WARN, "Blocker Certification vertified failed")
+             logMsg(LogType.WARN, "~~~~~~~~~~~~~~~~~~~~~Blocker Certification vertified failed")
              actRef! EndorsedBlock(false, blkData, BlockHelper.endorseBlock4NonHash(blkInfo, pe.getSysTag),blkidentifier)
              //签名之前不再使用hash
              //actRef! EndorsedBlock(false, blkData, BlockHelper.endorseBlock(blkInfo, pe.getSysTag),blkidentifier)
@@ -337,18 +341,19 @@ class EndorsementModule(moduleName: String) extends ModuleBase(moduleName) {
             //Check the blocker
             //println(" blk.previousBlockHash=" + blk.previousBlockHash.toStringUtf8  + "\t pe.getCurrentBlockHash="+pe.getCurrentBlockHash)
             if (blk.previousBlockHash.toStringUtf8 == pe.getCurrentBlockHash) {
-              
+               logMsg(LogType.WARN, "+++++===>endorser block verify is succuss")
                 if (!ClusterHelper.isBlocker(pe.getSysTag, pe.getBlocker.toString)) {
                 //Block endorsement
                 //广播收到背书请求的事件
                 sendEvent(EventType.RECEIVE_INFO, mediator, selfAddr, Topic.Endorsement, Event.Action.BLOCK_ENDORSEMENT)
                   if (pe.getBlocker.toString  == blocker.toString) {
+                    logMsg(LogType.WARN, "+++++===>endorser blocker is succuss")
                     endorseForWork(blk, actRef,blkidentifier,sendertime,recvtime)
                     cacheEndorseBlock = null
                   }else {
                     cacheEndorseBlock = PrimaryBlock4Cache(blk, blocker, voteinedx, actRef,blkidentifier,sendertime)
                     NoticeVoteModule(voteinedx)
-                    logMsg(LogType.WARN, "endorse add to cache")
+                    logMsg(LogType.WARN, "~~~~~~~~~~~~~~~~~~~~~endorser add to cache")
                     logMsg(LogType.WARN, s"${blocker} is not the current blocker(${pe.getBlocker})")
                   }
                 }else{ 
@@ -358,14 +363,14 @@ class EndorsementModule(moduleName: String) extends ModuleBase(moduleName) {
             }else{
                   //clear pe endorse cache
                   cacheEndorseBlock = PrimaryBlock4Cache(blk, blocker, voteinedx, actRef,blkidentifier,sendertime)
-                  logMsg(LogType.WARN, "endorse add to cache")
+                  logMsg(LogType.WARN, "~~~~~~~~~~~~~~~~~~~~~endorser add to cache")
                   logMsg(LogType.WARN, s"Chain in this node is not complete,this current heigh=${pe.getCacheHeight()},before=${blk.previousBlockHash.toStringUtf8},local=${pe.getCurrentBlockHash},blocker=${pe.getBlocker})")
               }
         }
         else {
             cacheEndorseBlock = PrimaryBlock4Cache(blk, blocker, voteinedx, actRef,blkidentifier,sendertime)
             //NoticeVoteModule(voteinedx)
-          logMsg(LogType.WARN, "It is not a candidate this time, endorsement requirement dropped")
+          logMsg(LogType.WARN, "~~~~~~~~~~~~~~~~~~~~~It is not a candidate this time, endorsement requirement dropped")
         }
     }else{
       cacheEndorseBlock = null
