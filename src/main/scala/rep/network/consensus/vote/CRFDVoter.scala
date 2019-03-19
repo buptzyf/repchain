@@ -19,6 +19,7 @@ package rep.network.consensus.vote
 import rep.crypto.Sha256
 import scala.collection.mutable
 import rep.storage.util.pathUtil
+import scala.math._
 
 /**
   * 系统默认
@@ -45,7 +46,7 @@ trait CRFDVoter extends VoterBase {
   }
   
   private def getRandomList(seed:Long,candidatorLen:Int,candidatorTotal:Int):Array[randomNumber]={
-    val m = 2*2*2*2*2*2*2*2*2*2*2*2*2*2*2*2*2*2*2*2
+    val m = pow(2,20).toLong
     val a = 2045
     val b = 1
     var randomArray = new Array[randomNumber](candidatorTotal)
