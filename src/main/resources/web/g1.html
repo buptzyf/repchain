@@ -344,13 +344,13 @@
                     	}
                         graph.cout_blocks++;
                         var blk = msg.blk;
-                        var dt = new Date(blk.timestamp.seconds * 1000 - 8 * 3600 * 1000);
+                        var dt = new Date(blk.endorsements[0].tmLocal.seconds * 1000 - 8 * 3600 * 1000);
                         var blk_hash = bufferToBase64(blk.previousBlockHash);
                         var ts = blk.transactions;
                         var tstr = "<li>本块交易数: " + ts.length + "<ul>";
                         for (var i = 0; i < ts.length; i++) {
                             var t = ts[i];
-                            tstr += "<li><a target='_blank' href='/transaction/" + t.txid + "'>" + t.txid + "</a>"
+                            tstr += "<li><a target='_blank' href='/transaction/" + t.id + "'>" + t.id + "</a>"
                                 //+"<br/>by："+bufferToBase64(t.signature)
                                 +
                                 "</li>";
