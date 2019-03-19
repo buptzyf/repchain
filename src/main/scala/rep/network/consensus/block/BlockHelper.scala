@@ -70,14 +70,15 @@ object BlockHelper {
     * @return
     */
   def checkBlockContent(endor:Signature, blkHash: Array[Byte],sysName:String): Boolean = {
+    var result = false
     //获取出块人的背书信息
     try{
       val certid = endor.getCertId
-      SignTool.verify(endor.signature.toByteArray, blkHash, certid,sysName)
+      result = SignTool.verify(endor.signature.toByteArray, blkHash, certid,sysName)
     }catch{
       case e  : RuntimeException => false
     }
-
+    result
   }
   
   //用于对交易对签名验证
@@ -90,7 +91,7 @@ object BlockHelper {
     
     
     try{
-      SignTool.verify(sig.get.signature.toByteArray(), tOutSig.toByteArray, sig.get.getCertId,sysName)
+      result = SignTool.verify(sig.get.signature.toByteArray(), tOutSig.toByteArray, sig.get.getCertId,sysName)
        
       }catch{
         case e : RuntimeException => resultMsg = s"The transaction(${t.id}) is not trusted${e.getMessage}"

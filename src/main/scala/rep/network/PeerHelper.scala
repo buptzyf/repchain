@@ -79,7 +79,7 @@ object PeerHelper {
     t = t.withCid(chaincodeId)
     t = t.withIpt(cip)
     t = t.withType(rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE)
-
+    t = t.clearSignature
     val certid = IdTool.getCertIdFromName(nodeName)
     var sobj = Signature(Option(certid), Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)))
     sobj = sobj.withSignature(ByteString.copyFrom(SignTool.sign(nodeName, t.toByteArray)))
@@ -105,7 +105,8 @@ object PeerHelper {
     t = t.withCid(chaincodeId)
     t = t.withSpec(cip)
     t = t.withType(rep.protos.peer.Transaction.Type.CHAINCODE_DEPLOY)
-
+    t = t.clearSignature
+    
     val certid = IdTool.getCertIdFromName(nodeName)
     var sobj = Signature(Option(certid), Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)))
     sobj = sobj.withSignature(ByteString.copyFrom(SignTool.sign(nodeName, t.toByteArray)))
@@ -136,7 +137,7 @@ class PeerHelper(name: String) extends ModuleBase(name) {
     //注册接收交易的广播
     SubscribeTopic(mediator, self, selfAddr, Topic.Transaction, true)
     logMsg(name + " ~ " + "Transaction Creator Start")
-    scheduler.scheduleOnce(5.seconds, self, Tick)
+    scheduler.scheduleOnce(15.seconds, self, Tick)
   }
 
   // override postRestart so we don't call preStart and schedule a new Tick
