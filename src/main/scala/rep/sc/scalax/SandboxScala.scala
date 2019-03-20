@@ -73,14 +73,17 @@ class SandboxScala(cid:ChaincodeId) extends Sandbox(cid){
             cobj.init(ctx)
             //deploy返回chancode.name
             //利用kv记住cid对应的txid,并增加kv操作日志,以便恢复deploy时能根据cid找到当时deploy的tx及其代码内容
-            val txid = ByteString.copyFromUtf8(t.id).toByteArray()
-            shim.sr.Put(key_tx,txid)
-            shim.ol.append(new Oper(key_tx, null, txid))
-            
-            //利用kv记住合约的开发者
-            val coder =  ByteString.copyFromUtf8(t.signature.get.certId.get.creditCode).toByteArray()
-            shim.sr.Put(key_code,coder)
-            shim.ol.append(new Oper(key_code, null, coder))            
+            //如果是部署合约需要登记部署合约相关的信息，包括：合约内容等。
+            if(!isForInvoke){
+              val txid = ByteString.copyFromUtf8(t.id).toByteArray()
+              shim.sr.Put(key_tx,txid)
+              shim.ol.append(new Oper(key_tx, null, txid))
+              
+              //利用kv记住合约的开发者
+              val coder =  ByteString.copyFromUtf8(t.signature.get.certId.get.creditCode).toByteArray()
+              shim.sr.Put(key_code,coder)
+              shim.ol.append(new Oper(key_code, null, coder))     
+            }
             new ActionResult(1,None)
           }
          //新建class实例并执行合约,传参为json数据
