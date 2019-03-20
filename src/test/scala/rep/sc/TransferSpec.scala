@@ -31,6 +31,7 @@ import rep.sc.TransferSpec.{ACTION, SetMap}
 import rep.sc.tpl.{CertInfo, Transfer}
 import rep.storage.ImpDataAccess
 import rep.utils.Json4s.compactJson
+import rep.app.conf.SystemProfile
 
 import scala.concurrent.duration._
 import scala.collection.mutable.Map
@@ -91,7 +92,7 @@ class TransferSpec(_system: ActorSystem)
     val db = ImpDataAccess.GetDataAccess(sysName)
     val sandbox = system.actorOf(TransProcessor.props("sandbox", "", probe.ref))
 
-    val cid2 =  ChaincodeId("ContractCert",1)
+    val cid2 =  ChaincodeId(SystemProfile.getAccountChaincodeName,1)
     val cid1 = ChaincodeId("ContractAssetsTPL",1)
     //生成deploy交易
     val t1 = PeerHelper.createTransaction4Deploy(sysName,cid1 ,

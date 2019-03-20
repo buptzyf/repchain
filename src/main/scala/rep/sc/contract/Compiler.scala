@@ -139,7 +139,7 @@ class Compiler(targetDir: Option[File], bDebug:Boolean) {
     val className = if(cid!=null) PRE_CLS_NAME+cid else classNameForCode(pcode)
     //debug环境下每次强制重新写入
     var cl: Option[Class[_]] = None
-    if(!bDebug){
+    //if(!bDebug){
        try{
         cl = Some(Class.forName(className))
       }catch {
@@ -148,7 +148,7 @@ class Compiler(targetDir: Option[File], bDebug:Boolean) {
       } 
       if(cl!=None)
           return cl.get      
-    }
+    //}
     //获取替换类名
     val ncode = pcode.substring(p0,p3) + "class "+className+ " "+pcode.substring(p1,p2+1)
     //+"\nscala.reflect.classTag[ContractAssets2].runtimeClass"

@@ -20,8 +20,6 @@ package rep.sc.tpl
 import org.json4s._
 import org.json4s.jackson.JsonMethods._
 import rep.sc.contract._
-import rep.sc.contract.ContractContext
-import rep.sc.contract.IContract
 import rep.app.conf.SystemProfile
 import rep.protos.peer.ChaincodeId
 import rep.utils.IdTool
