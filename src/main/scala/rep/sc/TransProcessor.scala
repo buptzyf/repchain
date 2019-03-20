@@ -199,7 +199,7 @@ class TransProcessor(name: String, da:String, parent: ActorRef) extends Actor {
             val tx_deploy = loadTransaction(sr, ByteString.copyFrom(deploy_tx_id).toStringUtf8()).get
             // acto新建之后需要从持久化恢复的chainCode
             // 根据tx_deploy的类型决定采用js合约容器或者scala合约容器          
-            val actor = createActorByType(  t.para.spec.get.ctype, cid, sn)
+            val actor = createActorByType(  tx_deploy.para.spec.get.ctype, cid, sn)
             actor ! DeployTransaction(tx_deploy, from, da)
             actor
           case Transaction.Type.CHAINCODE_DEPLOY =>
