@@ -85,7 +85,24 @@ object Sandbox {
   def getTXCId(t: Transaction): String = {
     val t_cid = t.cid.get
     getChaincodeId(t_cid)
-  }    
+  } 
+  
+  val coderMap = collection.mutable.Map[String, String]()
+  val stateMap = collection.mutable.Map[String, Boolean]()
+  
+  def getContractCoder(cName:String)= {
+     coderMap.get(cName)
+  }
+  def setContractCoder(cName:String, coder:String) = synchronized{
+    coderMap += (cName -> coder)
+  }
+  def getContractState(cid:String)={
+    stateMap.get(cid)
+  }
+  def setContractState(cid:String, state:Boolean) = synchronized{
+    stateMap += (cid-> state)
+  }
+  
 }
 
 /** 合约容器的抽象类，提供与底层进行API交互的shim实例，用于与存储交互的实例pe
@@ -110,6 +127,13 @@ abstract class Sandbox(cid:ChaincodeId) extends Actor {
   val shim = new Shim(context.system, cid.chaincodeName)
   val addr_self = akka.serialization.Serialization.serializedActorPath(self)
 
+  def errAction(errCode: Int) :ActionResult = {
+     errCode match{
+       case -101 =>
+         ActionResult(errCode,Some("目标合约不存在"))
+     }
+     ActionResult(errCode,Some("不明原因"))
+  }
   /** 消息处理主流程,包括对交易处理请求、交易的预执行处理请求、从存储恢复合约的请求
    * 
    */
@@ -124,8 +148,8 @@ abstract class Sandbox(cid:ChaincodeId) extends Actor {
       shim.rollback()
       sender ! tr
     //恢复chainCode,不回消息
-    case  DeployTransaction(t:Transaction,from:ActorRef, da:String,isForInvoke:Boolean) =>
-      val tr = doTransaction(t,from,da,isForInvoke)
+    case  DeployTransaction(t:Transaction,from:ActorRef, da:String) =>
+      val tr = doTransaction(t,from,da,true)
       shim.rollback()
   }
   /** 交易处理抽象方法，接受待处理交易，返回处理结果
@@ -134,6 +158,6 @@ abstract class Sandbox(cid:ChaincodeId) extends Actor {
    * 	@param da 存储访问标示
    *  @return 交易执行结果
    */
-  def doTransaction(t:Transaction,from:ActorRef, da:String,isForInvoke:Boolean=false):DoTransactionResult 
+  def doTransaction(t:Transaction,from:ActorRef, da:String, bRestore:Boolean=false):DoTransactionResult 
   
 }

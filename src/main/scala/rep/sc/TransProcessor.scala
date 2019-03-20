@@ -40,6 +40,10 @@ import rep.api.rest.RestActor.loadTransaction
 import rep.network.tools.PeerExtension
 import rep.sc.js.SandboxJS
 import rep.sc.scalax.SandboxScala
+import rep.sc.contract._
+import rep.utils.SerializeUtils.deserialise
+import rep.utils.SerializeUtils.serialise
+
 
 /** 伴生对象，预定义了交易处理的异常描述，传入消息的case类，以及静态方法
  *  @author c4w
@@ -51,10 +55,13 @@ object TransProcessor {
   val ERR_DEPLOY_CODE = "deploy交易代码内容不允许为空"
   val ERR_INVOKE_CHAINCODEID_EMPTY = "非deploy交易必须指定chaincodeId"
   val ERR_INVOKE_CHAINCODE_NOT_EXIST = "调用的chainCode不存在"
-  
+  val ERR_REPEATED_CID ="存在重复的合约Id"
+  val ERR_CODER = "合约只能由部署者升级更新"
+  val ERR_DISABLE_CID ="合约处于禁用状态"
   //下属actor的命名前缀
   val PRE_SUB_ACTOR = "sb_"
   val log_prefix = "Sandbox-TransProcessor~"
+  val PRE_STATE = "_STATE"
   
   /** 从api请求传入的 处理的预执行交易的输入消息
    *  @constructor 对交易简单封装
@@ -76,7 +83,7 @@ object TransProcessor {
    *  @param from 来源actor指向
    *  @param da 数据访问标示
    */
-  case class DeployTransaction(t:Transaction, from:ActorRef, da:String, isForInvoke:Boolean=false)
+  case class DeployTransaction(t:Transaction, from:ActorRef, da:String)
  
   /** 根据传入参数返回actor的Props
    *  @param name actor的命名
@@ -111,10 +118,18 @@ class TransProcessor(name: String, da:String, parent: ActorRef) extends Actor {
   def receive = {
     //来自共识层的执行交易请求
     case  ti:DoTransaction => 
-      val st = ti.t.`type`
-      val sb_actor = getSandboxActor(ti.t,ti.from,ti.da)
-       sb_actor ! ti
-      
+      try{
+        val st = ti.t.`type`
+        val sb_actor = getSandboxActor(ti.t,ti.from,ti.da)
+         sb_actor ! ti
+      }catch{
+        case e:Exception => 
+           e.printStackTrace()
+           val r = new DoTransactionResult(ti.t,null, null, null,null,null,
+               Option(akka.actor.Status.Failure(e)))
+           //向请求发送方返回包含执行异常的结果
+           sender ! r
+      }      
     //来自API的预执行交易的post提交  
     case m:PreTransaction =>
       val st = m.t.`type`
@@ -143,6 +158,15 @@ class TransProcessor(name: String, da:String, parent: ActorRef) extends Actor {
         parent ! tr      
   }
   
+  def createActorByType(ctype: rep.protos.peer.ChaincodeDeploy.CodeType,
+      cid:rep.protos.peer.ChaincodeId, sn:String): ActorRef = {
+      ctype match{
+        case rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA => 
+          context.actorOf(Props(new SandboxScala(cid)), sn)
+        //默认采用jdk内置的javascript作为合约容器
+        case _ => context.actorOf(Props(new SandboxJS(cid)), sn)
+      }    
+  }
   /** 根据待处理交易，请求发送actor，数据访问实例标示获得用于处理合约的容器actor
    *  @param t 待处理交易
    *  @param from 请求发送方
@@ -153,42 +177,103 @@ class TransProcessor(name: String, da:String, parent: ActorRef) extends Actor {
     //如果已经有对应的actor实例，复用之，否则建实例,actor name加字母前缀
     val tx_cid = getTXCId(t)
     val cid = t.cid.get
+    //检查交易是否有效，无效抛出异常
+    checkTransaction(t)
+    
     val sn = PRE_SUB_ACTOR+tx_cid
     //如果已经有对应的actor实例，复用之，否则建实例,actor name加字母前缀
     val cref = context.child(sn)
     cref match {
       case Some(r) =>
+        //检查该合约是否被禁用
         r
       case None =>
-        if(t.`type` != Transaction.Type.CHAINCODE_DEPLOY ){
-          //println(s"${pe.getSysTag} do invoke")
-          //尝试从持久化恢复,找到对应的Deploy交易，并先执行之
-          
-          val sr = ImpDataAccess.GetDataAccess(sTag)
-          val key_tx = WorldStateKeyPreFix+ tx_cid
-          val tx_id =sr.Get(key_tx) 
-          if(tx_id==null)
-            throw new SandboxException(ERR_INVOKE_CHAINCODE_NOT_EXIST)
-          
-          val tx_deploy = loadTransaction(sr, ByteString.copyFrom(tx_id).toStringUtf8()).get
-          // acto新建之后需要从持久化恢复的chainCode
-          // 根据tx_deploy的类型决定采用js合约容器或者scala合约容器          
-          val actor = tx_deploy.para.spec.get.ctype match{
-            case rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA => 
-              context.actorOf(Props(new SandboxScala(cid)), sn)
-            //默认采用jdk内置的javascript作为合约容器
-            case _ => context.actorOf(Props(new SandboxJS(cid)), sn)
-          }
-          actor ! DeployTransaction(tx_deploy, from, da, true)
-          actor
-        }else
-          //新执行的deploy交易,新建actor
-          t.para.spec.get.ctype match{
-            case rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA => 
-              context.actorOf(Props(new SandboxScala(cid)), sn)
-            //默认采用jdk内置的javascript作为合约容器
-            case _ => context.actorOf(Props(new SandboxJS(cid)), sn)
-          }
+        t.`type`  match {
+          case Transaction.Type.CHAINCODE_INVOKE | Transaction.Type.CHAINCODE_SET_STATE=>
+            //尝试从持久化恢复,找到对应的Deploy交易，并先执行之 
+            val sr = ImpDataAccess.GetDataAccess(sTag)
+            val key_tx = WorldStateKeyPreFix+ tx_cid
+            val deploy_tx_id =sr.Get(key_tx) 
+            if(deploy_tx_id==null)
+              throw new SandboxException(ERR_INVOKE_CHAINCODE_NOT_EXIST)            
+            val tx_deploy = loadTransaction(sr, ByteString.copyFrom(deploy_tx_id).toStringUtf8()).get
+            // acto新建之后需要从持久化恢复的chainCode
+            // 根据tx_deploy的类型决定采用js合约容器或者scala合约容器          
+            val actor = createActorByType(  t.para.spec.get.ctype, cid, sn)
+            actor ! DeployTransaction(tx_deploy, from, da)
+            actor
+          case Transaction.Type.CHAINCODE_DEPLOY =>
+            //新执行的deploy交易,新建actor
+            createActorByType(  t.para.spec.get.ctype, cid, sn)
+        }
     }
   }
+  
+ def checkTransaction(t: Transaction) = {
+    val tx_cid = getTXCId(t)
+    t.`type`  match {
+      case Transaction.Type.CHAINCODE_INVOKE =>
+        //cid不存在或状态为禁用抛出异常
+        if(Sandbox.getContractState(tx_cid)==None){
+          val key_tx_state = WorldStateKeyPreFix+ tx_cid + PRE_STATE
+          val sr = ImpDataAccess.GetDataAccess(sTag)
+          val state_bytes = sr.Get(key_tx_state)
+          //合约不存在
+          if(state_bytes == null)
+            throw new SandboxException(ERR_INVOKE_CHAINCODE_NOT_EXIST)    
+          else{
+             val state = deserialise(state_bytes).asInstanceOf[Boolean]
+             Sandbox.setContractState(tx_cid, state)
+             if(!state){
+               throw new SandboxException(ERR_DISABLE_CID)    
+             }
+          }
+        }
+      case Transaction.Type.CHAINCODE_DEPLOY =>
+        val cn = t.cid.get.chaincodeName
+        var coder = Sandbox.getContractCoder(cn)
+        if(coder == None){
+          val key_coder =  WorldStateKeyPreFix+ cn  
+          val sr = ImpDataAccess.GetDataAccess(sTag)
+          val coder_bytes = sr.Get(key_coder)
+          if(coder_bytes != null){
+            coder = Some(new String(coder_bytes))
+            Sandbox.setContractCoder(cn, coder.get)
+          }
+        }
+        //合约已存在且部署者并非当前交易签名者
+        if(coder!=None && !t.signature.get.certId.get.creditCode.equals(coder.get))
+          throw new SandboxException(ERR_CODER)      
+        
+      case Transaction.Type.CHAINCODE_SET_STATE =>
+        val cn = t.cid.get.chaincodeName
+        var coder = Sandbox.getContractCoder(cn)
+        if(coder == None){
+          val key_coder =  WorldStateKeyPreFix+ cn  
+          val sr = ImpDataAccess.GetDataAccess(sTag)
+          val coder_bytes = sr.Get(key_coder)
+          if(coder_bytes != null){
+            coder = Some(new String(coder_bytes))
+            Sandbox.setContractCoder(cn, coder.get)
+          }
+        }
+        //合约已存在且部署者并非当前交易签名者
+        if(coder!=None && !t.signature.get.certId.get.creditCode.equals(coder.get))
+          throw new SandboxException(ERR_CODER)       
+        
+        //cid不存在抛出异常
+        if(Sandbox.getContractState(tx_cid)==None){
+          val key_tx_state = WorldStateKeyPreFix+ tx_cid + PRE_STATE
+          val sr = ImpDataAccess.GetDataAccess(sTag)
+          val state_bytes = sr.Get(key_tx_state)
+          //合约不存在
+          if(state_bytes == null)
+            throw new SandboxException(ERR_INVOKE_CHAINCODE_NOT_EXIST)    
+          else{
+             val state = deserialise(state_bytes).asInstanceOf[Boolean]
+             Sandbox.setContractState(tx_cid, state)
+          }
+        }
+    }
+ }
 }
