@@ -199,6 +199,8 @@ class PreloadTransactionModule(moduleName: String, transProcessor:ActorRef) exte
               val result = new rep.protos.peer.TransactionResult(t.id,
                 olist, 0, "")
                 
+              
+              val tmpsr = ImpDataPreloadMgr.GetImpDataPreload(pe.getDBTag,"preload_"+blk.transactions.head.id)
               //todo与执行之后需要记录当前交易执行之后的merkle值，目前结构中没有产生
               preLoadTrans(t.id) = t//t.withMetadata(ByteString.copyFrom(SerializeUtils.serialise(mb)))
 

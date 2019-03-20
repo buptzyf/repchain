@@ -14,7 +14,7 @@
  *
  */
 
-package rep.storage.timeAnalysiser
+package rep.storage.test
 
 import rep.storage._
 import rep.protos.peer._

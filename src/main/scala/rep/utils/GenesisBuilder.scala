@@ -53,7 +53,7 @@ object GenesisBuilder {
     val s1 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/ContractCert.scala")
     val l1 = try s1.mkString finally s1.close()
     
-    val cid = new ChaincodeId("REPCHAINACCOUNTMGR",1)
+    val cid = new ChaincodeId("ContractCert",1)
     
     var translist : Array[Transaction] = new Array[Transaction] (15)
     

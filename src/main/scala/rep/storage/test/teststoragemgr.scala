@@ -14,14 +14,15 @@
  *
  */
 
-package rep.storage.timeAnalysiser
+package rep.storage.test
 
 import rep.storage._;
 import rep.storage.leveldb._;
 import rep.protos.peer._;
 import rep.utils._
 import rep.crypto._
-import java.util
+import java.util._
+import com.google.protobuf.ByteString
 
 
 /**
@@ -30,96 +31,26 @@ import java.util
  * @since	2017-09-28
  * */
 object teststoragemgr {
-    def main(args: Array[String]): Unit = {
-       
-		   /*val s = StorageMgr.GetStorageMgr("1")
-		   val s1 = StorageMgr.GetStorageMgr("2")
-		   val prefix = "c_"
-		   val ccid = "sfsldfsffkwiiwuqoq_"
-		   s.BeginTrans()
-		   s1.BeginTrans()
-		   for(a <- 1 to 1000){
-		     val b = (new util.Random()).nextInt(9000)
-		     val key = prefix+ccid+b
-		     s.put(key, String.valueOf("s"+b).getBytes)
-		     s1.put(key, String.valueOf("s1"+b).getBytes)
-		   }
-		   println("s merkle="+s.GetComputeMerkle4String);
-		   println("s1 merkle="+s1.GetComputeMerkle4String);
-		   */
-		   
-		  // val lh = StorageMgr.GetStorageMgr("testSystem");
-		   
-       
-		   /*ls.put("a_1001", "bbbbb".getBytes());
-		   println("key=a_1001\tvalue="+ls.get("a_1001"));
-		   ls.delete("a_1001");
-		    println("key=a_1001\tvalue="+ls.get("a_1001"));*/
-		    
-			/*lh.put("a_1001", "nnnn".getBytes());
-			lh.put("a_1000", "uuuu".getBytes());
-			println("key=a_1000\tvalue="+lh.byteToString(lh.get("a_1000")));
-			lh.BeginTrans();
-			lh.delete("a_1000");
-			System.out.println("key=a_1000\tvalue="+lh.byteToString(lh.get("a_1000")));
-			lh.put("c_1000", "dddd".getBytes());
-			System.out.println("key=c_1000\tvalue="+lh.byteToString(lh.get("c_1000")));
-			lh.put("c_1000", "eeee".getBytes());
-			System.out.println("key=c_1000\tvalue="+lh.byteToString(lh.get("c_1000")));
-			System.out.println("in trans");
-			lh.printmap(lh.FindByLike("a_"));
-			System.out.println("");
-			lh.printmap(lh.FindByLike("c_"));
-			System.out.println("");
-			lh.CommitTrans();
-			System.out.println("key=a_1000\tvalue="+lh.byteToString(lh.get("a_1000")));
-			System.out.println("key=c_1000\tvalue="+lh.byteToString(lh.get("c_1000")));
-			System.out.println("out trnas");
-			lh.printmap(lh.FindByLike("a_"));
-			System.out.println("");
-			lh.printmap(lh.FindByLike("c_"));*/
-		   
-		  /* 
-		   val atemp = s.FindByLike("c_")
-          atemp.foreach(f=>{
-            val key = f._1
-            val value1 = s.get(key)
-            val value2 = s1.get(key)
-            println("key="+key+"\tvalue1="+BytesHex.bytes2hex(value1)+"\tvalue2="+BytesHex.bytes2hex(value2))
-                //+"\tvalue2="+BytesHex.bytes2hex(value2)
-            //println(f._1, String.valueOf(f._2))
-          })
-          
-          println(s.GetComputeMerkle4String)
-          println(s1.GetComputeMerkle4String)
+   def getAllKeyValue():Unit={
+    val sr = ImpDataAccess.GetDataAccess("121000005l35120456.node1")
+    val hr = sr.FindByLike("c_")
+    hr.foreach(f=>{
+      if(f._2 != null){
+        try{
+          println(s"key=${f._1}\tvalue=${SerializeUtils.deserialise(f._2)}")
+        }catch{
+          case e:Exception => println(s"key=${f._1}\t")
+        }
+      }else{
+        println(s"key=${f._1}\t")
+      }
+      //println(s"key=${f._1}|||||\tvalue=${ByteString.copyFrom(f._2).toStringUtf8()}\r\n||||||")
       
-      s.BeginTrans()
-      s.put("c_key_a", "a".getBytes)
-      s.put("c_key_b", "d".getBytes)
-      println(s.GetComputeMerkle4String)
-      s.RollbackTrans()
-      s1.BeginTrans()
-      s1.put("c_key_a", "a".getBytes)
-      s1.put("c_key_b", "d".getBytes)
-      println(s1.GetComputeMerkle4String)
-      s1.RollbackTrans()*/
-      
-     /*println(s.getBlockHeight())
-      val blk = s.getBlockByHeight(1)
-      val blkobj = Block.parseFrom(blk);
-		  println(blkobj.toString())
-		  
-		  println(s1.getBlockHeight())
-      val blk1 = s1.getBlockByHeight(1)
-      val blkobj1 = Block.parseFrom(blk1);
-		  println(blkobj1.toString())*/
-		                        
-		  /* val tidVal =  s.get("c_" + "267454856593c8a7f9941e723767801d67e42130aa81d5720fddac932c39134e")
-      
-      val tid = SerializeUtils.deserialise(tidVal)
-      println(tid)
-      val txId = SerializeUtils.deserialise(tidVal).asInstanceOf[String]
-		  println(txId)*/
+    })
+  }
+  
+  def main(args: Array[String]): Unit = {
+       getAllKeyValue()
 		  
 		}
 }
