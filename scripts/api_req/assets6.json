@@ -1,0 +1,13 @@
+{
+  "stype": 2,
+  "chaincodename": "ContractAssetsTPL",
+  "chaincodeversion": 1,
+  "iptFunc": "transfer",
+  "iptArgs": [
+    "{\"from\" : \"121000005l35120456\",\"to\" : \"12110107bi45jh675g\",\"amount\" : 5}"
+  ],
+  "timeout": 0,
+  "legal_prose": "",
+  "code": "",
+  "ctype": 2
+}
