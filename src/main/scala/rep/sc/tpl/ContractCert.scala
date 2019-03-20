@@ -30,9 +30,9 @@ class ContractCert  extends IContract {
   val certExists = "证书已存在"
   val certNotExists = "证书不存在"
   val unknownError = "未知错误"
-  val chaincodeName = "ContractCert"// SystemProfile.getAccountChaincodeName
-  val chaincodeVersion = 1 //SystemProfile.getAccountChaincodeVersion
-  val prefix = IdTool.getCid(ChaincodeId(chaincodeName, chaincodeVersion))
+  val chaincodeName = SystemProfile.getAccountChaincodeName
+  val chaincodeVersion = SystemProfile.getAccountChaincodeVersion
+  //val prefix = IdTool.getCid(ChaincodeId(chaincodeName, chaincodeVersion))
   val underline = "_"
   val dot = "."
   // 锚点，错误回退
@@ -59,11 +59,11 @@ class ContractCert  extends IContract {
       return ActionResult(0,Some(notNodeCert))
     }
     // 存Signer账户
-    val signerKey = prefix + underline + data.creditCode
-    val signer = ctx.api.getState(signerKey)
+    //val signerKey = prefix + underline + data.creditCode
+    val signer = ctx.api.getState(data.creditCode)
     // 如果是null，表示已注销，如果不是null，则判断是否有值
     if (signer == null || new String(signer).equalsIgnoreCase("null")){
-      ctx.api.setVal(signerKey, data)
+      ctx.api.setVal(data.creditCode, data)
       ActionResult(1,None)
     } else {
       ActionResult(0,Some(signerExists))
@@ -81,9 +81,9 @@ class ContractCert  extends IContract {
     if (!isNodeCert) {
       return ActionResult(0,Some(notNodeCert))
     }
-    val certKey = prefix + underline + data.credit_code + dot + data.name
+    val certKey =  data.credit_code + dot + data.name
     val certInfo = ctx.api.getState(certKey)
-    val signerKey = prefix + underline + data.credit_code
+    val signerKey =  data.credit_code
     val signerContent = ctx.api.getState(signerKey)
     // 先判断证书，若证书不存在，则向账户添加name
     if (certInfo == null || new String(certInfo).equalsIgnoreCase("null")) {
@@ -121,7 +121,7 @@ class ContractCert  extends IContract {
     if (!isNodeCert) {
       return ActionResult(0,Some(notNodeCert))
     }
-    val certKey = prefix + underline + data.credit_code + dot + data.name
+    val certKey =  data.credit_code + dot + data.name
     val certInfo = ctx.api.getState(certKey)
     if (certInfo == null || new String(certInfo).equalsIgnoreCase("null")) {
       ActionResult(0,Some(certNotExists))

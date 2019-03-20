@@ -114,16 +114,20 @@ class ImpDataPreload (SystemName:String,InstanceName:String) extends AbstractLev
   			      "ImpDataPreload_" + SystemName + "_" + s"ImpDataPreload Put failed, error info= value is null")
 				  }
 				  if(key != null && bb != null){
-				    if(this.update.get(key) != null){
-				      val obbstr = toString(this.update.get(key))
+				    this.update.put(key, bb)
+				        //this.merkleop.Put(key, bb)
+				      this.PutWorldStateToMerkle(key,bb)
+				    /*if(this.update.get(key) != null){
+				      /*val obbstr = toString(this.update.get(key))
 				      val bbstr = toString(bb)
 				      if(!obbstr.equals(bbstr)){
 				        this.update.put(key, bb)
 				        //this.merkleop.Put(key, bb)
 				        this.PutWorldStateToMerkle(key,bb)
-				      }
+				      }*/
+				      
 				    }else{
-				      if(this.dbop.Get(key) != null){
+				      /*if(this.dbop.Get(key) != null){
 				        val obbstr = toString(this.dbop.Get(key))
   				      val bbstr = toString(bb)
   				      if(!obbstr.equals(bbstr)){
@@ -135,8 +139,8 @@ class ImpDataPreload (SystemName:String,InstanceName:String) extends AbstractLev
 				        this.update.put(key, bb)
 				        //this.merkleop.Put(key, bb)
 				        this.PutWorldStateToMerkle(key,bb)
-				      }
-				    }
+				      }*/
+				    }*/
 				  }
 				  setUseTime
 			}catch{
@@ -252,8 +256,13 @@ class ImpDataPreload (SystemName:String,InstanceName:String) extends AbstractLev
 	            
 	            if(jobj != null && jobj.length > 0){
 	              jobj.foreach(f=>{
-	                var tmpkeystr = IdxPrefix.WorldStateKeyPreFix+cid+"_"+f.key
-	                this.Put(IdxPrefix.WorldStateKeyPreFix+cid+"_"+f.key, f.newValue.toByteArray())
+	                if(f.key.startsWith(IdxPrefix.WorldStateKeyPreFix)){
+  		                  this.Put(f.key, f.newValue.toByteArray())
+  		                }else{
+  		                  this.Put(IdxPrefix.WorldStateKeyPreFix+cid+"_"+f.key, f.newValue.toByteArray())
+  		                }
+	                //var tmpkeystr = IdxPrefix.WorldStateKeyPreFix+cid+"_"+f.key
+	                //this.Put(tmpkeystr, f.newValue.toByteArray())
 	              })  
 	            }
 	          })
