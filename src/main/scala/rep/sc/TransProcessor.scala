@@ -178,7 +178,7 @@ class TransProcessor(name: String, da:String, parent: ActorRef) extends Actor {
     val tx_cid = getTXCId(t)
     val cid = t.cid.get
     //检查交易是否有效，无效抛出异常
-    checkTransaction(t)
+    //checkTransaction(t)
     
     val sn = PRE_SUB_ACTOR+tx_cid
     //如果已经有对应的actor实例，复用之，否则建实例,actor name加字母前缀
