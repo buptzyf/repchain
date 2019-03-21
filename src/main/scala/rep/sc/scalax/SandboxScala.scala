@@ -105,7 +105,7 @@ class SandboxScala(cid:ChaincodeId) extends Sandbox(cid){
         case  Transaction.Type.CHAINCODE_SET_STATE =>
           val key_tx_state = WorldStateKeyPreFix+ tx_cid + PRE_STATE
           val state = t.para.state.get
-          Sandbox.setContractState(t.id, state)
+          Sandbox.setContractState(tx_cid, state)
           val state_bytes = serialise(key_tx_state)
           shim.sr.Put(key_tx_state,state_bytes)
           shim.ol.append(new Oper(key_tx_state, null, state_bytes))
