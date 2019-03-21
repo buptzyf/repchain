@@ -214,7 +214,11 @@ class TransProcessor(name: String, da:String, parent: ActorRef) extends Actor {
     t.`type`  match {
       case Transaction.Type.CHAINCODE_INVOKE =>
         //cid不存在或状态为禁用抛出异常
-        if(Sandbox.getContractState(tx_cid)==None){
+        val state = Sandbox.getContractState(tx_cid)
+        if(state != None ){
+          if (!state.get)
+            throw new SandboxException(ERR_DISABLE_CID)
+        }else{
           val key_tx_state = WorldStateKeyPreFix+ tx_cid + PRE_STATE
           val sr = ImpDataAccess.GetDataAccess(sTag)
           val state_bytes = sr.Get(key_tx_state)
