@@ -51,7 +51,7 @@ object StateSpec {
 }
 
 /**
-  * author zyf
+  * author c4w
   * @param _system
   */
 class StateSpec(_system: ActorSystem)
