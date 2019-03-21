@@ -1,15 +1,10 @@
 package rep.sc.tpl
 
-import java.io.{ByteArrayInputStream, StringReader}
-import java.security.cert.{CertificateFactory, X509Certificate}
-
-import org.bouncycastle.util.io.pem.PemReader
 import rep.sc.contract._
 import rep.protos.peer._
 import org.json4s.jackson.JsonMethods._
 
 import scala.collection.mutable.Map
-import org.json4s.{DefaultFormats, Formats, jackson}
 import org.json4s.DefaultFormats
 import rep.app.conf.SystemProfile
 import rep.utils.{IdTool, SerializeUtils}
@@ -87,14 +82,10 @@ class ContractCert  extends IContract {
     val signerContent = ctx.api.getState(signerKey)
     // 先判断证书，若证书不存在，则向账户添加name
     if (certInfo == null || new String(certInfo).equalsIgnoreCase("null")) {
-      val certificate = generateX509Cert(data.cert.certificate)
-      if (certificate.isEmpty) {
-        return ActionResult(0, Some(unknownError))
-      }
       if (signerContent == null || new String(signerContent).equalsIgnoreCase("null")){
         return ActionResult(0,Some(signerNotExists))
       } else {
-        ctx.api.setVal(certKey, certificate.get)
+        ctx.api.setVal(certKey, data.cert)
         val signer = SerializeUtils.deserialise(signerContent).asInstanceOf[Signer]
         if (!signer.certNames.contains(data.name)){
           signer.addCertNames(data.name)
@@ -134,31 +125,23 @@ class ContractCert  extends IContract {
   }
 
   /**
-    * TODO 更新账户相关信息
+    * 更新账户相关信息
     * @param ctx
     * @param data
     * @return
     */
   def updateSigner(ctx: ContractContext, data: Signer): ActionResult = {
-    null
-  }
-
-
-  /**
-    * 根据pem字符串生成证书
-    * @param certPem
-    * @return
-    */
-  def generateX509Cert(certPem: String): Option[X509Certificate] = {
-    try {
-      val cf = CertificateFactory.getInstance("X.509")
-      val pemReader = new PemReader(new StringReader(certPem))
-      val certByte = pemReader.readPemObject().getContent()
-      val x509Cert = cf.generateCertificate(new ByteArrayInputStream(certByte))
-      Some(x509Cert.asInstanceOf[X509Certificate])
-    } catch {
-      case ex: Exception =>
-        None
+    val isNodeCert = ctx.api.bNodeCreditCode(ctx.t.getSignature.getCertId.creditCode)
+    if (!isNodeCert) {
+      return ActionResult(0,Some(notNodeCert))
+    }
+    val signer = ctx.api.getState(data.creditCode)
+    // 如果是null，账户不存在，不存在则不能更新
+    if (signer == null || new String(signer).equalsIgnoreCase("null")){
+      ActionResult(0,Some(signerNotExists))
+    } else {
+      ctx.api.setVal(data.creditCode, data)
+      ActionResult(1,None)
     }
   }
 
