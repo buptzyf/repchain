@@ -178,7 +178,7 @@ class TransProcessor(name: String, da:String, parent: ActorRef) extends Actor {
     val tx_cid = getTXCId(t)
     val cid = t.cid.get
     //检查交易是否有效，无效抛出异常
-    //checkTransaction(t)
+    checkTransaction(t)
     
     val sn = PRE_SUB_ACTOR+tx_cid
     //如果已经有对应的actor实例，复用之，否则建实例,actor name加字母前缀
@@ -230,7 +230,22 @@ class TransProcessor(name: String, da:String, parent: ActorRef) extends Actor {
           }
         }
       case Transaction.Type.CHAINCODE_DEPLOY =>
-        val cn = t.cid.get.chaincodeName
+        //检查合约名+版本是否已存在
+         if(Sandbox.getContractState(tx_cid)!=None)
+           throw new SandboxException(ERR_REPEATED_CID) 
+         else{
+          val key_tx_state = WorldStateKeyPreFix+ tx_cid + PRE_STATE
+          val sr = ImpDataAccess.GetDataAccess(sTag)
+          val state_bytes = sr.Get(key_tx_state)
+          //合约已存在
+          if(state_bytes != null){
+             val state = deserialise(state_bytes).asInstanceOf[Boolean]
+             Sandbox.setContractState(tx_cid, state)
+             throw new SandboxException(ERR_DISABLE_CID)    
+          }
+        }
+         //检查合约部署者
+       val cn = t.cid.get.chaincodeName
         var coder = Sandbox.getContractCoder(cn)
         if(coder == None){
           val key_coder =  WorldStateKeyPreFix+ cn  
