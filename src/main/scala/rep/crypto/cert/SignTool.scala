@@ -175,36 +175,18 @@ object SignTool {
     r
   }
   
-  def getCertByPem(pemcert: String): Certificate = {
+  /*def getCertByPem(pemcert: String): Certificate = {
     val cf = CertificateFactory.getInstance("X.509")
     val cert = cf.generateCertificate(
       new ByteArrayInputStream(
         Base64.Decoder(pemcert.replaceAll("\r\n", "").stripPrefix("-----BEGIN CERTIFICATE-----").stripSuffix("-----END CERTIFICATE-----")).toByteArray))
     cert
   }
-
-  /**
-    * 根据pem字符串生成证书
-    * @param certPem
-    * @return
-    */
-  def generateX509CertByPem(certPem: String): Option[X509Certificate] = {
-    try {
-      val cf = CertificateFactory.getInstance("X.509")
-      val pemReader = new PemReader(new StringReader(certPem))
-      val certByte = pemReader.readPemObject().getContent()
-      val x509Cert = cf.generateCertificate(new ByteArrayInputStream(certByte))
-      Some(x509Cert.asInstanceOf[X509Certificate])
-    } catch {
-      case ex: Exception =>
-        None
-    }
-  }
   
   def getCertByFile(path:String):Certificate = {
     val certF = CertificateFactory.getInstance("X.509")
     val fileInputStream = new FileInputStream(path)
     certF.generateCertificate(fileInputStream)
-  }
+  }*/
   
 }
