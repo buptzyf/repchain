@@ -111,8 +111,13 @@ class SandboxScala(cid:ChaincodeId) extends Sandbox(cid){
           shim.ol.append(new Oper(key_tx_state, null, state_bytes))
           new ActionResult(1,None)
       }
+      val mb = shim.sr.GetComputeMerkle4String
+      val mbstr = mb match {
+        case null => None
+        case _ => Option(mb)  //Option(BytesHex.bytes2hex(mb))
+      }
       new DoTransactionResult(t,from, r, 
-          None,
+          mbstr,
          shim.ol.toList,shim.mb,None)
     }catch{
       case e: Exception => 
