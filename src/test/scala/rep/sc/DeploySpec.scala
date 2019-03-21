@@ -108,10 +108,10 @@ class DeploySpec(_system: ActorSystem)
     val msg_send2 = new DoTransaction(t1, probe.ref, "dbnumber")
     probe.send(sandbox, msg_send1)
     val msg_recv2 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-    msg_recv2.r.code should be (-1)
+    msg_recv2.err.get.cause.getMessage should be (TransProcessor.ERR_REPEATED_CID)
 
     val cid3 = new ChaincodeId("Assets",2)
-    //不同合约部署者不允许部署同样名称不同版本合约
+     //同一合约部署者允许部署同样名称不同版本合约
     val t3 = PeerHelper.createTransaction4Deploy(sysName, cid3,
        l1, "",5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
     val msg_send3 = new DoTransaction(t3, probe.ref, "dbnumber")
@@ -121,22 +121,17 @@ class DeploySpec(_system: ActorSystem)
 
     
     val cid4 = new ChaincodeId("Assets",3)
-    
-
-    
-    
     val sysName2 = "12110107bi45jh675g.node2"
-    //建立PeerManager实例是为了调用transactionCreator(需要用到密钥签名)，无他
-    //val pm2 = system.actorOf(ModuleManager.props("pm2", sysName2))
+    //不同合约部署者不允许部署同样名称不同版本合约
     //在这里添加一个私钥的装载，因为系统默认只装载自己的节点私钥
     SignTool.loadPrivateKey("12110107bi45jh675g.node2", "123", "jks/12110107bi45jh675g.node2.jks")
-    //同一合约部署者允许部署同样名称不同版本合约
+   
     val t4 = PeerHelper.createTransaction4Deploy(sysName2, cid4,
        l1, "",5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
     val msg_send4 = new DoTransaction(t4, probe.ref, "dbnumber")
     probe.send(sandbox, msg_send4)
     val msg_recv4 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-    msg_recv4.r.code should be (-2)
+    msg_recv4.err.get.cause.getMessage should be (TransProcessor.ERR_CODER)
     
   }
 }
