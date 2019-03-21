@@ -115,6 +115,26 @@ object PeerHelper {
 
     t
   }
+  
+  def createTransaction4State(nodeName: String, chaincodeId: ChaincodeId,
+                               state:Boolean): Transaction = {
+    var t: Transaction = new Transaction()
+    val millis = TimeUtils.getCurrentTime()
+    if (chaincodeId == null) t
+
+    val txid = IdTool.getUUID()
+    t = t.withId(txid)
+    t = t.withCid(chaincodeId)
+    t = t.withType(rep.protos.peer.Transaction.Type.CHAINCODE_SET_STATE)
+    t = t.withState(state)
+    t = t.clearSignature
+    val certid = IdTool.getCertIdFromName(nodeName)
+    var sobj = Signature(Option(certid), Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)))
+    sobj = sobj.withSignature(ByteString.copyFrom(SignTool.sign(nodeName, t.toByteArray)))
+
+    t = t.withSignature(sobj)
+    t
+  }
 
 }
 
