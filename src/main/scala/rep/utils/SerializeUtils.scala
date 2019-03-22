@@ -18,14 +18,21 @@ package rep.utils
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream, ObjectInputStream, ObjectOutputStream}
 import java.security.cert.Certificate
-import Json4s._
-import rep.crypto.BytesHex._
 import com.twitter.chill.KryoInjection
+import com.twitter.bijection._
 
+import org.json4s._
+import org.json4s.native.JsonMethods
+import org.json4s.native.JsonMethods._
+
+import org.json4s.native.Serialization.write
+import org.json4s.native.Serialization.read
 /**
   * Created by shidianyue on 2017/6/9.
   */
 object SerializeUtils {
+  implicit val formats = DefaultFormats
+
   /**
     * Java 序列化方法
     * @param value
@@ -46,15 +53,21 @@ object SerializeUtils {
     KryoInjection.invert(bytes).get
   }
 
+def compactJson(src: Any): String = {
+    import org.json4s.native.Serialization
+    import org.json4s.native.JsonMethods._
+
+    implicit val formats = Serialization.formats(NoTypeHints)
+    compact(render(Extraction.decompose(src)))
+  }  
+
   /**
     * Json对象序列化
     * @param value
     * @return
     */
-  def serialiseJson(value: Any): Array[Byte] = {
-    val json = compactJson(value) 
-    //println(s"json $json")
-    json.getBytes
+  def toJson(v: AnyRef): String = {
+    write(v)
   }
 
   /**
@@ -62,10 +75,7 @@ object SerializeUtils {
     * @param bytes
     * @return
     */
-  def deserialiseJson(bytes: Array[Byte]): Any = {
-    if(bytes.isEmpty)
-      return None;
-    val json = new String(bytes)
-    parseAny(json)
+  def fromJson[A: Manifest](s: String): A = {
+    read[A](s)
   }
 }

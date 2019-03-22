@@ -33,7 +33,6 @@ import de.heikoseeberger.akkahttpjson4s.Json4sSupport
 import org.json4s._
 import rep.network.module.ModuleManager
 import rep.storage.ImpDataAccess
-import rep.utils.Json4s._
 import rep.utils.SerializeUtils.deserialise
 
 import java.nio.ByteBuffer
@@ -68,6 +67,7 @@ class SupplySpec(_system: ActorSystem)
   import akka.testkit.TestActorRef
   import Json4sSupport._
   import rep.sc.tpl.SupplyType._
+  import rep.utils.SerializeUtils.toJson
 
   implicit val serialization = jackson.Serialization
   // or native.Serialization
@@ -118,7 +118,6 @@ class SupplySpec(_system: ActorSystem)
     probe.send(sandbox, msg_send1)
     val msg_recv1 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
     val ol1 = msg_recv1.ol
-    val ol1str = compactJson(ol1)
 
     //生成invoke交易
     //获取deploy生成的chainCodeId
@@ -146,7 +145,7 @@ class SupplySpec(_system: ActorSystem)
        probe.send(sandbox, msg_send4)
       val msg_recv4 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
       val ol4 = msg_recv4.ol
-      val ol4str = compactJson(ol4)
+      val ol4str = toJson(ol4)
       println(s"oper log:${ol4str}")
       //分账之后总额应保持一致
       var total = 0
@@ -169,7 +168,7 @@ class SupplySpec(_system: ActorSystem)
        probe.send(sandbox, msg_send4)
       val msg_recv4 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
       val ol4 = msg_recv4.ol
-      val ol4str = compactJson(ol4)
+      val ol4str = toJson(ol4)
       println(s"oper log:${ol4str}")
       //分账之后总额应保持一致
       var total = 0

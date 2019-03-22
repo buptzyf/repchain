@@ -46,32 +46,8 @@ class SerializeSpec extends PropSpec with TableDrivenPropertyChecks with Matcher
   property("Any value can be serialise and deserialise") {
     forAll(examples) { (v:Any) =>
       val b1 = serialise(v)
-      val b2 = serialiseJson(v)
-      println(s"type:${v.getClass().getName} len_ser:${b1.length}  len_json:${b2.length}")
       val v1 = deserialise(b1)
-      val v2 = deserialiseJson(b2)
       v1 should equal (v)
-      v2 should equal (v)
-   }
-   
-   val len = 100000
-   val s1 = System.currentTimeMillis()
-   for( a <- 1 to len){
-      forAll(examples) { (v:Any) =>
-        val b1 = serialise(v)
-        val v1 = deserialise(b1)
-     }
-    }
-   val s2 = System.currentTimeMillis()
-   for( a <- 1 to len){
-      forAll(examples) { (v:Any) =>
-        val b1 = serialiseJson(v)
-        val v1 = deserialiseJson(b1)
-     }
-    }
-   val s3 = System.currentTimeMillis()
-   
-   println(s"tser:${s2-s1} tjson:${s3-s2}")
-       
+   }       
   }
 }

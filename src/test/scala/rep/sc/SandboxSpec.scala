@@ -34,7 +34,6 @@ import de.heikoseeberger.akkahttpjson4s.Json4sSupport
 import org.json4s._
 import rep.network.module.ModuleManager
 import rep.storage.ImpDataAccess
-import rep.utils.Json4s._
 import rep.sc.contract._
 import java.io.IOException
 import java.io.PrintWriter
@@ -125,7 +124,6 @@ class SandboxSpec(_system: ActorSystem)
     probe.send(sandbox, msg_send1)
     val msg_recv1 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
     val ol1 = msg_recv1.ol
-    val ol1str = compactJson(ol1)
 
     //生成invoke交易
     //获取deploy生成的chainCodeId
@@ -143,7 +141,6 @@ class SandboxSpec(_system: ActorSystem)
       probe.send(sandbox, msg_send3)
       val msg_recv3 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
       val ol3 = msg_recv3.ol
-      val ol3str = compactJson(ol3)
       //获得交易返回值
       val rv3 = msg_recv3.r.asInstanceOf[JValue]
       val re3 = rv3.extract[String]

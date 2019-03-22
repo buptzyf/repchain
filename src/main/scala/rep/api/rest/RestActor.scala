@@ -44,7 +44,7 @@ import rep.utils.GlobalUtils.ActorType
 import akka.actor.Props
 import rep.crypto.cert.SignTool
 import rep.log.trace._
-
+import rep.sc.contract.ActionResult
 
 /**
   * RestActor伴生object，包含可接受的传入消息定义，以及处理的返回结果定义。
@@ -66,7 +66,7 @@ object RestActor {
   case class TransactionId(txid: String)
   case class TransactionStreamId(txid: String)
 
-  case class PostResult(txid: String, result: Option[JValue], err: Option[String])
+  case class PostResult(txid: String, result: Option[ActionResult], err: Option[String])
   case class QueryResult(result: Option[JValue])
 
   case class resultMsg(result: String)
@@ -142,7 +142,6 @@ class RestActor extends Actor with ModuleHelper {
 
   import RestActor._
   import spray.json._
-  import rep.utils.Json4s.encodeJson
   import akka.http.scaladsl.model.{HttpResponse, MediaTypes,HttpEntity}
 
   //import rep.utils.JsonFormat.AnyJsonFormat
@@ -173,7 +172,7 @@ class RestActor extends Actor with ModuleHelper {
                 //预执行正常,提交并广播交易
                 getActorRef(ActorType.TRANSACTION_POOL) ! t // 给交易池发送消息 ！=》告知（getActorRef）
               }
-              sender ! PostResult(t.id, Option(encodeJson(rv.r)), None)
+              sender ! PostResult(t.id, Some(rv.r), None)
             case Some(err) =>
               //预执行异常,废弃交易，向api调用者发送异常
               sender ! err
