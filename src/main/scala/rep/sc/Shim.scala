@@ -17,7 +17,6 @@
 package rep.sc
 
 import com.fasterxml.jackson.core.Base64Variants
-import com.google.protobuf.ByteString
 import akka.actor.ActorSystem
 import rep.network.PeerHelper
 import rep.network.tools.PeerExtension

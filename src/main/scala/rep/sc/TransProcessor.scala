@@ -24,9 +24,6 @@ import rep.sc.Shim.Oper
 import rep.utils.{GlobalUtils,  TimeUtils}
 
 import rep.storage._
-import rep.crypto.Sha256
-import rep.crypto.BytesHex._
-import _root_.com.google.protobuf.ByteString
 
 import scala.concurrent.duration._
 import scala.concurrent._
@@ -197,7 +194,7 @@ class TransProcessor(name: String, da:String, parent: ActorRef) extends Actor {
             val deploy_tx_id =sr.Get(key_tx) 
             if(deploy_tx_id==null)
               throw new SandboxException(ERR_INVOKE_CHAINCODE_NOT_EXIST)            
-            val tx_deploy = loadTransaction(sr, ByteString.copyFrom(deploy_tx_id).toStringUtf8()).get
+            val tx_deploy = loadTransaction(sr, deserialise(deploy_tx_id).asInstanceOf[String]).get
             // acto新建之后需要从持久化恢复的chainCode
             // 根据tx_deploy的类型决定采用js合约容器或者scala合约容器          
             val actor = createActorByType(  tx_deploy.para.spec.get.ctype, cid, sn)
