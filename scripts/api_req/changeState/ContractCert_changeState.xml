@@ -16,10 +16,10 @@
   -->
 
 <!--该用例主要是启用/禁用（state：true/ state: false）合约并验证返回值-->
-<!--这个应该是可以成功启用/禁用的-->
+<!--这个应该是不能启用/禁用的-->
 <CSpec>
     <stype>3</stype>
-    <chaincodename>ContractAssetsTPL</chaincodename>
+    <chaincodename>ContractCert</chaincodename>
     <chaincodeversion>1</chaincodeversion>
     <iptFunc></iptFunc>
     <iptArgs></iptArgs>
