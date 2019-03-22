@@ -27,7 +27,6 @@ import rep.storage.IdxPrefix.WorldStateKeyPreFix
 import rep.log.trace.LogType
 import org.slf4j.LoggerFactory
 import rep.sc.Shim.Oper
-import rep.utils.Json4s._
 import com.google.protobuf.ByteString
 import org.json4s._
 import rep.log.trace.{RepLogger,ModuleType}

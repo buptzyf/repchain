@@ -63,7 +63,8 @@ libraryDependencies ++= Seq(
   "org.json4s" %% "json4s-native" % "3.5.4",
   "org.json4s" %% "json4s-jackson" % "3.5.4",
 
-  "ch.megard" %% "akka-http-cors" % "0.2.2"
+  "ch.megard" %% "akka-http-cors" % "0.2.2",
+  "com.twitter" % "chill-bijection_2.11" % "0.9.3"
 )	
 
 javacOptions ++= Seq("-encoding", "UTF-8")

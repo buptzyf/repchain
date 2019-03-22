@@ -30,7 +30,6 @@ import rep.sc.TransProcessor.DoTransaction
 import rep.sc.TransferSpec.{ACTION, SetMap}
 import rep.sc.tpl.{CertInfo, Transfer}
 import rep.storage.ImpDataAccess
-import rep.utils.Json4s.compactJson
 import rep.app.conf.SystemProfile
 
 import scala.concurrent.duration._
@@ -51,7 +50,7 @@ object StateSpec {
 }
 
 /**
-  * author zyf
+  * author c4w
   * @param _system
   */
 class StateSpec(_system: ActorSystem)
