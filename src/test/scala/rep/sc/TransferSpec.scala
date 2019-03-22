@@ -45,6 +45,8 @@ object TransferSpec {
     val set = "set"
     val SignUpSigner = "SignUpSigner"
     val SignUpCert = "SignUpCert"
+    val UpdateCertStatus = "UpdateCertStatus"
+    val UpdateSigner = "UpdateSigner"
   }
 }
 
