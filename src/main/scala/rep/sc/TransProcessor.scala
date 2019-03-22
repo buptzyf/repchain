@@ -178,6 +178,7 @@ class TransProcessor(name: String, da:String, parent: ActorRef) extends Actor {
     val tx_cid = getTXCId(t)
     val cid = t.cid.get
     //检查交易是否有效，无效抛出异常
+    //deploy之后紧接着调用同合约的invoke,会导致检查失败
     checkTransaction(t)
     
     val sn = PRE_SUB_ACTOR+tx_cid
@@ -223,8 +224,13 @@ class TransProcessor(name: String, da:String, parent: ActorRef) extends Actor {
           val sr = ImpDataAccess.GetDataAccess(sTag)
           val state_bytes = sr.Get(key_tx_state)
           //合约不存在
-          if(state_bytes == null)
-            throw new SandboxException(ERR_INVOKE_CHAINCODE_NOT_EXIST)    
+          if(state_bytes == null){
+            //进一步检查sn对应actor,判断是否存在合约正在deploying
+            val sn = PRE_SUB_ACTOR+tx_cid
+            val cref = context.child(sn)
+            if(cref == None)
+              throw new SandboxException(ERR_INVOKE_CHAINCODE_NOT_EXIST)    
+          }
           else{
              val state = deserialise(state_bytes).asInstanceOf[Boolean]
              Sandbox.setContractState(tx_cid, state)

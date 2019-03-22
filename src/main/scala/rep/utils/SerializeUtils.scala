@@ -29,6 +29,7 @@ import org.json4s.native.Serialization.write
 import org.json4s.native.Serialization.read
 /**
   * Created by shidianyue on 2017/6/9.
+  * updated by c4w 2019/3
   */
 object SerializeUtils {
   implicit val formats = DefaultFormats
