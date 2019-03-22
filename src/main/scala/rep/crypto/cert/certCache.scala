@@ -27,7 +27,7 @@ import rep.app.conf.SystemProfile
 
 object certCache {
   private val  getCertLock : Lock = new ReentrantLock();
-  private var  caches : immutable.HashMap[String,(Certificate,java.security.cert.Certificate)] = new immutable.HashMap[String,(Certificate,java.security.cert.Certificate)]()
+  private var  caches : immutable.HashMap[String,(Boolean,java.security.cert.Certificate)] = new immutable.HashMap[String,(Boolean,java.security.cert.Certificate)]()
   
   def getCertByPem(pemcert: String): java.security.cert.Certificate = {
     val cf = java.security.cert.CertificateFactory.getInstance("X.509")
@@ -52,7 +52,7 @@ object certCache {
                 val kvcert = SerializeUtils.deserialise(cert.get).asInstanceOf[Certificate]
                 if(kvcert != null){
                   rcert = getCertByPem(kvcert.certificate)
-                  caches += certKey -> (kvcert,rcert)
+                  caches += certKey -> (kvcert.certValid,rcert)
                 }
             }
         }

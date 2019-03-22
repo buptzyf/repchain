@@ -7,7 +7,7 @@ import com.gilt.timeuuid.TimeUuid
 
 object IdTool {
   
-  def getUUID(): String = {
+  def getUUID: String = {
     val uuid = TimeUuid()
     uuid.toString
   }

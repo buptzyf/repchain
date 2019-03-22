@@ -31,6 +31,7 @@ import rep.network.consensus.block.BlockHelper
 import rep.crypto.cert.SignTool
 import scala.collection.mutable
 import rep.sc.tpl._
+
 /**
  * 用于生成创世块json文件,该json文件可以在链初始化时由节点加载
  * 创世块中预置了deploy基础方法的交易
@@ -54,12 +55,15 @@ object GenesisBuilder {
     
     val cid = new ChaincodeId("ContractCert",1)
     
-    var translist : Array[Transaction] = new Array[Transaction] (15)
+    var translist : Array[Transaction] = new Array[Transaction] (17)
     
     
     val dep_trans = PeerHelper.createTransaction4Deploy(sysName, cid,
                l1, "",5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
     translist(0) = dep_trans
+    
+    val dep_trans_state = PeerHelper.createTransaction4State(sysName, cid, true)
+    translist(1) = dep_trans_state
     
     //System.out.println(Json4s.compactJson(dep_trans))
     
@@ -74,8 +78,8 @@ object GenesisBuilder {
     
     
     for(i<-0 to 5){
-        translist(i+1) = PeerHelper.createTransaction4Invoke("951002007l78123233.super_admin", cid,
-                    "SignUpSigner", Seq(SerializeUtils.compactJson(signers(i))))
+        translist(i+2) = PeerHelper.createTransaction4Invoke("951002007l78123233.super_admin", cid,
+                    "SignUpSigner", Seq(Json4s.compactJson(signers(i))))
     }
     
     
@@ -87,8 +91,8 @@ object GenesisBuilder {
       
       val tmp = rep.protos.peer.Certificate(certstr,"SHA1withECDSA",true,Option(Timestamp(millis/1000 , ((millis % 1000) * 1000000).toInt)))
       val a : CertInfo = CertInfo(signers(i).creditCode,signers(i).name,tmp)
-      translist(i+7) = PeerHelper.createTransaction4Invoke("951002007l78123233.super_admin", cid,
-                    "SignUpCert", Seq(SerializeUtils.compactJson(a)))
+      translist(i+8) = PeerHelper.createTransaction4Invoke("951002007l78123233.super_admin", cid,
+                    "SignUpCert", Seq(Json4s.compactJson(a)))
     }
     
     
@@ -97,13 +101,16 @@ object GenesisBuilder {
     val cid2 = new ChaincodeId("ContractAssetsTPL",1)
     val dep_asserts_trans = PeerHelper.createTransaction4Deploy(sysName, cid2,
                c2, "",5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
-    translist(13) = dep_asserts_trans
+    translist(14) = dep_asserts_trans
+    
+    val dep_asserts_trans_state = PeerHelper.createTransaction4State(sysName, cid2, true)
+    translist(15) = dep_asserts_trans_state
     
     // read invoke scala contract
     val s3 = scala.io.Source.fromFile("scripts/set.json")
     val ct1 = try s3.mkString finally s3.close()
     
-    translist(14) = PeerHelper.createTransaction4Invoke("951002007l78123233.super_admin", cid2,
+    translist(16) = PeerHelper.createTransaction4Invoke("951002007l78123233.super_admin", cid2,
                     "set", Seq(ct1))
     
     
