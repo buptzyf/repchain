@@ -73,7 +73,7 @@ object PeerHelper {
     val millis = TimeUtils.getCurrentTime()
     if (chaincodeId == null) t
 
-    val txid = IdTool.getUUID()
+    val txid = IdTool.getRandomUUID
     val cip = new ChaincodeInput(chaincodeInputFunc, params)
     t = t.withId(txid)
     t = t.withCid(chaincodeId)
@@ -96,7 +96,7 @@ object PeerHelper {
     val millis = TimeUtils.getCurrentTime()
     if (chaincodeId == null) t
 
-    val txid = IdTool.getUUID()
+    val txid = IdTool.getRandomUUID
     var cip = new ChaincodeDeploy(timeout)
     cip = cip.withCodePackage(spcPackage)
     cip = cip.withLegalProse(legal_prose)
@@ -122,7 +122,7 @@ object PeerHelper {
     val millis = TimeUtils.getCurrentTime()
     if (chaincodeId == null) t
 
-    val txid = IdTool.getUUID()
+    val txid = IdTool.getRandomUUID
     t = t.withId(txid)
     t = t.withCid(chaincodeId)
     t = t.withType(rep.protos.peer.Transaction.Type.CHAINCODE_SET_STATE)
