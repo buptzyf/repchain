@@ -61,6 +61,7 @@ object Repchain {
       val sys = new ClusterSystem(nodelist(i-2),InitType.MULTI_INIT,true)
       sys.init
       sys.joinCluster(joinAddress)
+      sys.disableWS()
       sys.start
       nodes += sys
     }

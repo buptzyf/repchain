@@ -105,6 +105,7 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart:Boolean) {
     * 是否开启Web Socket（API）
     */
   def enableWS() = enableWebSocket = true
+  def disableWS() = enableWebSocket = false
 
   /**
     * 获取用户和系统的联合配置
