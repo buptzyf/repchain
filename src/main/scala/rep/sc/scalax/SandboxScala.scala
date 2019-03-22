@@ -27,7 +27,6 @@ import rep.storage.IdxPrefix.WorldStateKeyPreFix
 import rep.log.trace.LogType
 import org.slf4j.LoggerFactory
 import rep.sc.Shim.Oper
-import com.google.protobuf.ByteString
 import org.json4s._
 import rep.log.trace.{RepLogger,ModuleType}
 import rep.sc.contract._
@@ -68,7 +67,7 @@ class SandboxScala(cid:ChaincodeId) extends Sandbox(cid){
           //新部署合约利用kv记住cid对应的txid,并增加kv操作日志,以便恢复deploy时能根据cid找到当时deploy的tx及其代码内容
           val coder = t.signature.get.certId.get.creditCode
           if(!bRestore){
-            val txid = ByteString.copyFromUtf8(t.id).toByteArray()
+            val txid = serialise(t.id)
             shim.sr.Put(key_tx,txid)
             shim.ol.append(new Oper(key_tx, null, txid))
             
@@ -79,7 +78,7 @@ class SandboxScala(cid:ChaincodeId) extends Sandbox(cid){
             shim.ol.append(new Oper(key_tx_state, null, state_enable))
             
             //利用kv记住合约的开发者
-            val coder_bytes =  ByteString.copyFromUtf8(coder).toByteArray()
+            val coder_bytes =  serialise(coder)
             shim.sr.Put(key_coder,coder_bytes)
             shim.ol.append(new Oper(key_coder, null, coder_bytes))            
             Sandbox.setContractCoder(cn,coder)

@@ -31,7 +31,6 @@ import org.json4s.{DefaultFormats, Formats, jackson}
 import de.heikoseeberger.akkahttpjson4s.Json4sSupport
 import org.json4s._
 import com.trueaccord.scalapb.json.JsonFormat
-import com.google.protobuf.ByteString
 import akka.util.Timeout
 import Shim._
 import rep.crypto.BytesHex
