@@ -16,24 +16,33 @@
 
 package rep.crypto.cert
 
-
+import java.io._
+import fastparse.utils.Base64
 import java.util.concurrent.locks._
 import scala.collection.immutable
-import java.security.cert.{ Certificate}
+import rep.protos.peer.Certificate
 import rep.storage._
 import rep.utils.SerializeUtils
 import rep.app.conf.SystemProfile
 
 object certCache {
   private val  getCertLock : Lock = new ReentrantLock();
-  private var  caches : immutable.HashMap[String,Certificate] = new immutable.HashMap[String,Certificate]()
+  private var  caches : immutable.HashMap[String,(Certificate,java.security.cert.Certificate)] = new immutable.HashMap[String,(Certificate,java.security.cert.Certificate)]()
   
-  def getCertForUser(certKey:String,sysTag:String):Certificate={
-    var rcert : Certificate = null
+  def getCertByPem(pemcert: String): java.security.cert.Certificate = {
+    val cf = java.security.cert.CertificateFactory.getInstance("X.509")
+    val cert = cf.generateCertificate(
+      new ByteArrayInputStream(
+        Base64.Decoder(pemcert.replaceAll("\r\n", "").stripPrefix("-----BEGIN CERTIFICATE-----").stripSuffix("-----END CERTIFICATE-----")).toByteArray))
+    cert
+  }
+  
+  def getCertForUser(certKey:String,sysTag:String):java.security.cert.Certificate={
+    var rcert : java.security.cert.Certificate = null
     getCertLock.lock()
     try{
       if(caches.contains(certKey)){
-        rcert = caches(certKey)
+        rcert = caches(certKey)._2
       }else{
         val sr: ImpDataAccess = ImpDataAccess.GetDataAccess(sysTag)
         val accountChaincodeName = SystemProfile.getAccountChaincodeName
@@ -42,8 +51,8 @@ object certCache {
           if (!(new String(cert.get)).equalsIgnoreCase("null")) {
                 val kvcert = SerializeUtils.deserialise(cert.get).asInstanceOf[Certificate]
                 if(kvcert != null){
-                  caches += certKey -> kvcert
-                  rcert = kvcert
+                  rcert = getCertByPem(kvcert.certificate)
+                  caches += certKey -> (kvcert,rcert)
                 }
             }
         }
