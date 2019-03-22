@@ -110,15 +110,15 @@ class SandboxSpec(_system: ActorSystem)
 
     val msg_send2 = DoTransaction(t2, probe.ref, "")
     probe.send(sandbox, msg_send2)
-    //deploy紧接invoke测试
-    val msg_recv2 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-    msg_recv2.r.code should be (1)
 
     // 生成invoke交易
     // 注册账户
     val t3 =  PeerHelper.createTransaction4Invoke(sysName,cid2, ACTION.SignUpSigner, Seq(write(signer)))
     val msg_send3 = DoTransaction(t3, probe.ref, "")
     probe.send(sandbox, msg_send3)
+    //deploy紧接invoke测试
+    val msg_recv2 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
+    msg_recv2.r.code should be (1)
     val msg_recv3 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
     msg_recv3.r.code should be (1)
 
