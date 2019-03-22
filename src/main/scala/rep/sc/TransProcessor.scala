@@ -259,7 +259,7 @@ class TransProcessor(name: String, da:String, parent: ActorRef) extends Actor {
           val sr = ImpDataAccess.GetDataAccess(sTag)
           val coder_bytes = sr.Get(key_coder)
           if(coder_bytes != null){
-            coder = Some(new String(coder_bytes))
+            coder = Some(deserialise(coder_bytes).asInstanceOf[String])
             Sandbox.setContractCoder(cn, coder.get)
           }
         }
