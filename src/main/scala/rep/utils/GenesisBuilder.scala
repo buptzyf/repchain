@@ -58,7 +58,9 @@ object GenesisBuilder {
     var translist : Array[Transaction] = new Array[Transaction] (15)
     
     
-    val dep_trans = PeerHelper.createTransaction4Deploy(sysName, cid,
+    //val dep_trans = PeerHelper.createTransaction4Deploy(sysName, cid,
+    //           l1, "",5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
+    val dep_trans = PeerHelper.createTransaction4Deploy("951002007l78123233.super_admin", cid,
                l1, "",5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
     translist(0) = dep_trans
     
