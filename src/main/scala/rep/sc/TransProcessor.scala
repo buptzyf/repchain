@@ -275,14 +275,15 @@ class TransProcessor(name: String, da:String, parent: ActorRef) extends Actor {
           val sr = ImpDataAccess.GetDataAccess(sTag)
           val coder_bytes = sr.Get(key_coder)
           if(coder_bytes != null){
-            coder = Some(new String(coder_bytes))
+            coder = Some(deserialise(coder_bytes).asInstanceOf[String])
             Sandbox.setContractCoder(cn, coder.get)
           }
         }
         //合约已存在且部署者并非当前交易签名者
-        if(coder!=None && !t.signature.get.certId.get.creditCode.equals(coder.get))
+        if(coder!=None && !t.signature.get.certId.get.creditCode.equals(coder.get)){
+          println(s"coder:${coder} signer:${t.signature.get.certId.get.creditCode}")
           throw new SandboxException(ERR_CODER)       
-        
+        }
         //cid不存在抛出异常
         if(Sandbox.getContractState(tx_cid)==None){
           val key_tx_state = WorldStateKeyPreFix+ tx_cid + PRE_STATE
