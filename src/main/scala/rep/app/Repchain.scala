@@ -65,46 +65,5 @@ object Repchain {
       sys.start
       nodes += sys
     }
-
-    //node数量在最大和最小值之间振荡,仿真node入网和离网
-    //离网的system似乎无法复用,只能重新新建实例
-    /*if(node_max > node_min){
-      var node_add = false
-      for(i <- 1 to 1000) {
-        Thread.sleep(5000)
-        val len = nodes.size
-        if(len >= node_max){
-          node_add=false
-        }else if(len <= node_min){
-          node_add=true
-        }
-        if(!node_add){
-          val nd_system = nodes.last
-          //nd_system.terminate()
-          //nd_system.shutdown();
-          //Cluster(system0).down(Cluster(nd_system).selfAddress)
-          nd_system.leaveCluster(cluster)
-          try{
-            //Await.ready(nd_system.terminate(), Duration.Inf)
-          }catch{
-            case msg:InvalidAssociationException => msg
-          }
-          //Await.ready(nd_system.whenTerminated, 30.seconds)
-          //nd_system.terminate();
-          //nd_system.shutdown()
-          nodes -= nd_system
-          //nodes_off += nd_system
-        } else{
-          //避免systemName重复
-          val sys = new ClusterSystem(i.toString,InitType.MULTI_INIT,true)
-          sys1.init
-          val joinAddress = sys1.getClusterAddr
-          sys1.joinCluster(joinAddress)
-          sys1.start
-          nodes += sys
-          //nodes_off -= nd_system
-        }
-      }
-    }*/
   }
 }
