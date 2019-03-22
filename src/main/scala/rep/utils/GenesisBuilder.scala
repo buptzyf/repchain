@@ -31,7 +31,6 @@ import rep.network.consensus.block.BlockHelper
 import rep.crypto.cert.SignTool
 import scala.collection.mutable
 import rep.sc.tpl._
-
 /**
  * 用于生成创世块json文件,该json文件可以在链初始化时由节点加载
  * 创世块中预置了deploy基础方法的交易
@@ -76,7 +75,7 @@ object GenesisBuilder {
     
     for(i<-0 to 5){
         translist(i+1) = PeerHelper.createTransaction4Invoke("951002007l78123233.super_admin", cid,
-                    "SignUpSigner", Seq(Json4s.compactJson(signers(i))))
+                    "SignUpSigner", Seq(SerializeUtils.compactJson(signers(i))))
     }
     
     
@@ -89,7 +88,7 @@ object GenesisBuilder {
       val tmp = rep.protos.peer.Certificate(certstr,"SHA1withECDSA",true,Option(Timestamp(millis/1000 , ((millis % 1000) * 1000000).toInt)))
       val a : CertInfo = CertInfo(signers(i).creditCode,signers(i).name,tmp)
       translist(i+7) = PeerHelper.createTransaction4Invoke("951002007l78123233.super_admin", cid,
-                    "SignUpCert", Seq(Json4s.compactJson(a)))
+                    "SignUpCert", Seq(SerializeUtils.compactJson(a)))
     }
     
     

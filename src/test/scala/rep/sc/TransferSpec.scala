@@ -30,7 +30,7 @@ import rep.sc.TransProcessor.DoTransaction
 import rep.sc.TransferSpec.{ACTION, SetMap}
 import rep.sc.tpl.{CertInfo, Transfer}
 import rep.storage.ImpDataAccess
-import rep.utils.Json4s.compactJson
+import rep.utils.SerializeUtils.toJson
 import rep.app.conf.SystemProfile
 
 import scala.concurrent.duration._
