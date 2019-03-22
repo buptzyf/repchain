@@ -24,9 +24,6 @@ import rep.sc.Shim.Oper
 import rep.utils.{GlobalUtils,  TimeUtils}
 
 import rep.storage._
-import rep.crypto.Sha256
-import rep.crypto.BytesHex._
-import _root_.com.google.protobuf.ByteString
 
 import scala.concurrent.duration._
 import scala.concurrent._
@@ -178,6 +175,7 @@ class TransProcessor(name: String, da:String, parent: ActorRef) extends Actor {
     val tx_cid = getTXCId(t)
     val cid = t.cid.get
     //检查交易是否有效，无效抛出异常
+    //deploy之后紧接着调用同合约的invoke,会导致检查失败
     checkTransaction(t)
     
     val sn = PRE_SUB_ACTOR+tx_cid
@@ -196,7 +194,7 @@ class TransProcessor(name: String, da:String, parent: ActorRef) extends Actor {
             val deploy_tx_id =sr.Get(key_tx) 
             if(deploy_tx_id==null)
               throw new SandboxException(ERR_INVOKE_CHAINCODE_NOT_EXIST)            
-            val tx_deploy = loadTransaction(sr, ByteString.copyFrom(deploy_tx_id).toStringUtf8()).get
+            val tx_deploy = loadTransaction(sr, deserialise(deploy_tx_id).asInstanceOf[String]).get
             // acto新建之后需要从持久化恢复的chainCode
             // 根据tx_deploy的类型决定采用js合约容器或者scala合约容器          
             val actor = createActorByType(  tx_deploy.para.spec.get.ctype, cid, sn)
@@ -223,8 +221,13 @@ class TransProcessor(name: String, da:String, parent: ActorRef) extends Actor {
           val sr = ImpDataAccess.GetDataAccess(sTag)
           val state_bytes = sr.Get(key_tx_state)
           //合约不存在
-          if(state_bytes == null)
-            throw new SandboxException(ERR_INVOKE_CHAINCODE_NOT_EXIST)    
+          if(state_bytes == null){
+            //进一步检查sn对应actor,判断是否存在合约正在deploying
+            val sn = PRE_SUB_ACTOR+tx_cid
+            val cref = context.child(sn)
+            if(cref == None)
+              throw new SandboxException(ERR_INVOKE_CHAINCODE_NOT_EXIST)    
+          }
           else{
              val state = deserialise(state_bytes).asInstanceOf[Boolean]
              Sandbox.setContractState(tx_cid, state)
