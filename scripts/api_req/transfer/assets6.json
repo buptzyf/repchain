@@ -9,5 +9,6 @@
   "timeout": 0,
   "legal_prose": "",
   "code": "",
-  "ctype": 2
+  "ctype": 2,
+  "state": true
 }
