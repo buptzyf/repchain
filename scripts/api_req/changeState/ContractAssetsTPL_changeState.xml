@@ -15,20 +15,17 @@
   ~
   -->
 
+<!--该用例主要是启用/禁用（state：true/ state: false）合约并验证返回值-->
+
 <CSpec>
-    <stype>2</stype>
+    <stype>3</stype>
     <chaincodename>ContractAssetsTPL</chaincodename>
     <chaincodeversion>1</chaincodeversion>
-    <iptFunc>transfer</iptFunc>
-    <iptArgs>
-        {
-            "from" : "121000005l35120456",
-            "to" : "12110107bi45jh675g",
-            "amount" : 5
-        }
-    </iptArgs>
+    <iptFunc></iptFunc>
+    <iptArgs></iptArgs>
     <timeout>0</timeout>
     <legal_prose></legal_prose>
     <code></code>
     <ctype>2</ctype>
+    <state>true</state>
 </CSpec>

@@ -76,7 +76,7 @@ object RestActor {
           secureContext: String, code: String, ctype: Int)    */
   case class CSpec(stype: Int, chaincodename: String, chaincodeversion: Int,
                    iptFunc: String, iptArgs: Seq[String], timeout: Int,legal_prose:String,
-                   code: String, ctype: Int)
+                   code: String, ctype: Int, state: Boolean)
   case class tranSign(tran: String)
 
   case class closeOrOpen4Node(nodename:String,status:String)
@@ -95,11 +95,13 @@ object RestActor {
         Transaction.Type.CHAINCODE_DEPLOY
       case 2 =>
         Transaction.Type.CHAINCODE_INVOKE
+      case 3=>
+        Transaction.Type.CHAINCODE_SET_STATE
       case _ =>
         Transaction.Type.UNDEFINED
     }
     val ctype = c.ctype match{
-      case 1 =>
+      case 2 =>
         rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA
       case _ =>
         rep.protos.peer.ChaincodeDeploy.CodeType.CODE_JAVASCRIPT
@@ -110,7 +112,9 @@ object RestActor {
       PeerHelper.createTransaction4Deploy(nodeName, chaincodeId, c.code, c.legal_prose, c.timeout, ctype)
     }else if(stype==Transaction.Type.CHAINCODE_INVOKE){
       PeerHelper.createTransaction4Invoke(nodeName, chaincodeId, c.iptFunc, c.iptArgs)
-    }else{
+    }else if (stype == Transaction.Type.CHAINCODE_SET_STATE){
+      PeerHelper.createTransaction4State(nodeName, chaincodeId, c.state)
+    } else {
       null
     }
   }

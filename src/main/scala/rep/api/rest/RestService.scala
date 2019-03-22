@@ -241,7 +241,7 @@ class TransactionService(ra: ActorRef)(implicit executionContext: ExecutionConte
   implicit val serialization = jackson.Serialization // or native.Serialization
   implicit val formats = DefaultFormats
   
-  implicit val specFormat = jsonFormat9(CSpec)
+  implicit val specFormat = jsonFormat10(CSpec)
   implicit val specUnmarshaller: FromEntityUnmarshaller[CSpec] = Unmarshaller.firstOf(
     //只能处理application/xml
     nodeSeqUnmarshaller(MediaTypes.`application/xml` withCharset HttpCharsets.`UTF-8`) map {
@@ -257,7 +257,8 @@ class TransactionService(ra: ActorRef)(implicit executionContext: ExecutionConte
           (x \ "timeout").text.toInt,
           (x \ "legal_prose").text,
           (x \ "code").text,
-          (x \ "ctype").text.toInt
+          (x \ "ctype").text.toInt,
+          (x \ "state").text.toBoolean
         )
     },    
     //只能处理application/json
