@@ -45,7 +45,7 @@ import akka.actor.Props
 import rep.crypto.cert.SignTool
 import rep.log.trace._
 import rep.sc.contract.ActionResult
-
+import rep.app.conf.SystemProfile
 /**
   * RestActor伴生object，包含可接受的传入消息定义，以及处理的返回结果定义。
   * 以及用于建立Tranaction，检索Tranaction的静态方法
@@ -54,6 +54,7 @@ import rep.sc.contract.ActionResult
   */
 
 object RestActor {
+  val contractOperationMode = SystemProfile.getContractOperationMode  
   def props(name: String): Props = Props(classOf[RestActor], name)
   case object ChainInfo
 
@@ -205,8 +206,11 @@ class RestActor extends Actor with ModuleHelper {
     //处理post CSpec构造交易的请求
     case c: CSpec =>
       //构建transaction并通过peer广播
-      val t = buildTranaction(pe.getSysTag, c)
-      preTransaction(t)
+      //debug状态才动用节点密钥签名
+      if(contractOperationMode==0){
+        val t = buildTranaction(pe.getSysTag, c)
+        preTransaction(t)
+      }else sender ! PostResult(null, None, Option("非Debug状态下此调用无效"))
 
     // 流式提交交易
     case t: Transaction =>
