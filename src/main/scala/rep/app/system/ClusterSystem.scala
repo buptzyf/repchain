@@ -39,6 +39,7 @@ import java.util.List
 import java.util.ArrayList
 import org.slf4j.LoggerFactory
 import rep.log.trace._
+import rep.storage.verify.verify4Storage
 
 /**
   * System创建伴生对象
@@ -231,6 +232,17 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart:Boolean) {
           Cluster(sysActor).down(clusterAddr)
           throw new Exception("not enough disk space")
         }
+        
+        try{
+          if(!verify4Storage.verify(sysTag)){
+            throw new Exception("Storager Verify Error")
+          }
+        }catch{
+          case e:Exception=>{
+            throw new Exception("Storager Verify Error,info:"+e.getMessage)
+          }
+        }
+        
         if (enableWebSocket) webSocket = sysActor.actorOf(Props[ EventServer ], "ws")
         memberLis = sysActor.actorOf(Props[ MemberListener ], "memberListener")
         ModuleBase.registerActorRef(sysTag, ActorType.MEMBER_LISTENER, memberLis)
