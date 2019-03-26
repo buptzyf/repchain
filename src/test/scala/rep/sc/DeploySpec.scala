@@ -37,7 +37,6 @@ import rep.utils.SerializeUtils.deserialise
 
 import java.nio.ByteBuffer
 
-import rep.sc.contract._
 import java.io.IOException
 import java.io.PrintWriter
 import java.io.FileWriter

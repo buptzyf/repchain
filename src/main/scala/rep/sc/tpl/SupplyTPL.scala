@@ -18,7 +18,6 @@
 
 package rep.sc.tpl
 
-import rep.sc.contract._
 import org.json4s._
 import org.json4s.jackson.JsonMethods._
 import scala.reflect.ManifestFactory.classType
@@ -28,6 +27,9 @@ import org.json4s.native.Serialization.{read, write}
 import org.json4s.{DefaultFormats, Formats, jackson}
 
 import rep.sc.tpl.SupplyType._
+import rep.sc.scalax.IContract
+import rep.sc.scalax.ContractContext
+import rep.sc.scalax.ActionResult
 
 /**
  * 供应链分账合约
@@ -40,7 +42,7 @@ class SupplyTPL extends IContract {
     
     
     def init(ctx: ContractContext){      
-      println(s"tid: $ctx.t.txid")
+      println(s"tid: $ctx.t.id")
     }
     
     /**

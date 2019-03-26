@@ -36,7 +36,7 @@ import Shim._
 import rep.crypto.BytesHex
 import rep.network.tools.PeerExtension
 import rep.storage.IdxPrefix.WorldStateKeyPreFix
-import rep.sc.contract.ActionResult
+import rep.sc.scalax.ActionResult
 
 /** 合约容器的抽象类伴生对象,定义了交易执行结果的case类
  * 

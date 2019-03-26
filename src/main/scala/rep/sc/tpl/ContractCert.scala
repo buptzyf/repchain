@@ -1,6 +1,5 @@
 package rep.sc.tpl
 
-import rep.sc.contract._
 import rep.protos.peer._
 import org.json4s.jackson.JsonMethods._
 
@@ -8,6 +7,9 @@ import scala.collection.mutable.Map
 import org.json4s.DefaultFormats
 import rep.app.conf.SystemProfile
 import rep.utils.{IdTool, SerializeUtils}
+import rep.sc.scalax.IContract
+import rep.sc.scalax.ContractContext
+import rep.sc.scalax.ActionResult
 
 /**
   * @author zyf
@@ -146,7 +148,7 @@ class ContractCert  extends IContract {
   }
 
   def init(ctx: ContractContext){
-    println(s"tid: $ctx.t.txid")
+    println(s"tid: $ctx.t.id")
   }
 
 

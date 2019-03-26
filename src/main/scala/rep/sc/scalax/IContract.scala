@@ -14,10 +14,9 @@
  *
  */
 
-package rep.sc.contract
+package rep.sc.scalax
 
 import rep.protos.peer.Transaction
-import rep.sc.Sandbox.DoTransactionResult
 import rep.sc.Shim
 
 class ContractContext(val api:Shim, val t:Transaction)
