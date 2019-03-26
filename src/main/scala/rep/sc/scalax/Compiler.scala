@@ -14,25 +14,22 @@
  *
  */
 
-package rep.sc.contract
+package rep.sc.scalax
 
 
 import scala.tools.nsc.{Global, Settings}
-import scala.reflect.internal.util.BatchSourceFile
 import tools.nsc.io.{VirtualDirectory, AbstractFile}
 import scala.reflect.internal.util.AbstractFileClassLoader
-import java.security.MessageDigest
-import java.math.BigInteger
 import collection.mutable
 import java.io._
 import org.json4s._
 import org.json4s.jackson.JsonMethods._
 import rep.crypto.Sha256
-
 import rep.app.conf.SystemProfile
 import scala.reflect.runtime.currentMirror
 import scala.tools.reflect.ToolBox
 import rep.storage.util.pathUtil
+import scala.reflect.io.Path.jfile2path
 
 /**
  * 动态编译工具类的伴生对象，提供静态方法

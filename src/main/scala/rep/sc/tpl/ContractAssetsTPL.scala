@@ -19,10 +19,15 @@ package rep.sc.tpl
 
 import org.json4s._
 import org.json4s.jackson.JsonMethods._
-import rep.sc.contract._
 import rep.app.conf.SystemProfile
 import rep.protos.peer.ChaincodeId
 import rep.utils.IdTool
+import rep.sc.scalax.IContract
+
+import rep.sc.scalax.ContractContext
+
+import rep.sc.scalax.ActionResult
+
 /**
  * 资产管理合约
  */

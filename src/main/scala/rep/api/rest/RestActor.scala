@@ -44,7 +44,7 @@ import rep.utils.GlobalUtils.ActorType
 import akka.actor.Props
 import rep.crypto.cert.SignTool
 import rep.log.trace._
-import rep.sc.contract.ActionResult
+import rep.sc.scalax.ActionResult
 import rep.app.conf.SystemProfile
 /**
   * RestActor伴生object，包含可接受的传入消息定义，以及处理的返回结果定义。

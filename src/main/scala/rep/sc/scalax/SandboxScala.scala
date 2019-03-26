@@ -29,7 +29,6 @@ import org.slf4j.LoggerFactory
 import rep.sc.Shim.Oper
 import org.json4s._
 import rep.log.trace.{RepLogger,ModuleType}
-import rep.sc.contract._
 import rep.utils.SerializeUtils.deserialise
 import rep.utils.SerializeUtils.serialise
 
