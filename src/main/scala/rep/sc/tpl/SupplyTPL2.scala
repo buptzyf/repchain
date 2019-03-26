@@ -40,7 +40,7 @@ class SupplyTPL2 extends IContract {
     
     
     def init(ctx: ContractContext){      
-      println(s"tid: $ctx.t.txid")
+      println(s"tid: $ctx.t.id")
     }
     
     /**

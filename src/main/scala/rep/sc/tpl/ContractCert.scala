@@ -146,7 +146,7 @@ class ContractCert  extends IContract {
   }
 
   def init(ctx: ContractContext){
-    println(s"tid: $ctx.t.txid")
+    println(s"tid: $ctx.t.id")
   }
 
 
