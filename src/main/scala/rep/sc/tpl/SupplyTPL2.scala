@@ -34,7 +34,7 @@ import rep.sc.scalax.ActionResult
 /**
  * 供应链分账合约
  */
-class SupplyTPL extends IContract {
+class SupplyTPL2 extends IContract {
     
     val SPLIT_CHAR  = "_";
     val TPL_MODE  = "_PM";
@@ -130,8 +130,9 @@ class SupplyTPL extends IContract {
       val json = parse(sdata)
       
       action match {
-        case ACTION.SignShare => 
-          signShare(ctx,json.extract[IPTSignShare])
+         //for test 合约升级变体
+        //case ACTION.SignShare => 
+        //  signShare(ctx,json.extract[IPTSignShare])
         case ACTION.SignFixed => 
           signFixed(ctx,json.extract[IPTSignFixed])
         case ACTION.Split => 

@@ -30,7 +30,7 @@ import rep.sc.Shim.Oper
 import com.google.protobuf.ByteString
 import org.json4s._
 import rep.log.trace.{RepLogger,ModuleType}
-import rep.sc.contract.ActionResult
+import rep.sc.scalax.ActionResult
 
 /**
  * @author c4w

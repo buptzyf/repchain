@@ -22,6 +22,7 @@ import org.json4s.jackson.JsonMethods._
 import rep.app.conf.SystemProfile
 import rep.protos.peer.ChaincodeId
 import rep.utils.IdTool
+import java.text.SimpleDateFormat
 import rep.sc.scalax.IContract
 
 import rep.sc.scalax.ContractContext
@@ -32,9 +33,9 @@ import rep.sc.scalax.ActionResult
  * 资产管理合约
  */
 
-case class Transfer(from:String, to:String, amount:Int)
 
-class ContractAssetsTPL extends IContract{
+class ContractAssetsTPL2 extends IContract{
+case class Transfer(from:String, to:String, amount:Int)
 
   // 需要跨合约读账户
   val chaincodeName = SystemProfile.getAccountChaincodeName
@@ -67,9 +68,18 @@ class ContractAssetsTPL extends IContract{
       if(dfrom < data.amount)
         return new ActionResult(-3, Some("余额不足"))
       var dto = ctx.api.getVal(data.to).toString.toInt
+      
+      val df:SimpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
+      val t1 = System.currentTimeMillis()      
+      val s1 = s"setval begin:${ctx.t.id} " + df.format(t1)
+      
       ctx.api.setVal(data.from,dfrom - data.amount)
+      //for test 同合约交易串行测试
+      Thread.sleep(5000) 
       ctx.api.setVal(data.to,dto + data.amount)
-       new ActionResult(1,None)
+      val t2 = System.currentTimeMillis()      
+      val s2 = s"setval end:${ctx.t.id} " + df.format(t2)
+      new ActionResult(1,Some(s1+"\n"+s2) )    
     }
     /**
      * 根据action,找到对应的method，并将传入的json字符串parse为method需要的传入参数
