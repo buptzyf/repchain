@@ -236,9 +236,10 @@ class TransProcessor(name: String, da:String, parent: ActorRef) extends Actor {
           }
         }
       case Transaction.Type.CHAINCODE_DEPLOY =>
-        //检查合约名+版本是否已存在
-         if(Sandbox.getContractState(tx_cid)!=None)
+        //检查合约名+版本是否已存在,API预执行导致sandbox实例化，紧接着共识预执行
+         if(Sandbox.getContractState(tx_cid)!=None){
            throw new SandboxException(ERR_REPEATED_CID) 
+         }
          else{
           val key_tx_state = WorldStateKeyPreFix+ tx_cid + PRE_STATE
           val sr = ImpDataAccess.GetDataAccess(sTag)

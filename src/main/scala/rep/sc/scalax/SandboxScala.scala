@@ -80,15 +80,7 @@ class SandboxScala(cid:ChaincodeId) extends Sandbox(cid){
             val coder_bytes =  serialise(coder)
             shim.sr.Put(key_coder,coder_bytes)
             shim.ol.append(new Oper(key_coder, null, coder_bytes))            
-            Sandbox.setContractCoder(cn,coder)
-            Sandbox.setContractState(tx_cid,true)
-          }else{
-            //从区块数据恢复合约实例,非新部署合约
-            Sandbox.setContractCoder(key_coder,coder)
-            val key_tx_state = WorldStateKeyPreFix+ tx_cid + PRE_STATE
-            val state = deserialise(shim.sr.Get(key_tx_state)).asInstanceOf[Boolean]
-            Sandbox.setContractState(tx_cid,state)
-          }          
+          }     
           new ActionResult(1,None)
          //由于Invoke为最频繁调用，因此应尽量避免在处理中I/O读写,比如合约状态的检查就最好在内存中处理
           //TODO case  Transaction.Type.CHAINCODE_DESC 增加对合约描述的处理
@@ -102,7 +94,6 @@ class SandboxScala(cid:ChaincodeId) extends Sandbox(cid){
         case  Transaction.Type.CHAINCODE_SET_STATE =>
           val key_tx_state = WorldStateKeyPreFix+ tx_cid + PRE_STATE
           val state = t.para.state.get
-          Sandbox.setContractState(tx_cid, state)
           val state_bytes = serialise(state)
           shim.sr.Put(key_tx_state,state_bytes)
           shim.ol.append(new Oper(key_tx_state, null, state_bytes))
