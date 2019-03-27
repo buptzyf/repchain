@@ -95,6 +95,6 @@ class ContractAssetsTPL extends IContract{
 
 ]]>
         </code>
-    <ctype>1</ctype>
+    <ctype>2</ctype>
     <state>true</state>
 </CSpec>
