@@ -37,6 +37,9 @@ import rep.crypto.BytesHex
 import rep.network.tools.PeerExtension
 import rep.storage.IdxPrefix.WorldStateKeyPreFix
 import rep.sc.scalax.ActionResult
+import rep.storage._
+import rep.utils.SerializeUtils.deserialise
+import rep.utils.SerializeUtils.serialise
 
 /** 合约容器的抽象类伴生对象,定义了交易执行结果的case类
  * 
@@ -84,24 +87,7 @@ object Sandbox {
   def getTXCId(t: Transaction): String = {
     val t_cid = t.cid.get
     getChaincodeId(t_cid)
-  } 
-  
-  val coderMap = collection.mutable.Map[String, String]()
-  val stateMap = collection.mutable.Map[String, Boolean]()
-  
-  def getContractCoder(cName:String)= {
-     coderMap.get(cName)
-  }
-  def setContractCoder(cName:String, coder:String) = synchronized{
-    coderMap += (cName -> coder)
-  }
-  def getContractState(cid:String)={
-    stateMap.get(cid)
-  }
-  def setContractState(cid:String, state:Boolean) = synchronized{
-    stateMap += (cid-> state)
-  }
-  
+  }  
 }
 
 /** 合约容器的抽象类，提供与底层进行API交互的shim实例，用于与存储交互的实例pe
@@ -139,18 +125,34 @@ abstract class Sandbox(cid:ChaincodeId) extends Actor {
   def receive = {
     //交易处理请求
     case  DoTransaction(t:Transaction,from:ActorRef, da:String) =>
-      val tr = doTransaction(t,from,da)
+      val tr = onTransaction(t,from,da)
       sender ! tr
     //交易预处理请求，指定接收者
     case  PreTransaction(t:Transaction) =>
-      val tr = doTransaction(t,null,t.id)
-      shim.rollback()
+      val tr = onTransaction(t,null,t.id)
       sender ! tr
     //恢复chainCode,不回消息
     case  DeployTransaction(t:Transaction,from:ActorRef, da:String) =>
-      val tr = doTransaction(t,from,da,true)
-      shim.rollback()
+      val tr = onTransaction(t,from,da,true)
   }
+
+  def onTransaction(t:Transaction,from:ActorRef, da:String, bRestore:Boolean=false):DoTransactionResult = {
+    try{
+          //要么上一份给result，重新建一份
+      shim.sr = ImpDataPreloadMgr.GetImpDataPreload(sTag, da)
+      checkTransaction(t, bRestore)
+      shim.mb = scala.collection.mutable.Map[String,Array[Byte]]()
+      shim.ol = new scala.collection.mutable.ListBuffer[Oper]
+      doTransaction(t,from,da,bRestore)
+    }catch{
+        case e:Exception => 
+          log.error(t.id, e)
+          new DoTransactionResult(t,null, null, null,null,null,
+               Option(akka.actor.Status.Failure(e)))
+      }
+  }
+  
+  
   /** 交易处理抽象方法，接受待处理交易，返回处理结果
    *  @param t 待处理交易
    *  @param from 发出交易请求的actor
@@ -158,5 +160,63 @@ abstract class Sandbox(cid:ChaincodeId) extends Actor {
    *  @return 交易执行结果
    */
   def doTransaction(t:Transaction,from:ActorRef, da:String, bRestore:Boolean=false):DoTransactionResult 
-  
+
+   def checkTransaction(t: Transaction, bRestore:Boolean=false) = {
+    val tx_cid = getTXCId(t)
+    val sr = shim.sr
+    t.`type`  match {
+      case Transaction.Type.CHAINCODE_INVOKE =>
+        //cid不存在或状态为禁用抛出异常
+        val key_tx_state = WorldStateKeyPreFix+ tx_cid + PRE_STATE        
+        val state_bytes = sr.Get(key_tx_state)
+        //合约不存在
+        if(state_bytes == null){
+            throw new SandboxException(ERR_INVOKE_CHAINCODE_NOT_EXIST)    
+        }
+        else{
+           val state = deserialise(state_bytes).asInstanceOf[Boolean]
+           if(!state){
+             throw new SandboxException(ERR_DISABLE_CID)    
+           }
+        }
+      case Transaction.Type.CHAINCODE_DEPLOY =>
+      //检查合约名+版本是否已存在,API预执行导致sandbox实例化，紧接着共识预执行
+        val key_tx_state = WorldStateKeyPreFix+ tx_cid + PRE_STATE
+        val state_bytes = sr.Get(key_tx_state)
+        //合约已存在且并非恢复合约
+        if(state_bytes != null && !bRestore){
+           throw new SandboxException(ERR_REPEATED_CID)    
+        }
+       //检查合约部署者
+       val cn = t.cid.get.chaincodeName
+       val key_coder =  WorldStateKeyPreFix+ cn  
+       val coder_bytes = sr.Get(key_coder)
+        if(coder_bytes != null){
+          val coder = Some(deserialise(coder_bytes).asInstanceOf[String])
+          //合约已存在且部署者并非当前交易签名者
+          if(!t.signature.get.certId.get.creditCode.equals(coder.get))
+            throw new SandboxException(ERR_CODER)      
+        }
+        
+      case Transaction.Type.CHAINCODE_SET_STATE =>
+        val cn = t.cid.get.chaincodeName
+        val key_coder =  WorldStateKeyPreFix+ cn  
+        val coder_bytes = sr.Get(key_coder)
+        if(coder_bytes != null){
+          val coder = Some(deserialise(coder_bytes).asInstanceOf[String])
+          //合约已存在且部署者并非当前交易签名者
+          println(s"cn:${key_coder} :: ${t.signature.get.certId.get.creditCode} :: ${coder.get}")
+          if(!t.signature.get.certId.get.creditCode.equals(coder.get)){
+            throw new SandboxException(ERR_CODER)       
+          }
+        }
+      //cid不存在抛出异常
+        val key_tx_state = WorldStateKeyPreFix+ tx_cid + PRE_STATE
+        val state_bytes = sr.Get(key_tx_state)
+        //合约不存在
+        if(state_bytes == null){
+            throw new SandboxException(ERR_INVOKE_CHAINCODE_NOT_EXIST)    
+        }
+    }
+ }  
 }
