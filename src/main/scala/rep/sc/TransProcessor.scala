@@ -39,7 +39,7 @@ import rep.sc.js.SandboxJS
 import rep.sc.scalax.SandboxScala
 import rep.utils.SerializeUtils.deserialise
 import rep.utils.SerializeUtils.serialise
-
+import org.slf4j.LoggerFactory
 
 /** 伴生对象，预定义了交易处理的异常描述，传入消息的case类，以及静态方法
  *  @author c4w
@@ -102,6 +102,7 @@ object TransProcessor {
 class TransProcessor(name: String, da:String, parent: ActorRef) extends Actor {
   import TransProcessor._
   
+   protected def log = LoggerFactory.getLogger(this.getClass)
   //获得所属于的actor system
   val pe = PeerExtension(context.system)
   val sTag = pe.getSysTag
@@ -120,7 +121,7 @@ class TransProcessor(name: String, da:String, parent: ActorRef) extends Actor {
          sb_actor ! ti
       }catch{
         case e:Exception => 
-           e.printStackTrace()
+           log.error(ti.t.id, e)
            val r = new DoTransactionResult(ti.t,null, null, null,null,null,
                Option(akka.actor.Status.Failure(e)))
            //向请求发送方返回包含执行异常的结果
@@ -175,7 +176,7 @@ class TransProcessor(name: String, da:String, parent: ActorRef) extends Actor {
     val cid = t.cid.get
     //检查交易是否有效，无效抛出异常
     //deploy之后紧接着调用同合约的invoke,会导致检查失败
-    checkTransaction(t)
+    //checkTransaction(t)
     
     val sn = PRE_SUB_ACTOR+tx_cid
     //如果已经有对应的actor实例，复用之，否则建实例,actor name加字母前缀
@@ -206,102 +207,5 @@ class TransProcessor(name: String, da:String, parent: ActorRef) extends Actor {
     }
   }
   
- def checkTransaction(t: Transaction) = {
-    val tx_cid = getTXCId(t)
-    t.`type`  match {
-      case Transaction.Type.CHAINCODE_INVOKE =>
-        //cid不存在或状态为禁用抛出异常
-        val state = Sandbox.getContractState(tx_cid)
-        if(state != None ){
-          if (!state.get)
-            throw new SandboxException(ERR_DISABLE_CID)
-        }else{
-          val key_tx_state = WorldStateKeyPreFix+ tx_cid + PRE_STATE
-          val sr = ImpDataAccess.GetDataAccess(sTag)
-          val state_bytes = sr.Get(key_tx_state)
-          //合约不存在
-          if(state_bytes == null){
-            //进一步检查sn对应actor,判断是否存在合约正在deploying
-            val sn = PRE_SUB_ACTOR+tx_cid
-            val cref = context.child(sn)
-            if(cref == None)
-              throw new SandboxException(ERR_INVOKE_CHAINCODE_NOT_EXIST)    
-          }
-          else{
-             val state = deserialise(state_bytes).asInstanceOf[Boolean]
-             Sandbox.setContractState(tx_cid, state)
-             if(!state){
-               throw new SandboxException(ERR_DISABLE_CID)    
-             }
-          }
-        }
-      case Transaction.Type.CHAINCODE_DEPLOY =>
-        //检查合约名+版本是否已存在,API预执行导致sandbox实例化，紧接着共识预执行
-         if(Sandbox.getContractState(tx_cid)!=None){
-           throw new SandboxException(ERR_REPEATED_CID) 
-         }
-         else{
-          val key_tx_state = WorldStateKeyPreFix+ tx_cid + PRE_STATE
-          val sr = ImpDataAccess.GetDataAccess(sTag)
-          val state_bytes = sr.Get(key_tx_state)
-          //合约已存在
-          if(state_bytes != null){
-             val state = deserialise(state_bytes).asInstanceOf[Boolean]
-             Sandbox.setContractState(tx_cid, state)
-             throw new SandboxException(ERR_DISABLE_CID)    
-          }
-        }
-         //检查合约部署者
-       val cn = t.cid.get.chaincodeName
-        var coder = Sandbox.getContractCoder(cn)
-        if(coder == None){
-          val key_coder =  WorldStateKeyPreFix+ cn  
-          val sr = ImpDataAccess.GetDataAccess(sTag)
-          val coder_bytes = sr.Get(key_coder)
-          if(coder_bytes != null){
-            coder = Some(deserialise(coder_bytes).asInstanceOf[String])
-            Sandbox.setContractCoder(cn, coder.get)
-          }
-        }
-        //合约已存在且部署者并非当前交易签名者
-        if(coder!=None && !t.signature.get.certId.get.creditCode.equals(coder.get))
-          throw new SandboxException(ERR_CODER)      
-        
-      case Transaction.Type.CHAINCODE_SET_STATE =>
-        val cn = t.cid.get.chaincodeName
-        var coder = Sandbox.getContractCoder(cn)
-        if(coder == None){
-          val key_coder =  WorldStateKeyPreFix+ cn  
-          val sr = ImpDataAccess.GetDataAccess(sTag)
-          val coder_bytes = sr.Get(key_coder)
-          if(coder_bytes != null){
-            coder = Some(deserialise(coder_bytes).asInstanceOf[String])
-            Sandbox.setContractCoder(cn, coder.get)
-          }
-        }
-        //合约已存在且部署者并非当前交易签名者
-        if(coder!=None && !t.signature.get.certId.get.creditCode.equals(coder.get)){
-          println(s"coder:${coder} signer:${t.signature.get.certId.get.creditCode}")
-          throw new SandboxException(ERR_CODER)       
-        }
-        //cid不存在抛出异常
-        if(Sandbox.getContractState(tx_cid)==None){
-          val key_tx_state = WorldStateKeyPreFix+ tx_cid + PRE_STATE
-          val sr = ImpDataAccess.GetDataAccess(sTag)
-          val state_bytes = sr.Get(key_tx_state)
-          //合约不存在
-          if(state_bytes == null){
-            //进一步检查sn对应actor,判断是否存在合约正在deploying
-            val sn = PRE_SUB_ACTOR+tx_cid
-            val cref = context.child(sn)
-            if(cref == None)
-              throw new SandboxException(ERR_INVOKE_CHAINCODE_NOT_EXIST)    
-          }
-          else{
-             val state = deserialise(state_bytes).asInstanceOf[Boolean]
-             Sandbox.setContractState(tx_cid, state)
-          }
-        }
-    }
- }
+
 }

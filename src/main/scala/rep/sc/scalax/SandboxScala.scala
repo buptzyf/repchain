@@ -41,10 +41,6 @@ class SandboxScala(cid:ChaincodeId) extends Sandbox(cid){
   
   def doTransaction(t:Transaction,from:ActorRef, da:String, bRestore:Boolean):DoTransactionResult ={
     //上下文可获得交易
-    //要么上一份给result，重新建一份
-    shim.sr = ImpDataPreloadMgr.GetImpDataPreload(sTag, da)
-    shim.mb = scala.collection.mutable.Map[String,Array[Byte]]()
-    shim.ol = scala.collection.mutable.ListBuffer.empty[Oper]
    //构造和传入ctx
    val ctx = new ContractContext(shim,t)
     //如果执行中出现异常,返回异常
