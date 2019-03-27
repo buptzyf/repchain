@@ -19,7 +19,7 @@
 
 <CSpec>
     <stype>1</stype>
-    <chaincodename>ContractAssetsTPL</chaincodename>
+    <chaincodename>SupplyTPL</chaincodename>
     <chaincodeversion>1</chaincodeversion>
     <iptFunc></iptFunc>
     <iptArgs></iptArgs>
@@ -218,6 +218,6 @@ class SupplyTPL extends IContract {
 
 ]]>
     </code>
-    <ctype>1</ctype>
+    <ctype>2</ctype>
     <state>true</state>
 </CSpec>
