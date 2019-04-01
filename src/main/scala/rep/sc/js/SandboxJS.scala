@@ -71,9 +71,9 @@ class SandboxJS(cid:ChaincodeId) extends Sandbox(cid){
           val r1 = sandbox.eval(t.para.ipt.get.function)
           r1.asInstanceOf[ActionResult]
       }
-      new DoTransactionResult(t,from, r, 
+      new DoTransactionResult(t.id,from, r, 
           None,
-         shim.ol.toList,shim.mb,None)
+         shim.ol.toList,None)
     }catch{
       case e: Exception => 
         log.error(t.id, e)
@@ -81,9 +81,9 @@ class SandboxJS(cid:ChaincodeId) extends Sandbox(cid){
         //val e1 = new Exception(e.getMessage, e.getCause)
         //akka send 无法序列化原始异常,简化异常信息
         val e1 = new SandboxException(e.getMessage)
-        new DoTransactionResult(t,from, null,
+        new DoTransactionResult(t.id,from, null,
            None,
-          shim.ol.toList,shim.mb, 
+          shim.ol.toList, 
           Option(akka.actor.Status.Failure(e1)))           
     }
   }

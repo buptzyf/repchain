@@ -174,10 +174,10 @@ class PreloadTransactionModule(moduleName: String, transProcessor:ActorRef) exte
       }
       else logMsg(LogType.WARN, "Preload Transcations input consensus failed")
 
-    case Sandbox.DoTransactionResult(t,from, r, merkle, ol, mb, err) =>
+    case Sandbox.DoTransactionResult(txId,from, r, merkle, ol, err) =>
       //是否在当前交易列表中
-      preLoadTrans.getOrElse(t.id, None) match {
-        case None => logMsg(LogType.WARN, s"${t.id} does exist in the block this time, size is ${preLoadTrans.size}")
+      preLoadTrans.getOrElse(txId, None) match {
+        case None => logMsg(LogType.WARN, s"${txId} does exist in the block this time, size is ${preLoadTrans.size}")
         case _ =>
           err match {
             case None =>
@@ -196,13 +196,13 @@ class PreloadTransactionModule(moduleName: String, transProcessor:ActorRef) exte
                 olist += new OperLog(l.key, bso, bsn)
               }
 
-              val result = new rep.protos.peer.TransactionResult(t.id,
+              val result = new rep.protos.peer.TransactionResult(txId,
                 olist, None)
                 
               
               //val tmpsr = ImpDataPreloadMgr.GetImpDataPreload(pe.getDBTag,"preload_"+blk.transactions.head.id)
               //todo与执行之后需要记录当前交易执行之后的merkle值，目前结构中没有产生
-              preLoadTrans(t.id) = t//t.withMetadata(ByteString.copyFrom(SerializeUtils.serialise(mb)))
+              preLoadTrans(txId) = t//t.withMetadata(ByteString.copyFrom(SerializeUtils.serialise(mb)))
 
 
               transResult = (transResult :+ result)
@@ -213,9 +213,9 @@ class PreloadTransactionModule(moduleName: String, transProcessor:ActorRef) exte
                 AssembleTransResult(merkle)
               }
             case _ =>
-              logMsg(LogType.WARN, s"${t.id} preload error, error: ${err.get}")
+              logMsg(LogType.WARN, s"${txId} preload error, error: ${err.get}")
               //TODO kami 删除出错的交易，如果全部出错，则返回false
-              preLoadTrans.remove(t.id)
+              preLoadTrans.remove(txId)
               errorCount += 1
               //println("ErrCount:" + errorCount)
               if ((transResult.size + errorCount) == blk.transactions.size) {

@@ -100,17 +100,17 @@ class SandboxScala(cid:ChaincodeId) extends Sandbox(cid){
         case null => None
         case _ => Option(mb)  //Option(BytesHex.bytes2hex(mb))
       }
-      new DoTransactionResult(t,from, r, 
+      new DoTransactionResult(t.id,from, r, 
           mbstr,
-         shim.ol.toList,shim.mb,None)
+         shim.ol.toList,None)
     }catch{
       case e: Exception => 
         log.error(t.id, e)
         //akka send 无法序列化原始异常,简化异常信息
         val e1 = new SandboxException(e.getMessage)
-        new DoTransactionResult(t,from, null,
+        new DoTransactionResult(t.id,from, null,
            None,
-          shim.ol.toList,shim.mb, 
+          shim.ol.toList,
           Option(akka.actor.Status.Failure(e1)))           
     }
   }  

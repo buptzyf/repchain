@@ -59,9 +59,8 @@ object Sandbox {
    * @param mb 合约执行涉及的key-value集合
    * @param err 执行中抛出的异常信息
    */
-  case class DoTransactionResult(t:Transaction,from:ActorRef, r:ActionResult,merkle:Option[String],
+  case class DoTransactionResult(txId:String,from:ActorRef, r:ActionResult,merkle:Option[String],
     ol:List[Oper],
-    mb:scala.collection.mutable.Map[String,Option[Array[Byte]]],
     err:Option[akka.actor.Status.Failure])
     
   /** 合约执行异常类
@@ -146,7 +145,7 @@ abstract class Sandbox(cid:ChaincodeId) extends Actor {
     }catch{
         case e:Exception => 
           log.error(t.id, e)
-          new DoTransactionResult(t,null, null, null,null,null,
+          new DoTransactionResult(t.id,null, null, null,null,
                Option(akka.actor.Status.Failure(e)))
       }
   }
