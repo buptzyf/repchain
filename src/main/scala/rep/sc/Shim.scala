@@ -49,7 +49,7 @@ object Shim {
    *  @param oldValue 旧键值
    *  @param newValue 新写入的键值
    */
-  case class Oper(key: Key, oldValue: Array[Byte], newValue: Array[Byte])
+  case class Oper(key: Key, oldValue: Option[Array[Byte]], newValue: Option[Array[Byte]])
 
   import rep.storage.IdxPrefix._
   val ERR_CERT_EXIST = "证书已存在"
@@ -91,21 +91,21 @@ class Shim(system: ActorSystem, cName: String) {
   //从交易传入, 内存中的worldState快照
   var sr:ImpDataPreload = null;
   //记录初始state
-  var mb = scala.collection.mutable.Map[Key, Array[Byte]]()
+  var mb = scala.collection.mutable.Map[Key, Option[Array[Byte]]]()
   //记录状态修改日志
   var ol = scala.collection.mutable.ListBuffer.empty[Oper]
     
-  def setVal(key: Key, value: Any):Unit ={
-    setState(key,serialise(value))
+  def setVal(key: Key, value: Option[Any]):Unit ={
+    setState(key, Some(serialise(value.get)))
   }
-   def getVal(key: Key):Any ={
-    deserialise(getState(key))
+   def getVal(key: Key):Option[Any] ={
+    Some(deserialise(getState(key).get))
   }
  
-  def setState(key: Key, value: Array[Byte]): Unit = {
+  def setState(key: Key, value: Option[Array[Byte]]): Unit = {
     val pkey = pre_key + key
     val oldValue = get(pkey)
-    sr.Put(pkey, value)
+    sr.Put(pkey, value.get)
     //记录初始值
     if (!mb.contains(pkey)) {
       mb.put(pkey, oldValue)
@@ -114,15 +114,15 @@ class Shim(system: ActorSystem, cName: String) {
     ol += new Oper(key, oldValue, value)
   }
 
-  private def get(key: Key): Array[Byte] = {
-    sr.Get(key)
+  private def get(key: Key): Option[Array[Byte]] = {
+    Some(sr.Get(key))
   }
 
-  def getState(key: Key): Array[Byte] = {
+  def getState(key: Key): Option[Array[Byte]] = {
     get(pre_key + key)
   }
 
-  def getStateEx(cName:String, key: Key): Array[Byte] = {
+  def getStateEx(cName:String, key: Key): Option[Array[Byte]] = {
     get(WorldStateKeyPreFix + cName + PRE_SPLIT + key)
   }
   
@@ -130,13 +130,6 @@ class Shim(system: ActorSystem, cName: String) {
   private def reset() = {
     mb.clear()
     ol.clear()
-  }
-
-  //回滚到初始值
-  def rollback() = {
-    for ((k, v) <- mb) sr.Put(k, v)
-    //回滚仍然保留操作日志,否则api拿不到操作日志
-    // ol.clear()
   }
   
   //判断账号是否节点账号 TODO
