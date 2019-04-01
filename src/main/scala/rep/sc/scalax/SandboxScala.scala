@@ -64,18 +64,18 @@ class SandboxScala(cid:ChaincodeId) extends Sandbox(cid){
           if(!bRestore){
             val txid = serialise(t.id)
             shim.sr.Put(key_tx,txid)
-            shim.ol.append(new Oper(key_tx, null, txid))
+            shim.ol.append(new Oper(key_tx, null, Some(txid)))
             
             //写入初始状态
             val key_tx_state = WorldStateKeyPreFix+ tx_cid + PRE_STATE
             val state_enable = serialise(true)
             shim.sr.Put(key_tx_state,state_enable)
-            shim.ol.append(new Oper(key_tx_state, null, state_enable))
+            shim.ol.append(new Oper(key_tx_state, null, Some(state_enable)))
             
             //利用kv记住合约的开发者
             val coder_bytes =  serialise(coder)
             shim.sr.Put(key_coder,coder_bytes)
-            shim.ol.append(new Oper(key_coder, null, coder_bytes))            
+            shim.ol.append(new Oper(key_coder, null, Some(coder_bytes)))            
           }     
           new ActionResult(1,None)
          //由于Invoke为最频繁调用，因此应尽量避免在处理中I/O读写,比如合约状态的检查就最好在内存中处理
@@ -92,7 +92,7 @@ class SandboxScala(cid:ChaincodeId) extends Sandbox(cid){
           val state = t.para.state.get
           val state_bytes = serialise(state)
           shim.sr.Put(key_tx_state,state_bytes)
-          shim.ol.append(new Oper(key_tx_state, null, state_bytes))
+          shim.ol.append(new Oper(key_tx_state, null, Some(state_bytes)))
           new ActionResult(1,None)
       }
       val mb = shim.sr.GetComputeMerkle4String
@@ -105,7 +105,6 @@ class SandboxScala(cid:ChaincodeId) extends Sandbox(cid){
          shim.ol.toList,shim.mb,None)
     }catch{
       case e: Exception => 
-        shim.rollback        
         log.error(t.id, e)
         //akka send 无法序列化原始异常,简化异常信息
         val e1 = new SandboxException(e.getMessage)

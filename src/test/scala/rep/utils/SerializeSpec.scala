@@ -16,6 +16,8 @@
 
 package rep.utils
 import rep.sc.Shim.Oper
+import rep.sc.Sandbox.DoTransactionResult
+import rep.sc.scalax.ActionResult
 
 import org.scalatest._
 import prop._
@@ -32,7 +34,10 @@ import SerializeUtils._
  * 
  */
 class SerializeSpec extends PropSpec with TableDrivenPropertyChecks with Matchers {
-  val ol = List(Oper("key1",null,BigInt(8).toByteArray),Oper("key1",BigInt(8).toByteArray,BigInt(8).toByteArray))
+  val ol = List(Oper("key1",None,Some(BigInt(8).toByteArray)),Oper("key1",Some(BigInt(8).toByteArray),None))
+  val tr = new DoTransactionResult(null,null, new ActionResult(1,None), 
+          None,
+         ol,null,None)
   
   val examples =
     Table(
@@ -41,7 +46,6 @@ class SerializeSpec extends PropSpec with TableDrivenPropertyChecks with Matcher
     666,
     true,
     Map("red" -> "#FF0000", "azure" -> "#F0FFFF")
-     //ol
    )
   property("Any value can be serialise and deserialise") {
     forAll(examples) { (v:Any) =>
@@ -50,4 +54,16 @@ class SerializeSpec extends PropSpec with TableDrivenPropertyChecks with Matcher
       v1 should equal (v)
    }       
   }
+  val e2 =
+    Table(
+    "v",  // First tuple defines column names
+     ol
+   )
+  property("Any value can be serialise and deserialise") {
+    forAll(e2) { (v:Any) =>
+      val b1 = v.asInstanceOf[DoTransactionResult]
+   }       
+  }
+  
+  
 }

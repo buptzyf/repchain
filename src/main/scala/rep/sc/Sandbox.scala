@@ -62,7 +62,7 @@ object Sandbox {
    */
   case class DoTransactionResult(t:Transaction,from:ActorRef, r:ActionResult,merkle:Option[String],
     ol:List[Oper],
-    mb:scala.collection.mutable.Map[String,Array[Byte]],
+    mb:scala.collection.mutable.Map[String,Option[Array[Byte]]],
     err:Option[akka.actor.Status.Failure])
     
   /** 合约执行异常类
@@ -141,7 +141,7 @@ abstract class Sandbox(cid:ChaincodeId) extends Actor {
           //要么上一份给result，重新建一份
       shim.sr = ImpDataPreloadMgr.GetImpDataPreload(sTag, da)
       checkTransaction(t, bRestore)
-      shim.mb = scala.collection.mutable.Map[String,Array[Byte]]()
+      shim.mb = scala.collection.mutable.Map[String,Option[Array[Byte]]]()
       shim.ol = new scala.collection.mutable.ListBuffer[Oper]
       doTransaction(t,from,da,bRestore)
     }catch{
