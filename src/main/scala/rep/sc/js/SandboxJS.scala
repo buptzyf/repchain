@@ -30,7 +30,6 @@ import rep.sc.Shim.Oper
 import com.google.protobuf.ByteString
 import org.json4s._
 import rep.log.trace.{RepLogger,ModuleType}
-import rep.sc.scalax.ActionResult
 
 /**
  * @author c4w
@@ -48,7 +47,7 @@ class SandboxJS(cid:ChaincodeId) extends Sandbox(cid){
     sandbox.put("tx_account", t.signature.get.certId.get.creditCode)
     //要么上一份给result，重新建一份
     shim.sr = ImpDataPreloadMgr.GetImpDataPreload(sTag, da)
-    shim.mb = scala.collection.mutable.Map[String,Array[Byte]]()
+    shim.mb = scala.collection.mutable.Map[String,Option[Array[Byte]]]()
     shim.ol = scala.collection.mutable.ListBuffer.empty[Oper]
     //如果执行中出现异常,返回异常
     try{
@@ -65,8 +64,8 @@ class SandboxJS(cid:ChaincodeId) extends Sandbox(cid){
           val key = WorldStateKeyPreFix+ cid
           shim.sr.Put(key,txid)
           //ol value改为byte array
-          shim.ol.append(new Oper(key, null, txid))
-          new ActionResult(1,None)
+          shim.ol.append(new Oper(key, null, Some(txid)))
+          new ActionResult(1)
          //调用方法时只需要执行function
         case  Transaction.Type.CHAINCODE_INVOKE =>
           val r1 = sandbox.eval(t.para.ipt.get.function)
@@ -77,7 +76,6 @@ class SandboxJS(cid:ChaincodeId) extends Sandbox(cid){
          shim.ol.toList,shim.mb,None)
     }catch{
       case e: Exception => 
-        shim.rollback        
         log.error(t.id, e)
         
         //val e1 = new Exception(e.getMessage, e.getCause)

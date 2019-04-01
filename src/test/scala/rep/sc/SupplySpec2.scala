@@ -175,9 +175,9 @@ class SupplySpec2(_system: ActorSystem)
       var total = 0
       ol4.foreach { 
         ol => 
-          total += deserialise(ol.newValue).asInstanceOf[Int]
+          total += deserialise(ol.newValue.get).asInstanceOf[Int]
           if(ol.oldValue!= null)        
-            total -= deserialise(ol.oldValue).asInstanceOf[Int]        
+            total -= deserialise(ol.oldValue.get).asInstanceOf[Int]        
       }
       total should be(el)
     }
@@ -198,10 +198,10 @@ class SupplySpec2(_system: ActorSystem)
       var total = 0
       ol4.foreach { 
         ol => 
-          total += deserialise(ol.newValue).asInstanceOf[Int]
+          total += deserialise(ol.newValue.get).asInstanceOf[Int]
           //由于不同版本共享kv,前面的分账结果导致账户不为空
           ol.oldValue should not be null
-          total -= deserialise(ol.oldValue).asInstanceOf[Int]       
+          total -= deserialise(ol.oldValue.get).asInstanceOf[Int]       
       }
       total should be(el)
     }

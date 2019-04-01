@@ -17,10 +17,10 @@
 package rep.sc.scalax
 
 import rep.protos.peer.Transaction
+import rep.protos.peer.ActionResult
 import rep.sc.Shim
 
 class ContractContext(val api:Shim, val t:Transaction)
-case class ActionResult(code:Int, reason:Option[String])
 
 /**
  * @author c4w

@@ -142,17 +142,17 @@ message OperLog{
 	bytes oldValue =2;
 	bytes newValue=3;
 }
+message ActionResult{
+	int32 code = 1;
+	string reason = 2;
+}
 //交易结果(背书中针对各个交易再进行单独背书)
 //背书请求的应答（针对block中的各个交易）
 message TransactionResult {
     //唯一标识一个Transaction
   string txId = 1;
-    // result - The return value of the transaction.
   repeated OperLog ol = 2;
-    // errorCode - An error code. 5xx will be logged as a failure in the dashboard.
-  uint32 errorCode = 3;
-    // error - An error string for logging an issue.
-  string error = 4;
+  ActionResult result = 3;
 }
 
 

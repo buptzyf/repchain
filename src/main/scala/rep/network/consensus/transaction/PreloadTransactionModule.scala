@@ -187,17 +187,17 @@ class PreloadTransactionModule(moduleName: String, transProcessor:ActorRef) exte
               for (l <- ol) {
                 val bso = l.oldValue match {
                   case null => _root_.com.google.protobuf.ByteString.EMPTY
-                  case _ => ByteString.copyFrom(l.oldValue)
+                  case _ => ByteString.copyFrom(l.oldValue.get)
                 }
                 val bsn = l.newValue match {
                   case null => _root_.com.google.protobuf.ByteString.EMPTY
-                  case _ => ByteString.copyFrom(l.newValue)
+                  case _ => ByteString.copyFrom(l.newValue.get)
                 }
                 olist += new OperLog(l.key, bso, bsn)
               }
 
               val result = new rep.protos.peer.TransactionResult(t.id,
-                olist, 0, "")
+                olist, None)
                 
               
               //val tmpsr = ImpDataPreloadMgr.GetImpDataPreload(pe.getDBTag,"preload_"+blk.transactions.head.id)

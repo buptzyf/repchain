@@ -126,7 +126,7 @@ class ContractCertSpec (_system: ActorSystem)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
     msg_recv.r.code should be (0)
-    msg_recv.r.reason.getOrElse("UnKnow Error") should be ("证书已存在")
+    msg_recv.r.reason should be ("证书已存在")
   }
 
   // 不能将证书注册到一个不存在的账户
@@ -137,7 +137,7 @@ class ContractCertSpec (_system: ActorSystem)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
     msg_recv.r.code should be (0)
-    msg_recv.r.reason.getOrElse("UnKnow Error") should be ("账户不存在")
+    msg_recv.r.reason should be ("账户不存在")
   }
 
   // 将证书2追加到 node1的账户中，使用node2作为certName
@@ -148,7 +148,7 @@ class ContractCertSpec (_system: ActorSystem)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
     msg_recv.r.code should be (1)
-    msg_recv.r.reason.getOrElse("default") should be ("default")
+    msg_recv.r.reason should be ("default")
   }
 
   // 更新证书状态,将刚刚追加的node2的证书状态修改为false
@@ -159,7 +159,7 @@ class ContractCertSpec (_system: ActorSystem)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
     msg_recv.r.code should be (1)
-    msg_recv.r.reason.getOrElse("default") should be ("default")
+    msg_recv.r.reason should be ("default")
   }
 
   // 更新证书状态，对应的证书不存在
@@ -170,7 +170,7 @@ class ContractCertSpec (_system: ActorSystem)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
     msg_recv.r.code should be (0)
-    msg_recv.r.reason.getOrElse("default") should be ("证书不存在")
+    msg_recv.r.reason should be ("证书不存在")
   }
 
   // 更新账户信息，将账户node1中的name改为node2，并且修改手机号
@@ -182,6 +182,6 @@ class ContractCertSpec (_system: ActorSystem)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
     msg_recv.r.code should be (1)
-    msg_recv.r.reason.getOrElse("default") should be ("default")
+    msg_recv.r.reason should be ("default")
   }
 }

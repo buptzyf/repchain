@@ -17,7 +17,7 @@
 package rep.utils
 import rep.sc.Shim.Oper
 import rep.sc.Sandbox.DoTransactionResult
-import rep.sc.scalax.ActionResult
+import rep.protos.peer.ActionResult
 
 import org.scalatest._
 import prop._
@@ -35,7 +35,7 @@ import SerializeUtils._
  */
 class SerializeSpec extends PropSpec with TableDrivenPropertyChecks with Matchers {
   val ol = List(Oper("key1",None,Some(BigInt(8).toByteArray)),Oper("key1",Some(BigInt(8).toByteArray),None))
-  val tr = new DoTransactionResult(null,null, new ActionResult(1,None), 
+  val tr = new DoTransactionResult(null,null, new ActionResult(1), 
           None,
          ol,null,None)
   

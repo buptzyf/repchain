@@ -36,7 +36,6 @@ import Shim._
 import rep.crypto.BytesHex
 import rep.network.tools.PeerExtension
 import rep.storage.IdxPrefix.WorldStateKeyPreFix
-import rep.sc.scalax.ActionResult
 import rep.storage._
 import rep.utils.SerializeUtils.deserialise
 import rep.utils.SerializeUtils.serialise
@@ -115,9 +114,9 @@ abstract class Sandbox(cid:ChaincodeId) extends Actor {
   def errAction(errCode: Int) :ActionResult = {
      errCode match{
        case -101 =>
-         ActionResult(errCode,Some("目标合约不存在"))
+         ActionResult(errCode,"目标合约不存在")
      }
-     ActionResult(errCode,Some("不明原因"))
+     ActionResult(errCode,"不明原因")
   }
   /** 消息处理主流程,包括对交易处理请求、交易的预执行处理请求、从存储恢复合约的请求
    * 

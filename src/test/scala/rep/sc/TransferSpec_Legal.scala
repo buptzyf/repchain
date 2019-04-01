@@ -125,7 +125,7 @@ class TransferSpec_Legal(_system: ActorSystem)
     msg_recv.r.code should be (2)
     
     //对提醒文本签名
-    val remind = msg_recv.r.reason.get
+    val remind = msg_recv.r.reason
     println(remind)
     p = Transfer("121000005l35120456", "12110107bi45jh675g", 5,remind )
     t = PeerHelper.createTransaction4Invoke(sysName, cid1, ACTION.transfer, Seq(toJson(p)))

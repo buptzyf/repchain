@@ -9,7 +9,7 @@ import rep.app.conf.SystemProfile
 import rep.utils.{IdTool, SerializeUtils}
 import rep.sc.scalax.IContract
 import rep.sc.scalax.ContractContext
-import rep.sc.scalax.ActionResult
+import rep.protos.peer.ActionResult
 
 /**
   * @author zyf
@@ -53,17 +53,17 @@ class ContractCert  extends IContract {
   def signUpSigner(ctx: ContractContext, data:Signer):ActionResult = {
     val isNodeCert = ctx.api.bNodeCreditCode(ctx.t.getSignature.getCertId.creditCode)
     if (!isNodeCert) {
-      return ActionResult(0,Some(notNodeCert))
+      return ActionResult(0,notNodeCert)
     }
     // 存Signer账户
     //val signerKey = prefix + underline + data.creditCode
     val signer = ctx.api.getState(data.creditCode)
     // 如果是null，表示已注销，如果不是null，则判断是否有值
-    if (signer == null || new String(signer).equalsIgnoreCase("null")){
-      ctx.api.setVal(data.creditCode, data)
-      ActionResult(1,None)
+    if (signer == None ){
+      ctx.api.setVal(data.creditCode, Some(data))
+      ActionResult(1)
     } else {
-      ActionResult(0,Some(signerExists))
+      ActionResult(0,signerExists)
     }
   }
 
@@ -76,27 +76,27 @@ class ContractCert  extends IContract {
   def signUpCert(ctx: ContractContext, data:CertInfo): ActionResult = {
     val isNodeCert = ctx.api.bNodeCreditCode(ctx.t.getSignature.getCertId.creditCode)
     if (!isNodeCert) {
-      return ActionResult(0,Some(notNodeCert))
+      return ActionResult(0,notNodeCert)
     }
     val certKey =  data.credit_code + dot + data.name
     val certInfo = ctx.api.getState(certKey)
     val signerKey =  data.credit_code
     val signerContent = ctx.api.getState(signerKey)
     // 先判断证书，若证书不存在，则向账户添加name
-    if (certInfo == null || new String(certInfo).equalsIgnoreCase("null")) {
-      if (signerContent == null || new String(signerContent).equalsIgnoreCase("null")){
-        return ActionResult(0,Some(signerNotExists))
+    if (certInfo == None) {
+      if (signerContent == None){
+        return ActionResult(0,signerNotExists)
       } else {
-        ctx.api.setVal(certKey, data.cert)
-        val signer = SerializeUtils.deserialise(signerContent).asInstanceOf[Signer]
+        ctx.api.setVal(certKey, Some(data.cert))
+        val signer = SerializeUtils.deserialise(signerContent.get).asInstanceOf[Signer]
         if (!signer.certNames.contains(data.name)){
           signer.addCertNames(data.name)
-          ctx.api.setVal(signerKey, signer)
+          ctx.api.setVal(signerKey, Some(signer))
         }
       }
-      ActionResult(1, None)
+      ActionResult(1)
     } else {
-      ActionResult(0, Some(certExists))
+      ActionResult(0, certExists)
     }
   }
 
@@ -112,17 +112,17 @@ class ContractCert  extends IContract {
   def updateCertStatus(ctx: ContractContext, data: CertStatus): ActionResult = {
     val isNodeCert = ctx.api.bNodeCreditCode(ctx.t.getSignature.getCertId.creditCode)
     if (!isNodeCert) {
-      return ActionResult(0,Some(notNodeCert))
+      return ActionResult(0,notNodeCert)
     }
     val certKey =  data.credit_code + dot + data.name
     val certInfo = ctx.api.getState(certKey)
-    if (certInfo == null || new String(certInfo).equalsIgnoreCase("null")) {
-      ActionResult(0,Some(certNotExists))
+    if (certInfo == None) {
+      ActionResult(0,certNotExists)
     } else {
-      val cert = SerializeUtils.deserialise(certInfo).asInstanceOf[Certificate]
+      val cert = SerializeUtils.deserialise(certInfo.get).asInstanceOf[Certificate]
       cert.withCertValid(data.status)
-      ctx.api.setVal(certKey, cert)
-      ActionResult(1,None)
+      ctx.api.setVal(certKey, Some(cert))
+      ActionResult(1)
     }
   }
 
@@ -135,15 +135,15 @@ class ContractCert  extends IContract {
   def updateSigner(ctx: ContractContext, data: Signer): ActionResult = {
     val isNodeCert = ctx.api.bNodeCreditCode(ctx.t.getSignature.getCertId.creditCode)
     if (!isNodeCert) {
-      return ActionResult(0,Some(notNodeCert))
+      return ActionResult(0,notNodeCert)
     }
     val signer = ctx.api.getState(data.creditCode)
     // 如果是null，账户不存在，不存在则不能更新
-    if (signer == null || new String(signer).equalsIgnoreCase("null")){
-      ActionResult(0,Some(signerNotExists))
+    if (signer == None){
+      ActionResult(0,signerNotExists)
     } else {
-      ctx.api.setVal(data.creditCode, data)
-      ActionResult(1,None)
+      ctx.api.setVal(data.creditCode, Some(data))
+      ActionResult(1)
     }
   }
 

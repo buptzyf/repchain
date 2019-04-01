@@ -77,7 +77,7 @@ class SandboxScala(cid:ChaincodeId) extends Sandbox(cid){
             shim.sr.Put(key_coder,coder_bytes)
             shim.ol.append(new Oper(key_coder, null, Some(coder_bytes)))            
           }     
-          new ActionResult(1,None)
+          new ActionResult(1)
          //由于Invoke为最频繁调用，因此应尽量避免在处理中I/O读写,比如合约状态的检查就最好在内存中处理
           //TODO case  Transaction.Type.CHAINCODE_DESC 增加对合约描述的处理
         case  Transaction.Type.CHAINCODE_INVOKE =>
@@ -93,7 +93,7 @@ class SandboxScala(cid:ChaincodeId) extends Sandbox(cid){
           val state_bytes = serialise(state)
           shim.sr.Put(key_tx_state,state_bytes)
           shim.ol.append(new Oper(key_tx_state, null, Some(state_bytes)))
-          new ActionResult(1,None)
+          new ActionResult(1)
       }
       val mb = shim.sr.GetComputeMerkle4String
       val mbstr = mb match {

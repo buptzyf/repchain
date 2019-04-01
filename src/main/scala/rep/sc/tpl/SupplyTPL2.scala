@@ -29,7 +29,7 @@ import org.json4s.{DefaultFormats, Formats, jackson}
 import rep.sc.tpl.SupplyType._
 import rep.sc.scalax.IContract
 import rep.sc.scalax.ContractContext
-import rep.sc.scalax.ActionResult
+import rep.protos.peer.ActionResult
 
 /**
  * 供应链分账合约
@@ -49,13 +49,13 @@ class SupplyTPL2 extends IContract {
      * 追加确认签名 TODO 逻辑实现
      */
     def confirmSign(ctx: ContractContext, data:IPTConfirm ):ActionResult={
-       ActionResult(1,None)
+       ActionResult(1)
     }
      /**
      * 取消追加确认签名 TODO 逻辑实现
      */
     def cancelSign(ctx: ContractContext, data:IPTConfirm ):ActionResult={
-       ActionResult(1,None)
+       ActionResult(1)
     }
 
    /**
@@ -65,7 +65,7 @@ class SupplyTPL2 extends IContract {
     * @return
     */
     def SignUp(ctx: ContractContext, data:Map[String,String]):ActionResult = {
-      ActionResult(1,None)
+      ActionResult(1)
     }
 
    /**
@@ -75,18 +75,18 @@ class SupplyTPL2 extends IContract {
       val sid = data.account_sale +SPLIT_CHAR + data.product_id
       val pid = sid+TPL_MODE
       //签约输入持久化,默认的类型转换无法胜任，以json字符串形式持久化
-      ctx.api.setVal(sid, write(data))
-      ctx.api.setVal(pid, TPL.Share)
-       ActionResult(1,None)
+      ctx.api.setVal(sid, Some(write(data)))
+      ctx.api.setVal(pid, Some(TPL.Share))
+       ActionResult(1)
     }
 
     def signFixed(ctx: ContractContext, data:IPTSignFixed ):ActionResult={
       val sid = data.account_sale +SPLIT_CHAR + data.product_id
       val pid = sid+TPL_MODE
       //签约输入持久化
-      ctx.api.setVal(sid, write(data))
-      ctx.api.setVal(pid, TPL.Fixed)
-       ActionResult(1,None)
+      ctx.api.setVal(sid, Some(write(data)))
+      ctx.api.setVal(pid, Some(TPL.Fixed))
+       ActionResult(1)
     }
     
     /**
@@ -110,7 +110,7 @@ class SupplyTPL2 extends IContract {
       }
       //返回分账计算结果
       addToAccount(ctx, mr)
-       ActionResult(1,None)
+       ActionResult(1)
     }
     
     /**
@@ -120,7 +120,7 @@ class SupplyTPL2 extends IContract {
       for ((k, v) <- mr) {
           val sk =  ctx.api.getVal(k)
           var dk = if(sk==null) 0 else sk.toString.toInt
-          ctx.api.setVal(k, dk+v)
+          ctx.api.setVal(k, Some(dk+v))
       }
     }
     /**
