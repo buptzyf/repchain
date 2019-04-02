@@ -52,16 +52,22 @@ object SystemProfile {
   private[this] var _VOTENODELIST : List[String] = new ArrayList[String]
   private[this] var _ACCOUNTCHAINCODENAEM : String = "ACCOUNTCHAINCODENAME"
   private[this] var _ACCOUNTCHAINCODEVERSION: Int = 1
+  private[this] var _GENESISNODENAME:String = ""
   
   
   private def SERVERPORT :Int = _SERVERPORT
   private def CHECKCERTVALIDATE:Int = _CHECKCERTVALIDATE
   private def DISKSPACE_ALARM_NUM :Long = _DISKSPACE_ALARM_NUM
   private def CONTRACTOPERATIONMODE:Int=_CONTRACTOPERATIONMODE
+  private def GENESISNODENAME:String = _GENESISNODENAME
   
   private def VOTENODELIST : List[String] = _VOTENODELIST
   private def ACCOUNTCHAINCODENAEM = _ACCOUNTCHAINCODENAEM
   private def ACCOUNTCHAINCODVERSION = _ACCOUNTCHAINCODEVERSION
+  
+  private def GENESISNODENAME_=(value:String):Unit={
+    _GENESISNODENAME = value
+  }
   
   private def VOTENODELIST_=(value: List[String]): Unit = {
       _VOTENODELIST = value
@@ -155,6 +161,7 @@ object SystemProfile {
     CONTRACTOPERATIONMODE_=(config.getInt("system.contractOperationMode"))
     ACCOUNTCHAINCODENAEM_= (config.getString("system.account.chaincodename"))
     ACCOUNTCHAINCODEVERSION_=(config.getInt("system.account.chaincodeversion"))
+    GENESISNODENAME_=(config.getString("system.genesis_node_name"))
   }
   
   def getLimitBlockTransNum = LIMIT_BLOCK_TRANS_NUM
@@ -184,4 +191,6 @@ object SystemProfile {
   def getAccountChaincodeName = ACCOUNTCHAINCODENAEM
 
   def getAccountChaincodeVersion = ACCOUNTCHAINCODVERSION
+  
+  def getGenesisNodeName = GENESISNODENAME
 }
