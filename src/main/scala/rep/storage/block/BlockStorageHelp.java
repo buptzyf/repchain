@@ -16,17 +16,10 @@
 
 package rep.storage.block;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.InputStreamReader;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-
-import com.typesafe.sslconfig.util.PrintlnLogger;
-
 import rep.storage.cfg.StoreConfig;
 import rep.storage.util.pathUtil;
 
@@ -36,7 +29,7 @@ import rep.storage.util.pathUtil;
  * @since	2017-09-28
  * @category	该类主要对File System进行操作。
  * */
-public class BlockHelp {
+public class BlockStorageHelp {
 	private static String FileName = "Repchain_BlockFile_";
 	private String SystemName = "";
 	private String BlockDataPath = "";
@@ -51,7 +44,7 @@ public class BlockHelp {
 	 * @param	String SystemName 系统名称
 	 * @return	无
 	 * */
-	public BlockHelp(String SystemName) throws Exception {
+	public BlockStorageHelp(String SystemName) throws Exception {
 		this.SystemName = SystemName;
 		StoreConfig sc = StoreConfig.getStoreConfig();
 		this.filemaxlength = sc.getFileMax();
@@ -252,9 +245,9 @@ public class BlockHelp {
 		long b = 8373l;
 		long c = 0l;
 		
-		System.out.println("start="+a+"\tconvert value="+BlockHelp.byteToLong(BlockHelp.longToByte(a))+"\t byte length="+BlockHelp.longToByte(a).length);
-		System.out.println("start="+b+"\tconvert value="+BlockHelp.byteToLong(BlockHelp.longToByte(b))+"\t byte length="+BlockHelp.longToByte(b).length);
-		System.out.println("start="+c+"\tconvert value="+BlockHelp.byteToLong(BlockHelp.longToByte(c))+"\t byte length="+BlockHelp.longToByte(c).length);
+		System.out.println("start="+a+"\tconvert value="+BlockStorageHelp.byteToLong(BlockStorageHelp.longToByte(a))+"\t byte length="+BlockStorageHelp.longToByte(a).length);
+		System.out.println("start="+b+"\tconvert value="+BlockStorageHelp.byteToLong(BlockStorageHelp.longToByte(b))+"\t byte length="+BlockStorageHelp.longToByte(b).length);
+		System.out.println("start="+c+"\tconvert value="+BlockStorageHelp.byteToLong(BlockStorageHelp.longToByte(c))+"\t byte length="+BlockStorageHelp.longToByte(c).length);
 	}
 	
 }
