@@ -26,7 +26,6 @@ import rep.storage._
 import rep.storage.IdxPrefix.WorldStateKeyPreFix
 import rep.log.trace.LogType
 import org.slf4j.LoggerFactory
-import rep.sc.Shim.Oper
 import com.google.protobuf.ByteString
 import org.json4s._
 import rep.log.trace.{RepLogger,ModuleType}
@@ -47,8 +46,7 @@ class SandboxJS(cid:ChaincodeId) extends Sandbox(cid){
     sandbox.put("tx_account", t.signature.get.certId.get.creditCode)
     //要么上一份给result，重新建一份
     shim.sr = ImpDataPreloadMgr.GetImpDataPreload(sTag, da)
-    shim.mb = scala.collection.mutable.Map[String,Option[Array[Byte]]]()
-    shim.ol = scala.collection.mutable.ListBuffer.empty[Oper]
+    shim.ol = scala.collection.mutable.ListBuffer.empty[OperLog]
     //如果执行中出现异常,返回异常
     try{
       val cs = t.para.spec.get.codePackage
@@ -64,7 +62,7 @@ class SandboxJS(cid:ChaincodeId) extends Sandbox(cid){
           val key = WorldStateKeyPreFix+ cid
           shim.sr.Put(key,txid)
           //ol value改为byte array
-          shim.ol.append(new Oper(key, null, Some(txid)))
+          shim.ol.append(new OperLog(key, null, ByteString.copyFrom(txid)))
           new ActionResult(1)
          //调用方法时只需要执行function
         case  Transaction.Type.CHAINCODE_INVOKE =>
@@ -72,7 +70,6 @@ class SandboxJS(cid:ChaincodeId) extends Sandbox(cid){
           r1.asInstanceOf[ActionResult]
       }
       new DoTransactionResult(t.id,from, r, 
-          None,
          shim.ol.toList,None)
     }catch{
       case e: Exception => 
@@ -82,7 +79,6 @@ class SandboxJS(cid:ChaincodeId) extends Sandbox(cid){
         //akka send 无法序列化原始异常,简化异常信息
         val e1 = new SandboxException(e.getMessage)
         new DoTransactionResult(t.id,from, null,
-           None,
           shim.ol.toList, 
           Option(akka.actor.Status.Failure(e1)))           
     }

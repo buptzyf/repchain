@@ -59,8 +59,8 @@ object Sandbox {
    * @param mb 合约执行涉及的key-value集合
    * @param err 执行中抛出的异常信息
    */
-  case class DoTransactionResult(txId:String,from:ActorRef, r:ActionResult,merkle:Option[String],
-    ol:List[Oper],
+  case class DoTransactionResult(txId:String,from:ActorRef, r:ActionResult,
+    ol:List[OperLog],
     err:Option[akka.actor.Status.Failure])
     
   /** 合约执行异常类
@@ -139,13 +139,12 @@ abstract class Sandbox(cid:ChaincodeId) extends Actor {
           //要么上一份给result，重新建一份
       shim.sr = ImpDataPreloadMgr.GetImpDataPreload(sTag, da)
       checkTransaction(t, bRestore)
-      shim.mb = scala.collection.mutable.Map[String,Option[Array[Byte]]]()
-      shim.ol = new scala.collection.mutable.ListBuffer[Oper]
+      shim.ol = new scala.collection.mutable.ListBuffer[OperLog]
       doTransaction(t,from,da,bRestore)
     }catch{
         case e:Exception => 
           log.error(t.id, e)
-          new DoTransactionResult(t.id,null, null, null,null,
+          new DoTransactionResult(t.id,null, null, null,
                Option(akka.actor.Status.Failure(e)))
       }
   }

@@ -20,7 +20,6 @@ import akka.actor.{Actor, ActorRef, Props, actorRef2Scala}
 import delight.nashornsandbox._
 import rep.protos.peer._
 import rep.sc.Sandbox._
-import rep.sc.Shim.Oper
 import rep.utils.{GlobalUtils,  TimeUtils}
 
 import rep.storage._
@@ -122,7 +121,7 @@ class TransProcessor(name: String, da:String, parent: ActorRef) extends Actor {
       }catch{
         case e:Exception => 
            log.error(ti.t.id, e)
-           val r = new DoTransactionResult(ti.t.id,null, null, null,null,
+           val r = new DoTransactionResult(ti.t.id,null, null, null,
                Option(akka.actor.Status.Failure(e)))
            //向请求发送方返回包含执行异常的结果
            sender ! r
@@ -140,7 +139,7 @@ class TransProcessor(name: String, da:String, parent: ActorRef) extends Actor {
         sender ! result
       }catch{
         case e:Exception => 
-           val r = new DoTransactionResult(m.t.id,null, null, null,null,
+           val r = new DoTransactionResult(m.t.id,null, null, null,
                Option(akka.actor.Status.Failure(e)))
            //向请求发送方返回包含执行异常的结果
            sender ! r
