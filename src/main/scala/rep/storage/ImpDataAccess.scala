@@ -361,9 +361,9 @@ class ImpDataAccess private(SystemName:String) extends IDataAccess(SystemName){
 		   }
 		   
 		 }else{
-		   val prve = newblock.previousBlockHash.toString("UTF-8")
-		   val cur = Sha256.hashstr(lastblock.toByteArray)
-		   if(prve.equals(cur)){
+		   val prve = newblock.previousBlockHash.toStringUtf8()
+		   val cur = lastblock.hashOfBlock.toStringUtf8()//Sha256.hashstr(lastblock.toByteArray)
+		   if(prve.equals(cur) && (lastblock.height+1) == newblock.height){
 		     b = true
 		   }else{
 		     b = false

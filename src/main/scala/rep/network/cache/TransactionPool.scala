@@ -141,12 +141,12 @@ class TransactionPool(moduleName: String) extends ModuleBase(moduleName) {
           case false => //ignore
           case true =>
             //签名验证成功
-            if(pe.getTransLength() < 100)
-              logMsg(LogType.INFO,s"<<<<<<<<<<<<<>>>>>>>>>transaction=${pe.getTransLength()}" )
-            if (SystemProfile.getMaxCacheTransNum == 0 || pe.getTransLength() < SystemProfile.getMaxCacheTransNum) {
-              pe.putTran(t)
+            if(pe.getTransPoolMgr.getTransLength() < 100)
+              logMsg(LogType.INFO,s"<<<<<<<<<<<<<>>>>>>>>>transaction=${pe.getTransPoolMgr.getTransLength()}" )
+            if (SystemProfile.getMaxCacheTransNum == 0 || pe.getTransPoolMgr.getTransLength() < SystemProfile.getMaxCacheTransNum) {
+              pe.getTransPoolMgr.putTran(t)
               //广播接收交易事件
-              if (pe.getTransLength() <= SystemProfile.getMinBlockTransNum)
+              if (pe.getTransPoolMgr.getTransLength() <= SystemProfile.getMinBlockTransNum)
                 getActorRef(pe.getSysTag, GlobalUtils.ActorType.VOTER_MODULE) ! VoteRecover
             }
             

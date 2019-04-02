@@ -10,7 +10,7 @@ import rep.protos.peer._
 import rep.storage.ImpDataAccess
 import rep.network.consensus.vote.CRFDVoterModule.NextVote
 import scala.collection.mutable
-import rep.utils.GlobalUtils.{ActorType, BlockEvent, EventType,BlockChainStatus}
+import rep.utils.GlobalUtils.{ActorType, BlockEvent, EventType}
 import rep.network.sync.SyncModule.{ChainDataReqSingleBlk}
 import scala.collection.immutable
 import rep.network.cluster.ClusterHelper
