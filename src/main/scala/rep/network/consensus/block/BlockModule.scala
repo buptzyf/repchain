@@ -33,7 +33,7 @@ import rep.network.sync.SyncModule.SyncResult
 import rep.network.consensus.transaction.PreloadTransactionModule.PreTransFromType
 import rep.protos.peer._
 import rep.storage.ImpDataAccess
-import rep.utils.GlobalUtils.{ActorType, BlockEvent, EventType,BlockChainStatus}
+import rep.utils.GlobalUtils.{ActorType, BlockEvent, EventType}
 import scala.collection.mutable
 import com.sun.beans.decoder.FalseElementHandler
 import scala.util.control.Breaks
@@ -368,7 +368,8 @@ class BlockModule(moduleName: String) extends ModuleBase(moduleName) {
             case true =>
               logTime("create block preload Trans time", System.currentTimeMillis(),false)
               logMsg(LogType.INFO, s"PreTransBlockResult ... with transcation,transaction size ${blk.transactions.size},node number=${pe.getSysTag},block identifier=${blkidentifier_str}")
-              blc = blk.withOperHash(ByteString.copyFromUtf8(merk))
+              //blc = blk.withOperHash(ByteString.copyFromUtf8(merk))
+              ///todo jiangbuyun
               blc = blc.withEndorsements(Seq(BlockHelper.endorseBlock4NonHash(blc.toByteArray, pe.getSysTag)))
               //签名之前不用获取hash
               //blc = blc.withConsensusMetadata(Seq(BlockHelper.endorseBlock(Sha256.hash(blc.toByteArray), pe.getSysTag)))
@@ -551,7 +552,8 @@ class BlockModule(moduleName: String) extends ModuleBase(moduleName) {
     //创世块预执行结果
     case PreTransBlockResultGensis(blk, result, merk, errorType, error) =>
       if (result) {
-        blc = blk.withOperHash(ByteString.copyFromUtf8(merk))
+        //todo by jiangbuyun
+        //blc = blk.withOperHash(ByteString.copyFromUtf8(merk))
         try {
           println(logPrefix + s"${pe.getSysTag} ~ Merk(Before Gensis): " + pe.getMerk)
           dataaccess.restoreBlocks(Array(blc))

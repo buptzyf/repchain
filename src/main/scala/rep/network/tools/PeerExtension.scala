@@ -17,7 +17,7 @@
 package rep.network.tools
 
 import akka.actor.{ActorSystem, Address, ExtendedActorSystem,ActorRef, Extension, ExtensionId, ExtensionIdProvider}
-import rep.protos.peer.{Transaction}
+import rep.protos.peer.{Transaction,BlockchainInfo}
 import scala.collection.immutable
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -28,8 +28,8 @@ import com.google.protobuf.UInt32Value
 import rep.network.consensus.block.BlockModule._
 import rep.protos.peer._
 import java.util.concurrent.ConcurrentLinkedQueue
-import rep.utils.GlobalUtils.{TranscationPoolPackage,BlockChainStatus}
-import scala.collection.script.Remove
+import rep.utils.GlobalUtils.{TranscationPoolPackage}
+
 
 
 
@@ -58,7 +58,8 @@ class PeerExtensionImpl extends Extension {
   //保存当前hash值（通过全网广播同步更新成最新的block hash）
   
   private var voteBlockHash:AtomicReference[String] = new AtomicReference[String]("0")
-  private var SystemCurrentChainStatus:AtomicReference[BlockChainStatus] = new AtomicReference[BlockChainStatus](new BlockChainStatus("0","",0))
+  private var SystemCurrentChainInfo:AtomicReference[BlockchainInfo] = 
+            new AtomicReference[BlockchainInfo](BlockchainInfo(0l,0l,_root_.com.google.protobuf.ByteString.EMPTY,_root_.com.google.protobuf.ByteString.EMPTY))
  
   //必须是线程安全的,需要原子操作
   private var isBlocking:AtomicBoolean = new AtomicBoolean(false)
@@ -159,7 +160,7 @@ class PeerExtensionImpl extends Extension {
 
   
   def getCurrentBlockHash : String = {
-    this.getSystemCurrentChainStatus.CurrentBlockHash
+    this.SystemCurrentChainInfo.get.currentBlockHash.toStringUtf8()
   }
 
   def getNodes :Set[Address] = {
@@ -295,12 +296,12 @@ class PeerExtensionImpl extends Extension {
 
   def getSeedNode = seedNode.get
   
-  def resetSystemCurrentChainStatus(value:BlockChainStatus){
-    this.SystemCurrentChainStatus.set(value)
+  def resetSystemCurrentChainStatus(value:BlockchainInfo){
+    this.SystemCurrentChainInfo.set(value)
   }
   
-  def getSystemCurrentChainStatus:BlockChainStatus={
-    this.SystemCurrentChainStatus.get
+  def getSystemCurrentChainStatus:BlockchainInfo={
+    this.SystemCurrentChainInfo.get
   }
   
   def setIpAndPort(ip: String, port: String): Unit = {
@@ -320,8 +321,6 @@ class PeerExtensionImpl extends Extension {
 
   def getSystemStatus = systemStatus.get
   
-  def getMerk = this.getSystemCurrentChainStatus.CurrentMerkle
-
   def setSysTag(name: String) = sysTag.set(name)
 
   def getSysTag = sysTag.get
@@ -342,7 +341,7 @@ class PeerExtensionImpl extends Extension {
   
   def getEndorState() = this.endorState.get
 
-  def getCacheHeight() = this.getSystemCurrentChainStatus.CurrentHeight
+  def getCacheHeight() = this.SystemCurrentChainInfo.get.height
 
   def addCacheBlkNum() = cacheBlkNum.addAndGet(1)
 

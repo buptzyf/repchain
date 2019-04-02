@@ -83,7 +83,7 @@ class PreloadTransactionModule(moduleName: String, transProcessor:ActorRef) exte
     blk = rep.protos.peer.Block()
   }
 
-  def preLoadFeedBackInfo(resultFlag: Boolean, block: rep.protos.peer.Block, from: Int, merk: String): Unit = {
+  def preLoadFeedBackInfo(resultFlag: Boolean, block: rep.protos.peer.Block, from: Int): Unit = {
     logTime("create block preload inner time", System.currentTimeMillis(),false)
     preloadFrom match {
       case PreTransFromType.BLOCK_CREATOR =>
@@ -149,7 +149,9 @@ class PreloadTransactionModule(moduleName: String, transProcessor:ActorRef) exte
       val preBlk = dataaccess.getBlockByHash(blk.previousBlockHash.toStringUtf8)
       freeSource
       
-      if((preBlk!=null && dataaccess.getBlockChainInfo().currentWorldStateHash == getBlkFromByte(preBlk).operHash.toStringUtf8)
+      //if((preBlk!=null && dataaccess.getBlockChainInfo().currentWorldStateHash == getBlkFromByte(preBlk).operHash.toStringUtf8)
+      //|| blk.previousBlockHash == ByteString.EMPTY){
+      if((preBlk!=null)
       || blk.previousBlockHash == ByteString.EMPTY){
         blkIdentifier_src = blkIdentifier
         //先清空缓存
@@ -202,7 +204,8 @@ class PreloadTransactionModule(moduleName: String, transProcessor:ActorRef) exte
               
               //val tmpsr = ImpDataPreloadMgr.GetImpDataPreload(pe.getDBTag,"preload_"+blk.transactions.head.id)
               //todo与执行之后需要记录当前交易执行之后的merkle值，目前结构中没有产生
-              preLoadTrans(txId) = t//t.withMetadata(ByteString.copyFrom(SerializeUtils.serialise(mb)))
+              
+              //preLoadTrans(txId) = t//t.withMetadata(ByteString.copyFrom(SerializeUtils.serialise(mb)))
 
 
               transResult = (transResult :+ result)

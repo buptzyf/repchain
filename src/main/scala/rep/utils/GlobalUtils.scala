@@ -26,7 +26,7 @@ import rep.protos.peer.{Transaction}
   */
 object GlobalUtils {
   case class TranscationPoolPackage(t:Transaction,createTime:Long)
-  case class BlockChainStatus(CurrentBlockHash:String,CurrentMerkle:String,CurrentHeight:Long)
+  
   
   case object BlockEvent{
     //同步信息广播

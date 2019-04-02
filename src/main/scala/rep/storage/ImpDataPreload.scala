@@ -19,7 +19,6 @@ package rep.storage
 import rep.utils._
 import scala.collection.mutable
 import rep.storage.leveldb._
-import rep.storage.merkle._
 import scala.collection.mutable.ArrayBuffer
 import rep.protos.peer._;
 import scala.util.control.Breaks
@@ -39,8 +38,6 @@ class ImpDataPreload (SystemName:String,InstanceName:String) extends AbstractLev
    
     private var dbop = ImpDataAccess.GetDataAccess(SystemName) 
    
-    //private var merkleop : RepBucket = new RepBucket(this)
-    this.ReloadMerkle
    
     /**
 	 * @author jiangbuyun
@@ -102,45 +99,21 @@ class ImpDataPreload (SystemName:String,InstanceName:String) extends AbstractLev
 	 * @param	key String 指定的键，bb Array[Byte] 要存储的值
 	 * @return	返回成功或者失败 Boolean
 	 * */
-  	override def Put (key : String,bb : Array[Byte],isWorldState : Boolean):Boolean={
+  	override def Put (key : String,bb : Array[Byte]):Boolean={
   		var b : Boolean = true
 			try{
 				  if(key == null){
 				    RepLogger.logInfo(SystemName, ModuleType.storager,
   			      "ImpDataPreload_" + SystemName + "_" + s"ImpDataPreload Put failed, error info= key is null")
 				  }
+				  var v :Array[Byte] = bb
 				  if(bb == null){
+				    v = None.toArray
 				    RepLogger.logInfo(SystemName, ModuleType.storager,
   			      "ImpDataPreload_" + SystemName + "_" + s"ImpDataPreload Put failed, error info= value is null")
 				  }
-				  if(key != null && bb != null){
-				    this.update.put(key, bb)
-				        //this.merkleop.Put(key, bb)
-				      this.PutWorldStateToMerkle(key,bb)
-				    /*if(this.update.get(key) != null){
-				      /*val obbstr = toString(this.update.get(key))
-				      val bbstr = toString(bb)
-				      if(!obbstr.equals(bbstr)){
-				        this.update.put(key, bb)
-				        //this.merkleop.Put(key, bb)
-				        this.PutWorldStateToMerkle(key,bb)
-				      }*/
-				      
-				    }else{
-				      /*if(this.dbop.Get(key) != null){
-				        val obbstr = toString(this.dbop.Get(key))
-  				      val bbstr = toString(bb)
-  				      if(!obbstr.equals(bbstr)){
-  				        this.update.put(key, bb)
-  				        //this.merkleop.Put(key, bb)
-  				        this.PutWorldStateToMerkle(key,bb)
-  				      }
-				      }else{
-				        this.update.put(key, bb)
-				        //this.merkleop.Put(key, bb)
-				        this.PutWorldStateToMerkle(key,bb)
-				      }*/
-				    }*/
+				  if(key != null ){
+				    this.update.put(key, v)
 				  }
 				  setUseTime
 			}catch{
@@ -226,68 +199,6 @@ class ImpDataPreload (SystemName:String,InstanceName:String) extends AbstractLev
 		  }
 		  rel
 		}
-  	
-  	/**
-	 * @author jiangbuyun
-	 * @version	0.7
-	 * @since	2017-09-28
-	 * @category	交易背书时调用，用于验证读写指令集
-	 * @param	block Block 待验证的区块
-	 * @return	如果验证成功返回true，否则false
-	 * */
-  	def  VerifyForEndorsement(block:Block):Boolean={
-  	  var b : Boolean = false
-		  if(block == null) return b
-  		if(block.operHash == null) return b
-  		  
-  		try{
-  		  var list : scala.collection.mutable.LinkedHashMap[String,Seq[OperLog]] = new scala.collection.mutable.LinkedHashMap[String,Seq[OperLog]]()
-		    val txresults = block.transactionResults
-		    txresults.foreach(f=>{
-		         list += f.txId -> f.ol
-		        }
-		      )
-  		     
-	        if(list.size > 0){
-	          list.foreach(f=>{
-	            val txid = f._1
-	            val cid = getTxidFormBlock(block,txid)
-	            val jobj = f._2
-	            
-	            if(jobj != null && jobj.length > 0){
-	              jobj.foreach(f=>{
-	                if(f.key.startsWith(IdxPrefix.WorldStateKeyPreFix)){
-  		                  this.Put(f.key, f.newValue.toByteArray())
-  		                }else{
-  		                  this.Put(IdxPrefix.WorldStateKeyPreFix+cid+"_"+f.key, f.newValue.toByteArray())
-  		                }
-	                //var tmpkeystr = IdxPrefix.WorldStateKeyPreFix+cid+"_"+f.key
-	                //this.Put(tmpkeystr, f.newValue.toByteArray())
-	              })  
-	            }
-	          })
-	        }
-  		    val shash4block = block.operHash.toStringUtf8
-  		    val shash4local = this.GetComputeMerkle4String
-  		    if(shash4block.equals(shash4local)){
-  		      b = true
-  		    }else{
-  		      b = false
-  		      RepLogger.logError(SystemName, ModuleType.storager,
-  			      "system_name="+this.SystemName+"\t verify World State is failed, hash4block="+shash4block+"\t hash4local="+shash4local)
-  		    }
-      }catch{
-        case e:Exception =>{
-          throw e;
-        }
-		  }finally{
-		    //todo
-		  }
-  		  
-		 b
-
-  }
-  	
   	
   	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   	

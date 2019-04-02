@@ -48,9 +48,22 @@ object teststoragemgr {
       
     })
   }
+   
+   def writenull():Unit={
+    val sr = ImpDataAccess.GetDataAccess("121000005l35120456.node1")
+     sr.Put("sdds", None.toArray)
+     //sr.Put("sdds", None)
+     val s = sr.Get("sdds")
+     
+     if(s == null){
+       println(s.toString())
+     }else{
+       println(s.length)
+     }
+  }
   
   def main(args: Array[String]): Unit = {
-       getAllKeyValue()
-		  
+      // getAllKeyValue()
+		  writenull
 		}
 }

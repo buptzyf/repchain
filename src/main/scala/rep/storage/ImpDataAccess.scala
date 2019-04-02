@@ -30,7 +30,6 @@ import org.json4s.jackson.JsonMethods
 import rep.sc.Shim._
 import rep.utils._
 import java.io._
-import rep.storage.merkle._
 import rep.protos.peer.OperLog
 import scala.collection.mutable._
 import rep.log.trace._
@@ -341,13 +340,6 @@ class ImpDataAccess private(SystemName:String) extends IDataAccess(SystemName){
 	    rbc = rbc.withHeight(currentheight) 
 	    rbc = rbc.withTotalTransactions(currenttxnumber) 
 		  
-	    val bwsh = this.GetComputeMerkle4String
-	    if(bwsh != null && !bwsh.equalsIgnoreCase("")){
-	      rbc = rbc.withCurrentWorldStateHash(ByteString.copyFromUtf8(bwsh))
-	    }else{
-	      rbc = rbc.withCurrentWorldStateHash(_root_.com.google.protobuf.ByteString.EMPTY) 
-	    }
-	    
 		  rbc 
 		}
 		
@@ -447,7 +439,7 @@ class ImpDataAccess private(SystemName:String) extends IDataAccess(SystemName){
 		override def  restoreBlock(block:Block):Boolean={
 		  var b : Boolean = false
 		  if(block == null) return b
-  		if(block.operHash == null) return b
+  		if(block.hashOfBlock == null || block.hashOfBlock.isEmpty()) return b
   		synchronized{
   		  val oldh = getBlockHeight()
   		  val oldno = this.getMaxFileNo()
@@ -489,9 +481,9 @@ class ImpDataAccess private(SystemName:String) extends IDataAccess(SystemName){
   		              jobj.foreach(f=>{
   		                val fkey = f.key
   		                if(fkey.startsWith(IdxPrefix.WorldStateKeyPreFix)){
-  		                  this.Put(f.key, f.newValue.toByteArray(),true)
+  		                  this.Put(f.key, f.newValue.toByteArray())
   		                }else{
-  		                  this.Put(IdxPrefix.WorldStateKeyPreFix+cid+"_"+f.key, f.newValue.toByteArray(),true)
+  		                  this.Put(IdxPrefix.WorldStateKeyPreFix+cid+"_"+f.key, f.newValue.toByteArray())
   		                }
   		              })  
   		            }
@@ -536,7 +528,7 @@ class ImpDataAccess private(SystemName:String) extends IDataAccess(SystemName){
   		var b : Boolean = false
   		var block = _block
   		if(block == null) return b 
-  		if(block.operHash == null) return b 
+  		if(block.hashOfBlock == null || block.hashOfBlock.isEmpty() ) return b 
   		if(block.previousBlockHash == null) return b 
   		RepLogger.logInfo(SystemName, ModuleType.storager,
   			      "system_name="+this.SystemName+"\t store a block")
@@ -635,7 +627,7 @@ class ImpDataAccess private(SystemName:String) extends IDataAccess(SystemName){
   	private def commitAndAddBlock( block:Block,blockhsah:Array[Byte]):Boolean={
   		var b : Boolean = false 
   		if(block == null) return b 
-  		if(block.operHash == null) return b 
+  		if(block.hashOfBlock == null || block.hashOfBlock.isEmpty()) return b 
   		if(block.previousBlockHash == null) return b 
   		if(blockhsah == null) return b 
   		val rbb = block.toByteArray

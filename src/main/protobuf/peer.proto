@@ -128,8 +128,8 @@ message Block {
     repeated Transaction transactions = 3;
     //交易执行日志及输出指令
     repeated TransactionResult transactionResults = 4;
-    //输出指令集合hash
-    bytes operHash = 5;
+    //区块的hash。在计算块hash的时候，不包括签名信息；在签名时需要包括块hash。
+    bytes hashOfBlock = 5;
     // previousBlockHash - The hash of the previous block in the chain.
     bytes previousBlockHash = 6;
     //背书签名集合,必须包含出块人签名
@@ -161,6 +161,5 @@ message BlockchainInfo {
     uint64 totalTransactions = 2;
     bytes  currentBlockHash = 3;
     bytes  previousBlockHash = 4;
-    bytes  currentWorldStateHash = 5;
 }
 

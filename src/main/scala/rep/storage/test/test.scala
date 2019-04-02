@@ -37,15 +37,14 @@ object test {
   def testop={
     val dataaccess :ImpDataAccess = ImpDataAccess.GetDataAccess("1")
     //dataaccess.BeginTrans
-    dataaccess.Put("c_sdfs_a", "a".getBytes,true)
-    dataaccess.Put("c_sdfs_a1", "b".getBytes,true)
-    dataaccess.Put("c_sdfs_a2", "c".getBytes,true)
-    dataaccess.Put("a3", "d".getBytes,true)
+    dataaccess.Put("c_sdfs_a", "a".getBytes)
+    dataaccess.Put("c_sdfs_a1", "b".getBytes)
+    dataaccess.Put("c_sdfs_a2", "c".getBytes)
+    dataaccess.Put("a3", "d".getBytes)
     //dataaccess.CommitTrans
     //dataaccess.RollbackTrans
     
     dataaccess.printlnHashMap(dataaccess.FindByLike("c"))
-    println(dataaccess.GetComputeMerkle4String)
     
   }
   
@@ -282,7 +281,6 @@ object test {
   def testop1={
     val dataaccess :ImpDataAccess = ImpDataAccess.GetDataAccess("1")
     dataaccess.printlnHashMap(dataaccess.FindByLike("c"))
-    println(dataaccess.GetComputeMerkle4String)
     
     /*dataaccess.Put("c_sdfs_a", "a".getBytes)
     dataaccess.Put("c_sdfs_a1", "b".getBytes)
@@ -292,18 +290,14 @@ object test {
     
     
     val preload :ImpDataPreload = ImpDataPreloadMgr.GetImpDataPreload("1","lllll")
-    preload.Put("c_sdfs_a", "1".getBytes)
-    preload.Put("c_sdfs_a1", "2".getBytes)
-    preload.Put("c_sdfs_a2", "3".getBytes)
-    println(preload.GetComputeMerkle4String)
-    println(dataaccess.GetComputeMerkle4String)
+    preload.Put("c_sdfs_a", ("1".getBytes))
+    preload.Put("c_sdfs_a1", ("2".getBytes))
+    preload.Put("c_sdfs_a2", ("3".getBytes))
     
     val preload1 :ImpDataPreload = ImpDataPreloadMgr.GetImpDataPreload("1","lllll")
-    preload1.Put("c_sdfs_a", "1".getBytes)
-    preload1.Put("c_sdfs_a1", "2".getBytes)
-    preload1.Put("c_sdfs_a2", "3".getBytes)
-    println(preload1.GetComputeMerkle4String)
-    println(dataaccess.GetComputeMerkle4String)
+    preload1.Put("c_sdfs_a", ("1".getBytes))
+    preload1.Put("c_sdfs_a1", ("2".getBytes))
+    preload1.Put("c_sdfs_a2", ("3".getBytes))
     
     
     ImpDataPreloadMgr.Free("1","lllll")
