@@ -29,6 +29,7 @@ import rep.network.consensus.block.BlockModule._
 import rep.protos.peer._
 import java.util.concurrent.ConcurrentLinkedQueue
 import rep.utils.GlobalUtils.{ TranscationPoolPackage, BlockerInfo, NodeStatus }
+import rep.network.persistence.BlockCache
 
 /**
  * Peer business logic node stared space（based on system）
@@ -48,6 +49,13 @@ class PeerExtensionImpl extends Extension {
   }
   /*********交易池缓存管理结束************/
   
+  /*********区块缓存管理开始************/
+  private val blockCache:BlockCache = new BlockCache
+  
+  def getBlockCacheMgr : BlockCache = {
+    this.blockCache
+  }
+  /*********区块缓存管理结束************/
 
   /*********组网节点信息管理，包括抽签候选人信息开始************/
   private val nodemgr = new NodeMgr
@@ -66,7 +74,7 @@ class PeerExtensionImpl extends Extension {
     this.SystemCurrentChainInfo.get.currentBlockHash.toStringUtf8()
   }
 
-  def getCacheHeight() = this.SystemCurrentChainInfo.get.height
+  def getCurrentHeight = this.SystemCurrentChainInfo.get.height
 
   def resetSystemCurrentChainStatus(value: BlockchainInfo) {
     this.SystemCurrentChainInfo.set(value)
@@ -121,15 +129,19 @@ class PeerExtensionImpl extends Extension {
 
   
   /*********系统Actor注册相关操作开始************/
-  private val actorList = mutable.HashMap[Int, ActorRef]()
+  private var actorList = mutable.HashMap[Int, ActorRef]().empty
 
   def register(actorName: Int, actorRef: ActorRef) = {
-    actorList.put(actorName, actorRef)
+    actorList += actorName ->actorRef
   }
 
-  def getActorRef(actorName: Int) = actorList.get(actorName)
+  def getActorRef(actorName: Int): ActorRef = {
+    actorList(actorName)
+  }
 
-  def unregister(actorName: Int) = actorList.remove(actorName)
+  def unregister(actorName: Int) = {
+    actorList -= actorName
+  }
   /*********系统Actor注册相关操作结束************/
 }
 

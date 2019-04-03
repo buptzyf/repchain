@@ -8,7 +8,7 @@ import rep.storage.ImpDataAccess
 import rep.protos.peer._
 import rep.network.persistence.PersistenceModule.{ BlockRestore, BlockSrc, LastBlock }
 import scala.collection._
-import rep.utils.GlobalUtils.{ ActorType, BlockEvent, EventType }
+import rep.utils.GlobalUtils.{ ActorType, BlockEvent, EventType ,NodeStatus}
 import rep.log.trace.LogType
 import rep.app.conf.SystemProfile
 import rep.network.util.NodeHelp
@@ -58,7 +58,7 @@ class SynchronizeRequester(moduleName: String) extends ModuleBase(moduleName) {
 
   private def ChainInfoHandler = {
     val len = this.ResultList.size
-    val nodelen = pe.getStableNodes.size
+    val nodelen = pe.getNodeMgr.getStableNodes.size
     if (NodeHelp.ConsensusConditionChecked(len, nodelen - 1)) {
       val majority = SyncHelp.GetGreatMajorityHeight(ResultList, this.chaininfo4local.height, nodelen)
       Decide(majority)
@@ -69,12 +69,12 @@ class SynchronizeRequester(moduleName: String) extends ModuleBase(moduleName) {
 
   private def Decide(majority: SynchronizeRequester.GreatMajority) = {
     if (majority == null) {
-      if (this.ResultList.size >= (pe.getStableNodes.size - 1)) {
+      if (this.ResultList.size >= (pe.getNodeMgr.getStableNodes.size - 1)) {
         //自动停止同步
         FinishHandler
-        logMsg(LogType.INFO, moduleName + "~" + s"sync chaininfo error,stoped sync,recv number=${this.ResultList.size},node number=${pe.getStableNodes.size}")
+        logMsg(LogType.INFO, moduleName + "~" + s"sync chaininfo error,stoped sync,recv number=${this.ResultList.size},node number=${pe.getNodeMgr.getStableNodes.size}")
       } else {
-        logMsg(LogType.INFO, moduleName + "~" + s"go on wait response,recv number=${this.ResultList.size},node number=${pe.getStableNodes.size}")
+        logMsg(LogType.INFO, moduleName + "~" + s"go on wait response,recv number=${this.ResultList.size},node number=${pe.getNodeMgr.getStableNodes.size}")
       }
     } else {
       //启动块同步
@@ -94,7 +94,7 @@ class SynchronizeRequester(moduleName: String) extends ModuleBase(moduleName) {
     this.CurrentStatus = SynchronizeRequester.SyncStatus.Sync_BlockData
     this.CurrentSyncBlockNumber = this.CurrentSyncInfo.minBlockHeight
   }
-
+  
   private def SendChainInfoSync(isRepeat: Boolean) = {
     schedulerLink = clearSched()
     if (isRepeat) {
@@ -116,22 +116,25 @@ class SynchronizeRequester(moduleName: String) extends ModuleBase(moduleName) {
     } else {
       repeatTimes = 1
     }
+    if(pe.getBlockCacheMgr.exist(this.CurrentSyncBlockNumber)){
+      this.CurrentSyncBlockNumber += 1
+    }
     this.CurrentSyncInfo.dp ! SyncMsg.BlockDataOfRequest(this.CurrentSyncBlockNumber)
     schedulerLink = scheduler.scheduleOnce(TimePolicy.getTimeoutSync seconds, self, SyncMsg.SyncTimeout)
   }
 
   private def FinishHandler = {
     schedulerLink = clearSched()
-    pe.setIsSync(false)
+    pe.setSystemStatus(NodeStatus.Ready)
     this.CurrentStatus = SynchronizeRequester.SyncStatus.Sync_None
     reset
   }
 
   override def receive: Receive = {
     case SyncMsg.StartSync =>
-      if (pe.getStableNodes.size >= SystemProfile.getVoteNoteMin) {
+      if (pe.getNodeMgr.getStableNodes.size >= SystemProfile.getVoteNoteMin) {
         if (this.CurrentStatus == SynchronizeRequester.SyncStatus.Sync_None) {
-          pe.setIsSync(true)
+          pe.setSystemStatus(NodeStatus.Synching)
           logMsg(LogType.INFO, moduleName + "~" + s"start sync chaininfo  from actorAddr" + "～" + NodeHelp.getNodePath(sender()))
           this.CurrentStatus = SynchronizeRequester.SyncStatus.Sync_ChainInfo
           SendChainInfoSync(false)
@@ -139,7 +142,7 @@ class SynchronizeRequester(moduleName: String) extends ModuleBase(moduleName) {
           logMsg(LogType.INFO, moduleName + "~" + s"it is synchronizing,currentstatus=${SynchronizeRequester.SyncStatusToString(this.CurrentStatus)}, from actorAddr" + "～" + NodeHelp.getNodePath(sender()))
         }
       } else {
-        pe.setIsSync(false)
+        pe.setSystemStatus(NodeStatus.Ready)
         logMsg(LogType.INFO, moduleName + "~" + s"too few node,min=${SystemProfile.getVoteNoteMin}  from actorAddr" + "～" + NodeHelp.getNodePath(sender()))
       }
 
@@ -166,7 +169,7 @@ class SynchronizeRequester(moduleName: String) extends ModuleBase(moduleName) {
           logMsg(LogType.INFO, moduleName + "~" + s"Get a data from $sender" + "～" + selfAddr)
           getActorRef(ActorType.PERSISTENCE_MODULE) ! BlockRestore(data, data.height, BlockSrc.SYNC_START_BLOCK, sender())
           if (this.CurrentSyncBlockNumber < this.CurrentSyncInfo.maxBlockHeight) {
-            this.CurrentSyncBlockNumber = this.CurrentSyncBlockNumber + 1
+            this.CurrentSyncBlockNumber +=  1
             SendBlockDataSync(false)
           } else {
             FinishHandler
@@ -179,9 +182,13 @@ class SynchronizeRequester(moduleName: String) extends ModuleBase(moduleName) {
         case SynchronizeRequester.SyncStatus.Sync_None =>
           reset
           logMsg(LogType.INFO, moduleName + "~" + s"block data sync from storager,start=${start},end=${end}start block data sync.")
-          pe.setIsSync(true)
+          //pe.setSystemStatus(NodeStatus.Synching)
           initBlockDataSync(responser, start, end)
           SendBlockDataSync(false)
+        case SynchronizeRequester.SyncStatus.Sync_BlockData =>
+          if(this.CurrentSyncInfo.maxBlockHeight < end){
+            this.CurrentSyncInfo = SynchronizeRequester.SyncInfo(responser, this.CurrentSyncInfo.minBlockHeight, end)
+          }
         case _ => logMsg(LogType.INFO, moduleName + "~" + s"do not recv Storager request,current status is ${SynchronizeRequester.SyncStatusToString(this.CurrentStatus)},  from actorAddr" + "～" + NodeHelp.getNodePath(sender()))
       }
 
