@@ -22,7 +22,6 @@ import com.google.protobuf.timestamp.Timestamp
 import rep.app.conf.SystemProfile
 import rep.crypto.{ Sha256 }
 import rep.network.base.ModuleBase
-import rep.network.consensus.block.BlockHelper
 import rep.network.cluster.ClusterActor
 import rep.network.tools.PeerExtension
 import rep.protos.peer._
