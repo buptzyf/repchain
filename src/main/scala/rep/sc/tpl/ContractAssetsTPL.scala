@@ -71,7 +71,21 @@ class ContractAssetsTPL extends IContract{
       ctx.api.setVal(data.to,dto + data.amount)
        new ActionResult(1,None)
     }
-    /**
+
+    def put_proof(ctx: ContractContext, data:Map[String,Any]): ActionResult={
+    //先检查该hash是否已经存在,如果已存在,抛异常
+    for((k,v)<-data){
+      var pv0 = ctx.api.getVal(k)
+      if(pv0 != null)
+//        throw new Exception("["+k+"]已存在，当前值["+pv0+"]");
+        return ActionResult(-1, Some(s"$k 已存在，当前值为 $pv0"))
+      ctx.api.setVal(k,v)
+      print("putProof:"+k+":"+v)
+    }
+      ActionResult(1,None)
+  }
+
+  /**
      * 根据action,找到对应的method，并将传入的json字符串parse为method需要的传入参数
      */
     def onAction(ctx: ContractContext,action:String, sdata:String ):ActionResult={
@@ -81,6 +95,8 @@ class ContractAssetsTPL extends IContract{
           transfer(ctx,json.extract[Transfer])
         case "set" => 
           set(ctx, json.extract[Map[String,Int]])
+        case "putProof" =>
+          put_proof(ctx, json.extract[Map[String,Any]])
       }
     }
     
