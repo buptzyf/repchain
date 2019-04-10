@@ -171,7 +171,7 @@ class RestActor extends Actor with ModuleHelper {
           val result = Await.result(future, timeout.duration).asInstanceOf[DoTransactionResult]
           val rv = result
           // 释放存储实例
-          ImpDataPreloadMgr.Free(pe.getDBTag,t.id)
+          ImpDataPreloadMgr.Free(pe.getSysTag,t.id)
           rv.err match {
             case None =>
               if (rv.r.reason.isEmpty) {

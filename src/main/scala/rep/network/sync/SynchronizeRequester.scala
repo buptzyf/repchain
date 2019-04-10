@@ -6,7 +6,7 @@ import rep.network.base.ModuleBase
 import rep.app.conf.TimePolicy
 import rep.storage.ImpDataAccess
 import rep.protos.peer._
-import rep.network.persistence.PersistenceModule.{ BlockRestore, BlockSrc, LastBlock }
+import rep.network.persistence.Storager.{ BlockRestore, SourceOfBlock }
 import scala.collection._
 import rep.utils.GlobalUtils.{ ActorType, BlockEvent, EventType ,NodeStatus}
 import rep.log.trace.LogType
@@ -167,7 +167,7 @@ class SynchronizeRequester(moduleName: String) extends ModuleBase(moduleName) {
           sendEvent(EventType.RECEIVE_INFO, mediator, sender.path.toString(), selfAddr, Event.Action.BLOCK_SYNC)
           sendEventSync(EventType.RECEIVE_INFO, mediator, sender.path.toString(), selfAddr, Event.Action.BLOCK_SYNC)
           logMsg(LogType.INFO, moduleName + "~" + s"Get a data from $sender" + "～" + selfAddr)
-          getActorRef(ActorType.PERSISTENCE_MODULE) ! BlockRestore(data, data.height, BlockSrc.SYNC_START_BLOCK, sender())
+          getActorRef(ActorType.PERSISTENCE_MODULE) ! BlockRestore(data,  SourceOfBlock.SYNC_BLOCK, sender)
           if (this.CurrentSyncBlockNumber < this.CurrentSyncInfo.maxBlockHeight) {
             this.CurrentSyncBlockNumber +=  1
             SendBlockDataSync(false)
