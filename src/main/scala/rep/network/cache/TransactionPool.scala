@@ -27,7 +27,7 @@ import rep.crypto.cert.SignTool
 import rep.network.{ PeerHelper, Topic }
 import rep.network.base.ModuleBase
 import rep.network.cache.TransactionPool.CheckedTransactionResult
-import rep.network.consensus.vote.CRFDVoterModule.VoteRecover
+import rep.network.consensus.vote.Voter.VoteOfBlocker
 import rep.protos.peer.ChaincodeId
 import rep.protos.peer.{ Event, Transaction }
 import rep.storage.IdxPrefix.WorldStateKeyPreFix
@@ -147,7 +147,7 @@ class TransactionPool(moduleName: String) extends ModuleBase(moduleName) {
               pe.getTransPoolMgr.putTran(t)
               //广播接收交易事件
               if (pe.getTransPoolMgr.getTransLength() <= SystemProfile.getMinBlockTransNum)
-                getActorRef(pe.getSysTag, GlobalUtils.ActorType.VOTER_MODULE) ! VoteRecover
+                getActorRef(pe.getSysTag, GlobalUtils.ActorType.VOTER_MODULE) ! VoteOfBlocker
             }
             
         }

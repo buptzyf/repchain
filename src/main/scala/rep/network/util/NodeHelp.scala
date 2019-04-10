@@ -1,6 +1,7 @@
 package rep.network.util
 
 import akka.actor.{ ActorRef, Props }
+import rep.app.conf.{ SystemProfile }
 
 object NodeHelp {
   def isSameNodeForRef(srcRef: ActorRef, destRef: ActorRef): Boolean = {
@@ -29,4 +30,20 @@ object NodeHelp {
     if ((inputNumber - 1) >= Math.floor(((nodeNumber)*1.0) / 2)) true else false
   }
   
+  def isCandidateNow(Systemname: String, candidates: Set[ String ]): Boolean = {
+    val list = candidates.toList
+    list.exists(p=> Systemname == p)
+  }
+  
+  def isBlocker(blockerOfInput: String, blockername: String): Boolean = {
+    if(blockerOfInput == blockername){
+      true
+    }else{
+      false
+    }
+  }
+  
+  def isSeedNode(nodeName:String):Boolean={
+    SystemProfile.getGenesisNodeName.equals(nodeName)
+  }
 }

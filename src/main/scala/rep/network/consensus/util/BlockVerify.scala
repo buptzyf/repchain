@@ -191,5 +191,31 @@ object BlockVerify {
     }
     b
   }
+  
+  def sort(src: Array[Signature]){  
+  
+    def swap(i:Integer, j:Integer){  
+      val t = src(i)
+      src(i) = src(j)
+      src(j) = t  
+    }  
+  
+    def sortSub(l: Int, r: Int){  
+      val half = src((l + r)/2)  
+      var i = l; var j = r;  
+      while (i <= j){  
+        while (IdTool.getSigner4String(src(i).getCertId) < IdTool.getSigner4String(half.getCertId)) i += 1  
+        while (IdTool.getSigner4String(src(j).getCertId) > IdTool.getSigner4String(half.getCertId)) j -= 1  
+        if(i <= j){  
+          swap(i, j)  
+          i += 1  
+          j -= 1  
+        }  
+      }  
+      if(l < j) sortSub(l, j)  
+      if(j < r) sortSub(i, r)  
+    }  
+    sortSub(0, src.length - 1)  
+  }  
 /****************************验证背书信息是否排序的操作结束**********************************************************/
 }

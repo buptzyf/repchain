@@ -25,7 +25,6 @@ import java.util.concurrent.atomic._
 import org.bouncycastle.asn1.cmp.ProtectedPart
 import java.util.concurrent.locks._
 import com.google.protobuf.UInt32Value
-import rep.network.consensus.block.BlockModule._
 import rep.protos.peer._
 import java.util.concurrent.ConcurrentLinkedQueue
 import rep.utils.GlobalUtils.{ TranscationPoolPackage, BlockerInfo, NodeStatus }
@@ -87,7 +86,7 @@ class PeerExtensionImpl extends Extension {
   
 
   /*********出块人开始************/
-  private var blocker: AtomicReference[BlockerInfo] = new AtomicReference[BlockerInfo](new BlockerInfo("", -1))
+  private var blocker: AtomicReference[BlockerInfo] = new AtomicReference[BlockerInfo](new BlockerInfo("", -1,0l))
 
   def resetBlocker(blker: BlockerInfo): Unit = {
     blocker.set(blker)

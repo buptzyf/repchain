@@ -27,7 +27,7 @@ import com.typesafe.config.Config
 
 object TimePolicy {
 
-  private[this] var _TIMEOUT_BLOCK: Int = 0//出块超时
+  private[this] var _TIMEOUT_BLOCK: Int = 60//出块超时
   private[this] var _TIMEOUT_ENDORSE: Int = 0//背书超时
   private[this] var _TIMEOUT_PRELOAD_TRANS: Int = 0//预执行超时
   private[this] var _TIMEOUT_SYNC_CHAIN: Int = 0//同步超时

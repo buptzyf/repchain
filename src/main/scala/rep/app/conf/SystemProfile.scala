@@ -53,6 +53,8 @@ object SystemProfile {
   private[this] var _ACCOUNTCHAINCODENAEM : String = "ACCOUNTCHAINCODENAME"
   private[this] var _ACCOUNTCHAINCODEVERSION: Int = 1
   private[this] var _GENESISNODENAME:String = ""
+  private[this] var _BLOCK_LENGTH: Int = 120000//区块的最大长度
+  
   
   
   private def SERVERPORT :Int = _SERVERPORT
@@ -68,6 +70,7 @@ object SystemProfile {
   private def GENESISNODENAME_=(value:String):Unit={
     _GENESISNODENAME = value
   }
+  
   
   private def VOTENODELIST_=(value: List[String]): Unit = {
       _VOTENODELIST = value
@@ -141,6 +144,11 @@ object SystemProfile {
     _LIMIT_BLOCK_TRANS_NUM = value
   }
 
+  private def BLOCK_LENGTH : Int = _BLOCK_LENGTH
+  
+  private def BLOCK_LENGTH_=(value: Int): Unit = {
+    _BLOCK_LENGTH = value
+  }
   
   /**
     * 初始化配饰信息
@@ -148,6 +156,7 @@ object SystemProfile {
     */
   def initConfigSystem(config:Config): Unit ={
     LIMIT_BLOCK_TRANS_NUM_=(config.getInt("system.block.trans_num_limit"))
+    BLOCK_LENGTH_=(config.getInt("system.block.block_length"))
     MIN_BLOCK_TRANS_NUM_=(config.getInt("system.block.trans_num_min"))
     RETRY_TIME_=(config.getInt("system.block.retry_time"))
     VOTE_NOTE_MIN_=(config.getInt("system.vote.vote_note_min"))
@@ -165,6 +174,8 @@ object SystemProfile {
   }
   
   def getLimitBlockTransNum = LIMIT_BLOCK_TRANS_NUM
+  
+  def getBlockLength = BLOCK_LENGTH
 
   def getMinBlockTransNum = MIN_BLOCK_TRANS_NUM
 

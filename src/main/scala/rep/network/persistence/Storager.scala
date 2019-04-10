@@ -8,7 +8,7 @@ import rep.network.module.ModuleManager.TargetBlock
 import rep.network.Topic
 import rep.protos.peer._
 import rep.storage.ImpDataAccess
-import rep.network.consensus.vote.CRFDVoterModule.NextVote
+import rep.network.consensus.vote.Voter.{VoteOfBlocker}
 import scala.collection.mutable
 import rep.utils.GlobalUtils.{ ActorType, BlockEvent, EventType, NodeStatus }
 import scala.collection.immutable
@@ -81,7 +81,7 @@ class Storager(moduleName: String) extends ModuleBase(moduleName) {
     if (pe.getBlockCacheMgr.isEmpty && pe.getSystemStatus == NodeStatus.Ready) {
       logMsg(LogType.INFO, moduleName + "~" + s"presistence is over,this is startup vote" + "~" + selfAddr)
       //通知抽签模块，开始抽签
-      getActorRef(pe.getSysTag, ActorType.VOTER_MODULE) ! NextVote(true, 0, false)
+      getActorRef(pe.getSysTag, ActorType.VOTER_MODULE) ! VoteOfBlocker
     }else{
       logMsg(LogType.INFO, moduleName + "~" + s"presistence is over,cache has data,do not vote,height=${pe.getCurrentHeight} ~" + selfAddr)
     }

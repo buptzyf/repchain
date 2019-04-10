@@ -114,7 +114,7 @@ class NodeMgr {
       source
     }
    
-  def putCandidator(addr: String): Unit = {
+  private def putCandidator(addr: String): Unit = {
     candidatorLock.lock()
     try{
       val key = addr.toString

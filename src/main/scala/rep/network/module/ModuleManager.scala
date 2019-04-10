@@ -26,7 +26,7 @@ import rep.network.cache.TransactionPool
 import rep.network.consensus.CRFD.{ConsensusInitFinish}
 import rep.network.consensus.ConsensusManager
 import rep.network.module.ModuleManager.{ClusterJoined, TargetBlock}
-import rep.network.persistence.PersistenceModule
+import rep.network.persistence.Storager
 import rep.network.sync.SyncModule
 import rep.network.sync.SyncModule.{ChainDataReqSingleBlk, SetupSync}
 import rep.storage.ImpDataAccess
@@ -68,9 +68,8 @@ class ModuleManager(moduleName: String, sysTag: String) extends ModuleBase(modul
     //Get IP and port
     val (ip, port) = ActorUtils.getIpAndPort(selfAddr)
     pe.setIpAndPort(ip, port)
-    pe.setDBTag(sysTag)
     pe.setSysTag(sysTag)
-    val confHeler = new ConfigerHelper(conf, sysTag, pe.getDBTag)
+    val confHeler = new ConfigerHelper(conf, sysTag, pe.getSysTag)
     confHeler.init()
     
     

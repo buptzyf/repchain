@@ -43,7 +43,7 @@ class PreloaderForTransaction(moduleName: String, transProcessor: ActorRef) exte
 
   private def ExecuteTransaction(t: Transaction, db_identifier: String): (Int, DoTransactionResult) = {
     try {
-      val future = transProcessor ? new DoTransaction(t, self, "preload_" + db_identifier)
+      val future = transProcessor ? new DoTransaction(t, self, db_identifier)
       val result = Await.result(future, timeout.duration).asInstanceOf[DoTransactionResult]
       (0, result)
     } catch {
@@ -51,7 +51,7 @@ class PreloaderForTransaction(moduleName: String, transProcessor: ActorRef) exte
     }
   }
 
-  private def AssembleTransResult(block:Block,preLoadTrans:mutable.HashMap[String,Transaction],transResult:Seq[TransactionResult]):Option[Block]={
+  private def AssembleTransResult(block:Block,preLoadTrans:mutable.HashMap[String,Transaction],transResult:Seq[TransactionResult], db_indentifier: String):Option[Block]={
     try{
       var newTranList = mutable.Seq.empty[ Transaction ]
       for (tran <- block.transactions) {
@@ -70,7 +70,7 @@ class PreloaderForTransaction(moduleName: String, transProcessor: ActorRef) exte
         logMsg(LogType.ERROR, s" AssembleTransResult error, error: ${e.getMessage}")
         None
     }finally{
-      ImpDataPreloadMgr.Free(pe.getSysTag,"preload_"+block.transactions.head.id)
+      ImpDataPreloadMgr.Free(pe.getSysTag,db_indentifier)
     }
   }
 
@@ -107,22 +107,23 @@ class PreloaderForTransaction(moduleName: String, transProcessor: ActorRef) exte
   }
 
   override def receive = {
-    case PreTransBlock(block) =>
+    case PreTransBlock(block,prefixOfDbTag) =>
       logTime("block preload inner time", System.currentTimeMillis(), true)
       if ((block.previousBlockHash.toStringUtf8().equals(pe.getCurrentBlockHash) || block.previousBlockHash == ByteString.EMPTY) &&
         block.height == (pe.getCurrentHeight + 1)) {
         var preLoadTrans = mutable.HashMap.empty[String, Transaction]
         preLoadTrans = block.transactions.map(trans => (trans.id, trans))(breakOut): mutable.HashMap[String, Transaction]
         var transResult = Seq.empty[rep.protos.peer.TransactionResult]
+        val dbtag = prefixOfDbTag+"_"+block.transactions.head.id
         //确保提交的时候顺序执行
         block.transactions.map(t => {
-          var ts = Handler(t, preLoadTrans, "preload_"+block.transactions.head.id)
+          var ts = Handler(t, preLoadTrans, dbtag)
           if(ts != None){
             transResult = (transResult :+ ts.get)
           }
         })
         
-        var newblock = AssembleTransResult(block,preLoadTrans,transResult)
+        var newblock = AssembleTransResult(block,preLoadTrans,transResult,dbtag)
         
         if(newblock == None){
           //所有交易执行失败

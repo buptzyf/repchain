@@ -21,7 +21,7 @@ import akka.actor.Actor.Receive
 import akka.cluster.pubsub.DistributedPubSubMediator.Subscribe
 import rep.app.conf.TimePolicy
 import rep.network.Topic
-import rep.network.consensus.block.BlockModule.ConfirmedBlock
+import rep.network.consensus.block.Blocker.ConfirmedBlock
 import rep.network.tools.PeerExtension
 import rep.network.tools.Statistic.StatisticCollection.{PerformanceCollection, TPSCollection}
 
@@ -81,7 +81,7 @@ class StatisticCollection extends Actor  {
 
   override def receive: Receive = {
 
-    case ConfirmedBlock(blk, height, actRef) =>
+    case ConfirmedBlock(blk,  actRef) =>
       if (!isReady) isReady = true
       count = count + blk.transactions.size
       totalBlkCount += 1
