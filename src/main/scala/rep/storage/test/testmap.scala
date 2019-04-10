@@ -261,7 +261,7 @@ def testTreeMapclear{
 case class myobject(txid:String,name:String)
 
   def  main(args: Array[String]): Unit = {
-  import rep.sc.Shim.Oper
+  //import rep.sc.Shim.Oper
    //testTreeMap
    //testTreeMapclear
    /*var as = new Array[myobject](5)
@@ -273,12 +273,7 @@ case class myobject(txid:String,name:String)
   
    val tmp = as.distinct
    println("tmpsize="+tmp.length+",assize="+as.length)*/
-   var ls:scala.collection.mutable.ListBuffer[Oper] =  new scala.collection.mutable.ListBuffer[Oper]
-   ls += new Oper("1","sdfs".getBytes,"abc".getBytes)
-  ls += new Oper("11","sdfs1".getBytes,"abc1".getBytes)
-  ls += new Oper("1","sdfs2".getBytes,"abc2".getBytes)
-  ls.toList.foreach(f=>{
-    println(s"key:${f.key},old=${f.oldValue.toString()},new=${f.newValue}")
-  })
+  
+  
   }
 }

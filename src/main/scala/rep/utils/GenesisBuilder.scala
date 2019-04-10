@@ -27,7 +27,7 @@ import rep.crypto.{ Sha256}
 import org.json4s.{DefaultFormats, Formats, jackson}
 import org.json4s.jackson.JsonMethods._
 import org.json4s.DefaultFormats._
-import rep.network.consensus.block.BlockHelper
+import rep.network.consensus.util.BlockHelp
 import rep.crypto.cert.SignTool
 import scala.collection.mutable
 import rep.sc.tpl._
@@ -129,8 +129,8 @@ object GenesisBuilder {
     //超级管理员背书（角色）
     //创建者背书（1）
     blk = blk.withEndorsements(Seq(
-        BlockHelper.endorseBlock4NonHash(blk_hash,"951002007l78123233.super_admin"),
-        BlockHelper.endorseBlock4NonHash(blk_hash,"121000005l35120456.node1")))
+        BlockHelp.SignDataOfBlock(blk_hash,"951002007l78123233.super_admin"),
+        BlockHelp.SignDataOfBlock(blk_hash,"121000005l35120456.node1")))
 //    blk = blk.withConsensusMetadata(Seq(Endorsement(ByteString.copyFromUtf8(ECDSASign.getBitcoinAddrByCert(certA)),
 //      ByteString.copyFrom(ECDSASign.sign(priKA, blk_hash))),
 //      Endorsement(ByteString.copyFromUtf8(ECDSASign.getBitcoinAddrByCert(cert)),ByteString.copyFrom(ECDSASign.sign(prik,blk_hash)))))

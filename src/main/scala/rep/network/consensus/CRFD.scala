@@ -18,15 +18,7 @@ package rep.network.consensus
 
 import akka.actor.{ActorRef, Props}
 import rep.network.base.{BaseActor, ModuleHelper}
-import rep.network.consensus.block.BlockModule
-import rep.network.consensus.block.BlockModule.BlockModuleInitFinished
-import rep.network.consensus.endorse.Endorse4Blocker
 import rep.network.consensus.CRFD.{ConsensusInitFinish, InitCRFD, NextConsensus}
-import rep.network.consensus.vote.CRFDVoterModule
-import rep.network.consensus.vote.CRFDVoterModule.NextVote
-import rep.network.consensus.endorse.EndorsementModule
-import rep.network.sync.SyncModule.SetupSync
-import rep.network.consensus.transaction.PreloadTransactionModule
 import rep.sc.TransProcessor
 import rep.utils.GlobalUtils.ActorType
 import org.slf4j.LoggerFactory

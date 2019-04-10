@@ -24,7 +24,6 @@ import rep.crypto.Sha256
 import scala.collection.mutable
 import rep.protos.peer._
 import java.io._
-import rep.network.consensus.block.BlockHelper
 import rep.storage.util.pathUtil
 
 /**

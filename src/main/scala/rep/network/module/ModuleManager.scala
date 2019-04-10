@@ -27,8 +27,7 @@ import rep.network.consensus.CRFD.{ConsensusInitFinish}
 import rep.network.consensus.ConsensusManager
 import rep.network.module.ModuleManager.{ClusterJoined, TargetBlock}
 import rep.network.persistence.Storager
-import rep.network.sync.SyncModule
-import rep.network.sync.SyncModule.{ChainDataReqSingleBlk, SetupSync}
+
 import rep.storage.ImpDataAccess
 import rep.utils.ActorUtils
 import rep.utils.GlobalUtils.ActorType
