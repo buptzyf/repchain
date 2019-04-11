@@ -223,10 +223,11 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart:Boolean) {
     * 启动系统
     */
   def start = {
-        if(enableStatistic) statistics = sysActor.actorOf(Props[StatisticCollection],"statistic")
+       
         SystemProfile.initConfigSystem(sysActor.settings.config)
-        moduleManager = sysActor.actorOf(ModuleManager.props("moduleManager", sysTag),"moduleManager")
-        ModuleBase.registerActorRef(sysTag, ActorType.MODULE_MANAGER, moduleManager)
+        moduleManager = sysActor.actorOf(ModuleManager.props("modulemanager", sysTag),"modulemanager")
+        
+         if(enableStatistic) statistics = sysActor.actorOf(Props[StatisticCollection],"statistic")
         
         if(!hasDiskSpace){
           Cluster(sysActor).down(clusterAddr)
@@ -243,11 +244,8 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart:Boolean) {
           }
         }
         
-        if (enableWebSocket) webSocket = sysActor.actorOf(Props[ EventServer ], "ws")
-        memberLis = sysActor.actorOf(Props[ MemberListener ], "memberListener")
-        ModuleBase.registerActorRef(sysTag, ActorType.MEMBER_LISTENER, memberLis)
-        if (enableWebSocket) ModuleBase.registerActorRef(sysTag, ActorType.API_MODULE, webSocket)
-        if(enableStatistic) ModuleBase.registerActorRef(sysTag,ActorType.STATISTIC_COLLECTION, statistics)
+        if (enableWebSocket) webSocket = sysActor.actorOf(Props[ EventServer ], "webapi")
+        memberLis = sysActor.actorOf(Props[ MemberListener ], "memberlistener")
     RepLogger.logInfo(sysTag, ModuleType.clustersystem, "System" +  " ~ " + s"ClusterSystem ${sysTag} start" + " ~ ")
   }
 

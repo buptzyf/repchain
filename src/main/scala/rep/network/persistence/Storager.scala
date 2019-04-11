@@ -12,10 +12,10 @@ import rep.network.consensus.vote.Voter.{VoteOfBlocker}
 import scala.collection.mutable
 import rep.utils.GlobalUtils.{ ActorType, BlockEvent, EventType, NodeStatus }
 import scala.collection.immutable
-import rep.network.cluster.ClusterHelper
 import rep.log.trace.LogType
 import rep.network.sync.SyncMsg
 import scala.util.control.Breaks._
+import rep.network.util.NodeHelp
 
 
 object Storager {
@@ -57,7 +57,7 @@ class Storager(moduleName: String) extends ModuleBase(moduleName) {
         pe.getBlockCacheMgr.removeFromCache(blkRestore.blk.height)
         
         if (blkRestore.SourceOfBlock == SourceOfBlock.CONFIRMED_BLOCK) {
-          if (ClusterHelper.checkBlocker(selfAddr.toString(), akka.serialization.Serialization.serializedActorPath(blkRestore.blker).toString())) {
+          if (NodeHelp.checkBlocker(selfAddr.toString(), akka.serialization.Serialization.serializedActorPath(blkRestore.blker).toString())) {
             mediator ! Publish(Topic.Event, new Event(selfAddr, Topic.Block, Event.Action.BLOCK_NEW, Some(blkRestore.blk)))
           }
         }
@@ -81,7 +81,7 @@ class Storager(moduleName: String) extends ModuleBase(moduleName) {
     if (pe.getBlockCacheMgr.isEmpty && pe.getSystemStatus == NodeStatus.Ready) {
       logMsg(LogType.INFO, moduleName + "~" + s"presistence is over,this is startup vote" + "~" + selfAddr)
       //通知抽签模块，开始抽签
-      getActorRef(pe.getSysTag, ActorType.VOTER_MODULE) ! VoteOfBlocker
+      pe.getActorRef( ActorType.voter) ! VoteOfBlocker
     }else{
       logMsg(LogType.INFO, moduleName + "~" + s"presistence is over,cache has data,do not vote,height=${pe.getCurrentHeight} ~" + selfAddr)
     }
@@ -95,7 +95,7 @@ class Storager(moduleName: String) extends ModuleBase(moduleName) {
       val max = hs(hs.length-1)
       val min = pe.getCurrentHeight+1
       pe.setSystemStatus(NodeStatus.Synching) 
-      pe.getActorRef(ActorType.SYNC_MODULE) ! SyncMsg.SyncRequestOfStorager(blker,min,max)
+      pe.getActorRef(ActorType.synchrequester) ! SyncMsg.SyncRequestOfStorager(blker,min,max)
     }
   }
 

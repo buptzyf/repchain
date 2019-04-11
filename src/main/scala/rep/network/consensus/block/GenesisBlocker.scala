@@ -14,7 +14,6 @@ import rep.crypto.Sha256
 import rep.network._
 import rep.network.base.ModuleBase
 import rep.network.consensus.block.Blocker.{ConfirmedBlock,PreTransBlock,PreTransBlockResult}
-import rep.network.cluster.ClusterHelper
 import rep.network.consensus.CRFD.CRFD_STEP
 import rep.protos.peer._
 import rep.storage.ImpDataAccess
@@ -65,7 +64,7 @@ class GenesisBlocker(moduleName: String) extends ModuleBase(moduleName) {
 
   private def ExecuteTransactionOfBlock(block: Block): Block = {
     try {
-      val future = pe.getActorRef(ActorType.PRELOADTRANS_MODULE) ? PreTransBlock(block, "preload")
+      val future = pe.getActorRef(ActorType.preloaderoftransaction) ? PreTransBlock(block, "preload")
       val result = Await.result(future, timeout.duration).asInstanceOf[PreTransBlockResult]
       if (result.result) {
         result.blc

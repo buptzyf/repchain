@@ -150,9 +150,9 @@ class SupplySpec(_system: ActorSystem)
       var total = 0
       ol4.foreach { 
         ol => 
-          total += deserialise(ol.newValue.get).asInstanceOf[Int]
+          total += deserialise(ol.newValue).asInstanceOf[Int]
           if(ol.oldValue!= null)        
-            total -= deserialise(ol.oldValue.get).asInstanceOf[Int]        
+            total -= deserialise(ol.oldValue).asInstanceOf[Int]        
       }
       total should be(el)
     }

@@ -147,7 +147,7 @@ class TransactionPool(moduleName: String) extends ModuleBase(moduleName) {
               pe.getTransPoolMgr.putTran(t)
               //广播接收交易事件
               if (pe.getTransPoolMgr.getTransLength() <= SystemProfile.getMinBlockTransNum)
-                getActorRef(pe.getSysTag, GlobalUtils.ActorType.VOTER_MODULE) ! VoteOfBlocker
+                pe.getActorRef(GlobalUtils.ActorType.voter) ! VoteOfBlocker
             }
             
         }

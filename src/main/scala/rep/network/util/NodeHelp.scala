@@ -43,6 +43,16 @@ object NodeHelp {
     }
   }
   
+  def checkBlocker(myaddress:String,sendaddress:String):Boolean = {
+    var b :Boolean = false
+    if(myaddress.indexOf("/user")>0){
+      val addr = myaddress.substring(0, myaddress.indexOf("/user"))
+      b = sendaddress.indexOf(addr) != -1
+    }
+    b
+  }
+
+  
   def isSeedNode(nodeName:String):Boolean={
     SystemProfile.getGenesisNodeName.equals(nodeName)
   }

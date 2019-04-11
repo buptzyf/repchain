@@ -167,7 +167,7 @@ class SynchronizeRequester(moduleName: String) extends ModuleBase(moduleName) {
           sendEvent(EventType.RECEIVE_INFO, mediator, sender.path.toString(), selfAddr, Event.Action.BLOCK_SYNC)
           sendEventSync(EventType.RECEIVE_INFO, mediator, sender.path.toString(), selfAddr, Event.Action.BLOCK_SYNC)
           logMsg(LogType.INFO, moduleName + "~" + s"Get a data from $sender" + "～" + selfAddr)
-          getActorRef(ActorType.PERSISTENCE_MODULE) ! BlockRestore(data,  SourceOfBlock.SYNC_BLOCK, sender)
+          pe.getActorRef(ActorType.storager) ! BlockRestore(data,  SourceOfBlock.SYNC_BLOCK, sender)
           if (this.CurrentSyncBlockNumber < this.CurrentSyncInfo.maxBlockHeight) {
             this.CurrentSyncBlockNumber +=  1
             SendBlockDataSync(false)

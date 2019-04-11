@@ -556,7 +556,7 @@ abstract class IDataAccess(val SystemName: String) extends AbstractLevelDB(Syste
    * @param	block  待写入系统的区块
    * @return	如果成功返回true，否则返回false
    */
-  def restoreBlock(block: Block): Boolean
+  def restoreBlock(block: Block):  (Boolean,Long,Long,String,String)
 
   /**
    * @author jiangbuyun

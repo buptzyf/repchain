@@ -14,7 +14,6 @@ import rep.crypto.Sha256
 import rep.network.consensus.vote.Voter.VoteOfBlocker
 import rep.network.base.ModuleBase
 import rep.network.consensus.block.Blocker.{ConfirmedBlock,PreTransBlock,PreTransBlockResult}
-import rep.network.cluster.ClusterHelper
 import rep.network.consensus.CRFD.CRFD_STEP
 import rep.protos.peer._
 import rep.storage.ImpDataAccess
@@ -121,7 +120,7 @@ class Blocker(moduleName: String) extends ModuleBase(moduleName) {
 
   private def ExecuteTransactionOfBlock(block: Block): Block = {
     try {
-      val future = pe.getActorRef(ActorType.PRELOADTRANS_MODULE) ? Blocker.PreTransBlock(block, "preload")
+      val future = pe.getActorRef(ActorType.preloaderoftransaction) ? Blocker.PreTransBlock(block, "preload")
       val result = Await.result(future, timeout.duration).asInstanceOf[PreTransBlockResult]
       if (result.result) {
         result.blc
@@ -156,7 +155,7 @@ class Blocker(moduleName: String) extends ModuleBase(moduleName) {
       if (blc != null) {
         this.preblock = blc
         schedulerLink = clearSched()
-        getActorRef(pe.getSysTag, ActorType.ENDORSE_MODULE) ! Blocker.CollectEndorsement(this.preblock, pe.getBlocker.blocker)
+        pe.getActorRef(ActorType.endorsementcollectioner) ! Blocker.CollectEndorsement(this.preblock, pe.getBlocker.blocker)
         schedulerLink = scheduler.scheduleOnce(TimePolicy.getTimeoutEndorse seconds, self, Blocker.EndorseOfBlockTimeOut)
       }
     }
@@ -174,7 +173,7 @@ class Blocker(moduleName: String) extends ModuleBase(moduleName) {
             if (preblock.previousBlockHash.toStringUtf8() == pe.getCurrentBlockHash) {
               //预出块已经建立，不需要重新创建，可以请求再次背书
               schedulerLink = clearSched()
-              getActorRef(pe.getSysTag, ActorType.ENDORSE_MODULE) ! Blocker.CollectEndorsement(this.preblock, pe.getBlocker.blocker)
+              pe.getActorRef(ActorType.endorsementcollectioner) ! Blocker.CollectEndorsement(this.preblock, pe.getBlocker.blocker)
               schedulerLink = scheduler.scheduleOnce(TimePolicy.getTimeoutEndorse seconds, self, Blocker.EndorseOfBlockTimeOut)
             } else {
               //上一个块已经变化，需要重新出块
@@ -191,7 +190,7 @@ class Blocker(moduleName: String) extends ModuleBase(moduleName) {
     //出块超时
     case Blocker.EndorseOfBlockTimeOut =>
       schedulerLink = clearSched()
-      getActorRef(pe.getSysTag, ActorType.ENDORSE_MODULE) ! Blocker.CollectEndorsement(this.preblock, pe.getBlocker.blocker)
+      pe.getActorRef(ActorType.endorsementcollectioner) ! Blocker.CollectEndorsement(this.preblock, pe.getBlocker.blocker)
       schedulerLink = scheduler.scheduleOnce(TimePolicy.getTimeoutEndorse seconds, self, Blocker.EndorseOfBlockTimeOut)
     case _ => //ignore
   }

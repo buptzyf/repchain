@@ -72,7 +72,7 @@ class Voter(moduleName: String) extends ModuleBase(moduleName) with CRFDVoter {
       //自己是出块人
       pe.setSystemStatus(NodeStatus.Blocking)
       //发送建立新块的消息
-      pe.getActorRef(ActorType.BLOCK_MODULE) ! CreateBlock
+      pe.getActorRef(ActorType.blocker) ! CreateBlock
     } else {
       //自己是背书人
       pe.setSystemStatus(NodeStatus.Endorsing)

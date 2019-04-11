@@ -88,7 +88,7 @@ class ContractCert  extends IContract {
         return ActionResult(0,signerNotExists)
       } else {
         ctx.api.setVal(certKey, Some(data.cert))
-        val signer = SerializeUtils.deserialise(signerContent.get).asInstanceOf[Signer]
+        val signer = SerializeUtils.deserialise(signerContent).asInstanceOf[Signer]
         if (!signer.certNames.contains(data.name)){
           signer.addCertNames(data.name)
           ctx.api.setVal(signerKey, Some(signer))
@@ -119,7 +119,7 @@ class ContractCert  extends IContract {
     if (certInfo == None) {
       ActionResult(0,certNotExists)
     } else {
-      val cert = SerializeUtils.deserialise(certInfo.get).asInstanceOf[Certificate]
+      val cert = SerializeUtils.deserialise(certInfo).asInstanceOf[Certificate]
       cert.withCertValid(data.status)
       ctx.api.setVal(certKey, Some(cert))
       ActionResult(1)

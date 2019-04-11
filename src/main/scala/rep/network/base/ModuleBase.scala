@@ -25,6 +25,7 @@ import rep.crypto.Sha256
 import scala.collection.mutable
 import org.slf4j.LoggerFactory
 import rep.log.trace.{ModuleType,RepLogger,RepTimeTracer}
+import rep.utils.GlobalUtils.{ActorType}
 
 
 /**
@@ -36,16 +37,6 @@ import rep.log.trace.{ModuleType,RepLogger,RepTimeTracer}
   * @update 2018-05 jiangbuyun
   **/
 object ModuleBase {
-  def registerActorRef(sysTag: String, actorType: Int, actorRef: ActorRef) = {
-    ClusterSystem.getActorRegister(sysTag) match {
-      case None =>
-        val actorRegister = new ActorRegister()
-        actorRegister.register(actorType, actorRef)
-        ClusterSystem.register(sysTag, actorRegister)
-      case actR =>
-        actR.get.register(actorType, actorRef)
-    }
-  }
 }
 
 /**
@@ -56,8 +47,41 @@ object ModuleBase {
   * @param name 模块名称
   **/
 
-abstract class ModuleBase(name: String) extends Actor with ModuleHelper with ClusterActor with BaseActor{
+abstract class  ModuleBase(name: String) extends Actor  with ClusterActor with BaseActor{
   val logPrefix = name
+  val pe = PeerExtension(context.system)
+  
+  val atype = ModuleNameToIntActorType
+  atype match{
+    case 0 => 
+    case _ => pe.register(atype, self)
+  }
+  
+  private def ModuleNameToIntActorType:Int={
+    name match{
+      case "memberlistener" => 1
+      case "modulemanager" => 2
+      case "webapi" => 3
+      case "peerhelper" => 4
+      case "blocker" => 5
+      case "preloaderoftransaction" => 6
+      case "endorser" => 7
+      case "voter" => 8
+      case "synchrequester" => 9
+      case "transactionpool" => 10
+      case "storager" => 11
+      case "consensusmanager" => 12
+      case "statiscollecter" => 13
+      case "endorsementcollectioner" => 14
+      case "endorsementrequester" => 15
+      case "confirmerofblock" => 16
+      case "gensisblock"  => 17
+      case "synchresponser" => 18
+      case _ => 0
+    }
+  }
+  
+    
   /**
     * 日志封装
     *
@@ -88,78 +112,3 @@ abstract class ModuleBase(name: String) extends Actor with ModuleHelper with Clu
   }
 }
 
-/**
-  * 模块帮助功能接口
-  *
-  * @author shidianyue
-  * @version 1.0
-  **/
-trait ModuleHelper extends Actor {
-  val pe = PeerExtension(context.system)
-
-  /**
-    * 从注册中心获取actor引用
-    * @param sysTag
-    * @param actorType
-    * @return
-    */
-  def getActorRef(sysTag: String, actorType: Int): ActorRef = {
-    ClusterSystem.getActorRegister(sysTag).getOrElse(None) match {
-      case None => self
-      case actorReg: ActorRegister => actorReg.getActorRef(actorType).getOrElse(None) match {
-        case None => self
-        case actorRef: ActorRef => actorRef
-      }
-    }
-  }
-
-  /**
-    * 从注册中心获取actor引用
-    * @param actorType
-    * @return
-    */
-  def getActorRef(actorType: Int): ActorRef = {
-    ClusterSystem.getActorRegister(pe.getSysTag).getOrElse(None) match {
-      case None => self
-      case actorReg: ActorRegister => actorReg.getActorRef(actorType).getOrElse(None) match {
-        case None => self
-        case actorRef: ActorRef => actorRef
-      }
-    }
-  }
-
-  /**
-    * 向注册中心注册actor引用
-    * @param sysTag
-    * @param actorType
-    * @param actorRef
-    * @return
-    */
-  def registerActorRef(sysTag: String, actorType: Int, actorRef: ActorRef) = {
-    ClusterSystem.getActorRegister(sysTag) match {
-      case None =>
-        val actorRegister = new ActorRegister()
-        actorRegister.register(actorType, actorRef)
-        ClusterSystem.register(sysTag, actorRegister)
-      case actR =>
-        actR.get.register(actorType, actorRef)
-    }
-  }
-
-  /**
-    * 向注册中心注册actor引用
-    * @param actorType
-    * @param actorRef
-    * @return
-    */
-  def registerActorRef(actorType: Int, actorRef: ActorRef) = {
-    ClusterSystem.getActorRegister(pe.getSysTag) match {
-      case None =>
-        val actorRegister = new ActorRegister()
-        actorRegister.register(actorType, actorRef)
-        ClusterSystem.register(pe.getSysTag, actorRegister)
-      case actR =>
-        actR.get.register(actorType, actorRef)
-    }
-  }
-}

@@ -27,6 +27,7 @@ import rep.network.consensus.CRFD.{ConsensusInitFinish}
 import rep.network.consensus.ConsensusManager
 import rep.network.module.ModuleManager.{ClusterJoined, TargetBlock}
 import rep.network.persistence.Storager
+import rep.network.sync.{SynchronizeResponser,SynchronizeRequester}
 
 import rep.storage.ImpDataAccess
 import rep.utils.ActorUtils
@@ -51,7 +52,8 @@ class ModuleManager(moduleName: String, sysTag: String) extends ModuleBase(modul
 
   private val conf = context.system.settings.config
   private var persistence: ActorRef = null
-  private var sync: ActorRef = null
+  private var syncrequester: ActorRef = null
+  private var syncresponser:ActorRef = null
   private var transactionPool: ActorRef = null
   private var consensus: ActorRef = null
   private var transCreator: ActorRef = null
@@ -70,25 +72,18 @@ class ModuleManager(moduleName: String, sysTag: String) extends ModuleBase(modul
     pe.setSysTag(sysTag)
     val confHeler = new ConfigerHelper(conf, sysTag, pe.getSysTag)
     confHeler.init()
-    
-    
-    
-    pe.setIsSync(true)
-    registerActorRef(ActorType.MODULE_MANAGER, self) //register itself
   }
 
   
   
   def loadModule() = {
-    persistence = context.actorOf(PersistenceModule.props("persistence"), "persistence")
-    sync = context.actorOf(SyncModule.props("sync"), "sync")
-    transactionPool = context.actorOf(TransactionPool.props("transactionPool"), "transactionPool")
+    persistence = context.actorOf(Storager.props("storager"), "storager")
+    this.syncrequester = context.actorOf(SynchronizeRequester.props("synchrequester"), "synchrequester")
+    this.syncresponser =  context.actorOf(SynchronizeResponser.props("synchresponser"), "synchresponser")
+    transactionPool = context.actorOf(TransactionPool.props("transactionpool"), "transactionpool")
     consensus = context.actorOf(ConsensusManager.props("consensusManager", context.system.settings.config), "consensusManager")
 
-    registerActorRef(ActorType.PERSISTENCE_MODULE, persistence)
-    registerActorRef(ActorType.SYNC_MODULE, sync)
-    registerActorRef(ActorType.TRANSACTION_POOL, transactionPool)
-    registerActorRef(ActorType.CONSENSUS_MANAGER, consensus)
+    
 
     logMsg(LogType.INFO, moduleName+"~"+ s"ModuleManager ${sysTag} start")
 
@@ -102,7 +97,7 @@ class ModuleManager(moduleName: String, sysTag: String) extends ModuleBase(modul
   def syncStartCheck = {
     (isClusterJoined && isConsensusFinished) match {
       case true =>
-        getActorRef(ActorType.SYNC_MODULE) ! SetupSync
+        //getActorRef(ActorType.SYNC_MODULE) ! SetupSync
         logMsg(LogType.INFO, "Sync Start Ticket")
       case false => // ignore
     }
@@ -111,14 +106,6 @@ class ModuleManager(moduleName: String, sysTag: String) extends ModuleBase(modul
 
   //除了广播消息，P2P的跨域消息都通过其中转（同步，存储等）
   override def receive: Receive = {
-
-    case tb: TargetBlock =>
-      //存储向出块人节点的同步模块请求同步数据
-      tb.blker ! ChainDataReqSingleBlk(sync,
-        tb.height)
-    case chaindataReqSB: ChainDataReqSingleBlk =>
-      //转移同步请求至同步模块
-      sync ! chaindataReqSB
 
     case ClusterJoined =>
       isClusterJoined = true

@@ -38,7 +38,6 @@ import com.trueaccord.scalapb.json.JsonFormat
 import rep.app.TestMain
 import org.json4s._
 import org.json4s.jackson.JsonMethods
-import rep.network.base.ModuleHelper
 import rep.network.tools.PeerExtension
 import rep.network.base.ModuleBase
 import rep.utils.GlobalUtils.ActorType
@@ -47,6 +46,7 @@ import rep.crypto.cert.SignTool
 import rep.log.trace._
 import rep.protos.peer.ActionResult
 import rep.app.conf.SystemProfile
+import rep.network.base.ModuleBase
 /**
   * RestActor伴生object，包含可接受的传入消息定义，以及处理的返回结果定义。
   * 以及用于建立Tranaction，检索Tranaction的静态方法
@@ -55,8 +55,9 @@ import rep.app.conf.SystemProfile
   */
 
 object RestActor {
-  val contractOperationMode = SystemProfile.getContractOperationMode  
   def props(name: String): Props = Props(classOf[RestActor], name)
+  
+  val contractOperationMode = SystemProfile.getContractOperationMode  
   case object ChainInfo
 
   case class SystemStart(cout: Int)
@@ -144,7 +145,7 @@ object RestActor {
   * RestActor负责处理rest api请求
   *
   */
-class RestActor extends Actor with ModuleHelper {
+class RestActor(moduleName: String) extends  ModuleBase(moduleName) {
 
   import RestActor._
   import spray.json._
@@ -176,7 +177,7 @@ class RestActor extends Actor with ModuleHelper {
             case None =>
               if (rv.r.reason.isEmpty) {
                 //预执行正常,提交并广播交易
-                getActorRef(ActorType.TRANSACTION_POOL) ! t // 给交易池发送消息 ！=》告知（getActorRef）
+                pe.getActorRef(ActorType.transactionpool) ! t // 给交易池发送消息 ！=》告知（getActorRef）
               }
               sender ! PostResult(t.id, Some(rv.r), None)
             case Some(err) =>

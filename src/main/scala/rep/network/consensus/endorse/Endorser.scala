@@ -57,7 +57,7 @@ class Endorser(moduleName: String) extends ModuleBase(moduleName) {
 
   private def ExecuteTransactionOfBlock(block: Block): Boolean = {
     try {
-      val future = pe.getActorRef(ActorType.PRELOADTRANS_MODULE) ? PreTransBlock(block,"endorser")
+      val future = pe.getActorRef(ActorType.preloaderoftransaction) ? PreTransBlock(block,"endorser")
       val result = Await.result(future, timeout.duration).asInstanceOf[PreTransBlockResult]
       if (result.result) {
         var tmpblock = result.blc.withHashOfBlock(block.hashOfBlock)

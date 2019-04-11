@@ -17,12 +17,17 @@
 package rep.network.consensus
 
 import akka.actor.{ActorRef, Props}
-import rep.network.base.{BaseActor, ModuleHelper}
+import rep.network.base.{BaseActor}
 import rep.network.consensus.CRFD.{ConsensusInitFinish, InitCRFD, NextConsensus}
 import rep.sc.TransProcessor
 import rep.utils.GlobalUtils.ActorType
 import org.slf4j.LoggerFactory
 import rep.log.trace._
+import rep.network.consensus.block.{GenesisBlocker,ConfirmOfBlock,EndorseCollector,Blocker}
+import rep.network.consensus.endorse.Endorser
+import rep.network.consensus.transaction.PreloaderForTransaction
+import rep.network.consensus.vote.Voter
+
 
 /**
   * Consensus handle and message dispatcher
@@ -60,42 +65,29 @@ object CRFD {
 
 }
 
-class CRFD(name: String) extends BaseConsenter with ModuleHelper with BaseActor  {
+class CRFD(name: String) extends BaseConsenter  with BaseActor  {
 
   import scala.concurrent.duration._
   
   protected def log = LoggerFactory.getLogger(this.getClass)
 
-  private var blocker: ActorRef = null
   
-  private var endorseinblocker :ActorRef = null
-
-  private var endorse: ActorRef = null
-
-  private var voter: ActorRef = null
-
-  private var transProcess:ActorRef = null
-
-  //暂时先单实例
-  private var preloadTrans:ActorRef = null
 
   override def init(): Unit = {
 //.withDispatcher("data-crfd-dispatcher")
-    blocker = context.actorOf(BlockModule.props("blocker"), "blocker")
-    endorseinblocker = context.actorOf(Endorse4Blocker.props("endorseinblocker"), "endorseinblocker")
-    endorse = context.actorOf(EndorsementModule.props("endorse"), "endorse")
-    voter = context.actorOf(CRFDVoterModule.props("voter"), "voter")
-    transProcess = context.actorOf(TransProcessor.props("sandbox", "", self),"sandboxProcessor")
-    preloadTrans = context.actorOf(PreloadTransactionModule.props("preloadTrans",transProcess),"preloadTrans")
+    context.actorOf(Blocker.props("blocker"), "blocker")
+    context.actorOf(GenesisBlocker.props("gensisblock"), "gensisblock")
+    context.actorOf(ConfirmOfBlock.props("confirmerofblock"), "confirmerofblock")
+    context.actorOf(EndorseCollector.props("endorsementcollectioner"), "endorsementcollectioner")
+    context.actorOf(Endorser.props("endorser"), "endorser")
+    context.actorOf(PreloaderForTransaction.props("preloaderoftransaction",context.actorOf(TransProcessor.props("sandbox", "", self),"sandboxProcessor")),"preloaderoftransaction")
+    context.actorOf(Endorser.props("endorser"), "endorser")
+    context.actorOf(Voter.props("voter"), "voter")
+    
 
-    registerActorRef(ActorType.BLOCK_MODULE, blocker)
-    registerActorRef(ActorType.ENDORSE_BLOCKER, endorseinblocker)
-    registerActorRef(ActorType.ENDORSE_MODULE, endorse)
-    registerActorRef(ActorType.VOTER_MODULE, voter)
-    registerActorRef(ActorType.PRELOADTRANS_MODULE, preloadTrans)
-
+   
     //logMsg(LOG_TYPE.INFO,name,"CRFD init finished",selfAddr)
-    RepLogger.logInfo(pe.getSysTag, ModuleType.crfd, "CRFD init finished"+"~"+selfAddr)
+    //RepLogger.logInfo(pe.getSysTag, ModuleType.crfd, "CRFD init finished"+"~"+selfAddr)
   }
 
   override def initFinished(): Unit = {
@@ -107,12 +99,12 @@ class CRFD(name: String) extends BaseConsenter with ModuleHelper with BaseActor 
   override def nextConsensus(): Unit = ???
 
   def nextConsensus(status:Boolean): Unit = {
-    getActorRef(ActorType.VOTER_MODULE) ! NextVote(status,0,false)
+    //getActorRef(ActorType.VOTER_MODULE) ! NextVote(status,0,false)
   }
 
   override def preStart(): Unit = {
     //logMsg(LOG_TYPE.INFO,name,"CRFD Actor Start",selfAddr)
-    RepLogger.logInfo(pe.getSysTag, ModuleType.crfd, "CRFD Actor Start"+"~"+selfAddr)
+    //RepLogger.logInfo(pe.getSysTag, ModuleType.crfd, "CRFD Actor Start"+"~"+selfAddr)
   }
 
   override def receive: Receive = {
@@ -120,8 +112,8 @@ class CRFD(name: String) extends BaseConsenter with ModuleHelper with BaseActor 
     case InitCRFD =>
       init()
 
-    case BlockModuleInitFinished =>
-      initFinished()
+    //case BlockModuleInitFinished =>
+    //  initFinished()
 
     case NextConsensus(status) =>
       nextConsensus(status)

@@ -31,6 +31,8 @@ class ConfirmOfBlock(moduleName: String) extends ModuleBase(moduleName) {
   import scala.concurrent.duration._
   import rep.protos.peer._
 
+  
+  
   private def asyncVerifyEndorse(e: Signature,byteOfBlock:Array[Byte]): Future[Boolean] = {
     val result = Promise[Boolean]
     
@@ -71,7 +73,7 @@ class ConfirmOfBlock(moduleName: String) extends ModuleBase(moduleName) {
               if (BlockVerify.VerifyEndorserSorted(block.endorsements.toArray[Signature]) == 1) {
                 //背书信息排序正确
                 sendEvent(EventType.RECEIVE_INFO, mediator, selfAddr, Topic.Block, Event.Action.BLOCK_NEW)
-                getActorRef(pe.getSysTag, ActorType.PERSISTENCE_MODULE) ! BlockRestore(block, SourceOfBlock.CONFIRMED_BLOCK, actRefOfBlock)
+                pe.getActorRef( ActorType.storager) ! BlockRestore(block, SourceOfBlock.CONFIRMED_BLOCK, actRefOfBlock)
               } else {
                 ////背书信息排序错误
               }

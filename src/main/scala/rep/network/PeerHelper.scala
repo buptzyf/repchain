@@ -192,7 +192,7 @@ class PeerHelper(name: String) extends ModuleBase(name) {
           "transfer", Seq(li2))
         //val t3 = transactionCreator(pe.getSysTag,rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE,
         //  "", "transfer" ,Seq(li2),"", Option(chaincode),rep.protos.peer.ChaincodeSpec.CodeType.CODE_JAVASCRIPT)
-        getActorRef(ActorType.TRANSACTION_POOL) ! t3
+        pe.getActorRef(ActorType.transactionpool) ! t3
         //val end = System.currentTimeMillis()
         //println(s"!!!!!!!!!!!!!!!!!!!!auto create trans time=${end-start}")
         scheduler.scheduleOnce(SystemProfile.getTranCreateDur.millis, self, TickInvoke)
@@ -214,7 +214,7 @@ class PeerHelper(name: String) extends ModuleBase(name) {
           //val chaincodeId = new ChaincodeId("chaincode-name", 1)
           val t3 = createTransaction4Invoke(pe.getSysTag, chaincode,
             "transfer", Seq(li2))
-          getActorRef(ActorType.TRANSACTION_POOL) ! t3
+          pe.getActorRef(ActorType.transactionpool) ! t3
           //mediator ! Publish(Topic.Transaction, t3)
           count += 1
           if (count > 1000) {

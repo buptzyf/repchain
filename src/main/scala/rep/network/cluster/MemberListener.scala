@@ -22,7 +22,6 @@ import akka.cluster.pubsub.DistributedPubSub
 import akka.cluster.{Cluster, MemberStatus}
 import rep.app.conf.TimePolicy
 import rep.network.Topic
-import rep.network.base.ModuleHelper
 import rep.network.cluster.MemberListener.{MemberDown, Recollection}
 import rep.network.module.ModuleManager.ClusterJoined
 import rep.network.tools.PeerExtension
@@ -32,6 +31,7 @@ import rep.log.trace.LogType
 import org.slf4j.LoggerFactory
 import scala.collection.mutable
 import rep.log.trace._
+import rep.network.base.ModuleBase
 
 
 /**
@@ -57,7 +57,7 @@ object MemberListener {
   * @since 1.0
   **/
 
-class MemberListener extends Actor with ClusterActor with ModuleHelper {
+class MemberListener(MoudleName:String) extends ModuleBase(MoudleName) with ClusterActor {
 
   import context.dispatcher
 
@@ -71,7 +71,7 @@ class MemberListener extends Actor with ClusterActor with ModuleHelper {
 
   var preloadNodesMap = mutable.HashMap[ Address, Long ]()
 
-  def scheduler = context.system.scheduler
+  //def scheduler = context.system.scheduler
 
 
   override def preStart(): Unit =
@@ -109,11 +109,10 @@ class MemberListener extends Actor with ClusterActor with ModuleHelper {
       nodes = state.members.collect {
         case m if m.status == MemberStatus.Up => m.address
       }
-      pe.resetNodes(nodes)
-      pe.resetStableNodes(nodes)
+      pe.getNodeMgr.resetNodes(nodes)
+      pe.getNodeMgr.resetStableNodes(nodes)
       if (!nodes.isEmpty) {
-        pe.resetSeedNode(nodes.head)
-        getActorRef(ActorType.MODULE_MANAGER) ! ClusterJoined
+        pe.getActorRef(ActorType.modulemanager) ! ClusterJoined
       }
 
       //成员入网
@@ -125,9 +124,7 @@ class MemberListener extends Actor with ClusterActor with ModuleHelper {
       //log.info("Member is Up: {}. {} nodes in cluster",
       //  member.address, nodes.size)
       RepLogger.logInfo(pe.getSysTag, ModuleType.memberlistener, "Member is Up: {}. {} nodes in cluster"+"~"+member.address+"~"+nodes.size)
-      if (nodes.size == 1) pe.resetSeedNode(member.address)
-      
-      pe.putNode(member.address)
+      pe.getNodeMgr.putNode(member.address)
       if(member.roles != null && !member.roles.isEmpty && member.roles.contains("CRFD-Node")){
         preloadNodesMap.put(member.address, TimeUtils.getCurrentTime())
       }
@@ -138,7 +135,7 @@ class MemberListener extends Actor with ClusterActor with ModuleHelper {
       //判断自己是否已经join到网络中
       addr_self.contains(member.address.toString) match {
         case true =>
-          getActorRef(ActorType.MODULE_MANAGER) ! ClusterJoined
+          pe.getActorRef(ActorType.modulemanager) ! ClusterJoined
         case false => //ignore
       }
       
@@ -150,10 +147,10 @@ class MemberListener extends Actor with ClusterActor with ModuleHelper {
         //member.address, nodes.size)
       RepLogger.logInfo(pe.getSysTag, ModuleType.memberlistener, "Member is Removed: {}. {} nodes cluster"+"~"+member.address+"~"+nodes.size)
       preloadNodesMap.remove(member.address)
-      pe.removeNode(member.address)
-      pe.removeStableNode(member.address)
+      pe.getNodeMgr.removeNode(member.address)
+      pe.getNodeMgr.removeStableNode(member.address)
       //Tell itself voter actor to judge if the downer is blocker or not
-      getActorRef(ActorType.VOTER_MODULE) ! MemberDown(member.address)
+      pe.getActorRef(ActorType.voter) ! MemberDown(member.address)
 
     // For test
 //    case Event(addr, topic, action, blk) =>
@@ -173,10 +170,10 @@ class MemberListener extends Actor with ClusterActor with ModuleHelper {
       println(pe.getSysTag + " MemberListening recollection")
       preloadNodesMap.foreach(node => {
         if (isStableNode(node._2, TimePolicy.getSysNodeStableDelay)) {
-          pe.putStableNode(node._1)
+          pe.getNodeMgr.putStableNode(node._1)
         }
       })
-      if (preloadNodesMap.size > 0) pe.getStableNodes.foreach(node => {
+      if (preloadNodesMap.size > 0) pe.getNodeMgr.getStableNodes.foreach(node => {
         if (preloadNodesMap.contains(node)) preloadNodesMap.remove(node)
       })
       if (preloadNodesMap.size > 0) self ! Recollection
@@ -185,10 +182,10 @@ class MemberListener extends Actor with ClusterActor with ModuleHelper {
       nodes -= event.remoteAddress
       log.info("Member is Removed: {}. {} nodes cluster", event.remoteAddress, nodes.size)
       preloadNodesMap.remove(event.remoteAddress)
-      pe.removeNode(event.remoteAddress)
-      pe.removeStableNode(event.remoteAddress)
+      pe.getNodeMgr.removeNode(event.remoteAddress)
+      pe.getNodeMgr.removeStableNode(event.remoteAddress)
       //Tell itself voter actor to judge if the downer is blocker or not
-      getActorRef(ActorType.VOTER_MODULE) ! MemberDown(event.remoteAddress)
+      pe.getActorRef(ActorType.voter) ! MemberDown(event.remoteAddress)
    
     case MemberLeft(member) => //ignore
       nodes -= member.address
@@ -196,10 +193,10 @@ class MemberListener extends Actor with ClusterActor with ModuleHelper {
       //  member.address, nodes.size)
       RepLogger.logInfo(pe.getSysTag, ModuleType.memberlistener, "Member is Removed: {}. {} nodes cluster"+"~"+member.address+"~"+nodes.size)
       preloadNodesMap.remove(member.address)
-      pe.removeNode(member.address)
-      pe.removeStableNode(member.address)
+      pe.getNodeMgr.removeNode(member.address)
+      pe.getNodeMgr.removeStableNode(member.address)
       //Tell itself voter actor to judge if the downer is blocker or not
-      getActorRef(ActorType.VOTER_MODULE) ! MemberDown(member.address)
+      pe.getActorRef(ActorType.voter) ! MemberDown(member.address)
       
     case MemberExited(member) => //ignore
       nodes -= member.address
@@ -207,10 +204,10 @@ class MemberListener extends Actor with ClusterActor with ModuleHelper {
       //  member.address, nodes.size)
       RepLogger.logInfo(pe.getSysTag, ModuleType.memberlistener, "Member is Removed: {}. {} nodes cluster"+"~"+member.address+"~"+nodes.size)
       preloadNodesMap.remove(member.address)
-      pe.removeNode(member.address)
-      pe.removeStableNode(member.address)
+      pe.getNodeMgr.removeNode(member.address)
+      pe.getNodeMgr.removeStableNode(member.address)
       //Tell itself voter actor to judge if the downer is blocker or not
-      getActorRef(ActorType.VOTER_MODULE) ! MemberDown(member.address)
+      pe.getActorRef(ActorType.voter) ! MemberDown(member.address)
 
     case _: MemberEvent => // ignore
   }
