@@ -60,7 +60,7 @@ class ContractCert  extends IContract {
     val signer = ctx.api.getState(data.creditCode)
     // 如果是null，表示已注销，如果不是null，则判断是否有值
     if (signer == None ){
-      ctx.api.setVal(data.creditCode, Some(data))
+      ctx.api.setVal(data.creditCode, data)
       ActionResult(1)
     } else {
       ActionResult(0,signerExists)
@@ -87,11 +87,11 @@ class ContractCert  extends IContract {
       if (signerContent == None){
         return ActionResult(0,signerNotExists)
       } else {
-        ctx.api.setVal(certKey, Some(data.cert))
+        ctx.api.setVal(certKey, data.cert)
         val signer = SerializeUtils.deserialise(signerContent).asInstanceOf[Signer]
         if (!signer.certNames.contains(data.name)){
           signer.addCertNames(data.name)
-          ctx.api.setVal(signerKey, Some(signer))
+          ctx.api.setVal(signerKey, signer)
         }
       }
       ActionResult(1)
@@ -121,7 +121,7 @@ class ContractCert  extends IContract {
     } else {
       val cert = SerializeUtils.deserialise(certInfo).asInstanceOf[Certificate]
       cert.withCertValid(data.status)
-      ctx.api.setVal(certKey, Some(cert))
+      ctx.api.setVal(certKey, cert)
       ActionResult(1)
     }
   }
@@ -142,7 +142,7 @@ class ContractCert  extends IContract {
     if (signer == None){
       ActionResult(0,signerNotExists)
     } else {
-      ctx.api.setVal(data.creditCode, Some(data))
+      ctx.api.setVal(data.creditCode, data)
       ActionResult(1)
     }
   }
