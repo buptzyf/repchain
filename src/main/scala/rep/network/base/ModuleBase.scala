@@ -20,7 +20,6 @@ import akka.actor.{Actor, Address, ActorRef}
 import rep.app.system.ClusterSystem
 import rep.network.cluster.ClusterActor
 import rep.network.tools.PeerExtension
-import rep.network.tools.register.ActorRegister
 import rep.crypto.Sha256
 import scala.collection.mutable
 import org.slf4j.LoggerFactory
