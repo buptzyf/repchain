@@ -55,7 +55,7 @@ object Repchain {
 
     var nodes_off = Set.empty[ClusterSystem]
 
-    for(i <- 2 to node_max) {
+   /* for(i <- 2 to node_max) {
       Thread.sleep(15000)
       val len = nodes.size
       val sys = new ClusterSystem(nodelist(i-2),InitType.MULTI_INIT,true)
@@ -64,6 +64,6 @@ object Repchain {
       sys.disableWS()
       sys.start
       nodes += sys
-    }
+    }*/
   }
 }

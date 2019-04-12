@@ -92,7 +92,8 @@ class ModuleManager(moduleName: String, sysTag: String, enableStatistic: Boolean
 
   def loadApiModule = {
     if (enableStatistic) context.actorOf(Props[StatisticCollection], "statistic")
-    if (enableWebSocket) context.actorOf(Props[EventServer], "webapi")
+    if (enableWebSocket) context.system.actorOf(Props[EventServer], "webapi")
+    
   }
 
   def loadSystemModule = {

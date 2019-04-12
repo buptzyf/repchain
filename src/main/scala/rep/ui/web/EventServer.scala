@@ -50,7 +50,8 @@ import rep.app.conf.SystemProfile
  *  @author c4w
  */
 object EventServer {
-
+//def props(name: String): Props = Props(classOf[EventServer], name)
+  
   implicit def myExceptionHandler = ExceptionHandler {
     //合约执行异常，回送HTTP 200，包容chrome的跨域尝试
     case e: SandboxException =>
@@ -92,7 +93,7 @@ object EventServer {
         }
       }
 
-    val ra = sys.actorOf(Props[RestActor],"api")
+    val ra = sys.actorOf(RestActor.props("api"), "api")
     //允许跨域访问,以支持在应用中发起请求
     Http().bindAndHandle(
       route_evt
