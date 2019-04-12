@@ -69,13 +69,13 @@ abstract class  ModuleBase(name: String) extends Actor  with ClusterActor with B
       case "synchrequester" => 9
       case "transactionpool" => 10
       case "storager" => 11
-      case "consensusmanager" => 12
+      case "synchresponser" => 12
       case "statiscollecter" => 13
       case "endorsementcollectioner" => 14
       case "endorsementrequester" => 15
       case "confirmerofblock" => 16
       case "gensisblock"  => 17
-      case "synchresponser" => 18
+      case "api" => 18
       case _ => 0
     }
   }

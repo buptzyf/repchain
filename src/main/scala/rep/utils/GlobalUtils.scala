@@ -79,6 +79,7 @@ object GlobalUtils {
     val endorsementrequester = 15
     val confirmerofblock = 16
     val gensisblock = 17
+    val api = 18
   }
   
   
