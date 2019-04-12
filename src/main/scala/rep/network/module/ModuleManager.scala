@@ -16,10 +16,10 @@
 
 package rep.network.module
 
-import akka.actor.{ActorRef, Props}
-import com.typesafe.config.{Config}
+import akka.actor.{ ActorRef, Props }
+import com.typesafe.config.{ Config }
 import rep.app.conf.SystemProfile.Trans_Create_Type_Enum
-import rep.app.conf.{SystemProfile, TimePolicy}
+import rep.app.conf.{ SystemProfile, TimePolicy }
 import rep.network.PeerHelper
 import rep.network.base.ModuleBase
 import rep.network.cache.TransactionPool
@@ -27,9 +27,9 @@ import rep.network.persistence.Storager
 import rep.network.tools.Statistic.StatisticCollection
 import rep.ui.web.EventServer
 import rep.network.cluster.MemberListener
-import rep.network.sync.{SynchronizeResponser,SynchronizeRequester}
+import rep.network.sync.{ SynchronizeResponser, SynchronizeRequester }
 
-import rep.network.consensus.block.{GenesisBlocker,ConfirmOfBlock,EndorseCollector,Blocker}
+import rep.network.consensus.block.{ GenesisBlocker, ConfirmOfBlock, EndorseCollector, Blocker }
 import rep.network.consensus.endorse.Endorser
 import rep.network.consensus.transaction.PreloaderForTransaction
 import rep.network.consensus.vote.Voter
@@ -42,20 +42,19 @@ import rep.log.trace.LogType
 import rep.crypto.cert.SignTool
 
 /**
-  * Created by shidianyue on 2017/9/22.
-  */
+ * Created by shidianyue on 2017/9/22.
+ */
 object ModuleManager {
-  def props(name: String, sysTag: String,enableStatistic:Boolean,enableWebSocket:Boolean,isStartup:Boolean): Props = Props(classOf[ ModuleManager ], name, sysTag,enableStatistic:Boolean,enableWebSocket:Boolean,isStartup:Boolean)
+  def props(name: String, sysTag: String, enableStatistic: Boolean, enableWebSocket: Boolean, isStartup: Boolean): Props = Props(classOf[ModuleManager], name, sysTag, enableStatistic: Boolean, enableWebSocket: Boolean, isStartup: Boolean)
 }
 
-class ModuleManager(moduleName: String, sysTag: String,enableStatistic:Boolean,enableWebSocket:Boolean,isStartup:Boolean) extends ModuleBase(moduleName) {
+class ModuleManager(moduleName: String, sysTag: String, enableStatistic: Boolean, enableWebSocket: Boolean, isStartup: Boolean) extends ModuleBase(moduleName) {
 
   private val conf = context.system.settings.config
 
   init()
   loadModule
 
-  
   def init(): Unit = {
     val (ip, port) = ActorUtils.getIpAndPort(selfAddr)
     pe.setIpAndPort(ip, port)
@@ -64,61 +63,57 @@ class ModuleManager(moduleName: String, sysTag: String,enableStatistic:Boolean,e
     confHeler.init()
   }
 
-  
-  
   def loadModule = {
     loadClusterModule
     loadApiModule
     loadSystemModule
     loadConsensusModule
-    
-    if(isStartup){
+
+    if (isStartup) {
       pe.getActorRef(ActorType.voter) ! Voter.VoteOfBlocker
     }
-    
-    logMsg(LogType.INFO, moduleName+"~"+ s"ModuleManager ${sysTag} start")
+
+    logMsg(LogType.INFO, moduleName + "~" + s"ModuleManager ${sysTag} start")
   }
 
-  def loadConsensusModule={
+  def loadConsensusModule = {
     val typeConsensus = context.system.settings.config.getString("system.consensus.type")
-    if(typeConsensus == "CRFD"){
+    if (typeConsensus == "CRFD") {
       context.actorOf(Blocker.props("blocker"), "blocker")
       context.actorOf(GenesisBlocker.props("gensisblock"), "gensisblock")
       context.actorOf(ConfirmOfBlock.props("confirmerofblock"), "confirmerofblock")
       context.actorOf(EndorseCollector.props("endorsementcollectioner"), "endorsementcollectioner")
       context.actorOf(Endorser.props("endorser"), "endorser")
-      context.actorOf(PreloaderForTransaction.props("preloaderoftransaction",context.actorOf(TransProcessor.props("sandbox", "", self),"sandboxProcessor")),"preloaderoftransaction")
-      context.actorOf(Endorser.props("endorser"), "endorser")
+      context.actorOf(PreloaderForTransaction.props("preloaderoftransaction", context.actorOf(TransProcessor.props("sandbox", "", self), "sandboxProcessor")), "preloaderoftransaction")
+      //context.actorOf(Endorser.props("endorser"), "endorser")
       context.actorOf(Voter.props("voter"), "voter")
     }
   }
-  
-  def loadApiModule={
-    if(enableStatistic)  context.actorOf(Props[StatisticCollection],"statistic")
-    if (enableWebSocket)  context.actorOf(Props[ EventServer ], "webapi")
+
+  def loadApiModule = {
+    if (enableStatistic) context.actorOf(Props[StatisticCollection], "statistic")
+    if (enableWebSocket) context.actorOf(Props[EventServer], "webapi")
   }
-  
-  def loadSystemModule={
+
+  def loadSystemModule = {
     context.actorOf(Storager.props("storager"), "storager")
     context.actorOf(SynchronizeRequester.props("synchrequester"), "synchrequester")
     context.actorOf(SynchronizeResponser.props("synchresponser"), "synchresponser")
     context.actorOf(TransactionPool.props("transactionpool"), "transactionpool")
-    if(SystemProfile.getTransCreateType==Trans_Create_Type_Enum.AUTO){
+    if (SystemProfile.getTransCreateType == Trans_Create_Type_Enum.AUTO) {
       context.actorOf(PeerHelper.props("peerhelper"), "peerhelper")
     }
   }
-  
-  def loadClusterModule={
-    context.actorOf( MemberListener.props("memberlistener"), "memberlistener")
-  }
 
+  def loadClusterModule = {
+    context.actorOf(MemberListener.props("memberlistener"), "memberlistener")
+  }
 
   //除了广播消息，P2P的跨域消息都通过其中转（同步，存储等）
   override def receive: Receive = {
     case _ => //ignore
   }
 }
-
 
 class ConfigerHelper(conf: Config, tag: String, dbTag: String) {
 
@@ -130,13 +125,13 @@ class ConfigerHelper(conf: Config, tag: String, dbTag: String) {
   }
 
   /**
-    * Authorization module init
-    *
-    * @param jksFilePath
-    * @param pwd
-    * @param trustJksFilePath
-    * @param trustPwd
-    */
+   * Authorization module init
+   *
+   * @param jksFilePath
+   * @param pwd
+   * @param trustJksFilePath
+   * @param trustPwd
+   */
   private def authInit(sysTag: String, jksFilePath: String, pwd: String, trustJksFilePath: String, trustPwd: String): Unit = {
     //init the ECDSA param
     SignTool.loadPrivateKey(sysTag, pwd, jksFilePath)
@@ -146,8 +141,8 @@ class ConfigerHelper(conf: Config, tag: String, dbTag: String) {
   }
 
   /**
-    * 根据配置初始化本地安全配置
-    */
+   * 根据配置初始化本地安全配置
+   */
   private def authInitByCfg(sysTag: String): Unit = {
     val mykeyPath = conf.getString("akka.remote.netty.ssl.security.base-path") + sysTag + ".jks"
     val psw = conf.getString("akka.remote.netty.ssl.security.key-store-password")
@@ -157,29 +152,29 @@ class ConfigerHelper(conf: Config, tag: String, dbTag: String) {
   }
 
   /**
-    * 初始化DB信息
-    *
-    * @param dbTag
-    */
+   * 初始化DB信息
+   *
+   * @param dbTag
+   */
   private def dbInit(dbTag: String): Unit = {
     ImpDataAccess.GetDataAccess(dbTag)
 
   }
 
   /**
-    * 初始化系统相关配置
-    *
-    * @param config
-    */
+   * 初始化系统相关配置
+   *
+   * @param config
+   */
   private def sysInit(config: Config): Unit = {
     SystemProfile.initConfigSystem(config)
   }
 
   /**
-    * 初始化时间策略配置
-    *
-    * @param config
-    */
+   * 初始化时间策略配置
+   *
+   * @param config
+   */
   private def timePolicyInit(config: Config): Unit = {
     TimePolicy.initTimePolicy(config)
   }
