@@ -90,8 +90,8 @@ class Shim(system: ActorSystem, cName: String) {
   def setVal(key: Key, value: Any):Unit ={
     setState(key, serialise(value))
   }
-   def getVal(key: Key):Option[Any] ={
-    Some(deserialise(getState(key)))
+   def getVal(key: Key):Any ={
+    deserialise(getState(key))
   }
  
   def setState(key: Key, value: Array[Byte]): Unit = {

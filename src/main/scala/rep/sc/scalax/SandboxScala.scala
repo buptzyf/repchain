@@ -98,7 +98,7 @@ class SandboxScala(cid:ChaincodeId) extends Sandbox(cid){
       new DoTransactionResult(t.id,from, r, 
          shim.ol.toList,None)
     }catch{
-      case e: Exception => 
+      case e: Throwable => 
         log.error(t.id, e)
         //akka send 无法序列化原始异常,简化异常信息
         val e1 = new SandboxException(e.getMessage)
