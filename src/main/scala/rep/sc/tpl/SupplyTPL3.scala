@@ -75,8 +75,8 @@ class SupplyTPL3 extends IContract {
       val sid = data.account_sale +SPLIT_CHAR + data.product_id
       val pid = sid+TPL_MODE
       //签约输入持久化,默认的类型转换无法胜任，以json字符串形式持久化
-      ctx.api.setVal(sid, Some(write(data)))
-      ctx.api.setVal(pid, Some(TPL.Share))
+      ctx.api.setVal(sid, write(data))
+      ctx.api.setVal(pid, TPL.Share)
        ActionResult(1)
     }
 
@@ -84,8 +84,8 @@ class SupplyTPL3 extends IContract {
       val sid = data.account_sale +SPLIT_CHAR + data.product_id
       val pid = sid+TPL_MODE
       //签约输入持久化
-      ctx.api.setVal(sid, Some(write(data)))
-      ctx.api.setVal(pid, Some(TPL.Fixed))
+      ctx.api.setVal(sid, write(data))
+      ctx.api.setVal(pid, TPL.Fixed)
        ActionResult(1)
     }
     
@@ -120,7 +120,7 @@ class SupplyTPL3 extends IContract {
       for ((k, v) <- mr) {
           val sk =  ctx.api.getVal(k)
           var dk = if(sk==null) 0 else sk.toString.toInt
-          ctx.api.setVal(k, Some(dk+v))
+          ctx.api.setVal(k, dk+v)
       }
     }
     /**

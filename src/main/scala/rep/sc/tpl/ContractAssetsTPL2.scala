@@ -50,7 +50,7 @@ case class Transfer(from:String, to:String, amount:Int)
     def set(ctx: ContractContext, data:Map[String,Int]) :ActionResult={
       println(s"set data:$data")
       for((k,v)<-data){
-        ctx.api.setVal(k, Some(v))
+        ctx.api.setVal(k, v)
       }
       new ActionResult(1)
     }
@@ -72,10 +72,10 @@ case class Transfer(from:String, to:String, amount:Int)
       val t1 = System.currentTimeMillis()      
       val s1 = s"setval begin:${ctx.t.id} " + df.format(t1)
       
-      ctx.api.setVal(data.from,Some(dfrom - data.amount))
+      ctx.api.setVal(data.from,dfrom - data.amount)
       //for test 同合约交易串行测试
       Thread.sleep(5000) 
-      ctx.api.setVal(data.to,Some(dto + data.amount))
+      ctx.api.setVal(data.to,dto + data.amount)
       val t2 = System.currentTimeMillis()      
       val s2 = s"setval end:${ctx.t.id} " + df.format(t2)
       new ActionResult(1, s1+"\n"+s2)     

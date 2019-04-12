@@ -182,7 +182,7 @@ abstract class Sandbox(cid:ChaincodeId) extends Actor {
         val state_bytes = sr.Get(key_tx_state)
         //合约已存在且并非恢复合约
         if(state_bytes != null && !bRestore){
-           throw new SandboxException(ERR_REPEATED_CID+":key_tx_state")    
+           throw new SandboxException(ERR_REPEATED_CID)    
         }
        //检查合约部署者
        val cn = t.cid.get.chaincodeName

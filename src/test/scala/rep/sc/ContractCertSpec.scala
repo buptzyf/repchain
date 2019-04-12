@@ -148,7 +148,6 @@ class ContractCertSpec (_system: ActorSystem)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
     msg_recv.r.code should be (1)
-    msg_recv.r.reason should be ("default")
   }
 
   // 更新证书状态,将刚刚追加的node2的证书状态修改为false
@@ -159,7 +158,6 @@ class ContractCertSpec (_system: ActorSystem)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
     msg_recv.r.code should be (1)
-    msg_recv.r.reason should be ("default")
   }
 
   // 更新证书状态，对应的证书不存在
@@ -182,6 +180,5 @@ class ContractCertSpec (_system: ActorSystem)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
     msg_recv.r.code should be (1)
-    msg_recv.r.reason should be ("default")
   }
 }

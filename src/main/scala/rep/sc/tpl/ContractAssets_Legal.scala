@@ -50,7 +50,7 @@ case class Transfer(from:String, to:String, amount:Int, remind:String)
     def set(ctx: ContractContext, data:Map[String,Int]) :ActionResult={
       println(s"set data:$data")
       for((k,v)<-data){
-        ctx.api.setVal(k, Some(v))
+        ctx.api.setVal(k, v)
       }
       new ActionResult(1)
     }
@@ -79,8 +79,8 @@ case class Transfer(from:String, to:String, amount:Int, remind:String)
           new ActionResult(-4,"提醒内容不符")  
         else{
           var dto = ctx.api.getVal(data.to).toString.toInt
-          ctx.api.setVal(data.from,Some(dfrom - data.amount))
-          ctx.api.setVal(data.to,Some(dto + data.amount))
+          ctx.api.setVal(data.from,dfrom - data.amount)
+          ctx.api.setVal(data.to,dto + data.amount)
           new ActionResult(1)    
         }
       }
