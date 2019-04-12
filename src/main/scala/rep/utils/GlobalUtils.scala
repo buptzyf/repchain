@@ -73,7 +73,6 @@ object GlobalUtils {
     val synchrequester = 9
     val transactionpool = 10
     val storager = 11
-    val consensusmanager = 12
     val statiscollecter = 13
     val endorsementcollectioner = 14
     val endorsementrequester = 15

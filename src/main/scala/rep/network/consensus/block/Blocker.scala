@@ -14,7 +14,6 @@ import rep.crypto.Sha256
 import rep.network.consensus.vote.Voter.VoteOfBlocker
 import rep.network.base.ModuleBase
 import rep.network.consensus.block.Blocker.{ConfirmedBlock,PreTransBlock,PreTransBlockResult}
-import rep.network.consensus.CRFD.CRFD_STEP
 import rep.protos.peer._
 import rep.storage.ImpDataAccess
 import rep.utils.GlobalUtils.{ ActorType, BlockEvent, EventType, NodeStatus }

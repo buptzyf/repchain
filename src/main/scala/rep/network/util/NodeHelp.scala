@@ -52,7 +52,6 @@ object NodeHelp {
     b
   }
 
-  
   def isSeedNode(nodeName:String):Boolean={
     SystemProfile.getGenesisNodeName.equals(nodeName)
   }

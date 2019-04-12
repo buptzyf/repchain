@@ -81,7 +81,7 @@ class DeploySpec(_system: ActorSystem)
   "container" should "deploy asset contract and invoke it" in {
     val sysName = "121000005l35120456.node1"
     //建立PeerManager实例是为了调用transactionCreator(需要用到密钥签名)，无他
-    val pm = system.actorOf(ModuleManager.props("pm", sysName))
+    val pm = system.actorOf(ModuleManager.props("modulemanager", sysName, false, false,false), "modulemanager")
     //加载合约脚本
     val s1 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/ContractAssetsTPL.scala")
     val l1 = try s1.mkString finally s1.close()

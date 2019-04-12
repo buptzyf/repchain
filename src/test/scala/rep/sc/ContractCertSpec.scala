@@ -56,7 +56,7 @@ class ContractCertSpec (_system: ActorSystem)
   val dbTag = "121000005l35120456.node1"
   val cid =  ChaincodeId(SystemProfile.getAccountChaincodeName,1)
   //建立PeerManager实例是为了调用transactionCreator(需要用到密钥签名)，无他
-  val pm: ActorRef = system.actorOf(ModuleManager.props("pm", sysName))
+  val pm: ActorRef = system.actorOf(ModuleManager.props("modulemanager", sysName, false, false,false), "modulemanager")
 
   val signers : Array[Signer] = Array(
     Signer("node1","121000005l35120456","18912345678",List("node1")) ,

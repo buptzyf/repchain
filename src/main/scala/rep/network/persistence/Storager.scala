@@ -4,7 +4,6 @@ import akka.actor.{ ActorRef, Props }
 import akka.cluster.pubsub.DistributedPubSubMediator.Publish
 import com.google.protobuf.ByteString
 import rep.network.base.ModuleBase
-import rep.network.module.ModuleManager.TargetBlock
 import rep.network.Topic
 import rep.protos.peer._
 import rep.storage.ImpDataAccess

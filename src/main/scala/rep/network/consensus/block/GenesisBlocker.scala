@@ -14,7 +14,6 @@ import rep.crypto.Sha256
 import rep.network._
 import rep.network.base.ModuleBase
 import rep.network.consensus.block.Blocker.{ConfirmedBlock,PreTransBlock,PreTransBlockResult}
-import rep.network.consensus.CRFD.CRFD_STEP
 import rep.protos.peer._
 import rep.storage.ImpDataAccess
 import rep.utils.GlobalUtils.{ ActorType, BlockEvent, EventType, NodeStatus }
@@ -79,15 +78,15 @@ class GenesisBlocker(moduleName: String) extends ModuleBase(moduleName) {
   override def receive = {
     //创建块请求（给出块人）
     case GenesisBlocker.GenesisBlock =>
-      if(dataaccess.getBlockChainInfo().height == 0 && NodeHelp.isSeedNode(pe.getSysTag)){
+      if(dataaccess.getBlockChainInfo().height == 0 && NodeHelp.isSeedNode(pe.getSysTag)  ){
         logMsg(LogType.INFO, "Create genesis block")
-        var blc = BlockHelp.CreateGenesisBlock
-        blc = ExecuteTransactionOfBlock(blc)
-        if (blc != null) {
-          blc = BlockHelp.AddBlockHash(blc)
-          blc = BlockHelp.AddSignToBlock(blc, pe.getSysTag)
+        preblock = BlockHelp.CreateGenesisBlock
+        preblock = ExecuteTransactionOfBlock(preblock)
+        if (preblock != null) {
+          preblock = BlockHelp.AddBlockHash(preblock)
+          preblock = BlockHelp.AddSignToBlock(preblock, pe.getSysTag)
           //sendEvent(EventType.RECEIVE_INFO, mediator, selfAddr, Topic.Block, Event.Action.BLOCK_NEW)
-          mediator ! Publish(Topic.Block, ConfirmedBlock(blc, sender))
+          mediator ! Publish(Topic.Block, ConfirmedBlock(preblock, sender))
           //getActorRef(pe.getSysTag, ActorType.PERSISTENCE_MODULE) ! BlockRestore(blc, SourceOfBlock.CONFIRMED_BLOCK, self)
         } else {
           //创世块失败

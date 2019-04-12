@@ -4,7 +4,6 @@ import akka.actor.{ Actor, Address, Props }
 import rep.app.conf.{ SystemProfile, TimePolicy, SystemCertList }
 import rep.crypto.Sha256
 import rep.network.base.ModuleBase
-import rep.network.consensus.CRFD.CRFD_STEP
 import rep.protos.peer.BlockchainInfo
 import rep.storage.ImpDataAccess
 import rep.utils.GlobalUtils.{ ActorType, BlockEvent, BlockerInfo, NodeStatus }
@@ -12,6 +11,8 @@ import com.sun.beans.decoder.FalseElementHandler
 import rep.log.trace.LogType
 import rep.network.util.NodeHelp
 import rep.network.consensus.block.Blocker.{ CreateBlock }
+import rep.network.sync.SyncMsg.StartSync
+import rep.network.consensus.block.GenesisBlocker.GenesisBlock
 
 object Voter {
 
@@ -87,7 +88,7 @@ class Voter(moduleName: String) extends ModuleBase(moduleName) with CRFDVoter {
   }
 
   private def vote = {
-    if (pe.getNodeMgr.getStableNodes.size >= SystemProfile.getVoteNoteMin || checkTranNum) {
+    if (checkTranNum) {
       if (!this.BlockHashOfVote.equals(pe.getCurrentBlockHash)) {
         //抽签的基础块已经变化，需要重续选择候选人
         this.cleanVoteInfo
@@ -112,19 +113,25 @@ class Voter(moduleName: String) extends ModuleBase(moduleName) with CRFDVoter {
   }
 
   private def voteMsgHandler = {
-    if (getSystemBlockHash == "") {
-      //系统属于初始化状态
-      if (NodeHelp.isSeedNode(pe.getSysTag)) {
-        //todo 建立创世块消息
-        
+    if(pe.getNodeMgr.getStableNodes.size >= SystemProfile.getVoteNoteMin ){
+      //只有共识节点符合要求之后开始工作
+      if (getSystemBlockHash == "") {
+        //系统属于初始化状态
+        if (NodeHelp.isSeedNode(pe.getSysTag)) {
+          // 建立创世块消息
+          pe.getActorRef(ActorType.gensisblock) ! GenesisBlock
+        } else {
+          // 发出同步消息
+          pe.setSystemStatus(NodeStatus.Synching)
+          pe.getActorRef(ActorType.synchrequester) ! StartSync
+        }
       } else {
-        //todo 发出同步消息
-      }
-    } else {
-      if (pe.getSystemStatus == NodeStatus.Synching) {
-        //不需要进入抽签
-      } else {
-        vote
+        if (pe.getSystemStatus == NodeStatus.Synching) {
+          //不需要进入抽签
+          pe.getActorRef(ActorType.synchrequester) ! StartSync
+        } else {
+          vote
+        }
       }
     }
     DelayVote

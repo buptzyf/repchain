@@ -14,7 +14,6 @@ import rep.network.base.ModuleBase
 import rep.network.consensus.block.Blocker.{ PreTransBlock, PreTransBlockResult}
 import rep.network.tools.PeerExtension
 import rep.network.Topic
-import rep.network.consensus.CRFD.CRFD_STEP
 import rep.protos.peer._
 import rep.sc.TransProcessor.DoTransaction
 import rep.sc.{ Sandbox, TransProcessor }

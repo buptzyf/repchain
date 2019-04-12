@@ -56,7 +56,7 @@ class TransferSpec2(_system: ActorSystem)
     val sysName = "121000005l35120456.node1"
     val dbTag = "121000005l35120456.node1"
     //建立PeerManager实例是为了调用transactionCreator(需要用到密钥签名)，无他
-    val pm = system.actorOf(ModuleManager.props("pm", sysName))
+    val pm = system.actorOf(ModuleManager.props("modulemanager", sysName, false, false,false), "modulemanager")
     // 部署资产管理
     val s1 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/ContractAssetsTPL2.scala")
     val l1 = try s1.mkString finally s1.close()

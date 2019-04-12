@@ -19,7 +19,7 @@ import scala.util.control.Exception.Finally
 import java.util.concurrent.ConcurrentHashMap
 import rep.log.trace.LogType
 import rep.network.consensus.block.Blocker.{ ConfirmedBlock }
-import rep.network.persistence.Storager.{BlockRestore,SourceOfBlock}
+import rep.network.persistence.Storager.{ BlockRestore, SourceOfBlock }
 import rep.network.consensus.util.{ BlockVerify, BlockHelp }
 
 object ConfirmOfBlock {
@@ -31,24 +31,22 @@ class ConfirmOfBlock(moduleName: String) extends ModuleBase(moduleName) {
   import scala.concurrent.duration._
   import rep.protos.peer._
 
-  
-  
-  private def asyncVerifyEndorse(e: Signature,byteOfBlock:Array[Byte]): Future[Boolean] = {
+  private def asyncVerifyEndorse(e: Signature, byteOfBlock: Array[Byte]): Future[Boolean] = {
     val result = Promise[Boolean]
-    
-      val tmp = BlockVerify.VerifyOneEndorseOfBlock(e, byteOfBlock, pe.getSysTag)
-      if (tmp._1) {
-        result.success(true)
-      }else{
-        result.success(false)
-      }
+
+    val tmp = BlockVerify.VerifyOneEndorseOfBlock(e, byteOfBlock, pe.getSysTag)
+    if (tmp._1) {
+      result.success(true)
+    } else {
+      result.success(false)
+    }
     result.future
   }
 
   private def asyncVerifyEndorses(block: Block): Boolean = {
     val b = block.clearEndorsements.toByteArray
     val listOfFuture: Seq[Future[Boolean]] = block.endorsements.map(x => {
-      asyncVerifyEndorse(x,b)
+      asyncVerifyEndorse(x, b)
     })
     val futureOfList: Future[List[Boolean]] = Future.sequence(listOfFuture.toList)
     var result = true
@@ -63,36 +61,42 @@ class ConfirmOfBlock(moduleName: String) extends ModuleBase(moduleName) {
     result
   }
 
+  private def handler(block: Block, actRefOfBlock: ActorRef) = {
+    if (asyncVerifyEndorses(block)) {
+      //背书人的签名一致
+      if (BlockVerify.VerifyEndorserSorted(block.endorsements.toArray[Signature]) == 1) {
+        //背书信息排序正确
+        sendEvent(EventType.RECEIVE_INFO, mediator, selfAddr, Topic.Block, Event.Action.BLOCK_NEW)
+        pe.getActorRef(ActorType.storager) ! BlockRestore(block, SourceOfBlock.CONFIRMED_BLOCK, actRefOfBlock)
+      } else {
+        ////背书信息排序错误
+      }
+    } else {
+      //背书验证有错误
+    }
+  }
+
   private def checkedOfConfirmBlock(block: Block, actRefOfBlock: ActorRef) = {
-        if (block.previousBlockHash.toStringUtf8 == pe.getCurrentBlockHash) {
-          //与上一个块一致
-          if (NodeHelp.ConsensusConditionChecked(block.endorsements.size, pe.getNodeMgr.getStableNodes.size)) {
-            //符合大多数人背书要求
-            if (asyncVerifyEndorses(block)) {
-              //背书人的签名一致
-              if (BlockVerify.VerifyEndorserSorted(block.endorsements.toArray[Signature]) == 1) {
-                //背书信息排序正确
-                sendEvent(EventType.RECEIVE_INFO, mediator, selfAddr, Topic.Block, Event.Action.BLOCK_NEW)
-                pe.getActorRef( ActorType.storager) ! BlockRestore(block, SourceOfBlock.CONFIRMED_BLOCK, actRefOfBlock)
-              } else {
-                ////背书信息排序错误
-              }
-            } else {
-              //背书验证有错误
-            }
-        } else {
-          //错误，没有符合大多人背书要求。
-          
-        }
-        }else{
-          //错误，上一个块不一致
-        }
+    if (pe.getCurrentBlockHash == "" && block.previousBlockHash.isEmpty()) {
+      handler(block, actRefOfBlock)
+    } else if (block.previousBlockHash.toStringUtf8 == pe.getCurrentBlockHash) {
+      //与上一个块一致
+      if (NodeHelp.ConsensusConditionChecked(block.endorsements.size, pe.getNodeMgr.getStableNodes.size)) {
+        //符合大多数人背书要求
+        handler(block, actRefOfBlock)
+      } else {
+        //错误，没有符合大多人背书要求。
+
+      }
+    } else {
+      //错误，上一个块不一致
+    }
   }
 
   override def receive = {
     //Endorsement block
     case ConfirmedBlock(block, actRefOfBlock) =>
-      checkedOfConfirmBlock(block, actRefOfBlock) 
+      checkedOfConfirmBlock(block, actRefOfBlock)
     case _ => //ignore
   }
 

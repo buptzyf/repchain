@@ -16,14 +16,13 @@
 
 package rep.network.cluster
 
-import akka.actor.{Actor, Address}
+import akka.actor.{Actor, Address,Props}
 import akka.cluster.ClusterEvent._
 import akka.cluster.pubsub.DistributedPubSub
 import akka.cluster.{Cluster, MemberStatus}
 import rep.app.conf.TimePolicy
 import rep.network.Topic
-import rep.network.cluster.MemberListener.{MemberDown, Recollection}
-import rep.network.module.ModuleManager.ClusterJoined
+import rep.network.cluster.MemberListener.{ Recollection}
 import rep.network.tools.PeerExtension
 import rep.utils.GlobalUtils.ActorType
 import rep.utils.{ TimeUtils}
@@ -42,9 +41,7 @@ import rep.network.base.ModuleBase
   * @update 2018-05 jiangbuyun
   **/
 object MemberListener {
-
-  //断网消息
-  case class MemberDown(address: Address)
+  def props(name: String): Props = Props(classOf[MemberListener], name)
   //稳定节点回收请求
   case object Recollection
 
@@ -111,10 +108,6 @@ class MemberListener(MoudleName:String) extends ModuleBase(MoudleName) with Clus
       }
       pe.getNodeMgr.resetNodes(nodes)
       pe.getNodeMgr.resetStableNodes(nodes)
-      if (!nodes.isEmpty) {
-        pe.getActorRef(ActorType.modulemanager) ! ClusterJoined
-      }
-
       //成员入网
     case MemberUp(member) =>
       nodes += member.address
@@ -132,14 +125,6 @@ class MemberListener(MoudleName:String) extends ModuleBase(MoudleName) with Clus
       scheduler.scheduleOnce(TimePolicy.getSysNodeStableDelay millis,
         self, Recollection)
         
-      //判断自己是否已经join到网络中
-      addr_self.contains(member.address.toString) match {
-        case true =>
-          pe.getActorRef(ActorType.modulemanager) ! ClusterJoined
-        case false => //ignore
-      }
-      
-      
       //成员离网
     case MemberRemoved(member, _) =>
       nodes -= member.address
@@ -149,21 +134,9 @@ class MemberListener(MoudleName:String) extends ModuleBase(MoudleName) with Clus
       preloadNodesMap.remove(member.address)
       pe.getNodeMgr.removeNode(member.address)
       pe.getNodeMgr.removeStableNode(member.address)
-      //Tell itself voter actor to judge if the downer is blocker or not
-      pe.getActorRef(ActorType.voter) ! MemberDown(member.address)
+      
 
-    // For test
-//    case Event(addr, topic, action, blk) =>
-//      topic match {
-//        case Topic.Block =>
-//          action match {
-//            case Event.Action.BLOCK_SYNC_SUC =>
-//              println(s"$addr sync sucess, ${pe.getSysName}")
-//            case _ => //ignore
-//          }
-//        case _ => //ignore
-//      }
-
+   
       //稳定节点收集
     case Recollection =>
       Thread.sleep(TimePolicy.getStableTimeDur) //给一个延迟量
@@ -184,8 +157,7 @@ class MemberListener(MoudleName:String) extends ModuleBase(MoudleName) with Clus
       preloadNodesMap.remove(event.remoteAddress)
       pe.getNodeMgr.removeNode(event.remoteAddress)
       pe.getNodeMgr.removeStableNode(event.remoteAddress)
-      //Tell itself voter actor to judge if the downer is blocker or not
-      pe.getActorRef(ActorType.voter) ! MemberDown(event.remoteAddress)
+      
    
     case MemberLeft(member) => //ignore
       nodes -= member.address
@@ -195,8 +167,7 @@ class MemberListener(MoudleName:String) extends ModuleBase(MoudleName) with Clus
       preloadNodesMap.remove(member.address)
       pe.getNodeMgr.removeNode(member.address)
       pe.getNodeMgr.removeStableNode(member.address)
-      //Tell itself voter actor to judge if the downer is blocker or not
-      pe.getActorRef(ActorType.voter) ! MemberDown(member.address)
+      
       
     case MemberExited(member) => //ignore
       nodes -= member.address
@@ -206,8 +177,7 @@ class MemberListener(MoudleName:String) extends ModuleBase(MoudleName) with Clus
       preloadNodesMap.remove(member.address)
       pe.getNodeMgr.removeNode(member.address)
       pe.getNodeMgr.removeStableNode(member.address)
-      //Tell itself voter actor to judge if the downer is blocker or not
-      pe.getActorRef(ActorType.voter) ! MemberDown(member.address)
+      
 
     case _: MemberEvent => // ignore
   }

@@ -23,11 +23,17 @@ import rep.app.conf.{SystemProfile, TimePolicy}
 import rep.network.PeerHelper
 import rep.network.base.ModuleBase
 import rep.network.cache.TransactionPool
-import rep.network.consensus.CRFD.{ConsensusInitFinish}
-import rep.network.consensus.ConsensusManager
-import rep.network.module.ModuleManager.{ClusterJoined, TargetBlock}
 import rep.network.persistence.Storager
+import rep.network.tools.Statistic.StatisticCollection
+import rep.ui.web.EventServer
+import rep.network.cluster.MemberListener
 import rep.network.sync.{SynchronizeResponser,SynchronizeRequester}
+
+import rep.network.consensus.block.{GenesisBlocker,ConfirmOfBlock,EndorseCollector,Blocker}
+import rep.network.consensus.endorse.Endorser
+import rep.network.consensus.transaction.PreloaderForTransaction
+import rep.network.consensus.vote.Voter
+import rep.sc.TransProcessor
 
 import rep.storage.ImpDataAccess
 import rep.utils.ActorUtils
@@ -39,34 +45,18 @@ import rep.crypto.cert.SignTool
   * Created by shidianyue on 2017/9/22.
   */
 object ModuleManager {
-  def props(name: String, sysTag: String): Props = Props(classOf[ ModuleManager ], name, sysTag)
-  
-  case class TargetBlock(height: Long, blker: ActorRef)
-  
-
-  case object ClusterJoined
-
+  def props(name: String, sysTag: String,enableStatistic:Boolean,enableWebSocket:Boolean,isStartup:Boolean): Props = Props(classOf[ ModuleManager ], name, sysTag,enableStatistic:Boolean,enableWebSocket:Boolean,isStartup:Boolean)
 }
 
-class ModuleManager(moduleName: String, sysTag: String) extends ModuleBase(moduleName) {
+class ModuleManager(moduleName: String, sysTag: String,enableStatistic:Boolean,enableWebSocket:Boolean,isStartup:Boolean) extends ModuleBase(moduleName) {
 
   private val conf = context.system.settings.config
-  private var persistence: ActorRef = null
-  private var syncrequester: ActorRef = null
-  private var syncresponser:ActorRef = null
-  private var transactionPool: ActorRef = null
-  private var consensus: ActorRef = null
-  private var transCreator: ActorRef = null
-
-  private var isConsensusFinished = false
-  private var isClusterJoined = false
 
   init()
+  loadModule
 
-  loadModule()
-
+  
   def init(): Unit = {
-    //Get IP and port
     val (ip, port) = ActorUtils.getIpAndPort(selfAddr)
     pe.setIpAndPort(ip, port)
     pe.setSysTag(sysTag)
@@ -76,45 +66,55 @@ class ModuleManager(moduleName: String, sysTag: String) extends ModuleBase(modul
 
   
   
-  def loadModule() = {
-    persistence = context.actorOf(Storager.props("storager"), "storager")
-    this.syncrequester = context.actorOf(SynchronizeRequester.props("synchrequester"), "synchrequester")
-    this.syncresponser =  context.actorOf(SynchronizeResponser.props("synchresponser"), "synchresponser")
-    transactionPool = context.actorOf(TransactionPool.props("transactionpool"), "transactionpool")
-    consensus = context.actorOf(ConsensusManager.props("consensusManager", context.system.settings.config), "consensusManager")
-
+  def loadModule = {
+    loadClusterModule
+    loadApiModule
+    loadSystemModule
+    loadConsensusModule
     
-
-    logMsg(LogType.INFO, moduleName+"~"+ s"ModuleManager ${sysTag} start")
-
-    SystemProfile.getTransCreateType match {
-      case Trans_Create_Type_Enum.AUTO =>
-        transCreator = context.actorOf(PeerHelper.props("helper"), "helper")
-      case Trans_Create_Type_Enum.MANUAL => // ignore
+    if(isStartup){
+      pe.getActorRef(ActorType.voter) ! Voter.VoteOfBlocker
     }
+    
+    logMsg(LogType.INFO, moduleName+"~"+ s"ModuleManager ${sysTag} start")
   }
 
-  def syncStartCheck = {
-    (isClusterJoined && isConsensusFinished) match {
-      case true =>
-        //getActorRef(ActorType.SYNC_MODULE) ! SetupSync
-        logMsg(LogType.INFO, "Sync Start Ticket")
-      case false => // ignore
+  def loadConsensusModule={
+    val typeConsensus = context.system.settings.config.getString("system.consensus.type")
+    if(typeConsensus == "CRFD"){
+      context.actorOf(Blocker.props("blocker"), "blocker")
+      context.actorOf(GenesisBlocker.props("gensisblock"), "gensisblock")
+      context.actorOf(ConfirmOfBlock.props("confirmerofblock"), "confirmerofblock")
+      context.actorOf(EndorseCollector.props("endorsementcollectioner"), "endorsementcollectioner")
+      context.actorOf(Endorser.props("endorser"), "endorser")
+      context.actorOf(PreloaderForTransaction.props("preloaderoftransaction",context.actorOf(TransProcessor.props("sandbox", "", self),"sandboxProcessor")),"preloaderoftransaction")
+      context.actorOf(Endorser.props("endorser"), "endorser")
+      context.actorOf(Voter.props("voter"), "voter")
     }
+  }
+  
+  def loadApiModule={
+    if(enableStatistic)  context.actorOf(Props[StatisticCollection],"statistic")
+    if (enableWebSocket)  context.actorOf(Props[ EventServer ], "webapi")
+  }
+  
+  def loadSystemModule={
+    context.actorOf(Storager.props("storager"), "storager")
+    context.actorOf(SynchronizeRequester.props("synchrequester"), "synchrequester")
+    context.actorOf(SynchronizeResponser.props("synchresponser"), "synchresponser")
+    context.actorOf(TransactionPool.props("transactionpool"), "transactionpool")
+    if(SystemProfile.getTransCreateType==Trans_Create_Type_Enum.AUTO){
+      context.actorOf(PeerHelper.props("peerhelper"), "peerhelper")
+    }
+  }
+  
+  def loadClusterModule={
+    context.actorOf( MemberListener.props("memberlistener"), "memberlistener")
   }
 
 
   //除了广播消息，P2P的跨域消息都通过其中转（同步，存储等）
   override def receive: Receive = {
-
-    case ClusterJoined =>
-      isClusterJoined = true
-      syncStartCheck
-
-    case ConsensusInitFinish =>
-      isConsensusFinished = true
-      syncStartCheck
-
     case _ => //ignore
   }
 }
