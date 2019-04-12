@@ -98,8 +98,10 @@ class Shim(system: ActorSystem, cName: String) {
     val pkey = pre_key + key
     val oldValue = get(pkey)
     sr.Put(pkey, value)
+    val ov = if(oldValue == null) ByteString.EMPTY else ByteString.copyFrom(oldValue)
+    val nv = if(value == null) ByteString.EMPTY else ByteString.copyFrom(value)
     //记录操作日志
-    ol += new OperLog(key,ByteString.copyFrom(oldValue), ByteString.copyFrom(value))
+    ol += new OperLog(key,ov, nv)
   }
 
   private def get(key: Key): Array[Byte] = {
