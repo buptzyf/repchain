@@ -34,7 +34,7 @@ class PreloaderForTransaction(moduleName: String, transProcessor: ActorRef) exte
   import scala.collection.breakOut
   import scala.concurrent.duration._
 
-  implicit val timeout = Timeout(TimePolicy.getTimeoutPreload seconds)
+  implicit val timeout = Timeout(TimePolicy.getTimeoutPreload*10 seconds)
 
   override def preStart(): Unit = {
     logMsg(LogType.INFO, "PreloaderForTransaction Start")
@@ -42,8 +42,8 @@ class PreloaderForTransaction(moduleName: String, transProcessor: ActorRef) exte
 
   private def ExecuteTransaction(t: Transaction, db_identifier: String): (Int, DoTransactionResult) = {
     try {
-      val future = transProcessor ? new DoTransaction(t, self, db_identifier)
-      val result = Await.result(future, timeout.duration).asInstanceOf[DoTransactionResult]
+      val future1 = transProcessor ? new DoTransaction(t,  db_identifier)
+      val result = Await.result(future1, timeout.duration).asInstanceOf[DoTransactionResult]
       (0, result)
     } catch {
       case e: AskTimeoutException => (1, null)
@@ -134,7 +134,8 @@ class PreloaderForTransaction(moduleName: String, transProcessor: ActorRef) exte
         }
         logTime("block preload inner time", System.currentTimeMillis(), false)
       }
-
+    case dr : DoTransactionResult=>
+      val a = dr
     case _ => //ignore
   }
 }

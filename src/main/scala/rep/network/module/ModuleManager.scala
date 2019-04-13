@@ -84,7 +84,7 @@ class ModuleManager(moduleName: String, sysTag: String, enableStatistic: Boolean
       context.actorOf(ConfirmOfBlock.props("confirmerofblock"), "confirmerofblock")
       context.actorOf(EndorseCollector.props("endorsementcollectioner"), "endorsementcollectioner")
       context.actorOf(Endorser.props("endorser"), "endorser")
-      context.actorOf(PreloaderForTransaction.props("preloaderoftransaction", context.actorOf(TransProcessor.props("sandbox", "", self), "sandboxProcessor")), "preloaderoftransaction")
+      context.actorOf(PreloaderForTransaction.props("preloaderoftransaction", context.actorOf(TransProcessor.props("sandbox_for_Preload",  self), "sandboxProcessor")), "preloaderoftransaction")
       //context.actorOf(Endorser.props("endorser"), "endorser")
       context.actorOf(Voter.props("voter"), "voter")
     }

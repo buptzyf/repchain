@@ -110,13 +110,13 @@ class SupplySpec2(_system: ActorSystem)
     //准备探针以验证调用返回结果
     val probe = TestProbe()
     val db = ImpDataAccess.GetDataAccess(sysName)
-    var sandbox = system.actorOf(TransProcessor.props("sandbox", "", probe.ref))
+    var sandbox = system.actorOf(TransProcessor.props("sandbox",  probe.ref))
     //生成deploy交易
     val cid = new ChaincodeId("Supply",1)
     val t1 = PeerHelper.createTransaction4Deploy(sysName, cid,
        l1, "",5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
 
-    val msg_send1 = new DoTransaction(t1, probe.ref, "")
+    val msg_send1 = new DoTransaction(t1,   "api_"+t1.id)
     probe.send(sandbox, msg_send1)
     val msg_recv1 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
     val ol1 = msg_recv1.ol
@@ -126,14 +126,14 @@ class SupplySpec2(_system: ActorSystem)
     //初始化资产
     val t2 = PeerHelper.createTransaction4Invoke(sysName,cid, ACTION.SignFixed, Seq(l2))
       
-    val msg_send2 = new DoTransaction(t2, probe.ref, "")
+    val msg_send2 = new DoTransaction(t2,   "api_"+t2.id)
     probe.send(sandbox, msg_send2)
     val msg_recv2 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
     //由于版本1支持SignFixed 分账方法,因此能够正确处理
     msg_recv2.r.code should be (1)
 
     var t = PeerHelper.createTransaction4Invoke(sysName, cid, ACTION.SignShare, Seq(l3))
-    var msg_send = new DoTransaction(t, probe.ref, "")
+    var msg_send = new DoTransaction(t,   "api_"+t.id)
      probe.send(sandbox, msg_send)
     var msg_recv = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
     //由于版本1不支持SignShare 分账方法,因此无法正确处理
@@ -144,13 +144,13 @@ class SupplySpec2(_system: ActorSystem)
     val cid2 = new ChaincodeId("Supply",2)
     t = PeerHelper.createTransaction4Deploy(sysName, cid2,
        l7, "",5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
-    msg_send = new DoTransaction(t, probe.ref, "")
+    msg_send = new DoTransaction(t,   "api_"+t.id)
     probe.send(sandbox, msg_send)
     msg_recv = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
     msg_recv.r.code should be (1)
 
     t = PeerHelper.createTransaction4Invoke(sysName, cid2, ACTION.SignShare, Seq(l3))
-    msg_send = new DoTransaction(t, probe.ref, "")
+    msg_send = new DoTransaction(t,   "api_"+t.id)
      probe.send(sandbox, msg_send)
     msg_recv = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
     //由于版本2支持SignShare 分账方法,因此正确处理
@@ -164,7 +164,7 @@ class SupplySpec2(_system: ActorSystem)
       val ipt4 = new IPTSplit(account_sales1,product_id,el)
       val l4 = write(ipt4)
       val t4 = PeerHelper.createTransaction4Invoke(sysName, cid, ACTION.Split, Seq(l4))
-      val msg_send4 = new DoTransaction(t4, probe.ref, "")
+      val msg_send4 = new DoTransaction(t4,   "api_"+t4.id)
       
        probe.send(sandbox, msg_send4)
       val msg_recv4 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
@@ -187,7 +187,7 @@ class SupplySpec2(_system: ActorSystem)
       val ipt4 = new IPTSplit(account_sales2,product_id,el)
       val l4 = write(ipt4)
       val t4 = PeerHelper.createTransaction4Invoke(sysName, cid2, ACTION.Split, Seq(l4))
-      val msg_send4 = new DoTransaction(t4, probe.ref, "")
+      val msg_send4 = new DoTransaction(t4,   "api_"+t4.id)
       
        probe.send(sandbox, msg_send4)
       val msg_recv4 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)

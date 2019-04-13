@@ -39,7 +39,7 @@ class SandboxScala(cid:ChaincodeId) extends Sandbox(cid){
   var cobj:IContract = null
   val PRE_STATE = "_STATE"
   
-  def doTransaction(t:Transaction,from:ActorRef, da:String, bRestore:Boolean):DoTransactionResult ={
+  def doTransaction(t:Transaction, da:String, bRestore:Boolean):DoTransactionResult ={
     //上下文可获得交易
    //构造和传入ctx
    val ctx = new ContractContext(shim,t)
@@ -95,14 +95,14 @@ class SandboxScala(cid:ChaincodeId) extends Sandbox(cid){
           shim.ol.append(OperLog(key_tx_state, null, ByteString.copyFrom(state_bytes)))
           new ActionResult(1)
       }
-      new DoTransactionResult(t.id,from, r, 
+      new DoTransactionResult(t.id, r, 
          shim.ol.toList,None)
     }catch{
       case e: Throwable => 
         log.error(t.id, e)
         //akka send 无法序列化原始异常,简化异常信息
         val e1 = new SandboxException(e.getMessage)
-        new DoTransactionResult(t.id,from, null,
+        new DoTransactionResult(t.id, null,
           shim.ol.toList,
           Option(akka.actor.Status.Failure(e1)))           
     }

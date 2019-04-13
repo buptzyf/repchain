@@ -50,7 +50,7 @@ class GenesisBlocker(moduleName: String) extends ModuleBase(moduleName) {
   import rep.protos.peer.{ Transaction }
 
   val dataaccess: ImpDataAccess = ImpDataAccess.GetDataAccess(pe.getSysTag)
-  implicit val timeout = Timeout(TimePolicy.getTimeoutPreload seconds)
+  implicit val timeout = Timeout(TimePolicy.getTimeoutPreload*20 seconds)
 
   var preblock: Block = null
 
@@ -79,18 +79,21 @@ class GenesisBlocker(moduleName: String) extends ModuleBase(moduleName) {
     //创建块请求（给出块人）
     case GenesisBlocker.GenesisBlock =>
       if(dataaccess.getBlockChainInfo().height == 0 && NodeHelp.isSeedNode(pe.getSysTag)  ){
-        logMsg(LogType.INFO, "Create genesis block")
-        preblock = BlockHelp.CreateGenesisBlock
-        preblock = ExecuteTransactionOfBlock(preblock)
-        if (preblock != null) {
-          preblock = BlockHelp.AddBlockHash(preblock)
-          preblock = BlockHelp.AddSignToBlock(preblock, pe.getSysTag)
-          //sendEvent(EventType.RECEIVE_INFO, mediator, selfAddr, Topic.Block, Event.Action.BLOCK_NEW)
+        if(this.preblock != null){
           mediator ! Publish(Topic.Block, ConfirmedBlock(preblock, sender))
-          //getActorRef(pe.getSysTag, ActorType.PERSISTENCE_MODULE) ! BlockRestore(blc, SourceOfBlock.CONFIRMED_BLOCK, self)
-        } else {
-          //创世块失败
+        }else{
+          logMsg(LogType.INFO, "Create genesis block")
+          preblock = BlockHelp.CreateGenesisBlock
+          preblock = ExecuteTransactionOfBlock(preblock)
+          if (preblock != null) {
+            preblock = BlockHelp.AddBlockHash(preblock)
+            preblock = BlockHelp.AddSignToBlock(preblock, pe.getSysTag)
+            //sendEvent(EventType.RECEIVE_INFO, mediator, selfAddr, Topic.Block, Event.Action.BLOCK_NEW)
+            mediator ! Publish(Topic.Block, ConfirmedBlock(preblock, sender))
+            //getActorRef(pe.getSysTag, ActorType.PERSISTENCE_MODULE) ! BlockRestore(blc, SourceOfBlock.CONFIRMED_BLOCK, self)
+          } 
         }
+        
       }
 
     case _ => //ignore

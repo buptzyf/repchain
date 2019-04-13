@@ -38,7 +38,7 @@ class SandboxJS(cid:ChaincodeId) extends Sandbox(cid){
   val sandbox= new ScriptEngineManager().getEngineByName("nashorn")
   sandbox.put("shim",shim)
   
-  override def doTransaction(t:Transaction,from:ActorRef, da:String, isForInvoke:Boolean):DoTransactionResult ={
+  override def doTransaction(t:Transaction, da:String, isForInvoke:Boolean):DoTransactionResult ={
     //上下文可获得交易
     sandbox.put("tx", t)
     //for test print sandbox id
@@ -69,7 +69,7 @@ class SandboxJS(cid:ChaincodeId) extends Sandbox(cid){
           val r1 = sandbox.eval(t.para.ipt.get.function)
           r1.asInstanceOf[ActionResult]
       }
-      new DoTransactionResult(t.id,from, r, 
+      new DoTransactionResult(t.id, r, 
          shim.ol.toList,None)
     }catch{
       case e: Exception => 
@@ -78,7 +78,7 @@ class SandboxJS(cid:ChaincodeId) extends Sandbox(cid){
         //val e1 = new Exception(e.getMessage, e.getCause)
         //akka send 无法序列化原始异常,简化异常信息
         val e1 = new SandboxException(e.getMessage)
-        new DoTransactionResult(t.id,from, null,
+        new DoTransactionResult(t.id, null,
           shim.ol.toList, 
           Option(akka.actor.Status.Failure(e1)))           
     }

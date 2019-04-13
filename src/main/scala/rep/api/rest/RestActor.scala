@@ -159,7 +159,7 @@ class RestActor(moduleName: String) extends  ModuleBase(moduleName) {
   val sr: ImpDataAccess = ImpDataAccess.GetDataAccess(pe.getSysTag)
   //  val sTag = PeerExtension(context.system).getSysTag
   //  val preload :ImpDataPreload = ImpDataPreloadMgr.GetImpDataPreload(sTag,"preload")
-  val sandbox = context.actorOf(TransProcessor.props("sandbox", "", self), "sandboxPost")
+  val sandbox = context.actorOf(TransProcessor.props("sandbox",  self), "sandboxPost")
 
   def preTransaction(t:Transaction) : Unit ={
     val sig = t.signature.get.signature.toByteArray
@@ -168,7 +168,7 @@ class RestActor(moduleName: String) extends  ModuleBase(moduleName) {
     try{
       SignTool.verify(sig, tOutSig.toByteArray, certId,pe.getSysTag) match {
         case true =>
-          val future = sandbox ? PreTransaction(t)
+          val future = sandbox ? DoTransaction(t,"api_"+t.id)
           val result = Await.result(future, timeout.duration).asInstanceOf[DoTransactionResult]
           val rv = result
           // 释放存储实例
