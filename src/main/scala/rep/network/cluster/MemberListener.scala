@@ -21,6 +21,7 @@ import akka.cluster.ClusterEvent._
 import akka.cluster.pubsub.DistributedPubSub
 import akka.cluster.{Cluster, MemberStatus}
 import rep.app.conf.TimePolicy
+import rep.app.conf.SystemProfile
 import rep.network.Topic
 import rep.network.cluster.MemberListener.{ Recollection}
 import rep.network.tools.PeerExtension
@@ -31,6 +32,7 @@ import org.slf4j.LoggerFactory
 import scala.collection.mutable
 import rep.log.trace._
 import rep.network.base.ModuleBase
+import rep.network.sync.SyncMsg.StartSync
 
 
 /**
@@ -144,6 +146,10 @@ class MemberListener(MoudleName:String) extends ModuleBase(MoudleName) with Clus
       preloadNodesMap.foreach(node => {
         if (isStableNode(node._2, TimePolicy.getSysNodeStableDelay)) {
           pe.getNodeMgr.putStableNode(node._1)
+          if(pe.getNodeMgr.getStableNodes.size >= SystemProfile.getVoteNoteMin){
+            //组网成功之后开始系统同步
+            pe.getActorRef(ActorType.synchrequester) ! StartSync
+          }
         }
       })
       if (preloadNodesMap.size > 0) pe.getNodeMgr.getStableNodes.foreach(node => {

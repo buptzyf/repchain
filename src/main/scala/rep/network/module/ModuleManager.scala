@@ -46,6 +46,8 @@ import rep.crypto.cert.SignTool
  */
 object ModuleManager {
   def props(name: String, sysTag: String, enableStatistic: Boolean, enableWebSocket: Boolean, isStartup: Boolean): Props = Props(classOf[ModuleManager], name, sysTag, enableStatistic: Boolean, enableWebSocket: Boolean, isStartup: Boolean)
+
+  case object startup
 }
 
 class ModuleManager(moduleName: String, sysTag: String, enableStatistic: Boolean, enableWebSocket: Boolean, isStartup: Boolean) extends ModuleBase(moduleName) {
@@ -69,18 +71,14 @@ class ModuleManager(moduleName: String, sysTag: String, enableStatistic: Boolean
     loadSystemModule
     loadConsensusModule
 
-    if (isStartup) {
+    /*if (isStartup) {
       try{
         Thread.sleep(2000)
       }catch{
         case _ => logMsg(LogType.INFO, moduleName + "~" + s"ModuleManager ${sysTag} delay startup error")
       }
-      context.actorOf(TransactionPool.props("transactionpool"), "transactionpool")
-      if (SystemProfile.getTransCreateType == Trans_Create_Type_Enum.AUTO) {
-        context.actorOf(PeerHelper.props("peerhelper"), "peerhelper")
-      }
-      pe.getActorRef(ActorType.voter) ! Voter.VoteOfBlocker
-    }
+      }*/
+     
 
     logMsg(LogType.INFO, moduleName + "~" + s"ModuleManager ${sysTag} start")
   }
@@ -118,6 +116,12 @@ class ModuleManager(moduleName: String, sysTag: String, enableStatistic: Boolean
 
   //除了广播消息，P2P的跨域消息都通过其中转（同步，存储等）
   override def receive: Receive = {
+    case ModuleManager.startup => 
+       context.actorOf(TransactionPool.props("transactionpool"), "transactionpool")
+      if (SystemProfile.getTransCreateType == Trans_Create_Type_Enum.AUTO) {
+        context.actorOf(PeerHelper.props("peerhelper"), "peerhelper")
+      }
+      pe.getActorRef(ActorType.voter) ! Voter.VoteOfBlocker
     case _ => //ignore
   }
 }

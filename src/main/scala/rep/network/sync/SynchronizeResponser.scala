@@ -20,7 +20,7 @@ class SynchronizeResponser(moduleName: String) extends ModuleBase(moduleName) {
   import scala.util.control.Breaks._
 
   override def preStart(): Unit = {
-    SubscribeTopic(mediator, self, selfAddr, BlockEvent.CHAIN_INFO_SYNC, false)
+    SubscribeTopic(mediator, self, selfAddr, BlockEvent.CHAIN_INFO_SYNC, true)
   }
 
   val dataaccess: ImpDataAccess = ImpDataAccess.GetDataAccess(pe.getSysTag)

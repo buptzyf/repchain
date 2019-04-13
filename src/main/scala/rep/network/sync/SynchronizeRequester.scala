@@ -4,6 +4,7 @@ import akka.actor.{ ActorRef, Props }
 import akka.cluster.pubsub.DistributedPubSubMediator.Publish
 import rep.network.base.ModuleBase
 import rep.app.conf.TimePolicy
+import rep.network.module.ModuleManager
 import rep.storage.ImpDataAccess
 import rep.protos.peer._
 import rep.network.persistence.Storager.{ BlockRestore, SourceOfBlock }
@@ -105,7 +106,7 @@ class SynchronizeRequester(moduleName: String) extends ModuleBase(moduleName) {
     reset
     val dataaccess: ImpDataAccess = ImpDataAccess.GetDataAccess(pe.getSysTag)
     chaininfo4local = dataaccess.getBlockChainInfo()
-    mediator ! Publish(BlockEvent.CHAIN_INFO_SYNC, chaininfo4local)
+    mediator ! Publish(BlockEvent.CHAIN_INFO_SYNC, SyncMsg.ChainInfoOfRequest)
     schedulerLink = scheduler.scheduleOnce(TimePolicy.getTimeoutSync seconds, self, SyncMsg.SyncTimeout)
   }
 
@@ -128,6 +129,7 @@ class SynchronizeRequester(moduleName: String) extends ModuleBase(moduleName) {
     pe.setSystemStatus(NodeStatus.Ready)
     this.CurrentStatus = SynchronizeRequester.SyncStatus.Sync_None
     reset
+    pe.getActorRef(ActorType.modulemanager) ! ModuleManager.startup
   }
 
   override def receive: Receive = {

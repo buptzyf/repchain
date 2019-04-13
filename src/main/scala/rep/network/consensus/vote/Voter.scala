@@ -119,7 +119,7 @@ class Voter(moduleName: String) extends ModuleBase(moduleName) with CRFDVoter {
   }
 
   private def voteMsgHandler = {
-    //if(pe.getNodeMgr.getStableNodes.size >= SystemProfile.getVoteNoteMin ){
+    if(pe.getNodeMgr.getStableNodes.size >= SystemProfile.getVoteNoteMin ){
     //只有共识节点符合要求之后开始工作
     if (getSystemBlockHash == "") {
       //系统属于初始化状态
@@ -128,8 +128,8 @@ class Voter(moduleName: String) extends ModuleBase(moduleName) with CRFDVoter {
         pe.getActorRef(ActorType.gensisblock) ! GenesisBlock
       } else {
         // 发出同步消息
-        pe.setSystemStatus(NodeStatus.Synching)
-        pe.getActorRef(ActorType.synchrequester) ! StartSync
+        //pe.setSystemStatus(NodeStatus.Synching)
+        //pe.getActorRef(ActorType.synchrequester) ! StartSync
       }
     } else {
       if (pe.getSystemStatus == NodeStatus.Synching) {
@@ -139,7 +139,7 @@ class Voter(moduleName: String) extends ModuleBase(moduleName) with CRFDVoter {
         vote
       }
     }
-    //}
+    }
     DelayVote
   }
 
