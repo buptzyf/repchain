@@ -28,6 +28,12 @@ object ConfirmOfBlock {
 
 class ConfirmOfBlock(moduleName: String) extends ModuleBase(moduleName) {
   import context.dispatcher
+
+  override def preStart(): Unit = {
+    logMsg(LogType.INFO, "confirm Block module start")
+    SubscribeTopic(mediator, self, selfAddr, Topic.Block, true)
+    //scheduler.scheduleOnce(TimePolicy.getStableTimeDur millis, context.parent, BlockModuleInitFinished)
+  }
   import scala.concurrent.duration._
   import rep.protos.peer._
 
@@ -64,7 +70,7 @@ class ConfirmOfBlock(moduleName: String) extends ModuleBase(moduleName) {
   private def handler(block: Block, actRefOfBlock: ActorRef) = {
     if (asyncVerifyEndorses(block)) {
       //背书人的签名一致
-      if (BlockVerify.VerifyEndorserSorted(block.endorsements.toArray[Signature]) == 1) {
+      if (BlockVerify.VerifyEndorserSorted(block.endorsements.toArray[Signature]) == 1 || (block.height==1 && pe.getCurrentBlockHash == "" && block.previousBlockHash.isEmpty())) {
         //背书信息排序正确
         sendEvent(EventType.RECEIVE_INFO, mediator, selfAddr, Topic.Block, Event.Action.BLOCK_NEW)
         pe.getActorRef(ActorType.storager) ! BlockRestore(block, SourceOfBlock.CONFIRMED_BLOCK, actRefOfBlock)

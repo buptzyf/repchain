@@ -77,7 +77,7 @@ class Storager(moduleName: String) extends ModuleBase(moduleName) {
   }
 
   private def NoticeVoteModule = {
-    if (pe.getBlockCacheMgr.isEmpty && pe.getSystemStatus == NodeStatus.Ready) {
+    if (pe.getBlockCacheMgr.isEmpty ) {
       logMsg(LogType.INFO, moduleName + "~" + s"presistence is over,this is startup vote" + "~" + selfAddr)
       //通知抽签模块，开始抽签
       pe.getActorRef( ActorType.voter) ! VoteOfBlocker
@@ -109,7 +109,7 @@ class Storager(moduleName: String) extends ModuleBase(moduleName) {
       val hs = pe.getBlockCacheMgr.getKeyArray4Sort
       val minheight = hs(0)
       val maxheight = hs(hs.length-1)
-      val loop :Long = minheight
+      var loop :Long = minheight
       breakable(
           while(loop <= maxheight){
             if(loop > localchaininfo.height+1){
@@ -119,6 +119,7 @@ class Storager(moduleName: String) extends ModuleBase(moduleName) {
             }else{
               RestoreBlock(pe.getBlockCacheMgr.getBlockFromCache(loop))
             }
+            loop += 1l
           }
       )
      NoticeVoteModule
