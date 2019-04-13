@@ -64,18 +64,18 @@ class SandboxScala(cid:ChaincodeId) extends Sandbox(cid){
           if(!bRestore){
             val txid = serialise(t.id)
             shim.sr.Put(key_tx,txid)
-            shim.ol.append(OperLog(key_tx, null, ByteString.copyFrom(txid)))
+            shim.ol.append(OperLog(key_tx, ByteString.EMPTY, ByteString.copyFrom(txid)))
             
             //写入初始状态
             val key_tx_state = WorldStateKeyPreFix+ tx_cid + PRE_STATE
             val state_enable = serialise(true)
             shim.sr.Put(key_tx_state,state_enable)
-            shim.ol.append(OperLog(key_tx_state, null, ByteString.copyFrom(state_enable)))
+            shim.ol.append(OperLog(key_tx_state, ByteString.EMPTY, ByteString.copyFrom(state_enable)))
             
             //利用kv记住合约的开发者
             val coder_bytes =  serialise(coder)
             shim.sr.Put(key_coder,coder_bytes)
-            shim.ol.append(OperLog(key_coder, null, ByteString.copyFrom(coder_bytes)))            
+            shim.ol.append(OperLog(key_coder, ByteString.EMPTY, ByteString.copyFrom(coder_bytes)))            
           }     
           new ActionResult(1)
          //由于Invoke为最频繁调用，因此应尽量避免在处理中I/O读写,比如合约状态的检查就最好在内存中处理
