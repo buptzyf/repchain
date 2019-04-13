@@ -70,6 +70,15 @@ class ModuleManager(moduleName: String, sysTag: String, enableStatistic: Boolean
     loadConsensusModule
 
     if (isStartup) {
+      try{
+        Thread.sleep(2000)
+      }catch{
+        case _ => logMsg(LogType.INFO, moduleName + "~" + s"ModuleManager ${sysTag} delay startup error")
+      }
+      context.actorOf(TransactionPool.props("transactionpool"), "transactionpool")
+      if (SystemProfile.getTransCreateType == Trans_Create_Type_Enum.AUTO) {
+        context.actorOf(PeerHelper.props("peerhelper"), "peerhelper")
+      }
       pe.getActorRef(ActorType.voter) ! Voter.VoteOfBlocker
     }
 
@@ -84,26 +93,23 @@ class ModuleManager(moduleName: String, sysTag: String, enableStatistic: Boolean
       context.actorOf(ConfirmOfBlock.props("confirmerofblock"), "confirmerofblock")
       context.actorOf(EndorseCollector.props("endorsementcollectioner"), "endorsementcollectioner")
       context.actorOf(Endorser.props("endorser"), "endorser")
-      context.actorOf(PreloaderForTransaction.props("preloaderoftransaction", context.actorOf(TransProcessor.props("sandbox_for_Preload",  self), "sandboxProcessor")), "preloaderoftransaction")
+      context.actorOf(PreloaderForTransaction.props("preloaderoftransaction", context.actorOf(TransProcessor.props("sandbox_for_Preload", self), "sandboxProcessor")), "preloaderoftransaction")
       //context.actorOf(Endorser.props("endorser"), "endorser")
       context.actorOf(Voter.props("voter"), "voter")
+      
     }
   }
 
   def loadApiModule = {
     if (enableStatistic) context.actorOf(Props[StatisticCollection], "statistic")
     if (enableWebSocket) context.system.actorOf(Props[EventServer], "webapi")
-    
+
   }
 
   def loadSystemModule = {
     context.actorOf(Storager.props("storager"), "storager")
     context.actorOf(SynchronizeRequester.props("synchrequester"), "synchrequester")
     context.actorOf(SynchronizeResponser.props("synchresponser"), "synchresponser")
-    context.actorOf(TransactionPool.props("transactionpool"), "transactionpool")
-    if (SystemProfile.getTransCreateType == Trans_Create_Type_Enum.AUTO) {
-      context.actorOf(PeerHelper.props("peerhelper"), "peerhelper")
-    }
   }
 
   def loadClusterModule = {

@@ -28,6 +28,10 @@ class Voter(moduleName: String) extends ModuleBase(moduleName) with CRFDVoter {
   import scala.concurrent.duration._
   import scala.concurrent.forkjoin.ThreadLocalRandom
 
+  override def preStart(): Unit = {
+    logMsg(LogType.INFO, "Vote module start")
+  }
+
   val dataaccess: ImpDataAccess = ImpDataAccess.GetDataAccess(pe.getSysTag)
 
   private var BlockHashOfVote: String = null
@@ -36,10 +40,6 @@ class Voter(moduleName: String) extends ModuleBase(moduleName) with CRFDVoter {
 
   def checkTranNum: Boolean = {
     if (pe.getTransPoolMgr.getTransLength() > SystemProfile.getMinBlockTransNum) true else false
-  }
-
-  override def preStart(): Unit = {
-    logMsg(LogType.INFO, "Voter start")
   }
 
   private def cleanVoteInfo = {
@@ -89,23 +89,29 @@ class Voter(moduleName: String) extends ModuleBase(moduleName) with CRFDVoter {
 
   private def vote = {
     if (checkTranNum) {
-      if (!this.BlockHashOfVote.equals(pe.getCurrentBlockHash)) {
-        //抽签的基础块已经变化，需要重续选择候选人
+      if (this.BlockHashOfVote == null) {
         this.cleanVoteInfo
         this.resetCandidator
         this.resetBlocker(0)
       } else {
-        if (this.Blocker.blocker == "") {
+        if (!this.BlockHashOfVote.equals(pe.getCurrentBlockHash)) {
+          //抽签的基础块已经变化，需要重续选择候选人
           this.cleanVoteInfo
           this.resetCandidator
           this.resetBlocker(0)
         } else {
-          if ((System.currentTimeMillis() - this.Blocker.voteTime) / 1000 > TimePolicy.getTimeOutBlock) {
-            //说明出块超时
-            this.voteCount = 0
-            this.resetBlocker(this.Blocker.VoteIndex + 1)
+          if (this.Blocker.blocker == "") {
+            this.cleanVoteInfo
+            this.resetCandidator
+            this.resetBlocker(0)
           } else {
-            NoticeBlockerMsg
+            if ((System.currentTimeMillis() - this.Blocker.voteTime) / 1000 > TimePolicy.getTimeOutBlock) {
+              //说明出块超时
+              this.voteCount = 0
+              this.resetBlocker(this.Blocker.VoteIndex + 1)
+            } else {
+              NoticeBlockerMsg
+            }
           }
         }
       }
@@ -114,25 +120,25 @@ class Voter(moduleName: String) extends ModuleBase(moduleName) with CRFDVoter {
 
   private def voteMsgHandler = {
     //if(pe.getNodeMgr.getStableNodes.size >= SystemProfile.getVoteNoteMin ){
-      //只有共识节点符合要求之后开始工作
-      if (getSystemBlockHash == "") {
-        //系统属于初始化状态
-        if (NodeHelp.isSeedNode(pe.getSysTag)) {
-          // 建立创世块消息
-          pe.getActorRef(ActorType.gensisblock) ! GenesisBlock
-        } else {
-          // 发出同步消息
-          pe.setSystemStatus(NodeStatus.Synching)
-          pe.getActorRef(ActorType.synchrequester) ! StartSync
-        }
+    //只有共识节点符合要求之后开始工作
+    if (getSystemBlockHash == "") {
+      //系统属于初始化状态
+      if (NodeHelp.isSeedNode(pe.getSysTag)) {
+        // 建立创世块消息
+        pe.getActorRef(ActorType.gensisblock) ! GenesisBlock
       } else {
-        if (pe.getSystemStatus == NodeStatus.Synching) {
-          //不需要进入抽签
-          pe.getActorRef(ActorType.synchrequester) ! StartSync
-        } else {
-          vote
-        }
+        // 发出同步消息
+        pe.setSystemStatus(NodeStatus.Synching)
+        pe.getActorRef(ActorType.synchrequester) ! StartSync
       }
+    } else {
+      if (pe.getSystemStatus == NodeStatus.Synching) {
+        //不需要进入抽签
+        pe.getActorRef(ActorType.synchrequester) ! StartSync
+      } else {
+        vote
+      }
+    }
     //}
     DelayVote
   }

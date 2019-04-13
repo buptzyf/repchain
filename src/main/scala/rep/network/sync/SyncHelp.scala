@@ -27,7 +27,26 @@ object SyncHelp {
       tmpmap += height -> tmp
     })
     
-    getHeight(tmpmap,localHeight,nodecount)
+    var majority = getHeight(tmpmap,localHeight,nodecount)
+    if(majority == null){
+      majority = findGenesisTimes(tmpmap,localHeight,nodecount)
+    }
+    majority
+  }
+  
+  private def findGenesisTimes(list: immutable.TreeMap[Long, SynchronizeRequester.GreatMajority],localHeight:Long,nodecount:Int): SynchronizeRequester.GreatMajority ={
+    var max: SynchronizeRequester.GreatMajority = null
+    val keylist = list.keys.toArray
+    if(keylist.size == 2){
+      val maxheight = list(keylist(1))
+      if(maxheight.height == 1){
+        val minheight = list(keylist(0))
+        if(NodeHelp.ConsensusConditionChecked(minheight.count, nodecount-1) && localHeight == 0){
+          max = maxheight
+        }
+      }
+    }
+    max
   }
 
   private def getHeight(list: immutable.TreeMap[Long, SynchronizeRequester.GreatMajority],localHeight:Long,nodecount:Int): SynchronizeRequester.GreatMajority = {

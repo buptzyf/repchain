@@ -41,9 +41,9 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
   
   private def createRouter={
     if(router == null){
-      var list : ListBuffer[Routee] = new ListBuffer[Routee]()
-      for(i <- 0 to pe.getNodeMgr.getStableNodes.size-1){
-        var ca = context.actorOf(Props[EnodorsementRequester])
+      var list : Array[Routee] = new Array[Routee](SystemProfile.getVoteNodeList.size())
+      for(i <- 0 to SystemProfile.getVoteNodeList.size()-1){
+        var ca = context.actorOf(EnodorsementRequester.props("endorsementrequester"+i),"endorsementrequester"+i)
         context.watch(ca)
         list(i) =  new ActorRefRoutee(ca)
       }

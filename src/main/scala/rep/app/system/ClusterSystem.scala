@@ -208,7 +208,7 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
    */
   def start = {
     SystemProfile.initConfigSystem(sysActor.settings.config)
-    moduleManager = sysActor.actorOf(ModuleManager.props("modulemanager", sysTag, enableStatistic, enableWebSocket,true), "modulemanager")
+    
 
     if (!hasDiskSpace) {
       Cluster(sysActor).down(clusterAddr)
@@ -224,6 +224,8 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
         throw new Exception("Storager Verify Error,info:" + e.getMessage)
       }
     }
+    
+    moduleManager = sysActor.actorOf(ModuleManager.props("modulemanager", sysTag, enableStatistic, enableWebSocket,true), "modulemanager")
 
     RepLogger.logInfo(sysTag, ModuleType.clustersystem, "System" + " ~ " + s"ClusterSystem ${sysTag} start" + " ~ ")
   }
