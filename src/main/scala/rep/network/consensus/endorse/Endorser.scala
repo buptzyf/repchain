@@ -89,6 +89,7 @@ class Endorser(moduleName: String) extends ModuleBase(moduleName) {
     })
     val futureOfList: Future[List[Boolean]] = Future.sequence(listOfFuture.toList)
     var result = true
+    //breakable(
     futureOfList.map(x => {
       x.foreach(f => {
         if (f) {
@@ -97,23 +98,32 @@ class Endorser(moduleName: String) extends ModuleBase(moduleName) {
         }
       })
     })
+    //)
     result
   }
 
   private def checkedOfEndorseCondition(block: Block, blocker: String) = {
     if (pe.getSystemStatus == NodeStatus.Endorsing) {
+      logMsg(LogType.INFO, "endorser recv endorsement")
       if (NodeHelp.isCandidateNow(pe.getSysTag, pe.getNodeMgr.getCandidator)) {
+        logMsg(LogType.INFO, "endorser is candidator")
         if (block.previousBlockHash.toStringUtf8 == pe.getCurrentBlockHash) {
+          logMsg(LogType.INFO, "endorser is curent blockhash")
           if (NodeHelp.isBlocker(blocker, pe.getBlocker.blocker)) {
+            logMsg(LogType.INFO, "endorser verify blocker")
             //符合要求，可以进行交易以及交易结果进行校验
             val bv = BlockVerify.VerifyAllEndorseOfBlock(block, pe.getSysTag)
             if (bv._1) {
+              logMsg(LogType.INFO, "endorser verify blocker sign")
               //出块人的签名验证正确
               if (!hasRepeatOfTrans(block.transactions)) {
+                logMsg(LogType.INFO, "endorser trans is repeat")
                 //  没有重复交易
                 if (asyncVerifyTransactions(block)) {
+                  logMsg(LogType.INFO, "endorser verify trans  sign ")
                   //交易签名验证正确
                   if (ExecuteTransactionOfBlock(block)) {
+                    logMsg(LogType.INFO, "endorser verify is finish")
                     //交易执行结果一致
                     sendEvent(EventType.PUBLISH_INFO, mediator, selfAddr, Topic.Block, Event.Action.ENDORSEMENT)
                     sender ! ResultOfEndorsed(true, BlockHelp.SignBlock(block, pe.getSysTag), block.hashOfBlock.toStringUtf8())

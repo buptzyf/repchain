@@ -20,6 +20,7 @@ import rep.log.trace.LogType
 import akka.pattern.AskTimeoutException
 import rep.network.consensus.util.BlockVerify
 import scala.util.control.Breaks
+import rep.utils.GlobalUtils.EventType
 
 object EnodorsementRequester {
   def props(name: String): Props = Props(classOf[EnodorsementRequester], name)
@@ -36,14 +37,15 @@ class EnodorsementRequester(moduleName: String) extends ModuleBase(moduleName) {
   private var requesterOfCollection: ActorRef = null
 
   override def preStart(): Unit = {
-    logMsg(LogType.INFO, "EndorseCollector Start")
+    logMsg(LogType.INFO, "EnodorsementRequester Start")
   }
 
   private def sendMessage(addr: Address, data: EndorsementInfo): ResultOfEndorsed = {
     try {
       val selection: ActorSelection = context.actorSelection(toAkkaUrl(addr, endorsementActorName));
       val future = selection ? data
-      Await.result(future, timeout.duration).asInstanceOf[ResultOfEndorsed]
+      val r = Await.result(future, timeout.duration).asInstanceOf[ResultOfEndorsed]
+      r
     } catch {
       case e: AskTimeoutException => ResultOfEndorsed(false, null, data.blc.hashOfBlock.toStringUtf8())
       case re: RuntimeException   => ResultOfEndorsed(false, null, data.blc.hashOfBlock.toStringUtf8())
@@ -69,11 +71,14 @@ class EnodorsementRequester(moduleName: String) extends ModuleBase(moduleName) {
       val result = sendMessage(addr, EndorsementInfo(block, blocker))
       if (result.result) {
         if (EndorsementVerify(block, result)) {
+          logMsg(LogType.INFO, "endorse requester recv endorsement result ok")
           context.parent ! ResultOfEndorseRequester(result.result, result.endor, result.BlockHash,addr)
         } else {
+          logMsg(LogType.INFO, "endorse requester recv endorsement result failed")
           context.parent ! ResultOfEndorseRequester(false, result.endor, result.BlockHash,addr)
         }
       } else {
+        logMsg(LogType.INFO, "endorse requester recv endorsement result failed")
         context.parent ! ResultOfEndorseRequester(false, result.endor, result.BlockHash,addr)
       }
 

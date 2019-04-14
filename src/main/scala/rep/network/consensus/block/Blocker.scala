@@ -175,6 +175,7 @@ class Blocker(moduleName: String) extends ModuleBase(moduleName) {
               //预出块已经建立，不需要重新创建，可以请求再次背书
               schedulerLink = clearSched()
               pe.getActorRef(ActorType.endorsementcollectioner) ! Blocker.CollectEndorsement(this.preblock, pe.getBlocker.blocker)
+              sendEvent(EventType.PUBLISH_INFO, mediator, selfAddr, Topic.Endorsement, Event.Action.BLOCK_ENDORSEMENT)
               schedulerLink = scheduler.scheduleOnce(TimePolicy.getTimeoutEndorse seconds, self, Blocker.EndorseOfBlockTimeOut)
             } else {
               //上一个块已经变化，需要重新出块

@@ -76,36 +76,45 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
   
   
   private def CheckAndFinishHandler{
+    logMsg(LogType.INFO, "collectioner check is finish ")
     if(NodeHelp.ConsensusConditionChecked(this.recvedEndorse.size+1,pe.getNodeMgr.getNodes.size)){
+      logMsg(LogType.INFO, "collectioner package endorsement to block")
             this.recvedEndorse.foreach(f=>{
               this.block = BlockHelp.AddEndorsementToBlock(this.block, f._2)
             })
              var consensus = this.block.endorsements.toArray[Signature]
           BlockVerify.sort(consensus)
+          logMsg(LogType.INFO, "collectioner endorsement sort")
         this.block = this.block.withEndorsements(consensus)
         mediator ! Publish(Topic.Block, new ConfirmedBlock(this.block, sender))
-        //sendEvent(EventType.RECEIVE_INFO, mediator, selfAddr, Topic.Block,
-        //                        Event.Action.ENDORSEMENT)   
+        sendEvent(EventType.RECEIVE_INFO, mediator, selfAddr, Topic.Block,
+                                Event.Action.ENDORSEMENT)
+        logMsg(LogType.INFO, "collectioner endorsementt finish")
              clearEndorseInfo                   
           }
   }
   
   override def receive = {
     case CollectEndorsement(block, blocker) =>
+      logMsg(LogType.INFO, "collectioner recv endorsement")
       createRouter
+      logMsg(LogType.INFO, "collectioner create router")
       resetEndorseInfo(block,blocker)
       pe.getNodeMgr.getStableNodes.foreach(f=>{
+        logMsg(LogType.INFO, "collectioner send endorsement to requester")
         router.route(RequesterOfEndorsement(block,blocker,f), self) 
       })
       schedulerLink = scheduler.scheduleOnce(TimePolicy.getTimeoutEndorse*1.5 seconds, self, EndorseCollector.ResendEndorseInfo)
     case EndorseCollector.ResendEndorseInfo =>
       if(this.block != null){
+        logMsg(LogType.INFO, "collectioner resend endorsement")
          resendEndorser
       }
     case ResultOfEndorseRequester(result,endors,blockhash,endorser)=>
       if(this.block != null){
         if(this.block.hashOfBlock.toStringUtf8().equals(blockhash)){
         if(result){
+          logMsg(LogType.INFO, "collectioner recv endorsement result")
           recvedEndorse += endorser.toString -> endors
           CheckAndFinishHandler
         }

@@ -40,32 +40,31 @@ import rep.network.persistence.BlockCache
  */
 class PeerExtensionImpl extends Extension {
 
-  /*********交易池缓存管理开始************/
+/*********交易池缓存管理开始************/
   private val transactionmgr = new TransactionPoolMgr
 
   def getTransPoolMgr: TransactionPoolMgr = {
     this.transactionmgr
   }
-  /*********交易池缓存管理结束************/
-  
-  /*********区块缓存管理开始************/
-  private val blockCache:BlockCache = new BlockCache
-  
-  def getBlockCacheMgr : BlockCache = {
+/*********交易池缓存管理结束************/
+
+/*********区块缓存管理开始************/
+  private val blockCache: BlockCache = new BlockCache
+
+  def getBlockCacheMgr: BlockCache = {
     this.blockCache
   }
-  /*********区块缓存管理结束************/
+/*********区块缓存管理结束************/
 
-  /*********组网节点信息管理，包括抽签候选人信息开始************/
+/*********组网节点信息管理，包括抽签候选人信息开始************/
   private val nodemgr = new NodeMgr
 
   def getNodeMgr: NodeMgr = {
     this.nodemgr
   }
-  /*********组网节点信息管理，包括抽签候选人信息结束************/
-  
+/*********组网节点信息管理，包括抽签候选人信息结束************/
 
-  /*********节点当前链信息开始************/
+/*********节点当前链信息开始************/
   private var SystemCurrentChainInfo: AtomicReference[BlockchainInfo] =
     new AtomicReference[BlockchainInfo](new BlockchainInfo(0l, 0l, _root_.com.google.protobuf.ByteString.EMPTY, _root_.com.google.protobuf.ByteString.EMPTY))
 
@@ -82,30 +81,27 @@ class PeerExtensionImpl extends Extension {
   def getSystemCurrentChainStatus: BlockchainInfo = {
     this.SystemCurrentChainInfo.get
   }
-  /*********节点当前链信息结束************/
-  
+/*********节点当前链信息结束************/
 
-  /*********出块人开始************/
-  private var blocker: AtomicReference[BlockerInfo] = new AtomicReference[BlockerInfo](new BlockerInfo("", -1,0l))
+/*********出块人开始************/
+  private var blocker: AtomicReference[BlockerInfo] = new AtomicReference[BlockerInfo](new BlockerInfo("", -1, 0l))
 
   def resetBlocker(blker: BlockerInfo): Unit = {
     blocker.set(blker)
   }
 
   def getBlocker = blocker.get
-  /*********出块人结束************/
+/*********出块人结束************/
 
-  
-  /*********节点状态开始************/
+/*********节点状态开始************/
   private var nodeStatus: AtomicInteger = new AtomicInteger(NodeStatus.Nothing)
 
   def setSystemStatus(status: Int) = this.nodeStatus.set(status)
 
   def getSystemStatus = this.nodeStatus.get
-  /*********节点状态结束************/
+/*********节点状态结束************/
 
-  
-  /*********节点信息相关操作开始************/
+/*********节点信息相关操作开始************/
   private var sys_ip: AtomicReference[String] = new AtomicReference[String]("")
 
   private var sys_port: AtomicReference[String] = new AtomicReference[String]("")
@@ -124,24 +120,29 @@ class PeerExtensionImpl extends Extension {
   def setSysTag(name: String) = sysTag.set(name)
 
   def getSysTag = sysTag.get
-  /*********节点信息相关操作结束************/
+/*********节点信息相关操作结束************/
 
-  
-  /*********系统Actor注册相关操作开始************/
+/*********系统Actor注册相关操作开始************/
   private var actorList = mutable.HashMap[Int, ActorRef]().empty
 
   def register(actorName: Int, actorRef: ActorRef) = {
-    actorList += actorName ->actorRef
+    actorList += actorName -> actorRef
   }
 
   def getActorRef(actorName: Int): ActorRef = {
-    actorList(actorName)
+    var r: ActorRef = null
+    try {
+      r = actorList(actorName)
+    } catch {
+      case e: Exception => r = null
+    }
+    r
   }
 
   def unregister(actorName: Int) = {
     actorList -= actorName
   }
-  /*********系统Actor注册相关操作结束************/
+/*********系统Actor注册相关操作结束************/
 }
 
 object PeerExtension

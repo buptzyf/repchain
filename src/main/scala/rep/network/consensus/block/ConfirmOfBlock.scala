@@ -31,7 +31,7 @@ class ConfirmOfBlock(moduleName: String) extends ModuleBase(moduleName) {
 
   override def preStart(): Unit = {
     logMsg(LogType.INFO, "confirm Block module start")
-    SubscribeTopic(mediator, self, selfAddr, Topic.Block, true)
+    SubscribeTopic(mediator, self, selfAddr, Topic.Block, false)
     //scheduler.scheduleOnce(TimePolicy.getStableTimeDur millis, context.parent, BlockModuleInitFinished)
   }
   import scala.concurrent.duration._
@@ -56,6 +56,7 @@ class ConfirmOfBlock(moduleName: String) extends ModuleBase(moduleName) {
     })
     val futureOfList: Future[List[Boolean]] = Future.sequence(listOfFuture.toList)
     var result = true
+    //breakable(
     futureOfList.map(x => {
       x.foreach(f => {
         if (f) {
@@ -64,14 +65,18 @@ class ConfirmOfBlock(moduleName: String) extends ModuleBase(moduleName) {
         }
       })
     })
+   // )
     result
   }
 
   private def handler(block: Block, actRefOfBlock: ActorRef) = {
+    logMsg(LogType.INFO, "confirm verify endorsement start")
     if (asyncVerifyEndorses(block)) {
+      logMsg(LogType.INFO, "confirm verify endorsement end")
       //背书人的签名一致
       if (BlockVerify.VerifyEndorserSorted(block.endorsements.toArray[Signature]) == 1 || (block.height==1 && pe.getCurrentBlockHash == "" && block.previousBlockHash.isEmpty())) {
         //背书信息排序正确
+        logMsg(LogType.INFO, "confirm verify endorsement sort")
         sendEvent(EventType.RECEIVE_INFO, mediator, selfAddr, Topic.Block, Event.Action.BLOCK_NEW)
         pe.getActorRef(ActorType.storager) ! BlockRestore(block, SourceOfBlock.CONFIRMED_BLOCK, actRefOfBlock)
       } else {
@@ -84,9 +89,11 @@ class ConfirmOfBlock(moduleName: String) extends ModuleBase(moduleName) {
 
   private def checkedOfConfirmBlock(block: Block, actRefOfBlock: ActorRef) = {
     if (pe.getCurrentBlockHash == "" && block.previousBlockHash.isEmpty()) {
+      logMsg(LogType.INFO, "confirm verify blockhash")
       handler(block, actRefOfBlock)
     } else if (block.previousBlockHash.toStringUtf8 == pe.getCurrentBlockHash) {
       //与上一个块一致
+      logMsg(LogType.INFO, "confirm verify blockhash")
       if (NodeHelp.ConsensusConditionChecked(block.endorsements.size, pe.getNodeMgr.getStableNodes.size)) {
         //符合大多数人背书要求
         handler(block, actRefOfBlock)

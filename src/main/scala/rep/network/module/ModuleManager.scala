@@ -66,8 +66,8 @@ class ModuleManager(moduleName: String, sysTag: String, enableStatistic: Boolean
   }
 
   def loadModule = {
-    loadClusterModule
     loadApiModule
+    loadClusterModule
     loadSystemModule
     loadConsensusModule
 
@@ -100,7 +100,7 @@ class ModuleManager(moduleName: String, sysTag: String, enableStatistic: Boolean
 
   def loadApiModule = {
     if (enableStatistic) context.actorOf(Props[StatisticCollection], "statistic")
-    if (enableWebSocket) context.system.actorOf(Props[EventServer], "webapi")
+    if (enableWebSocket) /*{if(pe.getActorRef(ActorType.webapi) == null) */context.system.actorOf(Props[EventServer], "webapi")
 
   }
 
@@ -118,7 +118,15 @@ class ModuleManager(moduleName: String, sysTag: String, enableStatistic: Boolean
   override def receive: Receive = {
     case ModuleManager.startup_Consensus => 
       if (SystemProfile.getTransCreateType == Trans_Create_Type_Enum.AUTO) {
-        context.actorOf(PeerHelper.props("peerhelper"), "peerhelper")
+        val a = context.child("peerhelper")
+        if(a == None){
+          println("--------------a is not exist")
+        }else{
+          println(s"--------------a is exist,node=${pe.getSysTag}")
+        }
+        if(pe.getActorRef(ActorType.peerhelper) == null){
+          context.actorOf(PeerHelper.props("peerhelper"), "peerhelper")
+        }
       }
       pe.getActorRef(ActorType.voter) ! Voter.VoteOfBlocker
     case _ => //ignore
