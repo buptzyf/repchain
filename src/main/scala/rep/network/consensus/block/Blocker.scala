@@ -16,7 +16,7 @@ import rep.network.base.ModuleBase
 import rep.network.consensus.block.Blocker.{ConfirmedBlock,PreTransBlock,PreTransBlockResult}
 import rep.protos.peer._
 import rep.storage.ImpDataAccess
-import rep.utils.GlobalUtils.{ ActorType, BlockEvent, EventType, NodeStatus }
+import rep.utils.GlobalUtils.{ ActorType, BlockEvent, EventType, NodeStatus}
 import scala.collection.mutable
 import com.sun.beans.decoder.FalseElementHandler
 import scala.util.control.Breaks
@@ -25,6 +25,7 @@ import rep.utils.IdTool
 import scala.util.control.Breaks._
 import rep.network.consensus.util.{ BlockHelp, BlockVerify }
 import rep.network.util.NodeHelp
+import rep.network.Topic
 
 object Blocker {
   def props(name: String): Props = Props(classOf[Blocker], name)
@@ -164,6 +165,7 @@ class Blocker(moduleName: String) extends ModuleBase(moduleName) {
     //创建块请求（给出块人）
     case Blocker.CreateBlock =>
       if (NodeHelp.isBlocker(pe.getBlocker.blocker, pe.getSysTag)) {
+        sendEvent(EventType.PUBLISH_INFO, mediator, selfAddr, Topic.Block, Event.Action.CANDIDATOR)
         if (pe.getSystemStatus == NodeStatus.Blocking) {
           //是出块节点
           if (preblock == null) {

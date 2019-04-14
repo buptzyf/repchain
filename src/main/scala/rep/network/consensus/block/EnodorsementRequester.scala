@@ -31,7 +31,7 @@ class EnodorsementRequester(moduleName: String) extends ModuleBase(moduleName) {
   import scala.concurrent.duration._
 
   implicit val timeout = Timeout(TimePolicy.getTimeoutEndorse seconds)
-  private val endorsementActorName = "/user/moduleManager/consensusManager/consensus-CRFD/endorser"
+  private val endorsementActorName = "/user/modulemanager/endorser"
 
   private var requesterOfCollection: ActorRef = null
 

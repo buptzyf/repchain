@@ -9,8 +9,11 @@ import com.google.protobuf.ByteString
 
 object SyncHelp {
   
-  def GetGreatMajorityHeight(ResultList:immutable.TreeMap[String, SynchronizeRequester.ResponseInfo],localHeight:Long,nodecount:Int): SynchronizeRequester.GreatMajority = {
+  def GetGreatMajorityHeight(ResultList:immutable.TreeMap[String, SynchronizeRequester.ResponseInfo],localHeight:Long,nodecount:Int,systemname:String): SynchronizeRequester.GreatMajority = {
     var tmpmap = new immutable.TreeMap[Long, SynchronizeRequester.GreatMajority]()
+    if(systemname == "122000002n00123567.node3" && ResultList.size == 4){
+      println(ResultList.size)
+    }
     ResultList.foreach(f => {
       val addr = f._1
       val hash = f._2.response.currentBlockHash.toStringUtf8()
@@ -28,23 +31,26 @@ object SyncHelp {
     })
     
     var majority = getHeight(tmpmap,localHeight,nodecount)
-    if(majority == null){
-      majority = findGenesisTimes(tmpmap,localHeight,nodecount)
+    
+    if(majority != null){
+      if(majority.height <= 0){
+        if(ResultList.size  >= (nodecount - 1)){
+          majority = findGenesisNode(tmpmap)
+        }else{
+          //节点数不够，继续等待
+          majority = null
+        }
+      }
     }
+    
     majority
   }
   
-  private def findGenesisTimes(list: immutable.TreeMap[Long, SynchronizeRequester.GreatMajority],localHeight:Long,nodecount:Int): SynchronizeRequester.GreatMajority ={
+  private def findGenesisNode(list: immutable.TreeMap[Long, SynchronizeRequester.GreatMajority]): SynchronizeRequester.GreatMajority ={
     var max: SynchronizeRequester.GreatMajority = null
     val keylist = list.keys.toArray
     if(keylist.size == 2){
-      val maxheight = list(keylist(1))
-      if(maxheight.height == 1){
-        val minheight = list(keylist(0))
-        if(NodeHelp.ConsensusConditionChecked(minheight.count, nodecount-1) && localHeight == 0){
-          max = maxheight
-        }
-      }
+      max = list(keylist(1))
     }
     max
   }

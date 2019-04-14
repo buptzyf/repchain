@@ -146,7 +146,7 @@ class TransactionPool(moduleName: String) extends ModuleBase(moduleName) {
             if (SystemProfile.getMaxCacheTransNum == 0 || pe.getTransPoolMgr.getTransLength() < SystemProfile.getMaxCacheTransNum) {
               pe.getTransPoolMgr.putTran(t)
               //广播接收交易事件
-              if (pe.getTransPoolMgr.getTransLength() <= SystemProfile.getMinBlockTransNum)
+              if (pe.getTransPoolMgr.getTransLength() >= SystemProfile.getMinBlockTransNum)
                 pe.getActorRef(GlobalUtils.ActorType.voter) ! VoteOfBlocker
             }
             

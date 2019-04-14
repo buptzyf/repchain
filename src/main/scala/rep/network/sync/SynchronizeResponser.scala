@@ -32,7 +32,7 @@ class SynchronizeResponser(moduleName: String) extends ModuleBase(moduleName) {
       } else {
         logMsg(LogType.INFO, moduleName + "~" + s"recv sync chaininfo request from actorAddr" + "～" + NodeHelp.getNodePath(sender()))
         val responseInfo = dataaccess.getBlockChainInfo()
-        sender() ! SyncMsg.ChainInfoOfResponse(responseInfo)
+        sender ! SyncMsg.ChainInfoOfResponse(responseInfo)
       }
 
     case SyncMsg.BlockDataOfRequest(startHeight) =>
@@ -41,9 +41,9 @@ class SynchronizeResponser(moduleName: String) extends ModuleBase(moduleName) {
       logMsg(LogType.INFO, moduleName + "~" + s"node number:${pe.getSysTag},start block number:${startHeight},Get a data request from  $sender" + "～" + selfAddr)
       val local = dataaccess.getBlockChainInfo()
       var data = Block()
-      if (local.height > startHeight) {
+      if (local.height >= startHeight) {
         data = dataaccess.getBlock4ObjectByHeight(startHeight)
-        sender() ! SyncMsg.BlockDataOfResponse(data)
+        sender  ! SyncMsg.BlockDataOfResponse(data)
       }
 
   }
