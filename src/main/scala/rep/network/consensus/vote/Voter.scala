@@ -116,6 +116,7 @@ class Voter(moduleName: String) extends ModuleBase(moduleName) with CRFDVoter {
         }
       }
     }
+    //logMsg(LogType.INFO, s"current blocker=${this.Blocker.blocker},${this.Blocker.VoteIndex}")
   }
 
   private def voteMsgHandler = {

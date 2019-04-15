@@ -11,7 +11,7 @@ import com.google.protobuf.ByteString
 import com.google.protobuf.timestamp.Timestamp
 import rep.app.conf.{ SystemProfile, TimePolicy }
 import rep.network.base.ModuleBase
-import rep.network.consensus.block.Blocker.{ EndorsementInfo, ResultOfEndorsed, RequesterOfEndorsement,ResultOfEndorseRequester}
+import rep.network.consensus.endorse.EndorseMsg.{ EndorsementInfo, ResultOfEndorsed, RequesterOfEndorsement,ResultOfEndorseRequester}
 import rep.network.tools.PeerExtension
 import rep.network.Topic
 import rep.protos.peer._

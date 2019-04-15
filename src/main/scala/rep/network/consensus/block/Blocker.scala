@@ -26,6 +26,7 @@ import scala.util.control.Breaks._
 import rep.network.consensus.util.{ BlockHelp, BlockVerify }
 import rep.network.util.NodeHelp
 import rep.network.Topic
+import rep.network.consensus.endorse.EndorseMsg
 
 object Blocker {
   def props(name: String): Props = Props(classOf[Blocker], name)
@@ -34,19 +35,7 @@ object Blocker {
   //块预执行结果
   case class PreTransBlockResult(blc: Block, result: Boolean)
 
-  //背书请求者消息
-  case class RequesterOfEndorsement(blc: Block, blocker: String, endorer: Address)
-  //给背书人的背书消息
-  case class EndorsementInfo(blc: Block, blocker: String)
-
-  //背书收集者消息
-  case class CollectEndorsement(blc: Block, blocker: String)
-
-  //背书人返回的背书结果
-  case class ResultOfEndorsed(result: Boolean, endor: Signature, BlockHash: String)
-
-  //背书请求者返回的结果
-  case class ResultOfEndorseRequester(result: Boolean, endor: Signature, BlockHash: String, endorser: Address)
+  
 
   //正式块
   case class ConfirmedBlock(blc: Block, actRef: ActorRef)
@@ -155,7 +144,7 @@ class Blocker(moduleName: String) extends ModuleBase(moduleName) {
       if (blc != null) {
         this.preblock = blc
         schedulerLink = clearSched()
-        pe.getActorRef(ActorType.endorsementcollectioner) ! Blocker.CollectEndorsement(this.preblock, pe.getBlocker.blocker)
+        pe.getActorRef(ActorType.endorsementcollectioner) ! EndorseMsg.CollectEndorsement(this.preblock, pe.getBlocker.blocker)
         schedulerLink = scheduler.scheduleOnce(TimePolicy.getTimeoutEndorse seconds, self, Blocker.EndorseOfBlockTimeOut)
       }
     }
@@ -174,7 +163,7 @@ class Blocker(moduleName: String) extends ModuleBase(moduleName) {
             if (preblock.previousBlockHash.toStringUtf8() == pe.getCurrentBlockHash) {
               //预出块已经建立，不需要重新创建，可以请求再次背书
               schedulerLink = clearSched()
-              pe.getActorRef(ActorType.endorsementcollectioner) ! Blocker.CollectEndorsement(this.preblock, pe.getBlocker.blocker)
+              pe.getActorRef(ActorType.endorsementcollectioner) ! EndorseMsg.CollectEndorsement(this.preblock, pe.getBlocker.blocker)
               sendEvent(EventType.PUBLISH_INFO, mediator, selfAddr, Topic.Endorsement, Event.Action.BLOCK_ENDORSEMENT)
               schedulerLink = scheduler.scheduleOnce(TimePolicy.getTimeoutEndorse seconds, self, Blocker.EndorseOfBlockTimeOut)
             } else {
@@ -192,7 +181,7 @@ class Blocker(moduleName: String) extends ModuleBase(moduleName) {
     //出块超时
     case Blocker.EndorseOfBlockTimeOut =>
       schedulerLink = clearSched()
-      pe.getActorRef(ActorType.endorsementcollectioner) ! Blocker.CollectEndorsement(this.preblock, pe.getBlocker.blocker)
+      pe.getActorRef(ActorType.endorsementcollectioner) ! EndorseMsg.CollectEndorsement(this.preblock, pe.getBlocker.blocker)
       schedulerLink = scheduler.scheduleOnce(TimePolicy.getTimeoutEndorse seconds, self, Blocker.EndorseOfBlockTimeOut)
     case _ => //ignore
   }

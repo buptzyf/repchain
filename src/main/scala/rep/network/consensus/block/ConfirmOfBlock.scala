@@ -59,9 +59,10 @@ class ConfirmOfBlock(moduleName: String) extends ModuleBase(moduleName) {
     //breakable(
     futureOfList.map(x => {
       x.foreach(f => {
-        if (f) {
+        if (!f) {
           result = false
-          break
+          logMsg(LogType.INFO, "comfirmOfBlock verify endorse is error, break")
+          //break
         }
       })
     })

@@ -5,7 +5,8 @@ import akka.cluster.pubsub.DistributedPubSubMediator.Publish
 import akka.routing._;
 import rep.app.conf.{ SystemProfile, TimePolicy }
 import rep.network.base.ModuleBase
-import rep.network.consensus.block.Blocker.{ RequesterOfEndorsement, ResultOfEndorseRequester,CollectEndorsement,ConfirmedBlock }
+import rep.network.consensus.endorse.EndorseMsg.{ RequesterOfEndorsement, ResultOfEndorseRequester,CollectEndorsement }
+import rep.network.consensus.block.Blocker.ConfirmedBlock
 import rep.network.tools.PeerExtension
 import rep.network.Topic
 import rep.protos.peer._
@@ -96,15 +97,20 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
   
   override def receive = {
     case CollectEndorsement(block, blocker) =>
-      logMsg(LogType.INFO, "collectioner recv endorsement")
-      createRouter
-      logMsg(LogType.INFO, "collectioner create router")
-      resetEndorseInfo(block,blocker)
-      pe.getNodeMgr.getStableNodes.foreach(f=>{
-        logMsg(LogType.INFO, "collectioner send endorsement to requester")
-        router.route(RequesterOfEndorsement(block,blocker,f), self) 
-      })
-      schedulerLink = scheduler.scheduleOnce(TimePolicy.getTimeoutEndorse*1.5 seconds, self, EndorseCollector.ResendEndorseInfo)
+      if(this.block != null && this.block.hashOfBlock.toStringUtf8().equals(block.hashOfBlock.toStringUtf8())){
+        logMsg(LogType.INFO, "collectioner is waiting endorse result")
+      }else{
+        logMsg(LogType.INFO, "collectioner recv endorsement")
+        createRouter
+        logMsg(LogType.INFO, "collectioner create router")
+        resetEndorseInfo(block,blocker)
+        pe.getNodeMgr.getStableNodes.foreach(f=>{
+          logMsg(LogType.INFO, "collectioner send endorsement to requester")
+          router.route(RequesterOfEndorsement(block,blocker,f), self) 
+        })
+        schedulerLink = scheduler.scheduleOnce(TimePolicy.getTimeoutEndorse*1.5 seconds, self, EndorseCollector.ResendEndorseInfo)
+      }
+      
     case EndorseCollector.ResendEndorseInfo =>
       if(this.block != null){
         logMsg(LogType.INFO, "collectioner resend endorsement")
