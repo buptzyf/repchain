@@ -125,8 +125,8 @@ message Block {
     repeated Transaction transactions = 3;
     //交易执行日志及输出指令
     repeated TransactionResult transactionResults = 4;
-    //输出指令集合hash
-    bytes operHash = 5;
+    //区块的hash。在计算块hash的时候，不包括签名信息；在签名时需要包括块hash。
+    bytes hashOfBlock = 5;
     // previousBlockHash - The hash of the previous block in the chain.
     bytes previousBlockHash = 6;
     //背书签名集合,必须包含出块人签名
@@ -139,17 +139,17 @@ message OperLog{
 	bytes oldValue =2;
 	bytes newValue=3;
 }
+message ActionResult{
+	int32 code = 1;
+	string reason = 2;
+}
 //交易结果(背书中针对各个交易再进行单独背书)
 //背书请求的应答（针对block中的各个交易）
 message TransactionResult {
     //唯一标识一个Transaction
   string txId = 1;
-    // result - The return value of the transaction.
   repeated OperLog ol = 2;
-    // errorCode - An error code. 5xx will be logged as a failure in the dashboard.
-  uint32 errorCode = 3;
-    // error - An error string for logging an issue.
-  string error = 4;
+  ActionResult result = 3;
 }
 
 
@@ -158,6 +158,5 @@ message BlockchainInfo {
     uint64 totalTransactions = 2;
     bytes  currentBlockHash = 3;
     bytes  previousBlockHash = 4;
-    bytes  currentWorldStateHash = 5;
 }
 

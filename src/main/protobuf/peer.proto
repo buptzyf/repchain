@@ -2,13 +2,10 @@
 copyright (C) 2018 by repChain 
 
 */
-
-
 syntax = "proto3";
-
+package rep.protos;
 option java_package = "rep.protos";
 import "google/protobuf/timestamp.proto";
-
 /*
 */
 //Event 用于图形展示的事件
