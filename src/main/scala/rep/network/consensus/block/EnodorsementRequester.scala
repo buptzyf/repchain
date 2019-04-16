@@ -34,21 +34,20 @@ class EnodorsementRequester(moduleName: String) extends ModuleBase(moduleName) {
   implicit val timeout = Timeout(TimePolicy.getTimeoutEndorse seconds)
   private val endorsementActorName = "/user/modulemanager/endorser"
 
-  private var requesterOfCollection: ActorRef = null
+  private var reqinfo: RequesterOfEndorsement = null
+  private var reqresult :ResultOfEndorseRequester = null
+  
 
   override def preStart(): Unit = {
     logMsg(LogType.INFO, "EnodorsementRequester Start")
   }
 
-  private def sendMessage(addr: Address, data: EndorsementInfo): ResultOfEndorsed = {
+  private def sendMessage(addr: Address, data: EndorsementInfo) = {
     try {
       val selection: ActorSelection = context.actorSelection(toAkkaUrl(addr, endorsementActorName));
-      val future = selection ? data
-      val r = Await.result(future, timeout.duration).asInstanceOf[ResultOfEndorsed]
-      r
+      selection ! data
     } catch {
-      case e: AskTimeoutException => ResultOfEndorsed(false, null, data.blc.hashOfBlock.toStringUtf8())
-      case re: RuntimeException   => ResultOfEndorsed(false, null, data.blc.hashOfBlock.toStringUtf8())
+      case re: RuntimeException   => logMsg(LogType.INFO, "send endorse request msg failed")
     }
   }
 
@@ -65,23 +64,50 @@ class EnodorsementRequester(moduleName: String) extends ModuleBase(moduleName) {
       false
     }
   }
-
-  override def receive = {
-    case RequesterOfEndorsement(block, blocker, addr) =>
-      val result = sendMessage(addr, EndorsementInfo(block, blocker))
-      if (result.result) {
-        if (EndorsementVerify(block, result)) {
+  
+  private def handlerOfResult(r:ResultOfEndorsed)={
+    if(this.reqinfo != null && this.reqinfo.blc.hashOfBlock.toStringUtf8() == r.BlockHash){
+      if(this.reqresult == null){
+        if (r.result) {
+        if (EndorsementVerify(this.reqinfo.blc, r)) {
           logMsg(LogType.INFO, "endorse requester recv endorsement result ok")
-          context.parent ! ResultOfEndorseRequester(result.result, result.endor, result.BlockHash,addr)
+          this.reqresult = ResultOfEndorseRequester(true, r.endor, r.BlockHash,this.reqinfo.endorer)
         } else {
           logMsg(LogType.INFO, "endorse requester recv endorsement result failed")
-          context.parent ! ResultOfEndorseRequester(false, result.endor, result.BlockHash,addr)
+          this.reqresult = ResultOfEndorseRequester(false, r.endor, r.BlockHash,this.reqinfo.endorer)
         }
       } else {
         logMsg(LogType.INFO, "endorse requester recv endorsement result failed")
-        context.parent ! ResultOfEndorseRequester(false, result.endor, result.BlockHash,addr)
+        this.reqresult = ResultOfEndorseRequester(false, r.endor, r.BlockHash,this.reqinfo.endorer)
       }
+      }
+      handler
+    }
+  }
+  
+  private def handler={
+    if(this.reqresult == null){
+      sendMessage(this.reqinfo.endorer, EndorsementInfo(this.reqinfo.blc, this.reqinfo.blocker))
+    }else{
+      context.parent ! this.reqresult
+    }
+  }
 
+  override def receive = {
+    case RequesterOfEndorsement(block, blocker, addr) =>
+      if(this.reqinfo == null){
+        this.reqinfo = RequesterOfEndorsement(block, blocker, addr)
+        this.reqresult = null
+      }else{
+        if(this.reqinfo.blc.hashOfBlock.toStringUtf8() != block.hashOfBlock.toStringUtf8() || this.reqinfo.blocker == blocker){
+          this.reqinfo = RequesterOfEndorsement(block, blocker, addr)
+          this.reqresult = null
+        }
+      }
+      handler
+      
+    case ResultOfEndorsed(result, endor, blockhash)=>
+      handlerOfResult(ResultOfEndorsed(result, endor, blockhash))
     case _ => //ignore
   }
 }
