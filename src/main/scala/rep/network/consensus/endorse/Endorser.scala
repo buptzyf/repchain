@@ -22,15 +22,15 @@ import scala.util.control.Breaks._
 import scala.util.control.Exception.Finally
 import java.util.concurrent.ConcurrentHashMap
 import rep.log.trace.LogType
-import rep.network.consensus.endorse.EndorseMsg.{ EndorsementInfo, ResultOfEndorsed }
+import rep.network.consensus.endorse.EndorseMsg.{ EndorsementInfo, ResultOfEndorsed,verifyTransSignOfEndorsement,verifyTransExeOfEndorsement,VerfiyBlockEndorseOfEndorsement,VerifyResultOfEndorsement,VerifyTypeOfEndorsement,ConsensusOfVote }
 import rep.network.consensus.block.Blocker.{PreTransBlock, PreTransBlockResult}
 import rep.network.consensus.util.{ BlockVerify, BlockHelp }
 
 object Endorser {
   def props(name: String): Props = Props(classOf[Endorser], name)
   case class CacheOfEndorsement(endorseinfo:EndorsementInfo,requester:ActorRef,
-      repeatOfChecked:Boolean,transSignOfChecked:Boolean,EndorseSignOfChecked:Boolean,
-      transExeOfChecked:Boolean,result:ResultOfEndorsed)
+      repeatOfChecked:Int,transSignOfChecked:Int,EndorseSignOfChecked:Int,
+      transExeOfChecked:Int,result:ResultOfEndorsed)
 }
 
 class Endorser(moduleName: String) extends ModuleBase(moduleName) {
@@ -62,57 +62,8 @@ class Endorser(moduleName: String) extends ModuleBase(moduleName) {
     }
     isRepeat
   }
-
-  private def ExecuteTransactionOfBlock(block: Block): Boolean = {
-    try {
-      val future = pe.getActorRef(ActorType.preloaderoftransaction) ? PreTransBlock(block,"endorser")
-      val result = Await.result(future, timeout.duration).asInstanceOf[PreTransBlockResult]
-      if (result.result) {
-        var tmpblock = result.blc.withHashOfBlock(block.hashOfBlock)
-        BlockVerify.VerifyHashOfBlock(tmpblock)
-      } else {
-        false
-      }
-    } catch {
-      case e: AskTimeoutException => false
-    }
-  }
-
-  private def asyncVerifyTransaction(t: Transaction): Future[Boolean] = {
-    val result = Promise[Boolean]
-    if (pe.getTransPoolMgr.findTrans(t.id)) {
-      result.success(true)
-    } else {
-      val tmp = BlockVerify.VerifyOneSignOfTrans(t, pe.getSysTag)
-      if (tmp._1) {
-        result.success(true)
-      }else{
-        result.success(false)
-      }
-    }
-    result.future
-  }
-
-  private def asyncVerifyTransactions(block: Block): Boolean = {
-    val listOfFuture: Seq[Future[Boolean]] = block.transactions.map(x => {
-      asyncVerifyTransaction(x)
-    })
-    val futureOfList: Future[List[Boolean]] = Future.sequence(listOfFuture.toList)
-    var result = true
-    //breakable(
-    futureOfList.map(x => {
-      x.foreach(f => {
-        if (!f) {
-          result = false
-          logMsg(LogType.INFO, "endorser verify tran sign is error, break")
-          //break
-        }
-      })
-    })
-    //)
-    result
-  }
-
+  
+/*
   private def checkedOfEndorseCondition(block: Block, blocker: String) = {
     if (pe.getSystemStatus == NodeStatus.Endorsing) {
       logMsg(LogType.INFO, "endorser recv endorsement")
@@ -178,7 +129,7 @@ class Endorser(moduleName: String) extends ModuleBase(moduleName) {
       logMsg(LogType.INFO, "endorser verify itself ")
       //sender ! ResultOfEndorsed(false, null, block.hashOfBlock.toStringUtf8())
     }
-  }
+  }*/
 
   private def isAllowEndorse(info:EndorsementInfo):Int={
     if(info.blocker == pe.getSysTag){
@@ -210,7 +161,17 @@ class Endorser(moduleName: String) extends ModuleBase(moduleName) {
         case 0 =>
           //entry endorse
           if(this.cache.result == null){
-            
+            if(this.cache.transSignOfChecked == 0) pe.getActorRef(ActorType.verifytransofsigner) ! verifyTransSignOfEndorsement(this.cache.endorseinfo.blc, this.cache.endorseinfo.blocker)
+            if(this.cache.transExeOfChecked == 0) pe.getActorRef(ActorType.verifytransofexecutor) ! verifyTransExeOfEndorsement(this.cache.endorseinfo.blc, this.cache.endorseinfo.blocker)
+            if(this.cache.EndorseSignOfChecked == 0) pe.getActorRef(ActorType.verifyblockendorser) ! VerfiyBlockEndorseOfEndorsement(this.cache.endorseinfo.blc, this.cache.endorseinfo.blocker)
+            if(this.cache.repeatOfChecked == 0){ 
+                val r = this.hasRepeatOfTrans(this.cache.endorseinfo.blc.transactions)
+              if(r){
+                this.cache = CacheOfEndorsement(this.cache.endorseinfo,this.cache.requester,1,this.cache.transSignOfChecked,this.cache.EndorseSignOfChecked,this.cache.transExeOfChecked,null)
+              }else{
+                this.cache = CacheOfEndorsement(this.cache.endorseinfo,this.cache.requester,2,this.cache.transSignOfChecked,this.cache.EndorseSignOfChecked,this.cache.transExeOfChecked,null)
+              }
+            }
           }else{
             //send result to endorse requester
             if(this.cache.result.result){
@@ -236,7 +197,7 @@ class Endorser(moduleName: String) extends ModuleBase(moduleName) {
   private def CheckEndorseInfo(info:EndorsementInfo)={
     if(this.cache == null){
       //直接接收背书并进行处理
-      this.cache = CacheOfEndorsement(info,sender,false,false,false,false,null)
+      this.cache = CacheOfEndorsement(info,sender,0,0,0,0,null)
       logMsg(LogType.INFO, "new endorsment")
     }else{
       //已经缓存背书了，检查是否是同一个背书请求
@@ -245,17 +206,57 @@ class Endorser(moduleName: String) extends ModuleBase(moduleName) {
         logMsg(LogType.INFO, "endorsement is same")
       }else{
         //不是同一个背书
-        this.cache = CacheOfEndorsement(info,sender,false,false,false,false,null)
+        this.cache = CacheOfEndorsement(info,sender,0,0,0,0,null)
         logMsg(LogType.INFO, "new endorsment,refresh cache")
       }
     }
     EndorseHandler
   }
   
+  private def VerifyOfHandler(vr:VerifyResultOfEndorsement)={
+    if(this.cache != null && this.cache.endorseinfo.blc != null && this.cache.endorseinfo.blc.hashOfBlock.toStringUtf8() == vr.blockhash && this.cache.endorseinfo.blocker==vr.blocker){
+      vr.verifyType match{
+        case VerifyTypeOfEndorsement.transSignVerify=>
+          if(vr.result){
+              this.cache = CacheOfEndorsement(this.cache.endorseinfo,this.cache.requester,this.cache.repeatOfChecked,1,this.cache.EndorseSignOfChecked,this.cache.transExeOfChecked,null)
+            }else{
+              this.cache = CacheOfEndorsement(this.cache.endorseinfo,this.cache.requester,this.cache.repeatOfChecked,2,this.cache.EndorseSignOfChecked,this.cache.transExeOfChecked,null)
+            }
+        case VerifyTypeOfEndorsement.transExeVerify=>
+          if(vr.result){
+              this.cache = CacheOfEndorsement(this.cache.endorseinfo,this.cache.requester,this.cache.repeatOfChecked,this.cache.transSignOfChecked,this.cache.EndorseSignOfChecked,1,null)
+            }else{
+              this.cache = CacheOfEndorsement(this.cache.endorseinfo,this.cache.requester,this.cache.repeatOfChecked,this.cache.transSignOfChecked,this.cache.EndorseSignOfChecked,2,null)
+            }
+        case VerifyTypeOfEndorsement.endorsementVerify=>
+          if(vr.result){
+              this.cache = CacheOfEndorsement(this.cache.endorseinfo,this.cache.requester,this.cache.repeatOfChecked,this.cache.transSignOfChecked,1,this.cache.transExeOfChecked,null)
+            }else{
+              this.cache = CacheOfEndorsement(this.cache.endorseinfo,this.cache.requester,this.cache.repeatOfChecked,this.cache.transSignOfChecked,2,this.cache.transExeOfChecked,null)
+            }
+      }
+      
+        if(this.cache.repeatOfChecked == 1 && this.cache.transSignOfChecked == 1 && this.cache.transExeOfChecked == 1 && this.cache.EndorseSignOfChecked == 1){
+          this.cache = CacheOfEndorsement(this.cache.endorseinfo,this.cache.requester,this.cache.repeatOfChecked,this.cache.transSignOfChecked,this.cache.EndorseSignOfChecked,this.cache.transExeOfChecked,
+                    ResultOfEndorsed(true, BlockHelp.SignBlock(this.cache.endorseinfo.blc, pe.getSysTag), this.cache.endorseinfo.blc.hashOfBlock.toStringUtf8()))
+        }else if(this.cache.repeatOfChecked == 2 || this.cache.transSignOfChecked == 2 || this.cache.transExeOfChecked == 2 || this.cache.EndorseSignOfChecked == 2){
+          this.cache = CacheOfEndorsement(this.cache.endorseinfo,this.cache.requester,this.cache.repeatOfChecked,this.cache.transSignOfChecked,this.cache.EndorseSignOfChecked,this.cache.transExeOfChecked,
+                    ResultOfEndorsed(false, BlockHelp.SignBlock(this.cache.endorseinfo.blc, pe.getSysTag), this.cache.endorseinfo.blc.hashOfBlock.toStringUtf8()))
+        }
+      EndorseHandler
+    }
+  }
+  
   override def receive = {
     //Endorsement block
     case EndorsementInfo(block, blocker) =>
-      checkedOfEndorseCondition(block, blocker)
+      CheckEndorseInfo(EndorsementInfo(block, blocker))
+    case VerifyResultOfEndorsement(blockhash:String,blocker:String,verifyType:Int,result:Boolean) =>
+      VerifyOfHandler(VerifyResultOfEndorsement(blockhash,blocker,verifyType,result))
+    case ConsensusOfVote=>
+      if(this.cache != null){
+        EndorseHandler
+      }
     case _ => //ignore
   }
 

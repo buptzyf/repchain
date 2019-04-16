@@ -13,6 +13,7 @@ import rep.network.util.NodeHelp
 import rep.network.consensus.block.Blocker.{ CreateBlock }
 import rep.network.sync.SyncMsg.StartSync
 import rep.network.consensus.block.GenesisBlocker.GenesisBlock
+import rep.network.consensus.endorse.EndorseMsg.ConsensusOfVote
 
 object Voter {
 
@@ -76,6 +77,7 @@ class Voter(moduleName: String) extends ModuleBase(moduleName) with CRFDVoter {
       pe.getActorRef(ActorType.blocker) ! CreateBlock
     } else {
       //自己是背书人
+      pe.getActorRef(ActorType.endorser) ! ConsensusOfVote
       pe.setSystemStatus(NodeStatus.Endorsing)
     }
   }
