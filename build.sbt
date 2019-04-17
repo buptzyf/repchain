@@ -2,7 +2,7 @@ name := """RepChain"""
 
 version := "0.1"
 
-scalaVersion := "2.11.11"
+scalaVersion := "2.11.12"
 
 lazy val akkaVersion = "2.5.3"
 val akkaHttpVersion   = "10.0.11"
@@ -28,8 +28,6 @@ libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value
 
 libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging" % "3.5.0"
 
-libraryDependencies += "com.trueaccord.scalapb" %% "scalapb-runtime" % com.trueaccord.scalapb.compiler.Version.scalapbVersion % "protobuf"
-// For ScalaPB 0.6.x:
 libraryDependencies += "com.trueaccord.scalapb" %% "scalapb-json4s" % "0.3.0"
 
 libraryDependencies += "org.iq80.leveldb" % "leveldb" % "0.7"
@@ -68,5 +66,13 @@ libraryDependencies ++= Seq(
 )	
 
 javacOptions ++= Seq("-encoding", "UTF-8")
+
+scapegoatVersion in ThisBuild := "1.1.0"
+PB.targets in Compile := Seq(
+  scalapb.gen() -> (sourceManaged in Compile).value
+)
+libraryDependencies += "com.thesamet.scalapb" %% "scalapb-runtime" % scalapb.compiler.Version.scalapbVersion % "protobuf"
+//libraryDependencies += "com.trueaccord.scalapb" %% "scalapb-runtime" % com.trueaccord.scalapb.compiler.Version.scalapbVersion % "protobuf"
+// For ScalaPB 0.6.x:
 
 mainClass in (Compile, packageBin) := Some("rep.app.Repchain")
