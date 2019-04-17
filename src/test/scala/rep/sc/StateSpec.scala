@@ -82,7 +82,7 @@ class StateSpec(_system: ActorSystem)
           Transfer("121000005l35120456", "12110107bi45jh675g", 5),
           Transfer("121000005l35120456", "12110107bi45jh675g0", 5),
            Transfer("121000005l35120456", "12110107bi45jh675g", 500))
-    val rcs = Array(1, -2 , -3)
+    val rcs = Array(None,  "目标账户不存在", "余额不足")
     
     val signer = Signer("node2", "12110107bi45jh675g", "13856789234", Seq("node2"))
     val cert = scala.io.Source.fromFile("jks/certs/12110107bi45jh675g.node2.cer")
@@ -99,92 +99,98 @@ class StateSpec(_system: ActorSystem)
     val t1 = PeerHelper.createTransaction4Deploy(sysName,cid1 ,
       l1, "",5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
 
-    val msg_send1 = DoTransaction(t1,   "api_"+t1.id)
+    val msg_send1 = DoTransaction(t1,   "dbnumber")
     probe.send(sandbox, msg_send1)
     val msg_recv1 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-    msg_recv1.r.code should be (1)
+    msg_recv1.err.isEmpty should be (true)
 
     val t2 = PeerHelper.createTransaction4Deploy(sysName,cid2,
       l2, "",5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
 
-    val msg_send2 = DoTransaction(t2,   "api_"+t2.id)
+    val msg_send2 = DoTransaction(t2,   "dbnumber")
     probe.send(sandbox, msg_send2)
     val msg_recv2 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-     msg_recv2.r.code should be (1)
+     msg_recv2.err.isEmpty should be (true)
 
     // 生成invoke交易
     // 注册账户
     val t3 =  PeerHelper.createTransaction4Invoke(sysName,cid2, ACTION.SignUpSigner, Seq(write(signer)))
-    val msg_send3 = DoTransaction(t3,   "api_"+t3.id)
+    val msg_send3 = DoTransaction(t3,  "dbnumber")
     probe.send(sandbox, msg_send3)
     val msg_recv3 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-    msg_recv3.r.code should be (1)
+    msg_recv3.err.isEmpty should be (true)
 
     // 注册证书
     val t4 =  PeerHelper.createTransaction4Invoke(sysName,cid2, ACTION.SignUpCert, Seq(writePretty(certinfo)))
-    val msg_send4 = DoTransaction(t4,   "api_"+t4.id)
+    val msg_send4 = DoTransaction(t4,   "dbnumber")
     probe.send(sandbox, msg_send4)
     val msg_recv4 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-    msg_recv4.r.code should be (1)
+    msg_recv4.err.isEmpty should be (true)
 
 
     //生成invoke交易
     val t5 = PeerHelper.createTransaction4Invoke(sysName,cid1, ACTION.set, Seq(sms))
-    val msg_send5 = DoTransaction(t5,   "api_"+t5.id)
+    val msg_send5 = DoTransaction(t5,   "dbnumber")
     probe.send(sandbox, msg_send5)
     val msg_recv5 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-    msg_recv5.r.code should be (1)
+    msg_recv5.err.isEmpty should be (true)
 
     //正常调用
     for (i <- 0 until 1){
         val t6 = PeerHelper.createTransaction4Invoke(sysName, cid1, ACTION.transfer, Seq(write(tcs(i))))
-        val msg_send6 = DoTransaction(t6,   "api_"+t6.id)
+        val msg_send6 = DoTransaction(t6,   "dbnumber")
         probe.send(sandbox, msg_send6)
         val msg_recv6 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-        msg_recv6.r.code should be (rcs(i))
+        if (msg_recv6.err.isEmpty && i == 0)
+          msg_recv6.err should be (rcs(0))
+        else
+          msg_recv6.err.get.cause.getMessage should be (rcs(i))
     } 
     //非部署者无法禁用合约
     val sysName2 = "12110107bi45jh675g.node2"
     SignTool.loadPrivateKey("12110107bi45jh675g.node2", "123", "jks/12110107bi45jh675g.node2.jks")
     var t = PeerHelper.createTransaction4State(sysName2, cid1,false)
-    var msg_send = DoTransaction(t,   "api_"+t.id)
+    var msg_send = DoTransaction(t,   "dbnumber")
     probe.send(sandbox, msg_send)
     var msg_recv = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
     msg_recv.err.get.cause.getMessage should be (TransProcessor.ERR_CODER)
 
     //部署者可以禁用合约
     t = PeerHelper.createTransaction4State(sysName, cid1,false)
-    msg_send = DoTransaction(t,   "api_"+t.id)
+    msg_send = DoTransaction(t,   "dbnumber")
     probe.send(sandbox, msg_send)
     msg_recv = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-    msg_recv4.r.code should be (1)
+    msg_recv4.err.isEmpty should be (true)
     //禁用合约之后，无法Invoke合约
     for (i <- 0 until 1){
         val t6 = PeerHelper.createTransaction4Invoke(sysName, cid1, ACTION.transfer, Seq(write(tcs(i))))
-        val msg_send6 = DoTransaction(t6,   "api_"+t6.id)
+        val msg_send6 = DoTransaction(t6,   "dbnumber")
         probe.send(sandbox, msg_send6)
         val msg_recv6 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
         msg_recv6.err.get.cause.getMessage should be (TransProcessor.ERR_DISABLE_CID)
     }     
     //非部署者无法启用合约
     t = PeerHelper.createTransaction4State(sysName2, cid1,true)
-    msg_send = DoTransaction(t,   "api_"+t.id)
+    msg_send = DoTransaction(t,   "dbnumber")
     probe.send(sandbox, msg_send)
     msg_recv = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
     msg_recv.err.get.cause.getMessage should be (TransProcessor.ERR_CODER)
     //部署者可以启用合约
     t = PeerHelper.createTransaction4State(sysName, cid1,true)
-    msg_send = DoTransaction(t,   "api_"+t.id)
+    msg_send = DoTransaction(t,  "dbnumber")
     probe.send(sandbox, msg_send)
     msg_recv = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-    msg_recv4.r.code should be (1)
+    msg_recv4.err.isEmpty should be (true)
     //启用合约之后,可以Invoke合约
     for (i <- 0 until 1){
         val t6 = PeerHelper.createTransaction4Invoke(sysName, cid1, ACTION.transfer, Seq(write(tcs(i))))
-        val msg_send6 = DoTransaction(t6,   "api_"+t6.id)
+        val msg_send6 = DoTransaction(t6,   "dbnumber")
         probe.send(sandbox, msg_send6)
         val msg_recv6 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-        msg_recv6.r.code should be (rcs(i))
+        if (msg_recv6.err.isEmpty && i == 0)
+          msg_recv6.err should be (rcs(0))
+        else
+          msg_recv6.err.get.cause.getMessage should be (rcs(i))
     } 
   }
 }
