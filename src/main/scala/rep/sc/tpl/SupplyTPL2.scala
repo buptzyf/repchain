@@ -49,13 +49,13 @@ class SupplyTPL2 extends IContract {
      * 追加确认签名 TODO 逻辑实现
      */
     def confirmSign(ctx: ContractContext, data:IPTConfirm ):ActionResult={
-       ActionResult(1)
+       null
     }
      /**
      * 取消追加确认签名 TODO 逻辑实现
      */
     def cancelSign(ctx: ContractContext, data:IPTConfirm ):ActionResult={
-       ActionResult(1)
+       null
     }
 
    /**
@@ -65,7 +65,7 @@ class SupplyTPL2 extends IContract {
     * @return
     */
     def SignUp(ctx: ContractContext, data:Map[String,String]):ActionResult = {
-      ActionResult(1)
+      null
     }
 
    /**
@@ -77,7 +77,7 @@ class SupplyTPL2 extends IContract {
       //签约输入持久化,默认的类型转换无法胜任，以json字符串形式持久化
       ctx.api.setVal(sid, write(data))
       ctx.api.setVal(pid, TPL.Share)
-       ActionResult(1)
+      null
     }
 
     def signFixed(ctx: ContractContext, data:IPTSignFixed ):ActionResult={
@@ -86,7 +86,7 @@ class SupplyTPL2 extends IContract {
       //签约输入持久化
       ctx.api.setVal(sid, write(data))
       ctx.api.setVal(pid, TPL.Fixed)
-       ActionResult(1)
+      null
     }
     
     /**
@@ -110,7 +110,7 @@ class SupplyTPL2 extends IContract {
       }
       //返回分账计算结果
       addToAccount(ctx, mr)
-       ActionResult(1)
+      null
     }
     
     /**
