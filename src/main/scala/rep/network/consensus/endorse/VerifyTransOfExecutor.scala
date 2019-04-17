@@ -71,7 +71,7 @@ class VerifyTransOfExecutor(moduleName: String) extends ModuleBase(moduleName) {
       }else if(blc.hashOfBlock.toStringUtf8() == this.cache.blc.hashOfBlock.toStringUtf8() && blocker == this.cache.blocker){
         logMsg(LogType.INFO, "trans exe verify is exist")
       }else{
-        logMsg(LogType.INFO, "trans exe verify is repeat")
+        logMsg(LogType.INFO, "trans exe verify is reset")
         this.cache = VerifyCacher(blc, blocker,null)
       }
       Handler

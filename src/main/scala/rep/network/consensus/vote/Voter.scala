@@ -95,22 +95,26 @@ class Voter(moduleName: String) extends ModuleBase(moduleName) with CRFDVoter {
         this.cleanVoteInfo
         this.resetCandidator
         this.resetBlocker(0)
+        logMsg(LogType.INFO, moduleName + "~" + s"first voter,blocker=${this.Blocker.blocker},voteidx=${this.Blocker.VoteIndex}" + "~" + selfAddr)
       } else {
         if (!this.BlockHashOfVote.equals(pe.getCurrentBlockHash)) {
           //抽签的基础块已经变化，需要重续选择候选人
           this.cleanVoteInfo
           this.resetCandidator
           this.resetBlocker(0)
+          logMsg(LogType.INFO, moduleName + "~" + s"hash change,reset voter,height=${pe.getCurrentHeight},blocker=${this.Blocker.blocker},voteidx=${this.Blocker.VoteIndex}" + "~" + selfAddr)
         } else {
           if (this.Blocker.blocker == "") {
             this.cleanVoteInfo
             this.resetCandidator
             this.resetBlocker(0)
+            logMsg(LogType.INFO, moduleName + "~" + s"blocker=null,reset voter,height=${pe.getCurrentHeight},blocker=${this.Blocker.blocker},voteidx=${this.Blocker.VoteIndex}" + "~" + selfAddr)
           } else {
             if ((System.currentTimeMillis() - this.Blocker.voteTime) / 1000 > TimePolicy.getTimeOutBlock) {
               //说明出块超时
               this.voteCount = 0
               this.resetBlocker(this.Blocker.VoteIndex + 1)
+              logMsg(LogType.INFO, moduleName + "~" + s"block timeout,reset voter,,height=${pe.getCurrentHeight},blocker=${this.Blocker.blocker},voteidx=${this.Blocker.VoteIndex}" + "~" + selfAddr)
             } else {
               NoticeBlockerMsg
             }

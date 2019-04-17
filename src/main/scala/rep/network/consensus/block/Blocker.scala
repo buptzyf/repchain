@@ -126,8 +126,10 @@ class Blocker(moduleName: String) extends ModuleBase(moduleName) {
     //todo 交易排序
     if (trans.size > SystemProfile.getMinBlockTransNum) {
       var blc = BlockHelp.WaitingForExecutionOfBlock(pe.getCurrentBlockHash, pe.getCurrentHeight + 1, trans)
+      logMsg(LogType.INFO, moduleName + "~" + s"create new block,height=${blc.height},local height=${pe.getCurrentHeight}" + "~" + selfAddr)
       blc = ExecuteTransactionOfBlock(blc)
       if (blc != null) {
+        logMsg(LogType.INFO, moduleName + "~" + s"create new block,prelaod success,height=${blc.height},local height=${pe.getCurrentHeight}" + "~" + selfAddr)
         blc = BlockHelp.AddBlockHash(blc)
         BlockHelp.AddSignToBlock(blc, pe.getSysTag)
       } else {
@@ -139,15 +141,15 @@ class Blocker(moduleName: String) extends ModuleBase(moduleName) {
   }
 
   private def CreateBlockHandler = {
-    if (preblock == null) {
+    //if (preblock == null) {
       val blc = CreateBlock
       if (blc != null) {
         this.preblock = blc
         schedulerLink = clearSched()
         pe.getActorRef(ActorType.endorsementcollectioner) ! EndorseMsg.CollectEndorsement(this.preblock, pe.getBlocker.blocker)
-        schedulerLink = scheduler.scheduleOnce(TimePolicy.getTimeoutEndorse seconds, self, Blocker.EndorseOfBlockTimeOut)
+        //schedulerLink = scheduler.scheduleOnce(TimePolicy.getTimeoutEndorse seconds, self, Blocker.EndorseOfBlockTimeOut)
       }
-    }
+    //}
   }
 
   override def receive = {
@@ -162,10 +164,12 @@ class Blocker(moduleName: String) extends ModuleBase(moduleName) {
           } else {
             if (preblock.previousBlockHash.toStringUtf8() == pe.getCurrentBlockHash) {
               //预出块已经建立，不需要重新创建，可以请求再次背书
-              schedulerLink = clearSched()
+              /*schedulerLink = clearSched()
+              logMsg(LogType.INFO, moduleName + "~" + s"create new block,send endorse collector,height=${this.preblock.height},local height=${pe.getCurrentHeight}" + "~" + selfAddr)
               pe.getActorRef(ActorType.endorsementcollectioner) ! EndorseMsg.CollectEndorsement(this.preblock, pe.getBlocker.blocker)
               sendEvent(EventType.PUBLISH_INFO, mediator, selfAddr, Topic.Endorsement, Event.Action.BLOCK_ENDORSEMENT)
-              schedulerLink = scheduler.scheduleOnce(TimePolicy.getTimeoutEndorse seconds, self, Blocker.EndorseOfBlockTimeOut)
+              schedulerLink = scheduler.scheduleOnce(TimePolicy.getTimeoutEndorse seconds, self, Blocker.EndorseOfBlockTimeOut)*/
+              
             } else {
               //上一个块已经变化，需要重新出块
               CreateBlockHandler
@@ -173,14 +177,17 @@ class Blocker(moduleName: String) extends ModuleBase(moduleName) {
           }
         } else {
           //节点状态不对
+          logMsg(LogType.INFO, moduleName + "~" + s"create new block,node status error,height=${this.preblock.height}" + "~" + selfAddr)
         }
       } else {
         //出块标识错误,暂时不用做任何处理
+        logMsg(LogType.INFO, moduleName + "~" + s"create new block,do not blocker,height=${this.preblock.height}" + "~" + selfAddr)
       }
 
     //出块超时
     case Blocker.EndorseOfBlockTimeOut =>
       schedulerLink = clearSched()
+      logMsg(LogType.INFO, moduleName + "~" + s"create new block,send endorse collector,height=${this.preblock.height},local height=${pe.getCurrentHeight}" + "~" + selfAddr)
       pe.getActorRef(ActorType.endorsementcollectioner) ! EndorseMsg.CollectEndorsement(this.preblock, pe.getBlocker.blocker)
       schedulerLink = scheduler.scheduleOnce(TimePolicy.getTimeoutEndorse seconds, self, Blocker.EndorseOfBlockTimeOut)
     case _ => //ignore

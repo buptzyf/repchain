@@ -86,7 +86,7 @@ class VerifyTransOfSigner(moduleName: String) extends ModuleBase(moduleName) {
       }else if(blc.hashOfBlock.toStringUtf8() == this.cache.blc.hashOfBlock.toStringUtf8() && blocker == this.cache.blocker){
         logMsg(LogType.INFO, "trans sign verify is exist")
       }else{
-        logMsg(LogType.INFO, "trans sign verify is repeat")
+        logMsg(LogType.INFO, "trans sign verify is reset")
         this.cache = VerifyCacher(blc, blocker,null)
       }
       Handler

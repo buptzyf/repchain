@@ -33,6 +33,7 @@ class EnodorsementRequester(moduleName: String) extends ModuleBase(moduleName) {
 
   implicit val timeout = Timeout(TimePolicy.getTimeoutEndorse seconds)
   private val endorsementActorName = "/user/modulemanager/endorser"
+  
 
   private var reqinfo: RequesterOfEndorsement = null
   private var reqresult :ResultOfEndorseRequester = null
@@ -99,7 +100,7 @@ class EnodorsementRequester(moduleName: String) extends ModuleBase(moduleName) {
         this.reqinfo = RequesterOfEndorsement(block, blocker, addr)
         this.reqresult = null
       }else{
-        if(this.reqinfo.blc.hashOfBlock.toStringUtf8() != block.hashOfBlock.toStringUtf8() || this.reqinfo.blocker == blocker){
+        if(this.reqinfo.blc.hashOfBlock.toStringUtf8() != block.hashOfBlock.toStringUtf8() ){
           this.reqinfo = RequesterOfEndorsement(block, blocker, addr)
           this.reqresult = null
         }
