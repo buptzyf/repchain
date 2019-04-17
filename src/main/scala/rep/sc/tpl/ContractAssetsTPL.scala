@@ -78,11 +78,11 @@ class ContractAssetsTPL extends IContract{
       var pv0 = ctx.api.getVal(k)
       if(pv0 != null)
 //        throw new Exception("["+k+"]已存在，当前值["+pv0+"]");
-        return ActionResult(-1, Some(s"$k 已存在，当前值为 $pv0"))
+        throw ContractException(s"$k 已存在，当前值为 $pv0")
       ctx.api.setVal(k,v)
       print("putProof:"+k+":"+v)
     }
-      ActionResult(1,None)
+      null
   }
 
   /**
