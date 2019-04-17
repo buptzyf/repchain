@@ -42,10 +42,8 @@ trait ILevelDB {
 	 * @param	key String 指定的键，bb Array[Byte] 要存储的值
 	 * @return	返回成功或者失败 Boolean
 	 * */
-    def   Put (key : String,bb : Array[Byte],isWorldState : Boolean):Boolean
-    def   Put (key : String,bb : Array[Byte]):Boolean={
-      Put (key,bb,false)
-    }
+    //def   Put (key : String,bb : Array[Byte],isWorldState : Boolean):Boolean
+    def   Put (key : String,bb : Array[Byte]):Boolean
      /**
 	 * @author jiangbuyun
 	 * @version	0.7
@@ -109,22 +107,6 @@ trait ILevelDB {
 	 * @return	返回当前实例的名称 String
 	 * */
     def   getInstanceName:String
-     /**
-	 * @author jiangbuyun
-	 * @version	0.7
-	 * @since	2017-09-28
-	 * @category	计算当前WorldState的Merkle的值
-	 * @param	无
-	 * @return	返回WorldState的Merkle值 Array[Byte]
-	 * */
-    def   GetComputeMerkle:Array[Byte]
-    /**
-	 * @author jiangbuyun
-	 * @version	0.7
-	 * @since	2017-09-28
-	 * @category	计算当前WorldState的Merkle的值
-	 * @param	无
-	 * @return	返回WorldState的Merkle值 String
-	 * */
-    def   GetComputeMerkle4String:String
+   
+   
 }

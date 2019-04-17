@@ -26,11 +26,11 @@ import rep.storage._
 import rep.storage.IdxPrefix.WorldStateKeyPreFix
 import rep.log.trace.LogType
 import org.slf4j.LoggerFactory
-import rep.sc.Shim.Oper
 import org.json4s._
 import rep.log.trace.{RepLogger,ModuleType}
 import rep.utils.SerializeUtils.deserialise
 import rep.utils.SerializeUtils.serialise
+import  _root_.com.google.protobuf.ByteString 
 
 /**
  * @author c4w
@@ -39,7 +39,7 @@ class SandboxScala(cid:ChaincodeId) extends Sandbox(cid){
   var cobj:IContract = null
   val PRE_STATE = "_STATE"
   
-  def doTransaction(t:Transaction,from:ActorRef, da:String, bRestore:Boolean):DoTransactionResult ={
+  def doTransaction(t:Transaction, da:String, bRestore:Boolean):DoTransactionResult ={
     //上下文可获得交易
    //构造和传入ctx
    val ctx = new ContractContext(shim,t)
@@ -64,20 +64,20 @@ class SandboxScala(cid:ChaincodeId) extends Sandbox(cid){
           if(!bRestore){
             val txid = serialise(t.id)
             shim.sr.Put(key_tx,txid)
-            shim.ol.append(new Oper(key_tx, null, txid))
+            shim.ol.append(OperLog(key_tx, ByteString.EMPTY, ByteString.copyFrom(txid)))
             
             //写入初始状态
             val key_tx_state = WorldStateKeyPreFix+ tx_cid + PRE_STATE
             val state_enable = serialise(true)
             shim.sr.Put(key_tx_state,state_enable)
-            shim.ol.append(new Oper(key_tx_state, null, state_enable))
+            shim.ol.append(OperLog(key_tx_state, ByteString.EMPTY, ByteString.copyFrom(state_enable)))
             
             //利用kv记住合约的开发者
             val coder_bytes =  serialise(coder)
             shim.sr.Put(key_coder,coder_bytes)
-            shim.ol.append(new Oper(key_coder, null, coder_bytes))            
+            shim.ol.append(OperLog(key_coder, ByteString.EMPTY, ByteString.copyFrom(coder_bytes)))            
           }     
-          new ActionResult(1,None)
+          null
          //由于Invoke为最频繁调用，因此应尽量避免在处理中I/O读写,比如合约状态的检查就最好在内存中处理
           //TODO case  Transaction.Type.CHAINCODE_DESC 增加对合约描述的处理
         case  Transaction.Type.CHAINCODE_INVOKE =>
@@ -92,26 +92,18 @@ class SandboxScala(cid:ChaincodeId) extends Sandbox(cid){
           val state = t.para.state.get
           val state_bytes = serialise(state)
           shim.sr.Put(key_tx_state,state_bytes)
-          shim.ol.append(new Oper(key_tx_state, null, state_bytes))
-          new ActionResult(1,None)
+          shim.ol.append(OperLog(key_tx_state, null, ByteString.copyFrom(state_bytes)))
+          null
       }
-      val mb = shim.sr.GetComputeMerkle4String
-      val mbstr = mb match {
-        case null => None
-        case _ => Option(mb)  //Option(BytesHex.bytes2hex(mb))
-      }
-      new DoTransactionResult(t,from, r, 
-          mbstr,
-         shim.ol.toList,shim.mb,None)
+      new DoTransactionResult(t.id, r, 
+         shim.ol.toList,None)
     }catch{
-      case e: Exception => 
-        shim.rollback        
+      case e: Throwable => 
         log.error(t.id, e)
         //akka send 无法序列化原始异常,简化异常信息
         val e1 = new SandboxException(e.getMessage)
-        new DoTransactionResult(t,from, null,
-           None,
-          shim.ol.toList,shim.mb, 
+        new DoTransactionResult(t.id, null,
+          shim.ol.toList,
           Option(akka.actor.Status.Failure(e1)))           
     }
   }  

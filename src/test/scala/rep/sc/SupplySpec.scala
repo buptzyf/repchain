@@ -81,7 +81,7 @@ class SupplySpec(_system: ActorSystem)
     val sysName = "121000005l35120456.node1"
     val dbTag = "121000005l35120456.node1"
     //建立PeerManager实例是为了调用transactionCreator(需要用到密钥签名)，无他
-    val pm = system.actorOf(ModuleManager.props("pm", sysName))
+    val pm = system.actorOf(ModuleManager.props("modulemanager", sysName, false, false,false), "modulemanager")
     //加载合约脚本
     val s1 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/SupplyTPL.scala")
     val l1 = try s1.mkString finally s1.close()
@@ -107,13 +107,13 @@ class SupplySpec(_system: ActorSystem)
     //准备探针以验证调用返回结果
     val probe = TestProbe()
     val db = ImpDataAccess.GetDataAccess(sysName)
-    var sandbox = system.actorOf(TransProcessor.props("sandbox", "", probe.ref))
+    var sandbox = system.actorOf(TransProcessor.props("sandbox",  probe.ref))
     //生成deploy交易
     val cid = new ChaincodeId("Supply",1)
     val t1 = PeerHelper.createTransaction4Deploy(sysName, cid,
        l1, "",5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
 
-    val msg_send1 = new DoTransaction(t1, probe.ref, "")
+    val msg_send1 = new DoTransaction(t1,   "api_"+t1.id)
     probe.send(sandbox, msg_send1)
     val msg_recv1 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
     val ol1 = msg_recv1.ol
@@ -123,12 +123,12 @@ class SupplySpec(_system: ActorSystem)
     //初始化资产
     val t2 = PeerHelper.createTransaction4Invoke(sysName,cid, ACTION.SignFixed, Seq(l2))
       
-    val msg_send2 = new DoTransaction(t2, probe.ref, "")
+    val msg_send2 = new DoTransaction(t2,   "api_"+t2.id)
     probe.send(sandbox, msg_send2)
     val msg_recv2 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
 
     val t3 = PeerHelper.createTransaction4Invoke(sysName, cid, ACTION.SignShare, Seq(l3))
-    val msg_send3 = new DoTransaction(t3, probe.ref, "")
+    val msg_send3 = new DoTransaction(t3,   "api_"+t3.id)
      probe.send(sandbox, msg_send3)
     val msg_recv3 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
 
@@ -139,7 +139,7 @@ class SupplySpec(_system: ActorSystem)
       val ipt4 = new IPTSplit(account_sales1,product_id,el)
       val l4 = write(ipt4)
       val t4 = PeerHelper.createTransaction4Invoke(sysName, cid, ACTION.Split, Seq(l4))
-      val msg_send4 = new DoTransaction(t4, probe.ref, "")
+      val msg_send4 = new DoTransaction(t4,   "api_"+t4.id)
       
        probe.send(sandbox, msg_send4)
       val msg_recv4 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
@@ -150,9 +150,9 @@ class SupplySpec(_system: ActorSystem)
       var total = 0
       ol4.foreach { 
         ol => 
-          total += deserialise(ol.newValue).asInstanceOf[Int]
+          total += deserialise(ol.newValue.toByteArray()).asInstanceOf[Int]
           if(ol.oldValue!= null)        
-            total -= deserialise(ol.oldValue).asInstanceOf[Int]        
+            total -= deserialise(ol.oldValue.toByteArray()).asInstanceOf[Int]        
       }
       total should be(el)
     }
@@ -162,7 +162,7 @@ class SupplySpec(_system: ActorSystem)
       val ipt4 = new IPTSplit(account_sales2,product_id,el)
       val l4 = write(ipt4)
       val t4 = PeerHelper.createTransaction4Invoke(sysName, cid, ACTION.Split, Seq(l4))
-      val msg_send4 = new DoTransaction(t4, probe.ref, "")
+      val msg_send4 = new DoTransaction(t4,   "api_"+t4.id)
       
        probe.send(sandbox, msg_send4)
       val msg_recv4 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
@@ -173,9 +173,9 @@ class SupplySpec(_system: ActorSystem)
       var total = 0
       ol4.foreach { 
         ol => 
-          total += deserialise(ol.newValue).asInstanceOf[Int]
+          total += deserialise(ol.newValue.toByteArray()).asInstanceOf[Int]
           if(ol.oldValue!= null)        
-            total -= deserialise(ol.oldValue).asInstanceOf[Int]       
+            total -= deserialise(ol.oldValue.toByteArray()).asInstanceOf[Int]       
       }
       total should be(el)
     }

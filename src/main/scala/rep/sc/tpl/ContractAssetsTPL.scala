@@ -25,8 +25,8 @@ import rep.utils.IdTool
 import rep.sc.scalax.IContract
 
 import rep.sc.scalax.ContractContext
-
-import rep.sc.scalax.ActionResult
+import rep.sc.scalax.ContractException
+import rep.protos.peer.ActionResult
 
 /**
  * 资产管理合约
@@ -52,24 +52,24 @@ class ContractAssetsTPL extends IContract{
       for((k,v)<-data){
         ctx.api.setVal(k, v)
       }
-      new ActionResult(1,None)
+      null
     }
     
     def transfer(ctx: ContractContext, data:Transfer) :ActionResult={
       if(!data.from.equals(ctx.t.getSignature.getCertId.creditCode))
-        return new ActionResult(-1, Some("只允许从本人账户转出"))      
+        throw ContractException("只允许从本人账户转出")      
       val signerKey =  data.to
       // 跨合约读账户，该处并未反序列化
       if(ctx.api.getStateEx(chaincodeName,data.to)==null)
-        return new ActionResult(-2, Some("目标账户不存在"))
+        throw ContractException("目标账户不存在")
       val sfrom =  ctx.api.getVal(data.from)
       var dfrom =sfrom.asInstanceOf[Int]
       if(dfrom < data.amount)
-        return new ActionResult(-3, Some("余额不足"))
+        throw ContractException("余额不足")
       var dto = ctx.api.getVal(data.to).toString.toInt
       ctx.api.setVal(data.from,dfrom - data.amount)
       ctx.api.setVal(data.to,dto + data.amount)
-       new ActionResult(1,None)
+       null
     }
 
     def put_proof(ctx: ContractContext, data:Map[String,Any]): ActionResult={

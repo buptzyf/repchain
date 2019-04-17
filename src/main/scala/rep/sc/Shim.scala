@@ -20,7 +20,7 @@ import com.fasterxml.jackson.core.Base64Variants
 import akka.actor.ActorSystem
 import rep.network.PeerHelper
 import rep.network.tools.PeerExtension
-import rep.protos.peer.Transaction
+import rep.protos.peer.{Transaction,OperLog}
 import rep.storage.ImpDataPreload
 import rep.utils.SerializeUtils
 import rep.utils.SerializeUtils.deserialise
@@ -33,7 +33,7 @@ import java.io.StringReader
 import java.security.cert.X509Certificate
 import rep.storage.ImpDataAccess
 import rep.crypto.cert.SignTool
-
+import  _root_.com.google.protobuf.ByteString 
 
 /** Shim伴生对象
  *  @author c4w
@@ -44,12 +44,6 @@ object Shim {
   type Key = String  
   type Value = Array[Byte]
 
-  /** 用于记录合约对worldState的写入日志
-   *  @param key 键名
-   *  @param oldValue 旧键值
-   *  @param newValue 新写入的键值
-   */
-  case class Oper(key: Key, oldValue: Array[Byte], newValue: Array[Byte])
 
   import rep.storage.IdxPrefix._
   val ERR_CERT_EXIST = "证书已存在"
@@ -90,13 +84,11 @@ class Shim(system: ActorSystem, cName: String) {
   val pe = PeerExtension(system)
   //从交易传入, 内存中的worldState快照
   var sr:ImpDataPreload = null;
-  //记录初始state
-  var mb = scala.collection.mutable.Map[Key, Array[Byte]]()
   //记录状态修改日志
-  var ol = scala.collection.mutable.ListBuffer.empty[Oper]
+  var ol = scala.collection.mutable.ListBuffer.empty[OperLog]
     
   def setVal(key: Key, value: Any):Unit ={
-    setState(key,serialise(value))
+    setState(key, serialise(value))
   }
    def getVal(key: Key):Any ={
     deserialise(getState(key))
@@ -106,12 +98,10 @@ class Shim(system: ActorSystem, cName: String) {
     val pkey = pre_key + key
     val oldValue = get(pkey)
     sr.Put(pkey, value)
-    //记录初始值
-    if (!mb.contains(pkey)) {
-      mb.put(pkey, oldValue)
-    }
+    val ov = if(oldValue == null) ByteString.EMPTY else ByteString.copyFrom(oldValue)
+    val nv = if(value == null) ByteString.EMPTY else ByteString.copyFrom(value)
     //记录操作日志
-    ol += new Oper(key, oldValue, value)
+    ol += new OperLog(key,ov, nv)
   }
 
   private def get(key: Key): Array[Byte] = {
@@ -124,19 +114,6 @@ class Shim(system: ActorSystem, cName: String) {
 
   def getStateEx(cName:String, key: Key): Array[Byte] = {
     get(WorldStateKeyPreFix + cName + PRE_SPLIT + key)
-  }
-  
-  //禁止脚本内调用此方法, 上下文应严密屏蔽不必要的方法和变量
-  private def reset() = {
-    mb.clear()
-    ol.clear()
-  }
-
-  //回滚到初始值
-  def rollback() = {
-    for ((k, v) <- mb) sr.Put(k, v)
-    //回滚仍然保留操作日志,否则api拿不到操作日志
-    // ol.clear()
   }
   
   //判断账号是否节点账号 TODO

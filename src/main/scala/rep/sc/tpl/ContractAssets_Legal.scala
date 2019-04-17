@@ -24,10 +24,9 @@ import rep.protos.peer.ChaincodeId
 import rep.utils.IdTool
 import java.text.SimpleDateFormat
 import rep.sc.scalax.IContract
-
+import rep.protos.peer.ActionResult
 import rep.sc.scalax.ContractContext
 
-import rep.sc.scalax.ActionResult
 
 /**
  * 资产管理合约
@@ -53,36 +52,36 @@ case class Transfer(from:String, to:String, amount:Int, remind:String)
       for((k,v)<-data){
         ctx.api.setVal(k, v)
       }
-      new ActionResult(1,None)
+      new ActionResult(1)
     }
     
     def transfer(ctx: ContractContext, data:Transfer) :ActionResult={
       if(!data.from.equals(ctx.t.getSignature.getCertId.creditCode))
-        return new ActionResult(-1, Some("只允许从本人账户转出"))      
+        return new ActionResult(-1, "只允许从本人账户转出")      
       val signerKey =  data.to
       // 跨合约读账户，该处并未反序列化
       if(ctx.api.getStateEx(chaincodeName,data.to)==null)
-        return new ActionResult(-2, Some("目标账户不存在"))      
+        return new ActionResult(-2, "目标账户不存在")      
       
       val sfrom =  ctx.api.getVal(data.from)
       var dfrom =sfrom.asInstanceOf[Int]
       if(dfrom < data.amount)
-        return new ActionResult(-3, Some("余额不足"))
+        return new ActionResult(-3, "余额不足")
       
        val rstr = s"""确定签名从本人所持有的账户【${data.from}】
           向账户【${data.to}】
           转账【${data.amount}】元"""
       //预执行获得结果提醒
       if(data.remind==null){
-          new ActionResult(2,Some(rstr))    
+          new ActionResult(2,rstr)    
       }else{
         if(!data.remind.equals(rstr))
-          new ActionResult(-4,Some("提醒内容不符"))  
+          new ActionResult(-4,"提醒内容不符")  
         else{
           var dto = ctx.api.getVal(data.to).toString.toInt
           ctx.api.setVal(data.from,dfrom - data.amount)
           ctx.api.setVal(data.to,dto + data.amount)
-          new ActionResult(1,None)    
+          new ActionResult(1)    
         }
       }
     }

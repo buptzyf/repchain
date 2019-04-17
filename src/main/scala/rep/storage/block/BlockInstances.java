@@ -26,10 +26,10 @@ import java.util.concurrent.ConcurrentHashMap;
 public class BlockInstances {
 	private static BlockInstances instance = null;
 	
-	private ConcurrentHashMap<String,BlockHelp> instances = null;
+	private ConcurrentHashMap<String,BlockStorageHelp> instances = null;
 	
 	private BlockInstances(){
-		this.instances = new ConcurrentHashMap<String,BlockHelp>();
+		this.instances = new ConcurrentHashMap<String,BlockStorageHelp>();
 	}
 	
 	public static synchronized BlockInstances getDBInstance(){
@@ -39,8 +39,8 @@ public class BlockInstances {
 		return instance;
 	}
 	
-	public BlockHelp getBlockHelp(String SystemName){
-		BlockHelp bhelp = null;
+	public BlockStorageHelp getBlockHelp(String SystemName){
+		BlockStorageHelp bhelp = null;
 		bhelp = this.instances.get(SystemName);
 		if(bhelp == null){
 			bhelp = CreateBlockHelp(SystemName);
@@ -48,10 +48,10 @@ public class BlockInstances {
 		return bhelp;
 	}
 	
-	private synchronized BlockHelp CreateBlockHelp(String SystemName){
-		BlockHelp lhelp = null;
+	private synchronized BlockStorageHelp CreateBlockHelp(String SystemName){
+		BlockStorageHelp lhelp = null;
 		try{
-			lhelp = new BlockHelp(SystemName);
+			lhelp = new BlockStorageHelp(SystemName);
 			this.instances.put(SystemName, lhelp);
 		}catch(Exception e){
 			e.printStackTrace();
@@ -61,7 +61,7 @@ public class BlockInstances {
 	
 	public static void main(String[] args){
 		try{
-			BlockHelp bh = BlockInstances.getDBInstance().getBlockHelp("testSystem");
+			BlockStorageHelp bh = BlockInstances.getDBInstance().getBlockHelp("testSystem");
 			String aa = "sdfsdfkjklsdfklsdflsflsdkflsdflsdfkljdflsdkf";
 			int aalen = aa.getBytes().length;
 			bh.writeBlock(0, 0, aa.getBytes());

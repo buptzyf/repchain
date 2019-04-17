@@ -17,10 +17,12 @@
 package rep.sc.scalax
 
 import rep.protos.peer.Transaction
+import rep.protos.peer.ActionResult
 import rep.sc.Shim
 
 class ContractContext(val api:Shim, val t:Transaction)
-case class ActionResult(code:Int, reason:Option[String])
+case class ContractException(private val message: String = "", private val cause: Throwable = None.orNull)
+  extends Exception(message, cause) 
 
 /**
  * @author c4w

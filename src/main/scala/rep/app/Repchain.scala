@@ -42,7 +42,7 @@ object Repchain {
     sys1.enableWS()//开启API接口
     sys1.start//启动系统
 
-    val cluster = sys1.getActorSys//获取内部系统SystemActor实例
+    //val cluster = sys1.getActorSys//获取内部系统SystemActor实例
 
     val node_min = 5
     //如果node_max>node_min 将启动node反复离网和入网的仿真，但是由于system离网后无法复用并重新加入
@@ -56,7 +56,7 @@ object Repchain {
     var nodes_off = Set.empty[ClusterSystem]
 
     for(i <- 2 to node_max) {
-      Thread.sleep(15000)
+      Thread.sleep(2000)
       val len = nodes.size
       val sys = new ClusterSystem(nodelist(i-2),InitType.MULTI_INIT,true)
       sys.init

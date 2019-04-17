@@ -56,7 +56,7 @@ class ContractCertSpec (_system: ActorSystem)
   val dbTag = "121000005l35120456.node1"
   val cid =  ChaincodeId(SystemProfile.getAccountChaincodeName,1)
   //建立PeerManager实例是为了调用transactionCreator(需要用到密钥签名)，无他
-  val pm: ActorRef = system.actorOf(ModuleManager.props("pm", sysName))
+  val pm: ActorRef = system.actorOf(ModuleManager.props("modulemanager", sysName, false, false,false), "modulemanager")
 
   val signers : Array[Signer] = Array(
     Signer("node1","121000005l35120456","18912345678",List("node1")) ,
@@ -82,7 +82,7 @@ class ContractCertSpec (_system: ActorSystem)
 
   //准备探针以验证调用返回结果
   val probe = TestProbe()
-  private val sandbox = system.actorOf(TransProcessor.props("sandbox", "", probe.ref))
+  private val sandbox = system.actorOf(TransProcessor.props("sandbox",  probe.ref))
 
   // 部署合约
   test("Deploy ContractCertTPL") {
@@ -91,7 +91,7 @@ class ContractCertSpec (_system: ActorSystem)
     val contractCertStr = try contractCert.mkString finally  contractCert.close()
     val t = PeerHelper.createTransaction4Deploy(sysName,cid ,
       contractCertStr, "",5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
-    val msg_send = DoTransaction(t, probe.ref, "")
+    val msg_send = DoTransaction(t,  "api_"+t.id)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
     assert(msg_recv.r.code == 1)
@@ -102,7 +102,7 @@ class ContractCertSpec (_system: ActorSystem)
     val signerNode1 = signers(0)
     // 注册账户
     val t =  PeerHelper.createTransaction4Invoke(sysName,cid, ACTION.SignUpSigner, Seq(write(signerNode1)))
-    val msg_send = DoTransaction(t, probe.ref, "")
+    val msg_send = DoTransaction(t,   "api_"+t.id)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
     msg_recv.r.code should be (1)
@@ -112,7 +112,7 @@ class ContractCertSpec (_system: ActorSystem)
   test("ContractCert should can signUp the node1.cer") {
     val certInfo = CertInfo("121000005l35120456", "node1", Certificate(certs.getOrElse("node1", "default"), "SHA256withECDSA", certValid = true , None, None) )
     val t =  PeerHelper.createTransaction4Invoke(sysName,cid, ACTION.SignUpCert, Seq(writePretty(certInfo)))
-    val msg_send = DoTransaction(t, probe.ref, "")
+    val msg_send = DoTransaction(t,   "api_"+t.id)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
     msg_recv.r.code should be (1)
@@ -122,55 +122,53 @@ class ContractCertSpec (_system: ActorSystem)
   test("ContractCert should can't signUp the same Certificate") {
     val certInfo = CertInfo("121000005l35120456", "node1", Certificate(certs.getOrElse("node1", "default"), "SHA256withECDSA", certValid = true , None, None) )
     val t =  PeerHelper.createTransaction4Invoke(sysName,cid, ACTION.SignUpCert, Seq(writePretty(certInfo)))
-    val msg_send = DoTransaction(t, probe.ref, "")
+    val msg_send = DoTransaction(t,   "api_"+t.id)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
     msg_recv.r.code should be (0)
-    msg_recv.r.reason.getOrElse("UnKnow Error") should be ("证书已存在")
+    msg_recv.r.reason should be ("证书已存在")
   }
 
   // 不能将证书注册到一个不存在的账户
   test("ContractCert should can't signUp the node1.cer to signerNode2 which not exists") {
     val certInfo = CertInfo("12110107bi45jh675g", "node2", Certificate(certs.getOrElse("node1", "default"), "SHA256withECDSA", certValid = true , None, None) )
     val t =  PeerHelper.createTransaction4Invoke(sysName,cid, ACTION.SignUpCert, Seq(writePretty(certInfo)))
-    val msg_send = DoTransaction(t, probe.ref, "")
+    val msg_send = DoTransaction(t,   "api_"+t.id)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
     msg_recv.r.code should be (0)
-    msg_recv.r.reason.getOrElse("UnKnow Error") should be ("账户不存在")
+    msg_recv.r.reason should be ("账户不存在")
   }
 
   // 将证书2追加到 node1的账户中，使用node2作为certName
   test("ContractCert can signUp the node2.cer to signerNode1") {
     val certInfo = CertInfo("121000005l35120456", "node2", Certificate(certs.getOrElse("node2", "default"), "SHA256withECDSA", certValid = true , None, None) )
     val t =  PeerHelper.createTransaction4Invoke(sysName,cid, ACTION.SignUpCert, Seq(writePretty(certInfo)))
-    val msg_send = DoTransaction(t, probe.ref, "")
+    val msg_send = DoTransaction(t,   "api_"+t.id)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
     msg_recv.r.code should be (1)
-    msg_recv.r.reason.getOrElse("default") should be ("default")
   }
 
   // 更新证书状态,将刚刚追加的node2的证书状态修改为false
   test("updateCertStatus，update the certStatus which exists") {
     val certStatus = CertStatus("121000005l35120456", "node2", status = false )
     val t =  PeerHelper.createTransaction4Invoke(sysName,cid, ACTION.UpdateCertStatus, Seq(writePretty(certStatus)))
-    val msg_send = DoTransaction(t, probe.ref, "")
+    val msg_send = DoTransaction(t,   "api_"+t.id)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
     msg_recv.r.code should be (1)
-    msg_recv.r.reason.getOrElse("default") should be ("default")
   }
 
   // 更新证书状态，对应的证书不存在
   test("updateCertStatus，update the certStatus which not exists") {
     val certStatus = CertStatus("12110107bi45jh675g", "node2", status = false )
     val t =  PeerHelper.createTransaction4Invoke(sysName,cid, ACTION.UpdateCertStatus, Seq(writePretty(certStatus)))
-    val msg_send = DoTransaction(t, probe.ref, "")
+    val msg_send = DoTransaction(t,   "api_"+t.id)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
     msg_recv.r.code should be (0)
-    msg_recv.r.reason.getOrElse("default") should be ("证书不存在")
+    msg_recv.r.reason should be ("证书不存在")
   }
 
   // 更新账户信息，将账户node1中的name改为node2，并且修改手机号
@@ -178,10 +176,9 @@ class ContractCertSpec (_system: ActorSystem)
     val signerNode1 = Signer("node2","121000005l35120456","13112345678",List("node1"))
     // 修改账户
     val t =  PeerHelper.createTransaction4Invoke(sysName,cid, ACTION.UpdateSigner, Seq(write(signerNode1)))
-    val msg_send = DoTransaction(t, probe.ref, "")
+    val msg_send = DoTransaction(t,   "api_"+t.id)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
     msg_recv.r.code should be (1)
-    msg_recv.r.reason.getOrElse("default") should be ("default")
   }
 }

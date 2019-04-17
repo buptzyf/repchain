@@ -6,6 +6,7 @@ import rep.log.trace.ModuleType
 import rep.protos.peer._
 import rep.crypto.Sha256
 import scala.util.control.Breaks._
+import rep.network.consensus.util.BlockHelp
 
 object verify4Storage {
   def verify(sysName:String):Boolean={
@@ -26,14 +27,14 @@ object verify4Storage {
               break
             }else{
               if(!prehash.equalsIgnoreCase("")){
-                if(!prehash.equals(block.previousBlockHash.toStringUtf8())){
+                val bstr = block.previousBlockHash.toStringUtf8()
+                if(!prehash.equals(bstr)){
                   errorInfo = "第"+i+"块信息错误，区块文件可能被篡改。"
                   b = false
                   break
                 }
               }
-              val rbb = block.toByteArray
-              prehash = Sha256.hashstr(rbb);
+              prehash = BlockHelp.GetBlockHash(block);
             }
           })
         }

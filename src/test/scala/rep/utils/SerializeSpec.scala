@@ -15,7 +15,8 @@
  */
 
 package rep.utils
-import rep.sc.Shim.Oper
+import rep.sc.Sandbox.DoTransactionResult
+import rep.protos.peer.{ActionResult,OperLog,TransactionResult}
 
 import org.scalatest._
 import prop._
@@ -25,14 +26,16 @@ import org.scalatest._
 import prop._
 import scala.collection.immutable._
 import scala.math.BigInt
-
+import com.google.protobuf.ByteString
 import SerializeUtils._
 /**对操作日志进行JSon的序列化和反序列化测试
  * @author c4w
  * 
  */
 class SerializeSpec extends PropSpec with TableDrivenPropertyChecks with Matchers {
-  val ol = List(Oper("key1",null,BigInt(8).toByteArray),Oper("key1",BigInt(8).toByteArray,BigInt(8).toByteArray))
+  val ol = List(OperLog("key1",null,ByteString.copyFrom(BigInt(8).toByteArray)),
+      OperLog("key1",ByteString.copyFrom(BigInt(8).toByteArray),null))
+  val tr = TransactionResult("txid-0001",  ol, Some(new ActionResult(1)))
   
   val examples =
     Table(
@@ -41,7 +44,6 @@ class SerializeSpec extends PropSpec with TableDrivenPropertyChecks with Matcher
     666,
     true,
     Map("red" -> "#FF0000", "azure" -> "#F0FFFF")
-     //ol
    )
   property("Any value can be serialise and deserialise") {
     forAll(examples) { (v:Any) =>
@@ -50,4 +52,19 @@ class SerializeSpec extends PropSpec with TableDrivenPropertyChecks with Matcher
       v1 should equal (v)
    }       
   }
+  val e2 =
+    Table(
+    "v",  // First tuple defines column names
+     ol
+   )
+  property("Any value can be serialise and deserialise") {
+    forAll(e2) { (v:Any) =>
+      val b1 = v.asInstanceOf[TransactionResult]
+      val v1 = b1.toByteArray
+      val v2 = TransactionResult.parseFrom(v1)
+      println(v2.toString())
+   }       
+  }
+  
+  
 }

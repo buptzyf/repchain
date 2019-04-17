@@ -26,7 +26,14 @@ import rep.protos.peer.{Transaction}
   */
 object GlobalUtils {
   case class TranscationPoolPackage(t:Transaction,createTime:Long)
-  case class BlockChainStatus(CurrentBlockHash:String,CurrentMerkle:String,CurrentHeight:Long)
+  case class BlockerInfo(blocker:String,VoteIndex:Int,voteTime:Long)
+  case object NodeStatus {
+    val Blocking = 1
+    val Endorsing = 2
+    val Synching = 3
+    val Ready = 4
+    val Nothing  = 5
+  }
   
   case object BlockEvent{
     //同步信息广播
@@ -55,21 +62,30 @@ object GlobalUtils {
   }
 
   case object ActorType{
-    val MEMBER_LISTENER = 1
-    val MODULE_MANAGER = 2
-    val API_MODULE = 3
-    val PEER_HELPER = 4
-    val BLOCK_MODULE = 5
-    val PRELOADTRANS_MODULE = 6
-    val ENDORSE_MODULE = 7
-    val VOTER_MODULE = 8
-    val SYNC_MODULE = 9
-    val TRANSACTION_POOL = 10
-    val PERSISTENCE_MODULE = 11
-    val CONSENSUS_MANAGER = 12
-    val STATISTIC_COLLECTION = 13
-    val ENDORSE_BLOCKER = 14
+    val memberlistener = 1
+    val modulemanager = 2
+    val webapi = 3
+    val peerhelper = 4
+    val blocker = 5
+    val preloaderoftransaction = 6
+    val endorser = 7
+    val voter = 8
+    val synchrequester = 9
+    val transactionpool = 10
+    val storager = 11
+    val synchresponser = 12
+    val statiscollecter = 13
+    val endorsementcollectioner = 14
+    val endorsementrequester = 15
+    val confirmerofblock = 16
+    val gensisblock = 17
+    val api = 18
+    val verifytransofsigner=19
+    val verifytransofexecutor=20
+    val verifyblockendorser=21
   }
+  
+  
 
   case object EventType{
     val PUBLISH_INFO = 1

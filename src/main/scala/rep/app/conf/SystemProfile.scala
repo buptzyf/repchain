@@ -52,16 +52,25 @@ object SystemProfile {
   private[this] var _VOTENODELIST : List[String] = new ArrayList[String]
   private[this] var _ACCOUNTCHAINCODENAEM : String = "ACCOUNTCHAINCODENAME"
   private[this] var _ACCOUNTCHAINCODEVERSION: Int = 1
+  private[this] var _GENESISNODENAME:String = ""
+  private[this] var _BLOCK_LENGTH: Int = 120000//区块的最大长度
+  
   
   
   private def SERVERPORT :Int = _SERVERPORT
   private def CHECKCERTVALIDATE:Int = _CHECKCERTVALIDATE
   private def DISKSPACE_ALARM_NUM :Long = _DISKSPACE_ALARM_NUM
   private def CONTRACTOPERATIONMODE:Int=_CONTRACTOPERATIONMODE
+  private def GENESISNODENAME:String = _GENESISNODENAME
   
   private def VOTENODELIST : List[String] = _VOTENODELIST
   private def ACCOUNTCHAINCODENAEM = _ACCOUNTCHAINCODENAEM
   private def ACCOUNTCHAINCODVERSION = _ACCOUNTCHAINCODEVERSION
+  
+  private def GENESISNODENAME_=(value:String):Unit={
+    _GENESISNODENAME = value
+  }
+  
   
   private def VOTENODELIST_=(value: List[String]): Unit = {
       _VOTENODELIST = value
@@ -135,6 +144,11 @@ object SystemProfile {
     _LIMIT_BLOCK_TRANS_NUM = value
   }
 
+  private def BLOCK_LENGTH : Int = _BLOCK_LENGTH
+  
+  private def BLOCK_LENGTH_=(value: Int): Unit = {
+    _BLOCK_LENGTH = value
+  }
   
   /**
     * 初始化配饰信息
@@ -142,6 +156,7 @@ object SystemProfile {
     */
   def initConfigSystem(config:Config): Unit ={
     LIMIT_BLOCK_TRANS_NUM_=(config.getInt("system.block.trans_num_limit"))
+    BLOCK_LENGTH_=(config.getInt("system.block.block_length"))
     MIN_BLOCK_TRANS_NUM_=(config.getInt("system.block.trans_num_min"))
     RETRY_TIME_=(config.getInt("system.block.retry_time"))
     VOTE_NOTE_MIN_=(config.getInt("system.vote.vote_note_min"))
@@ -155,9 +170,12 @@ object SystemProfile {
     CONTRACTOPERATIONMODE_=(config.getInt("system.contractOperationMode"))
     ACCOUNTCHAINCODENAEM_= (config.getString("system.account.chaincodename"))
     ACCOUNTCHAINCODEVERSION_=(config.getInt("system.account.chaincodeversion"))
+    GENESISNODENAME_=(config.getString("system.genesis_node_name"))
   }
   
   def getLimitBlockTransNum = LIMIT_BLOCK_TRANS_NUM
+  
+  def getBlockLength = BLOCK_LENGTH
 
   def getMinBlockTransNum = MIN_BLOCK_TRANS_NUM
 
@@ -184,4 +202,6 @@ object SystemProfile {
   def getAccountChaincodeName = ACCOUNTCHAINCODENAEM
 
   def getAccountChaincodeVersion = ACCOUNTCHAINCODVERSION
+  
+  def getGenesisNodeName = GENESISNODENAME
 }

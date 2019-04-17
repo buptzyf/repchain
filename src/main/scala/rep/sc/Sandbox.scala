@@ -36,7 +36,6 @@ import Shim._
 import rep.crypto.BytesHex
 import rep.network.tools.PeerExtension
 import rep.storage.IdxPrefix.WorldStateKeyPreFix
-import rep.sc.scalax.ActionResult
 import rep.storage._
 import rep.utils.SerializeUtils.deserialise
 import rep.utils.SerializeUtils.serialise
@@ -60,9 +59,8 @@ object Sandbox {
    * @param mb 合约执行涉及的key-value集合
    * @param err 执行中抛出的异常信息
    */
-  case class DoTransactionResult(t:Transaction,from:ActorRef, r:ActionResult,merkle:Option[String],
-    ol:List[Oper],
-    mb:scala.collection.mutable.Map[String,Array[Byte]],
+  case class DoTransactionResult(txId:String, r:ActionResult,
+    ol:List[OperLog],
     err:Option[akka.actor.Status.Failure])
     
   /** 合约执行异常类
@@ -115,39 +113,35 @@ abstract class Sandbox(cid:ChaincodeId) extends Actor {
   def errAction(errCode: Int) :ActionResult = {
      errCode match{
        case -101 =>
-         ActionResult(errCode,Some("目标合约不存在"))
+         ActionResult(errCode,"目标合约不存在")
      }
-     ActionResult(errCode,Some("不明原因"))
+     ActionResult(errCode,"不明原因")
   }
   /** 消息处理主流程,包括对交易处理请求、交易的预执行处理请求、从存储恢复合约的请求
    * 
    */
   def receive = {
     //交易处理请求
-    case  DoTransaction(t:Transaction,from:ActorRef, da:String) =>
-      val tr = onTransaction(t,from,da)
+    case  DoTransaction(t:Transaction, da:String) =>
+      val tr = onTransaction(t,da)
       sender ! tr
-    //交易预处理请求，指定接收者
-    case  PreTransaction(t:Transaction) =>
-      val tr = onTransaction(t,null,t.id)
-      sender ! tr
+   
     //恢复chainCode,不回消息
-    case  DeployTransaction(t:Transaction,from:ActorRef, da:String) =>
-      val tr = onTransaction(t,from,da,true)
+    case  DeployTransaction(t:Transaction, da:String) =>
+      val tr = onTransaction(t,da,true)
   }
 
-  def onTransaction(t:Transaction,from:ActorRef, da:String, bRestore:Boolean=false):DoTransactionResult = {
+  def onTransaction(t:Transaction, da:String, bRestore:Boolean=false):DoTransactionResult = {
     try{
           //要么上一份给result，重新建一份
       shim.sr = ImpDataPreloadMgr.GetImpDataPreload(sTag, da)
       checkTransaction(t, bRestore)
-      shim.mb = scala.collection.mutable.Map[String,Array[Byte]]()
-      shim.ol = new scala.collection.mutable.ListBuffer[Oper]
-      doTransaction(t,from,da,bRestore)
+      shim.ol = new scala.collection.mutable.ListBuffer[OperLog]
+      doTransaction(t,da,bRestore)
     }catch{
         case e:Exception => 
           log.error(t.id, e)
-          new DoTransactionResult(t,null, null, null,null,null,
+          new DoTransactionResult(t.id,null, null,
                Option(akka.actor.Status.Failure(e)))
       }
   }
@@ -159,7 +153,7 @@ abstract class Sandbox(cid:ChaincodeId) extends Actor {
    * 	@param da 存储访问标示
    *  @return 交易执行结果
    */
-  def doTransaction(t:Transaction,from:ActorRef, da:String, bRestore:Boolean=false):DoTransactionResult 
+  def doTransaction(t:Transaction, da:String, bRestore:Boolean=false):DoTransactionResult 
 
    def checkTransaction(t: Transaction, bRestore:Boolean=false) = {
     val tx_cid = getTXCId(t)

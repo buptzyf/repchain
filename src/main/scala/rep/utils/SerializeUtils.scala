@@ -18,6 +18,8 @@ package rep.utils
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream, ObjectInputStream, ObjectOutputStream}
 import java.security.cert.Certificate
+import scala.util.{Try, Success, Failure}
+
 import com.twitter.chill.KryoInjection
 import com.twitter.bijection._
 
@@ -51,7 +53,12 @@ object SerializeUtils {
   def deserialise(bytes: Array[Byte]): Any = {
     if(bytes == null)
       return null;
-    KryoInjection.invert(bytes).get
+    KryoInjection.invert(bytes) match {
+      case Success(any) =>
+        any
+      case Failure(e) =>
+        null
+    }
   }
 
 def compactJson(src: Any): String = {
