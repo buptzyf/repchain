@@ -100,7 +100,7 @@ class DeploySpec(_system: ActorSystem)
     val msg_send1 = new DoTransaction(t1,  "dbnumber")
     probe.send(sandbox, msg_send1)
     val msg_recv1 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-    msg_recv1.r.code should be (1)
+    msg_recv1.err should be (None)
     
     //同样合约id不允许重复部署
     val msg_send2 = new DoTransaction(t1,  "dbnumber")
@@ -115,7 +115,7 @@ class DeploySpec(_system: ActorSystem)
     val msg_send3 = new DoTransaction(t3,  "dbnumber")
     probe.send(sandbox, msg_send3)
     val msg_recv3 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-    msg_recv3.r.code should be (1)
+    msg_recv3.err should be (None)
 
     
     val cid4 = new ChaincodeId("Assets",3)
