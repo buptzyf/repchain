@@ -67,6 +67,7 @@ libraryDependencies ++= Seq(
 
 javacOptions ++= Seq("-encoding", "UTF-8")
 
+addCompilerPlugin("org.psywerx.hairyfotr" %% "linter" % "0.1.17")
 scapegoatVersion in ThisBuild := "1.1.0"
 PB.targets in Compile := Seq(
   scalapb.gen() -> (sourceManaged in Compile).value
