@@ -41,7 +41,10 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
   import rep.network.consensus.endorse.Endorser.CacheOfEndorsement
 
   implicit val timeout = Timeout(TimePolicy.getTimeoutPreload seconds)
-  //implicit val timeout4Sign = Timeout(2 seconds)
+  
+  override def preStart(): Unit = {
+    logMsg(LogType.INFO, "Endorser4Future Start")
+  }
 
   //背书块的交易预执行,然后验证block
   private def AskPreloadTransactionOfBlock(block: Block): Future[Boolean] =

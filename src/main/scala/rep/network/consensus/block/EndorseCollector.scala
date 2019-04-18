@@ -43,7 +43,9 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
     if (router == null) {
       var list: Array[Routee] = new Array[Routee](SystemProfile.getVoteNodeList.size())
       for (i <- 0 to SystemProfile.getVoteNodeList.size() - 1) {
-        var ca = context.actorOf(EnodorsementRequester.props("endorsementrequester" + i), "endorsementrequester" + i)
+        //EndorsementRequest4Future
+        //var ca = context.actorOf(EnodorsementRequester.props("endorsementrequester" + i), "endorsementrequester" + i)
+        var ca = context.actorOf(EndorsementRequest4Future.props("endorsementrequester" + i), "endorsementrequester" + i)
         context.watch(ca)
         list(i) = new ActorRefRoutee(ca)
       }
@@ -112,11 +114,11 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
         schedulerLink = scheduler.scheduleOnce(TimePolicy.getTimeoutEndorse seconds, self, EndorseCollector.ResendEndorseInfo)
       }
 
-    case EndorseCollector.ResendEndorseInfo =>
+    /*case EndorseCollector.ResendEndorseInfo =>
       if (this.block != null) {
         logMsg(LogType.INFO, "collectioner resend endorsement")
         resendEndorser
-      }
+      }*/
     case ResultOfEndorseRequester(result, endors, blockhash, endorser) =>
       if (this.block != null) {
         if (this.block.hashOfBlock.toStringUtf8().equals(blockhash)) {
