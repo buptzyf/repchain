@@ -47,6 +47,8 @@ class PreloaderForTransaction(moduleName: String, transProcessor: ActorRef) exte
       (0, result)
     } catch {
       case e: AskTimeoutException => (1, null)
+      case te:TimeoutException =>
+        (1, null)
     }
   }
 
