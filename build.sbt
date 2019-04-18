@@ -7,7 +7,11 @@ scalaVersion := "2.12.8"
 lazy val akkaVersion = "2.5.22"
 val akkaHttpVersion   = "10.1.8"
 
-
+dependencyOverrides ++= Seq(
+  "org.json4s" % "json4s-jackson_2.12" % "3.6.5",
+  "com.google.guava" % "guava" % "21.0",
+  "org.scala-lang.modules" % "scala-xml_2.12" % "1.1.1"
+)
 
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-actor" % akkaVersion,
@@ -28,7 +32,7 @@ libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value
 
 libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2"
 
-libraryDependencies += "com.trueaccord.scalapb" %% "scalapb-json4s" % "0.3.3"
+//libraryDependencies += "com.trueaccord.scalapb" %% "scalapb-json4s" % "0.3.3"
 
 libraryDependencies += "org.iq80.leveldb" % "leveldb" % "0.11"
 libraryDependencies += "org.fusesource.leveldbjni" % "leveldbjni-all" % "1.8"
@@ -53,8 +57,8 @@ libraryDependencies += "org.codehaus.janino" % "janino" % "3.0.12"
 libraryDependencies += "org.bouncycastle" % "bcprov-jdk15on" % "1.61"
 
 libraryDependencies ++= Seq(
-  "io.swagger" % "swagger-jaxrs" % "1.5.22",
-  "com.github.swagger-akka-http" %% "swagger-akka-http" % "2.0.2",
+  "io.swagger" % "swagger-jaxrs" % "1.5.18",
+  "com.github.swagger-akka-http" %% "swagger-akka-http" % "1.0.0",
   "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
   "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpVersion,
   "de.heikoseeberger" % "akka-http-json4s_2.11" % "1.25.2",
