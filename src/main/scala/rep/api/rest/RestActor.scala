@@ -56,8 +56,8 @@ import rep.network.base.ModuleBase
 
 object RestActor {
   def props(name: String): Props = Props(classOf[RestActor], name)
-  
-  val contractOperationMode = SystemProfile.getContractOperationMode  
+
+  val contractOperationMode = SystemProfile.getContractOperationMode
   case object ChainInfo
 
   case class SystemStart(cout: Int)
@@ -166,6 +166,11 @@ class RestActor(moduleName: String) extends  ModuleBase(moduleName) {
     val tOutSig = t.clearSignature
     val certId = t.signature.get.certId.get
     try{
+      loadTransaction(sr,t.id) match {
+        case st: Some[Transaction] =>
+          sender ! PostResult(t.id, None, Option(s"transactionId is exists, the transaction is \n ${JsonFormat.toJson(st.get)}"))
+        case None =>
+      }
       SignTool.verify(sig, tOutSig.toByteArray, certId,pe.getSysTag) match {
         case true =>
           val future = sandbox ? DoTransaction(t,"api_"+t.id)
@@ -182,7 +187,7 @@ class RestActor(moduleName: String) extends  ModuleBase(moduleName) {
               sender ! PostResult(t.id, Some(rv.r), None)
             case Some(err) =>
               //预执行异常,废弃交易，向api调用者发送异常
-              sender ! err
+              sender ! PostResult(t.id, None, Option(err.cause.getMessage))
           }
         case false => throw new RuntimeException("验证签名出错")
       }
@@ -202,7 +207,7 @@ class RestActor(moduleName: String) extends  ModuleBase(moduleName) {
         preTransaction(txr)
       } catch {
         case e:Exception =>
-          sender ! PostResult("", None, Option(s"transcation parser error! + ${e.getMessage}"))
+          sender ! PostResult("", None, Option(s"transaction parser error! + ${e.getMessage}"))
       }
 
     //处理post CSpec构造交易的请求
