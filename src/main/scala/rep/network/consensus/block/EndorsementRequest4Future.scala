@@ -11,7 +11,7 @@ import com.google.protobuf.ByteString
 import com.google.protobuf.timestamp.Timestamp
 import rep.app.conf.{ SystemProfile, TimePolicy }
 import rep.network.base.ModuleBase
-import rep.network.consensus.endorse.EndorseMsg.{ EndorsementInfo, ResultOfEndorsed, RequesterOfEndorsement,ResultOfEndorseRequester,ResultFlagOfEndorse}
+import rep.network.consensus.endorse.EndorseMsg.{ EndorsementInfo, ResultOfEndorsed, RequesterOfEndorsement, ResultOfEndorseRequester, ResultFlagOfEndorse }
 import rep.network.tools.PeerExtension
 import rep.network.Topic
 import rep.protos.peer._
@@ -20,9 +20,8 @@ import rep.log.trace.LogType
 import akka.pattern.AskTimeoutException
 import rep.network.consensus.util.BlockVerify
 import scala.util.control.Breaks
-import rep.utils.GlobalUtils.{EventType,ActorType}
+import rep.utils.GlobalUtils.{ EventType, ActorType }
 import rep.network.sync.SyncMsg.StartSync
-
 
 object EndorsementRequest4Future {
   def props(name: String): Props = Props(classOf[EndorsementRequest4Future], name)
@@ -35,12 +34,11 @@ class EndorsementRequest4Future(moduleName: String) extends ModuleBase(moduleNam
 
   implicit val timeout = Timeout(TimePolicy.getTimeoutEndorse seconds)
   private val endorsementActorName = "/user/modulemanager/endorser"
-  
 
   override def preStart(): Unit = {
     logMsg(LogType.INFO, "EndorsementRequest4Future Start")
   }
-  
+
   private def ExecuteOfEndorsement(addr: Address, data: EndorsementInfo): ResultOfEndorsed = {
     try {
       val selection: ActorSelection = context.actorSelection(toAkkaUrl(addr, endorsementActorName));
@@ -48,10 +46,10 @@ class EndorsementRequest4Future(moduleName: String) extends ModuleBase(moduleNam
       logMsg(LogType.INFO, "--------ExecuteOfEndorsement waiting result")
       Await.result(future1, timeout.duration).asInstanceOf[ResultOfEndorsed]
     } catch {
-      case e: AskTimeoutException => 
+      case e: AskTimeoutException =>
         logMsg(LogType.INFO, "--------ExecuteOfEndorsement timeout")
         null
-      case te:TimeoutException =>
+      case te: TimeoutException =>
         logMsg(LogType.INFO, "--------ExecuteOfEndorsement java timeout")
         null
     }
@@ -70,36 +68,43 @@ class EndorsementRequest4Future(moduleName: String) extends ModuleBase(moduleNam
       false
     }
   }
-  
-  private def handler(reqinfo:RequesterOfEndorsement)={
+
+  private def handler(reqinfo: RequesterOfEndorsement) = {
+    schedulerLink = clearSched()
     val result = this.ExecuteOfEndorsement(reqinfo.endorer, EndorsementInfo(reqinfo.blc, reqinfo.blocker))
-    if(result != null){
-      if(result.result == ResultFlagOfEndorse.success){
-        if(EndorsementVerify(reqinfo.blc, result)){
-          val re = ResultOfEndorseRequester(true, result.endor, result.BlockHash,reqinfo.endorer)
+    if (result != null) {
+      if (result.result == ResultFlagOfEndorse.success) {
+        if (EndorsementVerify(reqinfo.blc, result)) {
+          val re = ResultOfEndorseRequester(true, result.endor, result.BlockHash, reqinfo.endorer)
           context.parent ! re
           logMsg(LogType.INFO, "--------endorsementRequest4Future recv endorsement result is success ")
-        }else{
+        } else {
           logMsg(LogType.INFO, "--------endorsementRequest4Future recv endorsement result is error, result=${result.result}")
-          context.parent ! ResultOfEndorseRequester(false, null, reqinfo.blc.hashOfBlock.toStringUtf8(),reqinfo.endorer)
+          context.parent ! ResultOfEndorseRequester(false, null, reqinfo.blc.hashOfBlock.toStringUtf8(), reqinfo.endorer)
         }
-      }else{
-        if(result.endorserOfChainInfo.height > pe.getCurrentHeight + 1){
-          pe.getActorRef(ActorType.synchrequester) ! StartSync(false)
-          logMsg(LogType.INFO, "--------endorsementRequest4Future recv endorsement result must synch ")
+      } else {
+        if (result.result == ResultFlagOfEndorse.BlockHeightError) {
+          if (result.endorserOfChainInfo.height > pe.getCurrentHeight + 1) {
+            pe.getActorRef(ActorType.synchrequester) ! StartSync(false)
+            context.parent ! ResultOfEndorseRequester(false, null, reqinfo.blc.hashOfBlock.toStringUtf8(), reqinfo.endorer)
+            logMsg(LogType.INFO, "--------endorsementRequest4Future recv endorsement result must synch ")
+          } else {
+            schedulerLink = scheduler.scheduleOnce(TimePolicy.getTimeoutEndorse seconds, self, RequesterOfEndorsement(reqinfo.blc, reqinfo.blocker, reqinfo.endorer))
+          }
+        } else {
+          context.parent ! ResultOfEndorseRequester(false, null, reqinfo.blc.hashOfBlock.toStringUtf8(), reqinfo.endorer)
         }
-        context.parent ! ResultOfEndorseRequester(false, null, reqinfo.blc.hashOfBlock.toStringUtf8(),reqinfo.endorer)
       }
-    }else{
+    } else {
       logMsg(LogType.INFO, "--------endorsementRequest4Future recv endorsement result is null ")
-      context.parent ! ResultOfEndorseRequester(false, null, reqinfo.blc.hashOfBlock.toStringUtf8(),reqinfo.endorer)
+      context.parent ! ResultOfEndorseRequester(false, null, reqinfo.blc.hashOfBlock.toStringUtf8(), reqinfo.endorer)
     }
   }
 
   override def receive = {
     case RequesterOfEndorsement(block, blocker, addr) =>
       handler(RequesterOfEndorsement(block, blocker, addr))
-      
+
     //case ResultOfEndorsed(result, endor, blockhash)=>
     //  handlerOfResult(ResultOfEndorsed(result, endor, blockhash))
     case _ => //ignore

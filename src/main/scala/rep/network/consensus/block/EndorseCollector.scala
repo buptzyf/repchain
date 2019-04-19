@@ -58,30 +58,30 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
     this.block = block
     this.blocker = blocker
     this.recvedEndorse = this.recvedEndorse.empty
-    schedulerLink = clearSched()
+    //schedulerLink = clearSched()
   }
 
   private def clearEndorseInfo = {
     this.block = null
     this.blocker = null
     this.recvedEndorse = this.recvedEndorse.empty
-    schedulerLink = clearSched()
+    //schedulerLink = clearSched()
   }
 
   private def resendEndorser = {
-    schedulerLink = clearSched()
+    //schedulerLink = clearSched()
     pe.getNodeMgr.getStableNodes.foreach(f => {
       if (!recvedEndorse.contains(f.toString)) {
         router.route(RequesterOfEndorsement(block, blocker, f), self)
       }
     })
-    schedulerLink = scheduler.scheduleOnce(TimePolicy.getTimeoutEndorse seconds, self, EndorseCollector.ResendEndorseInfo)
+    //schedulerLink = scheduler.scheduleOnce(TimePolicy.getTimeoutEndorse seconds, self, EndorseCollector.ResendEndorseInfo)
   }
 
   private def CheckAndFinishHandler {
     logMsg(LogType.INFO, "collectioner check is finish ")
     if (NodeHelp.ConsensusConditionChecked(this.recvedEndorse.size + 1, pe.getNodeMgr.getNodes.size)) {
-      schedulerLink = clearSched()
+      //schedulerLink = clearSched()
       logMsg(LogType.INFO, "collectioner package endorsement to block")
       this.recvedEndorse.foreach(f => {
         this.block = BlockHelp.AddEndorsementToBlock(this.block, f._2)
@@ -95,7 +95,7 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
         Event.Action.ENDORSEMENT)
       logMsg(LogType.INFO, "collectioner endorsementt finish")
       clearEndorseInfo
-    }else{
+    } else {
       logMsg(LogType.INFO, s"collectioner check is error,get size=${this.recvedEndorse.size}")
     }
   }
@@ -112,7 +112,7 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
           logMsg(LogType.INFO, "collectioner send endorsement to requester")
           router.route(RequesterOfEndorsement(block, blocker, f), self)
         })
-        schedulerLink = scheduler.scheduleOnce(TimePolicy.getTimeoutEndorse seconds, self, EndorseCollector.ResendEndorseInfo)
+        //schedulerLink = scheduler.scheduleOnce(TimePolicy.getTimeoutEndorse seconds, self, EndorseCollector.ResendEndorseInfo)
       }
 
     /*case EndorseCollector.ResendEndorseInfo =>
@@ -127,7 +127,7 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
             logMsg(LogType.INFO, "collectioner recv endorsement result")
             recvedEndorse += endorser.toString -> endors
             CheckAndFinishHandler
-          }else{
+          } else {
             logMsg(LogType.INFO, "collectioner recv endorsement result,is error")
           }
         }
