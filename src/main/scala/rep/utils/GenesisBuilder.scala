@@ -22,7 +22,7 @@ import com.typesafe.config.ConfigFactory
 import com.google.protobuf.ByteString
 import com.google.protobuf.timestamp.Timestamp
 import rep.protos.peer._
-import com.trueaccord.scalapb.json.JsonFormat
+import scalapb.json4s.JsonFormat
 import rep.crypto.{ Sha256}
 import org.json4s.{DefaultFormats, Formats, jackson}
 import org.json4s.jackson.JsonMethods._

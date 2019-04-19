@@ -10,6 +10,7 @@ val akkaHttpVersion   = "10.1.8"
 dependencyOverrides ++= Seq(
   "org.json4s" % "json4s-jackson_2.12" % "3.6.5",
   "com.google.guava" % "guava" % "21.0",
+  "com.thesamet.scalapb" % "scalapb-runtime_2.12" % "0.7.0",
   "org.scala-lang.modules" % "scala-xml_2.12" % "1.1.1"
 )
 

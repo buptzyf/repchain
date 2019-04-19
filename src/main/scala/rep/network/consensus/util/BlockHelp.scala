@@ -2,7 +2,7 @@ package rep.network.consensus.util
 
 import com.google.protobuf.ByteString
 import com.google.protobuf.timestamp.Timestamp
-import com.trueaccord.scalapb.json.JsonFormat
+import scalapb.json4s.JsonFormat
 import rep.app.conf.SystemProfile
 import rep.crypto.{ Sha256 }
 import rep.protos.peer.{ Block, Signature, Transaction, ChaincodeId, CertId }

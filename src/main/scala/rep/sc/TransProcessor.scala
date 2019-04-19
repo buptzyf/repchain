@@ -182,6 +182,7 @@ class TransProcessor(name: String,  parent: ActorRef) extends Actor {
           case Transaction.Type.CHAINCODE_DEPLOY =>
             //新执行的deploy交易,新建actor
             createActorByType(  t.para.spec.get.ctype, cid, sn)
+          case _ => throw SandboxException(ERR_UNKNOWN_TRANSACTION_TYPE)
         }
     }
   }
