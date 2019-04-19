@@ -34,7 +34,7 @@ import rep.sc.Shim._
 import rep.network.PeerHelper._
 import rep.storage._
 import spray.json._
-import com.trueaccord.scalapb.json.JsonFormat
+import scalapb.json4s.JsonFormat
 import rep.app.TestMain
 import org.json4s._
 import org.json4s.jackson.JsonMethods
