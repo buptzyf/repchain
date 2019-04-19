@@ -180,11 +180,12 @@ class RestActor(moduleName: String) extends  ModuleBase(moduleName) {
           ImpDataPreloadMgr.Free(pe.getSysTag,t.id)
           rv.err match {
             case None =>
-              if (rv.r.reason.isEmpty) {
-                //预执行正常,提交并广播交易
-                pe.getActorRef(ActorType.transactionpool) ! t // 给交易池发送消息 ！=》告知（getActorRef）
-              }
-              sender ! PostResult(t.id, Some(rv.r), None)
+              //预执行正常,提交并广播交易
+              pe.getActorRef(ActorType.transactionpool) ! t // 给交易池发送消息 ！=》告知（getActorRef）
+              if (rv.r == null)
+                sender ! PostResult(t.id, None, None)
+              else
+                sender ! PostResult(t.id, Some(rv.r), None)  // legal_prose need
             case Some(err) =>
               //预执行异常,废弃交易，向api调用者发送异常
               sender ! PostResult(t.id, None, Option(err.cause.getMessage))
