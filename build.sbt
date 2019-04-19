@@ -23,16 +23,14 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-distributed-data" % akkaVersion
   )
 
-PB.targets in Compile := Seq(
-  scalapb.gen() -> (sourceManaged in Compile).value
-)
 libraryDependencies += "com.typesafe.akka" %% "akka-http-xml" % akkaHttpVersion
 libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value
 libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value
 
 libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2"
 
-//libraryDependencies += "com.trueaccord.scalapb" %% "scalapb-json4s" % "0.3.3"
+libraryDependencies += "com.thesamet.scalapb" %% "scalapb-json4s" % "0.7.0"
+
 
 libraryDependencies += "org.iq80.leveldb" % "leveldb" % "0.11"
 libraryDependencies += "org.fusesource.leveldbjni" % "leveldbjni-all" % "1.8"
@@ -61,16 +59,20 @@ libraryDependencies ++= Seq(
   "com.github.swagger-akka-http" %% "swagger-akka-http" % "1.0.0",
   "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
   "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpVersion,
-  "de.heikoseeberger" % "akka-http-json4s_2.11" % "1.25.2",
   "org.json4s" %% "json4s-native" % "3.6.5",
   "org.json4s" %% "json4s-jackson" % "3.6.5",
 
   "ch.megard" %% "akka-http-cors" % "0.4.0",
-  "com.twitter" % "chill-bijection_2.11" % "0.9.3"
+  "de.heikoseeberger" % "akka-http-json4s_2.12" % "1.25.2",
+  "com.twitter" %% "chill-akka" % "0.9.3",
+  "com.twitter" % "chill-bijection_2.12" % "0.9.3"
 )	
 
 javacOptions ++= Seq("-encoding", "UTF-8")
 
+PB.targets in Compile := Seq(
+  scalapb.gen() -> (sourceManaged in Compile).value
+)
 libraryDependencies += "com.thesamet.scalapb" %% "scalapb-runtime" % scalapb.compiler.Version.scalapbVersion % "protobuf"
 
 mainClass in (Compile, packageBin) := Some("rep.app.Repchain")
