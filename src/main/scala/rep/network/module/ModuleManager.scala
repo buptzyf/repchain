@@ -27,10 +27,10 @@ import rep.network.persistence.Storager
 import rep.network.tools.Statistic.StatisticCollection
 import rep.ui.web.EventServer
 import rep.network.cluster.MemberListener
-import rep.network.sync.{ SynchronizeResponser, SynchronizeRequester }
+import rep.network.sync.{ SynchronizeResponser, SynchronizeRequester4Future }
 
 import rep.network.consensus.block.{ GenesisBlocker, ConfirmOfBlock, EndorseCollector, Blocker }
-import rep.network.consensus.endorse.{Endorser,Endorser4Future,VerifyBlockEndorser,VerifyTransOfExecutor,VerifyTransOfSigner}
+import rep.network.consensus.endorse.{Endorser4Future}
 import rep.network.consensus.transaction.PreloaderForTransaction
 import rep.network.consensus.vote.Voter
 import rep.sc.TransProcessor
@@ -91,10 +91,6 @@ class ModuleManager(moduleName: String, sysTag: String, enableStatistic: Boolean
       context.actorOf(ConfirmOfBlock.props("confirmerofblock"), "confirmerofblock")
       context.actorOf(EndorseCollector.props("endorsementcollectioner"), "endorsementcollectioner")
       
-      context.actorOf(VerifyTransOfSigner.props("verifytransofsigner"), "verifytransofsigner")
-      context.actorOf(VerifyTransOfExecutor.props("verifytransofexecutor"), "verifytransofexecutor")
-      context.actorOf(VerifyBlockEndorser.props("verifyblockendorser"), "verifyblockendorser")
-      
       //context.actorOf(Endorser.props("endorser"), "endorser")
       context.actorOf(Endorser4Future.props("endorser"), "endorser")
       
@@ -113,7 +109,7 @@ class ModuleManager(moduleName: String, sysTag: String, enableStatistic: Boolean
 
   def loadSystemModule = {
     context.actorOf(Storager.props("storager"), "storager")
-    context.actorOf(SynchronizeRequester.props("synchrequester"), "synchrequester")
+    context.actorOf(SynchronizeRequester4Future.props("synchrequester"), "synchrequester")
     context.actorOf(SynchronizeResponser.props("synchresponser"), "synchresponser")
   }
 
@@ -125,17 +121,16 @@ class ModuleManager(moduleName: String, sysTag: String, enableStatistic: Boolean
   override def receive: Receive = {
     case ModuleManager.startup_Consensus => 
       if (SystemProfile.getTransCreateType == Trans_Create_Type_Enum.AUTO) {
-        val a = context.child("peerhelper")
-        if(a == None){
-          println("--------------a is not exist")
-        }else{
-          println(s"--------------a is exist,node=${pe.getSysTag}")
-        }
         if(pe.getActorRef(ActorType.peerhelper) == null){
           context.actorOf(PeerHelper.props("peerhelper"), "peerhelper")
         }
       }
-      pe.getActorRef(ActorType.voter) ! Voter.VoteOfBlocker
+      if(pe.getActorRef(ActorType.voter) != null){
+        pe.getActorRef(ActorType.voter) ! Voter.VoteOfBlocker
+      }else{
+        context.actorOf(Voter.props("voter"), "voter")
+        pe.getActorRef(ActorType.voter) ! Voter.VoteOfBlocker
+      }
     case _ => //ignore
   }
 }

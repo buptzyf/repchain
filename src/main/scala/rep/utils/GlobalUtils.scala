@@ -80,9 +80,7 @@ object GlobalUtils {
     val confirmerofblock = 16
     val gensisblock = 17
     val api = 18
-    val verifytransofsigner=19
-    val verifytransofexecutor=20
-    val verifyblockendorser=21
+  
   }
   
   

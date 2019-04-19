@@ -1,5 +1,8 @@
 package rep.network.persistence
 
+
+
+
 import akka.actor.{ ActorRef, Props }
 import akka.cluster.pubsub.DistributedPubSubMediator.Publish
 import com.google.protobuf.ByteString
@@ -15,6 +18,7 @@ import rep.log.trace.LogType
 import rep.network.sync.SyncMsg
 import scala.util.control.Breaks._
 import rep.network.util.NodeHelp
+import rep.network.sync.SyncMsg.{GreatMajority,BlockDataOfRequest,BlockDataOfResponse}
 
 
 object Storager {
@@ -40,6 +44,8 @@ class Storager(moduleName: String) extends ModuleBase(moduleName) {
   import context.dispatcher
   import scala.concurrent.duration._
   import rep.network.persistence.Storager.{ BlockRestore, SourceOfBlock }
+
+  
   val dataaccess: ImpDataAccess = ImpDataAccess.GetDataAccess(pe.getSysTag)
 
   //private var precache: immutable.TreeMap[Long, BlockRestore] = new immutable.TreeMap[Long, BlockRestore]()
@@ -92,9 +98,7 @@ class Storager(moduleName: String) extends ModuleBase(moduleName) {
       logMsg(LogType.INFO, moduleName + "~" + s"presistence is failed,must start sync,start send sync request ,height=${pe.getCurrentHeight} ~" + selfAddr)
       val hs = pe.getBlockCacheMgr.getKeyArray4Sort
       val max = hs(hs.length-1)
-      val min = pe.getCurrentHeight+1
-      pe.setSystemStatus(NodeStatus.Synching) 
-      pe.getActorRef(ActorType.synchrequester) ! SyncMsg.SyncRequestOfStorager(blker,min,max)
+      pe.getActorRef(ActorType.synchrequester) ! SyncMsg.SyncRequestOfStorager(blker,max)
     }
   }
 
@@ -110,11 +114,14 @@ class Storager(moduleName: String) extends ModuleBase(moduleName) {
       val minheight = hs(0)
       val maxheight = hs(hs.length-1)
       var loop :Long = minheight
+      
       breakable(
           while(loop <= maxheight){
             if(loop > localchaininfo.height+1){
               //发送同步消息
-              NoticeSyncModule(_blkRestore.blker)
+              if(!pe.isSynching){
+                NoticeSyncModule(_blkRestore.blker)
+              }
               break
             }else{
               RestoreBlock(pe.getBlockCacheMgr.getBlockFromCache(loop))

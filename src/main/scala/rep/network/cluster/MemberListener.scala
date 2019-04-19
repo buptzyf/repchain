@@ -148,7 +148,7 @@ class MemberListener(MoudleName:String) extends ModuleBase(MoudleName) with Clus
           pe.getNodeMgr.putStableNode(node._1)
           if(pe.getNodeMgr.getStableNodes.size >= SystemProfile.getVoteNoteMin){
             //组网成功之后开始系统同步
-            pe.getActorRef(ActorType.synchrequester) ! StartSync
+            pe.getActorRef(ActorType.synchrequester) ! StartSync(true)
           }
         }
       })

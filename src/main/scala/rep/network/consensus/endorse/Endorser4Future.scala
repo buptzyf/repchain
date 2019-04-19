@@ -22,15 +22,13 @@ import scala.util.control.Breaks._
 import scala.util.control.Exception.Finally
 import java.util.concurrent.ConcurrentHashMap
 import rep.log.trace.LogType
-import rep.network.consensus.endorse.EndorseMsg.{ EndorsementInfo, ResultOfEndorsed, verifyTransSignOfEndorsement, verifyTransExeOfEndorsement, VerfiyBlockEndorseOfEndorsement, VerifyResultOfEndorsement, VerifyTypeOfEndorsement, ConsensusOfVote }
+import rep.network.consensus.endorse.EndorseMsg.{ EndorsementInfo, ResultOfEndorsed, ResultFlagOfEndorse }
 import rep.network.consensus.block.Blocker.{ PreTransBlock, PreTransBlockResult }
 import rep.network.consensus.util.{ BlockVerify, BlockHelp }
+import rep.network.sync.SyncMsg.StartSync
 
 object Endorser4Future {
   def props(name: String): Props = Props(classOf[Endorser4Future], name)
-  case class CacheOfEndorsement(endorseinfo: EndorsementInfo, requester: ActorRef,
-                                repeatOfChecked: Int, transSignOfChecked: Int, EndorseSignOfChecked: Int,
-                                transExeOfChecked: Int, result: ResultOfEndorsed)
 }
 
 class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
@@ -38,7 +36,6 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
   import scala.concurrent.duration._
   import rep.protos.peer._
   import rep.storage.ImpDataAccess
-  import rep.network.consensus.endorse.Endorser.CacheOfEndorsement
 
   implicit val timeout = Timeout(TimePolicy.getTimeoutPreload seconds)
   
@@ -145,7 +142,10 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
           //可以进入背书
           logMsg(LogType.INFO, "vote result equal，allow entry endorse")
           0
-        } else {
+        } else  {
+          if(info.blc.height > pe.getCurrentHeight+1){
+            pe.getActorRef(ActorType.synchrequester) ! StartSync(false)
+          }
           //当前块hash和抽签的出块人都不一致，暂时不能够进行背书，可以进行缓存
           logMsg(LogType.INFO, "block hash is not equal or blocker is not equal")
           2
@@ -159,6 +159,7 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
   }
 
   private def VerifyInfo(info: EndorsementInfo) = {
+    val starttime = System.currentTimeMillis()
     println("entry 0")
     val transSign = asyncVerifyTransactions(info.blc)
     println("entry 1")
@@ -182,15 +183,15 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
       println("entry 7")
       //if(AskPreloadTransactionOfBlock(info.blc)){
       //println("entry 9")
+      val endtime = System.currentTimeMillis()
+      logMsg(LogType.INFO, s"#################endorsement spent time=${endtime-starttime}")
       sendEvent(EventType.PUBLISH_INFO, mediator, selfAddr, Topic.Block, Event.Action.ENDORSEMENT)
-      sender ! ResultOfEndorsed(true, BlockHelp.SignBlock(info.blc, pe.getSysTag), info.blc.hashOfBlock.toStringUtf8())
-      //}else{
-      //  println("entry 10")
-      //  sender ! ResultOfEndorsed(false, null, info.blc.hashOfBlock.toStringUtf8())
-      //}
+      sender ! ResultOfEndorsed(ResultFlagOfEndorse.success, BlockHelp.SignBlock(info.blc, pe.getSysTag), info.blc.hashOfBlock.toStringUtf8(),pe.getSystemCurrentChainStatus,pe.getBlocker)
     } else {
       println("entry 8")
-      sender ! ResultOfEndorsed(false, null, info.blc.hashOfBlock.toStringUtf8())
+      val endtime = System.currentTimeMillis()
+      logMsg(LogType.INFO, s"#################endorsement spent time=${endtime-starttime}")
+      sender ! ResultOfEndorsed(ResultFlagOfEndorse.VerifyError, null, info.blc.hashOfBlock.toStringUtf8(),pe.getSystemCurrentChainStatus,pe.getBlocker)
     }
   }
 
@@ -202,12 +203,15 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
         VerifyInfo(info: EndorsementInfo)
       case 2 =>
         //cache endorse,waiting revote
+        sender ! ResultOfEndorsed(ResultFlagOfEndorse.BlockHeightError, null, info.blc.hashOfBlock.toStringUtf8(),pe.getSystemCurrentChainStatus,pe.getBlocker)
         logMsg(LogType.INFO, s"endorsement entry cache,self height=${pe.getCurrentHeight},block height=${info.blc.height}")
       case 1 =>
         //do not endorse
+        sender ! ResultOfEndorsed(ResultFlagOfEndorse.BlockerSelfError, null, info.blc.hashOfBlock.toStringUtf8(),pe.getSystemCurrentChainStatus,pe.getBlocker)
         logMsg(LogType.INFO, "it is blocker")
       case 3 =>
         //do not endorse
+        sender ! ResultOfEndorsed(ResultFlagOfEndorse.CandidatorError, null, info.blc.hashOfBlock.toStringUtf8(),pe.getSystemCurrentChainStatus,pe.getBlocker)
         logMsg(LogType.INFO, "it is not candator,do not endorse")
     }
   }
@@ -215,11 +219,8 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
   override def receive = {
     //Endorsement block
     case EndorsementInfo(block, blocker) =>
+      
       EndorseHandler(EndorsementInfo(block, blocker))
-    //CheckEndorseInfo(EndorsementInfo(block, blocker))
-    //case VerifyResultOfEndorsement(blockhash: String, blocker: String, verifyType: Int, result: Boolean) =>
-    //  VerifyOfHandler(VerifyResultOfEndorsement(blockhash, blocker, verifyType, result))
-    //case ConsensusOfVote =>
 
     case _ => //ignore
   }

@@ -13,7 +13,6 @@ import rep.network.util.NodeHelp
 import rep.network.consensus.block.Blocker.{ CreateBlock }
 import rep.network.sync.SyncMsg.StartSync
 import rep.network.consensus.block.GenesisBlocker.GenesisBlock
-import rep.network.consensus.endorse.EndorseMsg.ConsensusOfVote
 
 object Voter {
 
@@ -71,15 +70,9 @@ class Voter(moduleName: String) extends ModuleBase(moduleName) with CRFDVoter {
 
   private def NoticeBlockerMsg = {
     if (this.Blocker.blocker.equals(pe.getSysTag)) {
-      //自己是出块人
-      pe.setSystemStatus(NodeStatus.Blocking)
       //发送建立新块的消息
       pe.getActorRef(ActorType.blocker) ! CreateBlock
-    } else {
-      //自己是背书人
-      pe.getActorRef(ActorType.endorser) ! ConsensusOfVote
-      pe.setSystemStatus(NodeStatus.Endorsing)
-    }
+    } 
   }
 
   private def DelayVote = {
@@ -139,10 +132,7 @@ class Voter(moduleName: String) extends ModuleBase(moduleName) with CRFDVoter {
         //pe.getActorRef(ActorType.synchrequester) ! StartSync
       }
     } else {
-      if (pe.getSystemStatus == NodeStatus.Synching) {
-        //不需要进入抽签
-        pe.getActorRef(ActorType.synchrequester) ! StartSync
-      } else {
+      if (!pe.isSynching) {
         vote
       }
     }

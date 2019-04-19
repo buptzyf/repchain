@@ -92,7 +92,7 @@ class ConfirmOfBlock(moduleName: String) extends ModuleBase(moduleName) {
     if (pe.getCurrentBlockHash == "" && block.previousBlockHash.isEmpty()) {
       logMsg(LogType.INFO, "confirm verify blockhash")
       handler(block, actRefOfBlock)
-    } else if (block.previousBlockHash.toStringUtf8 == pe.getCurrentBlockHash) {
+    } else  {
       //与上一个块一致
       logMsg(LogType.INFO, "confirm verify blockhash")
       if (NodeHelp.ConsensusConditionChecked(block.endorsements.size, pe.getNodeMgr.getStableNodes.size)) {
@@ -102,9 +102,7 @@ class ConfirmOfBlock(moduleName: String) extends ModuleBase(moduleName) {
         //错误，没有符合大多人背书要求。
 
       }
-    } else {
-      //错误，上一个块不一致
-    }
+    } 
   }
 
   override def receive = {
