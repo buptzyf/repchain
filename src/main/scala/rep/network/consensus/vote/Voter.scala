@@ -107,7 +107,7 @@ class Voter(moduleName: String) extends ModuleBase(moduleName) with CRFDVoter {
               //说明出块超时
               this.voteCount = 0
               this.resetBlocker(this.Blocker.VoteIndex + 1)
-              logMsg(LogType.INFO, moduleName + "~" + s"block timeout,reset voter,,height=${pe.getCurrentHeight},blocker=${this.Blocker.blocker},voteidx=${this.Blocker.VoteIndex}" + "~" + selfAddr)
+              logMsg(LogType.INFO, moduleName + "~" + s"block timeout,reset voter,height=${pe.getCurrentHeight},blocker=${this.Blocker.blocker},voteidx=${this.Blocker.VoteIndex}" + "~" + selfAddr)
             } else {
               NoticeBlockerMsg
             }

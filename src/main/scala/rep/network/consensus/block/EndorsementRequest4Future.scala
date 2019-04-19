@@ -45,7 +45,7 @@ class EndorsementRequest4Future(moduleName: String) extends ModuleBase(moduleNam
     try {
       val selection: ActorSelection = context.actorSelection(toAkkaUrl(addr, endorsementActorName));
       val future1 = selection ? data
-      logMsg(LogType.INFO, "--------ExecuteOfEndorsement success")
+      logMsg(LogType.INFO, "--------ExecuteOfEndorsement waiting result")
       Await.result(future1, timeout.duration).asInstanceOf[ResultOfEndorsed]
     } catch {
       case e: AskTimeoutException => 
@@ -78,16 +78,20 @@ class EndorsementRequest4Future(moduleName: String) extends ModuleBase(moduleNam
         if(EndorsementVerify(reqinfo.blc, result)){
           val re = ResultOfEndorseRequester(true, result.endor, result.BlockHash,reqinfo.endorer)
           context.parent ! re
+          logMsg(LogType.INFO, "--------endorsementRequest4Future recv endorsement result is success ")
         }else{
+          logMsg(LogType.INFO, "--------endorsementRequest4Future recv endorsement result is error, result=${result.result}")
           context.parent ! ResultOfEndorseRequester(false, null, reqinfo.blc.hashOfBlock.toStringUtf8(),reqinfo.endorer)
         }
       }else{
         if(result.endorserOfChainInfo.height > pe.getCurrentHeight + 1){
           pe.getActorRef(ActorType.synchrequester) ! StartSync(false)
+          logMsg(LogType.INFO, "--------endorsementRequest4Future recv endorsement result must synch ")
         }
         context.parent ! ResultOfEndorseRequester(false, null, reqinfo.blc.hashOfBlock.toStringUtf8(),reqinfo.endorer)
       }
     }else{
+      logMsg(LogType.INFO, "--------endorsementRequest4Future recv endorsement result is null ")
       context.parent ! ResultOfEndorseRequester(false, null, reqinfo.blc.hashOfBlock.toStringUtf8(),reqinfo.endorer)
     }
   }

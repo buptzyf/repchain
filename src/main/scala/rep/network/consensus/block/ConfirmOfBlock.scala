@@ -70,7 +70,7 @@ class ConfirmOfBlock(moduleName: String) extends ModuleBase(moduleName) {
       result1.toList.foreach(f=>{
         if(!f){
           result = false
-          logMsg(LogType.INFO, s"comfirmOfBlock verify endorse is error, break,block height${block.height},local height=${pe.getCurrentHeight}")
+          logMsg(LogType.INFO, s"comfirmOfBlock verify endorse is error, break,block height=${block.height},local height=${pe.getCurrentHeight}")
         }
       })
     }

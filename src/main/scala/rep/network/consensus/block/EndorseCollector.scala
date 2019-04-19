@@ -57,14 +57,14 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
   private def resetEndorseInfo(block: Block, blocker: String) = {
     this.block = block
     this.blocker = blocker
-    this.recvedEndorse.empty
+    this.recvedEndorse = this.recvedEndorse.empty
     schedulerLink = clearSched()
   }
 
   private def clearEndorseInfo = {
     this.block = null
     this.blocker = null
-    this.recvedEndorse.empty
+    this.recvedEndorse = this.recvedEndorse.empty
     schedulerLink = clearSched()
   }
 
@@ -95,17 +95,18 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
         Event.Action.ENDORSEMENT)
       logMsg(LogType.INFO, "collectioner endorsementt finish")
       clearEndorseInfo
+    }else{
+      logMsg(LogType.INFO, s"collectioner check is error,get size=${this.recvedEndorse.size}")
     }
   }
 
   override def receive = {
     case CollectEndorsement(block, blocker) =>
+      createRouter
       if (this.block != null && this.block.hashOfBlock.toStringUtf8().equals(block.hashOfBlock.toStringUtf8())) {
         logMsg(LogType.INFO, "collectioner is waiting endorse result")
       } else {
         logMsg(LogType.INFO, "collectioner recv endorsement")
-        createRouter
-        logMsg(LogType.INFO, "collectioner create router")
         resetEndorseInfo(block, blocker)
         pe.getNodeMgr.getStableNodes.foreach(f => {
           logMsg(LogType.INFO, "collectioner send endorsement to requester")
@@ -126,6 +127,8 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
             logMsg(LogType.INFO, "collectioner recv endorsement result")
             recvedEndorse += endorser.toString -> endors
             CheckAndFinishHandler
+          }else{
+            logMsg(LogType.INFO, "collectioner recv endorsement result,is error")
           }
         }
       }

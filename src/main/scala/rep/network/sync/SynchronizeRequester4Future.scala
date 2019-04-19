@@ -45,13 +45,13 @@ class SynchronizeRequester4Future(moduleName: String) extends ModuleBase(moduleN
   
   
   private def AsyncGetNodeOfChainInfo(addr: Address): Future[ResponseInfo] = Future{
-    println(s"${pe.getSysTag}:entry AsyncGetNodeOfChainInfo")
+    //println(s"${pe.getSysTag}:entry AsyncGetNodeOfChainInfo")
     var result : ResponseInfo = null
     
     try {
       val selection: ActorSelection = context.actorSelection(toAkkaUrl(addr, responseActorName));
       val future1 = selection ? SyncMsg.ChainInfoOfRequest
-      logMsg(LogType.INFO, "--------AsyncGetNodeOfChainInfo success")
+      //logMsg(LogType.INFO, "--------AsyncGetNodeOfChainInfo success")
       result = Await.result(future1, timeout.duration).asInstanceOf[ResponseInfo]
     } catch {
       case e: AskTimeoutException => 
@@ -62,12 +62,12 @@ class SynchronizeRequester4Future(moduleName: String) extends ModuleBase(moduleN
         null
     }
     
-    println(s"entry AsyncGetNodeOfChainInfo after,asyncVerifyTransaction=${result}")
+    println(s"${pe.getSysTag}:entry AsyncGetNodeOfChainInfo after,asyncVerifyTransaction=${result}")
     result
   }
 
   private def AsyncGetNodeOfChainInfos(stablenodes:Set[Address]):List[ResponseInfo] = {
-    println(s"${pe.getSysTag}:entry AsyncGetNodeOfChainInfos")
+    //println(s"${pe.getSysTag}:entry AsyncGetNodeOfChainInfos")
     //var result = new immutable.TreeMap[String, ResponseInfo]()
     val listOfFuture: Seq[Future[ResponseInfo]] = stablenodes.toSeq.map(addr => {
       AsyncGetNodeOfChainInfo(addr)
@@ -130,8 +130,9 @@ class SynchronizeRequester4Future(moduleName: String) extends ModuleBase(moduleN
   private def getBlockData(height:Long,ref:ActorRef):Boolean={
     try {
       val future1 = ref ? BlockDataOfRequest(height)
-      logMsg(LogType.INFO, "--------AsyncGetNodeOfChainInfo success")
+      //logMsg(LogType.INFO, "--------AsyncGetNodeOfChainInfo success")
       var result = Await.result(future1, timeout.duration).asInstanceOf[BlockDataOfResponse]
+      logMsg(LogType.INFO, s"${pe.getSysTag}:height=${height}--------AsyncGetNodeOfChainInfo success")
       pe.getActorRef(ActorType.storager) ! result
       true
     } catch {
@@ -165,8 +166,16 @@ class SynchronizeRequester4Future(moduleName: String) extends ModuleBase(moduleN
     getBlockDatas(majority)
   }
   
+  private def initSystemChainInfo={
+    if(pe.getCurrentHeight == 0){
+      val dataaccess: ImpDataAccess = ImpDataAccess.GetDataAccess(pe.getSysTag)
+      pe.resetSystemCurrentChainStatus(dataaccess.getBlockChainInfo())
+    }
+  }
+  
   override def receive: Receive = {
     case SyncMsg.StartSync(isNoticeModuleMgr:Boolean) =>
+      initSystemChainInfo
       if (pe.getNodeMgr.getStableNodes.size >= SystemProfile.getVoteNoteMin && !pe.isSynching) {
         pe.setSynching(true)
         Handler
