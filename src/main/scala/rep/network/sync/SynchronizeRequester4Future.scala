@@ -62,12 +62,12 @@ class SynchronizeRequester4Future(moduleName: String) extends ModuleBase(moduleN
         null
     }
     
-    println(s"entry asyncVerifyTransaction after,asyncVerifyTransaction=${result}")
+    println(s"entry AsyncGetNodeOfChainInfo after,asyncVerifyTransaction=${result}")
     result
   }
 
   private def AsyncGetNodeOfChainInfos(stablenodes:Set[Address]):List[ResponseInfo] = {
-    println(s"${pe.getSysTag}:entry asyncVerifyTransactions")
+    println(s"${pe.getSysTag}:entry AsyncGetNodeOfChainInfos")
     //var result = new immutable.TreeMap[String, ResponseInfo]()
     val listOfFuture: Seq[Future[ResponseInfo]] = stablenodes.toSeq.map(addr => {
       AsyncGetNodeOfChainInfo(addr)
@@ -77,10 +77,14 @@ class SynchronizeRequester4Future(moduleName: String) extends ModuleBase(moduleN
       case e:Exception =>
         null
     })
-    println(s"${pe.getSysTag}:entry asyncVerifyTransactions 1")
+    println(s"${pe.getSysTag}:entry AsyncGetNodeOfChainInfos 1")
     val result1 = Await.result(futureOfList, timeout.duration).asInstanceOf[List[ResponseInfo]]
-    println(s"${pe.getSysTag}:entry asyncVerifyTransactions 2")
-    result1.toList
+    println(s"${pe.getSysTag}:entry AsyncGetNodeOfChainInfos 2")
+    if(result1 == null){
+       List.empty
+    }else{
+      result1.toList
+    }
     
   }
   

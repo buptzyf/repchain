@@ -36,6 +36,8 @@ class ConfirmOfBlock(moduleName: String) extends ModuleBase(moduleName) {
   }
   import scala.concurrent.duration._
   import rep.protos.peer._
+  
+  implicit val timeout = Timeout(3 seconds)
 
   private def asyncVerifyEndorse(e: Signature, byteOfBlock: Array[Byte]): Future[Boolean] = {
     val result = Promise[Boolean]
@@ -54,19 +56,25 @@ class ConfirmOfBlock(moduleName: String) extends ModuleBase(moduleName) {
     val listOfFuture: Seq[Future[Boolean]] = block.endorsements.map(x => {
       asyncVerifyEndorse(x, b)
     })
-    val futureOfList: Future[List[Boolean]] = Future.sequence(listOfFuture.toList)
+    val futureOfList: Future[List[Boolean]] = Future.sequence(listOfFuture.toList).recover({
+      case e:Exception =>
+        null
+    })
+    
+    val result1 = Await.result(futureOfList, timeout.duration).asInstanceOf[List[Boolean]]
+    
     var result = true
-    //breakable(
-    futureOfList.map(x => {
-      x.foreach(f => {
-        if (!f) {
+    if(result1 == null){
+      false
+    }else{
+      result1.toList.foreach(f=>{
+        if(!f){
           result = false
           logMsg(LogType.INFO, s"comfirmOfBlock verify endorse is error, break,block height${block.height},local height=${pe.getCurrentHeight}")
-          //break
         }
       })
-    })
-   // )
+    }
+    
     result
   }
 
