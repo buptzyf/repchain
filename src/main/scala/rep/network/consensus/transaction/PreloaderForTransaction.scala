@@ -24,6 +24,7 @@ import rep.utils._
 import scala.collection.mutable
 import rep.log.trace.LogType
 import akka.pattern.AskTimeoutException
+import rep.crypto.Sha256
 
 object PreloaderForTransaction {
   def props(name: String, transProcessor: ActorRef): Props = Props(classOf[PreloaderForTransaction], name, transProcessor)
@@ -62,6 +63,8 @@ class PreloaderForTransaction(moduleName: String, transProcessor: ActorRef) exte
       if(newTranList.size > 0){
         val tmpblk = block.withTransactions(newTranList)
         var rblock = tmpblk.withTransactionResults(transResult)
+        val statehashstr = Sha256.hashstr(Array.concat(pe.getSystemCurrentChainStatus.currentStateHash.toByteArray() , SerializeUtils.serialise(transResult)))
+        rblock = rblock.withStateHash(ByteString.copyFromUtf8(statehashstr))
         Some(rblock)
       }else{
         None

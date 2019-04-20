@@ -96,7 +96,8 @@ object BlockHelp {
         null,
         _root_.com.google.protobuf.ByteString.EMPTY,
         ByteString.copyFromUtf8(preBlockHash),
-        Seq())
+        Seq(),
+        _root_.com.google.protobuf.ByteString.EMPTY)
     } catch {
       case e: RuntimeException => throw e
     }

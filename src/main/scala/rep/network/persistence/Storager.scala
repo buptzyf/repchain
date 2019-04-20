@@ -58,7 +58,7 @@ class Storager(moduleName: String) extends ModuleBase(moduleName) {
       if (result._1) {
         logMsg(LogType.INFO, moduleName + "~" + s"Restore blocks success,node number: ${pe.getSysTag},block number=${blkRestore.blk.height}" + "~" + selfAddr)
         pe.getTransPoolMgr.removeTrans(blkRestore.blk.transactions)
-        pe.resetSystemCurrentChainStatus(new BlockchainInfo(result._2, result._3, ByteString.copyFromUtf8(result._4), ByteString.copyFromUtf8(result._5)))
+        pe.resetSystemCurrentChainStatus(new BlockchainInfo(result._2, result._3, ByteString.copyFromUtf8(result._4), ByteString.copyFromUtf8(result._5),ByteString.copyFromUtf8(result._6)))
         pe.getBlockCacheMgr.removeFromCache(blkRestore.blk.height)
         
         if (blkRestore.SourceOfBlock == SourceOfBlock.CONFIRMED_BLOCK) {

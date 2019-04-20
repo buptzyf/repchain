@@ -322,6 +322,7 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
     if (bidx != null) {
       val bhash = bidx.getBlockHash()
       val bprevhash = bidx.getBlockPrevHash()
+      val statehash = bidx.getStateHash()
       if (bhash != null && !bhash.equalsIgnoreCase("")) {
         rbc = rbc.withCurrentBlockHash(ByteString.copyFromUtf8(bhash))
       } else {
@@ -333,6 +334,13 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
       } else {
         rbc = rbc.withPreviousBlockHash(_root_.com.google.protobuf.ByteString.EMPTY)
       }
+      
+      if (statehash != null && !statehash.equalsIgnoreCase("")) {
+        rbc = rbc.withCurrentStateHash(ByteString.copyFromUtf8(statehash))
+      } else {
+        rbc = rbc.withCurrentStateHash(_root_.com.google.protobuf.ByteString.EMPTY)
+      }
+      
     }
 
     rbc = rbc.withHeight(currentheight)
@@ -461,9 +469,9 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
    * @param	block  待写入系统的区块
    * @return	如果成功返回true，否则返回false
    */
-  override def restoreBlock(block: Block): (Boolean,Long,Long,String,String) = {
-    if (block == null) return (false,0l,0l,"","")
-    if (block.hashOfBlock == null || block.hashOfBlock.isEmpty()) return (false,0l,0l,"","")
+  override def restoreBlock(block: Block): (Boolean,Long,Long,String,String,String) = {
+    if (block == null) return (false,0l,0l,"","","")
+    if (block.hashOfBlock == null || block.hashOfBlock.isEmpty()) return (false,0l,0l,"","","")
     synchronized {
       val oldh = getBlockHeight()
       val oldno = this.getMaxFileNo()
@@ -481,10 +489,10 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
           WriteOperLogToDBWithRestoreBlock(block)
           if (this.commitAndAddBlock(block,oldh,oldno,oldtxnumber)) {
             this.CommitTrans
-            (true,block.height,oldtxnumber+block.transactions.length,block.hashOfBlock.toStringUtf8(),block.previousBlockHash.toStringUtf8())
+            (true,block.height,oldtxnumber+block.transactions.length,block.hashOfBlock.toStringUtf8(),block.previousBlockHash.toStringUtf8(),block.stateHash.toStringUtf8())
           } else {
             this.RollbackTrans
-            (false,0l,0l,"","")
+            (false,0l,0l,"","","")
           }
         } catch {
           case e: Exception => {
