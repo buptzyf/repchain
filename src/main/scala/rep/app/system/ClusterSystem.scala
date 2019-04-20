@@ -198,7 +198,7 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
     val nodelist = sysConf.getStringList("system.vote.vote_node_list")
     if (nodelist.contains(this.sysTag)) {
       var roles: List[String] = new ArrayList[String]
-      roles.add("CRFD-Node")
+      roles.add("CRFD-Node:"+this.sysTag)
       sysConf = sysConf.withValue("akka.cluster.roles", ConfigValueFactory.fromAnyRef(roles))
     }
   }

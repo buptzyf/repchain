@@ -29,11 +29,12 @@ import rep.utils.GlobalUtils.ActorType
 import rep.utils.{ TimeUtils}
 import rep.log.trace.LogType
 import org.slf4j.LoggerFactory
-import scala.collection.mutable
+import scala.collection.mutable.HashMap
 import rep.log.trace._
 import rep.network.base.ModuleBase
 import rep.network.sync.SyncMsg.StartSync
-
+import scala.util.control.Breaks._
+import scala.collection.mutable.ArrayBuffer
 
 /**
   * Cluster节点状态监听模块
@@ -68,7 +69,7 @@ class MemberListener(MoudleName:String) extends ModuleBase(MoudleName) with Clus
 
   val cluster = Cluster(context.system)
 
-  var preloadNodesMap = mutable.HashMap[ Address, Long ]()
+  var preloadNodesMap = HashMap[ Address, (Long,String) ]()
 
   //def scheduler = context.system.scheduler
 
@@ -99,17 +100,54 @@ class MemberListener(MoudleName:String) extends ModuleBase(MoudleName) with Clus
   //必须缓存，如果memActor跪了则每次出块就会出问题
   //同步的时候一定要把nodes也同步
   var nodes = Set.empty[ Address ]
+  
 
+  private def isCandidatorNode(roles: Set[String]):Boolean = {
+    var r = false
+    breakable(
+    roles.foreach(f=>{
+      if(f.startsWith("CRFD-Node")){
+        r = true
+        break
+      }
+    })
+    )
+    r
+  }
+  
+  private def getNodeName(roles: Set[String]):String = {
+    var r = ""
+    breakable(
+    roles.foreach(f=>{
+      if(f.startsWith("CRFD-Node")){
+        r = f.substring(f.indexOf("CRFD-Node")+10)
+        break
+      }
+    })
+    )
+    r
+  }
+  
   def receive = {
 
     //系统初始化时状态
     case state: CurrentClusterState =>
       println("Member call first time")
-      nodes = state.members.collect {
-        case m if m.status == MemberStatus.Up => m.address
-      }
+      //nodes = state.members.collect {
+      //  case m if m.status == MemberStatus.Up => m.address
+      //}
+      var snodes  = new ArrayBuffer[(Address ,String)]()
+      state.members.foreach(m=>{
+        if (m.status == MemberStatus.Up){
+          nodes += m.address
+          if(this.isCandidatorNode(m.roles)){
+            snodes.append((m.address,this.getNodeName(m.roles)))
+          }
+        }
+      })
+      
       pe.getNodeMgr.resetNodes(nodes)
-      pe.getNodeMgr.resetStableNodes(nodes)
+      pe.getNodeMgr.resetStableNodes(snodes.toSet)
       //成员入网
     case MemberUp(member) =>
       nodes += member.address
@@ -120,8 +158,8 @@ class MemberListener(MoudleName:String) extends ModuleBase(MoudleName) with Clus
       //  member.address, nodes.size)
       RepLogger.logInfo(pe.getSysTag, ModuleType.memberlistener, "Member is Up: {}. {} nodes in cluster"+"~"+member.address+"~"+nodes.size)
       pe.getNodeMgr.putNode(member.address)
-      if(member.roles != null && !member.roles.isEmpty && member.roles.contains("CRFD-Node")){
-        preloadNodesMap.put(member.address, TimeUtils.getCurrentTime())
+      if(member.roles != null && !member.roles.isEmpty && this.isCandidatorNode(member.roles)){
+        preloadNodesMap.put(member.address, (TimeUtils.getCurrentTime(),this.getNodeName(member.roles)))
       }
       
       scheduler.scheduleOnce(TimePolicy.getSysNodeStableDelay millis,
@@ -144,8 +182,8 @@ class MemberListener(MoudleName:String) extends ModuleBase(MoudleName) with Clus
       Thread.sleep(TimePolicy.getStableTimeDur) //给一个延迟量
       println(pe.getSysTag + " MemberListening recollection")
       preloadNodesMap.foreach(node => {
-        if (isStableNode(node._2, TimePolicy.getSysNodeStableDelay)) {
-          pe.getNodeMgr.putStableNode(node._1)
+        if (isStableNode(node._2._1, TimePolicy.getSysNodeStableDelay)) {
+          pe.getNodeMgr.putStableNode(node._1,node._2._2)
           if(pe.getNodeMgr.getStableNodes.size >= SystemProfile.getVoteNoteMin){
             //组网成功之后开始系统同步
             pe.getActorRef(ActorType.synchrequester) ! StartSync(true)
