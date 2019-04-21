@@ -542,6 +542,9 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
         if (bhelp.isAddFile(oldno, blenght + 8)) {
           newno = oldno + 1
           setMaxFileNo(newno)
+          setFileFirstHeight(newno,newh)
+        }else if(newh == 1 && newno == 0 ){
+          setFileFirstHeight(newno,newh)
         }
         val startpos = bhelp.getFileLength(newno)
         bidx.setBlockFileNo(newno)
@@ -687,9 +690,17 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
    * @return	无
    */
   private def setMaxFileNo(no: Int) = {
-    this.Put(IdxPrefix.MaxFileNo, String.valueOf(no).getBytes())
+    this.Put(IdxPrefix.MaxFileNo, String.valueOf(no).getBytes)
   }
 
+  private def setFileFirstHeight(no:Int,height:Long)={
+    this.Put(IdxPrefix.FirstHeightOfFilePrefix+no+IdxPrefix.FirstHeightOfFileSuffix, String.valueOf(height).getBytes)
+  }
+  
+  def getFileFirstHeight(no:Int):Long={
+    this.toLong(this.Get(IdxPrefix.FirstHeightOfFilePrefix+no+IdxPrefix.FirstHeightOfFileSuffix))
+  }
+  
   ////////////////////以下是用来存储文件的////////////////////////////////////
   /**
    * @author jiangbuyun

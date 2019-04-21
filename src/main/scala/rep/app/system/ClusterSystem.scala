@@ -34,7 +34,6 @@ import com.typesafe.config.ConfigValueFactory
 import java.util.List
 import java.util.ArrayList
 import org.slf4j.LoggerFactory
-import rep.storage.verify.verify4Storage
 import rep.log.RepLogger
 
 /**
@@ -215,15 +214,7 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
       throw new Exception("not enough disk space")
     }
 
-    try {
-      if (!verify4Storage.verify(sysTag)) {
-        throw new Exception("Storager Verify Error")
-      }
-    } catch {
-      case e: Exception => {
-        throw new Exception("Storager Verify Error,info:" + e.getMessage)
-      }
-    }
+    
     
     moduleManager = sysActor.actorOf(ModuleManager.props("modulemanager", sysTag, enableStatistic, enableWebSocket,true), "modulemanager")
 
