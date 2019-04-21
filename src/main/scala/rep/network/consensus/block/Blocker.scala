@@ -20,13 +20,13 @@ import rep.utils.GlobalUtils.{ ActorType, BlockEvent, EventType, NodeStatus}
 import scala.collection.mutable
 import com.sun.beans.decoder.FalseElementHandler
 import scala.util.control.Breaks
-import rep.log.trace.LogType
 import rep.utils.IdTool
 import scala.util.control.Breaks._
 import rep.network.consensus.util.{ BlockHelp, BlockVerify }
 import rep.network.util.NodeHelp
 import rep.network.Topic
 import rep.network.consensus.endorse.EndorseMsg
+import rep.log.RepLogger
 
 object Blocker {
   def props(name: String): Props = Props(classOf[Blocker], name)
@@ -68,7 +68,7 @@ class Blocker(moduleName: String) extends ModuleBase(moduleName) {
   var preblock: Block = null
 
   override def preStart(): Unit = {
-    logMsg(LogType.INFO, "Block module start")
+    RepLogger.info(RepLogger.Consensus_Logger, this.getLogMsgPrefix("Block module start"))
     //SubscribeTopic(mediator, self, selfAddr, Topic.Block, true)
     //scheduler.scheduleOnce(TimePolicy.getStableTimeDur millis, context.parent, BlockModuleInitFinished)
   }
@@ -126,10 +126,10 @@ class Blocker(moduleName: String) extends ModuleBase(moduleName) {
     //todo 交易排序
     if (trans.size > SystemProfile.getMinBlockTransNum) {
       var blc = BlockHelp.WaitingForExecutionOfBlock(pe.getCurrentBlockHash, pe.getCurrentHeight + 1, trans)
-      logMsg(LogType.INFO, moduleName + "~" + s"create new block,height=${blc.height},local height=${pe.getCurrentHeight}" + "~" + selfAddr)
+      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,height=${blc.height},local height=${pe.getCurrentHeight}" + "~" + selfAddr))
       blc = ExecuteTransactionOfBlock(blc)
       if (blc != null) {
-        logMsg(LogType.INFO, moduleName + "~" + s"create new block,prelaod success,height=${blc.height},local height=${pe.getCurrentHeight}" + "~" + selfAddr)
+        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"create new block,prelaod success,height=${blc.height},local height=${pe.getCurrentHeight}" + "~" + selfAddr))
         blc = BlockHelp.AddBlockHash(blc)
         BlockHelp.AddSignToBlock(blc, pe.getSysTag)
       } else {
@@ -177,17 +177,17 @@ class Blocker(moduleName: String) extends ModuleBase(moduleName) {
           }
         } else {
           //节点状态不对
-          logMsg(LogType.INFO, moduleName + "~" + s"create new block,node status error,height=${this.preblock.height}" + "~" + selfAddr)
+          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"create new block,node status error,height=${this.preblock.height}" + "~" + selfAddr))
         }
       } else {
         //出块标识错误,暂时不用做任何处理
-        logMsg(LogType.INFO, moduleName + "~" + s"create new block,do not blocker,height=${this.preblock.height}" + "~" + selfAddr)
+        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,do not blocker,height=${this.preblock.height}" + "~" + selfAddr))
       }
 
     //出块超时
     case Blocker.EndorseOfBlockTimeOut =>
       schedulerLink = clearSched()
-      logMsg(LogType.INFO, moduleName + "~" + s"create new block,send endorse collector,height=${this.preblock.height},local height=${pe.getCurrentHeight}" + "~" + selfAddr)
+      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,send endorse collector,height=${this.preblock.height},local height=${pe.getCurrentHeight}" + "~" + selfAddr))
       pe.getActorRef(ActorType.endorsementcollectioner) ! EndorseMsg.CollectEndorsement(this.preblock, pe.getBlocker.blocker)
       schedulerLink = scheduler.scheduleOnce(TimePolicy.getTimeoutEndorse seconds, self, Blocker.EndorseOfBlockTimeOut)
     case _ => //ignore

@@ -23,7 +23,8 @@ import rep.network.tools.PeerExtension
 import rep.crypto.Sha256
 import scala.collection.mutable
 import org.slf4j.LoggerFactory
-import rep.log.trace.{ModuleType,RepLogger,RepTimeTracer}
+import rep.log.RepTimeTracer
+import rep.log.RepLogger
 import rep.utils.GlobalUtils.{ActorType}
 
 
@@ -47,9 +48,7 @@ object ModuleBase {
   **/
 
 abstract class  ModuleBase(name: String) extends Actor  with ClusterActor with BaseActor{
-  val logPrefix = name
   val pe = PeerExtension(context.system)
-  
   val atype = ModuleNameToIntActorType
   atype match{
     case 0 => 
@@ -83,22 +82,15 @@ abstract class  ModuleBase(name: String) extends Actor  with ClusterActor with B
   
     
   /**
-    * 日志封装
+    * 日志前缀
     *
-    * @param lOG_TYPE
-    * @param msg
     */
-  def logMsg( msg: String): Unit = {
-    RepLogger.logInfo(pe.getSysTag, ModuleType.modulebase,  msg + " ~ " + selfAddr)
+  def getLogMsgPrefix(msg:String):String = {
+    s"${pe.getSysTag}~${this.name}~${msg}~"
   }
-
   
-  def logMsg(logtype: rep.log.trace.LogType.LogType, msg: String): Unit = {
-    RepLogger.logInfo(pe.getSysTag, ModuleType.modulebase,  msg + " ~ " + selfAddr)
-  }
   /**
     * 事件时间戳封装
-    *
     * @param msg
     * @param step
     * @param actorRef

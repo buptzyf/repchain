@@ -16,12 +16,12 @@ import rep.network.tools.PeerExtension
 import rep.network.Topic
 import rep.protos.peer._
 import rep.utils._
-import rep.log.trace.LogType
 import akka.pattern.AskTimeoutException
 import rep.network.consensus.util.BlockVerify
 import scala.util.control.Breaks
 import rep.utils.GlobalUtils.{ EventType, ActorType }
 import rep.network.sync.SyncMsg.StartSync
+import rep.log.RepLogger
 
 object EndorsementRequest4Future {
   def props(name: String): Props = Props(classOf[EndorsementRequest4Future], name)
@@ -36,21 +36,21 @@ class EndorsementRequest4Future(moduleName: String) extends ModuleBase(moduleNam
   private val endorsementActorName = "/user/modulemanager/endorser"
 
   override def preStart(): Unit = {
-    logMsg(LogType.INFO, "EndorsementRequest4Future Start")
+    RepLogger.info(RepLogger.Consensus_Logger, this.getLogMsgPrefix( "EndorsementRequest4Future Start"))
   }
 
   private def ExecuteOfEndorsement(addr: Address, data: EndorsementInfo): ResultOfEndorsed = {
     try {
       val selection: ActorSelection = context.actorSelection(toAkkaUrl(addr, endorsementActorName));
       val future1 = selection ? data
-      logMsg(LogType.INFO, "--------ExecuteOfEndorsement waiting result")
+      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( "--------ExecuteOfEndorsement waiting result"))
       Await.result(future1, timeout.duration).asInstanceOf[ResultOfEndorsed]
     } catch {
       case e: AskTimeoutException =>
-        logMsg(LogType.INFO, "--------ExecuteOfEndorsement timeout")
+        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( "--------ExecuteOfEndorsement timeout"))
         null
       case te: TimeoutException =>
-        logMsg(LogType.INFO, "--------ExecuteOfEndorsement java timeout")
+        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( "--------ExecuteOfEndorsement java timeout"))
         null
     }
   }
@@ -77,9 +77,9 @@ class EndorsementRequest4Future(moduleName: String) extends ModuleBase(moduleNam
         if (EndorsementVerify(reqinfo.blc, result)) {
           val re = ResultOfEndorseRequester(true, result.endor, result.BlockHash, reqinfo.endorer)
           context.parent ! re
-          logMsg(LogType.INFO, "--------endorsementRequest4Future recv endorsement result is success ")
+          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( "--------endorsementRequest4Future recv endorsement result is success "))
         } else {
-          logMsg(LogType.INFO, "--------endorsementRequest4Future recv endorsement result is error, result=${result.result}")
+          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("--------endorsementRequest4Future recv endorsement result is error, result=${result.result}"))
           context.parent ! ResultOfEndorseRequester(false, null, reqinfo.blc.hashOfBlock.toStringUtf8(), reqinfo.endorer)
         }
       } else {
@@ -87,7 +87,7 @@ class EndorsementRequest4Future(moduleName: String) extends ModuleBase(moduleNam
           if (result.endorserOfChainInfo.height > pe.getCurrentHeight + 1) {
             pe.getActorRef(ActorType.synchrequester) ! StartSync(false)
             context.parent ! ResultOfEndorseRequester(false, null, reqinfo.blc.hashOfBlock.toStringUtf8(), reqinfo.endorer)
-            logMsg(LogType.INFO, "--------endorsementRequest4Future recv endorsement result must synch ")
+            RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( "--------endorsementRequest4Future recv endorsement result must synch "))
           } else {
             schedulerLink = scheduler.scheduleOnce(TimePolicy.getTimeoutEndorse seconds, self, RequesterOfEndorsement(reqinfo.blc, reqinfo.blocker, reqinfo.endorer))
           }
@@ -96,7 +96,7 @@ class EndorsementRequest4Future(moduleName: String) extends ModuleBase(moduleNam
         }
       }
     } else {
-      logMsg(LogType.INFO, "--------endorsementRequest4Future recv endorsement result is null ")
+      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("--------endorsementRequest4Future recv endorsement result is null "))
       context.parent ! ResultOfEndorseRequester(false, null, reqinfo.blc.hashOfBlock.toStringUtf8(), reqinfo.endorer)
     }
   }

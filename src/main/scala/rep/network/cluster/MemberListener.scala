@@ -27,14 +27,13 @@ import rep.network.cluster.MemberListener.{ Recollection}
 import rep.network.tools.PeerExtension
 import rep.utils.GlobalUtils.ActorType
 import rep.utils.{ TimeUtils}
-import rep.log.trace.LogType
 import org.slf4j.LoggerFactory
 import scala.collection.mutable.HashMap
-import rep.log.trace._
 import rep.network.base.ModuleBase
 import rep.network.sync.SyncMsg.StartSync
 import scala.util.control.Breaks._
 import scala.collection.mutable.ArrayBuffer
+import rep.log.RepLogger
 
 /**
   * Cluster节点状态监听模块
@@ -132,7 +131,7 @@ class MemberListener(MoudleName:String) extends ModuleBase(MoudleName) with Clus
 
     //系统初始化时状态
     case state: CurrentClusterState =>
-      println("Member call first time")
+      RepLogger.trace(RepLogger.System_Logger, this.getLogMsgPrefix("Member call first time"))
       //nodes = state.members.collect {
       //  case m if m.status == MemberStatus.Up => m.address
       //}
@@ -151,12 +150,7 @@ class MemberListener(MoudleName:String) extends ModuleBase(MoudleName) with Clus
       //成员入网
     case MemberUp(member) =>
       nodes += member.address
-      /*if(member.roles == null || member.roles.isEmpty){
-        print()
-      }*/
-      //log.info("Member is Up: {}. {} nodes in cluster",
-      //  member.address, nodes.size)
-      RepLogger.logInfo(pe.getSysTag, ModuleType.memberlistener, "Member is Up: {}. {} nodes in cluster"+"~"+member.address+"~"+nodes.size)
+      RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("Member is Up: {}. {} nodes in cluster"+"~"+member.address+"~"+nodes.size))
       pe.getNodeMgr.putNode(member.address)
       if(member.roles != null && !member.roles.isEmpty && this.isCandidatorNode(member.roles)){
         preloadNodesMap.put(member.address, (TimeUtils.getCurrentTime(),this.getNodeName(member.roles)))
@@ -170,7 +164,7 @@ class MemberListener(MoudleName:String) extends ModuleBase(MoudleName) with Clus
       nodes -= member.address
       //log.info("Member is Removed: {}. {} nodes cluster",
         //member.address, nodes.size)
-      RepLogger.logInfo(pe.getSysTag, ModuleType.memberlistener, "Member is Removed: {}. {} nodes cluster"+"~"+member.address+"~"+nodes.size)
+      RepLogger.info(RepLogger.System_Logger,  "Member is Removed: {}. {} nodes cluster"+"~"+member.address+"~"+nodes.size)
       preloadNodesMap.remove(member.address)
       pe.getNodeMgr.removeNode(member.address)
       pe.getNodeMgr.removeStableNode(member.address)
@@ -180,7 +174,7 @@ class MemberListener(MoudleName:String) extends ModuleBase(MoudleName) with Clus
       //稳定节点收集
     case Recollection =>
       Thread.sleep(TimePolicy.getStableTimeDur) //给一个延迟量
-      println(pe.getSysTag + " MemberListening recollection")
+      RepLogger.trace(RepLogger.System_Logger, this.getLogMsgPrefix(" MemberListening recollection"))
       preloadNodesMap.foreach(node => {
         if (isStableNode(node._2._1, TimePolicy.getSysNodeStableDelay)) {
           pe.getNodeMgr.putStableNode(node._1,node._2._2)
@@ -207,7 +201,7 @@ class MemberListener(MoudleName:String) extends ModuleBase(MoudleName) with Clus
       nodes -= member.address
       //log.info("Member is Removed: {}. {} nodes cluster",
       //  member.address, nodes.size)
-      RepLogger.logInfo(pe.getSysTag, ModuleType.memberlistener, "Member is Removed: {}. {} nodes cluster"+"~"+member.address+"~"+nodes.size)
+      RepLogger.info(RepLogger.System_Logger, "Member is Removed: {}. {} nodes cluster"+"~"+member.address+"~"+nodes.size)
       preloadNodesMap.remove(member.address)
       pe.getNodeMgr.removeNode(member.address)
       pe.getNodeMgr.removeStableNode(member.address)
@@ -217,7 +211,7 @@ class MemberListener(MoudleName:String) extends ModuleBase(MoudleName) with Clus
       nodes -= member.address
       //log.info("Member is Removed: {}. {} nodes cluster",
       //  member.address, nodes.size)
-      RepLogger.logInfo(pe.getSysTag, ModuleType.memberlistener, "Member is Removed: {}. {} nodes cluster"+"~"+member.address+"~"+nodes.size)
+      RepLogger.info(RepLogger.System_Logger,  "Member is Removed: {}. {} nodes cluster"+"~"+member.address+"~"+nodes.size)
       preloadNodesMap.remove(member.address)
       pe.getNodeMgr.removeNode(member.address)
       pe.getNodeMgr.removeStableNode(member.address)

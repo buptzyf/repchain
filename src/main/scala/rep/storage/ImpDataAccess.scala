@@ -32,8 +32,8 @@ import rep.utils._
 import java.io._
 import rep.protos.peer.OperLog
 import scala.collection.mutable._
-import rep.log.trace._
 import rep.network.consensus.util.BlockHelp
+import rep.log.RepLogger
 
 /**
  * @author jiangbuyun
@@ -66,7 +66,7 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
         rb = getBlockByHash(bh)
       } catch {
         case e: Exception => {
-          RepLogger.logError(SystemName, ModuleType.storager,
+          RepLogger.error(RepLogger.Storager_Logger,  
             "base64 is invalidate")
         }
       }
@@ -525,7 +525,7 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
     if (block == null) return b
     if (block.hashOfBlock == null || block.hashOfBlock.isEmpty()) return b
     if (block.previousBlockHash == null) return b
-    RepLogger.logInfo(SystemName, ModuleType.storager,
+    RepLogger.trace(RepLogger.Storager_Logger,  
       "system_name=" + this.SystemName + "\t store a block")
     synchronized {
       try {
@@ -550,11 +550,11 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
         bidx.setBlockFilePos(startpos + 8)
         bidx.setBlockLength(blenght)
 
-        RepLogger.logInfo(SystemName, ModuleType.storager,
+        RepLogger.trace(RepLogger.Storager_Logger,  
           "system_name=" + this.SystemName + "\t new height=" + newh + "\t new file no=" + newno + "\t new tx number=" + newtxnumber)
 
         this.Put(IdxPrefix.IdxBlockPrefix + bidx.getBlockHash(), bidx.toArrayByte())
-        RepLogger.logInfo(SystemName, ModuleType.storager,
+        RepLogger.trace(RepLogger.Storager_Logger,  
           "system_name=" + this.SystemName + "\t blockhash=" + bidx.getBlockHash())
 
         this.Put(IdxPrefix.IdxBlockHeight + newh, bidx.getBlockHash().getBytes())
@@ -571,7 +571,7 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
         bhelp.writeBlock(bidx.getBlockFileNo(), bidx.getBlockFilePos() - 8, BlockStorageHelp.longToByte(blenght) ++ rbb)
 
         b = true
-        RepLogger.logInfo(SystemName, ModuleType.storager,
+        RepLogger.trace(RepLogger.Storager_Logger,  
           "system_name=" + this.SystemName + "\t blockhash=" + bidx.getBlockHash() + "\tcommited success")
       } catch {
         case e: Exception => {

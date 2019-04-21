@@ -43,7 +43,7 @@ import rep.api.SwaggerDocService
 import rep.api.rest._
 import rep.utils.GlobalUtils
 import rep.sc.Sandbox.SandboxException
-
+import rep.log.RepLogger
 import rep.app.conf.SystemProfile
 
 /** Event服务伴生对象
@@ -99,14 +99,12 @@ object EventServer {
       route_evt
         ~ cors() (
             new BlockService(ra).route ~
-            new LogMgrService(ra).route ~
             new ChainService(ra).route ~
             new TransactionService(ra).route ~
             SwaggerDocService.routes),
       "0.0.0.0", port)
-    println(s"Event Server online at http://localhost:$port")
+    RepLogger.info(RepLogger.System_Logger, s"Event Server online at http://localhost:$port")
   }
-  
 }
 
 /** Event服务类，提供web实时图、swagger-UI、ws的Event订阅服务

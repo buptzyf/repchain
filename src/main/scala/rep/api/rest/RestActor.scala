@@ -43,7 +43,6 @@ import rep.network.base.ModuleBase
 import rep.utils.GlobalUtils.ActorType
 import akka.actor.Props
 import rep.crypto.cert.SignTool
-import rep.log.trace._
 import rep.protos.peer.ActionResult
 import rep.app.conf.SystemProfile
 import rep.network.base.ModuleBase
@@ -81,11 +80,6 @@ object RestActor {
                    iptFunc: String, iptArgs: Seq[String], timeout: Int,legal_prose:String,
                    code: String, ctype: Int, state: Boolean)
   case class tranSign(tran: String)
-
-  case class closeOrOpen4Node(nodename:String,status:String)
-  case class closeOrOpen4Package(nodename:String,packagename:String,status:String)
-  case class ColseOrOpenAllLogger(status:String)
-  case class ColseOrOpenTimeTrace(status:String)
 
   /**
     * 根据节点名称和chainCode定义建立交易实例
@@ -154,11 +148,7 @@ class RestActor(moduleName: String) extends  ModuleBase(moduleName) {
   //import rep.utils.JsonFormat.AnyJsonFormat
 
   implicit val timeout = Timeout(1000.seconds)
-  //  val atp = getActorRef(ActorType.TRANSACTION_POOL)
-  //  println(s"atp:${atp}")
   val sr: ImpDataAccess = ImpDataAccess.GetDataAccess(pe.getSysTag)
-  //  val sTag = PeerExtension(context.system).getSysTag
-  //  val preload :ImpDataPreload = ImpDataPreloadMgr.GetImpDataPreload(sTag,"preload")
   val sandbox = context.actorOf(TransProcessor.props("sandbox",  self), "sandboxPost")
 
   def preTransaction(t:Transaction) : Unit ={
@@ -243,57 +233,7 @@ class RestActor(moduleName: String) extends  ModuleBase(moduleName) {
       sender ! r
 
 
-    case ColseOrOpenTimeTrace(status) =>
-      var remsg = ""
-      if(status.equalsIgnoreCase("on")){
-        RepTimeTracer.openTimeTrace
-        remsg = "已经打开运行时间跟踪"
-      }else if(status.equalsIgnoreCase("off")){
-        RepTimeTracer.closeTimeTrace
-        remsg = "已经关闭运行时间跟踪"
-      }else{
-        remsg = "状态只能输入on/off"
-      }
-      sender ! resultMsg(remsg)
-
-    case ColseOrOpenAllLogger(status) =>
-      var remsg = ""
-      if(status.equalsIgnoreCase("on")){
-        LogOption.openAllTrace
-        remsg = "已经打开日志输出"
-      }else if(status.equalsIgnoreCase("off")){
-        LogOption.closeAllTrace
-        remsg = "已经关闭日志输出"
-      }else{
-        remsg = "状态只能输入on/off"
-      }
-      sender ! resultMsg(remsg)
-
-    case closeOrOpen4Node(nodename,status) =>
-      var remsg = ""
-      if(status.equalsIgnoreCase("on")){
-        LogOption.openNodeLog(nodename)
-        remsg = "节点="+nodename+",已经打开日志输出"
-      }else if(status.equalsIgnoreCase("off")){
-        LogOption.closeNodeLog(nodename)
-        remsg = "节点="+nodename+",已经关闭日志输出"
-      }else{
-        remsg = "状态只能输入on/off"
-      }
-      sender ! resultMsg(remsg)
-
-    case closeOrOpen4Package(nodename,packagename,status) =>
-      var remsg = ""
-      if(status.equalsIgnoreCase("on")){
-        LogOption.setModuleLogOption(nodename, packagename, true)
-        remsg = "包名="+packagename+",已经打开日志输出"
-      }else if(status.equalsIgnoreCase("off")){
-        LogOption.setModuleLogOption(nodename, packagename, false)
-        remsg = "包名="+packagename+",已经关闭日志输出"
-      }else{
-        remsg = "状态只能输入on/off"
-      }
-      sender ! resultMsg(remsg)
+   
 
     // 根据高度检索块
     case BlockHeight(h) =>

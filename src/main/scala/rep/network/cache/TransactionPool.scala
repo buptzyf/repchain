@@ -35,7 +35,7 @@ import rep.storage.ImpDataAccess
 import rep.utils.{ ActorUtils, GlobalUtils }
 import rep.utils.GlobalUtils.EventType
 import rep.utils.SerializeUtils
-import rep.log.trace.LogType
+import rep.log.RepLogger
 
 /**
  * 交易缓冲池伴生对象
@@ -142,7 +142,7 @@ class TransactionPool(moduleName: String) extends ModuleBase(moduleName) {
           case true =>
             //签名验证成功
             if(pe.getTransPoolMgr.getTransLength() < 100)
-              logMsg(LogType.INFO,s"<<<<<<<<<<<<<>>>>>>>>>transaction=${pe.getTransPoolMgr.getTransLength()}" )
+              RepLogger.trace(RepLogger.System_Logger,this.getLogMsgPrefix(s"<<<<<<<<<<<<<>>>>>>>>>transaction=${pe.getTransPoolMgr.getTransLength()}"))
             if (SystemProfile.getMaxCacheTransNum == 0 || pe.getTransPoolMgr.getTransLength() < SystemProfile.getMaxCacheTransNum) {
               pe.getTransPoolMgr.putTran(t)
               //广播接收交易事件

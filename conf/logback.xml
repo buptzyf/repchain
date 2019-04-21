@@ -11,7 +11,7 @@
 
         </rollingPolicy>
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>DEBUG</level>
+            <level>TRACE</level>
         </filter>
 
         <immediateFlush>false</immediateFlush>
@@ -32,7 +32,7 @@
 
         </rollingPolicy>
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>DEBUG</level>
+            <level>TRACE</level>
         </filter>
 
         <immediateFlush>false</immediateFlush>
@@ -53,7 +53,7 @@
 
         </rollingPolicy>
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>DEBUG</level>
+            <level>TRACE</level>
         </filter>
 
         <immediateFlush>false</immediateFlush>
@@ -74,7 +74,7 @@
 
         </rollingPolicy>
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>DEBUG</level>
+            <level>TRACE</level>
         </filter>
 
         <immediateFlush>false</immediateFlush>
@@ -95,7 +95,7 @@
 
         </rollingPolicy>
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>DEBUG</level>
+            <level>TRACE</level>
         </filter>
 
         <immediateFlush>false</immediateFlush>
@@ -116,7 +116,7 @@
 
         </rollingPolicy>
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>INFO</level>
+            <level>TRACE</level>
         </filter>
 
         <immediateFlush>false</immediateFlush>
@@ -137,7 +137,7 @@
 
         </rollingPolicy>
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>DEBUG</level>
+            <level>TRACE</level>
         </filter>
 
         <immediateFlush>false</immediateFlush>
@@ -152,7 +152,7 @@
         <target>System.out</target>
         <!--level过滤器简化版-->
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>DEBUG</level>
+            <level>TRACE</level>
         </filter>
         
         <encoder>
@@ -163,31 +163,31 @@
 
     <!--<logger name="akka" level="INFO" />-->
 
-	<logger name="Business_Logger" additivity="false" level="INFO">
+	<logger name="Business_Logger" additivity="false" level="TRACE">
         <appender-ref ref="Business_Appender"/>
     </logger>
     
-    <logger name="System_Logger" additivity="false" level="INFO">
+    <logger name="System_Logger" additivity="false" level="TRACE">
         <appender-ref ref="System_Appender"/>
     </logger>
     
-    <logger name="Consensus_Logger" additivity="false" level="INFO">
+    <logger name="Consensus_Logger" additivity="false" level="TRACE">
         <appender-ref ref="Consensus_Appender"/>
     </logger>
     
-    <logger name="BlockSyncher_Logger" additivity="false" level="INFO">
+    <logger name="BlockSyncher_Logger" additivity="false" level="TRACE">
         <appender-ref ref="BlockSyncher_Appender"/>
     </logger>
     
-    <logger name="Storager_Logger" additivity="false" level="INFO">
+    <logger name="Storager_Logger" additivity="false" level="TRACE">
         <appender-ref ref="Storager_Appender"/>
     </logger>
     
-    <logger name="StatisTime_Logger" additivity="false" level="INFO">
+    <logger name="StatisTime_Logger" additivity="false" level="TRACE">
         <appender-ref ref="StatisTime_Appender"/>
     </logger>
     
-    <logger name="Sandbox_Logger" additivity="false" level="INFO">
+    <logger name="Sandbox_Logger" additivity="false" level="TRACE">
         <appender-ref ref="Sandbox_Appender"/>
     </logger>
 

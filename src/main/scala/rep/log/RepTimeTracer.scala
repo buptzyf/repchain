@@ -13,7 +13,7 @@
  * limitations under the License.
  *
  */
-package rep.log.trace
+package rep.log
 
 import java.util.concurrent.ConcurrentHashMap
 import scala.collection.JavaConverters._
@@ -47,7 +47,7 @@ object RepTimeTracer {
       val key = nodeName + "-" + flag;
       if (this.times.contains(key)) {
         val tl = t - this.times(key);
-        RepLogger.logInfo(nodeName, ModuleType.timeTracer, key + "=" + tl)
+        RepLogger.trace(RepLogger.StatisTime_Logger,  key + "=" + tl)
       }
     }
   }

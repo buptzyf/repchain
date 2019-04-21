@@ -4,6 +4,7 @@ import scala.collection.mutable.{ArrayBuffer,LinkedHashMap}
 import rep.protos.peer.Transaction
 import java.util.concurrent.locks._
 import rep.utils.GlobalUtils.{TranscationPoolPackage}
+import rep.log.RepLogger
 
 class TransactionPoolMgr {
   private val  transLock : Lock = new ReentrantLock();
@@ -25,7 +26,7 @@ class TransactionPoolMgr {
     transLock.lock()
     try{
       if (transactions.contains(tran.id)) {
-        println(s"${tran.id} exists in cache")
+        RepLogger.trace(RepLogger.System_Logger, s"${tran.id} exists in cache")
       }
       else transactions.put(tran.id, new TranscationPoolPackage(tran,System.currentTimeMillis()/1000))
     }finally {

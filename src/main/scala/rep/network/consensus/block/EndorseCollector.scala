@@ -13,12 +13,12 @@ import rep.protos.peer._
 import rep.utils.GlobalUtils.{ EventType }
 import rep.utils._
 import scala.collection.mutable._
-import rep.log.trace.LogType
 import rep.network.consensus.util.BlockVerify
 import scala.util.control.Breaks
 import rep.network.util.NodeHelp
 import rep.network.consensus.util.BlockHelp
 import rep.network.consensus.util.BlockVerify
+import rep.log.RepLogger
 
 object EndorseCollector {
   case object ResendEndorseInfo
@@ -36,7 +36,7 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
   private var recvedEndorse = new HashMap[String, Signature]()
 
   override def preStart(): Unit = {
-    logMsg(LogType.INFO, "EndorseCollector Start")
+    RepLogger.info(RepLogger.Consensus_Logger, this.getLogMsgPrefix( "EndorseCollector Start"))
   }
 
   private def createRouter = {
@@ -79,24 +79,24 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
   }
 
   private def CheckAndFinishHandler {
-    logMsg(LogType.INFO, "collectioner check is finish ")
+    RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("collectioner check is finish "))
     if (NodeHelp.ConsensusConditionChecked(this.recvedEndorse.size + 1, pe.getNodeMgr.getNodes.size)) {
       //schedulerLink = clearSched()
-      logMsg(LogType.INFO, "collectioner package endorsement to block")
+      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("collectioner package endorsement to block"))
       this.recvedEndorse.foreach(f => {
         this.block = BlockHelp.AddEndorsementToBlock(this.block, f._2)
       })
       var consensus = this.block.endorsements.toArray[Signature]
       BlockVerify.sort(consensus)
-      logMsg(LogType.INFO, "collectioner endorsement sort")
+      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("collectioner endorsement sort"))
       this.block = this.block.withEndorsements(consensus)
       mediator ! Publish(Topic.Block, new ConfirmedBlock(this.block, sender))
       sendEvent(EventType.RECEIVE_INFO, mediator, selfAddr, Topic.Block,
         Event.Action.ENDORSEMENT)
-      logMsg(LogType.INFO, "collectioner endorsementt finish")
+      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( "collectioner endorsementt finish"))
       clearEndorseInfo
     } else {
-      logMsg(LogType.INFO, s"collectioner check is error,get size=${this.recvedEndorse.size}")
+      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"collectioner check is error,get size=${this.recvedEndorse.size}"))
     }
   }
 
@@ -104,12 +104,12 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
     case CollectEndorsement(block, blocker) =>
       createRouter
       if (this.block != null && this.block.hashOfBlock.toStringUtf8().equals(block.hashOfBlock.toStringUtf8())) {
-        logMsg(LogType.INFO, "collectioner is waiting endorse result")
+        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("collectioner is waiting endorse result"))
       } else {
-        logMsg(LogType.INFO, "collectioner recv endorsement")
+        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( "collectioner recv endorsement"))
         resetEndorseInfo(block, blocker)
         pe.getNodeMgr.getStableNodes.foreach(f => {
-          logMsg(LogType.INFO, "collectioner send endorsement to requester")
+          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( "collectioner send endorsement to requester"))
           router.route(RequesterOfEndorsement(block, blocker, f), self)
         })
         //schedulerLink = scheduler.scheduleOnce(TimePolicy.getTimeoutEndorse seconds, self, EndorseCollector.ResendEndorseInfo)
@@ -124,11 +124,11 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
       if (this.block != null) {
         if (this.block.hashOfBlock.toStringUtf8().equals(blockhash)) {
           if (result) {
-            logMsg(LogType.INFO, "collectioner recv endorsement result")
+            RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( "collectioner recv endorsement result"))
             recvedEndorse += endorser.toString -> endors
             CheckAndFinishHandler
           } else {
-            logMsg(LogType.INFO, "collectioner recv endorsement result,is error")
+            RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("collectioner recv endorsement result,is error"))
           }
         }
       }

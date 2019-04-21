@@ -24,10 +24,9 @@ import rep.protos.peer._
 import akka.actor.{Actor, ActorRef, Props, actorRef2Scala}
 import rep.storage._
 import rep.storage.IdxPrefix.WorldStateKeyPreFix
-import rep.log.trace.LogType
 import org.slf4j.LoggerFactory
 import org.json4s._
-import rep.log.trace.{RepLogger,ModuleType}
+import rep.log.RepLogger
 import rep.utils.SerializeUtils.deserialise
 import rep.utils.SerializeUtils.serialise
 import  _root_.com.google.protobuf.ByteString 

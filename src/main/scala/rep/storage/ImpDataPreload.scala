@@ -22,7 +22,7 @@ import rep.storage.leveldb._
 import scala.collection.mutable.ArrayBuffer
 import rep.protos.peer._;
 import scala.util.control.Breaks
-import rep.log.trace._
+import rep.log.RepLogger
 
 /**内存数据库的访问类，属于多实例。
  * @constructor	根据SystemName和InstanceName建立实例
@@ -83,7 +83,7 @@ class ImpDataPreload (SystemName:String,InstanceName:String) extends AbstractLev
 			}catch{
 				case e:Exception =>{
 				  rb = null
-				  RepLogger.logError(SystemName, ModuleType.storager,
+				  RepLogger.error(RepLogger.Storager_Logger,  
   			      "ImpDataPreload_" + SystemName + "_" + s"ImpDataPreload Get failed, error info= "+e.getMessage)
   			  throw e
   			}
@@ -103,13 +103,13 @@ class ImpDataPreload (SystemName:String,InstanceName:String) extends AbstractLev
   		var b : Boolean = true
 			try{
 				  if(key == null){
-				    RepLogger.logInfo(SystemName, ModuleType.storager,
+				    RepLogger.trace(RepLogger.Storager_Logger,  
   			      "ImpDataPreload_" + SystemName + "_" + s"ImpDataPreload Put failed, error info= key is null")
 				  }
 				  var v :Array[Byte] = bb
 				  if(bb == null){
 				    v = None.toArray
-				    RepLogger.logInfo(SystemName, ModuleType.storager,
+				    RepLogger.trace(RepLogger.Storager_Logger,  
   			      "ImpDataPreload_" + SystemName + "_" + s"ImpDataPreload Put failed, error info= value is null")
 				  }
 				  if(key != null ){
@@ -119,7 +119,7 @@ class ImpDataPreload (SystemName:String,InstanceName:String) extends AbstractLev
 			}catch{
 			  case e:Exception =>{
 			    b = false
-			    RepLogger.logError(SystemName, ModuleType.storager,
+			    RepLogger.error(RepLogger.Storager_Logger,  
   			      "ImpDataPreload_" + SystemName + "_" + s"ImpDataPreload Put failed, error info= "+e.getMessage)
   				throw e
 			  }
@@ -253,7 +253,7 @@ private class  MultiDBMgr (val SystemName:String) {
     	       }
   	      }catch{
     		    case e:Exception =>{
-    		      RepLogger.logError(SystemName, ModuleType.storager,
+    		      RepLogger.error(RepLogger.Storager_Logger,  
   			      "MultiDBMgr_" + SystemName + "_" + s"ImpDataPreload Create failed, error info= "+e.getMessage)
     		      throw e
     		    }
@@ -287,7 +287,7 @@ private class  MultiDBMgr (val SystemName:String) {
         DBOps -= f
       }catch{
         case e:Exception =>{
-          RepLogger.logError(SystemName, ModuleType.storager,
+          RepLogger.error(RepLogger.Storager_Logger,  
   			      "MultiDBMgr_" + SystemName + "_" + s"ImpDataPreload clear failed, error info= "+e.getMessage)
     		      throw e
     		    }
@@ -309,7 +309,7 @@ private class  MultiDBMgr (val SystemName:String) {
       DBOps -= InstanceName
      }catch{
         case e:Exception =>{
-          RepLogger.logError(SystemName, ModuleType.storager,
+          RepLogger.error(RepLogger.Storager_Logger,  
   			      "MultiDBMgr_" + SystemName + "_" + s"ImpDataPreload Free failed, error info= "+e.getMessage)
     		      throw e
     		    }
@@ -352,7 +352,7 @@ object ImpDataPreloadMgr{
     	       dbop = singleobj.GetImpDataPreload(InstanceName)
   	      }catch{
     		    case e:Exception =>{
-    		      RepLogger.logError(SystemName, ModuleType.storager,
+    		      RepLogger.error(RepLogger.Storager_Logger,  
   			      "ImpDataPreloadMgr_" + SystemName + "_" + s"ImpDataPreload Create failed, error info= "+e.getMessage)
     		      throw e
     		    }
@@ -399,7 +399,7 @@ object ImpDataPreloadMgr{
     	       }
   	      }catch{
     		    case e:Exception =>{
-    		      RepLogger.logError(SystemName, ModuleType.storager,
+    		      RepLogger.error(RepLogger.Storager_Logger,  
   			      "ImpDataPreloadMgr_" + SystemName + "_" + s"ImpDataPreload Free failed, error info= "+e.getMessage)
     		      throw e
     		    }

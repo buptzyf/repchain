@@ -31,7 +31,7 @@ import scala.collection.mutable
 import rep.storage.util.StoreUtil
 import com.google.protobuf.ByteString
 import rep.crypto._
-import rep.log.trace._
+import rep.log.RepLogger
 
 /**
  * @author jiangbuyun
@@ -49,14 +49,14 @@ abstract class IDataAccess(val SystemName: String) extends AbstractLevelDB(Syste
   private var batch: WriteBatch = null
 
   if (SystemName == null || SystemName.equalsIgnoreCase("")) {
-    RepLogger.logInfo(SystemName, ModuleType.storager, "SystemName=" + SystemName)
+    RepLogger.info(RepLogger.Storager_Logger,  SystemName+"~"+"start")
   }
 
   val sc: StoreConfig = StoreConfig.getStoreConfig()
   DBDataPath = sc.getDbPath(SystemName)
   val b = pathUtil.MkdirAll(this.DBDataPath)
   if (!b) {
-    RepLogger.logError(SystemName, ModuleType.storager, "IDataAccess_" + SystemName + "_" + "DBOP Create error,db store dir is null!")
+    RepLogger.error(RepLogger.Storager_Logger,  "IDataAccess_" + SystemName + "_" + "DBOP Create error,db store dir is null!")
     throw new Exception("db store dir is null! " + DBDataPath)
   }
 
@@ -118,7 +118,7 @@ abstract class IDataAccess(val SystemName: String) extends AbstractLevelDB(Syste
               this.batch.close()
             } catch {
               case e: Exception => {
-                RepLogger.logError(SystemName, ModuleType.storager,
+                RepLogger.error(RepLogger.Storager_Logger,
                   "IDataAccess_" + SystemName + "_" + s"DBOP BeginTrans failed, error info= " + e.getMessage)
                 throw e
               }
@@ -133,7 +133,7 @@ abstract class IDataAccess(val SystemName: String) extends AbstractLevelDB(Syste
         case e: Exception => {
           this.IsTrans = false
           this.batch = null
-          RepLogger.logError(SystemName, ModuleType.storager,
+          RepLogger.error(RepLogger.Storager_Logger,  
             "IDataAccess_" + SystemName + "_" + s"DBOP BeginTrans failed, error info= " + e.getMessage)
           throw e
         }
@@ -159,7 +159,7 @@ abstract class IDataAccess(val SystemName: String) extends AbstractLevelDB(Syste
         }
       } catch {
         case e: Exception => {
-          RepLogger.logError(SystemName, ModuleType.storager,
+          RepLogger.error(RepLogger.Storager_Logger,  
             "IDataAccess_" + SystemName + "_" + s"DBOP CommitTrans failed, error info= " + e.getMessage)
           throw e
         }
@@ -171,7 +171,7 @@ abstract class IDataAccess(val SystemName: String) extends AbstractLevelDB(Syste
           }
         } catch {
           case e: Exception => {
-            RepLogger.logWarn(SystemName, ModuleType.storager,
+            RepLogger.error(RepLogger.Storager_Logger,  
               "IDataAccess_" + SystemName + "_" + s"DBOP CommitTrans failed, error info= " + e.getMessage)
           }
         } finally {
@@ -197,7 +197,7 @@ abstract class IDataAccess(val SystemName: String) extends AbstractLevelDB(Syste
         }
       } catch {
         case e: Exception => {
-          RepLogger.logError(SystemName, ModuleType.storager,
+          RepLogger.error(RepLogger.Storager_Logger,  
             "IDataAccess_" + SystemName + "_" + s"DBOP RollbackTrans failed, error info= " + e.getMessage)
           throw e
         }
@@ -240,7 +240,7 @@ abstract class IDataAccess(val SystemName: String) extends AbstractLevelDB(Syste
     } catch {
       case e: Exception => {
         rb = null
-        RepLogger.logError(SystemName, ModuleType.storager,
+        RepLogger.error(RepLogger.Storager_Logger,  
           "IDataAccess_" + SystemName + "_" + s"DBOP Get failed, error info= " + e.getMessage)
         throw e
       }
@@ -276,7 +276,7 @@ abstract class IDataAccess(val SystemName: String) extends AbstractLevelDB(Syste
       } catch {
         case e: Exception => {
           b = false
-          RepLogger.logError(SystemName, ModuleType.storager,
+          RepLogger.error(RepLogger.Storager_Logger,  
             "IDataAccess_" + SystemName + "_" + s"DBOP Put failed, error info= " + e.getMessage)
           throw e
         }
@@ -358,7 +358,7 @@ abstract class IDataAccess(val SystemName: String) extends AbstractLevelDB(Syste
         }
       } catch {
         case e: Exception => {
-          RepLogger.logError(SystemName, ModuleType.storager,
+          RepLogger.error(RepLogger.Storager_Logger,  
             "IDataAccess_" + SystemName + "_" + s"DBOP FindByLike failed, error info= " + e.getMessage)
           throw e
         }
@@ -368,7 +368,7 @@ abstract class IDataAccess(val SystemName: String) extends AbstractLevelDB(Syste
             iterator.close()
           } catch {
             case e: Exception => {
-              RepLogger.logError(SystemName, ModuleType.storager,
+              RepLogger.error(RepLogger.Storager_Logger,  
                 "IDataAccess_" + SystemName + "_" + s"DBOP FindByLike failed, error info= " + e.getMessage)
             }
           }

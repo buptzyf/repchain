@@ -25,7 +25,6 @@ import java.util.concurrent.Executors
 import java.lang.Exception
 import java.lang.Thread._
 import java.io.File._
-import rep.log.trace.LogType
 import org.slf4j.LoggerFactory
 import org.json4s.{DefaultFormats, Formats, jackson}
 import de.heikoseeberger.akkahttpjson4s.Json4sSupport
@@ -39,6 +38,7 @@ import rep.storage.IdxPrefix.WorldStateKeyPreFix
 import rep.storage._
 import rep.utils.SerializeUtils.deserialise
 import rep.utils.SerializeUtils.serialise
+import rep.log.RepLogger
 
 /** 合约容器的抽象类伴生对象,定义了交易执行结果的case类
  * 
@@ -199,7 +199,7 @@ abstract class Sandbox(cid:ChaincodeId) extends Actor {
         if(coder_bytes != null){
           val coder = Some(deserialise(coder_bytes).asInstanceOf[String])
           //合约已存在且部署者并非当前交易签名者
-          println(s"cn:${key_coder} :: ${t.signature.get.certId.get.creditCode} :: ${coder.get}")
+          RepLogger.info(RepLogger.Sandbox_Logger,s"cn:${key_coder} :: ${t.signature.get.certId.get.creditCode} :: ${coder.get}")
           if(!t.signature.get.certId.get.creditCode.equals(coder.get)){
             throw new SandboxException(ERR_CODER)       
           }

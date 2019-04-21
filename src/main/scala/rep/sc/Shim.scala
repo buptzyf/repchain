@@ -34,6 +34,7 @@ import java.security.cert.X509Certificate
 import rep.storage.ImpDataAccess
 import rep.crypto.cert.SignTool
 import  _root_.com.google.protobuf.ByteString 
+import rep.log.RepLogger
 
 /** Shim伴生对象
  *  @author c4w
@@ -62,7 +63,7 @@ object Shim {
       )
     )
     val test1 = cert
-    println(Option(null) == None)
+    RepLogger.trace(RepLogger.Sandbox_Logger,(Option(null) == None).toString())
   }
 }
 

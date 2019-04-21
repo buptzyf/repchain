@@ -38,8 +38,8 @@ import rep.sc.TransProcessor
 import rep.storage.ImpDataAccess
 import rep.utils.ActorUtils
 import rep.utils.GlobalUtils.ActorType
-import rep.log.trace.LogType
 import rep.crypto.cert.SignTool
+import rep.log.RepLogger
 
 /**
  * Created by shidianyue on 2017/9/22.
@@ -80,7 +80,7 @@ class ModuleManager(moduleName: String, sysTag: String, enableStatistic: Boolean
       }*/
      
 
-    logMsg(LogType.INFO, moduleName + "~" + s"ModuleManager ${sysTag} start")
+    RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"ModuleManager ${sysTag} start"))
   }
 
   def loadConsensusModule = {

@@ -26,9 +26,8 @@ import rep.storage.util.StoreUtil
 import com.google.protobuf.ByteString
 import scala.math._ 
 import rep.crypto._
-import rep.log.trace.LogType
 import org.slf4j.LoggerFactory
-import rep.log.trace._
+import rep.log.RepLogger
 
 
 /**
@@ -71,7 +70,7 @@ abstract class AbstractLevelDB(SystemName:String) extends ILevelDB  {
   			l = str.toLong
   		}catch{
   			case e:Exception =>{
-  			  RepLogger.logError(SystemName, ModuleType.storager,
+  			  RepLogger.error(RepLogger.Storager_Logger,  
   			      s"DBOP toLong failed, error info= "+e.getMessage)
 			  }
   		}
@@ -95,7 +94,7 @@ abstract class AbstractLevelDB(SystemName:String) extends ILevelDB  {
   			l = str.toInt
   		}catch{
   			case e:Exception =>{
-  			  RepLogger.logError(SystemName, ModuleType.storager,
+  			  RepLogger.error(RepLogger.Storager_Logger,  
   			      s"DBOP toInt failed, error info= "+e.getMessage)
 			  }
   		}
@@ -130,7 +129,7 @@ abstract class AbstractLevelDB(SystemName:String) extends ILevelDB  {
 	def printlnHashMap(map : mutable.HashMap[String,Array[Byte]])={
 	  if(map != null){
 	    map.foreach(f=>{
-	      RepLogger.logWarn(SystemName, ModuleType.storager,
+	      RepLogger.trace(RepLogger.Storager_Logger,  
   			      "\tkey="+f._1 + "\tvalue=" +toString(f._2))
 	    })
 	  }

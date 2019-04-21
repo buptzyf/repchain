@@ -24,11 +24,10 @@ import rep.protos.peer._
 import akka.actor.{Actor, ActorRef, Props, actorRef2Scala}
 import rep.storage._
 import rep.storage.IdxPrefix.WorldStateKeyPreFix
-import rep.log.trace.LogType
 import org.slf4j.LoggerFactory
 import com.google.protobuf.ByteString
 import org.json4s._
-import rep.log.trace.{RepLogger,ModuleType}
+import rep.log.RepLogger
 
 /**
  * @author c4w

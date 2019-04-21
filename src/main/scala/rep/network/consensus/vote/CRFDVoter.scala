@@ -20,6 +20,7 @@ import rep.crypto.Sha256
 import scala.collection.mutable
 import rep.storage.util.pathUtil
 import scala.math._
+import rep.log.RepLogger
 
 /**
   * 系统默认
@@ -82,8 +83,8 @@ trait CRFDVoter extends VoterBase {
       var candidate = new Array[String](len)
       var hashSeed:Long = pathUtil.bytesToInt(seed)
       var randomList = getRandomList(hashSeed,len,nodes.size)
-      //PrintRandomArray(randomList)
       //println(randomList(0).generateSerial)
+      RepLogger.trace(RepLogger.Consensus_Logger, randomList.mkString(","))
       for(j<-0 to len-1){
         var e = randomList(j)
         candidate(j) = nodesSeq(e.generateSerial)
