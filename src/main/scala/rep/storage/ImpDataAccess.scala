@@ -32,8 +32,8 @@ import rep.utils._
 import java.io._
 import rep.protos.peer.OperLog
 import scala.collection.mutable._
-import rep.log.trace._
 import rep.network.consensus.util.BlockHelp
+import rep.log.RepLogger
 
 /**
  * @author jiangbuyun
@@ -66,7 +66,7 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
         rb = getBlockByHash(bh)
       } catch {
         case e: Exception => {
-          RepLogger.logError(SystemName, ModuleType.storager,
+          RepLogger.error(RepLogger.Storager_Logger,  
             "base64 is invalidate")
         }
       }
@@ -322,6 +322,7 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
     if (bidx != null) {
       val bhash = bidx.getBlockHash()
       val bprevhash = bidx.getBlockPrevHash()
+      val statehash = bidx.getStateHash()
       if (bhash != null && !bhash.equalsIgnoreCase("")) {
         rbc = rbc.withCurrentBlockHash(ByteString.copyFromUtf8(bhash))
       } else {
@@ -333,6 +334,13 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
       } else {
         rbc = rbc.withPreviousBlockHash(_root_.com.google.protobuf.ByteString.EMPTY)
       }
+      
+      if (statehash != null && !statehash.equalsIgnoreCase("")) {
+        rbc = rbc.withCurrentStateHash(ByteString.copyFromUtf8(statehash))
+      } else {
+        rbc = rbc.withCurrentStateHash(_root_.com.google.protobuf.ByteString.EMPTY)
+      }
+      
     }
 
     rbc = rbc.withHeight(currentheight)
@@ -461,9 +469,9 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
    * @param	block  待写入系统的区块
    * @return	如果成功返回true，否则返回false
    */
-  override def restoreBlock(block: Block): (Boolean,Long,Long,String,String) = {
-    if (block == null) return (false,0l,0l,"","")
-    if (block.hashOfBlock == null || block.hashOfBlock.isEmpty()) return (false,0l,0l,"","")
+  override def restoreBlock(block: Block): (Boolean,Long,Long,String,String,String) = {
+    if (block == null) return (false,0l,0l,"","","")
+    if (block.hashOfBlock == null || block.hashOfBlock.isEmpty()) return (false,0l,0l,"","","")
     synchronized {
       val oldh = getBlockHeight()
       val oldno = this.getMaxFileNo()
@@ -481,10 +489,10 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
           WriteOperLogToDBWithRestoreBlock(block)
           if (this.commitAndAddBlock(block,oldh,oldno,oldtxnumber)) {
             this.CommitTrans
-            (true,block.height,oldtxnumber+block.transactions.length,block.hashOfBlock.toStringUtf8(),block.previousBlockHash.toStringUtf8())
+            (true,block.height,oldtxnumber+block.transactions.length,block.hashOfBlock.toStringUtf8(),block.previousBlockHash.toStringUtf8(),block.stateHash.toStringUtf8())
           } else {
             this.RollbackTrans
-            (false,0l,0l,"","")
+            (false,0l,0l,"","","")
           }
         } catch {
           case e: Exception => {
@@ -517,7 +525,7 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
     if (block == null) return b
     if (block.hashOfBlock == null || block.hashOfBlock.isEmpty()) return b
     if (block.previousBlockHash == null) return b
-    RepLogger.logInfo(SystemName, ModuleType.storager,
+    RepLogger.trace(RepLogger.Storager_Logger,  
       "system_name=" + this.SystemName + "\t store a block")
     synchronized {
       try {
@@ -534,6 +542,9 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
         if (bhelp.isAddFile(oldno, blenght + 8)) {
           newno = oldno + 1
           setMaxFileNo(newno)
+          setFileFirstHeight(newno,newh)
+        }else if(newh == 1 && newno == 0 ){
+          setFileFirstHeight(newno,newh)
         }
         val startpos = bhelp.getFileLength(newno)
         bidx.setBlockFileNo(newno)
@@ -542,11 +553,11 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
         bidx.setBlockFilePos(startpos + 8)
         bidx.setBlockLength(blenght)
 
-        RepLogger.logInfo(SystemName, ModuleType.storager,
+        RepLogger.trace(RepLogger.Storager_Logger,  
           "system_name=" + this.SystemName + "\t new height=" + newh + "\t new file no=" + newno + "\t new tx number=" + newtxnumber)
 
         this.Put(IdxPrefix.IdxBlockPrefix + bidx.getBlockHash(), bidx.toArrayByte())
-        RepLogger.logInfo(SystemName, ModuleType.storager,
+        RepLogger.trace(RepLogger.Storager_Logger,  
           "system_name=" + this.SystemName + "\t blockhash=" + bidx.getBlockHash())
 
         this.Put(IdxPrefix.IdxBlockHeight + newh, bidx.getBlockHash().getBytes())
@@ -563,7 +574,7 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
         bhelp.writeBlock(bidx.getBlockFileNo(), bidx.getBlockFilePos() - 8, BlockStorageHelp.longToByte(blenght) ++ rbb)
 
         b = true
-        RepLogger.logInfo(SystemName, ModuleType.storager,
+        RepLogger.trace(RepLogger.Storager_Logger,  
           "system_name=" + this.SystemName + "\t blockhash=" + bidx.getBlockHash() + "\tcommited success")
       } catch {
         case e: Exception => {
@@ -679,9 +690,17 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
    * @return	无
    */
   private def setMaxFileNo(no: Int) = {
-    this.Put(IdxPrefix.MaxFileNo, String.valueOf(no).getBytes())
+    this.Put(IdxPrefix.MaxFileNo, String.valueOf(no).getBytes)
   }
 
+  private def setFileFirstHeight(no:Int,height:Long)={
+    this.Put(IdxPrefix.FirstHeightOfFilePrefix+no+IdxPrefix.FirstHeightOfFileSuffix, String.valueOf(height).getBytes)
+  }
+  
+  def getFileFirstHeight(no:Int):Long={
+    this.toLong(this.Get(IdxPrefix.FirstHeightOfFilePrefix+no+IdxPrefix.FirstHeightOfFileSuffix))
+  }
+  
   ////////////////////以下是用来存储文件的////////////////////////////////////
   /**
    * @author jiangbuyun

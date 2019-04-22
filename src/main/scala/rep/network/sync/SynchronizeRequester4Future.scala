@@ -16,11 +16,11 @@ import rep.protos.peer._
 import rep.network.persistence.Storager.{ BlockRestore, SourceOfBlock }
 import scala.collection._
 import rep.utils.GlobalUtils.{ ActorType, BlockEvent, EventType, NodeStatus }
-import rep.log.trace.LogType
 import rep.app.conf.SystemProfile
 import rep.network.util.NodeHelp
 import rep.network.sync.SyncMsg.{ ResponseInfo, StartSync, GreatMajority, BlockDataOfRequest, BlockDataOfResponse, SyncRequestOfStorager }
 import scala.util.control.Breaks._
+import rep.log.RepLogger
 
 object SynchronizeRequester4Future {
   def props(name: String): Props = Props(classOf[SynchronizeRequester4Future], name)
@@ -35,7 +35,7 @@ class SynchronizeRequester4Future(moduleName: String) extends ModuleBase(moduleN
   private val responseActorName = "/user/modulemanager/synchresponser"
 
   override def preStart(): Unit = {
-    logMsg(LogType.INFO, "SynchronizeRequester4Future Start")
+    RepLogger.info(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix( "SynchronizeRequester4Future Start"))
   }
 
   private def toAkkaUrl(addr: Address, actorName: String): String = {
@@ -53,14 +53,14 @@ class SynchronizeRequester4Future(moduleName: String) extends ModuleBase(moduleN
       result = Await.result(future1, timeout.duration).asInstanceOf[ResponseInfo]
     } catch {
       case e: AskTimeoutException =>
-        logMsg(LogType.INFO, "--------AsyncGetNodeOfChainInfo timeout")
+        RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix("--------AsyncGetNodeOfChainInfo timeout"))
         null
       case te: TimeoutException =>
-        logMsg(LogType.INFO, "--------AsyncGetNodeOfChainInfo java timeout")
+        RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix( "--------AsyncGetNodeOfChainInfo java timeout"))
         null
     }
 
-    println(s"${pe.getSysTag}:entry AsyncGetNodeOfChainInfo after,asyncVerifyTransaction=${result}")
+    RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"entry AsyncGetNodeOfChainInfo after,asyncVerifyTransaction=${result}"))
     result
   }
 
@@ -75,10 +75,10 @@ class SynchronizeRequester4Future(moduleName: String) extends ModuleBase(moduleN
       case e: Exception =>
         null
     })
-    println(s"${pe.getSysTag}:entry AsyncGetNodeOfChainInfos 1")
+    RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry AsyncGetNodeOfChainInfos 1"))
     try {
       val result1 = Await.result(futureOfList, timeout.duration).asInstanceOf[List[ResponseInfo]]
-      println(s"${pe.getSysTag}:entry AsyncGetNodeOfChainInfos 2")
+      RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry AsyncGetNodeOfChainInfos 2"))
       if (result1 == null) {
         List.empty
       } else {
@@ -86,7 +86,7 @@ class SynchronizeRequester4Future(moduleName: String) extends ModuleBase(moduleN
       }
     } catch {
       case te: TimeoutException =>
-        logMsg(LogType.INFO, "--------AsyncGetNodeOfChainInfo java timeout")
+        RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix( "--------AsyncGetNodeOfChainInfo java timeout"))
         null
     }
   }
@@ -135,15 +135,15 @@ class SynchronizeRequester4Future(moduleName: String) extends ModuleBase(moduleN
       val future1 = ref ? BlockDataOfRequest(height)
       //logMsg(LogType.INFO, "--------AsyncGetNodeOfChainInfo success")
       var result = Await.result(future1, timeout.duration).asInstanceOf[BlockDataOfResponse]
-      logMsg(LogType.INFO, s"${pe.getSysTag}:height=${height}--------AsyncGetNodeOfChainInfo success")
+      RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix( s"height=${height}--------AsyncGetNodeOfChainInfo success"))
       pe.getActorRef(ActorType.storager) ! result
       true
     } catch {
       case e: AskTimeoutException =>
-        logMsg(LogType.INFO, "--------getBlockData timeout")
+        RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(  "--------getBlockData timeout"))
         false
       case te: TimeoutException =>
-        logMsg(LogType.INFO, "--------getBlockData java timeout")
+        RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix( "--------getBlockData java timeout"))
         false
     }
   }
@@ -186,7 +186,7 @@ class SynchronizeRequester4Future(moduleName: String) extends ModuleBase(moduleN
         if (isNoticeModuleMgr)
           pe.getActorRef(ActorType.modulemanager) ! ModuleManager.startup_Consensus
       } else {
-        logMsg(LogType.INFO, moduleName + "~" + s"too few node,min=${SystemProfile.getVoteNoteMin} or synching  from actorAddr" + "～" + NodeHelp.getNodePath(sender()))
+        RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(  s"too few node,min=${SystemProfile.getVoteNoteMin} or synching  from actorAddr" + "～" + NodeHelp.getNodePath(sender())))
       }
 
     case SyncRequestOfStorager(responser, maxHeight) =>

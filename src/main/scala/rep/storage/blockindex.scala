@@ -33,6 +33,7 @@ class blockindex() {
     private var  blockHeight   : Long = -1
     private var  blockHash     : String = ""
     private var  blockPrevHash : String = ""
+    private var  stateHash     : String = ""
     private var  txids         : Array[String] = null
     
     private var  BlockFileNo   : Int = 0
@@ -48,7 +49,8 @@ class blockindex() {
         //this.blockHash = b.
         this.blockHeight = b.height
         this.blockHash = b.hashOfBlock.toStringUtf8()
-        this.blockPrevHash = b.previousBlockHash.toString("UTF-8")
+        this.blockPrevHash = b.previousBlockHash.toStringUtf8()
+        this.stateHash = b.stateHash.toStringUtf8()
         val ts = b.transactions
         if(ts != null && ts.length > 0){
           txids = new Array[String](ts.length)
@@ -70,6 +72,7 @@ class blockindex() {
            this.blockHeight = str2Long(getAnyType(m,"blockHeight"))
            this.blockHash = this.str4null(getAnyType(m,"blockHash"))
            this.blockPrevHash = this.str4null(getAnyType(m,"blockPrevHash"))
+           this.stateHash = this.str4null(getAnyType(m,"stateHash"))
            this.txids = this.str2Array(getAnyType(m,"txids"))
            this.BlockFileNo = str2Int(getAnyType(m,"BlockFileNo"))
            this.BlockFilePos = str2Long(getAnyType(m,"BlockFilePos"))
@@ -143,6 +146,7 @@ class blockindex() {
        map.put("blockHeight", String.valueOf(blockHeight))
        map.put("blockHash", blockHash)
        map.put("blockPrevHash", blockPrevHash)
+       map.put("stateHash", stateHash)
        if(txids != null && txids.length > 0){
          val str = txids.mkString(" ")
          map.put("txids", str)
@@ -180,6 +184,10 @@ class blockindex() {
    
     def getBlockPrevHash():String={
       this.blockPrevHash
+    }
+    
+    def getStateHash():String={
+      this.stateHash
     }
     
     def getTxIds():Array[String]={

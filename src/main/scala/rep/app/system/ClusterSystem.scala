@@ -34,8 +34,7 @@ import com.typesafe.config.ConfigValueFactory
 import java.util.List
 import java.util.ArrayList
 import org.slf4j.LoggerFactory
-import rep.log.trace._
-import rep.storage.verify.verify4Storage
+import rep.log.RepLogger
 
 /**
  * System创建伴生对象
@@ -109,7 +108,7 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
         val final_conf = ConfigFactory.load(combined_conf)
         final_conf
       case false =>
-        RepLogger.logWarn(sysTag, ModuleType.clustersystem, moduleName + " ~ " + "Couldn't find the user config file" + " ~ ")
+        RepLogger.trace(RepLogger.System_Logger, sysTag+"~"+"ClusterSystem" + " ~ " + "Couldn't find the user config file" )
         innerConf
     }
   }
@@ -151,7 +150,7 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
    */
   def initSystem(sysName: String): Config = {
     val conf = getConfigBySys(sysName)
-    RepLogger.logInfo(sysTag, ModuleType.clustersystem, moduleName + " ~ " + "System configuration successfully" + " ~ ")
+    RepLogger.trace(RepLogger.System_Logger, sysTag + " ~ "+"ClusterSystem"+"~" + "System configuration successfully")
     enableWebSocket = conf.getInt("system.ws_enable") match {
       case 0 => false
       case 1 => true
@@ -191,14 +190,14 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
         clusterAddr = Cluster(sysActor).selfAddress
       case false => //ignore
     }
-    RepLogger.logInfo(sysTag, ModuleType.clustersystem, "System" + " ~ " + s"System(${sysTag}) init successfully" + " ~ ")
+    RepLogger.trace(RepLogger.System_Logger, sysTag+"~"+ "System" + " ~ " + s"System(${sysTag}) init successfully" + " ~ ")
   }
 
   private def initConsensusNodeOfConfig = {
     val nodelist = sysConf.getStringList("system.vote.vote_node_list")
     if (nodelist.contains(this.sysTag)) {
       var roles: List[String] = new ArrayList[String]
-      roles.add("CRFD-Node")
+      roles.add("CRFD-Node:"+this.sysTag)
       sysConf = sysConf.withValue("akka.cluster.roles", ConfigValueFactory.fromAnyRef(roles))
     }
   }
@@ -215,19 +214,11 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
       throw new Exception("not enough disk space")
     }
 
-    try {
-      if (!verify4Storage.verify(sysTag)) {
-        throw new Exception("Storager Verify Error")
-      }
-    } catch {
-      case e: Exception => {
-        throw new Exception("Storager Verify Error,info:" + e.getMessage)
-      }
-    }
+    
     
     moduleManager = sysActor.actorOf(ModuleManager.props("modulemanager", sysTag, enableStatistic, enableWebSocket,true), "modulemanager")
 
-    RepLogger.logInfo(sysTag, ModuleType.clustersystem, "System" + " ~ " + s"ClusterSystem ${sysTag} start" + " ~ ")
+    RepLogger.trace(RepLogger.System_Logger, sysTag+"~"+ "System" + " ~ " + s"ClusterSystem ${sysTag} start" + " ~ ")
   }
 
 }

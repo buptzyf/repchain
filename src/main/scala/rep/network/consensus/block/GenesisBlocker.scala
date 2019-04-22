@@ -20,11 +20,11 @@ import rep.utils.GlobalUtils.{ ActorType, BlockEvent, EventType, NodeStatus }
 import scala.collection.mutable
 import com.sun.beans.decoder.FalseElementHandler
 import scala.util.control.Breaks
-import rep.log.trace.LogType
 import rep.utils.IdTool
 import scala.util.control.Breaks._
 import rep.network.consensus.util.{ BlockHelp, BlockVerify }
 import rep.network.util.NodeHelp
+import rep.log.RepLogger
 
 object GenesisBlocker {
   def props(name: String): Props = Props(classOf[GenesisBlocker], name)
@@ -55,7 +55,7 @@ class GenesisBlocker(moduleName: String) extends ModuleBase(moduleName) {
   var preblock: Block = null
 
   override def preStart(): Unit = {
-    logMsg(LogType.INFO, "Block module start")
+    RepLogger.info(RepLogger.Consensus_Logger, this.getLogMsgPrefix( "Block module start"))
     SubscribeTopic(mediator, self, selfAddr, Topic.Block, true)
   }
 
@@ -82,7 +82,7 @@ class GenesisBlocker(moduleName: String) extends ModuleBase(moduleName) {
         if(this.preblock != null){
           mediator ! Publish(Topic.Block, ConfirmedBlock(preblock, sender))
         }else{
-          logMsg(LogType.INFO, "Create genesis block")
+          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( "Create genesis block"))
           preblock = BlockHelp.CreateGenesisBlock
           preblock = ExecuteTransactionOfBlock(preblock)
           if (preblock != null) {

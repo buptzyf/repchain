@@ -21,11 +21,11 @@ import sun.font.TrueTypeFont
 import scala.util.control.Breaks._
 import scala.util.control.Exception.Finally
 import java.util.concurrent.ConcurrentHashMap
-import rep.log.trace.LogType
 import rep.network.consensus.endorse.EndorseMsg.{ EndorsementInfo, ResultOfEndorsed, ResultFlagOfEndorse }
 import rep.network.consensus.block.Blocker.{ PreTransBlock, PreTransBlockResult }
 import rep.network.consensus.util.{ BlockVerify, BlockHelp }
 import rep.network.sync.SyncMsg.StartSync
+import rep.log.RepLogger
 
 object Endorser4Future {
   def props(name: String): Props = Props(classOf[Endorser4Future], name)
@@ -40,7 +40,7 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
   implicit val timeout = Timeout(TimePolicy.getTimeoutPreload seconds)
   
   override def preStart(): Unit = {
-    logMsg(LogType.INFO, "Endorser4Future Start")
+    RepLogger.info(RepLogger.Consensus_Logger, this.getLogMsgPrefix("Endorser4Future Start"))
   }
 
   //背书块的交易预执行,然后验证block
@@ -57,7 +57,7 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
       result.future
     }).recover({
       case e: Throwable =>
-        println(s"${pe.getSysTag}:entry AskPreloadTransactionOfBlock error")
+        RepLogger.error(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry AskPreloadTransactionOfBlock error"))
         false
     })
 
@@ -133,26 +133,26 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
 
   private def isAllowEndorse(info: EndorsementInfo): Int = {
     if (info.blocker == pe.getSysTag) {
-      logMsg(LogType.INFO, "endorser is itself,do not endorse")
+      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( "endorser is itself,do not endorse"))
       1
     } else {
       if (NodeHelp.isCandidateNow(pe.getSysTag, SystemCertList.getSystemCertList)) {
         //是候选节点，可以背书
         if (info.blc.previousBlockHash.toStringUtf8 == pe.getCurrentBlockHash && NodeHelp.isBlocker(info.blocker, pe.getBlocker.blocker)) {
           //可以进入背书
-          logMsg(LogType.INFO, "vote result equal，allow entry endorse")
+          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( "vote result equal，allow entry endorse"))
           0
         } else  {
           if(info.blc.height > pe.getCurrentHeight+1){
             pe.getActorRef(ActorType.synchrequester) ! StartSync(false)
           }
           //当前块hash和抽签的出块人都不一致，暂时不能够进行背书，可以进行缓存
-          logMsg(LogType.INFO, "block hash is not equal or blocker is not equal")
+          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( "block hash is not equal or blocker is not equal"))
           2
         }
       } else {
         //不是候选节点，不能够参与背书
-        logMsg(LogType.INFO, "it is not candidator node")
+        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( "it is not candidator node"))
         3
       }
     }
@@ -180,17 +180,17 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
     val result1 = Await.result(result, timeout.duration).asInstanceOf[Boolean]
     //println(s"${pe.getSysTag}:entry 6")
     if (result1) {
-      println(s"${pe.getSysTag}:entry 7")
+      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry 7"))
       //if(AskPreloadTransactionOfBlock(info.blc)){
       //println("entry 9")
       val endtime = System.currentTimeMillis()
-      logMsg(LogType.INFO, s"#################endorsement spent time=${endtime-starttime}")
+      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"#################endorsement spent time=${endtime-starttime}"))
       sendEvent(EventType.PUBLISH_INFO, mediator, selfAddr, Topic.Block, Event.Action.ENDORSEMENT)
       sender ! ResultOfEndorsed(ResultFlagOfEndorse.success, BlockHelp.SignBlock(info.blc, pe.getSysTag), info.blc.hashOfBlock.toStringUtf8(),pe.getSystemCurrentChainStatus,pe.getBlocker)
     } else {
-      println(s"${pe.getSysTag}:entry 8")
+      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry 8"))
       val endtime = System.currentTimeMillis()
-      logMsg(LogType.INFO, s"#################endorsement spent time=${endtime-starttime}")
+      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"#################endorsement spent time=${endtime-starttime}"))
       sender ! ResultOfEndorsed(ResultFlagOfEndorse.VerifyError, null, info.blc.hashOfBlock.toStringUtf8(),pe.getSystemCurrentChainStatus,pe.getBlocker)
     }
   }
@@ -204,15 +204,15 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
       case 2 =>
         //cache endorse,waiting revote
         sender ! ResultOfEndorsed(ResultFlagOfEndorse.BlockHeightError, null, info.blc.hashOfBlock.toStringUtf8(),pe.getSystemCurrentChainStatus,pe.getBlocker)
-        logMsg(LogType.INFO, s"endorsement entry cache,self height=${pe.getCurrentHeight},block height=${info.blc.height}")
+        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"endorsement entry cache,self height=${pe.getCurrentHeight},block height=${info.blc.height}"))
       case 1 =>
         //do not endorse
         sender ! ResultOfEndorsed(ResultFlagOfEndorse.BlockerSelfError, null, info.blc.hashOfBlock.toStringUtf8(),pe.getSystemCurrentChainStatus,pe.getBlocker)
-        logMsg(LogType.INFO, "it is blocker")
+        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("it is blocker"))
       case 3 =>
         //do not endorse
         sender ! ResultOfEndorsed(ResultFlagOfEndorse.CandidatorError, null, info.blc.hashOfBlock.toStringUtf8(),pe.getSystemCurrentChainStatus,pe.getBlocker)
-        logMsg(LogType.INFO, "it is not candator,do not endorse")
+        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("it is not candator,do not endorse"))
     }
   }
 

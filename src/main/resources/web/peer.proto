@@ -131,6 +131,7 @@ message Block {
     bytes previousBlockHash = 6;
     //背书签名集合,必须包含出块人签名
     repeated Signature endorsements=7;
+    bytes stateHash = 8;
 }
 
 //交易执行增量日志
@@ -158,5 +159,6 @@ message BlockchainInfo {
     uint64 totalTransactions = 2;
     bytes  currentBlockHash = 3;
     bytes  previousBlockHash = 4;
+    bytes  currentStateHash = 5;
 }
 

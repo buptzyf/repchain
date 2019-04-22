@@ -120,25 +120,4 @@ import rep.utils.GlobalUtils.EventType
     if (isEvent) sendEvent(EventType.PUBLISH_INFO, mediator, addr, Topic.Event, Event.Action.SUBSCRIBE_TOPIC)
   }
 
-  /**
-    * 两个节点是否相同的system
-    * （不完全对，有可能是相同IP和port但是UID不同）
-    * @param from
-    * @param self
-    * @return
-    */
-  def isSameSystem(from:ActorRef, self:ActorRef): Boolean ={
-    ActorUtils.getIpAndPort(getClusterAddr(from)) == ActorUtils.getIpAndPort(getClusterAddr(self))
-  }
-
-  /**
-    * 两个节点是否是相同的system
-    * @param from
-    * @param self
-    * @return
-    */
-  def isSameSystem(from:ActorRef, self:String) :Boolean = {
-    ActorUtils.getIpAndPort(getClusterAddr(from)) == ActorUtils.getIpAndPort(self)
-  }
-
 }

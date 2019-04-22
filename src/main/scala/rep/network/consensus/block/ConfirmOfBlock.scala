@@ -17,10 +17,10 @@ import com.sun.beans.decoder.FalseElementHandler
 import scala.util.control.Breaks._
 import scala.util.control.Exception.Finally
 import java.util.concurrent.ConcurrentHashMap
-import rep.log.trace.LogType
 import rep.network.consensus.block.Blocker.{ ConfirmedBlock }
 import rep.network.persistence.Storager.{ BlockRestore, SourceOfBlock }
 import rep.network.consensus.util.{ BlockVerify, BlockHelp }
+import rep.log.RepLogger
 
 object ConfirmOfBlock {
   def props(name: String): Props = Props(classOf[ConfirmOfBlock], name)
@@ -30,9 +30,8 @@ class ConfirmOfBlock(moduleName: String) extends ModuleBase(moduleName) {
   import context.dispatcher
 
   override def preStart(): Unit = {
-    logMsg(LogType.INFO, "confirm Block module start")
+    RepLogger.info(RepLogger.Consensus_Logger, this.getLogMsgPrefix("confirm Block module start"))
     SubscribeTopic(mediator, self, selfAddr, Topic.Block, false)
-    //scheduler.scheduleOnce(TimePolicy.getStableTimeDur millis, context.parent, BlockModuleInitFinished)
   }
   import scala.concurrent.duration._
   import rep.protos.peer._
@@ -70,7 +69,7 @@ class ConfirmOfBlock(moduleName: String) extends ModuleBase(moduleName) {
       result1.toList.foreach(f=>{
         if(!f){
           result = false
-          logMsg(LogType.INFO, s"comfirmOfBlock verify endorse is error, break,block height=${block.height},local height=${pe.getCurrentHeight}")
+          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"comfirmOfBlock verify endorse is error, break,block height=${block.height},local height=${pe.getCurrentHeight}"))
         }
       })
     }
@@ -79,13 +78,13 @@ class ConfirmOfBlock(moduleName: String) extends ModuleBase(moduleName) {
   }
 
   private def handler(block: Block, actRefOfBlock: ActorRef) = {
-    logMsg(LogType.INFO, "confirm verify endorsement start")
+    RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("confirm verify endorsement start"))
     if (asyncVerifyEndorses(block)) {
-      logMsg(LogType.INFO, "confirm verify endorsement end")
+      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("confirm verify endorsement end"))
       //背书人的签名一致
       if (BlockVerify.VerifyEndorserSorted(block.endorsements.toArray[Signature]) == 1 || (block.height==1 && pe.getCurrentBlockHash == "" && block.previousBlockHash.isEmpty())) {
         //背书信息排序正确
-        logMsg(LogType.INFO, "confirm verify endorsement sort")
+        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( "confirm verify endorsement sort"))
         sendEvent(EventType.RECEIVE_INFO, mediator, selfAddr, Topic.Block, Event.Action.BLOCK_NEW)
         pe.getActorRef(ActorType.storager) ! BlockRestore(block, SourceOfBlock.CONFIRMED_BLOCK, actRefOfBlock)
       } else {
@@ -98,11 +97,11 @@ class ConfirmOfBlock(moduleName: String) extends ModuleBase(moduleName) {
 
   private def checkedOfConfirmBlock(block: Block, actRefOfBlock: ActorRef) = {
     if (pe.getCurrentBlockHash == "" && block.previousBlockHash.isEmpty()) {
-      logMsg(LogType.INFO, "confirm verify blockhash")
+      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("confirm verify blockhash"))
       handler(block, actRefOfBlock)
     } else  {
       //与上一个块一致
-      logMsg(LogType.INFO, "confirm verify blockhash")
+      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("confirm verify blockhash"))
       if (NodeHelp.ConsensusConditionChecked(block.endorsements.size, pe.getNodeMgr.getStableNodes.size)) {
         //符合大多数人背书要求
         handler(block, actRefOfBlock)

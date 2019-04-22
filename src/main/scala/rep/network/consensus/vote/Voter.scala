@@ -8,11 +8,11 @@ import rep.protos.peer.BlockchainInfo
 import rep.storage.ImpDataAccess
 import rep.utils.GlobalUtils.{ ActorType, BlockEvent, BlockerInfo, NodeStatus }
 import com.sun.beans.decoder.FalseElementHandler
-import rep.log.trace.LogType
 import rep.network.util.NodeHelp
 import rep.network.consensus.block.Blocker.{ CreateBlock }
 import rep.network.sync.SyncMsg.StartSync
 import rep.network.consensus.block.GenesisBlocker.GenesisBlock
+import rep.log.RepLogger
 
 object Voter {
 
@@ -29,7 +29,7 @@ class Voter(moduleName: String) extends ModuleBase(moduleName) with CRFDVoter {
   import scala.concurrent.forkjoin.ThreadLocalRandom
 
   override def preStart(): Unit = {
-    logMsg(LogType.INFO, "Vote module start")
+    RepLogger.info(RepLogger.Consensus_Logger, this.getLogMsgPrefix(  "Vote module start"))
   }
 
   val dataaccess: ImpDataAccess = ImpDataAccess.GetDataAccess(pe.getSysTag)
@@ -88,26 +88,26 @@ class Voter(moduleName: String) extends ModuleBase(moduleName) with CRFDVoter {
         this.cleanVoteInfo
         this.resetCandidator
         this.resetBlocker(0)
-        logMsg(LogType.INFO, moduleName + "~" + s"first voter,blocker=${this.Blocker.blocker},voteidx=${this.Blocker.VoteIndex}" + "~" + selfAddr)
+        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(  s"first voter,blocker=${this.Blocker.blocker},voteidx=${this.Blocker.VoteIndex}" + "~" + selfAddr))
       } else {
         if (!this.BlockHashOfVote.equals(pe.getCurrentBlockHash)) {
           //抽签的基础块已经变化，需要重续选择候选人
           this.cleanVoteInfo
           this.resetCandidator
           this.resetBlocker(0)
-          logMsg(LogType.INFO, moduleName + "~" + s"hash change,reset voter,height=${pe.getCurrentHeight},blocker=${this.Blocker.blocker},voteidx=${this.Blocker.VoteIndex}" + "~" + selfAddr)
+          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(  s"hash change,reset voter,height=${pe.getCurrentHeight},blocker=${this.Blocker.blocker},voteidx=${this.Blocker.VoteIndex}" + "~" + selfAddr))
         } else {
           if (this.Blocker.blocker == "") {
             this.cleanVoteInfo
             this.resetCandidator
             this.resetBlocker(0)
-            logMsg(LogType.INFO, moduleName + "~" + s"blocker=null,reset voter,height=${pe.getCurrentHeight},blocker=${this.Blocker.blocker},voteidx=${this.Blocker.VoteIndex}" + "~" + selfAddr)
+            RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(  s"blocker=null,reset voter,height=${pe.getCurrentHeight},blocker=${this.Blocker.blocker},voteidx=${this.Blocker.VoteIndex}" + "~" + selfAddr))
           } else {
             if ((System.currentTimeMillis() - this.Blocker.voteTime) / 1000 > TimePolicy.getTimeOutBlock) {
               //说明出块超时
               this.voteCount = 0
               this.resetBlocker(this.Blocker.VoteIndex + 1)
-              logMsg(LogType.INFO, moduleName + "~" + s"block timeout,reset voter,height=${pe.getCurrentHeight},blocker=${this.Blocker.blocker},voteidx=${this.Blocker.VoteIndex}" + "~" + selfAddr)
+              RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"block timeout,reset voter,height=${pe.getCurrentHeight},blocker=${this.Blocker.blocker},voteidx=${this.Blocker.VoteIndex}" + "~" + selfAddr))
             } else {
               NoticeBlockerMsg
             }

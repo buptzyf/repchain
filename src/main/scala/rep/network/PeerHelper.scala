@@ -30,9 +30,8 @@ import rep.utils.{ IdTool, TimeUtils }
 import akka.cluster.pubsub.DistributedPubSubMediator.Publish
 import scala.concurrent.forkjoin.ThreadLocalRandom
 import java.text.SimpleDateFormat
-import rep.log.trace.LogType
 import rep.crypto.cert.SignTool
-
+import rep.log.RepLogger
 /**
  *
  * 代理节点辅助类
@@ -155,7 +154,7 @@ class PeerHelper(name: String) extends ModuleBase(name) {
   override def preStart(): Unit = {
     //注册接收交易的广播
     SubscribeTopic(mediator, self, selfAddr, Topic.Transaction, true)
-    logMsg(name + " ~ " + "Transaction Creator Start")
+    RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("Transaction Creator Start"))
     scheduler.scheduleOnce(15.seconds, self, Tick)
   }
 
@@ -219,7 +218,7 @@ class PeerHelper(name: String) extends ModuleBase(name) {
           count += 1
           if (count > 1000) {
             val end = System.currentTimeMillis()
-            println("send 1000 trans spent = " + (end - start))
+            RepLogger.trace(RepLogger.System_Logger,"send 1000 trans spent = " + (end - start))
             Thread.sleep(2000)
             count = 0
           }

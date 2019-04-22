@@ -38,8 +38,9 @@ import rep.sc.TransProcessor
 import rep.storage.ImpDataAccess
 import rep.utils.ActorUtils
 import rep.utils.GlobalUtils.ActorType
-import rep.log.trace.LogType
 import rep.crypto.cert.SignTool
+import rep.log.RepLogger
+import rep.storage.verify.verify4Storage
 
 /**
  * Created by shidianyue on 2017/9/22.
@@ -55,8 +56,28 @@ class ModuleManager(moduleName: String, sysTag: String, enableStatistic: Boolean
   private val conf = context.system.settings.config
 
   init()
+  
+  if(!checkSystemStorage){
+    context.system.terminate()
+  }
+  
   loadModule
 
+  def checkSystemStorage:Boolean={
+    var r = true
+    try {
+      if (!verify4Storage.verify(sysTag)) {
+        r = false
+      }
+    } catch {
+      case e: Exception => {
+        r = false
+        //throw new Exception("Storager Verify Error,info:" + e.getMessage)
+      }
+    }
+    r
+  }
+  
   def init(): Unit = {
     val (ip, port) = ActorUtils.getIpAndPort(selfAddr)
     pe.setIpAndPort(ip, port)
@@ -80,7 +101,7 @@ class ModuleManager(moduleName: String, sysTag: String, enableStatistic: Boolean
       }*/
      
 
-    logMsg(LogType.INFO, moduleName + "~" + s"ModuleManager ${sysTag} start")
+    RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"ModuleManager ${sysTag} start"))
   }
 
   def loadConsensusModule = {

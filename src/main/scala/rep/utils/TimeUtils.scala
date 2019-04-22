@@ -16,6 +16,8 @@
 
 package rep.utils
 
+import rep.log.RepLogger
+
 /**
   * 时间相关工具
   * Created by shidianyue on 2017/5/17.
@@ -30,7 +32,7 @@ object TimeUtils {
   }
 
   def getNextTargetTimeDur(targetTime:Long): Long ={
-    println("Time is : " + targetTime)
+    RepLogger.trace(RepLogger.System_Logger,"Time is : " + targetTime)
     val time = getCurrentTime()
     val result = targetTime - time%targetTime
     println("Time is : " + result)
@@ -40,7 +42,7 @@ object TimeUtils {
   def getNextTargetTimeDurMore(targetTime:Long): Long ={
     val time = getCurrentTime()
     val result = targetTime - time%targetTime
-    println("Time is : " + (result+targetTime))
+    RepLogger.trace(RepLogger.System_Logger,"Time is : " + (result+targetTime))
     result+targetTime
   }
 }

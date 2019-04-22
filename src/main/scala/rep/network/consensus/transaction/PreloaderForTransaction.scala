@@ -22,8 +22,9 @@ import rep.storage.{ ImpDataPreloadMgr }
 import rep.utils.GlobalUtils.ActorType
 import rep.utils._
 import scala.collection.mutable
-import rep.log.trace.LogType
 import akka.pattern.AskTimeoutException
+import rep.crypto.Sha256
+import rep.log.RepLogger
 
 object PreloaderForTransaction {
   def props(name: String, transProcessor: ActorRef): Props = Props(classOf[PreloaderForTransaction], name, transProcessor)
@@ -37,7 +38,7 @@ class PreloaderForTransaction(moduleName: String, transProcessor: ActorRef) exte
   implicit val timeout = Timeout(TimePolicy.getTimeoutPreload*10 seconds)
 
   override def preStart(): Unit = {
-    logMsg(LogType.INFO, "PreloaderForTransaction Start")
+    RepLogger.info(RepLogger.Consensus_Logger, this.getLogMsgPrefix( "PreloaderForTransaction Start"))
   }
 
   private def ExecuteTransaction(t: Transaction, db_identifier: String): (Int, DoTransactionResult) = {
@@ -62,13 +63,15 @@ class PreloaderForTransaction(moduleName: String, transProcessor: ActorRef) exte
       if(newTranList.size > 0){
         val tmpblk = block.withTransactions(newTranList)
         var rblock = tmpblk.withTransactionResults(transResult)
+        val statehashstr = Sha256.hashstr(Array.concat(pe.getSystemCurrentChainStatus.currentStateHash.toByteArray() , SerializeUtils.serialise(transResult)))
+        rblock = rblock.withStateHash(ByteString.copyFromUtf8(statehashstr))
         Some(rblock)
       }else{
         None
       }
     }catch{
       case e:RuntimeException=>
-        logMsg(LogType.ERROR, s" AssembleTransResult error, error: ${e.getMessage}")
+        RepLogger.error(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s" AssembleTransResult error, error: ${e.getMessage}"))
         None
     }finally{
       ImpDataPreloadMgr.Free(pe.getSysTag,db_indentifier)
@@ -90,19 +93,19 @@ class PreloaderForTransaction(moduleName: String, transProcessor: ActorRef) exte
             case _ =>
               //error
               preLoadTrans.remove(t.id)
-              logMsg(LogType.ERROR, s"${t.id} preload error, error: ${r.err}")
+              RepLogger.error(RepLogger.Business_Logger, this.getLogMsgPrefix( s"${t.id} preload error, error: ${r.err}"))
               None
           }
         case _ =>
           // timeout failed
           preLoadTrans.remove(t.id)
-          logMsg(LogType.ERROR, s"${t.id} preload error, error: timeout")
+          RepLogger.error(RepLogger.Business_Logger, this.getLogMsgPrefix( s"${t.id} preload error, error: timeout"))
           None
       }
     } catch {
       case e: RuntimeException =>
         preLoadTrans.remove(t.id)
-        logMsg(LogType.ERROR, s"${t.id} preload error, error: ${e.getMessage}")
+        RepLogger.error(RepLogger.Business_Logger, this.getLogMsgPrefix( s"${t.id} preload error, error: ${e.getMessage}"))
         None
     }
   }
@@ -110,7 +113,7 @@ class PreloaderForTransaction(moduleName: String, transProcessor: ActorRef) exte
   override def receive = {
     case PreTransBlock(block,prefixOfDbTag) =>
       
-      println(s"---------------------send ${sender.path.toString()} ")
+      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(  "entry preload"))
       logTime("block preload inner time", System.currentTimeMillis(), true)
       if ((block.previousBlockHash.toStringUtf8().equals(pe.getCurrentBlockHash) || block.previousBlockHash == ByteString.EMPTY) &&
         block.height == (pe.getCurrentHeight + 1)) {
@@ -130,7 +133,7 @@ class PreloaderForTransaction(moduleName: String, transProcessor: ActorRef) exte
         
         if(newblock == None){
           //所有交易执行失败
-          logMsg(LogType.ERROR, s" All Transaction failed, error: ${block.height}")
+          RepLogger.error(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s" All Transaction failed, error: ${block.height}"))
           sender ! PreTransBlockResult(null,false)
         }else{
           //全部或者部分交易成功

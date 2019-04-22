@@ -19,7 +19,7 @@ package rep.app.conf
 import java.io._
 import rep.utils.IdTool
 import rep.crypto.cert.SignTool
-
+import rep.log.RepLogger
 
 /**
  * @author jiangbuyun
@@ -42,6 +42,7 @@ object SystemCertList {
            }
         }
         this.mySystemCertList = rlist.toSet[String]
+        RepLogger.trace(RepLogger.System_Logger, this.mySystemCertList.mkString(","))
       }
     }
   }
