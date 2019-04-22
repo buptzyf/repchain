@@ -36,6 +36,8 @@ class ConfirmOfBlock(moduleName: String) extends ModuleBase(moduleName) {
   }
   import scala.concurrent.duration._
   import rep.protos.peer._
+  
+  implicit val timeout = Timeout(3 seconds)
 
   private def asyncVerifyEndorse(e: Signature, byteOfBlock: Array[Byte]): Future[Boolean] = {
     val result = Promise[Boolean]
@@ -54,19 +56,25 @@ class ConfirmOfBlock(moduleName: String) extends ModuleBase(moduleName) {
     val listOfFuture: Seq[Future[Boolean]] = block.endorsements.map(x => {
       asyncVerifyEndorse(x, b)
     })
-    val futureOfList: Future[List[Boolean]] = Future.sequence(listOfFuture.toList)
+    val futureOfList: Future[List[Boolean]] = Future.sequence(listOfFuture.toList).recover({
+      case e:Exception =>
+        null
+    })
+    
+    val result1 = Await.result(futureOfList, timeout.duration).asInstanceOf[List[Boolean]]
+    
     var result = true
-    //breakable(
-    futureOfList.map(x => {
-      x.foreach(f => {
-        if (!f) {
+    if(result1 == null){
+      false
+    }else{
+      result1.toList.foreach(f=>{
+        if(!f){
           result = false
-          logMsg(LogType.INFO, "comfirmOfBlock verify endorse is error, break")
-          //break
+          logMsg(LogType.INFO, s"comfirmOfBlock verify endorse is error, break,block height=${block.height},local height=${pe.getCurrentHeight}")
         }
       })
-    })
-   // )
+    }
+    
     result
   }
 
@@ -92,7 +100,7 @@ class ConfirmOfBlock(moduleName: String) extends ModuleBase(moduleName) {
     if (pe.getCurrentBlockHash == "" && block.previousBlockHash.isEmpty()) {
       logMsg(LogType.INFO, "confirm verify blockhash")
       handler(block, actRefOfBlock)
-    } else if (block.previousBlockHash.toStringUtf8 == pe.getCurrentBlockHash) {
+    } else  {
       //与上一个块一致
       logMsg(LogType.INFO, "confirm verify blockhash")
       if (NodeHelp.ConsensusConditionChecked(block.endorsements.size, pe.getNodeMgr.getStableNodes.size)) {
@@ -102,9 +110,7 @@ class ConfirmOfBlock(moduleName: String) extends ModuleBase(moduleName) {
         //错误，没有符合大多人背书要求。
 
       }
-    } else {
-      //错误，上一个块不一致
-    }
+    } 
   }
 
   override def receive = {

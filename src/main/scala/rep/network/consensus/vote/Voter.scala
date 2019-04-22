@@ -13,7 +13,6 @@ import rep.network.util.NodeHelp
 import rep.network.consensus.block.Blocker.{ CreateBlock }
 import rep.network.sync.SyncMsg.StartSync
 import rep.network.consensus.block.GenesisBlocker.GenesisBlock
-import rep.network.consensus.endorse.EndorseMsg.ConsensusOfVote
 
 object Voter {
 
@@ -71,15 +70,9 @@ class Voter(moduleName: String) extends ModuleBase(moduleName) with CRFDVoter {
 
   private def NoticeBlockerMsg = {
     if (this.Blocker.blocker.equals(pe.getSysTag)) {
-      //自己是出块人
-      pe.setSystemStatus(NodeStatus.Blocking)
       //发送建立新块的消息
       pe.getActorRef(ActorType.blocker) ! CreateBlock
-    } else {
-      //自己是背书人
-      pe.getActorRef(ActorType.endorser) ! ConsensusOfVote
-      pe.setSystemStatus(NodeStatus.Endorsing)
-    }
+    } 
   }
 
   private def DelayVote = {
@@ -95,22 +88,26 @@ class Voter(moduleName: String) extends ModuleBase(moduleName) with CRFDVoter {
         this.cleanVoteInfo
         this.resetCandidator
         this.resetBlocker(0)
+        logMsg(LogType.INFO, moduleName + "~" + s"first voter,blocker=${this.Blocker.blocker},voteidx=${this.Blocker.VoteIndex}" + "~" + selfAddr)
       } else {
         if (!this.BlockHashOfVote.equals(pe.getCurrentBlockHash)) {
           //抽签的基础块已经变化，需要重续选择候选人
           this.cleanVoteInfo
           this.resetCandidator
           this.resetBlocker(0)
+          logMsg(LogType.INFO, moduleName + "~" + s"hash change,reset voter,height=${pe.getCurrentHeight},blocker=${this.Blocker.blocker},voteidx=${this.Blocker.VoteIndex}" + "~" + selfAddr)
         } else {
           if (this.Blocker.blocker == "") {
             this.cleanVoteInfo
             this.resetCandidator
             this.resetBlocker(0)
+            logMsg(LogType.INFO, moduleName + "~" + s"blocker=null,reset voter,height=${pe.getCurrentHeight},blocker=${this.Blocker.blocker},voteidx=${this.Blocker.VoteIndex}" + "~" + selfAddr)
           } else {
             if ((System.currentTimeMillis() - this.Blocker.voteTime) / 1000 > TimePolicy.getTimeOutBlock) {
               //说明出块超时
               this.voteCount = 0
               this.resetBlocker(this.Blocker.VoteIndex + 1)
+              logMsg(LogType.INFO, moduleName + "~" + s"block timeout,reset voter,height=${pe.getCurrentHeight},blocker=${this.Blocker.blocker},voteidx=${this.Blocker.VoteIndex}" + "~" + selfAddr)
             } else {
               NoticeBlockerMsg
             }
@@ -135,10 +132,7 @@ class Voter(moduleName: String) extends ModuleBase(moduleName) with CRFDVoter {
         //pe.getActorRef(ActorType.synchrequester) ! StartSync
       }
     } else {
-      if (pe.getSystemStatus == NodeStatus.Synching) {
-        //不需要进入抽签
-        pe.getActorRef(ActorType.synchrequester) ! StartSync
-      } else {
+      if (!pe.isSynching) {
         vote
       }
     }

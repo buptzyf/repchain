@@ -11,6 +11,7 @@ import rep.network.consensus.util.BlockHelp
 object verify4Storage {
   def verify(sysName:String):Boolean={
     var b = true
+    RepLogger.logInfo(sysName, ModuleType.storager, "系统开始自检区块文件")
     var errorInfo = "未知问题"
     try{
       val sr: ImpDataAccess = ImpDataAccess.GetDataAccess(sysName)
@@ -48,6 +49,7 @@ object verify4Storage {
         throw new Exception("系统自检错误：存储检查失败，LevelDB或者Block文件损坏，请与管理员联系！错误信息："+errorInfo+",其他信息="+e.getMessage)
       }
     }
+    RepLogger.logInfo(sysName, ModuleType.storager, "系统自检区块文件完成")
     b
   }
   

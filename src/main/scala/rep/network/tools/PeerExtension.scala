@@ -94,11 +94,12 @@ class PeerExtensionImpl extends Extension {
 /*********出块人结束************/
 
 /*********节点状态开始************/
-  private var nodeStatus: AtomicInteger = new AtomicInteger(NodeStatus.Nothing)
+  private var synching: AtomicBoolean = new AtomicBoolean(false)
 
-  def setSystemStatus(status: Int) = this.nodeStatus.set(status)
+  def setSynching(status:Boolean) = this.synching.set(status)
+  
 
-  def getSystemStatus = this.nodeStatus.get
+  def isSynching = this.synching.get
 /*********节点状态结束************/
 
 /*********节点信息相关操作开始************/

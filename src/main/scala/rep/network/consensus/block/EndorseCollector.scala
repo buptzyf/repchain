@@ -5,12 +5,12 @@ import akka.cluster.pubsub.DistributedPubSubMediator.Publish
 import akka.routing._;
 import rep.app.conf.{ SystemProfile, TimePolicy }
 import rep.network.base.ModuleBase
-import rep.network.consensus.endorse.EndorseMsg.{ RequesterOfEndorsement, ResultOfEndorseRequester,CollectEndorsement }
+import rep.network.consensus.endorse.EndorseMsg.{ RequesterOfEndorsement, ResultOfEndorseRequester, CollectEndorsement }
 import rep.network.consensus.block.Blocker.ConfirmedBlock
 import rep.network.tools.PeerExtension
 import rep.network.Topic
 import rep.protos.peer._
-import rep.utils.GlobalUtils.{EventType}
+import rep.utils.GlobalUtils.{ EventType }
 import rep.utils._
 import scala.collection.mutable._
 import rep.log.trace.LogType
@@ -30,101 +30,107 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
   import scala.concurrent.duration._
   import scala.collection.immutable._
 
-  private var router :Router = null
-  private var block : Block = null
-  private var blocker :String = null
-  private var recvedEndorse = new HashMap[ String, Signature ]()
-  
-  
+  private var router: Router = null
+  private var block: Block = null
+  private var blocker: String = null
+  private var recvedEndorse = new HashMap[String, Signature]()
+
   override def preStart(): Unit = {
     logMsg(LogType.INFO, "EndorseCollector Start")
   }
-  
-  private def createRouter={
-    if(router == null){
-      var list : Array[Routee] = new Array[Routee](SystemProfile.getVoteNodeList.size())
-      for(i <- 0 to SystemProfile.getVoteNodeList.size()-1){
-        var ca = context.actorOf(EnodorsementRequester.props("endorsementrequester"+i),"endorsementrequester"+i)
+
+  private def createRouter = {
+    if (router == null) {
+      var list: Array[Routee] = new Array[Routee](SystemProfile.getVoteNodeList.size())
+      for (i <- 0 to SystemProfile.getVoteNodeList.size() - 1) {
+        //EndorsementRequest4Future
+        //var ca = context.actorOf(EnodorsementRequester.props("endorsementrequester" + i), "endorsementrequester" + i)
+        var ca = context.actorOf(EndorsementRequest4Future.props("endorsementrequester" + i), "endorsementrequester" + i)
         context.watch(ca)
-        list(i) =  new ActorRefRoutee(ca)
+        list(i) = new ActorRefRoutee(ca)
       }
-      val rlist : IndexedSeq[Routee] = list.toIndexedSeq
-      router = Router(SmallestMailboxRoutingLogic(),rlist)
+      val rlist: IndexedSeq[Routee] = list.toIndexedSeq
+      router = Router(SmallestMailboxRoutingLogic(), rlist)
     }
   }
 
-  private def resetEndorseInfo(block:Block,blocker:String)={
-      this.block = block
-      this.blocker = blocker
-      this.recvedEndorse.empty
-      schedulerLink = clearSched()
-   }
-  
-  private def clearEndorseInfo={
-      this.block = null
-      this.blocker = null
-      this.recvedEndorse.empty
-      schedulerLink = clearSched()
+  private def resetEndorseInfo(block: Block, blocker: String) = {
+    this.block = block
+    this.blocker = blocker
+    this.recvedEndorse = this.recvedEndorse.empty
+    //schedulerLink = clearSched()
   }
-  
-  private def resendEndorser={
-    pe.getNodeMgr.getStableNodes.foreach(f=>{
-            if(!recvedEndorse.contains(f.toString)){
-              router.route(RequesterOfEndorsement(block,blocker,f), self) 
-            }
-       })
+
+  private def clearEndorseInfo = {
+    this.block = null
+    this.blocker = null
+    this.recvedEndorse = this.recvedEndorse.empty
+    //schedulerLink = clearSched()
   }
-  
-  
-  private def CheckAndFinishHandler{
+
+  private def resendEndorser = {
+    //schedulerLink = clearSched()
+    pe.getNodeMgr.getStableNodes.foreach(f => {
+      if (!recvedEndorse.contains(f.toString)) {
+        router.route(RequesterOfEndorsement(block, blocker, f), self)
+      }
+    })
+    //schedulerLink = scheduler.scheduleOnce(TimePolicy.getTimeoutEndorse seconds, self, EndorseCollector.ResendEndorseInfo)
+  }
+
+  private def CheckAndFinishHandler {
     logMsg(LogType.INFO, "collectioner check is finish ")
-    if(NodeHelp.ConsensusConditionChecked(this.recvedEndorse.size+1,pe.getNodeMgr.getNodes.size)){
+    if (NodeHelp.ConsensusConditionChecked(this.recvedEndorse.size + 1, pe.getNodeMgr.getNodes.size)) {
+      //schedulerLink = clearSched()
       logMsg(LogType.INFO, "collectioner package endorsement to block")
-            this.recvedEndorse.foreach(f=>{
-              this.block = BlockHelp.AddEndorsementToBlock(this.block, f._2)
-            })
-             var consensus = this.block.endorsements.toArray[Signature]
-          BlockVerify.sort(consensus)
-          logMsg(LogType.INFO, "collectioner endorsement sort")
-        this.block = this.block.withEndorsements(consensus)
-        mediator ! Publish(Topic.Block, new ConfirmedBlock(this.block, sender))
-        sendEvent(EventType.RECEIVE_INFO, mediator, selfAddr, Topic.Block,
-                                Event.Action.ENDORSEMENT)
-        logMsg(LogType.INFO, "collectioner endorsementt finish")
-             clearEndorseInfo                   
-          }
+      this.recvedEndorse.foreach(f => {
+        this.block = BlockHelp.AddEndorsementToBlock(this.block, f._2)
+      })
+      var consensus = this.block.endorsements.toArray[Signature]
+      BlockVerify.sort(consensus)
+      logMsg(LogType.INFO, "collectioner endorsement sort")
+      this.block = this.block.withEndorsements(consensus)
+      mediator ! Publish(Topic.Block, new ConfirmedBlock(this.block, sender))
+      sendEvent(EventType.RECEIVE_INFO, mediator, selfAddr, Topic.Block,
+        Event.Action.ENDORSEMENT)
+      logMsg(LogType.INFO, "collectioner endorsementt finish")
+      clearEndorseInfo
+    } else {
+      logMsg(LogType.INFO, s"collectioner check is error,get size=${this.recvedEndorse.size}")
+    }
   }
-  
+
   override def receive = {
     case CollectEndorsement(block, blocker) =>
-      if(this.block != null && this.block.hashOfBlock.toStringUtf8().equals(block.hashOfBlock.toStringUtf8())){
+      createRouter
+      if (this.block != null && this.block.hashOfBlock.toStringUtf8().equals(block.hashOfBlock.toStringUtf8())) {
         logMsg(LogType.INFO, "collectioner is waiting endorse result")
-      }else{
+      } else {
         logMsg(LogType.INFO, "collectioner recv endorsement")
-        createRouter
-        logMsg(LogType.INFO, "collectioner create router")
-        resetEndorseInfo(block,blocker)
-        pe.getNodeMgr.getStableNodes.foreach(f=>{
+        resetEndorseInfo(block, blocker)
+        pe.getNodeMgr.getStableNodes.foreach(f => {
           logMsg(LogType.INFO, "collectioner send endorsement to requester")
-          router.route(RequesterOfEndorsement(block,blocker,f), self) 
+          router.route(RequesterOfEndorsement(block, blocker, f), self)
         })
-        schedulerLink = scheduler.scheduleOnce(TimePolicy.getTimeoutEndorse*1.5 seconds, self, EndorseCollector.ResendEndorseInfo)
+        //schedulerLink = scheduler.scheduleOnce(TimePolicy.getTimeoutEndorse seconds, self, EndorseCollector.ResendEndorseInfo)
       }
-      
-    case EndorseCollector.ResendEndorseInfo =>
-      if(this.block != null){
+
+    /*case EndorseCollector.ResendEndorseInfo =>
+      if (this.block != null) {
         logMsg(LogType.INFO, "collectioner resend endorsement")
-         resendEndorser
-      }
-    case ResultOfEndorseRequester(result,endors,blockhash,endorser)=>
-      if(this.block != null){
-        if(this.block.hashOfBlock.toStringUtf8().equals(blockhash)){
-        if(result){
-          logMsg(LogType.INFO, "collectioner recv endorsement result")
-          recvedEndorse += endorser.toString -> endors
-          CheckAndFinishHandler
+        resendEndorser
+      }*/
+    case ResultOfEndorseRequester(result, endors, blockhash, endorser) =>
+      if (this.block != null) {
+        if (this.block.hashOfBlock.toStringUtf8().equals(blockhash)) {
+          if (result) {
+            logMsg(LogType.INFO, "collectioner recv endorsement result")
+            recvedEndorse += endorser.toString -> endors
+            CheckAndFinishHandler
+          } else {
+            logMsg(LogType.INFO, "collectioner recv endorsement result,is error")
+          }
         }
-      }
       }
     case _ => //ignore
   }

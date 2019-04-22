@@ -47,6 +47,8 @@ class PreloaderForTransaction(moduleName: String, transProcessor: ActorRef) exte
       (0, result)
     } catch {
       case e: AskTimeoutException => (1, null)
+      case te:TimeoutException =>
+        (1, null)
     }
   }
 
@@ -107,6 +109,8 @@ class PreloaderForTransaction(moduleName: String, transProcessor: ActorRef) exte
 
   override def receive = {
     case PreTransBlock(block,prefixOfDbTag) =>
+      
+      println(s"---------------------send ${sender.path.toString()} ")
       logTime("block preload inner time", System.currentTimeMillis(), true)
       if ((block.previousBlockHash.toStringUtf8().equals(pe.getCurrentBlockHash) || block.previousBlockHash == ByteString.EMPTY) &&
         block.height == (pe.getCurrentHeight + 1)) {

@@ -4,18 +4,18 @@ import rep.protos.peer._
 import akka.actor.{ ActorRef, Props }
 
 object SyncMsg {
-  case object StartSync
+  case class StartSync(isNoticeModuleMgr:Boolean)
   
   case object ChainInfoOfRequest
-
-  case class ChainInfoOfResponse(response: BlockchainInfo)
   
+  case class ResponseInfo(response: BlockchainInfo, responser: ActorRef)
+  
+  case class GreatMajority(addr: ActorRef, height: Long)
+
   case class BlockDataOfRequest(startHeight:Long)
   
   case class BlockDataOfResponse(data: Block)
   
-  case object SyncTimeout
-  
-  case class  SyncRequestOfStorager(responser:ActorRef,StartHeight:Long,LastHeight:Long)
+  case class  SyncRequestOfStorager(responser:ActorRef,maxHeight:Long)
 
 }

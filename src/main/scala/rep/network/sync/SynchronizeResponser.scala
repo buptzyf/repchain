@@ -8,6 +8,7 @@ import rep.storage.ImpDataAccess
 import rep.protos.peer._
 import rep.log.trace.LogType
 import rep.network.util.NodeHelp
+import rep.network.sync.SyncMsg.{ResponseInfo,BlockDataOfResponse}
 
 object SynchronizeResponser {
   def props(name: String): Props = Props(classOf[SynchronizeResponser], name)
@@ -32,7 +33,7 @@ class SynchronizeResponser(moduleName: String) extends ModuleBase(moduleName) {
       } else {
         logMsg(LogType.INFO, moduleName + "~" + s"recv sync chaininfo request from actorAddr" + "～" + NodeHelp.getNodePath(sender()))
         val responseInfo = dataaccess.getBlockChainInfo()
-        sender ! SyncMsg.ChainInfoOfResponse(responseInfo)
+        sender ! ResponseInfo(responseInfo,self)
       }
 
     case SyncMsg.BlockDataOfRequest(startHeight) =>
