@@ -182,7 +182,8 @@ class RestActor(moduleName: String) extends  ModuleBase(moduleName) {
               //预执行异常,废弃交易，向api调用者发送异常
               sender ! PostResult(t.id, None, Option(err.cause.getMessage))
           }
-        case false => throw new RuntimeException("验证签名出错")
+        case false =>
+          sender ! PostResult(t.id, None, Option("验证签名出错"))
       }
 
     }catch{
@@ -195,22 +196,25 @@ class RestActor(moduleName: String) extends  ModuleBase(moduleName) {
 
     case tranSign(tr: String) =>
       val tr1 = BytesHex.hex2bytes(tr) // 解析交易编码后的16进制字符串,进行解码16进制反解码decode
+      var txr = Transaction.defaultInstance
       try {
-        val txr = Transaction.parseFrom(tr1)
+        txr = Transaction.parseFrom(tr1)
         preTransaction(txr)
       } catch {
         case e:Exception =>
-          sender ! PostResult("", None, Option(s"transaction parser error! + ${e.getMessage}"))
+          sender ! PostResult(txr.id, None, Option(s"transaction parser error! + ${e.getMessage}"))
       }
 
     //处理post CSpec构造交易的请求
     case c: CSpec =>
-      //构建transaction并通过peer广播
+      var txr = Transaction.defaultInstance
       //debug状态才动用节点密钥签名
       if(contractOperationMode==0){
-        val t = buildTranaction(pe.getSysTag, c)
-        preTransaction(t)
-      }else sender ! PostResult(null, None, Option("非Debug状态下此调用无效"))
+        //构建transaction并通过peer预执行广播
+        txr = buildTranaction(pe.getSysTag, c)
+        preTransaction(txr)
+      }else
+        sender ! PostResult(txr.id, None, Option("非Debug状态下此调用无效"))
 
     // 流式提交交易
     case t: Transaction =>
