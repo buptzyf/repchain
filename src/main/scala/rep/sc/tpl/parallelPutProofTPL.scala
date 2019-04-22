@@ -26,6 +26,7 @@ class parallelPutProofTPL extends IContract{
 
   case class proofDataSingle(key: String, value: Any)
   type proofDataMap = Map[String, Any]
+  val split = "_"
 
   override def init(ctx: ContractContext): Unit = {
     println(s"tid: $ctx.t.id")
@@ -40,7 +41,7 @@ class parallelPutProofTPL extends IContract{
   def putProof(ctx: ContractContext, data: proofDataMap): ActionResult = {
     data.foreach(
       entry => {
-        ctx.api.setVal(entry._1,entry._2)
+        ctx.api.setVal(ctx.t.id + split + entry._1,entry._2)
         print("putProof:"+ entry._1 + ":" + entry._2)
       }
     )
@@ -54,7 +55,7 @@ class parallelPutProofTPL extends IContract{
     * @return
     */
   def putProof(ctx: ContractContext, data: proofDataSingle): ActionResult = {
-    ctx.api.setVal(data.key, data.value)
+    ctx.api.setVal(ctx.t.id + split + data.key, data.value)
     print("putProof:"+ data.key + ":" + data.value)
     null
   }
