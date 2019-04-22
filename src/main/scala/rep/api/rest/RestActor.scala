@@ -100,6 +100,8 @@ object RestActor {
     val ctype = c.ctype match{
       case 2 =>
         rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA
+      case 3 =>  
+        rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA_PARALLEL
       case _ =>
         rep.protos.peer.ChaincodeDeploy.CodeType.CODE_JAVASCRIPT
     }

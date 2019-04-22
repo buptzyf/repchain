@@ -137,7 +137,8 @@ class TransProcessor(name: String,  parent: ActorRef) extends Actor {
   def createActorByType(ctype: rep.protos.peer.ChaincodeDeploy.CodeType,
       cid:rep.protos.peer.ChaincodeId, sn:String): ActorRef = {
       ctype match{
-        case rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA => 
+        case rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA |
+        rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA_PARALLEL=> 
           context.actorOf(Props(new SandboxScala(cid)), sn)
         //默认采用jdk内置的javascript作为合约容器
         case _ => context.actorOf(Props(new SandboxJS(cid)), sn)

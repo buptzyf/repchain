@@ -88,6 +88,7 @@ message ChaincodeDeploy {
 	CODE_UNDEFINED = 0;
         CODE_JAVASCRIPT = 1;
         CODE_SCALA = 2;
+        CODE_SCALA_PARALLEL = 3;
     }
     CodeType ctype = 4;
 } 

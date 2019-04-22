@@ -75,5 +75,7 @@ PB.targets in Compile := Seq(
   scalapb.gen() -> (sourceManaged in Compile).value
 )
 libraryDependencies += "com.thesamet.scalapb" %% "scalapb-runtime" % scalapb.compiler.Version.scalapbVersion % "protobuf"
+addCompilerPlugin("org.psywerx.hairyfotr" %% "linter" % "0.1.17")
+scapegoatVersion in ThisBuild := "1.3.3"
 
 mainClass in (Compile, packageBin) := Some("rep.app.Repchain")
