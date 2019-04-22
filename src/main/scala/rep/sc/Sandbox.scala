@@ -29,7 +29,6 @@ import org.slf4j.LoggerFactory
 import org.json4s.{DefaultFormats, Formats, jackson}
 import de.heikoseeberger.akkahttpjson4s.Json4sSupport
 import org.json4s._
-import com.trueaccord.scalapb.json.JsonFormat
 import akka.util.Timeout
 import Shim._
 import rep.crypto.BytesHex
@@ -46,6 +45,8 @@ import rep.log.RepLogger
  * 
  */
 object Sandbox {
+  val ERR_UNKNOWN_TRANSACTION_TYPE = "无效的交易类型"  
+  
   val SplitChainCodeId = "_"
   //日志前缀
   val log_prefix = "Sandbox-"
@@ -211,6 +212,8 @@ abstract class Sandbox(cid:ChaincodeId) extends Actor {
         if(state_bytes == null){
             throw new SandboxException(ERR_INVOKE_CHAINCODE_NOT_EXIST)    
         }
+     case _ => throw SandboxException(ERR_UNKNOWN_TRANSACTION_TYPE)
+
     }
  }  
 }

@@ -18,7 +18,7 @@ package rep.network
 
 import akka.actor.{ActorSystem, Props}
 import akka.testkit.TestKit
-import com.trueaccord.scalapb.json.JsonFormat
+import scalapb.json4s.JsonFormat
 import org.json4s.{DefaultFormats, jackson, _}
 import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, Matchers}
 import rep.app.system.ClusterSystem

@@ -67,6 +67,7 @@ class SandboxJS(cid:ChaincodeId) extends Sandbox(cid){
         case  Transaction.Type.CHAINCODE_INVOKE =>
           val r1 = sandbox.eval(t.para.ipt.get.function)
           r1.asInstanceOf[ActionResult]
+        case _ => throw SandboxException(ERR_UNKNOWN_TRANSACTION_TYPE)
       }
       new DoTransactionResult(t.id, r, 
          shim.ol.toList,None)

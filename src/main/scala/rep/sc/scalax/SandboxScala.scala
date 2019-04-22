@@ -93,6 +93,7 @@ class SandboxScala(cid:ChaincodeId) extends Sandbox(cid){
           shim.sr.Put(key_tx_state,state_bytes)
           shim.ol.append(OperLog(key_tx_state, null, ByteString.copyFrom(state_bytes)))
           null
+        case _ => throw SandboxException(ERR_UNKNOWN_TRANSACTION_TYPE)
       }
       new DoTransactionResult(t.id, r, 
          shim.ol.toList,None)
