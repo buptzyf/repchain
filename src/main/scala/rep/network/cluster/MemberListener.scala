@@ -25,7 +25,7 @@ import rep.app.conf.SystemProfile
 import rep.network.Topic
 import rep.network.cluster.MemberListener.{ Recollection}
 import rep.network.tools.PeerExtension
-import rep.utils.GlobalUtils.ActorType
+import rep.utils.GlobalUtils.{ActorType,EventType}
 import rep.utils.{ TimeUtils}
 import org.slf4j.LoggerFactory
 import scala.collection.mutable.HashMap
@@ -34,6 +34,7 @@ import rep.network.sync.SyncMsg.StartSync
 import scala.util.control.Breaks._
 import scala.collection.mutable.ArrayBuffer
 import rep.log.RepLogger
+import rep.protos.peer.Event
 
 /**
   * Cluster节点状态监听模块
@@ -141,6 +142,7 @@ class MemberListener(MoudleName:String) extends ModuleBase(MoudleName) with Clus
           nodes += m.address
           if(this.isCandidatorNode(m.roles)){
             snodes.append((m.address,this.getNodeName(m.roles)))
+            sendEvent(EventType.PUBLISH_INFO, mediator, this.getNodeName(m.roles), Topic.Event, Event.Action.MEMBER_UP)
           }
         }
       })
@@ -154,6 +156,7 @@ class MemberListener(MoudleName:String) extends ModuleBase(MoudleName) with Clus
       pe.getNodeMgr.putNode(member.address)
       if(member.roles != null && !member.roles.isEmpty && this.isCandidatorNode(member.roles)){
         preloadNodesMap.put(member.address, (TimeUtils.getCurrentTime(),this.getNodeName(member.roles)))
+        sendEvent(EventType.PUBLISH_INFO, mediator, this.getNodeName(member.roles), Topic.Event, Event.Action.MEMBER_UP)
       }
       
       scheduler.scheduleOnce(TimePolicy.getSysNodeStableDelay millis,
@@ -168,6 +171,7 @@ class MemberListener(MoudleName:String) extends ModuleBase(MoudleName) with Clus
       preloadNodesMap.remove(member.address)
       pe.getNodeMgr.removeNode(member.address)
       pe.getNodeMgr.removeStableNode(member.address)
+      sendEvent(EventType.PUBLISH_INFO, mediator, this.getNodeName(member.roles), Topic.Event, Event.Action.MEMBER_DOWN)
       
 
    

@@ -27,6 +27,7 @@ import akka.actor.Actor
   **/
 trait BaseActor extends Actor {
   val selfAddr = akka.serialization.Serialization.serializedActorPath(self)
+  
 
   var schedulerLink: akka.actor.Cancellable = null
 

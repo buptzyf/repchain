@@ -91,7 +91,7 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("collectioner endorsement sort"))
       this.block = this.block.withEndorsements(consensus)
       mediator ! Publish(Topic.Block, new ConfirmedBlock(this.block, sender))
-      sendEvent(EventType.RECEIVE_INFO, mediator, selfAddr, Topic.Block,
+      sendEvent(EventType.RECEIVE_INFO, mediator, pe.getSysTag, Topic.Block,
         Event.Action.ENDORSEMENT)
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( "collectioner endorsementt finish"))
       clearEndorseInfo
