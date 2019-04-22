@@ -156,7 +156,7 @@ class Blocker(moduleName: String) extends ModuleBase(moduleName) {
     //创建块请求（给出块人）
     case Blocker.CreateBlock =>
       if (NodeHelp.isBlocker(pe.getBlocker.blocker, pe.getSysTag)) {
-        sendEvent(EventType.PUBLISH_INFO, mediator, selfAddr, Topic.Block, Event.Action.CANDIDATOR)
+        sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Block, Event.Action.CANDIDATOR)
         if (!pe.isSynching) {
           //是出块节点
           if (preblock == null) {
