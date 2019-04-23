@@ -134,18 +134,15 @@ class Compiler(targetDir: Option[File], bDebug:Boolean) {
     if(p1.equals(-1) || p1.equals(-1) || p1.equals(-1))
       throw new RuntimeException("合约语法错误")
     val className = if(cid!=null) PRE_CLS_NAME+cid else classNameForCode(pcode)
-    //debug环境下每次强制重新写入
     var cl: Option[Class[_]] = None
-    //if(!bDebug){
-       try{
-        cl = Some(Class.forName(className))
-      }catch {
-        case e:Throwable =>     
-          cl = findClass(className)          
-      } 
-      if(cl!=None)
-          return cl.get      
-    //}
+    try{
+      cl = Some(Class.forName(className))
+    }catch {
+      case e:Throwable =>     
+        cl = findClass(className)          
+    } 
+    if(cl!=None)
+        return cl.get      
     //获取替换类名
     val ncode = pcode.substring(p0,p3) + "class "+className+ " "+pcode.substring(p1,p2+1)
     //+"\nscala.reflect.classTag[ContractAssets2].runtimeClass"

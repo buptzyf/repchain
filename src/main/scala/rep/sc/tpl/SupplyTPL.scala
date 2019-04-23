@@ -45,29 +45,6 @@ class SupplyTPL extends IContract {
       println(s"tid: $ctx.t.id")
     }
     
-    /**
-     * 追加确认签名 TODO 逻辑实现
-     */
-    def confirmSign(ctx: ContractContext, data:IPTConfirm ):ActionResult={
-       null
-    }
-     /**
-     * 取消追加确认签名 TODO 逻辑实现
-     */
-    def cancelSign(ctx: ContractContext, data:IPTConfirm ):ActionResult={
-       null
-    }
-
-   /**
-    * TODO
-    * @param ctx
-    * @param data 
-    * @return
-    */
-    def SignUp(ctx: ContractContext, data:Map[String,String]):ActionResult = {
-      null
-    }
-
    /**
      * 设计方、原料方、生产方、销售方 签订对销售额的分成合约, 对于销售方账号+产品型号决定唯一的分账合约
      */
@@ -101,7 +78,7 @@ class SupplyTPL extends IContract {
       //根据签约时选择的分账方式模版,验证定制参数
       val mr = tm match {
         case TPL.Share =>
-          val sp0 = ctx.api.getVal(sid)
+          val sp0:Any = ctx.api.getVal(sid)
           val sp = read[IPTSignShare](ctx.api.getVal(sid).asInstanceOf[String])
           splitShare(data.amount, sp.account_remain, sp.tpl_param)
         case TPL.Fixed =>
@@ -118,7 +95,7 @@ class SupplyTPL extends IContract {
      */
     def addToAccount(ctx: ContractContext, mr:Map[String,Int]){
       for ((k, v) <- mr) {
-          val sk =  ctx.api.getVal(k)
+          val sk :Any=  ctx.api.getVal(k)
           var dk = if(sk==null) 0 else sk.toString.toInt
           ctx.api.setVal(k, dk+v)
       }
@@ -136,20 +113,7 @@ class SupplyTPL extends IContract {
           signFixed(ctx,json.extract[IPTSignFixed])
         case ACTION.Split => 
           split(ctx, json.extract[IPTSplit])
-        case ACTION.ConfirmSign =>
-          confirmSign(ctx,json.extract[IPTConfirm])
-        case ACTION.CancelSign =>
-          cancelSign(ctx, json.extract[IPTConfirm])
-        case ACTION.SignUp =>
-          println(s"SignUp")
-          SignUp(ctx, json.extract[Map[String,String]])
-
       }
-    }
-    //TODO case  Transaction.Type.CHAINCODE_DESC 增加对合约描述的处理
-    def descAction(ctx: ContractContext,action:String, sdata:String ):String={
-      val json = parse(sdata)
-      null
     }
  
 /**

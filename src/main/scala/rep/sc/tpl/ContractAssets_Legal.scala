@@ -63,7 +63,7 @@ case class Transfer(from:String, to:String, amount:Int, remind:String)
       if(ctx.api.getStateEx(chaincodeName,data.to)==null)
         return new ActionResult(-2, "目标账户不存在")      
       
-      val sfrom =  ctx.api.getVal(data.from)
+      val sfrom:Any =  ctx.api.getVal(data.from)
       var dfrom =sfrom.asInstanceOf[Int]
       if(dfrom < data.amount)
         return new ActionResult(-3, "余额不足")

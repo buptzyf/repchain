@@ -76,6 +76,7 @@ PB.targets in Compile := Seq(
 )
 libraryDependencies += "com.thesamet.scalapb" %% "scalapb-runtime" % scalapb.compiler.Version.scalapbVersion % "protobuf"
 addCompilerPlugin("org.psywerx.hairyfotr" %% "linter" % "0.1.17")
+scalacOptions += "-P:linter:disable:UseIfExpression+VariableAssignedUnusedValue+UseGetOrElseNotPatMatch"
 scapegoatVersion in ThisBuild := "1.3.3"
 
 mainClass in (Compile, packageBin) := Some("rep.app.Repchain")

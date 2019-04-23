@@ -62,7 +62,7 @@ class ContractAssetsTPL extends IContract{
       // 跨合约读账户，该处并未反序列化
       if(ctx.api.getStateEx(chaincodeName,data.to)==null)
         throw ContractException("目标账户不存在")
-      val sfrom =  ctx.api.getVal(data.from)
+      val sfrom:Any =  ctx.api.getVal(data.from)
       var dfrom =sfrom.asInstanceOf[Int]
       if(dfrom < data.amount)
         throw ContractException("余额不足")
@@ -75,7 +75,7 @@ class ContractAssetsTPL extends IContract{
     def put_proof(ctx: ContractContext, data:Map[String,Any]): ActionResult={
     //先检查该hash是否已经存在,如果已存在,抛异常
     for((k,v)<-data){
-      var pv0 = ctx.api.getVal(k)
+      var pv0:Any = ctx.api.getVal(k)
       if(pv0 != null)
 //        throw new Exception("["+k+"]已存在，当前值["+pv0+"]");
         throw ContractException(s"$k 已存在，当前值为 $pv0")
