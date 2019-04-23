@@ -5,6 +5,7 @@ import rep.protos.peer.CertId
 import java.util.UUID
 import com.gilt.timeuuid.TimeUuid
 
+
 object IdTool {
   
   def getUUID: String = {
@@ -35,7 +36,8 @@ object IdTool {
     }else{
       null
     }
-   
   }
+  
+  
   
 }
