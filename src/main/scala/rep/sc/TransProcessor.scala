@@ -34,7 +34,6 @@ import rep.storage.IdxPrefix.WorldStateKeyPreFix
 import rep.utils.SerializeUtils
 import rep.api.rest.RestActor.loadTransaction
 import rep.network.tools.PeerExtension
-import rep.sc.js.SandboxJS
 import rep.sc.scalax.SandboxScala
 import rep.utils.SerializeUtils.deserialise
 import rep.utils.SerializeUtils.serialise
