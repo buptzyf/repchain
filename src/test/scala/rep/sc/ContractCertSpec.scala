@@ -82,7 +82,7 @@ class ContractCertSpec (_system: ActorSystem)
 
   //准备探针以验证调用返回结果
   val probe = TestProbe()
-  private val sandbox = system.actorOf(TransProcessor.props("sandbox",  probe.ref))
+  private val sandbox = system.actorOf(TransProcessor.props("sandbox"))
 
   // 部署合约
   test("Deploy ContractCertTPL") {

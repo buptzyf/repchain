@@ -79,7 +79,7 @@ class TransferSpec2(_system: ActorSystem)
     //准备探针以验证调用返回结果
     val probe = TestProbe()
     val db = ImpDataAccess.GetDataAccess(sysName)
-    val sandbox = system.actorOf(TransProcessor.props("sandbox",  probe.ref))
+    val sandbox = system.actorOf(TransProcessor.props("sandbox"))
 
     val cid2 =  ChaincodeId(SystemProfile.getAccountChaincodeName,1)
     val cid1 = ChaincodeId("ContractAssetsTPL2",1)

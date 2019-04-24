@@ -54,6 +54,7 @@ object SystemProfile {
   private[this] var _ACCOUNTCHAINCODEVERSION: Int = 1
   private[this] var _GENESISNODENAME:String = ""
   private[this] var _BLOCK_LENGTH: Int = 120000//区块的最大长度
+  private[this] var _NUMBER_OF_TRANSPROCESSOR = 100 //
   
   
   
@@ -67,10 +68,15 @@ object SystemProfile {
   private def ACCOUNTCHAINCODENAEM = _ACCOUNTCHAINCODENAEM
   private def ACCOUNTCHAINCODVERSION = _ACCOUNTCHAINCODEVERSION
   
+  private def NUMBER_OF_TRANSPROCESSOR = _NUMBER_OF_TRANSPROCESSOR
+  
   private def GENESISNODENAME_=(value:String):Unit={
     _GENESISNODENAME = value
   }
   
+  private def NUMBER_OF_TRANSPROCESSOR_=(value:Int):Unit={
+    _NUMBER_OF_TRANSPROCESSOR = value
+  }
   
   private def VOTENODELIST_=(value: List[String]): Unit = {
       _VOTENODELIST = value
@@ -171,9 +177,12 @@ object SystemProfile {
     ACCOUNTCHAINCODENAEM_= (config.getString("system.account.chaincodename"))
     ACCOUNTCHAINCODEVERSION_=(config.getInt("system.account.chaincodeversion"))
     GENESISNODENAME_=(config.getString("system.genesis_node_name"))
+    NUMBER_OF_TRANSPROCESSOR_=(config.getInt("system.number_of_transProcessor"))
   }
   
   def getLimitBlockTransNum = LIMIT_BLOCK_TRANS_NUM
+  
+  def getNumberOfTransProcessor = NUMBER_OF_TRANSPROCESSOR
   
   def getBlockLength = BLOCK_LENGTH
 

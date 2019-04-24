@@ -84,7 +84,7 @@ object TransProcessor {
    *  @param parent 父actor指向
    *  @return 可用于创建actor的Props
    */
-  def props(name: String,  parent: ActorRef): Props = Props(classOf[TransProcessor], name,  parent)
+  def props(name: String): Props = Props(classOf[TransProcessor], name)
   
 }
 

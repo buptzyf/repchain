@@ -141,8 +141,6 @@ class PreloaderForTransaction(moduleName: String, transProcessor: ActorRef) exte
         }
         logTime("block preload inner time", System.currentTimeMillis(), false)
       }
-    case dr : DoTransactionResult=>
-      val a = dr
     case _ => //ignore
   }
 }

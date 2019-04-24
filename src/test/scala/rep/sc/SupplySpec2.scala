@@ -110,7 +110,7 @@ class SupplySpec2(_system: ActorSystem)
     //准备探针以验证调用返回结果
     val probe = TestProbe()
     val db = ImpDataAccess.GetDataAccess(sysName)
-    var sandbox = system.actorOf(TransProcessor.props("sandbox",  probe.ref))
+    var sandbox = system.actorOf(TransProcessor.props("sandbox"))
     //生成deploy交易
     val cid = new ChaincodeId("Supply",1)
     val t1 = PeerHelper.createTransaction4Deploy(sysName, cid,

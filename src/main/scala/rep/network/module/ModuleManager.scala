@@ -115,7 +115,7 @@ class ModuleManager(moduleName: String, sysTag: String, enableStatistic: Boolean
       //context.actorOf(Endorser.props("endorser"), "endorser")
       context.actorOf(Endorser4Future.props("endorser"), "endorser")
       
-      context.actorOf(PreloaderForTransaction.props("preloaderoftransaction", context.actorOf(TransProcessor.props("sandbox_for_Preload", self), "sandboxProcessor")), "preloaderoftransaction")
+      context.actorOf(PreloaderForTransaction.props("preloaderoftransaction", context.actorOf(TransProcessor.props("sandbox_for_Preload"), "sandboxProcessor")), "preloaderoftransaction")
       //context.actorOf(Endorser.props("endorser"), "endorser")
       context.actorOf(Voter.props("voter"), "voter")
       context.actorOf(TransactionPool.props("transactionpool"), "transactionpool")

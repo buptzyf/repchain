@@ -151,7 +151,7 @@ class RestActor(moduleName: String) extends  ModuleBase(moduleName) {
 
   implicit val timeout = Timeout(1000.seconds)
   val sr: ImpDataAccess = ImpDataAccess.GetDataAccess(pe.getSysTag)
-  val sandbox = context.actorOf(TransProcessor.props("sandbox",  self), "sandboxPost")
+  val sandbox = context.actorOf(TransProcessor.props("sandbox"), "sandboxPost")
 
   def preTransaction(t:Transaction) : Unit ={
     val sig = t.signature.get.signature.toByteArray
