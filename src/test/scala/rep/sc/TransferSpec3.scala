@@ -41,7 +41,7 @@ import scala.collection.mutable.Map
   * author zyf
   * @param _system
   */
-class TransferSpec2(_system: ActorSystem)
+class TransferSpec3(_system: ActorSystem)
   extends TestKit(_system) with Matchers with FlatSpecLike with BeforeAndAfterAll {
 
   def this() = this(ActorSystem("TransferSpec", new ClusterSystem("121000005l35120456.node1", InitType.MULTI_INIT, false).getConf))
@@ -52,7 +52,7 @@ class TransferSpec2(_system: ActorSystem)
   // or native.Serialization
   implicit val formats = DefaultFormats
 
-  "Contract deployed as CODE_SCALA " should "executes serially" in {
+  "Contract deployed as CODE_SCALA_PARALLEL " should "executes in parallel" in {
     val sysName = "121000005l35120456.node1"
     val dbTag = "121000005l35120456.node1"
     //建立PeerManager实例是为了调用transactionCreator(需要用到密钥签名)，无他
@@ -80,12 +80,13 @@ class TransferSpec2(_system: ActorSystem)
     val probe = TestProbe()
     val db = ImpDataAccess.GetDataAccess(sysName)
     val sandbox = system.actorOf(TransProcessor.props("sandbox"))
+    val sandbox2 =  pe.getActorRef(ActorType.preloadtransrouter)
 
     val cid2 =  ChaincodeId(SystemProfile.getAccountChaincodeName,1)
-    val cid1 = ChaincodeId("ContractAssetsTPL2",1)
+    val cid1 = ChaincodeId("ContractAssetsTPL3",1)
     //生成deploy交易
     val t1 = PeerHelper.createTransaction4Deploy(sysName,cid1 ,
-      l1, "",5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
+      l1, "",5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA_PARALLEL)
 
     val msg_send1 = DoTransaction(t1,   "dbnumber")
     probe.send(sandbox, msg_send1)
@@ -126,12 +127,11 @@ class TransferSpec2(_system: ActorSystem)
     for (i <- 0 until tcs.length){
         val t6 = PeerHelper.createTransaction4Invoke(sysName, cid1, ACTION.transfer, Seq(write(tcs(i))))
         val msg_send6 = DoTransaction(t6,   "dbnumber")
-        probe.send(sandbox, msg_send6)
+        probe.send(sandbox2, msg_send6)
     }    
     for (i <- 0 until tcs.length){
         val msg_recv6 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
         msg_recv6.err.isEmpty should be (true)
-//        println(msg_recv6.r.reason)
         msg_recv6.r shouldBe(null)
     }    
   }
