@@ -16,7 +16,13 @@
 
 package rep.sc
 
-import akka.actor.ActorSystem
+import akka.util.Timeout
+import scala.concurrent.duration._
+import akka.pattern.ask
+import akka.pattern.AskTimeoutException
+import scala.concurrent._
+
+import akka.actor.{ActorSystem,ActorRef,ActorSelection}
 import akka.testkit.{TestKit, TestProbe}
 import org.json4s.{DefaultFormats, jackson}
 import org.json4s.native.Serialization.{write, writePretty}
@@ -32,10 +38,14 @@ import rep.sc.tpl.{CertInfo, Transfer}
 import rep.storage.ImpDataAccess
 import rep.utils.SerializeUtils.toJson
 import rep.app.conf.SystemProfile
-import rep.network.tools.PeerExtension
-import rep.utils.GlobalUtils.ActorType
+
 import scala.concurrent.duration._
 import scala.collection.mutable.Map
+import rep.utils.GlobalUtils.ActorType
+import rep.network.consensus.transaction.PreloadTransRouter
+import rep.protos.peer.Transaction
+
+import scala.concurrent.ExecutionContext.Implicits._
 
 
 /**
@@ -44,7 +54,26 @@ import scala.collection.mutable.Map
   */
 class TransferSpec3(_system: ActorSystem)
   extends TestKit(_system) with Matchers with FlatSpecLike with BeforeAndAfterAll {
-
+  import scala.concurrent.duration._
+  
+  implicit val timeout = Timeout(3 seconds)
+  
+  private def asyncPreload(dt: DoTransaction,probe:TestProbe,sandbox2:ActorRef,i:Int): Future[Boolean] = {
+    val result = Promise[Boolean]
+    println(s"probe before ${i}")
+    probe.send(sandbox2, dt)
+    println(s"probe after ${i}")
+    val msg_recv6 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
+    if(msg_recv6.err.isEmpty){
+      println(s"probe result success ${i}")
+      result.success(true)
+    }else{
+      println(s"probe result failed ${i}")
+      result.success(false)
+    }
+    result.future
+  }
+  
   def this() = this(ActorSystem("TransferSpec", new ClusterSystem("121000005l35120456.node1", InitType.MULTI_INIT, false).getConf))
 
   override def afterAll: Unit = { shutdown(system) }
@@ -58,6 +87,9 @@ class TransferSpec3(_system: ActorSystem)
     val dbTag = "121000005l35120456.node1"
     //建立PeerManager实例是为了调用transactionCreator(需要用到密钥签名)，无他
     val pm = system.actorOf(ModuleManager.props("modulemanager", sysName, false, false,false), "modulemanager")
+    //val path = pm.path.address.toString +  "/user/modulemanager/preloadtransrouter"
+    
+    val sandbox2 = system.actorOf(PreloadTransRouter.props("preloadtransrouter"),"preloadtransrouter")
     // 部署资产管理
     val s1 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/ContractAssetsTPL2.scala")
     val l1 = try s1.mkString finally s1.close()
@@ -81,8 +113,6 @@ class TransferSpec3(_system: ActorSystem)
     val probe = TestProbe()
     val db = ImpDataAccess.GetDataAccess(sysName)
     val sandbox = system.actorOf(TransProcessor.props("sandbox"))
-    val pe = PeerExtension(system)
-    val sandbox2 =  pe.getActorRef(ActorType.preloadtransrouter)
 
     val cid2 =  ChaincodeId(SystemProfile.getAccountChaincodeName,1)
     val cid1 = ChaincodeId("ContractAssetsTPL3",1)
@@ -91,7 +121,7 @@ class TransferSpec3(_system: ActorSystem)
       l1, "",5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA_PARALLEL)
 
     val msg_send1 = DoTransaction(t1,   "dbnumber")
-    probe.send(sandbox, msg_send1)
+    probe.send(sandbox2, msg_send1)
     val msg_recv1 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
     msg_recv1.err.isEmpty should be (true)
 
@@ -122,10 +152,35 @@ class TransferSpec3(_system: ActorSystem)
     //生成invoke交易
     val t5 = PeerHelper.createTransaction4Invoke(sysName,cid1, ACTION.set, Seq(sms))
     val msg_send5 = DoTransaction(t5,   "dbnumber")
-    probe.send(sandbox, msg_send5)
+    probe.send(sandbox2, msg_send5)
     val msg_recv5 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
     msg_recv5.err.isEmpty should be (true)
 
+    Thread.sleep(5000) 
+    
+ /*   var ts = new Array[(DoTransaction,Int)](tcs.length)
+    for (i <- 0 until tcs.length){
+        val t6 = PeerHelper.createTransaction4Invoke(sysName, cid1, ACTION.transfer, Seq(write(tcs(i))))
+        val msg_send6 = DoTransaction(t6,   "dbnumber")
+        ts(i) = (msg_send6,i)
+    }    
+    
+    val listOfFuture: Seq[Future[Boolean]] = ts.map(x => {
+      println(s"&&&&&&&&&&&${x._2}")
+      asyncPreload(x._1,probe,sandbox2,x._2)
+    })
+    println("####1")
+    val futureOfList: Future[List[Boolean]] = Future.sequence(listOfFuture.toList)
+    println("******2")
+    val result1 = Await.result(futureOfList, timeout.duration).asInstanceOf[List[Boolean]]
+    println("******3")
+    if(result1 != null)
+      println("--------parallel result ----"+result1.mkString(","))
+    else
+      println("--------parallel result ----"+"get error ,result1 is null")
+    
+*/    
+    
     for (i <- 0 until tcs.length){
         val t6 = PeerHelper.createTransaction4Invoke(sysName, cid1, ACTION.transfer, Seq(write(tcs(i))))
         val msg_send6 = DoTransaction(t6,   "dbnumber")
@@ -135,6 +190,6 @@ class TransferSpec3(_system: ActorSystem)
         val msg_recv6 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
         msg_recv6.err.isEmpty should be (true)
         msg_recv6.r shouldBe(null)
-    }    
+    }   
   }
 }
