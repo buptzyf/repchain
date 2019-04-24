@@ -32,7 +32,8 @@ import rep.sc.tpl.{CertInfo, Transfer}
 import rep.storage.ImpDataAccess
 import rep.utils.SerializeUtils.toJson
 import rep.app.conf.SystemProfile
-
+import rep.network.tools.PeerExtension
+import rep.utils.GlobalUtils.ActorType
 import scala.concurrent.duration._
 import scala.collection.mutable.Map
 
@@ -80,6 +81,7 @@ class TransferSpec3(_system: ActorSystem)
     val probe = TestProbe()
     val db = ImpDataAccess.GetDataAccess(sysName)
     val sandbox = system.actorOf(TransProcessor.props("sandbox"))
+    val pe = PeerExtension(system)
     val sandbox2 =  pe.getActorRef(ActorType.preloadtransrouter)
 
     val cid2 =  ChaincodeId(SystemProfile.getAccountChaincodeName,1)
