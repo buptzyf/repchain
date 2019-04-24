@@ -47,7 +47,7 @@ class PreloadTransRouter(moduleName: String) extends ModuleBase(moduleName) {
   private def createRouter = {
     if (router == null) {
       var list: Array[Routee] = new Array[Routee](SystemProfile.getNumberOfTransProcessor)
-      for (i <- 0 to SystemProfile.getVoteNodeList.size() - 1) {
+      for (i <- 0 to SystemProfile.getNumberOfTransProcessor - 1) {
         var ca = context.actorOf( TransProcessor.props("sandbox_for_Preload_of_router" + i), "sandbox_for_Preload_of_router" + i)
         context.watch(ca)
         list(i) = new ActorRefRoutee(ca)

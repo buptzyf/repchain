@@ -105,8 +105,9 @@ class ModuleManager(moduleName: String, sysTag: String, enableStatistic: Boolean
       
       //context.actorOf(Endorser.props("endorser"), "endorser")
       context.actorOf(Endorser4Future.props("endorser"), "endorser")
-      
-      context.actorOf(PreloadTransRouter.props("preloadtransrouter"),"preloadtransrouter")
+      if(this.isStartup){
+        context.actorOf(PreloadTransRouter.props("preloadtransrouter"),"preloadtransrouter")
+      }
       context.actorOf(PreloaderForTransaction.props("preloaderoftransaction", context.actorOf(TransProcessor.props("sandbox_for_Preload"), "sandboxProcessor")), "preloaderoftransaction")
       
       
