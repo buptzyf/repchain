@@ -31,7 +31,7 @@ import rep.network.sync.{ SynchronizeResponser, SynchronizeRequester4Future }
 
 import rep.network.consensus.block.{ GenesisBlocker, ConfirmOfBlock, EndorseCollector, Blocker }
 import rep.network.consensus.endorse.{Endorser4Future}
-import rep.network.consensus.transaction.PreloaderForTransaction
+import rep.network.consensus.transaction.{PreloaderForTransaction,PreloadTransRouter}
 import rep.network.consensus.vote.Voter
 import rep.sc.TransProcessor
 
@@ -92,15 +92,6 @@ class ModuleManager(moduleName: String, sysTag: String, enableStatistic: Boolean
     loadSystemModule
     loadConsensusModule
 
-    /*if (isStartup) {
-      try{
-        Thread.sleep(2000)
-      }catch{
-        case _ => logMsg(LogType.INFO, moduleName + "~" + s"ModuleManager ${sysTag} delay startup error")
-      }
-      }*/
-     
-
     RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"ModuleManager ${sysTag} start"))
   }
 
@@ -115,8 +106,10 @@ class ModuleManager(moduleName: String, sysTag: String, enableStatistic: Boolean
       //context.actorOf(Endorser.props("endorser"), "endorser")
       context.actorOf(Endorser4Future.props("endorser"), "endorser")
       
+      context.actorOf(PreloadTransRouter.props("preloadtransrouter"),"preloadtransrouter")
       context.actorOf(PreloaderForTransaction.props("preloaderoftransaction", context.actorOf(TransProcessor.props("sandbox_for_Preload"), "sandboxProcessor")), "preloaderoftransaction")
-      //context.actorOf(Endorser.props("endorser"), "endorser")
+      
+      
       context.actorOf(Voter.props("voter"), "voter")
       context.actorOf(TransactionPool.props("transactionpool"), "transactionpool")
     }

@@ -151,7 +151,6 @@ class RestActor(moduleName: String) extends  ModuleBase(moduleName) {
 
   implicit val timeout = Timeout(1000.seconds)
   val sr: ImpDataAccess = ImpDataAccess.GetDataAccess(pe.getSysTag)
-  val sandbox = context.actorOf(TransProcessor.props("sandbox"), "sandboxPost")
 
   def preTransaction(t:Transaction) : Unit ={
     val sig = t.signature.get.signature.toByteArray
@@ -165,7 +164,7 @@ class RestActor(moduleName: String) extends  ModuleBase(moduleName) {
       }
       SignTool.verify(sig, tOutSig.toByteArray, certId,pe.getSysTag) match {
         case true =>
-          val future = sandbox ? DoTransaction(t,"api_"+t.id)
+          val future = pe.getActorRef(ActorType.preloadtransrouter) ? DoTransaction(t,"api_"+t.id)
           val result = Await.result(future, timeout.duration).asInstanceOf[DoTransactionResult]
           val rv = result
           // 释放存储实例

@@ -36,6 +36,7 @@ import scala.collection.mutable
 import scala.concurrent.duration._
 import scala.io.BufferedSource
 
+import rep.network.consensus.transaction.PreloadTransRouter
 
 /**
   * @author zyf
@@ -83,6 +84,7 @@ class ContractCertSpec (_system: ActorSystem)
   //准备探针以验证调用返回结果
   val probe = TestProbe()
   private val sandbox = system.actorOf(TransProcessor.props("sandbox"))
+  //private val transRouter = system.actorOf(PreloadTransRouter.props("preloadtransrouter"),"preloadtransrouter")
 
   // 部署合约
   test("Deploy ContractCertTPL") {

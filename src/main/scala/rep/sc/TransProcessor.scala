@@ -96,7 +96,7 @@ object TransProcessor {
  * @param da 数据访问实例标示
  * @param parent 父actor指向
  */
-class TransProcessor(name: String,  parent: ActorRef) extends Actor {
+class TransProcessor(name: String) extends Actor {
   import TransProcessor._
   
    protected def log = LoggerFactory.getLogger(this.getClass)
