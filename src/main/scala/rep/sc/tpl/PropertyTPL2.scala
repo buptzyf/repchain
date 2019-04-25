@@ -25,35 +25,38 @@ import org.json4s.jackson.JsonMethods.parse
 import rep.crypto.ECDSASign
 import rep.sc.Shim.{ERR_CERT_EXIST, PRE_CERT, PRE_CERT_INFO}
 import rep.sc.contract.{ContractContext, IContract}
-import rep.utils.SerializeUtils
+import rep.utils.{Json4s, SerializeUtils}
 
 
 /**
-  * 不动产权登记与检索
+  * 不动产权交易登记与检索
   * @author zyf
   */
-class PropertyTPL extends IContract{
+class PropertyTPL2 extends IContract{
 
   /**
     *
-    * @param hash       产权证hash
-    * @param certId     产权证编号
+    * @param hash       交易内容Hash
+    * @param tranId     交易ID
     */
-  case class propertyData(hash: String, certId: String)
+  case class PropertyTranData(hash: String, tranId: String)
+
 
   /**
     *
-    * @param hash       产权证hash
+    * @param hash       交易hash
     * @param userId     调用检索服务的用户ID
     */
-  case class retrievalData(hash: String, userId: String)
+  case class RetrievalData(hash: String, userId: String)
+  type RetrievalDataMap = scala.collection.mutable.HashMap[String, String]
+
 
   /**
     *
     * @param certPem    证书pem字符串
     * @param userInfo   user信息，如，姓名、手机号、邮箱等,JsonString
     */
-  case class certData(certPem: String, userInfo: String)
+  case class CertData(certPem: String, userInfo: String)
 
 
   override def init(ctx: ContractContext): Unit = {
@@ -66,27 +69,32 @@ class PropertyTPL extends IContract{
     * @param data 产权数据
     * @return
     */
-  def propertyProof(ctx: ContractContext, data: propertyData): Object = {
+  def propertyTranProof(ctx: ContractContext, data: PropertyTranData): Object = {
     // 产权信息可能变动，hash始终是唯一的
-    ctx.api.setVal(data.hash,data.certId)
-    print("propertyProof:"+ data.hash + ":" + data.certId)
-    "propertyProof ok"
+    ctx.api.setVal(data.hash,data.tranId)
+    print("propertyTranProof:"+ data.hash + ":" + data.tranId)
+    "propertyTranProof ok"
   }
 
   /**
     * 检索，需要将查询人的信息也记录下来
     * @param ctx
-    * @param retrievalData
+    * @param RetrievalDataMap
     * @return
     */
-  def propertyRetrieval(ctx: ContractContext, retrievalData: retrievalData): Object = {
-    val propertyId = ctx.api.getVal(retrievalData.hash)
-    // 将检索人的信息记录下来
-    if (propertyId == null)
-      throw new RuntimeException(s"[${retrievalData.hash}] 不存在")
-    else
-      ctx.api.setVal(retrievalData.userId, retrievalData)
-    "retrieval ok"
+  def propertyTranRetrieval(ctx: ContractContext, dataMap: RetrievalDataMap): Object = {
+    val result = new scala.collection.mutable.HashMap[String,Any]
+    for (data <- dataMap) {
+      val houseId = ctx.api.getVal(data._1)
+      if (houseId == null)
+        result.put(data._1, false)
+      else
+        result.put(data._1, true)
+      // 将检索人的信息记录下来
+      val retrievalData = RetrievalData(data._1, data._2)
+      ctx.api.setVal(data._2, retrievalData)
+    }
+    Json4s.compactJson(result)
   }
 
   /**
@@ -95,7 +103,7 @@ class PropertyTPL extends IContract{
     * @param certData
     * @return
     */
-  def signUp(ctx: ContractContext, certData: certData): Object = {
+  def signUp(ctx: ContractContext, certData: CertData): Object = {
     ctx.api.check(ctx.t.cert.toStringUtf8,ctx.t)
     val cert = generateX509Cert(certData.certPem)
     if (cert.isDefined) {
@@ -167,17 +175,17 @@ class PropertyTPL extends IContract{
     val json = parse(sdata)
 
     action match {
-      // 产权登记
-      case "propertyProof" =>
-        propertyProof(ctx, json.extract[propertyData])
+      // 产权交易登记
+      case "propertyTranProof" =>
+        propertyTranProof(ctx, json.extract[PropertyTranData])
 
-      // 产权检索
-      case "propertyRetrieval" =>
-        propertyRetrieval(ctx, json.extract[retrievalData])
+      // 产权交易检索
+      case "propertyTranRetrieval" =>
+        propertyTranRetrieval(ctx, json.extract[RetrievalDataMap])
 
       // 证书注册
       case "signUp" =>
-        signUp(ctx, json.extract[certData])
+        signUp(ctx, json.extract[CertData])
 
       // 注销证书
       case "destroyCert" =>

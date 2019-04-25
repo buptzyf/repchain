@@ -18,6 +18,9 @@ package rep.sc
 
 import akka.actor.ActorSystem
 import akka.testkit.{TestKit, TestProbe}
+import org.json4s.JsonAST.{JString, JValue}
+import org.json4s.native.Serialization.{write, writePretty}
+import org.json4s.jackson.JsonMethods._
 import org.json4s.{DefaultFormats, jackson}
 import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, Matchers}
 import rep.app.system.ClusterSystem
@@ -26,53 +29,34 @@ import rep.network.PeerHelper.transactionCreator
 import rep.network.module.ModuleManager
 import rep.sc.Sandbox.DoTransactionResult
 import rep.sc.TransProcessor.DoTransaction
-import rep.storage.ImpDataAccess
+import rep.utils.Json4s
 import rep.utils.Json4s.compactJson
-import org.json4s.native.Serialization.{writePretty,write}
 
+import scala.collection.immutable.HashMap
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
+object PropertySpec2 {
 
-object PropertySpec {
+  case class retrievalData(hash: String, houseId: String)
 
-  case class propertyData(hash: String, houseId: String)
-
-  case class PropertyTranData(hash: String, tranId: String)
-
-  case class retrievalData(hash: String, userId: String)
-
-  type RetrievalDataMap = scala.collection.mutable.HashMap[String, String]
-
-  case class certData(certPem: String, userInfo: String)
-
-  case class certInfo(id: String, iphone: String, email: String)
-
-  object ACTION {
-    val propertyProof = "propertyProof"
-    val propertyTranProof = "propertyTranProof"
-    val propertyRetrieval = "propertyRetrieval"
-    val propertyTranRetrieval = "propertyTranRetrieval"
-    val signUp = "signUp"
-    val destroyCert = "destroyCert"
-  }
 }
 
 /**
   * @author zyf
   * @param _system
   */
-class PropertySpec(_system: ActorSystem)
+class PropertySpec2(_system: ActorSystem)
   extends TestKit(_system) with Matchers with FlatSpecLike with BeforeAndAfterAll{
 
-  def this() = this(ActorSystem("PropertySpec", new ClusterSystem("1", InitType.MULTI_INIT, false).getConf))
+  def this() = this(ActorSystem("PropertySpec2", new ClusterSystem("1", InitType.MULTI_INIT, false).getConf))
   override def afterAll: Unit = Await.ready(system.terminate(), Duration.Inf)
 
   implicit val serialization = jackson.Serialization
   // or native.Serialization
   implicit val formats = DefaultFormats
 
-  "PropertySpec" should "can save hash and retrieval" in {
+  "PropertySpec2" should "can save hash and retrieval" in {
 
     import PropertySpec._
 
@@ -82,7 +66,7 @@ class PropertySpec(_system: ActorSystem)
     val pm = system.actorOf(ModuleManager.props("pm", sysName))
 
     //加载合约脚本
-    val s1 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/PropertyTPL.scala")
+    val s1 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/PropertyTPL2.scala")
     val l1 = try s1.mkString finally s1.close()
 
     //准备探针以验证调用返回结果
@@ -103,26 +87,37 @@ class PropertySpec(_system: ActorSystem)
     //生成invoke交易
     //获取deploy生成的chainCodeId
     // 存证
-    val saveData = propertyData("hash_123","propertyId_123")
-    val l2 = write(saveData)
-    val t2 = transactionCreator(sysName, rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE,
-      "", ACTION.propertyProof, Seq(l2), "", Option(cname))
-    val msg_send2 = DoTransaction(t2, probe.ref, "")
-    probe.send(sandbox, msg_send2)
-    val msg_recv2 = probe.expectMsgType[DoTransactionResult](1000.seconds)
-    println(msg_recv2)
-    msg_recv2.r.extract[String] should be("propertyProof ok")
+    val saveData = Seq(PropertyTranData("hash_123","houseId 1"), PropertyTranData("hash_456","houseId 1"), PropertyTranData("hash_789","propertyId_123"))
+    for (elem <- saveData) {
+      val l2 = write(elem)
+      val t2 = transactionCreator(sysName, rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE,
+        "", ACTION.propertyTranProof, Seq(l2), "", Option(cname))
+      val msg_send2 = DoTransaction(t2, probe.ref, "")
+      probe.send(sandbox, msg_send2)
+      val msg_recv2 = probe.expectMsgType[DoTransactionResult](1000.seconds)
+      println(msg_recv2)
+      msg_recv2.r.extract[String] should be("propertyTranProof ok")
+    }
 
     // 检索
-    val retrievaldata = retrievalData("hash_123", "certId_456")
-    val l3 = write(retrievaldata)
+    val retrievalDataMap = HashMap("hash_123" -> "houseId 1", "hash_456" -> "houseId 1", "hash_456" -> "houseId 2", "hash_567" -> "houseId 1")
+    val l3 = write(retrievalDataMap)
     val t3 = transactionCreator(sysName, rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE,
-      "", ACTION.propertyRetrieval, Seq(l3), "", Option(cname))
+      "", ACTION.propertyTranRetrieval, Seq(l3), "", Option(cname))
     val msg_send3 = DoTransaction(t3, probe.ref, "")
     probe.send(sandbox, msg_send3)
     val msg_recv3 = probe.expectMsgType[DoTransactionResult](1000.seconds)
-    println(msg_recv3)
-    msg_recv3.r.extract[String] should be ("retrieval ok")
+    println(msg_recv3.r)
+    val boolResult = HashMap("hash_123" -> true, "hash_456" -> true, "hash_567" -> false)
+    msg_recv3.r match {
+      case JString(string: String) =>
+        val retrievalResult = parse(string).extract[Map[String, Boolean]]
+        retrievalResult.foreach(
+          entry => {
+            entry._2.shouldBe(boolResult(entry._1))
+          }
+        )
+    }
 
     // 注册证书
     val cert =
