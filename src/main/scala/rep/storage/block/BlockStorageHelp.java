@@ -1,5 +1,5 @@
 /*
- * Copyright  2018 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
+ * Copyright  2019 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -41,7 +41,7 @@ public class BlockStorageHelp {
 	 * @version	1.0
 	 * @since	2017-09-28
 	 * @category	构造函数
-	 * @param	String SystemName 系统名称
+	 * @param	 SystemName 系统名称
 	 * @return	无
 	 * */
 	public BlockStorageHelp(String SystemName) throws Exception {
@@ -60,7 +60,7 @@ public class BlockStorageHelp {
 	 * @version	1.0
 	 * @since	2017-09-28
 	 * @category	获取当前文件的长度
-	 * @param	long fileno 文件编号
+	 * @param   fileno 文件编号
 	 * @return	返回当前编号的文件长度 long
 	 * */
 	public long  getFileLength(long fileno)throws Exception{
@@ -79,7 +79,7 @@ public class BlockStorageHelp {
 	 * @version	1.0
 	 * @since	2017-09-28
 	 * @category	判断是否需要增加新的区块文件
-	 * @param	long fileno 文件编号，int blength 当前要写入数据的长度
+	 * @param   fileno 文件编号，int blength 当前要写入数据的长度
 	 * @return	如果需要新增区块文件返回true，否则false
 	 * */
 	public boolean  isAddFile(long fileno,int blength)throws Exception{

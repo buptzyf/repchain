@@ -1,5 +1,5 @@
 /*
- * Copyright  2018 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
+ * Copyright  2019 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -107,7 +107,7 @@ public class StoreConfig {
 	 * @version	1.0
 	 * @since	2017-09-28
 	 * @category	根据系统名称，获取数据库的存储路径
-	 * @param	String 系统名称
+	 * @param	SystemName 系统名称
 	 * @return	String 返回数据库的存储路径
 	 * */
 	public String getDbPath(String SystemName){
@@ -120,7 +120,7 @@ public class StoreConfig {
 	 * @version	1.0
 	 * @since	2017-09-28
 	 * @category	获取区块的存储路径
-	 * @param	String 系统名称
+	 * @param	无
 	 * @return	String 返回区块的存储路径
 	 * */
 	public String getBlockPath(){
@@ -136,7 +136,7 @@ public class StoreConfig {
 	 * @version	1.0
 	 * @since	2017-09-28
 	 * @category	根据系统名称，获取区块的存储路径
-	 * @param	String 系统名称
+	 * @param	SystemName 系统名称
 	 * @return	String 返回区块的存储路径
 	 * */
 	public String getBlockPath(String SystemName){
