@@ -2,6 +2,7 @@ package rep.network.util
 
 import akka.actor.{ ActorRef, Props }
 import rep.app.conf.{ SystemProfile }
+import scala.util.control.Breaks._
 
 object NodeHelp {
   def isSameNodeForRef(srcRef: ActorRef, destRef: ActorRef): Boolean = {
@@ -55,4 +56,31 @@ object NodeHelp {
   def isSeedNode(nodeName:String):Boolean={
     SystemProfile.getGenesisNodeName.equals(nodeName)
   }
+  
+  def isCandidatorNode(roles: Set[String]):Boolean = {
+    var r = false
+    breakable(
+    roles.foreach(f=>{
+      if(f.startsWith("CRFD-Node")){
+        r = true
+        break
+      }
+    })
+    )
+    r
+  }
+  
+  def getNodeName(roles: Set[String]):String = {
+    var r = ""
+    breakable(
+    roles.foreach(f=>{
+      if(f.startsWith("CRFD-Node")){
+        r = f.substring(f.indexOf("CRFD-Node")+10)
+        break
+      }
+    })
+    )
+    r
+  }
+  
 }

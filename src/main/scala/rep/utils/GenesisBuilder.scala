@@ -106,7 +106,7 @@ object GenesisBuilder {
     translist(13) = dep_asserts_trans
     
     // read invoke scala contract
-    val s3 = scala.io.Source.fromFile("scripts/set.json")
+    val s3 = scala.io.Source.fromFile("api_req/json/set.json")
     val ct1 = try s3.mkString finally s3.close()
     
     translist(14) = PeerHelper.createTransaction4Invoke("951002007l78123233.super_admin", cid2,

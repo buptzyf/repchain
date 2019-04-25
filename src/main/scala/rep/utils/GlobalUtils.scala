@@ -80,7 +80,7 @@ object GlobalUtils {
     val confirmerofblock = 16
     val gensisblock = 17
     val api = 18
-  
+    val preloadtransrouter = 19
   }
   
   

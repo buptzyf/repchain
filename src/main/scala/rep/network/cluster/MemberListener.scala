@@ -25,7 +25,7 @@ import rep.app.conf.SystemProfile
 import rep.network.Topic
 import rep.network.cluster.MemberListener.{ Recollection}
 import rep.network.tools.PeerExtension
-import rep.utils.GlobalUtils.ActorType
+import rep.utils.GlobalUtils.{ActorType,EventType}
 import rep.utils.{ TimeUtils}
 import org.slf4j.LoggerFactory
 import scala.collection.mutable.HashMap
@@ -34,6 +34,8 @@ import rep.network.sync.SyncMsg.StartSync
 import scala.util.control.Breaks._
 import scala.collection.mutable.ArrayBuffer
 import rep.log.RepLogger
+import rep.protos.peer.Event
+import rep.network.util.NodeHelp
 
 /**
   * Cluster节点状态监听模块
@@ -101,31 +103,9 @@ class MemberListener(MoudleName:String) extends ModuleBase(MoudleName) with Clus
   var nodes = Set.empty[ Address ]
   
 
-  private def isCandidatorNode(roles: Set[String]):Boolean = {
-    var r = false
-    breakable(
-    roles.foreach(f=>{
-      if(f.startsWith("CRFD-Node")){
-        r = true
-        break
-      }
-    })
-    )
-    r
-  }
   
-  private def getNodeName(roles: Set[String]):String = {
-    var r = ""
-    breakable(
-    roles.foreach(f=>{
-      if(f.startsWith("CRFD-Node")){
-        r = f.substring(f.indexOf("CRFD-Node")+10)
-        break
-      }
-    })
-    )
-    r
-  }
+  
+  
   
   def receive = {
 
@@ -139,8 +119,9 @@ class MemberListener(MoudleName:String) extends ModuleBase(MoudleName) with Clus
       state.members.foreach(m=>{
         if (m.status == MemberStatus.Up){
           nodes += m.address
-          if(this.isCandidatorNode(m.roles)){
-            snodes.append((m.address,this.getNodeName(m.roles)))
+          if(NodeHelp.isCandidatorNode(m.roles)){
+            snodes.append((m.address,NodeHelp.getNodeName(m.roles)))
+            sendEvent(EventType.PUBLISH_INFO, mediator, NodeHelp.getNodeName(m.roles), Topic.Event, Event.Action.MEMBER_UP)
           }
         }
       })
@@ -152,8 +133,9 @@ class MemberListener(MoudleName:String) extends ModuleBase(MoudleName) with Clus
       nodes += member.address
       RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("Member is Up: {}. {} nodes in cluster"+"~"+member.address+"~"+nodes.size))
       pe.getNodeMgr.putNode(member.address)
-      if(member.roles != null && !member.roles.isEmpty && this.isCandidatorNode(member.roles)){
-        preloadNodesMap.put(member.address, (TimeUtils.getCurrentTime(),this.getNodeName(member.roles)))
+      if(member.roles != null && !member.roles.isEmpty && NodeHelp.isCandidatorNode(member.roles)){
+        preloadNodesMap.put(member.address, (TimeUtils.getCurrentTime(),NodeHelp.getNodeName(member.roles)))
+        sendEvent(EventType.PUBLISH_INFO, mediator, NodeHelp.getNodeName(member.roles), Topic.Event, Event.Action.MEMBER_UP)
       }
       
       scheduler.scheduleOnce(TimePolicy.getSysNodeStableDelay millis,
@@ -168,6 +150,7 @@ class MemberListener(MoudleName:String) extends ModuleBase(MoudleName) with Clus
       preloadNodesMap.remove(member.address)
       pe.getNodeMgr.removeNode(member.address)
       pe.getNodeMgr.removeStableNode(member.address)
+      sendEvent(EventType.PUBLISH_INFO, mediator, NodeHelp.getNodeName(member.roles), Topic.Event, Event.Action.MEMBER_DOWN)
       
 
    

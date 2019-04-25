@@ -61,7 +61,7 @@ case class Transfer(from:String, to:String, amount:Int)
       // 跨合约读账户，该处并未反序列化
       if(ctx.api.getStateEx(chaincodeName,data.to)==null)
         throw ContractException("目标账户不存在")
-      val sfrom =  ctx.api.getVal(data.from)
+      val sfrom:Any =  ctx.api.getVal(data.from)
       var dfrom =sfrom.asInstanceOf[Int]
       if(dfrom < data.amount)
         throw ContractException("余额不足")
@@ -77,7 +77,7 @@ case class Transfer(from:String, to:String, amount:Int)
       ctx.api.setVal(data.to,dto + data.amount)
       val t2 = System.currentTimeMillis()      
       val s2 = s"setval end:${ctx.t.id} " + df.format(t2)
-      print(s1+"\n"+s2)
+      print("\n"+s1+"\n"+s2)
       null
     }
     /**

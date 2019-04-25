@@ -59,7 +59,9 @@ class EventActor extends ActorPublisher[Event] {
     mediator ! Subscribe(Topic.Event, self)   
     //发送当前出块人
     val pe = PeerExtension(context.system)
-    self ! new Event( pe.getBlocker.toString, "", Event.Action.CANDIDATOR) 
+    self ! new Event( pe.getBlocker.blocker.toString, "", Event.Action.CANDIDATOR) 
+    val ref = context.actorSelection("/user/modulemanager/memberlistener")
+    if(ref != null) ref ! cluster.state
   }
 
   /** 停止处理，取消订阅
@@ -91,7 +93,7 @@ class EventActor extends ActorPublisher[Event] {
         }  
       }
     //集群事件
-    case state: CurrentClusterState =>
+    /*case state: CurrentClusterState =>
       val iter = state.members.iterator;
       iter.foreach { m =>
         if (m.status == MemberStatus.Up){
@@ -115,7 +117,7 @@ class EventActor extends ActorPublisher[Event] {
         self ! new Event( member.address.toString,"",Event.Action.MEMBER_DOWN)
       }
     case _: MemberEvent => // ignore
-    
+    */
   }
 }
 

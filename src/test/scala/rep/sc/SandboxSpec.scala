@@ -92,7 +92,7 @@ class SandboxSpec(_system: ActorSystem)
     //准备探针以验证调用返回结果
     val probe = TestProbe()
     val db = ImpDataAccess.GetDataAccess(sysName)
-    val sandbox = system.actorOf(TransProcessor.props("sandbox",  probe.ref))
+    val sandbox = system.actorOf(TransProcessor.props("sandbox"))
 
     // 该处由于ContractAssetsTPL中判断用的ChainCodeIdName是用的系统设置，因此现在暂定为系统设置的
     val cid1 = ChaincodeId(SystemProfile.getAccountChaincodeName,1)

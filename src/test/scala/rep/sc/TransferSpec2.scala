@@ -52,7 +52,7 @@ class TransferSpec2(_system: ActorSystem)
   // or native.Serialization
   implicit val formats = DefaultFormats
 
-  "ContractAssetsTPL" should "can set assets and transfer from a to b" in {
+  "Contract deployed as CODE_SCALA " should "executes serially" in {
     val sysName = "121000005l35120456.node1"
     val dbTag = "121000005l35120456.node1"
     //建立PeerManager实例是为了调用transactionCreator(需要用到密钥签名)，无他
@@ -79,7 +79,7 @@ class TransferSpec2(_system: ActorSystem)
     //准备探针以验证调用返回结果
     val probe = TestProbe()
     val db = ImpDataAccess.GetDataAccess(sysName)
-    val sandbox = system.actorOf(TransProcessor.props("sandbox",  probe.ref))
+    val sandbox = system.actorOf(TransProcessor.props("sandbox"))
 
     val cid2 =  ChaincodeId(SystemProfile.getAccountChaincodeName,1)
     val cid1 = ChaincodeId("ContractAssetsTPL2",1)

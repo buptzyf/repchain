@@ -44,6 +44,7 @@ class PreloaderForTransaction(moduleName: String, transProcessor: ActorRef) exte
   private def ExecuteTransaction(t: Transaction, db_identifier: String): (Int, DoTransactionResult) = {
     try {
       val future1 = transProcessor ? new DoTransaction(t,  db_identifier)
+      //val future1 = pe.getActorRef(ActorType.preloadtransrouter) ? new DoTransaction(t,  db_identifier)
       val result = Await.result(future1, timeout.duration).asInstanceOf[DoTransactionResult]
       (0, result)
     } catch {
@@ -141,8 +142,6 @@ class PreloaderForTransaction(moduleName: String, transProcessor: ActorRef) exte
         }
         logTime("block preload inner time", System.currentTimeMillis(), false)
       }
-    case dr : DoTransactionResult=>
-      val a = dr
     case _ => //ignore
   }
 }

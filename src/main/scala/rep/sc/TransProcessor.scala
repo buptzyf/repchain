@@ -34,7 +34,6 @@ import rep.storage.IdxPrefix.WorldStateKeyPreFix
 import rep.utils.SerializeUtils
 import rep.api.rest.RestActor.loadTransaction
 import rep.network.tools.PeerExtension
-import rep.sc.js.SandboxJS
 import rep.sc.scalax.SandboxScala
 import rep.utils.SerializeUtils.deserialise
 import rep.utils.SerializeUtils.serialise
@@ -69,7 +68,7 @@ object TransProcessor {
    *  @param from 来源actor指向
    *  @param da 数据访问标示
    */
-  case class DoTransaction(t:Transaction,da:String)
+  final case class DoTransaction(t:Transaction,da:String)
   
   /** 本消息用于从存储恢复合约对应的sandbox
    *  @constructor 根据待执行交易、来源actor指向、数据访问标示建立实例
@@ -77,7 +76,7 @@ object TransProcessor {
    *  @param from 来源actor指向
    *  @param da 数据访问标示
    */
-  case class DeployTransaction(t:Transaction, da:String)
+  final case class DeployTransaction(t:Transaction, da:String)
  
   /** 根据传入参数返回actor的Props
    *  @param name actor的命名
@@ -85,7 +84,7 @@ object TransProcessor {
    *  @param parent 父actor指向
    *  @return 可用于创建actor的Props
    */
-  def props(name: String,  parent: ActorRef): Props = Props(classOf[TransProcessor], name,  parent)
+  def props(name: String): Props = Props(classOf[TransProcessor], name)
   
 }
 
@@ -97,7 +96,7 @@ object TransProcessor {
  * @param da 数据访问实例标示
  * @param parent 父actor指向
  */
-class TransProcessor(name: String,  parent: ActorRef) extends Actor {
+class TransProcessor(name: String) extends Actor {
   import TransProcessor._
   
    protected def log = LoggerFactory.getLogger(this.getClass)
@@ -137,10 +136,11 @@ class TransProcessor(name: String,  parent: ActorRef) extends Actor {
   def createActorByType(ctype: rep.protos.peer.ChaincodeDeploy.CodeType,
       cid:rep.protos.peer.ChaincodeId, sn:String): ActorRef = {
       ctype match{
-        case rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA => 
+        case rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA |
+        rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA_PARALLEL=> 
           context.actorOf(Props(new SandboxScala(cid)), sn)
         //默认采用jdk内置的javascript作为合约容器
-        case _ => context.actorOf(Props(new SandboxJS(cid)), sn)
+        case _ => context.actorOf(Props(new SandboxScala(cid)), sn)
       }    
   }
   /** 根据待处理交易，请求发送actor，数据访问实例标示获得用于处理合约的容器actor

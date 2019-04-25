@@ -70,6 +70,15 @@ class NodeMgr {
     source
   }
 
+  def getStableNodeName4Addr(addr:Address):String={
+    nodesStableLock.lock()
+    try {
+      stableNodes(addr)
+    } finally {
+      nodesStableLock.unlock()
+    }
+  }
+  
   def putStableNode(addr: Address, nodeName: String): Unit = {
     nodesStableLock.lock()
     try {

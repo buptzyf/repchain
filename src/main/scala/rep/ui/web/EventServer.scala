@@ -46,6 +46,12 @@ import rep.sc.Sandbox.SandboxException
 import rep.log.RepLogger
 import rep.app.conf.SystemProfile
 
+import rep.log.RecvEventActor
+import rep.log.EventActor4Stage
+import akka.stream.Graph
+import akka.stream.SourceShape
+import akka.NotUsed
+
 /** Event服务伴生对象
  *  @author c4w
  */
@@ -74,6 +80,10 @@ object EventServer {
     implicit val materializer = ActorMaterializer()
     implicit val executionContext = system.dispatcher
     
+    val evtactor = system.actorOf(Props[RecvEventActor],"RecvEventActor")
+    
+
+    
     //提供静态文件的web访问服务
     val route_evt =
       //提供swagger UI服务
@@ -86,10 +96,18 @@ object EventServer {
       path("event") {
         get {
           //must ref to the same actor
-         val source = Source.actorPublisher[Event](Props[EventActor]).map(evt =>  BinaryMessage(ByteString(evt.toByteArray)))   
+         //val source = Source.actorPublisher[Event](Props[EventActor]).map(evt =>  BinaryMessage(ByteString(evt.toByteArray))) 
+         //val sourceGraph: Graph[SourceShape[Event], NotUsed] = new EventActor4Stage(system)
+          val sourceGraph: Graph[SourceShape[Event], NotUsed] = new EventActor4Stage(evtactor)
+          val source: Source[Event, NotUsed] = Source.fromGraph(sourceGraph)
+          
+          
           extractUpgradeToWebSocket { upgrade =>
-            complete(upgrade.handleMessagesWithSinkSource(Sink.ignore, source))
+            complete(upgrade.handleMessagesWithSinkSource(Sink.ignore, source.map(evt => BinaryMessage(ByteString(evt.toByteArray)))))
           }
+         /*extractUpgradeToWebSocket { upgrade =>
+            complete(upgrade.handleMessagesWithSinkSource(Sink.ignore, source))
+          }*/
         }
       }
 

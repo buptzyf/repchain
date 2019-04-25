@@ -130,12 +130,12 @@ class TransactionPool(moduleName: String) extends ModuleBase(moduleName) {
         
         
         //广播发送交易事件
-        sendEvent(EventType.PUBLISH_INFO, mediator, selfAddr, Topic.Transaction, Event.Action.TRANSACTION)
+        sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)
       } else {
         //交易缓存,这里默认各个节点的交易缓存都是一致的。但是因为入网时间不一致，所有可能会有区别。最终以出块人的交易为准
         //TODO kami 验证交易签名和证书
         //val checkedTransactionResult = CheckedTransactionResult(true, "")
-        sendEvent(EventType.RECEIVE_INFO, mediator, selfAddr, Topic.Transaction, Event.Action.TRANSACTION)
+        sendEvent(EventType.RECEIVE_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)
         val checkedTransactionResult = checkTransaction(t, dataaccess)
         checkedTransactionResult.result match {
           case false => //ignore
