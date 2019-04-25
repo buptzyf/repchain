@@ -67,7 +67,7 @@ trait CRFDVoter extends VoterBase {
     randomArray
   }
   
-  override def candidators(nodes: Set[String], seed: Array[Byte]): Array[String] = {
+  override def candidators(Systemname:String,hash:String,nodes: Set[String], seed: Array[Byte]): Array[String] = {
     var nodesSeq = nodes.toSeq.sortBy(f=>(f.toString()))
     var len = nodes.size / 2 + 1
     val min_len = 4
@@ -89,6 +89,9 @@ trait CRFDVoter extends VoterBase {
         var e = randomList(j)
         candidate(j) = nodesSeq(e.generateSerial)
       }
+      RepLogger.debug(RepLogger.Vote_Logger, s"sysname=${Systemname},hash=${hash},hashvalue=${hashSeed},randomList=${randomList.mkString("|")}")
+      RepLogger.debug(RepLogger.Vote_Logger, s"sysname=${Systemname},candidates=${candidate.mkString("|")}")
+      
       candidate
     }
   }

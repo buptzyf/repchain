@@ -46,5 +46,5 @@ trait VoterBase {
     * @return
     */
   //def candidators[T](nodes:Set[T], seed:Array[Byte]):Set[T]
-  def candidators(nodes:Set[String], seed:Array[Byte]):Array[String]
+  def candidators(Systemname:String,hash:String,nodes:Set[String], seed:Array[Byte]):Array[String]
 }

@@ -30,7 +30,8 @@ class NodeMgr {
   //本地缓存稳定的网络节点
   private var stableNodes: TreeMap[Address, String] = new TreeMap[Address, String]()
   //本地上次候选人名单
-  private var candidator: TreeMap[String, String] = new TreeMap[String, String]()
+  //private var candidator: TreeMap[String, String] = new TreeMap[String, String]()
+  private var candidator: Set[String] = Set.empty[String]
 
   def getNodes: Set[Address] = {
     var source = Set.empty[Address]
@@ -146,14 +147,14 @@ class NodeMgr {
     var source = Set.empty[String]
     candidatorLock.lock()
     try {
-      source = candidator.values.toArray.toSet
+      source = candidator
     } finally {
       candidatorLock.unlock()
     }
     source
   }
 
-  private def putCandidator(addr: String): Unit = {
+  /*private def putCandidator(addr: String): Unit = {
     candidatorLock.lock()
     try {
       val key = addr.toString
@@ -161,18 +162,19 @@ class NodeMgr {
     } finally {
       candidatorLock.unlock()
     }
-  }
+  }*/
 
   def resetCandidator(nds: Array[String]): Unit = {
     candidatorLock.lock()
     try {
-      candidator = TreeMap.empty[String, String]
+      candidator = Set.empty[String]
+      candidator = nds.toSet
     } finally {
       candidatorLock.unlock()
     }
-    nds.foreach(addr => {
+    /*nds.foreach(addr => {
       putCandidator(addr)
-    })
+    })*/
   }
 
 }

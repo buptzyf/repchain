@@ -33,6 +33,7 @@ object RepLogger {
    def Storager_Logger = LoggerFactory.getLogger("Storager_Logger")
    def StatisTime_Logger = LoggerFactory.getLogger("StatisTime_Logger")
    def Sandbox_Logger = LoggerFactory.getLogger("Sandbox_Logger")
+   def Vote_Logger = LoggerFactory.getLogger("Vote_Logger")
    
    def trace(logger:Logger,msg:String)={
      logger.trace(msg)
