@@ -152,7 +152,12 @@ class RestActor(moduleName: String) extends  ModuleBase(moduleName) {
   implicit val timeout = Timeout(1000.seconds)
   val sr: ImpDataAccess = ImpDataAccess.GetDataAccess(pe.getSysTag)
 
+  // 先检查交易大小，然后再检查交易是否已存在，再去验证签名，如果没有问题，则广播
   def preTransaction(t:Transaction) : Unit ={
+    val tranLimitSize = SystemProfile.getBlockLength/3
+    if (t.toByteArray.length > tranLimitSize) {
+      sender ! PostResult(t.id, None, Option(s"交易大小超出限制： ${tranLimitSize}，请重新检查"))
+    }
     val sig = t.signature.get.signature.toByteArray
     val tOutSig = t.clearSignature
     val certId = t.signature.get.certId.get
@@ -161,30 +166,29 @@ class RestActor(moduleName: String) extends  ModuleBase(moduleName) {
         case st: Some[Transaction] =>
           sender ! PostResult(t.id, None, Option(s"transactionId is exists, the transaction is \n ${JsonFormat.toJson(st.get)}"))
         case None =>
-      }
-      SignTool.verify(sig, tOutSig.toByteArray, certId,pe.getSysTag) match {
-        case true =>
-          val future = pe.getActorRef(ActorType.preloadtransrouter) ? DoTransaction(t,"api_"+t.id)
-          val result = Await.result(future, timeout.duration).asInstanceOf[DoTransactionResult]
-          val rv = result
-          // 释放存储实例
-          ImpDataPreloadMgr.Free(pe.getSysTag,t.id)
-          rv.err match {
-            case None =>
-              //预执行正常,提交并广播交易
-              pe.getActorRef(ActorType.transactionpool) ! t // 给交易池发送消息 ！=》告知（getActorRef）
-              if (rv.r == null)
-                sender ! PostResult(t.id, None, None)
-              else
-                sender ! PostResult(t.id, Some(rv.r), None)  // legal_prose need
-            case Some(err) =>
-              //预执行异常,废弃交易，向api调用者发送异常
-              sender ! PostResult(t.id, None, Option(err.cause.getMessage))
+          SignTool.verify(sig, tOutSig.toByteArray, certId,pe.getSysTag) match {
+            case true =>
+              val future = pe.getActorRef(ActorType.preloadtransrouter) ? DoTransaction(t,"api_"+t.id)
+              val result = Await.result(future, timeout.duration).asInstanceOf[DoTransactionResult]
+              val rv = result
+              // 释放存储实例
+              ImpDataPreloadMgr.Free(pe.getSysTag,t.id)
+              rv.err match {
+                case None =>
+                  //预执行正常,提交并广播交易
+                  pe.getActorRef(ActorType.transactionpool) ! t // 给交易池发送消息 ！=》告知（getActorRef）
+                  if (rv.r == null)
+                    sender ! PostResult(t.id, None, None)
+                  else
+                    sender ! PostResult(t.id, Some(rv.r), None)  // legal_prose need
+                case Some(err) =>
+                  //预执行异常,废弃交易，向api调用者发送异常
+                  sender ! PostResult(t.id, None, Option(err.cause.getMessage))
+              }
+            case false =>
+              sender ! PostResult(t.id, None, Option("验证签名出错"))
           }
-        case false =>
-          sender ! PostResult(t.id, None, Option("验证签名出错"))
       }
-
     }catch{
       case e : RuntimeException =>
         sender ! PostResult(t.id, None, Option(e.getMessage))
