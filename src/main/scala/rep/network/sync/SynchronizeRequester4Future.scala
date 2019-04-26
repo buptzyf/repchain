@@ -51,7 +51,7 @@ class SynchronizeRequester4Future(moduleName: String) extends ModuleBase(moduleN
   private val responseActorName = "/user/modulemanager/synchresponser"
 
   override def preStart(): Unit = {
-    RepLogger.info(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix( "SynchronizeRequester4Future Start"))
+    RepLogger.info(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix("SynchronizeRequester4Future Start"))
   }
 
   private def toAkkaUrl(addr: Address, actorName: String): String = {
@@ -72,11 +72,11 @@ class SynchronizeRequester4Future(moduleName: String) extends ModuleBase(moduleN
         RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix("--------AsyncGetNodeOfChainInfo timeout"))
         null
       case te: TimeoutException =>
-        RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix( "--------AsyncGetNodeOfChainInfo java timeout"))
+        RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix("--------AsyncGetNodeOfChainInfo java timeout"))
         null
     }
 
-    RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"entry AsyncGetNodeOfChainInfo after,asyncVerifyTransaction=${result}"))
+    RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"entry AsyncGetNodeOfChainInfo after,chaininfo=${result}"))
     result
   }
 
@@ -102,7 +102,7 @@ class SynchronizeRequester4Future(moduleName: String) extends ModuleBase(moduleN
       }
     } catch {
       case te: TimeoutException =>
-        RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix( "--------AsyncGetNodeOfChainInfo java timeout"))
+        RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix("--------AsyncGetNodeOfChainInfo java timeout"))
         null
     }
   }
@@ -117,7 +117,7 @@ class SynchronizeRequester4Future(moduleName: String) extends ModuleBase(moduleN
 
       infos.foreach(f => {
         if (f != null) {
-          if (f.response.height >= localHeight) {
+          if (f.response.height > localHeight) {
             nodecount += 1
             if (nodeheight == 0) {
               nodeheight = f.response.height
@@ -141,6 +141,10 @@ class SynchronizeRequester4Future(moduleName: String) extends ModuleBase(moduleN
         } else if (nodeheight > 0) {
           majority = GreatMajority(addr, nodeheight)
         }
+      } else {
+        if (nodeheight == 1 && localHeight == 0 && oneAddr != null) {
+          majority = GreatMajority(oneAddr, 1)
+        }
       }
     }
     majority
@@ -148,18 +152,19 @@ class SynchronizeRequester4Future(moduleName: String) extends ModuleBase(moduleN
 
   private def getBlockData(height: Long, ref: ActorRef): Boolean = {
     try {
+      
       val future1 = ref ? BlockDataOfRequest(height)
       //logMsg(LogType.INFO, "--------AsyncGetNodeOfChainInfo success")
       var result = Await.result(future1, timeout.duration).asInstanceOf[BlockDataOfResponse]
-      RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix( s"height=${height}--------AsyncGetNodeOfChainInfo success"))
-      pe.getActorRef(ActorType.storager) ! result
+      RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"height=${height}--------getBlockData success"))
+      pe.getActorRef(ActorType.storager) ! BlockRestore(result.data, SourceOfBlock.SYNC_BLOCK, ref)
       true
     } catch {
       case e: AskTimeoutException =>
-        RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(  "--------getBlockData timeout"))
+        RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix("--------getBlockData timeout"))
         false
       case te: TimeoutException =>
-        RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix( "--------getBlockData java timeout"))
+        RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix("--------getBlockData java timeout"))
         false
     }
   }
@@ -181,8 +186,27 @@ class SynchronizeRequester4Future(moduleName: String) extends ModuleBase(moduleN
   private def Handler = {
     val nodes = pe.getNodeMgr.getStableNodes
     val res = AsyncGetNodeOfChainInfos(nodes)
+    
     val majority = getSyncInfo(res, nodes.size, pe.getCurrentHeight)
+
     getBlockDatas(majority)
+    if (majority != null) {
+      var count = 0
+      breakable(
+        while (count <= 10) {
+          RepLogger.info(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"waiting block save,localheight=${pe.getCurrentHeight},expectheight=${majority.height}"))
+          if (pe.getCurrentHeight < majority.height) {
+            try {
+              Thread.sleep(1000)
+            } catch {
+              case e: Exception => RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"waiting block save,localheight=${pe.getCurrentHeight}"))
+            }
+          } else {
+            break
+          }
+          count += 1
+        })
+    }
   }
 
   private def initSystemChainInfo = {
@@ -202,7 +226,7 @@ class SynchronizeRequester4Future(moduleName: String) extends ModuleBase(moduleN
         if (isNoticeModuleMgr)
           pe.getActorRef(ActorType.modulemanager) ! ModuleManager.startup_Consensus
       } else {
-        RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(  s"too few node,min=${SystemProfile.getVoteNoteMin} or synching  from actorAddr" + "～" + NodeHelp.getNodePath(sender())))
+        RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"too few node,min=${SystemProfile.getVoteNoteMin} or synching  from actorAddr" + "～" + NodeHelp.getNodePath(sender())))
       }
 
     case SyncRequestOfStorager(responser, maxHeight) =>

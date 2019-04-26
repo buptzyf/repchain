@@ -235,8 +235,11 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
   override def receive = {
     //Endorsement block
     case EndorsementInfo(block, blocker) =>
-      
-      EndorseHandler(EndorsementInfo(block, blocker))
+      if(!pe.isSynching){
+        EndorseHandler(EndorsementInfo(block, blocker))
+      }else{
+        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("do not endorse,it is synching."))
+      }
 
     case _ => //ignore
   }

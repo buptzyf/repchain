@@ -70,6 +70,7 @@ class Storager(moduleName: String) extends ModuleBase(moduleName) {
   private def SaveBlock(blkRestore: BlockRestore): Integer = {
     var re: Integer = 0
     try {
+     
       RepLogger.trace(RepLogger.Storager_Logger, this.getLogMsgPrefix( s"PreBlockHash(Before presistence): ${pe.getCurrentBlockHash}" + "~" + selfAddr))
       val result = dataaccess.restoreBlock(blkRestore.blk)
       if (result._1) {
