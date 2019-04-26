@@ -85,8 +85,8 @@ class PropertyTPL2 extends IContract{
   def propertyTranRetrieval(ctx: ContractContext, dataMap: RetrievalDataMap): Object = {
     val result = new scala.collection.mutable.HashMap[String,Any]
     for (data <- dataMap) {
-      val houseId = ctx.api.getVal(data._1)
-      if (houseId == null)
+      val tranId = ctx.api.getVal(data._1)
+      if (tranId == null)
         result.put(data._1, false)
       else
         result.put(data._1, true)
