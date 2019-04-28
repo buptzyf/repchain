@@ -27,10 +27,11 @@ import rep.log.RepLogger
 import akka.routing._;
 
 
+
 object BlockStubActor {
   def props(name: String): Props = Props(classOf[BlockStubActor], name)
   
-  //case class 
+  case class WriteBlockStub(trans:Set[Transaction])
   
 }
 
@@ -40,41 +41,55 @@ class BlockStubActor(moduleName: String) extends ModuleBase(moduleName) {
   import scala.concurrent.duration._
   import scala.collection.immutable._
   import rep.utils.IdTool
+  import rep.sc.BlockStubActor._
+  import rep.network.consensus.block.Blocker
+  import rep.network.consensus.util.BlockHelp
+  import rep.network.persistence.Storager.{SourceOfBlock,BlockRestore}
 
-  private var TransActors: HashMap[String, ActorRef] = new HashMap[String, ActorRef]()
+  implicit val timeout = Timeout(TimePolicy.getTimeoutPreload seconds)
 
+  private def ExecuteTransactionOfBlock(block: Block): Block = {
+    try {
+      val future = pe.getActorRef(ActorType.preloaderoftransaction) ? Blocker.PreTransBlock(block, "preload")
+      val result = Await.result(future, timeout.duration).asInstanceOf[PreTransBlockResult]
+      if (result.result) {
+        result.blc
+      } else {
+        null
+      }
+    } catch {
+      case e: AskTimeoutException => null
+    }
+  }
+
+  private def CreateBlock(trans:Set[Transaction]): Block = {
+    //todo 交易排序
+    if (trans.size > SystemProfile.getMinBlockTransNum) {
+      var blc = BlockHelp.WaitingForExecutionOfBlock(pe.getCurrentBlockHash, pe.getCurrentHeight + 1, trans.toSeq)
+      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,height=${blc.height},local height=${pe.getCurrentHeight}" + "~" + selfAddr))
+      blc = ExecuteTransactionOfBlock(blc)
+      if (blc != null) {
+        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"create new block,prelaod success,height=${blc.height},local height=${pe.getCurrentHeight}" + "~" + selfAddr))
+        blc = BlockHelp.AddBlockHash(blc)
+        BlockHelp.AddSignToBlock(blc, pe.getSysTag)
+      } else {
+        null
+      }
+    } else {
+      null
+    }
+  }
+  
   override def preStart(): Unit = {
-    RepLogger.info(RepLogger.Consensus_Logger, this.getLogMsgPrefix("TransactionDispatcher Start"))
-  }
-
-  private def HasTransActor(cid: String): Boolean = {
-    if (this.TransActors.contains(cid)) {
-      true
-    } else {
-      false
-    }
-  }
-
-  private def CheckTransActor(cid: String): ActorRef = {
-    if (HasTransActor(cid)) {
-      RepLogger.debug(RepLogger.Sandbox_Logger, s"sandbox dispatcher for ${cid} is exist.")
-      this.TransActors(cid)
-    } else {
-      val sd = context.actorOf(SandboxDispatcher.props("sandbox_dispatcher_" + cid, cid), "sandbox_dispatcher_" + cid)
-      this.TransActors += cid -> sd
-      RepLogger.debug(RepLogger.Sandbox_Logger, s"create sandbox dispatcher for ${cid} .")
-      sd
-    }
+    RepLogger.info(RepLogger.Consensus_Logger, this.getLogMsgPrefix("BlockStubActor Start"))
   }
 
   override def receive = {
-    case tr: DoTransaction =>
-      if (tr.t != null) {
-        val ref: ActorRef = CheckTransActor(IdTool.getTXCId(tr.t))
-        ref.forward(tr)
-      } else {
-        RepLogger.error(RepLogger.Business_Logger, this.getLogMsgPrefix(s"recv DoTransaction is null"))
-      }
+    case wb: WriteBlockStub =>
+     val newblock =  CreateBlock(wb.trans)
+     if(newblock != null){
+       pe.getActorRef(ActorType.storager) ! BlockRestore(newblock, SourceOfBlock.SYNC_BLOCK, self)
+     }
     case _ => //ignore
   }
 }
