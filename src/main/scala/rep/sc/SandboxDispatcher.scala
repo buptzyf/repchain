@@ -96,7 +96,7 @@ class SandboxDispatcher(moduleName: String, cid: String) extends ModuleBase(modu
   import scala.collection.immutable._
 
   var ContractState: ContractStateType.Value = ContractStateType.ContractInNone
-  var txidOfContractDeploy: String = ""
+  //var txidOfContractDeploy: String = ""
   private var RouterOfParallelSandboxs: Router = null
   private var SerialSandbox: ActorRef = null
 
@@ -115,8 +115,9 @@ class SandboxDispatcher(moduleName: String, cid: String) extends ModuleBase(modu
     if (txid == null) {
       None
     } else {
-      this.txidOfContractDeploy = deserialise(txid).asInstanceOf[String]
-      db.getTransDataByTxId(this.txidOfContractDeploy)
+      //this.txidOfContractDeploy = deserialise(txid).asInstanceOf[String]
+      //db.getTransDataByTxId(this.txidOfContractDeploy)
+      db.getTransDataByTxId(deserialise(txid).asInstanceOf[String])
     }
   }
 
@@ -131,10 +132,10 @@ class SandboxDispatcher(moduleName: String, cid: String) extends ModuleBase(modu
     val snapshot = ImpDataPreloadMgr.GetImpDataPreload(pe.getSysTag, da)
     val txid = snapshot.Get(key_tx)
     if (txid != null) {
-      val txid_str = deserialise(txid).asInstanceOf[String]
-      if (txid_str == this.txidOfContractDeploy) {
+      //val txid_str = deserialise(txid).asInstanceOf[String]
+      //if (txid_str == this.txidOfContractDeploy) {
         b = true
-      }
+      //}
     }
     b
   }
@@ -150,7 +151,11 @@ class SandboxDispatcher(moduleName: String, cid: String) extends ModuleBase(modu
         //cc not exist
         if (t.`type` == Transaction.Type.CHAINCODE_DEPLOY) {
           this.ContractState = ContractStateType.ContractInSnapshot
-          this.txidOfContractDeploy = t.id
+          if (IsContractInSnapshot(da)) {
+            throw new SandboxException(ERR_REPEATED_CID)
+          }else{
+            this.ContractState = ContractStateType.ContractInSnapshot
+          }
         } else {
           if (IsContractInSnapshot(da)) {
             //contract in snapshot
