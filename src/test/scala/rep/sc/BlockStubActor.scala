@@ -15,8 +15,8 @@ import rep.network.consensus.block.Blocker.{ PreTransBlock, PreTransBlockResult 
 import rep.network.tools.PeerExtension
 import rep.network.Topic
 import rep.protos.peer._
-import rep.sc.Sandbox.DoTransactionResult
 import rep.sc.SandboxDispatcher.DoTransaction
+import rep.sc.Sandbox.DoTransactionResult
 import rep.storage.{ ImpDataPreloadMgr }
 import rep.utils.GlobalUtils.ActorType
 import rep.utils._
@@ -26,11 +26,15 @@ import rep.crypto.Sha256
 import rep.log.RepLogger
 import akka.routing._;
 
-object TransactionDispatcher {
-  def props(name: String): Props = Props(classOf[TransactionDispatcher], name)
+
+object BlockStubActor {
+  def props(name: String): Props = Props(classOf[BlockStubActor], name)
+  
+  //case class 
+  
 }
 
-class TransactionDispatcher(moduleName: String) extends ModuleBase(moduleName) {
+class BlockStubActor(moduleName: String) extends ModuleBase(moduleName) {
   import context.dispatcher
   import scala.collection.breakOut
   import scala.concurrent.duration._

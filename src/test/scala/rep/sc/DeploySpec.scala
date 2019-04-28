@@ -61,8 +61,8 @@ class DeploySpec(_system: ActorSystem)
   with FlatSpecLike
   with BeforeAndAfterAll {
 
-  import rep.sc.TransProcessor.DoTransaction
   import rep.sc.Sandbox.DoTransactionResult
+  import rep.sc.SandboxDispatcher.DoTransaction
 
   import akka.testkit.TestProbe
   import akka.testkit.TestActorRef
@@ -91,28 +91,28 @@ class DeploySpec(_system: ActorSystem)
     //准备探针以验证调用返回结果
     val probe = TestProbe()
     val db = ImpDataAccess.GetDataAccess(sysName)
-    var sandbox = system.actorOf(TransProcessor.props("sandbox"))
+    var sandbox =  system.actorOf(TransactionDispatcher.props("transactiondispatcher"),"transactiondispatcher")
     //生成deploy交易
     val cid = new ChaincodeId("Assets",1)
     val t1 = PeerHelper.createTransaction4Deploy(sysName, cid,
        l1, "",5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
 
-    val msg_send1 = new DoTransaction(t1,  "dbnumber")
+    val msg_send1 = new DoTransaction(t1,  "dbnumber",TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send1)
     val msg_recv1 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
     msg_recv1.err should be (None)
     
     //同样合约id不允许重复部署
-    val msg_send2 = new DoTransaction(t1,  "dbnumber")
+    val msg_send2 = new DoTransaction(t1,  "dbnumber",TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send1)
     val msg_recv2 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-    msg_recv2.err.get.cause.getMessage should be (TransProcessor.ERR_REPEATED_CID)
+    msg_recv2.err.get.cause.getMessage should be (SandboxDispatcher.ERR_REPEATED_CID)
 
     val cid3 = new ChaincodeId("Assets",2)
      //同一合约部署者允许部署同样名称不同版本合约
     val t3 = PeerHelper.createTransaction4Deploy(sysName, cid3,
        l1, "",5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
-    val msg_send3 = new DoTransaction(t3,  "dbnumber")
+    val msg_send3 = new DoTransaction(t3,  "dbnumber",TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send3)
     val msg_recv3 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
     msg_recv3.err should be (None)
@@ -126,10 +126,10 @@ class DeploySpec(_system: ActorSystem)
    
     val t4 = PeerHelper.createTransaction4Deploy(sysName2, cid4,
        l1, "",5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
-    val msg_send4 = new DoTransaction(t4,  "dbnumber")
+    val msg_send4 = new DoTransaction(t4,  "dbnumber",TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send4)
     val msg_recv4 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-    msg_recv4.err.get.cause.getMessage should be (TransProcessor.ERR_CODER)
+    msg_recv4.err.get.cause.getMessage should be (SandboxDispatcher.ERR_CODER)
     
   }
 }

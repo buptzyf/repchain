@@ -25,9 +25,6 @@ import scala.concurrent.duration._
 import akka.pattern.ask
 
 import scala.concurrent._
-import rep.sc.TransProcessor
-import rep.sc.TransProcessor._
-import rep.sc.Sandbox._
 import rep.protos.peer._
 import rep.crypto._
 import rep.sc.Shim._
@@ -46,6 +43,9 @@ import rep.crypto.cert.SignTool
 import rep.protos.peer.ActionResult
 import rep.app.conf.SystemProfile
 import rep.network.base.ModuleBase
+import rep.sc.TypeOfSender
+import rep.sc.SandboxDispatcher.DoTransaction
+import rep.sc.Sandbox.DoTransactionResult
 /**
   * RestActor伴生object，包含可接受的传入消息定义，以及处理的返回结果定义。
   * 以及用于建立Tranaction，检索Tranaction的静态方法
@@ -147,7 +147,7 @@ class RestActor(moduleName: String) extends  ModuleBase(moduleName) {
       }
       SignTool.verify(sig, tOutSig.toByteArray, certId,pe.getSysTag) match {
         case true =>
-          val future = pe.getActorRef(ActorType.preloadtransrouter) ? DoTransaction(t,"api_"+t.id)
+          val future = pe.getActorRef(ActorType.transactiondispatcher) ? DoTransaction(t,"api_"+t.id,TypeOfSender.FromAPI)
           val result = Await.result(future, timeout.duration).asInstanceOf[DoTransactionResult]
           val rv = result
           // 释放存储实例

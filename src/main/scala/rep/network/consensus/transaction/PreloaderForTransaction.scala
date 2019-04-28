@@ -31,8 +31,7 @@ import rep.network.consensus.block.Blocker.{ PreTransBlock, PreTransBlockResult}
 import rep.network.tools.PeerExtension
 import rep.network.Topic
 import rep.protos.peer._
-import rep.sc.TransProcessor.DoTransaction
-import rep.sc.{ Sandbox, TransProcessor }
+import rep.sc.SandboxDispatcher.DoTransaction
 import rep.sc.Sandbox.DoTransactionResult
 import rep.storage.{ ImpDataPreloadMgr }
 import rep.utils.GlobalUtils.ActorType
@@ -41,12 +40,13 @@ import scala.collection.mutable
 import akka.pattern.AskTimeoutException
 import rep.crypto.Sha256
 import rep.log.RepLogger
+import rep.sc.TypeOfSender
 
 object PreloaderForTransaction {
-  def props(name: String, transProcessor: ActorRef): Props = Props(classOf[PreloaderForTransaction], name, transProcessor)
+  def props(name: String): Props = Props(classOf[PreloaderForTransaction], name)
 }
 
-class PreloaderForTransaction(moduleName: String, transProcessor: ActorRef) extends ModuleBase(moduleName) {
+class PreloaderForTransaction(moduleName: String) extends ModuleBase(moduleName) {
   import context.dispatcher
   import scala.collection.breakOut
   import scala.concurrent.duration._
@@ -59,7 +59,7 @@ class PreloaderForTransaction(moduleName: String, transProcessor: ActorRef) exte
 
   private def ExecuteTransaction(t: Transaction, db_identifier: String): (Int, DoTransactionResult) = {
     try {
-      val future1 = transProcessor ? new DoTransaction(t,  db_identifier)
+      val future1 = pe.getActorRef(ActorType.transactiondispatcher) ? new DoTransaction(t,  db_identifier,TypeOfSender.FromPreloader)
       //val future1 = pe.getActorRef(ActorType.preloadtransrouter) ? new DoTransaction(t,  db_identifier)
       val result = Await.result(future1, timeout.duration).asInstanceOf[DoTransactionResult]
       (0, result)
