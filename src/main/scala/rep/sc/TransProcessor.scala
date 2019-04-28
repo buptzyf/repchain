@@ -32,12 +32,12 @@ import java.lang.Exception
 
 import rep.storage.IdxPrefix.WorldStateKeyPreFix
 import rep.utils.SerializeUtils
-import rep.api.rest.RestActor.loadTransaction
 import rep.network.tools.PeerExtension
 import rep.sc.scalax.SandboxScala
 import rep.utils.SerializeUtils.deserialise
 import rep.utils.SerializeUtils.serialise
 import org.slf4j.LoggerFactory
+import rep.utils.IdTool
 
 /** 伴生对象，预定义了交易处理的异常描述，传入消息的case类，以及静态方法
  *  @author c4w
@@ -151,7 +151,7 @@ class TransProcessor(name: String) extends Actor {
    */
   def getSandboxActor(t: Transaction, da:String): ActorRef = {
     //如果已经有对应的actor实例，复用之，否则建实例,actor name加字母前缀
-    val tx_cid = getTXCId(t)
+    val tx_cid = IdTool.getTXCId(t)
     val cid = t.cid.get
     //检查交易是否有效，无效抛出异常
     //deploy之后紧接着调用同合约的invoke,会导致检查失败
@@ -173,7 +173,7 @@ class TransProcessor(name: String) extends Actor {
             val deploy_tx_id =sr.Get(key_tx) 
             if(deploy_tx_id==null)
               throw new SandboxException(ERR_INVOKE_CHAINCODE_NOT_EXIST)            
-            val tx_deploy = loadTransaction(sr, deserialise(deploy_tx_id).asInstanceOf[String]).get
+            val tx_deploy = sr.getTransDataByTxId( deserialise(deploy_tx_id).asInstanceOf[String]).get
             // acto新建之后需要从持久化恢复的chainCode
             // 根据tx_deploy的类型决定采用js合约容器或者scala合约容器          
             val actor = createActorByType(  tx_deploy.para.spec.get.ctype, cid, sn)

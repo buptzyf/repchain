@@ -28,6 +28,8 @@ import org.slf4j.LoggerFactory
 import com.google.protobuf.ByteString
 import org.json4s._
 import rep.log.RepLogger
+import rep.utils.IdTool
+import rep.sc.SandboxDispatcher.DoTransactionOfSandbox
 
 /**
  * @author c4w
@@ -37,8 +39,10 @@ class SandboxJS(cid:ChaincodeId) extends Sandbox(cid){
   val sandbox= new ScriptEngineManager().getEngineByName("nashorn")
   sandbox.put("shim",shim)
   
-  override def doTransaction(t:Transaction, da:String, isForInvoke:Boolean):DoTransactionResult ={
+  override def doTransaction(dotrans: DoTransactionOfSandbox):DoTransactionResult ={
     //上下文可获得交易
+    val t = dotrans.t
+    val da = dotrans.da
     sandbox.put("tx", t)
     //for test print sandbox id
     sandbox.put("addr_self", this.addr_self)
@@ -49,7 +53,7 @@ class SandboxJS(cid:ChaincodeId) extends Sandbox(cid){
     //如果执行中出现异常,返回异常
     try{
       val cs = t.para.spec.get.codePackage
-      val cid = getTXCId(t)
+      val cid = IdTool.getTXCId(t)
       val r:ActionResult = t.`type` match {
         //部署合约时执行整个合约脚本，驻留funcs
         case Transaction.Type.CHAINCODE_DEPLOY => 
@@ -73,7 +77,7 @@ class SandboxJS(cid:ChaincodeId) extends Sandbox(cid){
          shim.ol.toList,None)
     }catch{
       case e: Exception => 
-        log.error(t.id, e)
+        RepLogger.except(RepLogger.Sandbox_Logger, t.id, e)
         
         //val e1 = new Exception(e.getMessage, e.getCause)
         //akka send 无法序列化原始异常,简化异常信息

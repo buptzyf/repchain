@@ -58,21 +58,7 @@ class TransferSpec3(_system: ActorSystem)
   
   implicit val timeout = Timeout(3 seconds)
   
-  private def asyncPreload(dt: DoTransaction,probe:TestProbe,sandbox2:ActorRef,i:Int): Future[Boolean] = {
-    val result = Promise[Boolean]
-    println(s"probe before ${i}")
-    probe.send(sandbox2, dt)
-    println(s"probe after ${i}")
-    val msg_recv6 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-    if(msg_recv6.err.isEmpty){
-      println(s"probe result success ${i}")
-      result.success(true)
-    }else{
-      println(s"probe result failed ${i}")
-      result.success(false)
-    }
-    result.future
-  }
+  
   
   def this() = this(ActorSystem("TransferSpec", new ClusterSystem("121000005l35120456.node1", InitType.MULTI_INIT, false).getConf))
 
@@ -158,28 +144,7 @@ class TransferSpec3(_system: ActorSystem)
 
     Thread.sleep(5000) 
     
- /*   var ts = new Array[(DoTransaction,Int)](tcs.length)
-    for (i <- 0 until tcs.length){
-        val t6 = PeerHelper.createTransaction4Invoke(sysName, cid1, ACTION.transfer, Seq(write(tcs(i))))
-        val msg_send6 = DoTransaction(t6,   "dbnumber")
-        ts(i) = (msg_send6,i)
-    }    
-    
-    val listOfFuture: Seq[Future[Boolean]] = ts.map(x => {
-      println(s"&&&&&&&&&&&${x._2}")
-      asyncPreload(x._1,probe,sandbox2,x._2)
-    })
-    println("####1")
-    val futureOfList: Future[List[Boolean]] = Future.sequence(listOfFuture.toList)
-    println("******2")
-    val result1 = Await.result(futureOfList, timeout.duration).asInstanceOf[List[Boolean]]
-    println("******3")
-    if(result1 != null)
-      println("--------parallel result ----"+result1.mkString(","))
-    else
-      println("--------parallel result ----"+"get error ,result1 is null")
-    
-*/    
+ 
     
     for (i <- 0 until tcs.length){
         val t6 = PeerHelper.createTransaction4Invoke(sysName, cid1, ACTION.transfer, Seq(write(tcs(i))))

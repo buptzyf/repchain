@@ -34,6 +34,7 @@ import rep.protos.peer.OperLog
 import scala.collection.mutable._
 import rep.network.consensus.util.BlockHelp
 import rep.log.RepLogger
+import rep.utils.SerializeUtils.deserialise
 
 /**
  * @author jiangbuyun
@@ -178,6 +179,59 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
     rb
   }
 
+   /**
+   * @author jiangbuyun
+   * @version	1.0
+   * @since	2019-04-28
+   * @category	根据交易id获取这个交易隶属的block
+   * @param	bh String 交易的id
+   * @return	返回Block对象，如果没有找到，返回null
+   */
+  def getBlock4ObjectByTxId(bh:String):Block={
+    val bb = getBlockByTxId(bh)
+    bb match {
+      case null => null
+      case _ =>
+        Block.parseFrom(bb)
+    }
+  }
+  
+  
+  /**
+   * @author jiangbuyun
+   * @version	1.0
+   * @since	2019-04-28
+   * @category	根据交易Id值获取指定交易
+   * @param	txid String 交易的Id值
+   * @return	返回Transaction对象，如果没有找到，返回None
+   */
+  def getTransDataByTxId(txid:String):Option[Transaction]={
+    val b = getBlock4ObjectByTxId(txid)
+    b match {
+      case null => None
+      case _ =>
+        b.transactions.find(_.id == txid)
+    }
+  }
+  
+  /**
+   * @author jiangbuyun
+   * @version	1.0
+   * @since	2019-04-28
+   * @category	根据chaincodeid获取指定交易
+   * @param	cid String 链码id
+   * @return	返回Transaction对象，如果没有找到，返回None
+   */
+  def getTransOfContractFromChaincodeId(cid:String): Option[Transaction]={
+    val txid = Get(cid)
+    if (txid == null) {
+      None
+    } else {
+      getTransDataByTxId(deserialise(txid).asInstanceOf[String])
+    }
+  }
+  
+  
   /**
    * @author jiangbuyun
    * @version	0.7

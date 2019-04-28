@@ -11,7 +11,7 @@ import com.google.protobuf.ByteString
 import com.google.protobuf.timestamp.Timestamp
 import rep.app.conf.{ SystemProfile, TimePolicy }
 import rep.network.base.ModuleBase
-import rep.network.consensus.block.Blocker.{ PreTransBlock, PreTransBlockResult}
+import rep.network.consensus.block.Blocker.{ PreTransBlock, PreTransBlockResult }
 import rep.network.tools.PeerExtension
 import rep.network.Topic
 import rep.protos.peer._
@@ -35,53 +35,40 @@ class TransactionDispatcher(moduleName: String) extends ModuleBase(moduleName) {
   import scala.collection.breakOut
   import scala.concurrent.duration._
   import scala.collection.immutable._
+  import rep.utils.IdTool
 
-  private var TransActors : HashMap[String,ActorRef] = new HashMap[String,ActorRef]()
+  private var TransActors: HashMap[String, ActorRef] = new HashMap[String, ActorRef]()
 
   override def preStart(): Unit = {
-    RepLogger.info(RepLogger.Consensus_Logger, this.getLogMsgPrefix( "TransactionDispatcher Start"))
+    RepLogger.info(RepLogger.Consensus_Logger, this.getLogMsgPrefix("TransactionDispatcher Start"))
   }
 
-  /** 根据合约的链码定义获得其唯一标示
-   *  @param c 链码Id
-   *  @return 链码id字符串
-   */
-  private def getChaincodeId(c: ChaincodeId): String={
-    IdTool.getCid(c)
-  }  
-  /** 从部署合约的交易，获得其部署的合约的链码id
-   *  @param t 交易对象
-   *  @return 链码id
-   */
-  private def getTXCId(t: Transaction): String = {
-    val t_cid = t.cid.get
-    getChaincodeId(t_cid)
-  } 
-  
-  private def HasTransActor(cid:String):Boolean = {
-    if(this.TransActors.contains(cid)){
+  private def HasTransActor(cid: String): Boolean = {
+    if (this.TransActors.contains(cid)) {
       true
-    }else{
+    } else {
       false
     }
   }
-  
-  private def CheckTransActor(cid:String) : ActorRef = {
-    if(HasTransActor(cid)){
+
+  private def CheckTransActor(cid: String): ActorRef = {
+    if (HasTransActor(cid)) {
+      RepLogger.debug(RepLogger.Sandbox_Logger, s"sandbox dispatcher for ${cid} is exist.")
       this.TransActors(cid)
-    }else{
-      val sd = context.actorOf( SandboxDispatcher.props("sandbox_dispatcher_"+cid,cid), "sandbox_dispatcher_"+cid )
+    } else {
+      val sd = context.actorOf(SandboxDispatcher.props("sandbox_dispatcher_" + cid, cid), "sandbox_dispatcher_" + cid)
       this.TransActors += cid -> sd
+      RepLogger.debug(RepLogger.Sandbox_Logger, s"create sandbox dispatcher for ${cid} .")
       sd
     }
   }
-  
+
   override def receive = {
-    case tr:DoTransaction =>
-      if(tr.t != null){
-        val ref : ActorRef = CheckTransActor(getTXCId(tr.t)) 
+    case tr: DoTransaction =>
+      if (tr.t != null) {
+        val ref: ActorRef = CheckTransActor(IdTool.getTXCId(tr.t))
         ref.forward(tr)
-      }else{
+      } else {
         RepLogger.error(RepLogger.Business_Logger, this.getLogMsgPrefix(s"recv DoTransaction is null"))
       }
     case _ => //ignore
