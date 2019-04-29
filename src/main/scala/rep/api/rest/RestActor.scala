@@ -166,9 +166,8 @@ class RestActor(moduleName: String) extends  ModuleBase(moduleName) {
         case st: Some[Transaction] =>
           sender ! PostResult(t.id, None, Option(s"transactionId is exists, the transaction is \n ${JsonFormat.toJson(st.get)}"))
         case None =>
-          SignTool.verify(sig, tOutSig.toByteArray, certId,pe.getSysTag) match {
-            case true =>
-              val future = pe.getActorRef(ActorType.preloadtransrouter) ? DoTransaction(t,"api_"+t.id)
+          if (SignTool.verify(sig, tOutSig.toByteArray, certId,pe.getSysTag)) {
+              val future = pe.getActorRef(ActorType.preloadtransrouter) ? DoTransaction(t, "api_" + t.id)
               val result = Await.result(future, timeout.duration).asInstanceOf[DoTransactionResult]
               val rv = result
               // 释放存储实例
@@ -185,8 +184,8 @@ class RestActor(moduleName: String) extends  ModuleBase(moduleName) {
                   //预执行异常,废弃交易，向api调用者发送异常
                   sender ! PostResult(t.id, None, Option(err.cause.getMessage))
               }
-            case false =>
-              sender ! PostResult(t.id, None, Option("验证签名出错"))
+          } else {
+            sender ! PostResult(t.id, None, Option("验证签名出错"))
           }
       }
     }catch{

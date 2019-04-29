@@ -115,9 +115,6 @@ class ContractCert  extends IContract {
     }
   }
 
-  // TODO
-  def rollback(map: Map[String, Byte]): Unit = {}
-
   /**
     * 用户证书禁用、启用
     * @param ctx
