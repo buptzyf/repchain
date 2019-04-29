@@ -99,6 +99,7 @@ class SandboxDispatcher(moduleName: String, cid: String) extends ModuleBase(modu
   //var txidOfContractDeploy: String = ""
   private var RouterOfParallelSandboxs: Router = null
   private var SerialSandbox: ActorRef = null
+  private var DeployTransactionCache : Transaction = null
 
   //设置同步处理请求的最大等待时间
   implicit val timeout = Timeout(1000.seconds)
@@ -145,16 +146,16 @@ class SandboxDispatcher(moduleName: String, cid: String) extends ModuleBase(modu
    * @author jiangbuyun
    */
   private def SetContractState(t: Transaction, da: String) = {
-    if (this.ContractState == ContractStateType.ContractInSnapshot || this.ContractState == ContractStateType.ContractInSnapshot) {
+    if (this.ContractState == ContractStateType.ContractInSnapshot || this.ContractState == ContractStateType.ContractInNone) {
       val ctx = getTransOfContractFromLevelDB
       if (ctx == None) {
         //cc not exist
         if (t.`type` == Transaction.Type.CHAINCODE_DEPLOY) {
-          this.ContractState = ContractStateType.ContractInSnapshot
           if (IsContractInSnapshot(da)) {
             throw new SandboxException(ERR_REPEATED_CID)
           }else{
             this.ContractState = ContractStateType.ContractInSnapshot
+            this.DeployTransactionCache = t
           }
         } else {
           if (IsContractInSnapshot(da)) {
@@ -170,6 +171,7 @@ class SandboxDispatcher(moduleName: String, cid: String) extends ModuleBase(modu
       } else {
         //cc exist,contract in leveldb
         this.ContractState = ContractStateType.ContractInLevelDB
+        this.DeployTransactionCache = ctx.get
       }
     }
   }
@@ -226,10 +228,10 @@ class SandboxDispatcher(moduleName: String, cid: String) extends ModuleBase(modu
       SetContractState(dotrans.t, dotrans.da)
       RepLogger.debug(RepLogger.Sandbox_Logger, s"sandbox dispatcher ${cid},execute setcontractstate after , contract state ${this.ContractState}.")
       if (this.ContractState == ContractStateType.ContractInLevelDB) {
-        this.createParallelRouter(dotrans.t.cid.get, dotrans.t.para.spec.get.ctype)
+        this.createParallelRouter(this.DeployTransactionCache.cid.get, this.DeployTransactionCache.para.spec.get.ctype)
         RepLogger.debug(RepLogger.Sandbox_Logger, s"sandbox dispatcher ${cid},create parallel router after .")
       }
-      this.createSerialSandbox(dotrans.t.cid.get, dotrans.t.para.spec.get.ctype)
+      this.createSerialSandbox(this.DeployTransactionCache.cid.get, this.DeployTransactionCache.para.spec.get.ctype)
       RepLogger.debug(RepLogger.Sandbox_Logger, s"sandbox dispatcher ${cid},create serial sandbox  after , contract state ${this.ContractState}.")
 
       this.ContractState match {
@@ -239,7 +241,7 @@ class SandboxDispatcher(moduleName: String, cid: String) extends ModuleBase(modu
             case TypeOfSender.FromAPI =>
               this.RouterOfParallelSandboxs.route(DoTransactionOfSandbox(dotrans.t, dotrans.da, this.ContractState), sender)
             case _ =>
-              dotrans.t.para.spec.get.ctype match {
+              this.DeployTransactionCache.para.spec.get.ctype match {
                 case ChaincodeDeploy.CodeType.CODE_SCALA_PARALLEL =>
                   this.RouterOfParallelSandboxs.route(DoTransactionOfSandbox(dotrans.t, dotrans.da, this.ContractState), sender)
                 case _ => this.SerialSandbox.forward(DoTransactionOfSandbox(dotrans.t, dotrans.da, this.ContractState))

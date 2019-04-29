@@ -20,6 +20,7 @@ import scala.concurrent.duration._
 import scala.collection.mutable.Map
 import rep.sc.SandboxDispatcher.DoTransaction
 import rep.protos.peer.Transaction
+import rep.sc.BlockStubActor.WriteBlockStub
 
 object ContractTest {
 
@@ -91,15 +92,16 @@ class ContractTest(_system: ActorSystem)
     PeerHelper.createTransaction4Invoke(sysName,cid2, action, Seq(param))
   }
   
-  private def ExecuteTrans(probe:TestProbe,sandbox:ActorRef,t:Transaction,snapshotName:String,sendertype:TypeOfSender.Value)={
+  private def ExecuteTrans(probe:TestProbe,sandbox:ActorRef,t:Transaction,snapshotName:String,sendertype:TypeOfSender.Value,serial:Int,eresult:Boolean)={
     val msg_send1 = DoTransaction(t,snapshotName,sendertype)
     probe.send(sandbox, msg_send1)
     val msg_recv1 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
     if(msg_recv1.err.isEmpty){
+      println(s"serial:${serial},expect result:${eresult},exeresult:true")
       msg_recv1.err.isEmpty should be (true)
     }else{
-      println(msg_recv1.err.toString())
-      !msg_recv1.err.isEmpty should be (false)
+      println(msg_recv1.err.get.toString())
+      println(s"serial:${serial},expect result:${eresult},exeresult:false")
     }
   }
   
@@ -127,36 +129,38 @@ class ContractTest(_system: ActorSystem)
     //准备探针以验证调用返回结果
     val probe = TestProbe()
     val sandbox = system.actorOf(TransactionDispatcher.props("transactiondispatcher"),"transactiondispatcher")
+    val blocker = system.actorOf(BlockStubActor.props("tmpblockactor"),"tmpblockactor")
 
     //内存中没有合约，建立合约，此时合约在快照中
     val t1 = this.get_ContractCert_Deploy_Trans(sysName, 1)
-    ExecuteTrans(probe,sandbox:ActorRef,t1,"dbnumber1",TypeOfSender.FromAPI)
+    ExecuteTrans(probe,sandbox:ActorRef,t1,"dbnumber1",TypeOfSender.FromAPI,1,true)
 
    val t2 =  this.createCertTransInvoke(sysName, 1, ACTION.SignUpSigner, write(signer))
-   ExecuteTrans(probe,sandbox:ActorRef,t2,"dbnumber1",TypeOfSender.FromAPI)
+   ExecuteTrans(probe,sandbox:ActorRef,t2,"dbnumber1",TypeOfSender.FromAPI,2,true)
     
    //这个应该错误，应该是找不到合约
    val t3 =  this.createCertTransInvoke(sysName, 1, ACTION.SignUpSigner, write(signer))
-   ExecuteTrans(probe,sandbox:ActorRef,t3,"dbnumber2",TypeOfSender.FromAPI)
+   ExecuteTrans(probe,sandbox:ActorRef,t3,"dbnumber2",TypeOfSender.FromAPI,3,false)
    
    var t4 = PeerHelper.createTransaction4State(sysName, ChaincodeId(SystemProfile.getAccountChaincodeName,1),false)
-   ExecuteTrans(probe,sandbox:ActorRef,t3,"dbnumber1",TypeOfSender.FromAPI)
+   ExecuteTrans(probe,sandbox:ActorRef,t4,"dbnumber1",TypeOfSender.FromAPI,4,true)
    
     val t5 =  this.createCertTransInvoke(sysName,1, ACTION.SignUpCert, writePretty(certinfo))
-   ExecuteTrans(probe,sandbox:ActorRef,t5,"dbnumber1",TypeOfSender.FromAPI)
+   ExecuteTrans(probe,sandbox:ActorRef,t5,"dbnumber1",TypeOfSender.FromAPI,5,true)
     
     //会失败
     val t6 = this.get_ContractCert_Deploy_Trans(sysName, 1)
-    ExecuteTrans(probe,sandbox:ActorRef,t6,"dbnumber1",TypeOfSender.FromAPI)
+    ExecuteTrans(probe,sandbox:ActorRef,t6,"dbnumber1",TypeOfSender.FromAPI,6,false)
     
     val t7 = this.get_ContractCert_Deploy_Trans(sysName, 1)
-    ExecuteTrans(probe,sandbox:ActorRef,t7,"dbnumber2",TypeOfSender.FromAPI)
+    ExecuteTrans(probe,sandbox:ActorRef,t7,"dbnumber2",TypeOfSender.FromAPI,7,true)
 
     val t8 = this.get_ContractCert_Deploy_Trans(sysName, 2)
-    ExecuteTrans(probe,sandbox:ActorRef,t6,"dbnumber1",TypeOfSender.FromAPI)
+    ExecuteTrans(probe,sandbox:ActorRef,t8,"dbnumber1",TypeOfSender.FromAPI,8,true)
 
-
-     
+    val tsls =  Array(t1,t2,t3,t4,t5)
+    
+    //probe.send(blocker, WriteBlockStub(tsls.toSet[Transaction]))
   }
 }
 
