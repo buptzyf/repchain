@@ -84,6 +84,8 @@ class BlockStubActor(moduleName: String) extends ModuleBase(moduleName) {
     RepLogger.info(RepLogger.Consensus_Logger, this.getLogMsgPrefix("BlockStubActor Start"))
   }
 
+  
+  
   override def receive = {
     case wb: WriteBlockStub =>
      val newblock =  CreateBlock(wb.trans)
