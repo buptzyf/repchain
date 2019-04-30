@@ -43,6 +43,7 @@ object Storager {
   case object SourceOfBlock {
     val CONFIRMED_BLOCK = 1
     val SYNC_BLOCK = 2
+    val TEST_PROBE = 3
   }
 
   def SourceOfBlockToString(s: Int): String = {
@@ -162,6 +163,9 @@ class Storager(moduleName: String) extends ModuleBase(moduleName) {
           (pe.getCurrentHeight == 0 && blkRestore.blk.previousBlockHash == ByteString.EMPTY)) {
           RepLogger.trace(RepLogger.Storager_Logger, this.getLogMsgPrefix(s"node number:${pe.getSysTag},entry save,height:${blkRestore.blk.height}" + "~" + selfAddr))
           if (SaveBlock(blkRestore) == 0) {
+            if(blkRestore.SourceOfBlock == SourceOfBlock.TEST_PROBE){
+              sender ! 0
+            }
             re = 0
           } else {
             pe.getBlockCacheMgr.removeFromCache(blkRestore.blk.height)

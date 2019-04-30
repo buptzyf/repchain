@@ -73,9 +73,9 @@ class PreloaderForTransaction(moduleName: String) extends ModuleBase(moduleName)
   private def AssembleTransResult(block:Block,preLoadTrans:mutable.HashMap[String,Transaction],transResult:Seq[TransactionResult], db_indentifier: String):Option[Block]={
     try{
       var newTranList = mutable.Seq.empty[ Transaction ]
-      for (tran <- block.transactions) {
-        if (preLoadTrans.getOrElse(tran.id, None) != None)
-          newTranList = newTranList :+ preLoadTrans(tran.id)
+      for (tran <- transResult) {
+        if (preLoadTrans.getOrElse(tran.txId, None) != None)
+          newTranList = newTranList :+ preLoadTrans(tran.txId)
       }
       if(newTranList.size > 0){
         val tmpblk = block.withTransactions(newTranList)
@@ -143,6 +143,8 @@ class PreloaderForTransaction(moduleName: String) extends ModuleBase(moduleName)
           var ts = Handler(t, preLoadTrans, dbtag)
           if(ts != None){
             transResult = (transResult :+ ts.get)
+          }else{
+            preLoadTrans -= t.id
           }
         })
         

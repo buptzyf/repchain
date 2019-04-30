@@ -155,12 +155,19 @@ class ContractTest(_system: ActorSystem)
     val t7 = this.get_ContractCert_Deploy_Trans(sysName, 1)
     ExecuteTrans(probe,sandbox:ActorRef,t7,"dbnumber2",TypeOfSender.FromAPI,7,true)
 
+    
     val t8 = this.get_ContractCert_Deploy_Trans(sysName, 2)
     ExecuteTrans(probe,sandbox:ActorRef,t8,"dbnumber1",TypeOfSender.FromAPI,8,true)
-
-    val tsls =  Array(t1,t2,t3,t4,t5)
     
-    //probe.send(blocker, WriteBlockStub(tsls.toSet[Transaction]))
+    //持久化这些交易
+    val tsls =  Array(t1,t2,t3,t4,t5)
+    val sets = tsls.toSeq
+    probe.send(blocker, WriteBlockStub(sets))
+    val msg_recv1 = probe.expectMsgType[Int](1000.seconds)
+    msg_recv1 == 0 should be (true)
+   println("store finish = " + msg_recv1.toString())
+
+    
   }
 }
 

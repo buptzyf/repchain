@@ -106,6 +106,7 @@ class ModuleManager(moduleName: String, sysTag: String, enableStatistic: Boolean
       context.actorOf(Endorser4Future.props("endorser"), "endorser")
       if(this.isStartup){
         context.actorOf(TransactionDispatcher.props("transactiondispatcher"), "transactiondispatcher")
+        //context.actorOf(PreloaderForTransaction.props("preloaderoftransaction"),"preloaderoftransaction")
       }
       context.actorOf(PreloaderForTransaction.props("preloaderoftransaction"),"preloaderoftransaction")
       

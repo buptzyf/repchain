@@ -108,8 +108,15 @@ class SandboxScala(cid: ChaincodeId) extends Sandbox(cid) {
           val key_tx_state = WorldStateKeyPreFix + tx_cid + PRE_STATE
           val state = t.para.state.get
           val state_bytes = serialise(state)
+          
+          val oldstate = shim.sr.Get(key_tx_state)
+          var oldbytestring = ByteString.EMPTY
+          if(oldstate != null){
+            oldbytestring = ByteString.copyFrom(state_bytes)
+          }
+          
           shim.sr.Put(key_tx_state, state_bytes)
-          shim.ol.append(OperLog(key_tx_state, null, ByteString.copyFrom(state_bytes)))
+          shim.ol.append(OperLog(key_tx_state, oldbytestring, ByteString.copyFrom(state_bytes)))
           null
         case _ => throw SandboxException(ERR_UNKNOWN_TRANSACTION_TYPE)
       }
