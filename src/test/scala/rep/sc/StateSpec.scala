@@ -27,7 +27,8 @@ import rep.network.PeerHelper
 import rep.network.module.ModuleManager
 import rep.protos.peer.{Certificate, ChaincodeId, Signer}
 import rep.sc.TransferSpec.{ACTION, SetMap}
-import rep.sc.tpl.{CertInfo, Transfer}
+import rep.sc.tpl.ContractCert//.{CertStatus,CertInfo}
+import rep.sc.tpl.Transfer
 import rep.storage.ImpDataAccess
 import rep.app.conf.SystemProfile
 
@@ -82,11 +83,11 @@ class StateSpec(_system: ActorSystem)
           Transfer("121000005l35120456", "12110107bi45jh675g0", 5),
            Transfer("121000005l35120456", "12110107bi45jh675g", 500))
     val rcs = Array(None,  "目标账户不存在", "余额不足")
-    
+    val aa = new ContractCert
     val signer = Signer("node2", "12110107bi45jh675g", "13856789234", Seq("node2"))
     val cert = scala.io.Source.fromFile("jks/certs/12110107bi45jh675g.node2.cer")
     val certStr = try cert.mkString finally  cert.close()
-    val certinfo = CertInfo("12110107bi45jh675g", "node2", Certificate(certStr, "SHA1withECDSA", true, None, None) )
+    val certinfo = aa.CertInfo("12110107bi45jh675g", "node2", Certificate(certStr, "SHA1withECDSA", true, None, None) )
     //准备探针以验证调用返回结果
     val probe = TestProbe()
     val db = ImpDataAccess.GetDataAccess(sysName)

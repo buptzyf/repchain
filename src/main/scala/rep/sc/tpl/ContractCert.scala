@@ -22,18 +22,18 @@ import org.json4s.jackson.JsonMethods._
 import scala.collection.mutable.Map
 import org.json4s.DefaultFormats
 import rep.app.conf.SystemProfile
-import rep.utils.{IdTool, SerializeUtils}
-import rep.sc.scalax.{ContractContext, ContractException, IContract}
+import rep.utils.{ IdTool, SerializeUtils }
+import rep.sc.scalax.{ ContractContext, ContractException, IContract }
 import rep.protos.peer.ActionResult
 
 /**
-  * @author zyf
-  */
-// 证书状态
-case class CertStatus(credit_code: String, name: String, status: Boolean)
-case class CertInfo(credit_code: String,name: String, cert: Certificate)
+ * @author zyf
+ */
 
-class ContractCert  extends IContract {
+class ContractCert extends IContract {
+  case class CertStatus(credit_code: String, name: String, status: Boolean)
+  case class CertInfo(credit_code: String, name: String, cert: Certificate)
+  
   implicit val formats = DefaultFormats
 
   val notNodeCert = "非管理员操作"
@@ -57,15 +57,13 @@ class ContractCert  extends IContract {
     val UpdateSigner = "UpdateSigner"
   }
 
-  
-
   /**
-    * 注册Signer账户
-    * @param ctx
-    * @param data
-    * @return
-    */
-  def signUpSigner(ctx: ContractContext, data:Signer):ActionResult = {
+   * 注册Signer账户
+   * @param ctx
+   * @param data
+   * @return
+   */
+  def signUpSigner(ctx: ContractContext, data: Signer): ActionResult = {
     val isNodeCert = ctx.api.bNodeCreditCode(ctx.t.getSignature.getCertId.creditCode)
     if (!isNodeCert) {
       throw ContractException(notNodeCert)
@@ -74,7 +72,7 @@ class ContractCert  extends IContract {
     //val signerKey = prefix + underline + data.creditCode
     val signer = ctx.api.getState(data.creditCode)
     // 如果是null，表示已注销，如果不是null，则判断是否有值
-    if (signer == null ){
+    if (signer == null) {
       ctx.api.setVal(data.creditCode, data)
       null
     } else {
@@ -83,28 +81,28 @@ class ContractCert  extends IContract {
   }
 
   /**
-    * 注册用户证书：1、将name加到账户中；2、将Certificate保存
-    * @param ctx
-    * @param data
-    * @return
-    */
-  def signUpCert(ctx: ContractContext, data:CertInfo): ActionResult = {
+   * 注册用户证书：1、将name加到账户中；2、将Certificate保存
+   * @param ctx
+   * @param data
+   * @return
+   */
+  def signUpCert(ctx: ContractContext, data: CertInfo): ActionResult = {
     val isNodeCert = ctx.api.bNodeCreditCode(ctx.t.getSignature.getCertId.creditCode)
     if (!isNodeCert) {
       throw ContractException(notNodeCert)
     }
-    val certKey =  data.credit_code + dot + data.name
+    val certKey = data.credit_code + dot + data.name
     val certInfo = ctx.api.getState(certKey)
-    val signerKey =  data.credit_code
+    val signerKey = data.credit_code
     val signerContent = ctx.api.getState(signerKey)
     // 先判断证书，若证书不存在，则向账户添加name
     if (certInfo == null) {
-      if (signerContent == null){
+      if (signerContent == null) {
         throw ContractException(signerNotExists)
       } else {
         ctx.api.setVal(certKey, data.cert)
         val signer = SerializeUtils.deserialise(signerContent).asInstanceOf[Signer]
-        if (!signer.certNames.contains(data.name)){
+        if (!signer.certNames.contains(data.name)) {
           signer.addCertNames(data.name)
           ctx.api.setVal(signerKey, signer)
         }
@@ -119,17 +117,17 @@ class ContractCert  extends IContract {
   def rollback(map: Map[String, Byte]): Unit = {}
 
   /**
-    * 用户证书禁用、启用
-    * @param ctx
-    * @param data
-    * @return
-    */
+   * 用户证书禁用、启用
+   * @param ctx
+   * @param data
+   * @return
+   */
   def updateCertStatus(ctx: ContractContext, data: CertStatus): ActionResult = {
     val isNodeCert = ctx.api.bNodeCreditCode(ctx.t.getSignature.getCertId.creditCode)
     if (!isNodeCert) {
       throw ContractException(notNodeCert)
     }
-    val certKey =  data.credit_code + dot + data.name
+    val certKey = data.credit_code + dot + data.name
     val certInfo = ctx.api.getState(certKey)
     if (certInfo == null) {
       throw ContractException(certNotExists)
@@ -142,11 +140,11 @@ class ContractCert  extends IContract {
   }
 
   /**
-    * 更新账户相关信息
-    * @param ctx
-    * @param data
-    * @return
-    */
+   * 更新账户相关信息
+   * @param ctx
+   * @param data
+   * @return
+   */
   def updateSigner(ctx: ContractContext, data: Signer): ActionResult = {
     val isNodeCert = ctx.api.bNodeCreditCode(ctx.t.getSignature.getCertId.creditCode)
     if (!isNodeCert) {
@@ -154,7 +152,7 @@ class ContractCert  extends IContract {
     }
     val signer = ctx.api.getState(data.creditCode)
     // 如果是null，账户不存在，不存在则不能更新
-    if (signer == null){
+    if (signer == null) {
       throw ContractException(signerNotExists)
     } else {
       ctx.api.setVal(data.creditCode, data)
@@ -162,15 +160,15 @@ class ContractCert  extends IContract {
     }
   }
 
-  def init(ctx: ContractContext){
+  
+  override def init(ctx: ContractContext) {
     println(s"tid: $ctx.t.id")
   }
 
-
   /**
-    * 合约方法入口
-    */
-  def onAction(ctx: ContractContext,action:String, sdata:String ): ActionResult={
+   * 合约方法入口
+   */
+  override def onAction(ctx: ContractContext, action: String, sdata: String): ActionResult = {
     val json = parse(sdata)
 
     action match {

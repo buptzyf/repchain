@@ -11,7 +11,6 @@ import rep.network.PeerHelper
 import rep.network.module.ModuleManager
 import rep.protos.peer.{Certificate, ChaincodeId, Signer}
 import rep.sc.TransferSpec.{ACTION, SetMap}
-import rep.sc.tpl.{CertInfo, Transfer}
 import rep.storage.ImpDataAccess
 import rep.utils.SerializeUtils.toJson
 import rep.app.conf.SystemProfile
@@ -21,6 +20,7 @@ import scala.collection.mutable.Map
 import rep.sc.SandboxDispatcher.DoTransaction
 import rep.protos.peer.Transaction
 import rep.sc.BlockStubActor.WriteBlockStub
+import rep.sc.tpl.ContractCert//.{CertStatus,CertInfo}
 
 object ContractTest {
 
@@ -115,16 +115,18 @@ class ContractTest(_system: ActorSystem)
     val sm: SetMap = Map("121000005l35120456" -> 50, "12110107bi45jh675g" -> 50, "122000002n00123567" -> 50)
     val sms = write(sm)
     
-    val tcs = Array(
+    /*val tcs = Array(
           Transfer("121000005l35120456", "12110107bi45jh675g", 5),
           Transfer("121000005l35120456", "12110107bi45jh675g0", 5),
            Transfer("121000005l35120456", "12110107bi45jh675g", 500))
-    val rcs = Array(None,  "目标账户不存在", "余额不足")
+    val rcs = Array(None,  "目标账户不存在", "余额不足")*/
+    
+    val aa = new ContractCert
     
     val signer = Signer("node2", "12110107bi45jh675g", "13856789234", Seq("node2"))
     val cert = scala.io.Source.fromFile("jks/certs/12110107bi45jh675g.node2.cer")
     val certStr = try cert.mkString finally  cert.close()
-    val certinfo = CertInfo("12110107bi45jh675g", "node2", Certificate(certStr, "SHA1withECDSA", true, None, None) )
+    val certinfo = aa.CertInfo("12110107bi45jh675g", "node2", Certificate(certStr, "SHA1withECDSA", true, None, None) )
     
     //准备探针以验证调用返回结果
     val probe = TestProbe()
@@ -133,31 +135,31 @@ class ContractTest(_system: ActorSystem)
 
     //内存中没有合约，建立合约，此时合约在快照中
     val t1 = this.get_ContractCert_Deploy_Trans(sysName, 1)
-    ExecuteTrans(probe,sandbox:ActorRef,t1,"dbnumber1",TypeOfSender.FromAPI,1,true)
+    ExecuteTrans(probe,sandbox,t1,"dbnumber1",TypeOfSender.FromAPI,1,true)
 
    val t2 =  this.createCertTransInvoke(sysName, 1, ACTION.SignUpSigner, write(signer))
-   ExecuteTrans(probe,sandbox:ActorRef,t2,"dbnumber1",TypeOfSender.FromAPI,2,true)
+   ExecuteTrans(probe,sandbox,t2,"dbnumber1",TypeOfSender.FromAPI,2,true)
     
    //这个应该错误，应该是找不到合约
    val t3 =  this.createCertTransInvoke(sysName, 1, ACTION.SignUpSigner, write(signer))
-   ExecuteTrans(probe,sandbox:ActorRef,t3,"dbnumber2",TypeOfSender.FromAPI,3,false)
+   ExecuteTrans(probe,sandbox,t3,"dbnumber2",TypeOfSender.FromAPI,3,false)
    
    var t4 = PeerHelper.createTransaction4State(sysName, ChaincodeId(SystemProfile.getAccountChaincodeName,1),false)
-   ExecuteTrans(probe,sandbox:ActorRef,t4,"dbnumber1",TypeOfSender.FromAPI,4,true)
+   ExecuteTrans(probe,sandbox,t4,"dbnumber1",TypeOfSender.FromAPI,4,true)
    
     val t5 =  this.createCertTransInvoke(sysName,1, ACTION.SignUpCert, writePretty(certinfo))
-   ExecuteTrans(probe,sandbox:ActorRef,t5,"dbnumber1",TypeOfSender.FromAPI,5,true)
+   ExecuteTrans(probe,sandbox,t5,"dbnumber1",TypeOfSender.FromAPI,5,true)
     
-    //会失败
+    //同一快照中，再次部署同一版本合约，会失败
     val t6 = this.get_ContractCert_Deploy_Trans(sysName, 1)
-    ExecuteTrans(probe,sandbox:ActorRef,t6,"dbnumber1",TypeOfSender.FromAPI,6,false)
+    ExecuteTrans(probe,sandbox,t6,"dbnumber1",TypeOfSender.FromAPI,6,false)
     
     val t7 = this.get_ContractCert_Deploy_Trans(sysName, 1)
-    ExecuteTrans(probe,sandbox:ActorRef,t7,"dbnumber2",TypeOfSender.FromAPI,7,true)
+    ExecuteTrans(probe,sandbox,t7,"dbnumber2",TypeOfSender.FromAPI,7,true)
 
     
     val t8 = this.get_ContractCert_Deploy_Trans(sysName, 2)
-    ExecuteTrans(probe,sandbox:ActorRef,t8,"dbnumber1",TypeOfSender.FromAPI,8,true)
+    ExecuteTrans(probe,sandbox,t8,"dbnumber1",TypeOfSender.FromAPI,8,true)
     
     //持久化这些交易
     val tsls =  Array(t1,t2,t3,t4,t5)
@@ -165,9 +167,46 @@ class ContractTest(_system: ActorSystem)
     probe.send(blocker, WriteBlockStub(sets))
     val msg_recv1 = probe.expectMsgType[Int](1000.seconds)
     msg_recv1 == 0 should be (true)
-   println("store finish = " + msg_recv1.toString())
-
+    println("store finish 1= " + msg_recv1.toString())
+   
     
+    
+   //已经持久化合约，应该要失败
+    val t9 = this.get_ContractCert_Deploy_Trans(sysName, 1)
+    ExecuteTrans(probe,sandbox:ActorRef,t1,"dbnumber1",TypeOfSender.FromAPI,9,false)
+
+    val signer3 = Signer("node3", "122000002n00123567", "13856789274", Seq("node3"))
+    val cert3 = scala.io.Source.fromFile("jks/certs/122000002n00123567.node3.cer")
+    val certStr3 = try cert3.mkString finally  cert3.close()
+    val certinfo3 = aa.CertInfo("122000002n00123567", "node3", Certificate(certStr3, "SHA1withECDSA", true, None, None) )
+    
+    //合约状态为disable，会失败
+    val t10 =  this.createCertTransInvoke(sysName, 1, ACTION.SignUpSigner, write(signer3))
+   ExecuteTrans(probe,sandbox:ActorRef,t10,"dbnumber1",TypeOfSender.FromAPI,10,false)
+    
+   //合约状态为disable，会失败
+    val t11 =  this.createCertTransInvoke(sysName,1, ACTION.SignUpCert, writePretty(certinfo))
+   ExecuteTrans(probe,sandbox:ActorRef,t11,"dbnumber1",TypeOfSender.FromAPI,11,false)
+   
+   //重新设置合约状态为enable
+   var t12 = PeerHelper.createTransaction4State(sysName, ChaincodeId(SystemProfile.getAccountChaincodeName,1),true)
+   ExecuteTrans(probe,sandbox:ActorRef,t12,"dbnumber1",TypeOfSender.FromAPI,12,true)
+   
+   //持久化这些交易
+    probe.send(blocker, WriteBlockStub(Array(t10,t11,t12).toSeq))
+    val msg_recv2 = probe.expectMsgType[Int](1000.seconds)
+    msg_recv2 == 0 should be (true)
+    println("store finish 2= " + msg_recv2.toString())
+    
+    //合约状态持久化为enable，会成功
+    val t13 =  this.createCertTransInvoke(sysName, 1, ACTION.SignUpSigner, write(signer3))
+   ExecuteTrans(probe,sandbox:ActorRef,t13,"dbnumber1",TypeOfSender.FromAPI,13,true)
+    
+   //合约状态为disable，会失败
+    val t14 =  this.createCertTransInvoke(sysName,1, ACTION.SignUpCert, writePretty(certinfo))
+   ExecuteTrans(probe,sandbox:ActorRef,t14,"dbnumber1",TypeOfSender.FromAPI,14,true)
+   
+   
   }
 }
 

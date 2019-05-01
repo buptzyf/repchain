@@ -27,7 +27,8 @@ import rep.network.PeerHelper
 import rep.network.module.ModuleManager
 import rep.protos.peer.{Certificate, ChaincodeId, Signer}
 import rep.sc.SandboxSpec.{ACTION, SetMap}
-import rep.sc.tpl.{CertInfo, Transfer}
+import rep.sc.tpl.ContractCert//.{CertStatus,CertInfo}
+import rep.sc.tpl.Transfer
 import rep.storage.ImpDataAccess
 import rep.utils.SerializeUtils.toJson
 import rep.app.conf.SystemProfile
@@ -78,7 +79,7 @@ class SandboxSpec(_system: ActorSystem)
     val l2 = try s2.mkString finally  s2.close()
     val sm: SetMap = Map("121000005l35120456" -> 50, "12110107bi45jh675g" -> 50, "122000002n00123567" -> 50)
     val sms = write(sm)
-    
+    val aa = new ContractCert
     val tcs = Array(
           Transfer("121000005l35120456", "12110107bi45jh675g", 5),
           Transfer("121000005l35120456", "12110107bi45jh675g0", 5),
@@ -88,7 +89,7 @@ class SandboxSpec(_system: ActorSystem)
     val signer = Signer("node2", "12110107bi45jh675g", "13856789234", Seq("node2"))
     val cert = scala.io.Source.fromFile("jks/certs/12110107bi45jh675g.node2.cer")
     val certStr = try cert.mkString finally  cert.close()
-    val certinfo = CertInfo("12110107bi45jh675g", "node2", Certificate(certStr, "SHA1withECDSA", true, None, None) )
+    val certinfo = aa.CertInfo("12110107bi45jh675g", "node2", Certificate(certStr, "SHA1withECDSA", true, None, None) )
     //准备探针以验证调用返回结果
     val probe = TestProbe()
     val db = ImpDataAccess.GetDataAccess(sysName)

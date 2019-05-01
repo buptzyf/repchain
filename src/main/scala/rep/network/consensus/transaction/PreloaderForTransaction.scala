@@ -143,8 +143,6 @@ class PreloaderForTransaction(moduleName: String) extends ModuleBase(moduleName)
           var ts = Handler(t, preLoadTrans, dbtag)
           if(ts != None){
             transResult = (transResult :+ ts.get)
-          }else{
-            preLoadTrans -= t.id
           }
         })
         

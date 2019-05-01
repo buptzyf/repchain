@@ -45,7 +45,12 @@ class SandboxScala(cid: ChaincodeId) extends Sandbox(cid) {
   private def LoadClass(ctx: ContractContext, txcid: String, t: Transaction) = {
     val code = t.para.spec.get.codePackage
     val clazz = Compiler.compilef(code, txcid)
-    cobj = clazz.getConstructor().newInstance().asInstanceOf[IContract]
+    try{
+      cobj = clazz.getConstructor().newInstance().asInstanceOf[IContract]
+    }catch{
+      case e:Exception =>cobj = clazz.newInstance().asInstanceOf[IContract]
+    }
+    
     cobj.init(ctx)
   }
 
