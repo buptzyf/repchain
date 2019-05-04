@@ -26,15 +26,15 @@ import rep.app.system.ClusterSystem.InitType
 import rep.network.PeerHelper
 import rep.network.module.ModuleManager
 import rep.protos.peer.{Certificate, ChaincodeId, Signer}
-import rep.sc.TransProcessor.DoTransaction
 import rep.sc.TransferSpec.{ACTION, SetMap}
-import rep.sc.tpl.{CertInfo, Transfer}
+import rep.sc.tpl.ContractCert//.{CertStatus,CertInfo}
+import rep.sc.tpl.Transfer
 import rep.storage.ImpDataAccess
 import rep.app.conf.SystemProfile
 
 import scala.concurrent.duration._
 import scala.collection.mutable.Map
-
+import rep.sc.SandboxDispatcher.DoTransaction
 import rep.crypto.cert.SignTool
 
 object StateSpec {
@@ -83,15 +83,15 @@ class StateSpec(_system: ActorSystem)
           Transfer("121000005l35120456", "12110107bi45jh675g0", 5),
            Transfer("121000005l35120456", "12110107bi45jh675g", 500))
     val rcs = Array(None,  "目标账户不存在", "余额不足")
-    
+    val aa = new ContractCert
     val signer = Signer("node2", "12110107bi45jh675g", "13856789234", Seq("node2"))
     val cert = scala.io.Source.fromFile("jks/certs/12110107bi45jh675g.node2.cer")
     val certStr = try cert.mkString finally  cert.close()
-    val certinfo = CertInfo("12110107bi45jh675g", "node2", Certificate(certStr, "SHA1withECDSA", true, None, None) )
+    val certinfo = aa.CertInfo("12110107bi45jh675g", "node2", Certificate(certStr, "SHA1withECDSA", true, None, None) )
     //准备探针以验证调用返回结果
     val probe = TestProbe()
     val db = ImpDataAccess.GetDataAccess(sysName)
-    val sandbox = system.actorOf(TransProcessor.props("sandbox"))
+    val sandbox =  system.actorOf(TransactionDispatcher.props("transactiondispatcher"),"transactiondispatcher")
 
     val cid2 =  ChaincodeId(SystemProfile.getAccountChaincodeName,1)
     val cid1 = ChaincodeId("ContractAssetsTPL",1)
@@ -99,7 +99,7 @@ class StateSpec(_system: ActorSystem)
     val t1 = PeerHelper.createTransaction4Deploy(sysName,cid1 ,
       l1, "",5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
 
-    val msg_send1 = DoTransaction(t1,   "dbnumber")
+    val msg_send1 = DoTransaction(t1,   "dbnumber",TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send1)
     val msg_recv1 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
     msg_recv1.err.isEmpty should be (true)
@@ -107,7 +107,7 @@ class StateSpec(_system: ActorSystem)
     val t2 = PeerHelper.createTransaction4Deploy(sysName,cid2,
       l2, "",5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
 
-    val msg_send2 = DoTransaction(t2,   "dbnumber")
+    val msg_send2 = DoTransaction(t2,   "dbnumber",TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send2)
     val msg_recv2 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
      msg_recv2.err.isEmpty should be (true)
@@ -115,14 +115,14 @@ class StateSpec(_system: ActorSystem)
     // 生成invoke交易
     // 注册账户
     val t3 =  PeerHelper.createTransaction4Invoke(sysName,cid2, ACTION.SignUpSigner, Seq(write(signer)))
-    val msg_send3 = DoTransaction(t3,  "dbnumber")
+    val msg_send3 = DoTransaction(t3,  "dbnumber",TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send3)
     val msg_recv3 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
     msg_recv3.err.isEmpty should be (true)
 
     // 注册证书
     val t4 =  PeerHelper.createTransaction4Invoke(sysName,cid2, ACTION.SignUpCert, Seq(writePretty(certinfo)))
-    val msg_send4 = DoTransaction(t4,   "dbnumber")
+    val msg_send4 = DoTransaction(t4,   "dbnumber",TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send4)
     val msg_recv4 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
     msg_recv4.err.isEmpty should be (true)
@@ -130,7 +130,7 @@ class StateSpec(_system: ActorSystem)
 
     //生成invoke交易
     val t5 = PeerHelper.createTransaction4Invoke(sysName,cid1, ACTION.set, Seq(sms))
-    val msg_send5 = DoTransaction(t5,   "dbnumber")
+    val msg_send5 = DoTransaction(t5,   "dbnumber",TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send5)
     val msg_recv5 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
     msg_recv5.err.isEmpty should be (true)
@@ -138,7 +138,7 @@ class StateSpec(_system: ActorSystem)
     //正常调用
     for (i <- 0 until 1){
         val t6 = PeerHelper.createTransaction4Invoke(sysName, cid1, ACTION.transfer, Seq(write(tcs(i))))
-        val msg_send6 = DoTransaction(t6,   "dbnumber")
+        val msg_send6 = DoTransaction(t6,   "dbnumber",TypeOfSender.FromAPI)
         probe.send(sandbox, msg_send6)
         val msg_recv6 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
         if (msg_recv6.err.isEmpty && i == 0)
@@ -150,41 +150,41 @@ class StateSpec(_system: ActorSystem)
     val sysName2 = "12110107bi45jh675g.node2"
     SignTool.loadPrivateKey("12110107bi45jh675g.node2", "123", "jks/12110107bi45jh675g.node2.jks")
     var t = PeerHelper.createTransaction4State(sysName2, cid1,false)
-    var msg_send = DoTransaction(t,   "dbnumber")
+    var msg_send = DoTransaction(t,   "dbnumber",TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
     var msg_recv = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-    msg_recv.err.get.cause.getMessage should be (TransProcessor.ERR_CODER)
+    msg_recv.err.get.cause.getMessage should be (SandboxDispatcher.ERR_CODER)
 
     //部署者可以禁用合约
     t = PeerHelper.createTransaction4State(sysName, cid1,false)
-    msg_send = DoTransaction(t,   "dbnumber")
+    msg_send = DoTransaction(t,   "dbnumber",TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
     msg_recv = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
     msg_recv4.err.isEmpty should be (true)
     //禁用合约之后，无法Invoke合约
     for (i <- 0 until 1){
         val t6 = PeerHelper.createTransaction4Invoke(sysName, cid1, ACTION.transfer, Seq(write(tcs(i))))
-        val msg_send6 = DoTransaction(t6,   "dbnumber")
+        val msg_send6 = DoTransaction(t6,   "dbnumber",TypeOfSender.FromAPI)
         probe.send(sandbox, msg_send6)
         val msg_recv6 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-        msg_recv6.err.get.cause.getMessage should be (TransProcessor.ERR_DISABLE_CID)
+        msg_recv6.err.get.cause.getMessage should be (SandboxDispatcher.ERR_DISABLE_CID)
     }     
     //非部署者无法启用合约
     t = PeerHelper.createTransaction4State(sysName2, cid1,true)
-    msg_send = DoTransaction(t,   "dbnumber")
+    msg_send = DoTransaction(t,   "dbnumber",TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
     msg_recv = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-    msg_recv.err.get.cause.getMessage should be (TransProcessor.ERR_CODER)
+    msg_recv.err.get.cause.getMessage should be (SandboxDispatcher.ERR_CODER)
     //部署者可以启用合约
     t = PeerHelper.createTransaction4State(sysName, cid1,true)
-    msg_send = DoTransaction(t,  "dbnumber")
+    msg_send = DoTransaction(t,  "dbnumber",TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
     msg_recv = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
     msg_recv4.err.isEmpty should be (true)
     //启用合约之后,可以Invoke合约
     for (i <- 0 until 1){
         val t6 = PeerHelper.createTransaction4Invoke(sysName, cid1, ACTION.transfer, Seq(write(tcs(i))))
-        val msg_send6 = DoTransaction(t6,   "dbnumber")
+        val msg_send6 = DoTransaction(t6,   "dbnumber",TypeOfSender.FromAPI)
         probe.send(sandbox, msg_send6)
         val msg_recv6 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
         if (msg_recv6.err.isEmpty && i == 0)

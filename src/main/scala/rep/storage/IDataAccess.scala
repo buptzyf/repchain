@@ -454,11 +454,41 @@ abstract class IDataAccess(val SystemName: String) extends AbstractLevelDB(Syste
    * @author jiangbuyun
    * @version	0.7
    * @since	2017-09-28
-   * @category	根据block的hash值获取block
-   * @param	bh String block的hash值
+   * @category	根据交易Id值获取block数据
+   * @param	bh String 交易的Id值
    * @return	返回block的字节数组，如果没有找到，返回null
    */
   def getBlockByTxId(bh: String): Array[Byte]
+  
+  /**
+   * @author jiangbuyun
+   * @version	1.0
+   * @since	2017-09-28
+   * @category	根据交易Id值获取block
+   * @param	bh String 交易的id值
+   * @return	返回block对象，如果没有找到，返回null
+   */
+  def getBlock4ObjectByTxId(bh:String):Block
+  
+  /**
+   * @author jiangbuyun
+   * @version	1.0
+   * @since	2019-04-28
+   * @category	根据chaincodeid获取指定交易
+   * @param	cid String 链码id
+   * @return	返回Transaction对象，如果没有找到，返回None
+   */
+  def getTransOfContractFromChaincodeId(cid:String): Option[Transaction]
+  
+  /**
+   * @author jiangbuyun
+   * @version	1.0
+   * @since	2019-04-28
+   * @category	根据交易Id值获取指定交易
+   * @param	txid String 交易的Id值
+   * @return	返回Transaction对象，如果没有找到，返回None
+   */
+  def getTransDataByTxId(txid:String):Option[Transaction]
 
   /**
    * @author jiangbuyun

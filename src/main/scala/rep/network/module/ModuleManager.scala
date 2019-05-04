@@ -28,12 +28,11 @@ import rep.network.tools.Statistic.StatisticCollection
 import rep.ui.web.EventServer
 import rep.network.cluster.MemberListener
 import rep.network.sync.{ SynchronizeResponser, SynchronizeRequester4Future }
-
+import rep.sc.TransactionDispatcher
 import rep.network.consensus.block.{ GenesisBlocker, ConfirmOfBlock, EndorseCollector, Blocker }
 import rep.network.consensus.endorse.{Endorser4Future}
-import rep.network.consensus.transaction.{PreloaderForTransaction,PreloadTransRouter}
+import rep.network.consensus.transaction.{PreloaderForTransaction}
 import rep.network.consensus.vote.Voter
-import rep.sc.TransProcessor
 
 import rep.storage.ImpDataAccess
 import rep.utils.ActorUtils
@@ -106,9 +105,10 @@ class ModuleManager(moduleName: String, sysTag: String, enableStatistic: Boolean
       //context.actorOf(Endorser.props("endorser"), "endorser")
       context.actorOf(Endorser4Future.props("endorser"), "endorser")
       if(this.isStartup){
-        context.actorOf(PreloadTransRouter.props("preloadtransrouter"),"preloadtransrouter")
+        context.actorOf(TransactionDispatcher.props("transactiondispatcher"), "transactiondispatcher")
+        //context.actorOf(PreloaderForTransaction.props("preloaderoftransaction"),"preloaderoftransaction")
       }
-      context.actorOf(PreloaderForTransaction.props("preloaderoftransaction", context.actorOf(TransProcessor.props("sandbox_for_Preload"), "sandboxProcessor")), "preloaderoftransaction")
+      context.actorOf(PreloaderForTransaction.props("preloaderoftransaction"),"preloaderoftransaction")
       
       
       context.actorOf(Voter.props("voter"), "voter")

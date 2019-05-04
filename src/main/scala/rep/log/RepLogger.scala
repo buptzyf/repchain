@@ -54,4 +54,8 @@ object RepLogger {
    def except(logger:Logger,msg:String,e:Exception)={
      logger.error(msg,e)
    }
+   
+   def except4Throwable(logger:Logger,msg:String,e:Throwable)={
+     logger.error(msg,e)
+   }
 }

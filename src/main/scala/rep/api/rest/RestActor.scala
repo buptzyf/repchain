@@ -25,9 +25,6 @@ import scala.concurrent.duration._
 import akka.pattern.ask
 
 import scala.concurrent._
-import rep.sc.TransProcessor
-import rep.sc.TransProcessor._
-import rep.sc.Sandbox._
 import rep.protos.peer._
 import rep.crypto._
 import rep.sc.Shim._
@@ -46,6 +43,9 @@ import rep.crypto.cert.SignTool
 import rep.protos.peer.ActionResult
 import rep.app.conf.SystemProfile
 import rep.network.base.ModuleBase
+import rep.sc.TypeOfSender
+import rep.sc.SandboxDispatcher.DoTransaction
+import rep.sc.Sandbox.DoTransactionResult
 /**
   * RestActor伴生object，包含可接受的传入消息定义，以及处理的返回结果定义。
   * 以及用于建立Tranaction，检索Tranaction的静态方法
@@ -118,23 +118,6 @@ object RestActor {
     }
   }
 
-  /** 根据存储实例和交易id检索并返回交易Transaction
-    *  @param sr 存储实例
-    *  @param txId 交易id
-    *  @return 如果存在该交易，返回该交易；否则返回null
-    *
-    */
-  def loadTransaction(sr: ImpDataAccess, txId: String): Option[Transaction] = {
-    val bb = sr.getBlockByTxId(txId)
-    bb match {
-      case null => None
-      case _ =>
-        //交易所在的块
-        val bl = Block.parseFrom(bb)
-        //bl.transactions.foreach(f=>println(s"---${f.txid}"))
-        bl.transactions.find(_.id == txId)
-    }
-  }
 }
 
 /**
@@ -162,12 +145,12 @@ class RestActor(moduleName: String) extends  ModuleBase(moduleName) {
     val tOutSig = t.clearSignature
     val certId = t.signature.get.certId.get
     try{
-      loadTransaction(sr,t.id) match {
+      sr.getTransDataByTxId(t.id) match {
         case st: Some[Transaction] =>
           sender ! PostResult(t.id, None, Option(s"transactionId is exists, the transaction is \n ${JsonFormat.toJson(st.get)}"))
         case None =>
           if (SignTool.verify(sig, tOutSig.toByteArray, certId,pe.getSysTag)) {
-              val future = pe.getActorRef(ActorType.preloadtransrouter) ? DoTransaction(t, "api_" + t.id)
+              val future = pe.getActorRef(ActorType.transactiondispatcher) ? DoTransaction(t, "api_" + t.id,TypeOfSender.FromAPI)
               val result = Await.result(future, timeout.duration).asInstanceOf[DoTransactionResult]
               val rv = result
               // 释放存储实例
@@ -275,7 +258,7 @@ class RestActor(moduleName: String) extends  ModuleBase(moduleName) {
 
     // 根据txid检索交易
     case TransactionId(txId) =>
-      var r = loadTransaction(sr, txId) match {
+      var r = sr.getTransDataByTxId( txId) match {
         case None =>
           QueryResult(None)
         case t: Some[Transaction] =>
@@ -286,7 +269,7 @@ class RestActor(moduleName: String) extends  ModuleBase(moduleName) {
 
     // 根据txid检索交易字节流
     case TransactionStreamId(txId) =>
-      val r = loadTransaction(sr, txId)
+      val r = sr.getTransDataByTxId( txId)
       val t = r.get
       val body = akka.util.ByteString(t.toByteArray)
       val entity = HttpEntity.Strict(MediaTypes.`application/octet-stream`, body)

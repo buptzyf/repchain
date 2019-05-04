@@ -16,7 +16,7 @@
 
 package rep.sc
 
-import akka.actor.{Actor, ActorRef, Props, actorRef2Scala}
+import akka.actor.{ Actor, ActorRef, Props, actorRef2Scala }
 import rep.utils._
 import rep.api.rest._
 import rep.protos.peer._
@@ -26,7 +26,7 @@ import java.lang.Exception
 import java.lang.Thread._
 import java.io.File._
 import org.slf4j.LoggerFactory
-import org.json4s.{DefaultFormats, Formats, jackson}
+import org.json4s.{ DefaultFormats, Formats, jackson }
 import de.heikoseeberger.akkahttpjson4s.Json4sSupport
 import org.json4s._
 import akka.util.Timeout
@@ -39,19 +39,20 @@ import rep.utils.SerializeUtils.deserialise
 import rep.utils.SerializeUtils.serialise
 import rep.log.RepLogger
 
-/** 合约容器的抽象类伴生对象,定义了交易执行结果的case类
- * 
+/**
+ * 合约容器的抽象类伴生对象,定义了交易执行结果的case类
+ *
  * @author c4w
- * 
+ *
  */
 object Sandbox {
-  val ERR_UNKNOWN_TRANSACTION_TYPE = "无效的交易类型"  
-  
+  val ERR_UNKNOWN_TRANSACTION_TYPE = "无效的交易类型"
+
   val SplitChainCodeId = "_"
   //日志前缀
-  val log_prefix = "Sandbox-"
   //t:中含txid可以找到原始交易; r:执行结果; merkle:执行完worldstate的hash; err:执行异常
-  /** 交易执行结果类
+  /**
+   * 交易执行结果类
    * @param t 传入交易实例
    * @param from 来源actor指向
    * @param r 执行结果,任意类型
@@ -60,160 +61,153 @@ object Sandbox {
    * @param mb 合约执行涉及的key-value集合
    * @param err 执行中抛出的异常信息
    */
-  case class DoTransactionResult(txId:String, r:ActionResult,
-    ol:List[OperLog],
-    err:Option[akka.actor.Status.Failure])
-    
-  /** 合约执行异常类
+  case class DoTransactionResult(txId: String, r: ActionResult,
+                                 ol:  List[OperLog],
+                                 err: Option[akka.actor.Status.Failure])
+
+  /**
+   * 合约执行异常类
    *  @param message 异常信息的文本描述
    *  @param cause 导致异常的原因
    */
-  case class SandboxException(private val message: String = "", 
-                           private val cause: Throwable = None.orNull)
-                      extends Exception(message, cause) 
-
-  /** 根据合约的链码定义获得其唯一标示
-   *  @param c 链码Id
-   *  @return 链码id字符串
-   */
-  def getChaincodeId(c: ChaincodeId): String={
-    IdTool.getCid(c)
-  }  
-  /** 从部署合约的交易，获得其部署的合约的链码id
-   *  @param t 交易对象
-   *  @return 链码id
-   */
-  def getTXCId(t: Transaction): String = {
-    val t_cid = t.cid.get
-    getChaincodeId(t_cid)
-  }  
+  case class SandboxException(
+    private val message: String    = "",
+    private val cause:   Throwable = None.orNull)
+    extends Exception(message, cause)
 }
 
-/** 合约容器的抽象类，提供与底层进行API交互的shim实例，用于与存储交互的实例pe
+/**
+ * 合约容器的抽象类，提供与底层进行API交互的shim实例，用于与存储交互的实例pe
  * @author c4w
  * 目前已实现的合约容器包括SandboxJS—以javascript作为合约脚本语言,不支持debug,性能较低;
  * 另一个实现是以scala作为合约脚本语言的SandboxScalax，支持debug,性能较高
- * 
+ *
  * @constructor 以合约在区块链上的链码id作为合约容器id建立实例
  * @param cid 链码id
  */
-abstract class Sandbox(cid:ChaincodeId) extends Actor {
-  import TransProcessor._
+abstract class Sandbox(cid: ChaincodeId) extends Actor {
+  import SandboxDispatcher._
   import Sandbox._
   import spray.json._
-  protected def log = LoggerFactory.getLogger(this.getClass)
   //与存储交互的实例
   val pe = PeerExtension(context.system)
-  val sTag =pe.getSysTag
-   
+  val sTag = pe.getSysTag
 
   //与底层交互的api实例,不同版本的合约KV空间重叠
   val shim = new Shim(context.system, cid.chaincodeName)
   val addr_self = akka.serialization.Serialization.serializedActorPath(self)
 
-  def errAction(errCode: Int) :ActionResult = {
-     errCode match{
-       case -101 =>
-         ActionResult(errCode,"目标合约不存在")
-     }
-     ActionResult(errCode,"不明原因")
+  def errAction(errCode: Int): ActionResult = {
+    errCode match {
+      case -101 =>
+        ActionResult(errCode, "目标合约不存在")
+    }
+    ActionResult(errCode, "不明原因")
   }
-  /** 消息处理主流程,包括对交易处理请求、交易的预执行处理请求、从存储恢复合约的请求
-   * 
+  /**
+   * 消息处理主流程,包括对交易处理请求、交易的预执行处理请求、从存储恢复合约的请求
+   *
    */
   def receive = {
     //交易处理请求
-    case  DoTransaction(t:Transaction, da:String) =>
-      val tr = onTransaction(t,da)
+    case dotrans: DoTransactionOfSandbox =>
+      val tr = onTransaction(dotrans)
       sender ! tr
-   
-    //恢复chainCode,不回消息
-    case  DeployTransaction(t:Transaction, da:String) =>
-      val tr = onTransaction(t,da,true)
   }
 
-  def onTransaction(t:Transaction, da:String, bRestore:Boolean=false):DoTransactionResult = {
-    try{
-          //要么上一份给result，重新建一份
-      shim.sr = ImpDataPreloadMgr.GetImpDataPreload(sTag, da)
-      checkTransaction(t, bRestore)
+  def onTransaction(dotrans: DoTransactionOfSandbox): DoTransactionResult = {
+    try {
+      shim.sr = ImpDataPreloadMgr.GetImpDataPreload(sTag, dotrans.da)
+      checkTransaction(dotrans)
       shim.ol = new scala.collection.mutable.ListBuffer[OperLog]
-      doTransaction(t,da,bRestore)
-    }catch{
-        case e:Exception => 
-          log.error(t.id, e)
-          new DoTransactionResult(t.id,null, null,
-               Option(akka.actor.Status.Failure(e)))
-      }
+      doTransaction(dotrans)
+    } catch {
+      case e: Exception =>
+        RepLogger.except(RepLogger.Sandbox_Logger, dotrans.t.id, e)
+        new DoTransactionResult(dotrans.t.id, null, null,
+          Option(akka.actor.Status.Failure(e)))
+    }
   }
-  
-  
-  /** 交易处理抽象方法，接受待处理交易，返回处理结果
+
+  /**
+   * 交易处理抽象方法，接受待处理交易，返回处理结果
    *  @param t 待处理交易
    *  @param from 发出交易请求的actor
    * 	@param da 存储访问标示
    *  @return 交易执行结果
    */
-  def doTransaction(t:Transaction, da:String, bRestore:Boolean=false):DoTransactionResult 
+  def doTransaction(dotrans: DoTransactionOfSandbox): DoTransactionResult
 
-   def checkTransaction(t: Transaction, bRestore:Boolean=false) = {
-    val tx_cid = getTXCId(t)
-    val sr = shim.sr
-    t.`type`  match {
-      case Transaction.Type.CHAINCODE_INVOKE =>
-        //cid不存在或状态为禁用抛出异常
-        val key_tx_state = WorldStateKeyPreFix+ tx_cid + PRE_STATE        
-        val state_bytes = sr.Get(key_tx_state)
-        //合约不存在
-        if(state_bytes == null){
-            throw new SandboxException(ERR_INVOKE_CHAINCODE_NOT_EXIST)    
-        }
-        else{
-           val state = deserialise(state_bytes).asInstanceOf[Boolean]
-           if(!state){
-             throw new SandboxException(ERR_DISABLE_CID)    
-           }
-        }
-      case Transaction.Type.CHAINCODE_DEPLOY =>
-      //检查合约名+版本是否已存在,API预执行导致sandbox实例化，紧接着共识预执行
-        val key_tx_state = WorldStateKeyPreFix+ tx_cid + PRE_STATE
-        val state_bytes = sr.Get(key_tx_state)
-        //合约已存在且并非恢复合约
-        if(state_bytes != null && !bRestore){
-           throw new SandboxException(ERR_REPEATED_CID)    
-        }
-       //检查合约部署者
-       val cn = t.cid.get.chaincodeName
-       val key_coder =  WorldStateKeyPreFix+ cn  
-       val coder_bytes = sr.Get(key_coder)
-        if(coder_bytes != null){
-          val coder = Some(deserialise(coder_bytes).asInstanceOf[String])
-          //合约已存在且部署者并非当前交易签名者
-          if(!t.signature.get.certId.get.creditCode.equals(coder.get))
-            throw new SandboxException(ERR_CODER)      
-        }
-        
-      case Transaction.Type.CHAINCODE_SET_STATE =>
-        val cn = t.cid.get.chaincodeName
-        val key_coder =  WorldStateKeyPreFix+ cn  
-        val coder_bytes = sr.Get(key_coder)
-        if(coder_bytes != null){
-          val coder = Some(deserialise(coder_bytes).asInstanceOf[String])
-          //合约已存在且部署者并非当前交易签名者
-          RepLogger.info(RepLogger.Sandbox_Logger,s"cn:${key_coder} :: ${t.signature.get.certId.get.creditCode} :: ${coder.get}")
-          if(!t.signature.get.certId.get.creditCode.equals(coder.get)){
-            throw new SandboxException(ERR_CODER)       
-          }
-        }
-      //cid不存在抛出异常
-        val key_tx_state = WorldStateKeyPreFix+ tx_cid + PRE_STATE
-        val state_bytes = sr.Get(key_tx_state)
-        //合约不存在
-        if(state_bytes == null){
-            throw new SandboxException(ERR_INVOKE_CHAINCODE_NOT_EXIST)    
-        }
-     case _ => throw SandboxException(ERR_UNKNOWN_TRANSACTION_TYPE)
-
+  private def getContractEnableValueFromLevelDB(txcid: String): Option[Boolean] = {
+    val db = ImpDataAccess.GetDataAccess(this.sTag)
+    val key_tx_state = WorldStateKeyPreFix + txcid + PRE_STATE
+    val state_bytes = db.Get(key_tx_state)
+    if (state_bytes == null) {
+      None
+    } else {
+      val state = deserialise(state_bytes).asInstanceOf[Boolean]
+      Some(state)
     }
- }  
+  }
+
+  private def IsCurrentSigner(dotrans: DoTransactionOfSandbox) {
+    val cn = dotrans.t.cid.get.chaincodeName
+    val key_coder = WorldStateKeyPreFix + cn
+    val coder_bytes = shim.sr.Get(key_coder)
+    if (coder_bytes != null) {
+      val coder = Some(deserialise(coder_bytes).asInstanceOf[String])
+      //合约已存在且部署,需要重新部署，但是当前提交者不是以前提交者
+      if (!dotrans.t.signature.get.certId.get.creditCode.equals(coder.get))
+        throw new SandboxException(ERR_CODER)
+    }
+  }
+
+  private def ContraceIsExist(txcid: String) {
+    val key_tx_state = WorldStateKeyPreFix + txcid + PRE_STATE
+    val state_bytes = shim.sr.Get(key_tx_state)
+    //合约不存在
+    if (state_bytes == null) {
+      throw new SandboxException(ERR_INVOKE_CHAINCODE_NOT_EXIST)
+    }
+  }
+
+  private def checkTransaction(dotrans: DoTransactionOfSandbox) = {
+    val txcid = IdTool.getTXCId(dotrans.t)
+    dotrans.t.`type` match {
+      case Transaction.Type.CHAINCODE_DEPLOY =>
+        dotrans.contractStateType match {
+          case ContractStateType.ContractInLevelDB =>
+            throw new SandboxException(ERR_REPEATED_CID)
+          case _ =>
+            //检查合约部署者
+            IsCurrentSigner(dotrans)
+        }
+
+      case Transaction.Type.CHAINCODE_SET_STATE =>
+        ContraceIsExist(txcid)
+        IsCurrentSigner(dotrans)
+
+      case Transaction.Type.CHAINCODE_INVOKE =>
+        ContraceIsExist(txcid)
+        val cstateInLevelDB = getContractEnableValueFromLevelDB(txcid)
+        cstateInLevelDB match {
+          case None =>
+            dotrans.contractStateType match {
+              case ContractStateType.ContractInSnapshot =>
+              //ignor
+              case _ =>
+                //except
+                throw new SandboxException(ERR_DISABLE_CID)
+            }
+          case _ =>
+            if (!cstateInLevelDB.get) {
+              throw new SandboxException(ERR_DISABLE_CID)
+            } else {
+              //ignore
+            }
+
+        }
+      case _ => throw SandboxException(ERR_UNKNOWN_TRANSACTION_TYPE)
+    }
+  }
 }

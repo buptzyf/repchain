@@ -28,6 +28,16 @@ import rep.crypto.Sha256
 import rep.app.conf.SystemProfile
 import scala.reflect.runtime.currentMirror
 import scala.tools.reflect.ToolBox
+
+/*import scala.reflect.runtime.universe
+
+import scala.reflect.internal.util.SourceFile
+import scala.reflect.internal.util.BatchSourceFile
+import com.google.common.io.Files
+import java.nio.charset.Charset
+import java.io.File
+import scala.io.Source*/
+
 import rep.storage.util.pathUtil
 import scala.reflect.io.Path.jfile2path
 
@@ -64,7 +74,7 @@ class Compiler(targetDir: Option[File], bDebug:Boolean) {
   //合约类名前缀
   val PRE_CLS_NAME = "SC_"
   //反射工具对象
-  val tb = currentMirror.mkToolBox()
+  val tb = currentMirror.mkToolBox()//universe.runtimeMirror(getClass.getClassLoader).mkToolBox()
   //源文件路径
   val path_source = if(bDebug) getSourcePath else pathUtil.getPath("custom_contract")
   //目标文件路径
@@ -81,7 +91,7 @@ class Compiler(targetDir: Option[File], bDebug:Boolean) {
   settings.outputDirs.setSingleOutput(target)
   settings.usejavacp.value = true
   settings.classpath.append(getSourcePath())
-
+  
   private val global = new Global(settings)
   private lazy val run = new global.Run
   //类加载器，优先从默认类加载路径加载
@@ -122,6 +132,7 @@ class Compiler(targetDir: Option[File], bDebug:Boolean) {
    //去掉package声明,将class放在default路径下
     var p0 = pcode.indexOf("import")
      //第一个定位点应加强容错能力,允许空白字符
+    //val pattern = "extends\\s+IContract\\s*\\{".r
     val pattern = "extends\\s+IContract\\s*\\{".r
     val p1str = pattern.findFirstIn(pcode).get
     val p1 = pcode.indexOf(p1str)
@@ -144,17 +155,24 @@ class Compiler(targetDir: Option[File], bDebug:Boolean) {
     if(cl!=None)
         return cl.get      
     //获取替换类名
-    val ncode = pcode.substring(p0,p3) + "class "+className+ " "+pcode.substring(p1,p2+1)
-    //+"\nscala.reflect.classTag[ContractAssets2].runtimeClass"
+    val oldclassname = pcode.substring(p3+5,p1)
+    val newpcode = pcode.substring(p0)
+    var mo = newpcode.replaceFirst("object\\s*"+oldclassname.trim+"\\s*\\{", "object "+className +"{")
+    mo =mo.replaceFirst("class\\s*"+oldclassname.trim+"\\s*extends", "class "+className +" extends  ")
+    val ncode =mo.replaceAll(oldclassname.trim+".", className +".")
+    //val ncode = pcode.substring(p0,p3) + "class "+className+ " "+pcode.substring(p1,p2+1)
     if(path_source!=null)
       saveCode(className,ncode)  
-    val cls =   tb.compile(tb.parse(ncode +"\nscala.reflect.classTag["
+   
+      var cls =   tb.compile(tb.parse(ncode +"\nscala.reflect.classTag["
       +className
-      +"].runtimeClass"))().asInstanceOf[Class[_]]
+      +"].runtimeClass")).apply().asInstanceOf[Class[_]]
+    
     classCache(className) = cls
     cls  
   }
 
+  
 /** 尝试加载类定义
  * 	@param className 类名称
  *  @return 类定义

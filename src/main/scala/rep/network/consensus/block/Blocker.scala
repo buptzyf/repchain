@@ -140,7 +140,7 @@ class Blocker(moduleName: String) extends ModuleBase(moduleName) {
   private def CreateBlock: Block = {
     val trans = CollectedTransOfBlock(SystemProfile.getLimitBlockTransNum, SystemProfile.getBlockLength)
     //todo 交易排序
-    if (trans.size > SystemProfile.getMinBlockTransNum) {
+    if (trans.size >= SystemProfile.getMinBlockTransNum) {
       var blc = BlockHelp.WaitingForExecutionOfBlock(pe.getCurrentBlockHash, pe.getCurrentHeight + 1, trans)
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,height=${blc.height},local height=${pe.getCurrentHeight}" + "~" + selfAddr))
       blc = ExecuteTransactionOfBlock(blc)

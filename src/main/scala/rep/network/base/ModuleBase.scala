@@ -75,7 +75,7 @@ abstract class  ModuleBase(name: String) extends Actor  with ClusterActor with B
       case "confirmerofblock" => 16
       case "gensisblock"  => 17
       case "api" => 18
-      case "preloadtransrouter" => 19
+      case "transactiondispatcher" => 19
       case _ => 0
     }
   }
