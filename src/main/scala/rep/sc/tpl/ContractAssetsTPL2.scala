@@ -87,7 +87,7 @@ case class Transfer(from:String, to:String, amount:Int)
       val json = parse(sdata)      
       action match {
         case "transfer" => 
-          transfer(ctx,json.extract[Transfer])
+          transfer(ctx,json.extract[ Transfer])
         case "set" => 
           set(ctx, json.extract[Map[String,Int]])
       }
