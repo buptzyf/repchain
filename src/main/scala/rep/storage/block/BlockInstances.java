@@ -59,7 +59,7 @@ public class BlockInstances {
 		return lhelp;
 	}
 	
-	public static void main(String[] args){
+	/*public static void main(String[] args){
 		try{
 			BlockStorageHelp bh = BlockInstances.getDBInstance().getBlockHelp("testSystem");
 			String aa = "sdfsdfkjklsdfklsdflsflsdkflsdflsdfkljdflsdkf";
@@ -77,5 +77,5 @@ public class BlockInstances {
 			e.printStackTrace();
 		}
 		
-	}
+	}*/
 }

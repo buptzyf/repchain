@@ -169,9 +169,9 @@ public class StoreConfig {
 		return l;
 	}
 	
-	public static void main(String[] args){
+	/*public static void main(String[] args){
 		StoreConfig msc = StoreConfig.getStoreConfig();
 		System.out.println(msc.getDbPath());
 		System.out.println(msc.getDbPath("mySystem"));
-	}
+	}*/
 }

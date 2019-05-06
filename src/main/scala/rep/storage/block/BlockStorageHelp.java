@@ -204,7 +204,7 @@ public class BlockStorageHelp {
 	        | (((long) b[5] & 0xff) << 16) | (((long) b[6] & 0xff) << 8) | ((long) b[7] & 0xff));
 	}
 	
-	public static void main(String[] args){
+	/*public static void main(String[] args){
 		/*try{
 			BlockHelp bh = new BlockHelp("testSystem");
 			String aa = "sdfsdfkjklsdfklsdflsflsdkflsdflsdfkljdflsdkf";
@@ -241,13 +241,13 @@ public class BlockStorageHelp {
 			e.printStackTrace();
 		} */
 		
-		long a = 1829000002222222222l;
+		/*long a = 1829000002222222222l;
 		long b = 8373l;
 		long c = 0l;
 		
 		System.out.println("start="+a+"\tconvert value="+BlockStorageHelp.byteToLong(BlockStorageHelp.longToByte(a))+"\t byte length="+BlockStorageHelp.longToByte(a).length);
 		System.out.println("start="+b+"\tconvert value="+BlockStorageHelp.byteToLong(BlockStorageHelp.longToByte(b))+"\t byte length="+BlockStorageHelp.longToByte(b).length);
 		System.out.println("start="+c+"\tconvert value="+BlockStorageHelp.byteToLong(BlockStorageHelp.longToByte(c))+"\t byte length="+BlockStorageHelp.longToByte(c).length);
-	}
+	}*/
 	
 }
