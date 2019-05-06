@@ -32,9 +32,9 @@ import rep.sc.scalax.ContractContext
  * 资产管理合约
  */
 
-
+final case class TransferForLegal(from:String, to:String, amount:Int, remind:String)
 class ContractAssetsTPL_Legal extends IContract{
-case class Transfer(from:String, to:String, amount:Int, remind:String)
+
 
   // 需要跨合约读账户
   val chaincodeName = SystemProfile.getAccountChaincodeName
@@ -55,7 +55,7 @@ case class Transfer(from:String, to:String, amount:Int, remind:String)
       new ActionResult(1)
     }
     
-    def transfer(ctx: ContractContext, data:Transfer) :ActionResult={
+    def transfer(ctx: ContractContext, data:TransferForLegal) :ActionResult={
       if(!data.from.equals(ctx.t.getSignature.getCertId.creditCode))
         return new ActionResult(-1, "只允许从本人账户转出")      
       val signerKey =  data.to
@@ -92,7 +92,7 @@ case class Transfer(from:String, to:String, amount:Int, remind:String)
       val json = parse(sdata)      
       action match {
         case "transfer" => 
-          transfer(ctx,json.extract[Transfer])
+          transfer(ctx,json.extract[TransferForLegal])
         case "set" => 
           set(ctx, json.extract[Map[String,Int]])
       }

@@ -29,10 +29,11 @@ import rep.protos.peer.ActionResult
 /**
  * @author zyf
  */
-
+final case class CertStatus(credit_code: String, name: String, status: Boolean)
+final case class CertInfo(credit_code: String, name: String, cert: Certificate)
 class ContractCert extends IContract {
-  case class CertStatus(credit_code: String, name: String, status: Boolean)
-  case class CertInfo(credit_code: String, name: String, cert: Certificate)
+  //case class CertStatus(credit_code: String, name: String, status: Boolean)
+  //case class CertInfo(credit_code: String, name: String, cert: Certificate)
   
   implicit val formats = DefaultFormats
 
