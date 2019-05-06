@@ -44,7 +44,8 @@ class SandboxScala(cid: ChaincodeId) extends Sandbox(cid) {
 
   private def LoadClass(ctx: ContractContext, txcid: String, t: Transaction) = {
     val code = t.para.spec.get.codePackage
-    val clazz = Compiler.compilef(code, txcid)
+    val clazz = Compiler.compilef(code, txcid)  
+    //val clazz = CompilerOfSourceCode.compilef(code, txcid)  
     try{
       cobj = clazz.getConstructor().newInstance().asInstanceOf[IContract]
     }catch{
@@ -99,7 +100,7 @@ class SandboxScala(cid: ChaincodeId) extends Sandbox(cid) {
         case Transaction.Type.CHAINCODE_INVOKE =>
           if (this.cobj == null) {
             val db = ImpDataAccess.GetDataAccess(pe.getSysTag)
-            val tds = db.getTransOfContractFromChaincodeId(tx_cid)
+            val tds = db.getTransOfContractFromChaincodeId(WorldStateKeyPreFix +tx_cid)
             if (tds == None) throw new SandboxException(ERR_INVOKE_CHAINCODE_NOT_EXIST)
             this.LoadClass(ctx, tx_cid, tds.get)
           }

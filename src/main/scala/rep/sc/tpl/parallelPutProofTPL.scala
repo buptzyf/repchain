@@ -21,10 +21,9 @@ import org.json4s.jackson.JsonMethods.parse
 import rep.protos.peer.ActionResult
 import rep.sc.scalax.{ContractContext, IContract}
 
-
+final case class proofDataSingle(key: String, value: Any)
 class parallelPutProofTPL extends IContract{
 
-  case class proofDataSingle(key: String, value: Any)
   type proofDataMap = Map[String, Any]
   val split = "_"
 
@@ -64,11 +63,12 @@ class parallelPutProofTPL extends IContract{
   override def onAction(ctx: ContractContext, action: String, sdata: String): ActionResult = {
 
     implicit val formats = DefaultFormats
-
+    println("-----------"+sdata)
     val json = parse(sdata)
 
     action match {
       case "putProofSingle" =>
+        println("-----------"+sdata)
         putProof(ctx, json.extract[proofDataSingle])
       case "putProofMap" =>
         putProof(ctx, json.extract[proofDataMap])

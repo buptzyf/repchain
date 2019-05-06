@@ -32,7 +32,7 @@ import rep.protos.peer.ActionResult
  * 资产管理合约
  */
 
-case class Transfer(from:String, to:String, amount:Int)
+final case class Transfer(from:String, to:String, amount:Int)
 
 class ContractAssetsTPL extends IContract{
 

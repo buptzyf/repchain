@@ -31,7 +31,7 @@ import rep.network.consensus.util.BlockHelp
 import rep.crypto.cert.SignTool
 import scala.collection.mutable
 import rep.sc.tpl._
-import rep.sc.tpl.ContractCert//.{CertStatus,CertInfo}
+import rep.sc.tpl.ContractCert
 
 /**
  * 用于生成创世块json文件,该json文件可以在链初始化时由节点加载
@@ -93,8 +93,8 @@ object GenesisBuilder {
       val millis = System.currentTimeMillis()
       
       val tmp = rep.protos.peer.Certificate(certstr,"SHA1withECDSA",true,Option(Timestamp(millis/1000 , ((millis % 1000) * 1000000).toInt)))
-       val aa = new ContractCert
-      val a : aa.CertInfo = aa.CertInfo(signers(i).creditCode,signers(i).name,tmp)
+       //val aa = new ContractCert
+      val a : CertInfo = CertInfo(signers(i).creditCode,signers(i).name,tmp)
       translist(i+7) = PeerHelper.createTransaction4Invoke("951002007l78123233.super_admin", cid,
                     "SignUpCert", Seq(SerializeUtils.compactJson(a)))
     }

@@ -1,20 +1,6 @@
-/*
- * Copyright  2019 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BA SIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
 
-package rep.sc.tpl
+//package rep.sc.tpl
+
 
 import rep.protos.peer._
 import org.json4s.jackson.JsonMethods._
@@ -24,17 +10,13 @@ import org.json4s.DefaultFormats
 import rep.app.conf.SystemProfile
 import rep.utils.{ IdTool, SerializeUtils }
 import rep.sc.scalax.{ ContractContext, ContractException, IContract }
-import rep.protos.peer.ActionResult
+//import rep.protos.peer.ActionResult
 
-/**
- * @author zyf
- */
-final case class CertStatus(credit_code: String, name: String, status: Boolean)
-final case class CertInfo(credit_code: String, name: String, cert: Certificate)
-class ContractCert extends IContract {
-  //case class CertStatus(credit_code: String, name: String, status: Boolean)
-  //case class CertInfo(credit_code: String, name: String, cert: Certificate)
-  
+  final case class CertStatus(credit_code: String, name: String, status: Boolean)
+  final case class CertInfo(credit_code: String, name: String, cert: Certificate)
+
+class ContractCert6 extends IContract {
+
   implicit val formats = DefaultFormats
 
   val notNodeCert = "非管理员操作"
@@ -88,31 +70,14 @@ class ContractCert extends IContract {
    * @return
    */
   def signUpCert(ctx: ContractContext, data: CertInfo): ActionResult = {
-    val isNodeCert = ctx.api.bNodeCreditCode(ctx.t.getSignature.getCertId.creditCode)
-    if (!isNodeCert) {
-      throw ContractException(notNodeCert)
-    }
     val certKey = data.credit_code + dot + data.name
-    val certInfo = ctx.api.getState(certKey)
     val signerKey = data.credit_code
-    val signerContent = ctx.api.getState(signerKey)
-    // 先判断证书，若证书不存在，则向账户添加name
-    if (certInfo == null) {
-      if (signerContent == null) {
-        throw ContractException(signerNotExists)
-      } else {
-        ctx.api.setVal(certKey, data.cert)
-        val signer = SerializeUtils.deserialise(signerContent).asInstanceOf[Signer]
-        if (!signer.certNames.contains(data.name)) {
-          signer.addCertNames(data.name)
-          ctx.api.setVal(signerKey, signer)
-        }
-      }
+    val certInfo = data.credit_code
       null
-    } else {
-      throw ContractException(certExists)
-    }
   }
+
+  // TODO
+  def rollback(map: Map[String, Byte]): Unit = {}
 
   /**
    * 用户证书禁用、启用

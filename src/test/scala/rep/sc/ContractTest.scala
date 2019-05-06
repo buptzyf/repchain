@@ -20,7 +20,8 @@ import scala.collection.mutable.Map
 import rep.sc.SandboxDispatcher.DoTransaction
 import rep.protos.peer.Transaction
 import rep.sc.BlockStubActor.WriteBlockStub
-import rep.sc.tpl.ContractCert//.{CertStatus,CertInfo}
+import rep.sc.tpl._//.{CertStatus,CertInfo}
+//import rep.utils.CaseClassToString
 
 object ContractTest {
 
@@ -67,6 +68,8 @@ class ContractTest(_system: ActorSystem)
       l2, "",5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
       t2
   }
+  
+ 
   
   private def createCertTransInvoke(sysName:String,version:Int,action:String,param:String):Transaction={
      val cid2 =  ChaincodeId(SystemProfile.getAccountChaincodeName,version)
@@ -121,12 +124,19 @@ class ContractTest(_system: ActorSystem)
            Transfer("121000005l35120456", "12110107bi45jh675g", 500))
     val rcs = Array(None,  "目标账户不存在", "余额不足")*/
     
-    val aa = new ContractCert
+    //val aa = new ContractCert
     
     val signer = Signer("node2", "12110107bi45jh675g", "13856789234", Seq("node2"))
     val cert = scala.io.Source.fromFile("jks/certs/12110107bi45jh675g.node2.cer")
     val certStr = try cert.mkString finally  cert.close()
-    val certinfo = aa.CertInfo("12110107bi45jh675g", "node2", Certificate(certStr, "SHA1withECDSA", true, None, None) )
+    
+    /*var aa  = new CaseClassToString()
+    aa.AddElement("credit_code", "12110107bi45jh675g")
+    aa.AddElement("name", "node2")
+    aa.AddElement("cert", Certificate(certStr, "SHA1withECDSA", true, None, None))*/
+    
+    val certinfo = CertInfo("12110107bi45jh675g", "node2", Certificate(certStr, "SHA1withECDSA", true, None, None) )
+    //val certinfo = aa.toJsonString
     
     //准备探针以验证调用返回结果
     val probe = TestProbe()
@@ -147,6 +157,7 @@ class ContractTest(_system: ActorSystem)
    var t4 = PeerHelper.createTransaction4State(sysName, ChaincodeId(SystemProfile.getAccountChaincodeName,1),false)
    ExecuteTrans(probe,sandbox,t4,"dbnumber1",TypeOfSender.FromAPI,4,true)
    
+    //val t5 =  this.createCertTransInvoke(sysName,1, ACTION.SignUpCert, writePretty(certinfo))
     val t5 =  this.createCertTransInvoke(sysName,1, ACTION.SignUpCert, writePretty(certinfo))
    ExecuteTrans(probe,sandbox,t5,"dbnumber1",TypeOfSender.FromAPI,5,true)
     
@@ -161,8 +172,13 @@ class ContractTest(_system: ActorSystem)
     val t8 = this.get_ContractCert_Deploy_Trans(sysName, 2)
     ExecuteTrans(probe,sandbox,t8,"dbnumber1",TypeOfSender.FromAPI,8,true)
     
+    val t81 = this.get_parallelPutProofTPL_Deploy_Trans(sysName, 1)
+    ExecuteTrans(probe,sandbox,t81,"dbnumber1",TypeOfSender.FromAPI,81,true)
+    
+    
+    
     //持久化这些交易
-    val tsls =  Array(t1,t2,t3,t4,t5)
+    val tsls =  Array(t1,t2,t3,t4,t5,t81)
     val sets = tsls.toSeq
     probe.send(blocker, WriteBlockStub(sets))
     val msg_recv1 = probe.expectMsgType[Int](1000.seconds)
@@ -178,7 +194,14 @@ class ContractTest(_system: ActorSystem)
     val signer3 = Signer("node3", "122000002n00123567", "13856789274", Seq("node3"))
     val cert3 = scala.io.Source.fromFile("jks/certs/122000002n00123567.node3.cer")
     val certStr3 = try cert3.mkString finally  cert3.close()
-    val certinfo3 = aa.CertInfo("122000002n00123567", "node3", Certificate(certStr3, "SHA1withECDSA", true, None, None) )
+    
+     /*var aa1  = new CaseClassToString()
+    aa1.AddElement("credit_code", "122000002n00123567")
+    aa1.AddElement("name", "node3")
+    aa1.AddElement("cert", Certificate(certStr3, "SHA1withECDSA", true, None, None))*/
+    
+    val certinfo3 = CertInfo("122000002n00123567", "node3", Certificate(certStr3, "SHA1withECDSA", true, None, None) )
+    //val certinfo3 = aa1.toJsonString
     
     //合约状态为disable，会失败
     val t10 =  this.createCertTransInvoke(sysName, 1, ACTION.SignUpSigner, write(signer3))
@@ -202,9 +225,42 @@ class ContractTest(_system: ActorSystem)
     val t13 =  this.createCertTransInvoke(sysName, 1, ACTION.SignUpSigner, write(signer3))
    ExecuteTrans(probe,sandbox:ActorRef,t13,"dbnumber1",TypeOfSender.FromAPI,13,true)
     
-   //合约状态为disable，会失败
+   //证书已经存在，会失败
     val t14 =  this.createCertTransInvoke(sysName,1, ACTION.SignUpCert, writePretty(certinfo))
-   ExecuteTrans(probe,sandbox:ActorRef,t14,"dbnumber1",TypeOfSender.FromAPI,14,true)
+   ExecuteTrans(probe,sandbox:ActorRef,t14,"dbnumber1",TypeOfSender.FromAPI,14,false)
+   
+   
+   var probes = new Array[TestProbe](10)
+   var doparams = new Array[DoTransaction](10)
+   
+   for(i<-0 to 9){
+     val p = proofDataSingle("paeallel_key_"+i,"value_"+i)
+     val t =  this.createParallelTransInvoke(sysName,1, "createParallelTransInvoke", writePretty(p))
+     doparams(i) = DoTransaction(t,"dbnumber1",TypeOfSender.FromAPI)
+     probes(i) =  TestProbe()
+   }
+    
+   for(i<-0 to 9){
+     probes(i).send(sandbox, doparams(i))
+   }
+   
+   for(i<-0 to 9){
+     val msg_recv1 = probes(i).expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
+    if(msg_recv1.err.isEmpty){
+      println(s"serial:${15+i},expect result:${true},exeresult:true")
+      msg_recv1.err.isEmpty should be (true)
+    }else{
+      println(msg_recv1.err.get.toString())
+      println(s"serial:${15+i},expect result:${true},exeresult:false")
+    }
+   }
+   
+   
+   
+   /*val p = proofDataSingle("paeallel_key_1","value_1")
+   val t15 =  this.createParallelTransInvoke(sysName,1, "createParallelTransInvoke", writePretty(p))
+   ExecuteTrans(probe,sandbox:ActorRef,t15,"dbnumber1",TypeOfSender.FromAPI,15,true)*/
+   
    
    
   }

@@ -30,7 +30,7 @@ import rep.network.module.ModuleManager
 import rep.protos.peer.{Certificate, ChaincodeId, Signer}
 
 import rep.sc.TransferSpec.ACTION
-import rep.sc.tpl.ContractCert
+import rep.sc.tpl._
 import rep.sc.tpl.ContractCert//.{CertStatus,CertInfo}
 
 import scala.collection.mutable
@@ -111,10 +111,10 @@ class ContractCertSpec (_system: ActorSystem)
     val msg_recv = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
     msg_recv.err.isEmpty should be (true)
   }
-  val aa = new ContractCert
+  //val aa = new ContractCert
   // 注册node1 证书
   test("ContractCert should can signUp the node1.cer") {
-    val certInfo = aa.CertInfo("121000005l35120456", "node1", Certificate(certs.getOrElse("node1", "default"), "SHA256withECDSA", certValid = true , None, None) )
+    val certInfo = CertInfo("121000005l35120456", "node1", Certificate(certs.getOrElse("node1", "default"), "SHA256withECDSA", certValid = true , None, None) )
     val t =  PeerHelper.createTransaction4Invoke(sysName,cid, ACTION.SignUpCert, Seq(writePretty(certInfo)))
     val msg_send = DoTransaction(t,   "dbnumber",TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
@@ -124,7 +124,7 @@ class ContractCertSpec (_system: ActorSystem)
 
   // 重复注册一个证书会提示错误
   test("ContractCert should can't signUp the same Certificate") {
-    val certInfo = aa.CertInfo("121000005l35120456", "node1", Certificate(certs.getOrElse("node1", "default"), "SHA256withECDSA", certValid = true , None, None) )
+    val certInfo = CertInfo("121000005l35120456", "node1", Certificate(certs.getOrElse("node1", "default"), "SHA256withECDSA", certValid = true , None, None) )
     val t =  PeerHelper.createTransaction4Invoke(sysName,cid, ACTION.SignUpCert, Seq(writePretty(certInfo)))
     val msg_send = DoTransaction(t,  "dbnumber",TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
@@ -134,7 +134,7 @@ class ContractCertSpec (_system: ActorSystem)
 
   // 不能将证书注册到一个不存在的账户
   test("ContractCert should can't signUp the node1.cer to signerNode2 which not exists") {
-    val certInfo = aa.CertInfo("12110107bi45jh675g", "node2", Certificate(certs.getOrElse("node1", "default"), "SHA256withECDSA", certValid = true , None, None) )
+    val certInfo = CertInfo("12110107bi45jh675g", "node2", Certificate(certs.getOrElse("node1", "default"), "SHA256withECDSA", certValid = true , None, None) )
     val t =  PeerHelper.createTransaction4Invoke(sysName,cid, ACTION.SignUpCert, Seq(writePretty(certInfo)))
     val msg_send = DoTransaction(t,   "dbnumber",TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
@@ -144,7 +144,7 @@ class ContractCertSpec (_system: ActorSystem)
 
   // 将证书2追加到 node1的账户中，使用node2作为certName
   test("ContractCert can signUp the node2.cer to signerNode1") {
-    val certInfo = aa.CertInfo("121000005l35120456", "node2", Certificate(certs.getOrElse("node2", "default"), "SHA256withECDSA", certValid = true , None, None) )
+    val certInfo = CertInfo("121000005l35120456", "node2", Certificate(certs.getOrElse("node2", "default"), "SHA256withECDSA", certValid = true , None, None) )
     val t =  PeerHelper.createTransaction4Invoke(sysName,cid, ACTION.SignUpCert, Seq(writePretty(certInfo)))
     val msg_send = DoTransaction(t,   "dbnumber",TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
@@ -154,7 +154,7 @@ class ContractCertSpec (_system: ActorSystem)
 
   // 更新证书状态,将刚刚追加的node2的证书状态修改为false
   test("updateCertStatus，update the certStatus which exists") {
-    val certStatus = aa.CertStatus("121000005l35120456", "node2", status = false )
+    val certStatus = CertStatus("121000005l35120456", "node2", status = false )
     val t =  PeerHelper.createTransaction4Invoke(sysName,cid, ACTION.UpdateCertStatus, Seq(writePretty(certStatus)))
     val msg_send = DoTransaction(t, "dbnumber",TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
@@ -164,7 +164,7 @@ class ContractCertSpec (_system: ActorSystem)
 
   // 更新证书状态，对应的证书不存在
   test("updateCertStatus，update the certStatus which not exists") {
-    val certStatus = aa.CertStatus("12110107bi45jh675g", "node2", status = false )
+    val certStatus = CertStatus("12110107bi45jh675g", "node2", status = false )
     val t =  PeerHelper.createTransaction4Invoke(sysName,cid, ACTION.UpdateCertStatus, Seq(writePretty(certStatus)))
     val msg_send = DoTransaction(t,   "dbnumber" ,TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
