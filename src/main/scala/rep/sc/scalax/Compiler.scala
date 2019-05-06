@@ -1,5 +1,5 @@
 /*
- * Copyright  2019 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
+ * Copyright  2018 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -28,16 +28,6 @@ import rep.crypto.Sha256
 import rep.app.conf.SystemProfile
 import scala.reflect.runtime.currentMirror
 import scala.tools.reflect.ToolBox
-
-/*import scala.reflect.runtime.universe
-
-import scala.reflect.internal.util.SourceFile
-import scala.reflect.internal.util.BatchSourceFile
-import com.google.common.io.Files
-import java.nio.charset.Charset
-import java.io.File
-import scala.io.Source*/
-
 import rep.storage.util.pathUtil
 import scala.reflect.io.Path.jfile2path
 
@@ -62,6 +52,42 @@ object Compiler{
   def compilef(pcode: String, cid: String): Class[_]= {
     cp.compilef(pcode, cid)
   }
+
+  /**
+   * 为case class加cid前缀,避免合约间重名
+   */
+  def prefixCaseClass(code:String, pre:String) : String={
+    val ptn = """case\s+class\s+(\S+)\s*\(""".r
+    var rc = code
+    for(ptn(cn) <- ptn.findAllIn(code)){
+       val pcn = pre+cn
+       //替换定义
+       rc = rc.replaceFirst("""case\s+class\s+"""+cn+"""\s*\(""".r,  "case class "+pcn+"(")
+       //替换json造型
+       rc = rc.replaceAll("""\[\s*"""+cn+"""\s*\]""".r,  "["+pcn+"]")
+       //替换类型声明
+       rc = rc.replaceAll(""":\s*"""+cn+"""""".r,  ":"+pcn)
+    }
+    rc
+  }
+  
+  def prefixCode(code:String, cn:String) :String = {
+    prefixCaseClass(prefixClass(code,cn),cn)
+  }
+  /**
+   * 为class加cid前缀，避免合约间重名,移除package声明,增加classTag声明
+   */
+  def prefixClass(code:String, cn:String) :String ={
+     //val pattern = """class\s+(S+)\s+extends\s+IContract\s*\{"""
+     //移除package声明——由于reflect不支持
+     var c = code
+     c = c.replaceFirst("""\s*package\s+\S+""", "")
+     //替换类名
+     c = c.replaceFirst("""class\s+(\S+)\s+extends\s+IContract\s*\{""", "class "+cn + " extends IContract{")
+     //增加返回classTag
+     //c +=  "\nscala.reflect.classTag[" + cn  +"].runtimeClass"
+     c
+  }
 }
 
 /** 负责动态编译scala合约的工具类
@@ -74,7 +100,7 @@ class Compiler(targetDir: Option[File], bDebug:Boolean) {
   //合约类名前缀
   val PRE_CLS_NAME = "SC_"
   //反射工具对象
-  val tb = currentMirror.mkToolBox()//universe.runtimeMirror(getClass.getClassLoader).mkToolBox()
+  val tb = currentMirror.mkToolBox()
   //源文件路径
   val path_source = if(bDebug) getSourcePath else pathUtil.getPath("custom_contract")
   //目标文件路径
@@ -91,7 +117,7 @@ class Compiler(targetDir: Option[File], bDebug:Boolean) {
   settings.outputDirs.setSingleOutput(target)
   settings.usejavacp.value = true
   settings.classpath.append(getSourcePath())
-  
+
   private val global = new Global(settings)
   private lazy val run = new global.Run
   //类加载器，优先从默认类加载路径加载
@@ -129,21 +155,6 @@ class Compiler(targetDir: Option[File], bDebug:Boolean) {
    * @return 编译生成的类定义
    */
   def compilef(pcode: String, cid: String): Class[_]= {
-   //去掉package声明,将class放在default路径下
-    var p0 = pcode.indexOf("import")
-     //第一个定位点应加强容错能力,允许空白字符
-    //val pattern = "extends\\s+IContract\\s*\\{".r
-    val pattern = "extends\\s+IContract\\s*\\{".r
-    val p1str = pattern.findFirstIn(pcode).get
-    val p1 = pcode.indexOf(p1str)
-    val p2 = pcode.lastIndexOf("}")
-    val p3 = pcode.lastIndexOf("class ",p1)
-    
-    //可能不存在import指令
-    if(p0.equals(-1)) 
-      p0 = p3
-    if(p1.equals(-1) || p1.equals(-1) || p1.equals(-1))
-      throw new RuntimeException("合约语法错误")
     val className = if(cid!=null) PRE_CLS_NAME+cid else classNameForCode(pcode)
     var cl: Option[Class[_]] = None
     try{
@@ -155,24 +166,16 @@ class Compiler(targetDir: Option[File], bDebug:Boolean) {
     if(cl!=None)
         return cl.get      
     //获取替换类名
-    val oldclassname = pcode.substring(p3+5,p1)
-    val newpcode = pcode.substring(p0)
-    var mo = newpcode.replaceFirst("object\\s*"+oldclassname.trim+"\\s*\\{", "object "+className +"{")
-    mo =mo.replaceFirst("class\\s*"+oldclassname.trim+"\\s*extends", "class "+className +" extends  ")
-    val ncode =mo.replaceAll(oldclassname.trim+".", className +".")
-    //val ncode = pcode.substring(p0,p3) + "class "+className+ " "+pcode.substring(p1,p2+1)
+    val ncode = Compiler.prefixCode(pcode, className)
     if(path_source!=null)
       saveCode(className,ncode)  
-   
-      var cls =   tb.compile(tb.parse(ncode +"\nscala.reflect.classTag["
+    val cls = tb.compile(tb.parse(ncode +"\nscala.reflect.classTag["
       +className
-      +"].runtimeClass")).apply().asInstanceOf[Class[_]]
-    
+      +"].runtimeClass"))().asInstanceOf[Class[_]]
     classCache(className) = cls
     cls  
   }
 
-  
 /** 尝试加载类定义
  * 	@param className 类名称
  *  @return 类定义

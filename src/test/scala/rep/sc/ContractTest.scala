@@ -20,7 +20,8 @@ import scala.collection.mutable.Map
 import rep.sc.SandboxDispatcher.DoTransaction
 import rep.protos.peer.Transaction
 import rep.sc.BlockStubActor.WriteBlockStub
-import rep.sc.tpl.ContractCert//.{CertStatus,CertInfo}
+//import rep.sc.tpl.ContractCert//.{CertStatus,CertInfo}
+import rep.utils.CaseClassToString
 
 object ContractTest {
 
@@ -60,7 +61,7 @@ class ContractTest(_system: ActorSystem)
   }
   
   private def get_ContractCert_Deploy_Trans(sysName:String,version:Int) : Transaction= {
-    val s2 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/ContractCert.scala")
+    val s2 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/ContractCert1.scala")
     val l2 = try s2.mkString finally  s2.close()
     val cid2 =  ChaincodeId(SystemProfile.getAccountChaincodeName,version)
     val t2 = PeerHelper.createTransaction4Deploy(sysName,cid2,
@@ -121,12 +122,19 @@ class ContractTest(_system: ActorSystem)
            Transfer("121000005l35120456", "12110107bi45jh675g", 500))
     val rcs = Array(None,  "目标账户不存在", "余额不足")*/
     
-    val aa = new ContractCert
+    //val aa = new ContractCert
     
     val signer = Signer("node2", "12110107bi45jh675g", "13856789234", Seq("node2"))
     val cert = scala.io.Source.fromFile("jks/certs/12110107bi45jh675g.node2.cer")
     val certStr = try cert.mkString finally  cert.close()
-    val certinfo = aa.CertInfo("12110107bi45jh675g", "node2", Certificate(certStr, "SHA1withECDSA", true, None, None) )
+    
+    var aa  = new CaseClassToString()
+    aa.AddElement("credit_code", "12110107bi45jh675g")
+    aa.AddElement("name", "node2")
+    aa.AddElement("cert", Certificate(certStr, "SHA1withECDSA", true, None, None))
+    
+    //val certinfo = aa.CertInfo("12110107bi45jh675g", "node2", Certificate(certStr, "SHA1withECDSA", true, None, None) )
+    val certinfo = aa.toJsonString
     
     //准备探针以验证调用返回结果
     val probe = TestProbe()
@@ -147,7 +155,8 @@ class ContractTest(_system: ActorSystem)
    var t4 = PeerHelper.createTransaction4State(sysName, ChaincodeId(SystemProfile.getAccountChaincodeName,1),false)
    ExecuteTrans(probe,sandbox,t4,"dbnumber1",TypeOfSender.FromAPI,4,true)
    
-    val t5 =  this.createCertTransInvoke(sysName,1, ACTION.SignUpCert, writePretty(certinfo))
+    //val t5 =  this.createCertTransInvoke(sysName,1, ACTION.SignUpCert, writePretty(certinfo))
+    val t5 =  this.createCertTransInvoke(sysName,1, ACTION.SignUpCert, certinfo)
    ExecuteTrans(probe,sandbox,t5,"dbnumber1",TypeOfSender.FromAPI,5,true)
     
     //同一快照中，再次部署同一版本合约，会失败
@@ -178,7 +187,14 @@ class ContractTest(_system: ActorSystem)
     val signer3 = Signer("node3", "122000002n00123567", "13856789274", Seq("node3"))
     val cert3 = scala.io.Source.fromFile("jks/certs/122000002n00123567.node3.cer")
     val certStr3 = try cert3.mkString finally  cert3.close()
-    val certinfo3 = aa.CertInfo("122000002n00123567", "node3", Certificate(certStr3, "SHA1withECDSA", true, None, None) )
+    
+     var aa1  = new CaseClassToString()
+    aa1.AddElement("credit_code", "122000002n00123567")
+    aa1.AddElement("name", "node3")
+    aa1.AddElement("cert", Certificate(certStr3, "SHA1withECDSA", true, None, None))
+    
+    //val certinfo3 = aa.CertInfo("122000002n00123567", "node3", Certificate(certStr3, "SHA1withECDSA", true, None, None) )
+    val certinfo3 = aa1.toJsonString
     
     //合约状态为disable，会失败
     val t10 =  this.createCertTransInvoke(sysName, 1, ACTION.SignUpSigner, write(signer3))
