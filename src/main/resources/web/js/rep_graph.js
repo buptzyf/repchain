@@ -19,6 +19,24 @@ function myGraph() {
         //订阅发送连线，为了不与订阅连线重合，直线连接，不参与force运算，但在tick中更新
         this.dlinks =[];
         // Add and remove elements on the graph object
+        this.onAddNode = function(sfrom) {
+    		//存在重复的节点入网消息干扰布局
+        	if(findNode(sfrom)){
+        		return;
+        		//this.removeNode(sfrom);
+        	}
+            this.addNode(sfrom);
+            this.addDLink(sfrom, 'Transaction');
+            this.addDLink(sfrom, 'Block');
+            this.addDLink(sfrom, 'Endorsement');
+            //graph.addDLink(sfrom, 'Event');
+            this.addSLink('Transaction', sfrom);
+            this.addSLink('Block', sfrom);
+            this.addSLink('Endorsement', sfrom);
+            //graph.addSLink('Event', sfrom);
+            this.cout_nodes++;
+            this.setNodeSta('RepChain', this.cout_nodes);
+        }
         this.addNode = function (idp) {
             if(typeof idp === 'string'){
             	//setBlocker消息可能先到
@@ -70,6 +88,16 @@ function myGraph() {
         	nd.attr("sync",val);
         	if(this.blocker != id)
         		nd.attr("class","node_circle").attr("fill","seagreen");
+        }
+        this.resetNodes = function() {
+        	links = [];
+            this.slinks =[];
+            //订阅发送连线，为了不与订阅连线重合，直线连接，不参与force运算，但在tick中更新
+            this.dlinks =[];
+            nodes = [];
+            this.cout_nodes=0;
+            this.setNodeSta('RepChain', 0);
+            //update();
         }
         this.removeNode = function (id) {
             var i = 0;
@@ -163,7 +191,6 @@ function myGraph() {
             for (var i in nodes) {
                 if (nodes[i]["id"] === id) return nodes[i];
             }
-            ;
         };
 
         var findNodeIndex = function (id) {
