@@ -23,17 +23,14 @@ function myGraph() {
     		//存在重复的节点入网消息干扰布局
         	if(findNode(sfrom)){
         		return;
-        		//this.removeNode(sfrom);
         	}
             this.addNode(sfrom);
             this.addDLink(sfrom, 'Transaction');
             this.addDLink(sfrom, 'Block');
             this.addDLink(sfrom, 'Endorsement');
-            //graph.addDLink(sfrom, 'Event');
             this.addSLink('Transaction', sfrom);
             this.addSLink('Block', sfrom);
             this.addSLink('Endorsement', sfrom);
-            //graph.addSLink('Event', sfrom);
             this.cout_nodes++;
             this.setNodeSta('RepChain', this.cout_nodes);
         }
@@ -175,15 +172,33 @@ function myGraph() {
         };
 
         this.addLink = function (source, target, value) {
-            links.push({"source": findNode(source), "target": findNode(target), "value": value||20});
+        	var ns = findNode(source);
+        	var nt = findNode(target);
+        	if(!ns || !nt){
+        		console.error('err addLink:'+ns+ ' '+ nt);
+        		return;
+        	}       	
+            links.push({"source": ns, "target": nt, "value": value||20});
             update();
         };
         this.addSLink=function(source, target, value){
-            this.slinks.push({"source": findNode(source), "target": findNode(target), "value": value||20});
+        	var ns = findNode(source);
+        	var nt = findNode(target);
+        	if(!ns || !nt){
+        		console.error('err addSLink:'+ns+ ' '+ nt);
+        		return;
+        	}       	
+            this.slinks.push({"source": ns, "target": nt, "value": value||20});
             update();
         }
         this.addDLink=function(source, target, value){
-            this.dlinks.push({"source": findNode(source), "target": findNode(target), "value": value||20});
+        	var ns = findNode(source);
+        	var nt = findNode(target);
+        	if(!ns || !nt){
+        		console.error('err addDLink:'+ns+ ' '+ nt);
+        		return;
+        	}       	
+            this.dlinks.push({"source": ns, "target": nt, "value": value||20});
             update();
         }
 
@@ -255,6 +270,10 @@ svg.append("svg:defs").selectAll("marker")
       //console.error(slinks.length+':'+vis.selectAll(".slink")[0].length)
 	  var slink = vis.selectAll(".slink")
 	    .data(slinks,function (d) {
+	    	if(!d.source || !d.target){
+	    		console.error('err .slink:'+d);
+	    		
+	    	}
             return 'p_'+d.source.id + "-" + d.target.id;
         });
 	  slink.enter().append("svg:path")
@@ -301,31 +320,10 @@ svg.append("svg:defs").selectAll("marker")
 	        }) .attr("class", "back_circle");
 	    bc.exit().remove();
        
-          /* var link = vis.selectAll(".link")
-                 .data(links, function (d) {
-                        return "l_"+d.source.id + "-" + d.target.id;
-                    });
-
-            link.enter().append("line")
-             //.attr("marker-end", "url(#end)")
-                    .attr("id", function (d) {
-                        return "l_"+d.source.id + "-" + d.target.id;
-                    })
-                    .attr("stroke-width", function (d) {
-                        return d.value / 10;
-                    })
-                    .attr("class", "link");
-            link.append("title")
-                    .text(function (d) {
-                        return d.value;
-                    });
-            link.exit().remove();*/
-
             var node = vis.selectAll("g.node")
                     .data(nodes, function (d) {
                         return d.id;
                     });
-
 
             var nodeEnter = node.enter().append("g")
                     .attr("class", "node")
@@ -341,6 +339,7 @@ svg.append("svg:defs").selectAll("marker")
 
             nodeEnter.append("svg:text")
                     .attr("class", "textClass")
+                    .attr("opacity","0.3")
                     .attr("x", 14)
                     .attr("y", ".31em")
                     .text(function (d) {
@@ -357,11 +356,8 @@ svg.append("svg:defs").selectAll("marker")
             .text(function (d) {
                 return d.sta||'';
             });
-
             node.exit().remove();
-
             
-
             force.on("tick", function () {
 
                 node.attr("transform", function (d) {
@@ -396,39 +392,22 @@ svg.append("svg:defs").selectAll("marker")
                 bc.attr("r", function (d) {
 	                return Math.sqrt((d.source.x-d.target.x)*(d.source.x-d.target.x) 
 	                	+(d.source.y-d.target.y)*(d.source.y-d.target.y));
-	            });
-              
-               /*link.attr("x1", function (d) {
-                    return d.source.x;
-                }) .attr("y1", function (d) {
-                    return d.source.y;
-                })
-                .attr("x2", function (d) {
-                    return d.target.x;
-                })
-                .attr("y2", function (d) {
-                    return d.target.y;
-                });*/
+	            });              
             });
 
             // Restart the force layout.
             force.gravity(.1)
-            //.charge(-8000000)
             .charge(function(d){
                 var charge = -2000;
                 if (d.index === 0) {
                     charge = 10 * charge;
-                    //d.fixed = true;
                 }
                 return charge;
             })
-            //.friction(0)
             .linkDistance( function(d) { return d.value * 8 } )
             .size([w, h])
             .start();
         };
-
-
         // Make it all go
         update();
     }
