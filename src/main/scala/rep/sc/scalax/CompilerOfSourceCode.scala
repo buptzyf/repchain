@@ -19,6 +19,9 @@ import java.nio.file.Paths
 import scala.reflect.io.VirtualDirectory
 import scala.reflect.internal.util.BatchSourceFile
 
+import scala.reflect.runtime.currentMirror
+import scala.tools.reflect.ToolBox
+
 
 /**
  * 动态编译工具类的伴生对象，提供静态方法
@@ -52,6 +55,7 @@ object CompilerOfSourceCode {
  *  @param bDebug: 是否调试模式
  */
 class CompilerOfSourceCode(targetDir: Option[File], bDebug: Boolean) {
+  val tb = currentMirror.mkToolBox()
   //合约类名前缀
   val PRE_CLS_NAME = "SC_"
   //源文件路径
@@ -78,7 +82,8 @@ class CompilerOfSourceCode(targetDir: Option[File], bDebug: Boolean) {
   settings.classpath.append(this.getClass.getClassLoader.getResource("").toString())
   
   settings.classpath.append("/Users/jiangbuyun/.ivy2/cache")
-  
+  //tb.mirror.classLoader.
+  //tb.mirror.universe.runtimeMirror(getClass.getClassLoader).
   println(s"getSourcePath=${getSourcePath()}")
   println(s"getclasspath=${this.getClass.getClassLoader.getResource("")}")
   

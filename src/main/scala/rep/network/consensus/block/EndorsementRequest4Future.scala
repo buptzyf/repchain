@@ -59,14 +59,14 @@ class EndorsementRequest4Future(moduleName: String) extends ModuleBase(moduleNam
     try {
       val selection: ActorSelection = context.actorSelection(toAkkaUrl(addr, endorsementActorName));
       val future1 = selection ? data
-      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( "--------ExecuteOfEndorsement waiting result"))
+      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"--------ExecuteOfEndorsement waiting resultheight=${data.blc.height},local height=${pe.getCurrentHeight}"))
       Await.result(future1, timeout.duration).asInstanceOf[ResultOfEndorsed]
     } catch {
       case e: AskTimeoutException =>
-        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( "--------ExecuteOfEndorsement timeout"))
+        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"--------ExecuteOfEndorsement timeout,height=${data.blc.height},local height=${pe.getCurrentHeight}"))
         null
       case te: TimeoutException =>
-        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( "--------ExecuteOfEndorsement java timeout"))
+        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"--------ExecuteOfEndorsement java timeout,height=${data.blc.height},local height=${pe.getCurrentHeight}"))
         null
     }
   }
@@ -93,9 +93,9 @@ class EndorsementRequest4Future(moduleName: String) extends ModuleBase(moduleNam
         if (EndorsementVerify(reqinfo.blc, result)) {
           val re = ResultOfEndorseRequester(true, result.endor, result.BlockHash, reqinfo.endorer)
           context.parent ! re
-          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( "--------endorsementRequest4Future recv endorsement result is success "))
+          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"--------endorsementRequest4Future, send endorsement, height=${reqinfo.blc.height},local height=${pe.getCurrentHeight} "))
         } else {
-          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("--------endorsementRequest4Future recv endorsement result is error, result=${result.result}"))
+          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"--------endorsementRequest4Future recv endorsement result is error, result=${result.result},height=${reqinfo.blc.height},local height=${pe.getCurrentHeight}"))
           context.parent ! ResultOfEndorseRequester(false, null, reqinfo.blc.hashOfBlock.toStringUtf8(), reqinfo.endorer)
         }
       } else {
@@ -103,7 +103,7 @@ class EndorsementRequest4Future(moduleName: String) extends ModuleBase(moduleNam
           if (result.endorserOfChainInfo.height > pe.getCurrentHeight + 1) {
             pe.getActorRef(ActorType.synchrequester) ! StartSync(false)
             context.parent ! ResultOfEndorseRequester(false, null, reqinfo.blc.hashOfBlock.toStringUtf8(), reqinfo.endorer)
-            RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( "--------endorsementRequest4Future recv endorsement result must synch "))
+            RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"--------endorsementRequest4Future recv endorsement result must synch,height=${reqinfo.blc.height},local height=${pe.getCurrentHeight} "))
           } else {
             schedulerLink = scheduler.scheduleOnce(TimePolicy.getTimeoutEndorse seconds, self, RequesterOfEndorsement(reqinfo.blc, reqinfo.blocker, reqinfo.endorer))
           }
@@ -112,7 +112,7 @@ class EndorsementRequest4Future(moduleName: String) extends ModuleBase(moduleNam
         }
       }
     } else {
-      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("--------endorsementRequest4Future recv endorsement result is null "))
+      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"--------endorsementRequest4Future recv endorsement result is null,height=${reqinfo.blc.height},local height=${pe.getCurrentHeight} "))
       context.parent ! ResultOfEndorseRequester(false, null, reqinfo.blc.hashOfBlock.toStringUtf8(), reqinfo.endorer)
     }
   }

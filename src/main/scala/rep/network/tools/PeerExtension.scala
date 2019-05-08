@@ -84,7 +84,7 @@ class PeerExtensionImpl extends Extension {
 /*********节点当前链信息结束************/
 
 /*********出块人开始************/
-  private var blocker: AtomicReference[BlockerInfo] = new AtomicReference[BlockerInfo](new BlockerInfo("", -1, 0l))
+  private var blocker: AtomicReference[BlockerInfo] = new AtomicReference[BlockerInfo](new BlockerInfo("", -1, 0l,"",-1))
 
   def resetBlocker(blker: BlockerInfo): Unit = {
     blocker.set(blker)
