@@ -80,4 +80,11 @@ scalacOptions += "-P:linter:disable:UseIfExpression+VariableAssignedUnusedValue+
 scapegoatVersion in ThisBuild := "1.3.3"
 scapegoatDisabledInspections := Seq("OptionGet", "AsInstanceOf","MethodReturningAny")
 
-mainClass in (Compile, packageBin) := Some("rep.app.Repchain")
+assemblyMergeStrategy in assembly := {
+  case PathList("org", "iq80", "leveldb", xs @ _*) => MergeStrategy.first
+  case x =>
+    val oldStrategy = (assemblyMergeStrategy in assembly).value
+    oldStrategy(x)
+}
+
+mainClass in (Compile, packageBin) := Some("rep.app.Repchain_Single")
