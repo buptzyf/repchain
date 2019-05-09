@@ -22,9 +22,9 @@ import akka.actor.{ ActorRef, Props }
 object SyncMsg {
   case class StartSync(isNoticeModuleMgr:Boolean)
   
-  case object ChainInfoOfRequest
+  case object ChainInfoOfRequest//(reqChainInfo:BlockchainInfo)
   
-  case class ResponseInfo(response: BlockchainInfo, responser: ActorRef)
+  case class ResponseInfo(response: BlockchainInfo, responser: ActorRef)//,)
   
   case class GreatMajority(addr: ActorRef, height: Long)
 
