@@ -120,12 +120,12 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
     case CollectEndorsement(block, blocker) =>
       createRouter
       if (this.block != null && this.block.hashOfBlock.toStringUtf8().equals(block.hashOfBlock.toStringUtf8())) {
-        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("collectioner is waiting endorse result"))
+        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"collectioner is waiting endorse result,height=${block.height},local height=${pe.getCurrentHeight}"))
       } else {
-        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( "collectioner recv endorsement"))
+        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"collectioner recv endorsement,height=${block.height},local height=${pe.getCurrentHeight}"))
         resetEndorseInfo(block, blocker)
         pe.getNodeMgr.getStableNodes.foreach(f => {
-          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( "collectioner send endorsement to requester"))
+          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"collectioner send endorsement to requester,height=${block.height},local height=${pe.getCurrentHeight}"))
           router.route(RequesterOfEndorsement(block, blocker, f), self)
         })
         //schedulerLink = scheduler.scheduleOnce(TimePolicy.getTimeoutEndorse seconds, self, EndorseCollector.ResendEndorseInfo)
@@ -140,11 +140,11 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
       if (this.block != null) {
         if (this.block.hashOfBlock.toStringUtf8().equals(blockhash)) {
           if (result) {
-            RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( "collectioner recv endorsement result"))
+            RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"collectioner recv endorsement result,height=${block.height},local height=${pe.getCurrentHeight}"))
             recvedEndorse += endorser.toString -> endors
             CheckAndFinishHandler
           } else {
-            RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("collectioner recv endorsement result,is error"))
+            RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"collectioner recv endorsement result,is error,height=${block.height},local height=${pe.getCurrentHeight}"))
           }
         }
       }

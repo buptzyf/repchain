@@ -50,18 +50,20 @@ class Voter(moduleName: String) extends ModuleBase(moduleName) with CRFDVoter {
 
   val dataaccess: ImpDataAccess = ImpDataAccess.GetDataAccess(pe.getSysTag)
 
-  private var BlockHashOfVote: String = null
-  private var Blocker: BlockerInfo = BlockerInfo("", -1, 0l)
+  //private var BlockHashOfVote: String = null
+  private var candidator: Array[String] = Array.empty[String]
+  private var Blocker: BlockerInfo = BlockerInfo("", -1, 0l,"",-1)
   private var voteCount = 0
 
   def checkTranNum: Boolean = {
-    if (pe.getTransPoolMgr.getTransLength() > SystemProfile.getMinBlockTransNum) true else false
+    pe.getTransPoolMgr.getTransLength() > SystemProfile.getMinBlockTransNum
   }
 
   private def cleanVoteInfo = {
     this.voteCount = 0
-    this.BlockHashOfVote = null
-    this.Blocker = BlockerInfo("", -1, 0l)
+    //this.BlockHashOfVote = null
+    candidator = Array.empty[String]
+    this.Blocker = BlockerInfo("", -1, 0l,"",-1)
     pe.resetBlocker(this.Blocker)
   }
 
@@ -73,14 +75,14 @@ class Voter(moduleName: String) extends ModuleBase(moduleName) with CRFDVoter {
   }
 
   private def resetCandidator = {
-    this.BlockHashOfVote = pe.getCurrentBlockHash
-    val candidatorCur = candidators(pe.getSysTag,this.BlockHashOfVote,SystemCertList.getSystemCertList, Sha256.hash(BlockHashOfVote))
-    pe.getNodeMgr.resetCandidator(candidatorCur)
+    //this.BlockHashOfVote = pe.getCurrentBlockHash
+    candidator = candidators(pe.getSysTag,pe.getCurrentBlockHash,SystemCertList.getSystemCertList, Sha256.hash(pe.getCurrentBlockHash))
+    //pe.getNodeMgr.resetCandidator(candidatorCur)
   }
 
   private def resetBlocker(idx: Int) = {
-    RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(  s"sysname=${pe.getSysTag},votelist=${pe.getNodeMgr.getCandidator.toArray[String].mkString("|")},idx=${idx}"))
-    this.Blocker = BlockerInfo(blocker(pe.getNodeMgr.getCandidator.toArray[String], idx), idx, System.currentTimeMillis())
+    RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(  s"sysname=${pe.getSysTag},votelist=${candidator.toArray[String].mkString("|")},idx=${idx}"))
+    this.Blocker = BlockerInfo(blocker(candidator.toArray[String], idx), idx, System.currentTimeMillis(),pe.getCurrentBlockHash,pe.getCurrentHeight)
     pe.resetBlocker(this.Blocker)
     NoticeBlockerMsg
   }
@@ -101,13 +103,13 @@ class Voter(moduleName: String) extends ModuleBase(moduleName) with CRFDVoter {
 
   private def vote = {
     if (checkTranNum) {
-      if (this.BlockHashOfVote == null) {
+      if (this.Blocker.voteBlockHash == "") {
         this.cleanVoteInfo
         this.resetCandidator
         this.resetBlocker(0)
         RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(  s"sysname=${pe.getSysTag},first voter,blocker=${this.Blocker.blocker},voteidx=${this.Blocker.VoteIndex}" + "~" + selfAddr))
       } else {
-        if (!this.BlockHashOfVote.equals(pe.getCurrentBlockHash)) {
+        if (!this.Blocker.voteBlockHash.equals(pe.getCurrentBlockHash)) {
           //抽签的基础块已经变化，需要重续选择候选人
           this.cleanVoteInfo
           this.resetCandidator

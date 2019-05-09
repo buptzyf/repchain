@@ -61,7 +61,7 @@
         font-size: '12px' list-style: none;
         -webkit-padding-start: 0;
         -webkit-margin-after: 0;
-        -webkit-margin-before: 1em;
+        -webkit-margin-before: 0;
         border: 1px solid #000;
         overflow-y: auto;
         width: 100%;
@@ -304,8 +304,10 @@
         };
 
         socket.onclose = function() {
-            graph.svg.select('#node_RepChain').transition().duration(2000).style({ "fill": "red" });
            	console.error("Disconnected\n");
+           	graph.resetNodes();
+           	addNodes();
+            graph.svg.select('#node_RepChain').transition().duration(2000).style({ "fill": "red" });
            	setTimeout(function(){
            		connect();
         	},5000);
@@ -413,18 +415,8 @@
                 switch (msg.action) {
                     //节点入网
                 	case 5:
-                        graph.addNode(sfrom);
                         console.log("Received: " + msg.action + " from:" + msg.from + " to:" + msg.to + "\n");
-                        graph.addDLink(sfrom, 'Transaction');
-                        graph.addDLink(sfrom, 'Block');
-                        graph.addDLink(sfrom, 'Endorsement');
-                        //graph.addDLink(sfrom, 'Event');
-                        graph.addSLink('Transaction', sfrom);
-                        graph.addSLink('Block', sfrom);
-                        graph.addSLink('Endorsement', sfrom);
-                        //graph.addSLink('Event', sfrom);
-                        graph.cout_nodes++;
-                        graph.setNodeSta('RepChain', graph.cout_nodes);
+						graph.onAddNode(sfrom);
                         break;
                      //节点离网
                     case 6:

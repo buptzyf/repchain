@@ -29,10 +29,10 @@ import rep.app.conf.{ SystemProfile, TimePolicy }
 import rep.crypto.Sha256
 import rep.network.consensus.vote.Voter.VoteOfBlocker
 import rep.network.base.ModuleBase
-import rep.network.consensus.block.Blocker.{ConfirmedBlock,PreTransBlock,PreTransBlockResult}
+import rep.network.consensus.block.Blocker.{ ConfirmedBlock, PreTransBlock, PreTransBlockResult }
 import rep.protos.peer._
 import rep.storage.ImpDataAccess
-import rep.utils.GlobalUtils.{ ActorType, BlockEvent, EventType, NodeStatus}
+import rep.utils.GlobalUtils.{ ActorType, BlockEvent, EventType, NodeStatus }
 import scala.collection.mutable
 import com.sun.beans.decoder.FalseElementHandler
 import scala.util.control.Breaks
@@ -50,8 +50,6 @@ object Blocker {
   case class PreTransBlock(block: Block, prefixOfDbTag: String)
   //块预执行结果
   case class PreTransBlockResult(blc: Block, result: Boolean)
-
-  
 
   //正式块
   case class ConfirmedBlock(blc: Block, actRef: ActorRef)
@@ -145,7 +143,7 @@ class Blocker(moduleName: String) extends ModuleBase(moduleName) {
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,height=${blc.height},local height=${pe.getCurrentHeight}" + "~" + selfAddr))
       blc = ExecuteTransactionOfBlock(blc)
       if (blc != null) {
-        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"create new block,prelaod success,height=${blc.height},local height=${pe.getCurrentHeight}" + "~" + selfAddr))
+        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,prelaod success,height=${blc.height},local height=${pe.getCurrentHeight}" + "~" + selfAddr))
         blc = BlockHelp.AddBlockHash(blc)
         BlockHelp.AddSignToBlock(blc, pe.getSysTag)
       } else {
@@ -158,54 +156,48 @@ class Blocker(moduleName: String) extends ModuleBase(moduleName) {
 
   private def CreateBlockHandler = {
     //if (preblock == null) {
-      val blc = CreateBlock
-      if (blc != null) {
-        this.preblock = blc
-        schedulerLink = clearSched()
-        pe.getActorRef(ActorType.endorsementcollectioner) ! EndorseMsg.CollectEndorsement(this.preblock, pe.getBlocker.blocker)
-        //schedulerLink = scheduler.scheduleOnce(TimePolicy.getTimeoutEndorse seconds, self, Blocker.EndorseOfBlockTimeOut)
-      }
+    val blc = CreateBlock
+    if (blc != null) {
+      this.preblock = blc
+      schedulerLink = clearSched()
+      pe.getActorRef(ActorType.endorsementcollectioner) ! EndorseMsg.CollectEndorsement(this.preblock, pe.getBlocker.blocker)
+      //schedulerLink = scheduler.scheduleOnce(TimePolicy.getTimeoutEndorse seconds, self, Blocker.EndorseOfBlockTimeOut)
+    }
     //}
   }
 
   override def receive = {
     //创建块请求（给出块人）
     case Blocker.CreateBlock =>
-      if (NodeHelp.isBlocker(pe.getBlocker.blocker, pe.getSysTag)) {
-        sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Block, Event.Action.CANDIDATOR)
-        if (!pe.isSynching) {
+      if (!pe.isSynching) {
+        if (NodeHelp.isBlocker(pe.getBlocker.blocker, pe.getSysTag) && pe.getBlocker.voteBlockHash == pe.getCurrentBlockHash) {
+          sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Block, Event.Action.CANDIDATOR)
+
           //是出块节点
           if (preblock == null) {
             CreateBlockHandler
           } else {
-            if (preblock.previousBlockHash.toStringUtf8() == pe.getCurrentBlockHash) {
-              //预出块已经建立，不需要重新创建，可以请求再次背书
-              /*schedulerLink = clearSched()
-              logMsg(LogType.INFO, moduleName + "~" + s"create new block,send endorse collector,height=${this.preblock.height},local height=${pe.getCurrentHeight}" + "~" + selfAddr)
-              pe.getActorRef(ActorType.endorsementcollectioner) ! EndorseMsg.CollectEndorsement(this.preblock, pe.getBlocker.blocker)
-              sendEvent(EventType.PUBLISH_INFO, mediator, selfAddr, Topic.Endorsement, Event.Action.BLOCK_ENDORSEMENT)
-              schedulerLink = scheduler.scheduleOnce(TimePolicy.getTimeoutEndorse seconds, self, Blocker.EndorseOfBlockTimeOut)*/
-              
-            } else {
+            if (preblock.previousBlockHash.toStringUtf8() != pe.getBlocker.voteBlockHash) {
               //上一个块已经变化，需要重新出块
               CreateBlockHandler
-            }
+            } 
           }
         } else {
-          //节点状态不对
-          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"create new block,node status error,height=${this.preblock.height}" + "~" + selfAddr))
+          //出块标识错误,暂时不用做任何处理
+          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,do not blocker or blocker hash not equal current hash,height=${this.preblock.height}" + "~" + selfAddr))
         }
+
       } else {
-        //出块标识错误,暂时不用做任何处理
-        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,do not blocker,height=${this.preblock.height}" + "~" + selfAddr))
+        //节点状态不对
+        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,node status error,status is synching,height=${this.preblock.height}" + "~" + selfAddr))
       }
 
     //出块超时
-    case Blocker.EndorseOfBlockTimeOut =>
+    /*case Blocker.EndorseOfBlockTimeOut =>
       schedulerLink = clearSched()
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,send endorse collector,height=${this.preblock.height},local height=${pe.getCurrentHeight}" + "~" + selfAddr))
       pe.getActorRef(ActorType.endorsementcollectioner) ! EndorseMsg.CollectEndorsement(this.preblock, pe.getBlocker.blocker)
-      schedulerLink = scheduler.scheduleOnce(TimePolicy.getTimeoutEndorse seconds, self, Blocker.EndorseOfBlockTimeOut)
+      schedulerLink = scheduler.scheduleOnce(TimePolicy.getTimeoutEndorse seconds, self, Blocker.EndorseOfBlockTimeOut)*/
     case _ => //ignore
   }
 

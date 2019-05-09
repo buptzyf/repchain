@@ -31,7 +31,7 @@ class NodeMgr {
   private var stableNodes: TreeMap[Address, String] = new TreeMap[Address, String]()
   //本地上次候选人名单
   //private var candidator: TreeMap[String, String] = new TreeMap[String, String]()
-  private var candidator: Set[String] = Set.empty[String]
+  //private var candidator: Set[String] = Set.empty[String]
 
   def getNodes: Set[Address] = {
     var source = Set.empty[Address]
@@ -143,7 +143,7 @@ class NodeMgr {
     a
   }
 
-  def getCandidator: Set[String] = {
+  /*def getCandidator: Set[String] = {
     var source = Set.empty[String]
     candidatorLock.lock()
     try {
@@ -152,7 +152,7 @@ class NodeMgr {
       candidatorLock.unlock()
     }
     source
-  }
+  }*/
 
   /*private def putCandidator(addr: String): Unit = {
     candidatorLock.lock()
@@ -164,17 +164,17 @@ class NodeMgr {
     }
   }*/
 
-  def resetCandidator(nds: Array[String]): Unit = {
+  /*def resetCandidator(nds: Array[String]): Unit = {
     candidatorLock.lock()
     try {
       candidator = Set.empty[String]
       candidator = nds.toSet
     } finally {
       candidatorLock.unlock()
-    }
+    }*/
     /*nds.foreach(addr => {
       putCandidator(addr)
     })*/
-  }
+  //}
 
 }

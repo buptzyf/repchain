@@ -235,7 +235,7 @@ class ContractTest(_system: ActorSystem)
    
    for(i<-0 to 9){
      val p = proofDataSingle("paeallel_key_"+i,"value_"+i)
-     val t =  this.createParallelTransInvoke(sysName,1, "createParallelTransInvoke", writePretty(p))
+     val t =  this.createParallelTransInvoke(sysName,1, "putProofSingle", writePretty(p))
      doparams(i) = DoTransaction(t,"dbnumber1",TypeOfSender.FromAPI)
      probes(i) =  TestProbe()
    }
