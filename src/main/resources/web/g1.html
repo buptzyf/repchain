@@ -396,7 +396,7 @@
                     }
                     console.info("Received: " + msg.action + " from:" + msg.from + " to:" + msg.to + "\n");
                 } //背书
-                else if (msg.action == 3) {
+                else if (msg.action == 4) {
                     //只统计sendEvent
                     if (msg.from != 'Endorsement')
                         graph.cout_endorsements++;

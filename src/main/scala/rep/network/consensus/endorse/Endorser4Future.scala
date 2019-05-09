@@ -202,7 +202,7 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
       //println("entry 9")
       val endtime = System.currentTimeMillis()
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"#################endorsement spent time=${endtime-starttime},,recv endorse request,endorse height=${info.blc.height},local height=${pe.getCurrentHeight}"))
-      sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Block, Event.Action.ENDORSEMENT)
+      sendEvent(EventType.RECEIVE_INFO, mediator, pe.getSysTag, Topic.Endorsement,Event.Action.ENDORSEMENT)
       sender ! ResultOfEndorsed(ResultFlagOfEndorse.success, BlockHelp.SignBlock(info.blc, pe.getSysTag), info.blc.hashOfBlock.toStringUtf8(),pe.getSystemCurrentChainStatus,pe.getBlocker)
     } else {
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry 8"))

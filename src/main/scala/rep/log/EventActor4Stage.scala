@@ -54,8 +54,9 @@ class EventActor4Stage(eventactor: ActorRef) extends GraphStage[SourceShape[Even
     private def messageHandler(receive: (ActorRef, Any)): Unit = {
       receive match {
         case (_, evt:Event) => {
-          if(this.isAvailable(out) && !this.isClosed(out) )
+          if(this.isAvailable(out) && !this.isClosed(out) ){
             push(out,evt)
+          }
         }
         case(_,_) =>
       }
