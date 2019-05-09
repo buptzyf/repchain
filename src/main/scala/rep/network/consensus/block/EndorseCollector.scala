@@ -95,6 +95,7 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
   }
 
   private def CheckAndFinishHandler {
+    sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Endorsement, Event.Action.ENDORSEMENT)
     RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("collectioner check is finish "))
     if (NodeHelp.ConsensusConditionChecked(this.recvedEndorse.size + 1, pe.getNodeMgr.getNodes.size)) {
       //schedulerLink = clearSched()
@@ -107,8 +108,6 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("collectioner endorsement sort"))
       this.block = this.block.withEndorsements(consensus)
       mediator ! Publish(Topic.Block, new ConfirmedBlock(this.block, sender))
-      sendEvent(EventType.RECEIVE_INFO, mediator, pe.getSysTag, Topic.Block,
-        Event.Action.ENDORSEMENT)
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( "collectioner endorsementt finish"))
       clearEndorseInfo
     } else {

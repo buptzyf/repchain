@@ -160,7 +160,9 @@ class Blocker(moduleName: String) extends ModuleBase(moduleName) {
     if (blc != null) {
       this.preblock = blc
       schedulerLink = clearSched()
-      pe.getActorRef(ActorType.endorsementcollectioner) ! EndorseMsg.CollectEndorsement(this.preblock, pe.getBlocker.blocker)
+      //在发出背书时，告诉对方我是当前出块人，取出系统的名称
+      //pe.getActorRef(ActorType.endorsementcollectioner) ! EndorseMsg.CollectEndorsement(this.preblock, pe.getBlocker.blocker)
+      pe.getActorRef(ActorType.endorsementcollectioner) ! EndorseMsg.CollectEndorsement(this.preblock, pe.getSysTag)
       //schedulerLink = scheduler.scheduleOnce(TimePolicy.getTimeoutEndorse seconds, self, Blocker.EndorseOfBlockTimeOut)
     }
     //}
