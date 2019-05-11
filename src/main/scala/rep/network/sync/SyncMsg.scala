@@ -22,16 +22,20 @@ import akka.actor.{ ActorRef, Props }
 object SyncMsg {
   case class StartSync(isNoticeModuleMgr:Boolean)
   
-  case object ChainInfoOfRequest
+  case class ChainInfoOfRequest(height:Long)
   
-  case class ResponseInfo(response: BlockchainInfo, responser: ActorRef)
+  case class ResponseInfo(response: BlockchainInfo, responser: ActorRef,ChainInfoOfSpecifiedHeight:BlockchainInfo)
   
-  case class GreatMajority(addr: ActorRef, height: Long)
-
   case class BlockDataOfRequest(startHeight:Long)
   
   case class BlockDataOfResponse(data: Block)
   
   case class  SyncRequestOfStorager(responser:ActorRef,maxHeight:Long)
+  
+  case class AnalysisResult(ar:Boolean,error:String)
+  
+  case class SynchAction(start:Long,end:Long,server:ActorRef)
+  
+  case class RollbackAction(destHeight:Long)
 
 }

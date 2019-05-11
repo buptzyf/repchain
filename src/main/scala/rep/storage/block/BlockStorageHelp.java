@@ -189,6 +189,51 @@ public class BlockStorageHelp {
 		return b;  
 	}
 	
+	/**
+	 * @author jiangbuyun
+	 * @version	1.0
+	 * @since	2017-09-28
+	 * @category	内部函数，写区块字节数组到指定文件的指定位置
+	 * @param	fileno Long 文件编号,startpos Long 区块信息存储的起始位置,bb byte[] 区块字节数组
+	 * @return	如果写入成功返回true，否则false
+	 * */
+	public boolean deleteBlockBytesFromFileTail(long fileno,long delLength)throws Exception{
+		boolean b = false;
+		String np = this.BlockDataPath + File.separator + FileName + fileno;
+		synchronized(this.synchObject){
+			RandomAccessFile rf = null;
+			FileChannel channel = null;
+			try{
+				rf = new RandomAccessFile(np, "rw");  
+				channel = rf.getChannel(); 
+				long len = channel.size() - delLength;
+				channel.truncate(len);
+				b = true;
+			}catch(Exception e){
+				e.printStackTrace();
+				throw e;
+			}finally{
+				if(channel != null){
+					try{
+						channel.close();
+					}catch(Exception ec){
+						ec.printStackTrace();
+					}
+				}
+				
+				if(rf != null){
+					try{
+						rf.close();
+					}catch(Exception er){
+						er.printStackTrace();
+					}
+				}
+			}
+		}
+		
+		return b;  
+	}
+	
 	
 	public static byte[] longToByte(long number) {
 	    byte[] b = new byte[8];

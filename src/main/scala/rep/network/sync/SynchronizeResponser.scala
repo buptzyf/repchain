@@ -23,7 +23,7 @@ import rep.utils.GlobalUtils.{ ActorType, BlockEvent, EventType }
 import rep.storage.ImpDataAccess
 import rep.protos.peer._
 import rep.network.util.NodeHelp
-import rep.network.sync.SyncMsg.{ResponseInfo,BlockDataOfResponse}
+import rep.network.sync.SyncMsg.{ResponseInfo,BlockDataOfResponse,ChainInfoOfRequest,BlockDataOfRequest}
 import rep.log.RepLogger
 
 object SynchronizeResponser {
@@ -44,18 +44,28 @@ class SynchronizeResponser(moduleName: String) extends ModuleBase(moduleName) {
   val dataaccess: ImpDataAccess = ImpDataAccess.GetDataAccess(pe.getSysTag)
 
   override def receive: Receive = {
-    case SyncMsg.ChainInfoOfRequest =>
+    case ChainInfoOfRequest(height) =>
+      sendEvent(EventType.RECEIVE_INFO, mediator,pe.getNodeMgr.getStableNodeName4Addr(self.path.address), BlockEvent.CHAIN_INFO_SYNC,  Event.Action.BLOCK_SYNC)
       if (NodeHelp.isSameNodeForRef(sender(), self)) {
-        RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(  s"recv sync chaininfo request,it is self,do not response, from actorAddr" + "～" + NodeHelp.getNodePath(sender())))
-      } else {
-        RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix( s"recv sync chaininfo request from actorAddr" + "～" + NodeHelp.getNodePath(sender())))
+        RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(  "recv sync chaininfo request,it is self,do not response, from actorAddr" + "～" + NodeHelp.getNodePath(sender())))
+      } //else {
+        RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix( "recv sync chaininfo request from actorAddr" + "～" + NodeHelp.getNodePath(sender())))
         val responseInfo = dataaccess.getBlockChainInfo()
-        sender ! ResponseInfo(responseInfo,self)
-      }
+        var ChainInfoOfSpecifiedHeight : BlockchainInfo = BlockchainInfo(0l, 0l, _root_.com.google.protobuf.ByteString.EMPTY,
+                                                                        _root_.com.google.protobuf.ByteString.EMPTY,
+                                                                        _root_.com.google.protobuf.ByteString.EMPTY)
+        if(height < responseInfo.height){
+          val b = dataaccess.getBlock4ObjectByHeight(height)
+          ChainInfoOfSpecifiedHeight = ChainInfoOfSpecifiedHeight.withHeight(height)
+          ChainInfoOfSpecifiedHeight = ChainInfoOfSpecifiedHeight.withCurrentBlockHash(b.hashOfBlock)
+          ChainInfoOfSpecifiedHeight = ChainInfoOfSpecifiedHeight.withPreviousBlockHash(b.previousBlockHash)
+          ChainInfoOfSpecifiedHeight = ChainInfoOfSpecifiedHeight.withCurrentStateHash(b.stateHash)
+        }
+        sender ! ResponseInfo(responseInfo,self,ChainInfoOfSpecifiedHeight)
+      //}
 
-    case SyncMsg.BlockDataOfRequest(startHeight) =>
-      sendEvent(EventType.PUBLISH_INFO, mediator,sender.path.toString(), selfAddr,  Event.Action.BLOCK_SYNC)
-      sendEventSync(EventType.PUBLISH_INFO, mediator,sender.path.toString(), selfAddr,  Event.Action.BLOCK_SYNC)
+    case BlockDataOfRequest(startHeight) =>
+      sendEvent(EventType.RECEIVE_INFO, mediator,pe.getNodeMgr.getStableNodeName4Addr(self.path.address), BlockEvent.CHAIN_INFO_SYNC,  Event.Action.BLOCK_SYNC)
       RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(  s"node number:${pe.getSysTag},start block number:${startHeight},Get a data request from  $sender" + "～" + selfAddr))
       val local = dataaccess.getBlockChainInfo()
       var data = Block()

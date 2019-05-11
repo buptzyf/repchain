@@ -31,7 +31,7 @@ import scala.collection.immutable
 import rep.network.sync.SyncMsg
 import scala.util.control.Breaks._
 import rep.network.util.NodeHelp
-import rep.network.sync.SyncMsg.{GreatMajority,BlockDataOfRequest,BlockDataOfResponse}
+import rep.network.sync.SyncMsg.{BlockDataOfRequest,BlockDataOfResponse}
 import rep.log.RepLogger
 
 

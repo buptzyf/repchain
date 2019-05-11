@@ -21,106 +21,61 @@ import akka.actor.{ Address }
 import java.util.concurrent.locks._
 import scala.util.control.Breaks._
 
+import java.util.concurrent.ConcurrentHashMap
+import scala.collection.JavaConverters._
+
 class NodeMgr {
-  private val nodesLock: Lock = new ReentrantLock();
-  private val nodesStableLock: Lock = new ReentrantLock();
-  private val candidatorLock: Lock = new ReentrantLock();
+  //private val nodesLock: Lock = new ReentrantLock();
+  //private val nodesStableLock: Lock = new ReentrantLock();
+  //private val candidatorLock: Lock = new ReentrantLock();
   //本地缓存网络节点
-  private var nodes: TreeMap[String, Address] = new TreeMap[String, Address]()
+  //private var nodes: TreeMap[String, Address] = new TreeMap[String, Address]()
+  private implicit var nodes = new ConcurrentHashMap[String, Address] asScala
   //本地缓存稳定的网络节点
-  private var stableNodes: TreeMap[Address, String] = new TreeMap[Address, String]()
+  //private var stableNodes: TreeMap[Address, String] = new TreeMap[Address, String]()
+  private implicit var stableNodes = new ConcurrentHashMap[Address, String] asScala
+  
   //本地上次候选人名单
   //private var candidator: TreeMap[String, String] = new TreeMap[String, String]()
   //private var candidator: Set[String] = Set.empty[String]
 
   def getNodes: Set[Address] = {
-    var source = Set.empty[Address]
-    nodesLock.lock()
-    try {
-      source = nodes.values.toArray.toSet
-    } finally {
-      nodesLock.unlock()
-    }
-    source
+     nodes.values.toArray.toSet
   }
 
   def putNode(addr: Address): Unit = {
-    nodesLock.lock()
-    try {
-      val key = addr.toString
-      nodes += key -> addr
-    } finally {
-      nodesLock.unlock()
-    }
+      nodes.put(addr.toString, addr)
   }
 
   def removeNode(addr: Address): Unit = {
-    nodesLock.lock()
-    try {
-      val key = addr.toString
-      nodes -= key
-    } finally {
-      nodesLock.unlock()
-    }
+    nodes.remove(addr.toString)
   }
 
   def resetNodes(nds: Set[Address]): Unit = {
-    nodesLock.lock()
-    try {
-      nodes = TreeMap.empty[String, Address]
-    } finally {
-      nodesLock.unlock()
-    }
+    nodes.clear
     nds.foreach(addr => {
       putNode(addr)
     })
   }
 
   def getStableNodes: Set[Address] = {
-    var source = Set.empty[Address]
-    nodesStableLock.lock()
-    try {
-      source = stableNodes.keys.toSet
-    } finally {
-      nodesStableLock.unlock()
-    }
-    source
+    stableNodes.keys.toSet
   }
 
   def getStableNodeName4Addr(addr:Address):String={
-    nodesStableLock.lock()
-    try {
-      stableNodes(addr)
-    } finally {
-      nodesStableLock.unlock()
-    }
+      stableNodes.get(addr).get
   }
   
   def putStableNode(addr: Address, nodeName: String): Unit = {
-    nodesStableLock.lock()
-    try {
-      stableNodes += addr -> nodeName
-    } finally {
-      nodesStableLock.unlock()
-    }
+    stableNodes.put(addr, nodeName)
   }
 
   def removeStableNode(addr: Address): Unit = {
-    nodesStableLock.lock()
-    try {
-      stableNodes -= addr
-    } finally {
-      nodesStableLock.unlock()
-    }
+    stableNodes.remove(addr)
   }
 
   def resetStableNodes(nds: Set[(Address, String)]): Unit = {
-    nodesStableLock.lock()
-    try {
-      stableNodes = TreeMap.empty[Address, String]
-    } finally {
-      nodesStableLock.unlock()
-    }
+    stableNodes.clear()
     nds.foreach(addr => {
       putStableNode(addr._1, addr._2)
     })
@@ -128,53 +83,14 @@ class NodeMgr {
 
   def getNodeAddr4NodeName(nodeName: String): Address = {
     var a: Address = null
-    nodesStableLock.lock()
-    try {
-      breakable(
+    breakable(
         stableNodes.foreach(f => {
           if (f._2 == nodeName) {
             a = f._1
             break
           }
         }))
-    } finally {
-      nodesStableLock.unlock()
-    }
     a
   }
-
-  /*def getCandidator: Set[String] = {
-    var source = Set.empty[String]
-    candidatorLock.lock()
-    try {
-      source = candidator
-    } finally {
-      candidatorLock.unlock()
-    }
-    source
-  }*/
-
-  /*private def putCandidator(addr: String): Unit = {
-    candidatorLock.lock()
-    try {
-      val key = addr.toString
-      candidator += key -> addr
-    } finally {
-      candidatorLock.unlock()
-    }
-  }*/
-
-  /*def resetCandidator(nds: Array[String]): Unit = {
-    candidatorLock.lock()
-    try {
-      candidator = Set.empty[String]
-      candidator = nds.toSet
-    } finally {
-      candidatorLock.unlock()
-    }*/
-    /*nds.foreach(addr => {
-      putCandidator(addr)
-    })*/
-  //}
 
 }

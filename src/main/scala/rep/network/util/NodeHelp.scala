@@ -38,26 +38,29 @@ object NodeHelp {
     b
   }
   
+  //获取Actor的地址，akka.ssl.tcp://Repchain@192.168.10.155:54310
+  def getNodeAddress(actref: ActorRef):String={
+    val path = getNodePath(actref)
+    path.substring(0, path.indexOf("/user"))
+  }
+  
+  //获取Actor的路径，akka.ssl.tcp://Repchain@192.168.10.155:54310/user/modulemanager/synchresponser#-1500748370
   def getNodePath(actref: ActorRef):String={
     if(actref == null) ""
     akka.serialization.Serialization.serializedActorPath(actref)
   }
   
   def ConsensusConditionChecked(inputNumber: Int, nodeNumber: Int): Boolean = {
-    if ((inputNumber - 1) >= Math.floor(((nodeNumber)*1.0) / 2)) true else false
+    (inputNumber - 1) >= Math.floor(((nodeNumber)*1.0) / 2)
   }
   
   def isCandidateNow(Systemname: String, candidates: Set[ String ]): Boolean = {
     val list = candidates.toList
-    list.exists(p=> Systemname == p)
+    list.contains(Systemname)
   }
   
   def isBlocker(blockerOfInput: String, blockername: String): Boolean = {
-    if(blockerOfInput == blockername){
-      true
-    }else{
-      false
-    }
+    blockerOfInput == blockername
   }
   
   def checkBlocker(myaddress:String,sendaddress:String):Boolean = {

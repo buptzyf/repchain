@@ -119,7 +119,7 @@ abstract class IDataAccess(val SystemName: String) extends AbstractLevelDB(Syste
             } catch {
               case e: Exception => {
                 RepLogger.error(RepLogger.Storager_Logger,
-                  "IDataAccess_" + SystemName + "_" + s"DBOP BeginTrans failed, error info= " + e.getMessage)
+                  "IDataAccess_" + SystemName + "_" + "DBOP BeginTrans failed, error info= " + e.getMessage)
                 throw e
               }
             } finally {
@@ -134,7 +134,7 @@ abstract class IDataAccess(val SystemName: String) extends AbstractLevelDB(Syste
           this.IsTrans = false
           this.batch = null
           RepLogger.error(RepLogger.Storager_Logger,  
-            "IDataAccess_" + SystemName + "_" + s"DBOP BeginTrans failed, error info= " + e.getMessage)
+            "IDataAccess_" + SystemName + "_" + "DBOP BeginTrans failed, error info= " + e.getMessage)
           throw e
         }
       }
@@ -160,7 +160,7 @@ abstract class IDataAccess(val SystemName: String) extends AbstractLevelDB(Syste
       } catch {
         case e: Exception => {
           RepLogger.error(RepLogger.Storager_Logger,  
-            "IDataAccess_" + SystemName + "_" + s"DBOP CommitTrans failed, error info= " + e.getMessage)
+            "IDataAccess_" + SystemName + "_" + "DBOP CommitTrans failed, error info= " + e.getMessage)
           throw e
         }
       } finally {
@@ -172,7 +172,7 @@ abstract class IDataAccess(val SystemName: String) extends AbstractLevelDB(Syste
         } catch {
           case e: Exception => {
             RepLogger.error(RepLogger.Storager_Logger,  
-              "IDataAccess_" + SystemName + "_" + s"DBOP CommitTrans failed, error info= " + e.getMessage)
+              "IDataAccess_" + SystemName + "_" + "DBOP CommitTrans failed, error info= " + e.getMessage)
           }
         } finally {
           this.batch = null
@@ -198,7 +198,7 @@ abstract class IDataAccess(val SystemName: String) extends AbstractLevelDB(Syste
       } catch {
         case e: Exception => {
           RepLogger.error(RepLogger.Storager_Logger,  
-            "IDataAccess_" + SystemName + "_" + s"DBOP RollbackTrans failed, error info= " + e.getMessage)
+            "IDataAccess_" + SystemName + "_" + "DBOP RollbackTrans failed, error info= " + e.getMessage)
           throw e
         }
       } finally {
@@ -241,7 +241,7 @@ abstract class IDataAccess(val SystemName: String) extends AbstractLevelDB(Syste
       case e: Exception => {
         rb = null
         RepLogger.error(RepLogger.Storager_Logger,  
-          "IDataAccess_" + SystemName + "_" + s"DBOP Get failed, error info= " + e.getMessage)
+          "IDataAccess_" + SystemName + "_" + "DBOP Get failed, error info= " + e.getMessage)
         throw e
       }
     }
@@ -277,7 +277,7 @@ abstract class IDataAccess(val SystemName: String) extends AbstractLevelDB(Syste
         case e: Exception => {
           b = false
           RepLogger.error(RepLogger.Storager_Logger,  
-            "IDataAccess_" + SystemName + "_" + s"DBOP Put failed, error info= " + e.getMessage)
+            "IDataAccess_" + SystemName + "_" + "DBOP Put failed, error info= " + e.getMessage)
           throw e
         }
       }
@@ -288,16 +288,16 @@ abstract class IDataAccess(val SystemName: String) extends AbstractLevelDB(Syste
   /**
    * @author jiangbuyun
    * @version	0.7
-   * @since	2017-09-28
+   * @since	2019-05-09
    * @category	删除指定的键值
    * @param	key String 指定的键
    * @return	返回成功或者失败 Boolean
    * 该类暂时没有实现，因为RepChain不能够删除已有的WorldState
+   * 开启这个方法的实现，因为要实现区块的回滚恢复。
    */
   override def Delete(key: String): Boolean = {
     var b: Boolean = true;
-    //todo 现在不实现这个方法，原因是：所有的信息暂时不允许删除
-    /*synchObject.synchronized{
+    synchObject.synchronized{
 			try{
 				if(this.IsTrans){
 					this.batch.delete(key.getBytes());
@@ -307,11 +307,12 @@ abstract class IDataAccess(val SystemName: String) extends AbstractLevelDB(Syste
 			}catch{
 				case e:Exception =>{
 			    b = false
-  				log.error("IDataAccess" + SystemName + "_" + s"DBOP Delete failed, error info= "+e.getMessage)
+			    RepLogger.error(RepLogger.Storager_Logger,  
+            "IDataAccess_" + SystemName + "_" + "DBOP Delete failed, error info= " + e.getMessage)
   				throw e
 			  }
 			}
-		}*/
+		}
     b;
   }
 
@@ -359,7 +360,7 @@ abstract class IDataAccess(val SystemName: String) extends AbstractLevelDB(Syste
       } catch {
         case e: Exception => {
           RepLogger.error(RepLogger.Storager_Logger,  
-            "IDataAccess_" + SystemName + "_" + s"DBOP FindByLike failed, error info= " + e.getMessage)
+            "IDataAccess_" + SystemName + "_" + "DBOP FindByLike failed, error info= " + e.getMessage)
           throw e
         }
       } finally {
@@ -369,7 +370,7 @@ abstract class IDataAccess(val SystemName: String) extends AbstractLevelDB(Syste
           } catch {
             case e: Exception => {
               RepLogger.error(RepLogger.Storager_Logger,  
-                "IDataAccess_" + SystemName + "_" + s"DBOP FindByLike failed, error info= " + e.getMessage)
+                "IDataAccess_" + SystemName + "_" + "DBOP FindByLike failed, error info= " + e.getMessage)
             }
           }
         }
@@ -588,6 +589,16 @@ abstract class IDataAccess(val SystemName: String) extends AbstractLevelDB(Syste
    */
   def restoreBlock(block: Block):  (Boolean,Long,Long,String,String,String)
 
+  /**
+   * @author jiangbuyun
+   * @version	0.7
+   * @since	2019-05-09
+   * @category	回滚块到某个高度
+   * @param	to 将要回滚到到高度
+   * @return	如果成功返回true，否则返回false
+   */
+  def rollbackToheight(toHeight: Long):  Boolean
+  
   /**
    * @author jiangbuyun
    * @version	0.7

@@ -407,7 +407,7 @@
                     graph.setBlocker(sfrom);
                     console.log("Received: " + msg.action + " from:" + msg.from + " to:" + msg.to + "\n");
                 } //同步完成
-                else if (msg.action == 11) {
+                else if (msg.action == 10) {
                     graph.setNodeSync(sfrom, 1);
                     console.log("Received: " + msg.action + " from:" + msg.from + " to:" + msg.to + "\n");
                 }
