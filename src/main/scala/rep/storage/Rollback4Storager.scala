@@ -14,7 +14,7 @@ class Rollback4Storager(val dbop: ImpDataAccess,val bhelp: BlockStorageHelp) {
       val chaininfo = dbop.getBlockChainInfo()
       var loop: Long = chaininfo.height
       breakable(
-        while (loop >= toHeight) {
+        while (loop > toHeight) {
           if (rollbackBlock(loop)) {
             loop -= 1
             RepLogger.trace(
@@ -43,8 +43,8 @@ class Rollback4Storager(val dbop: ImpDataAccess,val bhelp: BlockStorageHelp) {
       rollbackFileFirstHeight(bidx)
       rollbackTranIdxAndTranCount(bidx, txnumber)
       rollbackWorldState(block)
-      dbop.CommitTrans
       bhelp.deleteBlockBytesFromFileTail(bidx.getBlockFileNo(), bidx.getBlockLength()+8)
+      dbop.CommitTrans
       bv = true
     } catch {
       case e: Exception => {

@@ -31,5 +31,11 @@ object SyncMsg {
   case class BlockDataOfResponse(data: Block)
   
   case class  SyncRequestOfStorager(responser:ActorRef,maxHeight:Long)
+  
+  case class AnalysisResult(ar:Boolean,error:String)
+  
+  case class SynchAction(start:Long,end:Long,server:ActorRef)
+  
+  case class RollbackAction(destHeight:Long)
 
 }

@@ -45,6 +45,7 @@ class SynchronizeResponser(moduleName: String) extends ModuleBase(moduleName) {
 
   override def receive: Receive = {
     case ChainInfoOfRequest(height) =>
+      sendEvent(EventType.RECEIVE_INFO, mediator,pe.getNodeMgr.getStableNodeName4Addr(self.path.address), BlockEvent.CHAIN_INFO_SYNC,  Event.Action.BLOCK_SYNC)
       if (NodeHelp.isSameNodeForRef(sender(), self)) {
         RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(  "recv sync chaininfo request,it is self,do not response, from actorAddr" + "～" + NodeHelp.getNodePath(sender())))
       } //else {
@@ -64,8 +65,7 @@ class SynchronizeResponser(moduleName: String) extends ModuleBase(moduleName) {
       //}
 
     case BlockDataOfRequest(startHeight) =>
-      sendEvent(EventType.PUBLISH_INFO, mediator,sender.path.toString(), selfAddr,  Event.Action.BLOCK_SYNC)
-      sendEventSync(EventType.PUBLISH_INFO, mediator,sender.path.toString(), selfAddr,  Event.Action.BLOCK_SYNC)
+      sendEvent(EventType.RECEIVE_INFO, mediator,pe.getNodeMgr.getStableNodeName4Addr(self.path.address), BlockEvent.CHAIN_INFO_SYNC,  Event.Action.BLOCK_SYNC)
       RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(  s"node number:${pe.getSysTag},start block number:${startHeight},Get a data request from  $sender" + "～" + selfAddr))
       val local = dataaccess.getBlockChainInfo()
       var data = Block()

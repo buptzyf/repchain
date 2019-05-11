@@ -109,53 +109,11 @@ class SynchronizeRequester4Future(moduleName: String) extends ModuleBase(moduleN
     }
   }
 
-  /*private def getSyncInfo(infos: List[ResponseInfo], nodelength: Int, localHeight: Long): GreatMajority = {
-    var majority: GreatMajority = null
-    if (infos != null) {
-      var nodecount = 0
-      var nodeheight = 0l
-      var addr: ActorRef = null
-      var oneAddr: ActorRef = null
-
-      infos.foreach(f => {
-        if (f != null) {
-          if (f.response.height > localHeight) {
-            nodecount += 1
-            if (nodeheight == 0) {
-              nodeheight = f.response.height
-              addr = f.responser
-            } else {
-              if (f.response.height <= nodeheight) {
-                nodeheight = f.response.height
-                addr = f.responser
-              }
-            }
-          }
-          if (f.response.height == 1) {
-            oneAddr = f.responser
-          }
-        }
-      })
-
-      if (NodeHelp.ConsensusConditionChecked(nodecount, nodelength)) {
-        if (nodeheight == 0 && localHeight == 0 && oneAddr != null) {
-          majority = GreatMajority(oneAddr, 1)
-        } else if (nodeheight > 0) {
-          majority = GreatMajority(addr, nodeheight)
-        }
-      } else {
-        if (nodeheight == 1 && localHeight == 0 && oneAddr != null) {
-          majority = GreatMajority(oneAddr, 1)
-        }
-      }
-    }
-    majority
-  }*/
-
+  
   
   private def getBlockData(height: Long, ref: ActorRef): Boolean = {
     try {
-      
+      sendEvent(EventType.PUBLISH_INFO, mediator,pe.getNodeMgr.getStableNodeName4Addr(self.path.address), BlockEvent.CHAIN_INFO_SYNC,  Event.Action.BLOCK_SYNC)
       val future1 = ref ? BlockDataOfRequest(height)
       //logMsg(LogType.INFO, "--------AsyncGetNodeOfChainInfo success")
       var result = Await.result(future1, timeout.duration).asInstanceOf[BlockDataOfResponse]
@@ -214,178 +172,37 @@ class SynchronizeRequester4Future(moduleName: String) extends ModuleBase(moduleN
     val lhash = pe.getCurrentBlockHash
     val lprehash = pe.getSystemCurrentChainStatus.previousBlockHash.toStringUtf8()
     val nodes = pe.getNodeMgr.getStableNodes
+    sendEvent(EventType.PUBLISH_INFO, mediator,pe.getNodeMgr.getStableNodeName4Addr(self.path.address), BlockEvent.CHAIN_INFO_SYNC,  Event.Action.BLOCK_SYNC)
     val res = AsyncGetNodeOfChainInfos(nodes,lh)
     
-    if(NodeHelp.ConsensusConditionChecked(res.length + 1, nodes.size)){
-      //获取到到chaininfo信息的数量，得到大多数节点的响应，进一步判断同步的策略
-      //获取返回的chaininfo信息中，大多数节点的相同高度的最大值
-       val heightStatis = res.groupBy(x => x.response.height).map(x => (x._1,x._2.length)).toList.sortBy(x => -x._2)
-       val maxheight = heightStatis.head._1
-       var nodesOfmaxHeight = heightStatis.head._2
-       
-       if(NodeHelp.ConsensusConditionChecked(nodesOfmaxHeight, nodes.size)){
-         //得到了真正大多数节点相同的高度
-         val agreementResult = checkHashAgreement(maxheight,res,nodes.size,1)
-         if(agreementResult._1){
-           //当前同步高度的最后高度的块hash一致
-           if(maxheight > lh){
-             //待同步高度大于本地高度
-             if(lh == 0){
-               //当前本地高度0，没有前序块，不需要检查前序块hash，可以直接进入同步
-               val actorref = res.filter(_.response.height == maxheight).head.responser
-               getBlockDatas(lh,maxheight,actorref)
-               RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix("--------error,大于本地高度，同步完成"))
-             }else{
-               //本地高度大于0，需要检查前序块的hash是否一致
-               val leadingAgreementResult = checkHashAgreement(maxheight,res,nodes.size,2)
-               if(leadingAgreementResult._1){
-                 //远端前序块hash检查一致
-                 if(leadingAgreementResult._2 == lhash){
-                   //本地最后块的hash与远端的前序块hash一致，可以直接进入同步
-                   val actorref = res.filter(_.response.height == maxheight).
-                                       filter(_.response.currentBlockHash.toStringUtf8() == agreementResult._2).
-                                       filter(_.ChainInfoOfSpecifiedHeight.currentBlockHash.toStringUtf8() == leadingAgreementResult._2).head.responser
-                   getBlockDatas(lh,maxheight,actorref)
-                   RepLogger.info(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix("--------error,大于本地高度，同步完成"))
-                 }else{
-                   //由于与远端的前序块的hash不一致，需要进一步进入回滚当前块的判断
-                   val fls = res.filter(_.response.height == maxheight).
-                                 filter(_.ChainInfoOfSpecifiedHeight.currentBlockHash.toStringUtf8() == leadingAgreementResult._2)
-                   if(fls.nonEmpty){
-                     val chinfo = fls.head
-                     if(lprehash == chinfo.ChainInfoOfSpecifiedHeight.previousBlockHash.toStringUtf8()){
-                       //本地块的前一块的hash与远端前导块的前一块的hash一致，可以调用块回滚到前一个块，直接调用存储持久化代码，进行块回滚，回滚之后载同步
-                       val actorref = res.filter(_.response.height == maxheight).
-                                     filter(_.response.currentBlockHash.toStringUtf8() == agreementResult._2).
-                                     filter(_.ChainInfoOfSpecifiedHeight.currentBlockHash.toStringUtf8() == leadingAgreementResult._2).head.responser
-                       val da = ImpDataAccess.GetDataAccess(pe.getSysTag)
-                       if(da.rollbackToheight(lh-1)){
-                         pe.resetSystemCurrentChainStatus(da.getBlockChainInfo())
-                         getBlockDatas(lh-1,maxheight,actorref)
-                         RepLogger.info(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix("--------error,大于本地高度，回滚成功"))
-                       }else{
-                         RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix("--------error,大于本地高度，回滚失败"))
-                       }
-                     }else{
-                       //本地块的前一块的hash与远端前导块的前一块的hash不一致，输出错误，停止同步
-                       RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix("--------error,大于本地高度，本地块的前一块的hash与远端前导块的前一块的hash不一致，输出错误，停止同步"))
-                     }
-                   }else{
-                     //找不到正确的响应信息，输出错误，停止同步
-                     RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix("--------error,大于本地高度，找不到正确的响应信息，输出错误，停止同步"))
-                   }
-                 }
-               }else{
-                 //远端前序块hash不一致，输出错误，停止同步
-                 RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix("--------error,大于本地高度，远端前序块hash不一致，输出错误，停止同步"))
-               }
-             }
-           }else if(maxheight == lh ){
-             //待同步高度等于本地高度
-             if(lh == 0){
-               //当前本地高度0，又与大多数节点相同，说明系统处于初始状态，寻找种子节点是否已经建立创世块
-               val resinfo = res.filter(_.response.height == 1)
-               if(resinfo.nonEmpty){
-                   var actorref : ActorRef = null
-                   breakable(
-                   resinfo.foreach(f=>{
-                     if(NodeHelp.isSeedNode(pe.getNodeMgr.getStableNodeName4Addr(f.responser.path.address))){
-                       actorref = f.responser
-                       break
-                     }
-                     })
-                     )
-                   if(actorref != null){
-                     //找到创世节点，启动同步创世块
-                     getBlockDatas(lh,1,actorref)
-                     RepLogger.info(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix("--------error,等于本地高度，找到创世节点，启动同步创世块"))
-                   }else{
-                     //没有找到创世节点，输出信息，停止同步
-                     RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix("--------error,等于本地高度，没有找到创世节点，输出信息，停止同步"))
-                   }
-                 }else{
-                   ////没有找到创世节点，输出信息，停止同步
-                   RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix("--------error,等于本地高度，//没有找到创世节点，输出信息，停止同步"))
-                 }
-               }else{
-                 //系统非初始状态，检查hash一致性
-                 val agreementResult = checkHashAgreement(maxheight,res,nodes.size,1)
-                 if(!agreementResult._1){
-                   //当前最后高度的块hash不一致，输出错误，停止同步
-                    RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix("--------error,等于本地高度，当前最后高度的块hash不一致，输出错误，停止同步"))
-                 }else{
-                   //当前最后高度的块hash一致，检查自己是否与他们相等
-                   if(lhash == agreementResult._2){
-                     //自己同大多数节点hash一致，完成同步
-                     RepLogger.info(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix("--------error,等于本地高度，自己同大多数节点hash一致，完成同步"))
-                   }else{
-                     //开始检查回滚
-                     val tmpres = res.filter(_.response.height == maxheight).
-                                     filter(_.response.currentBlockHash.toStringUtf8() == agreementResult._2).head
-                     if(lprehash == tmpres.response.previousBlockHash.toStringUtf8()){
-                       //可以开始回滚
-                       val da = ImpDataAccess.GetDataAccess(pe.getSysTag)
-                       if(da.rollbackToheight(lh-1)){
-                         pe.resetSystemCurrentChainStatus(da.getBlockChainInfo())
-                         getBlockDatas(lh-1,lh,tmpres.responser)
-                         RepLogger.info(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix("--------error,等于本地高度，回滚完成，完成同步"))
-                       }else{
-                         RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix("--------error,等于本地高度，回滚失败，停止同步"))
-                       }
-                     }else{
-                       //前一个块的hash不一致，输出错误，停止同步
-                       RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix("--------error,等于本地高度，前一个块的hash不一致，输出错误，停止同步"))
-                     }
-                   }
-                 }
-               }
-           }else{
-             //待同步高度小于本地高度
-             if(lh == 1){
-               if(NodeHelp.isSeedNode(pe.getSysTag)){
-                 //当前系统是种子节点，并且是创世块，完成同步
-                 RepLogger.info(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix("--------error,小于本地高度，当前系统是种子节点，并且是创世块，完成同步"))
-               }
-             }else{
-               if(maxheight > 0){
-                 //检查其他节点是否一致
-                 val agreementResult = checkHashAgreement(maxheight,res,nodes.size,1)
-                 if(!agreementResult._1){
-                   //当前最后高度的块hash不一致，输出错误，停止同步
-                   RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix("--------error,小于本地高度，当前最后高度的块hash不一致，输出错误，停止同步"))
-                 }else{
-                   //如果一致
-                   val da = ImpDataAccess.GetDataAccess(pe.getSysTag)
-                   val block = da.getBlockByHash(agreementResult._2)
-                   if(block != null){
-                     //需要回滚
-                     if(da.rollbackToheight(maxheight)){
-                         pe.resetSystemCurrentChainStatus(da.getBlockChainInfo())
-                         //完成同步
-                         RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix("--------error,小于本地高度，完成同步"))
-                      }else{
-                        //回滚失败，输出错误，停止同步
-                        RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix("--------error,小于本地高度，回滚失败，输出错误，停止同步"))
-                      }
-                   }
-                 }
-               }else{
-                 //远程高度小于0，完成同步
-                 RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix("--------error,远程高度小于0，完成同步"))
-               }
-             }
-           }
-         }else{
-           //当前同步高度的最后高度的块hash不一致，输出错误信息，停止同步
-           RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix("--------error,当前同步高度的最后高度的块hash不一致，输出错误信息，停止同步"))
+    val parser = new SynchResponseInfoAnalyzer(pe.getSysTag, pe.getSystemCurrentChainStatus, pe.getNodeMgr)
+    parser.Parser(res)
+    val result = parser.getResult
+    val rresult = parser.getRollbackAction
+    val sresult = parser.getSynchActiob
+    
+    
+    if(result == null){
+      println(pe.getSysTag)
+    }
+    
+    if(result.ar){
+      if(rresult != null){
+        val da = ImpDataAccess.GetDataAccess(pe.getSysTag)
+       if(da.rollbackToheight(rresult.destHeight)){
+         if(sresult != null){
+           getBlockDatas(sresult.start,sresult.end,sresult.server)
          }
        }else{
-         //最多数量的高度，达不到共识的要求，输出错误信息停止同步
-         RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"--------error,最多数量的高度，达不到共识的要求，输出错误信息停止同步 response size=${res.size}"))
+         RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"回滚块失败，failed height=${rresult.destHeight}"))
        }
+      }else{
+        if(sresult != null){
+          getBlockDatas(sresult.start,sresult.end,sresult.server)
+        }
+      }
     }else{
-      //获取到到chaininfo信息的数量，没有得到大多数节点的响应，输出错误信息停止同步
-      RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"--------error,获取到到chaininfo信息的数量，没有得到大多数节点的响应，输出错误信息停止同步 response size=${res.size}"))
+      RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(result.error))
     }
   }
 
