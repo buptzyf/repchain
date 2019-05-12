@@ -5,6 +5,10 @@ import java.io.File
 import rep.storage.util.pathUtil
 
 object StoreConfig4Scala {
+  private val dbpath="/repchaindata/data/leveldbdata"
+  private val blockpath="/repchaindata/data/blockdata"
+  private val filemax=200000000
+  
   /**
 	 * @author jiangbuyun
 	 * @version	1.0
@@ -14,7 +18,7 @@ object StoreConfig4Scala {
 	 * @return	String 返回数据库的存储路径
 	 * */
 	def  getDbPath:String={
-		SystemProfile.getDBPath
+		if(SystemProfile.getDBPath == "") dbpath else SystemProfile.getDBPath
 	}
 	
 	/**
@@ -26,7 +30,10 @@ object StoreConfig4Scala {
 	 * @return	String 返回数据库的存储路径
 	 * */
 	def getDbPath(SystemName:String):String={
-	  SystemProfile.getDBPath + File.separator + SystemName
+	  if(SystemProfile.getDBPath == "")
+	    dbpath + File.separator + SystemName
+	  else
+	    SystemProfile.getDBPath + File.separator + SystemName
 	}
 	
 	/**
@@ -38,7 +45,10 @@ object StoreConfig4Scala {
 	 * @return	String 返回区块的存储路径
 	 * */
 	def  getBlockPath:String={
-		SystemProfile.getBlockPath
+	  if(SystemProfile.getBlockPath == "")
+	    blockpath
+	  else
+	    SystemProfile.getBlockPath
 	}
 	
 	/**
@@ -50,11 +60,14 @@ object StoreConfig4Scala {
 	 * @return	String 返回区块的存储路径
 	 * */
 	def getBlockPath(SystemName:String):String={
-		SystemProfile.getBlockPath + File.separator + SystemName
+	  if(SystemProfile.getBlockPath == "")
+	    blockpath + File.separator + SystemName
+	  else
+	    SystemProfile.getBlockPath + File.separator + SystemName
 	}
 	
 	def getFileMax:Long={
-		SystemProfile.getFileMax
+	  SystemProfile.getFileMax
 	}
 	
 	def getFreeDiskSpace:Long={

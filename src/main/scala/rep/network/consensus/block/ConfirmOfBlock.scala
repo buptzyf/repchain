@@ -37,6 +37,7 @@ import rep.network.consensus.block.Blocker.{ ConfirmedBlock }
 import rep.network.persistence.Storager.{ BlockRestore, SourceOfBlock }
 import rep.network.consensus.util.{ BlockVerify, BlockHelp }
 import rep.log.RepLogger
+import rep.log.RepTimeTracer
 
 object ConfirmOfBlock {
   def props(name: String): Props = Props(classOf[ConfirmOfBlock], name)
@@ -131,7 +132,9 @@ class ConfirmOfBlock(moduleName: String) extends ModuleBase(moduleName) {
   override def receive = {
     //Endorsement block
     case ConfirmedBlock(block, actRefOfBlock) =>
+      RepTimeTracer.setStartTime(pe.getSysTag, "blockconfirm", System.currentTimeMillis())
       checkedOfConfirmBlock(block, actRefOfBlock)
+      RepTimeTracer.setEndTime(pe.getSysTag, "blockconfirm", System.currentTimeMillis())
     case _ => //ignore
   }
 

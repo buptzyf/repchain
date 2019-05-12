@@ -43,6 +43,7 @@ import rep.network.util.NodeHelp
 import rep.network.Topic
 import rep.network.consensus.endorse.EndorseMsg
 import rep.log.RepLogger
+import rep.log.RepTimeTracer
 
 object Blocker {
   def props(name: String): Props = Props(classOf[Blocker], name)
@@ -136,12 +137,18 @@ class Blocker(moduleName: String) extends ModuleBase(moduleName) {
   }
 
   private def CreateBlock: Block = {
+    RepTimeTracer.setStartTime(pe.getSysTag, "Block", System.currentTimeMillis())
+    RepTimeTracer.setStartTime(pe.getSysTag, "createBlock", System.currentTimeMillis())
+    RepTimeTracer.setStartTime(pe.getSysTag, "collectTransToBlock", System.currentTimeMillis())
     val trans = CollectedTransOfBlock(SystemProfile.getLimitBlockTransNum, SystemProfile.getBlockLength)
     //todo 交易排序
     if (trans.size >= SystemProfile.getMinBlockTransNum) {
+      RepTimeTracer.setEndTime(pe.getSysTag, "collectTransToBlock", System.currentTimeMillis())
       var blc = BlockHelp.WaitingForExecutionOfBlock(pe.getCurrentBlockHash, pe.getCurrentHeight + 1, trans)
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,height=${blc.height},local height=${pe.getCurrentHeight}" + "~" + selfAddr))
+       RepTimeTracer.setStartTime(pe.getSysTag, "PreloadTrans", System.currentTimeMillis())
       blc = ExecuteTransactionOfBlock(blc)
+       RepTimeTracer.setEndTime(pe.getSysTag, "PreloadTrans", System.currentTimeMillis())
       if (blc != null) {
         RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,prelaod success,height=${blc.height},local height=${pe.getCurrentHeight}" + "~" + selfAddr))
         blc = BlockHelp.AddBlockHash(blc)
@@ -158,10 +165,12 @@ class Blocker(moduleName: String) extends ModuleBase(moduleName) {
     //if (preblock == null) {
     val blc = CreateBlock
     if (blc != null) {
+      RepTimeTracer.setEndTime(pe.getSysTag, "createBlock", System.currentTimeMillis())
       this.preblock = blc
       schedulerLink = clearSched()
       //在发出背书时，告诉对方我是当前出块人，取出系统的名称
       //pe.getActorRef(ActorType.endorsementcollectioner) ! EndorseMsg.CollectEndorsement(this.preblock, pe.getBlocker.blocker)
+      RepTimeTracer.setStartTime(pe.getSysTag, "Endorsement", System.currentTimeMillis())
       pe.getActorRef(ActorType.endorsementcollectioner) ! EndorseMsg.CollectEndorsement(this.preblock, pe.getSysTag)
       //schedulerLink = scheduler.scheduleOnce(TimePolicy.getTimeoutEndorse seconds, self, Blocker.EndorseOfBlockTimeOut)
     }

@@ -33,6 +33,7 @@ import scala.util.control.Breaks._
 import rep.network.util.NodeHelp
 import rep.network.sync.SyncMsg.{BlockDataOfRequest,BlockDataOfResponse}
 import rep.log.RepLogger
+import rep.log.RepTimeTracer
 
 
 object Storager {
@@ -102,6 +103,9 @@ class Storager(moduleName: String) extends ModuleBase(moduleName) {
   }
 
   private def NoticeVoteModule = {
+    if(pe.getSysTag == pe.getBlocker.blocker){
+        RepTimeTracer.setEndTime(pe.getSysTag, "Block", System.currentTimeMillis())
+      }
     if (pe.getBlockCacheMgr.isEmpty ) {
       RepLogger.trace(RepLogger.Storager_Logger, this.getLogMsgPrefix(s"presistence is over,this is startup vote" + "~" + selfAddr))
       //通知抽签模块，开始抽签
@@ -189,7 +193,10 @@ class Storager(moduleName: String) extends ModuleBase(moduleName) {
   override def receive = {
     case blkRestore: BlockRestore =>
       RepLogger.trace(RepLogger.Storager_Logger, this.getLogMsgPrefix( s"node number:${pe.getSysTag},restore single block,height:${blkRestore.blk.height}" + "~" + selfAddr))
+      RepTimeTracer.setStartTime(pe.getSysTag, "storage", System.currentTimeMillis())
       Handler(blkRestore)
+      RepTimeTracer.setEndTime(pe.getSysTag, "storage", System.currentTimeMillis())
+      
     case _             => //ignore
   }
 

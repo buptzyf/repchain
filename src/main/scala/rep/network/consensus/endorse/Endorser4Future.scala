@@ -42,6 +42,7 @@ import rep.network.consensus.block.Blocker.{ PreTransBlock, PreTransBlockResult 
 import rep.network.consensus.util.{ BlockVerify, BlockHelp }
 import rep.network.sync.SyncMsg.StartSync
 import rep.log.RepLogger
+import rep.log.RepTimeTracer
 
 object Endorser4Future {
   def props(name: String): Props = Props(classOf[Endorser4Future], name)
@@ -237,7 +238,9 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
     //Endorsement block
     case EndorsementInfo(block, blocker) =>
       if(!pe.isSynching){
+        RepTimeTracer.setStartTime(pe.getSysTag, "recvendorsement", System.currentTimeMillis())
         EndorseHandler(EndorsementInfo(block, blocker))
+        RepTimeTracer.setEndTime(pe.getSysTag, "recvendorsement", System.currentTimeMillis())
       }else{
         RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"do not endorse,it is synching,recv endorse request,endorse height=${block.height},local height=${pe.getCurrentHeight}"))
       }

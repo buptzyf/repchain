@@ -1,5 +1,7 @@
 package rep.storage.block
 
+import java.nio.ByteBuffer
+
 class BlockFileMgr(val SystemName: String) {
   private var bw: BlockFileWriter = null
 
@@ -80,6 +82,19 @@ class BlockFileMgr(val SystemName: String) {
   def readBlock(fileno: Long, startpos: Long, length: Int): Array[Byte] = {
     var reader = new BlockFileReader(this.SystemName)
     reader.readBlock(fileno, startpos, length)
+  }
+  
+  def longToByte(number:Long):Array[Byte]={
+    var buffer = ByteBuffer.allocate(8)
+    buffer.putLong(0, number)
+    buffer.array()
+  }
+  
+  def byteToLong(b:Array[Byte]):Long={
+    var buffer = ByteBuffer.allocate(8)
+    buffer.put(b, 0, b.length) 
+    buffer.flip()
+    buffer.getLong()
   }
   
 }
