@@ -34,6 +34,7 @@ import scala.collection.mutable._
 import rep.network.consensus.util.BlockHelp
 import rep.log.RepLogger
 import rep.utils.SerializeUtils.deserialise
+import rep.storage.util.pathUtil
 
 
 /**
@@ -43,11 +44,11 @@ import rep.utils.SerializeUtils.deserialise
  * @category	实现IDataAccess定义的外部操作方法。
  */
 class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName) {
-  private var bhelp: BlockStorageHelp = null
+  private var filemgr: BlockFileMgr = null
 
   //初始化文件操作实例
-  var bi: BlockInstances = BlockInstances.getDBInstance()
-  bhelp = bi.getBlockHelp(this.SystemName)
+  //var bi: BlockInstances = BlockInstances.getDBInstance()
+  filemgr = new BlockFileMgr(this.SystemName)
 
   /**
    * @author jiangbuyun
@@ -93,7 +94,8 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
     if (value != null) {
       var bidx = new blockindex()
       bidx.InitBlockIndex(value)
-      rb = bhelp.readBlock(bidx.getBlockFileNo(), bidx.getBlockFilePos(), bidx.getBlockLength())
+      rb = filemgr.readBlock(bidx.getBlockFileNo(), bidx.getBlockFilePos(), bidx.getBlockLength())
+      //rb = bhelp.readBlock(bidx.getBlockFileNo(), bidx.getBlockFilePos(), bidx.getBlockLength())
     }
     rb
   }
@@ -515,7 +517,7 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
   }
 
   override def rollbackToheight(toHeight: Long): Boolean = {
-    val rs = new Rollback4Storager(this,bhelp)
+    val rs = new Rollback4Storager(this,filemgr)
     rs.rollbackToheight(toHeight)
   }
 
@@ -598,14 +600,14 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
         val rbb = block.toByteArray
         val blenght = rbb.length
         //jiangbuyun modify 20180430,块写入文件系统时，增加块长度写入文件中，方便以后没有leveldb时，可以完全依靠块文件快速恢复系统，判断长度是否超过文件的最大长度
-        if (bhelp.isAddFile(oldno, blenght + 8)) {
+        if (filemgr.isAddFile(oldno, blenght + 8)) {
           newno = oldno + 1
           setMaxFileNo(newno)
           setFileFirstHeight(newno, newh)
         } else if (newh == 1 && newno == 0) {
           setFileFirstHeight(newno, newh)
         }
-        val startpos = bhelp.getFileLength(newno)
+        val startpos = filemgr.getFileLength(newno)
         bidx.setBlockFileNo(newno)
         //jiangbuyun modify 20180430,块写入文件系统时，增加块长度写入文件中，方便以后没有leveldb时，可以完全依靠块文件快速恢复系统，调整块数据的写入初始位置
         //bidx.setBlockFilePos(startpos)
@@ -632,7 +634,7 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
         this.setBlockAllTxNumber(newtxnumber)
         //jiangbuyun modify 20180430,块写入文件系统时，增加块长度写入文件中，方便以后没有leveldb时，可以完全依靠块文件快速恢复系统,该位置实现字节数组的合并
         //bhelp.writeBlock(bidx.getBlockFileNo(), bidx.getBlockFilePos(), rbb)
-        bhelp.writeBlock(bidx.getBlockFileNo(), bidx.getBlockFilePos() - 8, BlockStorageHelp.longToByte(blenght) ++ rbb)
+        filemgr.writeBlock(bidx.getBlockFileNo(), bidx.getBlockFilePos() - 8, pathUtil.longToByte(blenght) ++ rbb)
 
         b = true
         RepLogger.trace(
@@ -777,7 +779,7 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
    * @return	返回读取的区块字节数组
    */
   private def readBlock(fileno: Long, startpos: Long, length: Int): Array[Byte] = {
-    val bs = bhelp.readBlock(fileno, startpos, length)
+    val bs = filemgr.readBlock(fileno, startpos, length)
     bs
   }
 
@@ -790,7 +792,7 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
    * @return	如果写入成功返回true，否则false
    */
   private def writeBlock(fileno: Long, startpos: Long, bb: Array[Byte]): Boolean = {
-    val b = bhelp.writeBlock(fileno, startpos, bb)
+    val b = filemgr.writeBlock(fileno, startpos, bb)
     b
   }
   /////////////////end////////////////////////////////////////////////////

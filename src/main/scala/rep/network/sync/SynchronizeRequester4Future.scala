@@ -113,7 +113,7 @@ class SynchronizeRequester4Future(moduleName: String) extends ModuleBase(moduleN
   
   private def getBlockData(height: Long, ref: ActorRef): Boolean = {
     try {
-      sendEvent(EventType.PUBLISH_INFO, mediator,pe.getNodeMgr.getStableNodeName4Addr(self.path.address), BlockEvent.CHAIN_INFO_SYNC,  Event.Action.BLOCK_SYNC)
+      sendEvent(EventType.PUBLISH_INFO, mediator,pe.getSysTag, BlockEvent.CHAIN_INFO_SYNC,  Event.Action.BLOCK_SYNC)
       val future1 = ref ? BlockDataOfRequest(height)
       //logMsg(LogType.INFO, "--------AsyncGetNodeOfChainInfo success")
       var result = Await.result(future1, timeout.duration).asInstanceOf[BlockDataOfResponse]
@@ -172,7 +172,7 @@ class SynchronizeRequester4Future(moduleName: String) extends ModuleBase(moduleN
     val lhash = pe.getCurrentBlockHash
     val lprehash = pe.getSystemCurrentChainStatus.previousBlockHash.toStringUtf8()
     val nodes = pe.getNodeMgr.getStableNodes
-    sendEvent(EventType.PUBLISH_INFO, mediator,pe.getNodeMgr.getStableNodeName4Addr(self.path.address), BlockEvent.CHAIN_INFO_SYNC,  Event.Action.BLOCK_SYNC)
+    sendEvent(EventType.PUBLISH_INFO, mediator,pe.getSysTag, BlockEvent.CHAIN_INFO_SYNC,  Event.Action.BLOCK_SYNC)
     val res = AsyncGetNodeOfChainInfos(nodes,lh)
     
     val parser = new SynchResponseInfoAnalyzer(pe.getSysTag, pe.getSystemCurrentChainStatus, pe.getNodeMgr)
@@ -182,9 +182,7 @@ class SynchronizeRequester4Future(moduleName: String) extends ModuleBase(moduleN
     val sresult = parser.getSynchActiob
     
     
-    if(result == null){
-      println(pe.getSysTag)
-    }
+    
     
     if(result.ar){
       if(rresult != null){

@@ -25,7 +25,7 @@ import org.iq80.leveldb.DB
 import org.iq80.leveldb.DBIterator
 import org.iq80.leveldb.Options
 import org.iq80.leveldb.WriteBatch
-import rep.storage.cfg.StoreConfig
+import rep.storage.cfg.StoreConfig4Scala
 import rep.storage.util.pathUtil
 import scala.collection.mutable
 import rep.storage.util.StoreUtil
@@ -52,8 +52,8 @@ abstract class IDataAccess(val SystemName: String) extends AbstractLevelDB(Syste
     RepLogger.info(RepLogger.Storager_Logger,  SystemName+"~"+"start")
   }
 
-  val sc: StoreConfig = StoreConfig.getStoreConfig()
-  DBDataPath = sc.getDbPath(SystemName)
+  //val sc: StoreConfig = StoreConfig.getStoreConfig()
+  DBDataPath = StoreConfig4Scala.getDbPath(SystemName)
   val b = pathUtil.MkdirAll(this.DBDataPath)
   if (!b) {
     RepLogger.error(RepLogger.Storager_Logger,  "IDataAccess_" + SystemName + "_" + "DBOP Create error,db store dir is null!")
