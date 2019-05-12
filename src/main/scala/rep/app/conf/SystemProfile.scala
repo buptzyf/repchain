@@ -56,9 +56,14 @@ object SystemProfile {
   private[this] var _BLOCK_LENGTH: Int = 120000//区块的最大长度
   private[this] var _NUMBER_OF_TRANSPROCESSOR = 100 //
   
+  
   private[this] var _DBPATH:String = "" //leveldb数据库文件路径
   private[this] var _BLOCKPATH:String = ""//区块文件的路径
   private[this] var _FILEMAX: Int = 200000000//区块文件的最大长度
+  
+  
+  //实时图的事件是否发送，如果不发送，前端实时图将收不到任何消息。
+  private[this] var _REALTIMEGRAPH_ENABLE = 1 ////0 unable;1 enable; default 1
   
   
   
@@ -75,12 +80,18 @@ object SystemProfile {
   
   private def NUMBER_OF_TRANSPROCESSOR = _NUMBER_OF_TRANSPROCESSOR
   
+  private def REALTIMEGRAPH_ENABLE = _REALTIMEGRAPH_ENABLE
+  
   private def DBPATH:String = _DBPATH
   private def BLOCKPATH:String = _BLOCKPATH
   private def FILEMAX: Int = _FILEMAX
   
   private def DBPATH_=(value:String):Unit={
     _DBPATH = value
+  }
+  
+  private def REALTIMEGRAPH_ENABLE_=(value:Int):Unit={
+    _REALTIMEGRAPH_ENABLE = value
   }
   
   private def BLOCKPATH_=(value:String):Unit={
@@ -203,7 +214,10 @@ object SystemProfile {
     DBPATH_= (config.getString("system.storage.dbpath"))
     BLOCKPATH_= (config.getString("system.storage.blockpath"))
     FILEMAX_=(config.getInt("system.storage.filemax"))
+    REALTIMEGRAPH_ENABLE_=(config.getInt("system.realtimegraph_enable"))
   }
+  
+  def getRealtimeGraph = REALTIMEGRAPH_ENABLE
   
   def getDBPath = DBPATH
   

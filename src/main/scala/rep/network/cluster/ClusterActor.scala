@@ -22,6 +22,7 @@ import rep.network.Topic
 import rep.protos.peer.Event
 import rep.utils.ActorUtils
 import rep.utils.GlobalUtils.EventType
+import rep.app.conf.SystemProfile
 
 /**
   * Akka组网类
@@ -55,19 +56,20 @@ import rep.utils.GlobalUtils.EventType
     * @param action
     */
   def sendEvent(eventType: Int, mediator: ActorRef, addr: String, topic: String, action: Event.Action): Unit = {
-    eventType match {
-      case EventType.PUBLISH_INFO =>
-        //publish event(send message)
-        val evt = new Event(addr, topic,
-          action)
-        mediator ! Publish(Topic.Event, evt)
-      case EventType.RECEIVE_INFO =>
-        //receive event
-        val evt = new Event(topic, addr,
-          action)
-        mediator ! Publish(Topic.Event, evt)
+    if(SystemProfile.getRealtimeGraph == 1){
+      eventType match {
+        case EventType.PUBLISH_INFO =>
+          //publish event(send message)
+          val evt = new Event(addr, topic,
+            action)
+          mediator ! Publish(Topic.Event, evt)
+        case EventType.RECEIVE_INFO =>
+          //receive event
+          val evt = new Event(topic, addr,
+            action)
+          mediator ! Publish(Topic.Event, evt)
+      }
     }
-
   }
   
   
