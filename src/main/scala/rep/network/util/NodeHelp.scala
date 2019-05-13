@@ -41,7 +41,7 @@ object NodeHelp {
   //获取Actor的地址，akka.ssl.tcp://Repchain@192.168.10.155:54310
   def getNodeAddress(actref: ActorRef):String={
     val path = getNodePath(actref)
-    path.substring(0, path.indexOf("/user"))
+    if (path.indexOf("/user") > 0) path.substring(0, path.indexOf("/user")) else ""
   }
   
   //获取Actor的路径，akka.ssl.tcp://Repchain@192.168.10.155:54310/user/modulemanager/synchresponser#-1500748370
