@@ -1,12 +1,16 @@
 package rep.storage.block
 
 import java.nio.ByteBuffer
+import rep.storage.cfg.StoreConfig4Scala
+import rep.storage.util.pathUtil
 
 class BlockFileMgr(val SystemName: String) {
   private var bw: BlockFileWriter = null
 
   private def checkFileWriter(fileno: Long) = {
     synchronized {
+      val tmpblockDataPath = StoreConfig4Scala.getBlockPath(SystemName)
+      val b = pathUtil.MkdirAll(tmpblockDataPath)
       if (this.bw == null) {
         this.bw = new BlockFileWriter(SystemName, fileno, false)
       } else {
