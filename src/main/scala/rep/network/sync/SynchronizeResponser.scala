@@ -65,7 +65,7 @@ class SynchronizeResponser(moduleName: String) extends ModuleBase(moduleName) {
       //}
 
     case BlockDataOfRequest(startHeight) =>
-      sendEvent(EventType.RECEIVE_INFO, mediator,pe.getSysTag, BlockEvent.CHAIN_INFO_SYNC,  Event.Action.BLOCK_SYNC)
+      
       RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(  s"node number:${pe.getSysTag},start block number:${startHeight},Get a data request from  $sender" + "～" + selfAddr))
       val local = dataaccess.getBlockChainInfo()
       var data = Block()
@@ -73,7 +73,7 @@ class SynchronizeResponser(moduleName: String) extends ModuleBase(moduleName) {
         data = dataaccess.getBlock4ObjectByHeight(startHeight)
         sender  ! SyncMsg.BlockDataOfResponse(data)
       }
-
+      sendEvent(EventType.PUBLISH_INFO, mediator,pe.getSysTag, pe.getNodeMgr.getNodeName4AddrString(NodeHelp.getNodeAddress(sender)), Event.Action.BLOCK_SYNC_DATA)
   }
 
 }

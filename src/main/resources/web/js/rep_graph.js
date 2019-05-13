@@ -28,9 +28,11 @@ function myGraph() {
             this.addDLink(sfrom, 'Transaction');
             this.addDLink(sfrom, 'Block');
             this.addDLink(sfrom, 'Endorsement');
+            this.addDLink(sfrom, 'Sync');
             this.addSLink('Transaction', sfrom);
             this.addSLink('Block', sfrom);
             this.addSLink('Endorsement', sfrom);
+            this.addSLink('Sync', sfrom);
             this.cout_nodes++;
             this.setNodeSta('RepChain', this.cout_nodes);
         }

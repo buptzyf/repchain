@@ -37,7 +37,7 @@ object GlobalUtils {
   
   case object BlockEvent{
     //同步信息广播
-    val CHAIN_INFO_SYNC = "CHAIN_INFO_SYNC"
+    val CHAIN_INFO_SYNC = "Sync"
     //创建block
     val CREATE_BLOCK = "CREATE_BLOCK"
     //出块人
