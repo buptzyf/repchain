@@ -24,7 +24,6 @@ import rep.network.PeerHelper
 import rep.network.base.ModuleBase
 import rep.network.cache.TransactionPool
 import rep.network.persistence.Storager
-import rep.network.tools.Statistic.StatisticCollection
 import rep.ui.web.EventServer
 import rep.network.cluster.MemberListener
 import rep.network.sync.{ SynchronizeResponser, SynchronizeRequester4Future }
@@ -40,6 +39,7 @@ import rep.utils.GlobalUtils.ActorType
 import rep.crypto.cert.SignTool
 import rep.log.RepLogger
 import rep.storage.verify.verify4Storage
+import rep.log.RepTimeTracer
 
 /**
  * Created by shidianyue on 2017/9/22.
@@ -117,7 +117,8 @@ class ModuleManager(moduleName: String, sysTag: String, enableStatistic: Boolean
   }
 
   def loadApiModule = {
-    if (enableStatistic) context.actorOf(Props[StatisticCollection], "statistic")
+    //if (enableStatistic) context.actorOf(Props[StatisticCollection], "statistic")
+    if (enableStatistic) RepTimeTracer.openTimeTrace else RepTimeTracer.closeTimeTrace
     if (enableWebSocket) /*{if(pe.getActorRef(ActorType.webapi) == null) */context.system.actorOf(Props[EventServer], "webapi")
 
   }

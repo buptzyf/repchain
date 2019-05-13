@@ -19,6 +19,9 @@ import java.nio.channels.FileChannel;
 
 import scala.collection.immutable._
 
+import java.nio.ByteBuffer
+import rep.storage.util.pathUtil
+
 object blockDataCheck extends App {
   implicit val serialization = jackson.Serialization
   implicit val formats = DefaultFormats
@@ -45,7 +48,55 @@ object blockDataCheck extends App {
   case class bcinfo(height:Long,hash:String)
   case class resInfo (req:bcinfo,reqer:String,last:bcinfo)
   
-  var sets = new Array[resInfo](5)
+  def longToByte(number:Long):Array[Byte]={
+    var buffer = ByteBuffer.allocate(8)
+    buffer.putLong(0, number)
+    buffer.array()
+  }
+  
+  def byteToLong(b:Array[Byte]):Long={
+    var buffer = ByteBuffer.allocate(8)
+    buffer.put(b, 0, b.length) 
+    buffer.flip()
+    buffer.getLong()
+  }
+  
+  val start = System.currentTimeMillis()
+  for(i<-0 to 100000){
+  val mylong : Long = 294723843
+  val b = longToByte(mylong)
+  //val l = byteToLong(b)
+  //println(s"old=${mylong},new=${l}")
+  }
+  val end = System.currentTimeMillis()
+  println("spent time="+(end-start))
+  
+  val start1 = System.currentTimeMillis()
+  for(i<-0 to 100000){
+  val mylong : Long = 294723843
+  val b = pathUtil.longToByte(mylong)
+  //val l = pathUtil.byteToLong(b)
+  //println(s"old=${mylong},new=${l}")
+  }
+  val end1 = System.currentTimeMillis()
+  println("spent time="+(end1-start1))
+  
+ /* def  longToByte(number:Long) :Array[Byte]={
+      var param = number
+	    var b = new Array[Byte](8)
+	    for (i <- 7 to 0 by -1) {
+	      b(i) = (param % 256).asInstanceOf[Byte]
+	      param = param >> 8
+	    }
+	    b
+	}
+	
+	def byteToLong(b : Array[Byte]) : Long = {
+	    return ((( b[0].asInstanceOf[Long] & 0xff) << 56) | (((long) b[1] & 0xff) << 48) | (((long) b[2] & 0xff) << 40) | (((long) b[3] & 0xff) << 32) | (((long) b[4] & 0xff) << 24)
+	        | (((long) b[5] & 0xff) << 16) | (((long) b[6] & 0xff) << 8) | ((long) b[7] & 0xff));
+	}*/
+  
+  /*var sets = new Array[resInfo](5)
   sets(0)  = resInfo(bcinfo(10,"hash10"),"certnode1",bcinfo(8,"hash8"))
   sets(1)  = resInfo(bcinfo(9,"hash9"),"certnode1",bcinfo(8,"hash8"))
   sets(2)  = resInfo(bcinfo(10,"hash10"),"certnode1",bcinfo(8,"hashxx"))
@@ -58,7 +109,7 @@ object blockDataCheck extends App {
   println(tmp.mkString(","))
   val t = tmp(0)._1
   val fsets = sets.filter(_.req.height == t)
-  println(fsets.mkString(","))
+  println(fsets.mkString(","))*/
   
   def fileOp={
     val filename = "/Users/jiangbuyun/tmp.fos"

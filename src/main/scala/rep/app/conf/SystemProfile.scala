@@ -57,6 +57,16 @@ object SystemProfile {
   private[this] var _NUMBER_OF_TRANSPROCESSOR = 100 //
   
   
+  private[this] var _DBPATH:String = "" //leveldb数据库文件路径
+  private[this] var _BLOCKPATH:String = ""//区块文件的路径
+  private[this] var _FILEMAX: Int = 200000000//区块文件的最大长度
+  
+  
+  //实时图的事件是否发送，如果不发送，前端实时图将收不到任何消息。
+  private[this] var _REALTIMEGRAPH_ENABLE = 1 ////0 unable;1 enable; default 1
+  
+  
+  
   
   private def SERVERPORT :Int = _SERVERPORT
   private def CHECKCERTVALIDATE:Int = _CHECKCERTVALIDATE
@@ -69,6 +79,28 @@ object SystemProfile {
   private def ACCOUNTCHAINCODVERSION = _ACCOUNTCHAINCODEVERSION
   
   private def NUMBER_OF_TRANSPROCESSOR = _NUMBER_OF_TRANSPROCESSOR
+  
+  private def REALTIMEGRAPH_ENABLE = _REALTIMEGRAPH_ENABLE
+  
+  private def DBPATH:String = _DBPATH
+  private def BLOCKPATH:String = _BLOCKPATH
+  private def FILEMAX: Int = _FILEMAX
+  
+  private def DBPATH_=(value:String):Unit={
+    _DBPATH = value
+  }
+  
+  private def REALTIMEGRAPH_ENABLE_=(value:Int):Unit={
+    _REALTIMEGRAPH_ENABLE = value
+  }
+  
+  private def BLOCKPATH_=(value:String):Unit={
+    _BLOCKPATH = value
+  }
+  
+  private def FILEMAX_=(value:Int):Unit={
+    _FILEMAX = value
+  }
   
   private def GENESISNODENAME_=(value:String):Unit={
     _GENESISNODENAME = value
@@ -178,7 +210,20 @@ object SystemProfile {
     ACCOUNTCHAINCODEVERSION_=(config.getInt("system.account.chaincodeversion"))
     GENESISNODENAME_=(config.getString("system.genesis_node_name"))
     NUMBER_OF_TRANSPROCESSOR_=(config.getInt("system.number_of_transProcessor"))
+    
+    DBPATH_= (config.getString("system.storage.dbpath"))
+    BLOCKPATH_= (config.getString("system.storage.blockpath"))
+    FILEMAX_=(config.getInt("system.storage.filemax"))
+    REALTIMEGRAPH_ENABLE_=(config.getInt("system.realtimegraph_enable"))
   }
+  
+  def getRealtimeGraph = REALTIMEGRAPH_ENABLE
+  
+  def getDBPath = DBPATH
+  
+  def getBlockPath = BLOCKPATH
+  
+  def getFileMax = FILEMAX
   
   def getLimitBlockTransNum = LIMIT_BLOCK_TRANS_NUM
   

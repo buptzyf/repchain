@@ -3,9 +3,9 @@ package rep.storage
 import scala.util.control.Breaks._
 import rep.log.RepLogger
 import rep.protos.peer._
-import rep.storage.block.BlockStorageHelp
+import rep.storage.block.BlockFileMgr
 
-class Rollback4Storager(val dbop: ImpDataAccess,val bhelp: BlockStorageHelp) {
+class Rollback4Storager(val dbop: ImpDataAccess,val filemgr: BlockFileMgr) {
   private var rollbackLockObject: Object = new Object()
 
   def rollbackToheight(toHeight: Long): Boolean = {
@@ -43,7 +43,7 @@ class Rollback4Storager(val dbop: ImpDataAccess,val bhelp: BlockStorageHelp) {
       rollbackFileFirstHeight(bidx)
       rollbackTranIdxAndTranCount(bidx, txnumber)
       rollbackWorldState(block)
-      bhelp.deleteBlockBytesFromFileTail(bidx.getBlockFileNo(), bidx.getBlockLength()+8)
+      filemgr.deleteBlockBytesFromFileTail(bidx.getBlockFileNo(), bidx.getBlockLength()+8)
       dbop.CommitTrans
       bv = true
     } catch {

@@ -135,8 +135,8 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
 
   def hasDiskSpace: Boolean = {
     var b = true
-    val sc: StoreConfig = StoreConfig.getStoreConfig()
-    val ds = sc.getFreeDiskSpace / (1000 * 1000)
+    //val sc: StoreConfig = StoreConfig.getStoreConfig()
+    val ds = StoreConfig4Scala.getFreeDiskSpace / (1000 * 1000)
     if (SystemProfile.getDiskSpaceAlarm >= ds) {
       b = false
     }
