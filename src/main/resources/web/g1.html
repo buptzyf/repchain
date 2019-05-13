@@ -406,11 +406,23 @@
                 else if (msg.action == 7) {
                     graph.setBlocker(sfrom);
                     console.log("Received: " + msg.action + " from:" + msg.from + " to:" + msg.to + "\n");
-                } //同步完成
+                } else if (msg.action == 9) {//同步chaininfo
+                		var tm = new Date().getTime();
+		    	        	//避免过度频繁刷新
+		    	        	if(!tl_map['Sync'] || tm - tl_map['Sync']>500){
+		    	            	tl_map['Sync'] = tm;
+		    	        	}
+                    console.log("Received: " + msg.action + " from:" + msg.from + " to:" + msg.to + "\n");
+                } else if (msg.action == 10) {//同步blockdata
+                		graph.addDLink(sfrom,sto);
+                    console.log("Received: " + msg.action + " from:" + msg.from + " to:" + msg.to + "\n");
+                } 
+                
+                /*//同步完成
                 else if (msg.action == 10) {
                     graph.setNodeSync(sfrom, 1);
                     console.log("Received: " + msg.action + " from:" + msg.from + " to:" + msg.to + "\n");
-                }
+                }*/
 
                 switch (msg.action) {
                     //节点入网
@@ -426,15 +438,17 @@
                         graph.setNodeSta('RepChain', graph.cout_nodes);
                         break;
                      //节点数据同步
-                    case 9:
+                    /*case 9:
                        	graph.addSLink(sto,'Sync');
-                		graph.addSLink('Sync',sfrom);
-                		graph.addDLink(sfrom,sto);
-                		break;
+                			graph.addSLink('Sync',sfrom);
+                			graph.addDLink(sfrom,sto);
+                			break;*/
                 	//发送或收到topic消息
                     case 1:
                     case 2:
                     case 3:
+                    case 4:
+                    case 9:
                     	//防止过度频繁刷新,对每条线分别计时
                     	var tm = new Date().getTime();
                     	//发送消息

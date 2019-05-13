@@ -92,5 +92,17 @@ class NodeMgr {
         }))
     a
   }
+  
+  def getNodeName4AddrString(addrstr: String): String = {
+    var a: String = ""
+    breakable(
+        stableNodes.foreach(f => {
+          if (f._1.toString == addrstr) {
+            a = f._2
+            break
+          }
+        }))
+    a
+  }
 
 }

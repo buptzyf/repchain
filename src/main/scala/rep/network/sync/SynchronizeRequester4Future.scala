@@ -113,7 +113,7 @@ class SynchronizeRequester4Future(moduleName: String) extends ModuleBase(moduleN
   
   private def getBlockData(height: Long, ref: ActorRef): Boolean = {
     try {
-      sendEvent(EventType.PUBLISH_INFO, mediator,pe.getSysTag, BlockEvent.CHAIN_INFO_SYNC,  Event.Action.BLOCK_SYNC)
+      sendEvent(EventType.PUBLISH_INFO, mediator,pe.getSysTag, pe.getNodeMgr.getNodeName4AddrString(NodeHelp.getNodeAddress(ref)) ,  Event.Action.BLOCK_SYNC_DATA)
       val future1 = ref ? BlockDataOfRequest(height)
       //logMsg(LogType.INFO, "--------AsyncGetNodeOfChainInfo success")
       var result = Await.result(future1, timeout.duration).asInstanceOf[BlockDataOfResponse]
