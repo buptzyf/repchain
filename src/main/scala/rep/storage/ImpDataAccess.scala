@@ -48,6 +48,7 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
 
   //初始化文件操作实例
   //var bi: BlockInstances = BlockInstances.getDBInstance()
+  
   filemgr = new BlockFileMgr(this.SystemName)
 
   /**
