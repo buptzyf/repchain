@@ -238,9 +238,9 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
     //Endorsement block
     case EndorsementInfo(block, blocker) =>
       if(!pe.isSynching){
-        RepTimeTracer.setStartTime(pe.getSysTag, "recvendorsement", System.currentTimeMillis())
+        RepTimeTracer.setStartTime(pe.getSysTag, "recvendorsement", System.currentTimeMillis(),block.height,block.transactions.size)
         EndorseHandler(EndorsementInfo(block, blocker))
-        RepTimeTracer.setEndTime(pe.getSysTag, "recvendorsement", System.currentTimeMillis())
+        RepTimeTracer.setEndTime(pe.getSysTag, "recvendorsement", System.currentTimeMillis(),block.height,block.transactions.size)
       }else{
         RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"do not endorse,it is synching,recv endorse request,endorse height=${block.height},local height=${pe.getCurrentHeight}"))
       }

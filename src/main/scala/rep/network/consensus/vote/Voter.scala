@@ -56,7 +56,7 @@ class Voter(moduleName: String) extends ModuleBase(moduleName) with CRFDVoter {
   private var voteCount = 0
 
   def checkTranNum: Boolean = {
-    pe.getTransPoolMgr.getTransLength() > SystemProfile.getMinBlockTransNum
+    pe.getTransPoolMgr.getTransLength() >= SystemProfile.getMinBlockTransNum
   }
 
   private def cleanVoteInfo = {

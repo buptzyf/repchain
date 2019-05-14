@@ -175,6 +175,10 @@ class SynchronizeRequester4Future(moduleName: String) extends ModuleBase(moduleN
     sendEvent(EventType.PUBLISH_INFO, mediator,pe.getSysTag, BlockEvent.CHAIN_INFO_SYNC,  Event.Action.BLOCK_SYNC)
     val res = AsyncGetNodeOfChainInfos(nodes,lh)
     
+    //if(pe.getSysTag == "921000006e0012v696.node5"){
+    //  println("921000006e0012v696.node5")
+    //}
+    
     val parser = new SynchResponseInfoAnalyzer(pe.getSysTag, pe.getSystemCurrentChainStatus, pe.getNodeMgr)
     parser.Parser(res)
     val result = parser.getResult
@@ -229,6 +233,9 @@ class SynchronizeRequester4Future(moduleName: String) extends ModuleBase(moduleN
     case SyncRequestOfStorager(responser, maxHeight) =>
       if (!pe.isSynching) {
         pe.setSynching(true)
+         //if(pe.getSysTag == "921000006e0012v696.node5"){
+         //   println("921000006e0012v696.node5")
+         // }
         getBlockDatas(pe.getCurrentHeight,maxHeight,responser)
         pe.setSynching(false)
         //pe.getActorRef(ActorType.modulemanager) ! ModuleManager.startup_Consensus

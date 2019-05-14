@@ -164,6 +164,27 @@
         </encoder>
     </appender>
     
+     <appender name="OutputTime_Appender" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>logs/OutputTime-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <!-- each file should be at most 100MB, keep 30 days worth of history, but at most 3GB -->
+            <maxFileSize>100MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>3GB</totalSizeCap>
+
+        </rollingPolicy>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>TRACE</level>
+        </filter>
+
+        <immediateFlush>false</immediateFlush>
+        <append>false</append>
+        <encoder charset="UTF-8">
+            <pattern>%date{ISO8601} %-5level %logger{36} %X{akkaSource} - %msg%n</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+    
     <appender name="Sandbox_Appender" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
             <fileNamePattern>logs/RepChain-Sandbox-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
@@ -226,6 +247,10 @@
     
     <logger name="StatisTime_Logger" additivity="false" level="TRACE">
         <appender-ref ref="StatisTime_Appender"/>
+    </logger>
+    
+    <logger name="OutputTime_Logger" additivity="false" level="TRACE">
+        <appender-ref ref="OutputTime_Appender"/>
     </logger>
     
     <logger name="Sandbox_Logger" additivity="false" level="TRACE">

@@ -87,7 +87,7 @@ class Storager(moduleName: String) extends ModuleBase(moduleName) {
           }
         }
 
-        logTime("create block storeblock time", System.currentTimeMillis(), false)
+        //logTime("create block storeblock time", System.currentTimeMillis(), false)
         RepLogger.trace(RepLogger.Storager_Logger, this.getLogMsgPrefix( s"CurrentHash(After presistence): ${pe.getCurrentBlockHash}" + "~" + selfAddr))
         RepLogger.trace(RepLogger.Storager_Logger, this.getLogMsgPrefix( s"save block success,height=${pe.getCurrentHeight},hash=${pe.getCurrentBlockHash}" + "~" + selfAddr))
       } else {
@@ -103,9 +103,6 @@ class Storager(moduleName: String) extends ModuleBase(moduleName) {
   }
 
   private def NoticeVoteModule = {
-    if(pe.getSysTag == pe.getBlocker.blocker){
-        RepTimeTracer.setEndTime(pe.getSysTag, "Block", System.currentTimeMillis())
-      }
     if (pe.getBlockCacheMgr.isEmpty ) {
       RepLogger.trace(RepLogger.Storager_Logger, this.getLogMsgPrefix(s"presistence is over,this is startup vote" + "~" + selfAddr))
       //通知抽签模块，开始抽签
@@ -193,10 +190,12 @@ class Storager(moduleName: String) extends ModuleBase(moduleName) {
   override def receive = {
     case blkRestore: BlockRestore =>
       RepLogger.trace(RepLogger.Storager_Logger, this.getLogMsgPrefix( s"node number:${pe.getSysTag},restore single block,height:${blkRestore.blk.height}" + "~" + selfAddr))
-      RepTimeTracer.setStartTime(pe.getSysTag, "storage", System.currentTimeMillis())
+      RepTimeTracer.setStartTime(pe.getSysTag, "storage", System.currentTimeMillis(),blkRestore.blk.height,blkRestore.blk.transactions.size)
       Handler(blkRestore)
-      RepTimeTracer.setEndTime(pe.getSysTag, "storage", System.currentTimeMillis())
-      
+      RepTimeTracer.setEndTime(pe.getSysTag, "storage", System.currentTimeMillis(),blkRestore.blk.height,blkRestore.blk.transactions.size)
+      if(pe.getSysTag == pe.getBlocker.blocker){
+        RepTimeTracer.setEndTime(pe.getSysTag, "Block", System.currentTimeMillis(),blkRestore.blk.height,blkRestore.blk.transactions.size)
+      }
     case _             => //ignore
   }
 

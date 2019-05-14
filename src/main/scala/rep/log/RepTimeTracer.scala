@@ -37,18 +37,22 @@ object RepTimeTracer {
     this.isOpenTrace.set(false)
   }
 
-  def setStartTime(nodeName: String, flag: String, t: Long) = {
-    if (this.isOpenTrace.get)
-      this.times.put(nodeName + "-" + flag, t);
+  def setStartTime(nodeName: String, flag: String, t: Long,bheight:Long,trannum:Int) = {
+    if (this.isOpenTrace.get){
+      val key = nodeName + "-" + flag
+      this.times.put(key, t);
+      RepLogger.trace(RepLogger.OutputTime_Logger,  s"${key}_bheight=${bheight}_start_time=${t},transcount=${trannum}")
+    }
   }
 
-  def setEndTime(nodeName: String, flag: String, t: Long) = {
+  def setEndTime(nodeName: String, flag: String, t: Long,bheight:Long,trannum:Int) = {
     if (this.isOpenTrace.get) {
       val key = nodeName + "-" + flag;
       if (this.times.contains(key)) {
         val tl = t - this.times(key);
-        RepLogger.trace(RepLogger.StatisTime_Logger,  key + "=" + tl)
+        RepLogger.trace(RepLogger.StatisTime_Logger,  s"${key}_bheight=${bheight}_spent_time=${tl},transcount=${trannum}")
       }
+      RepLogger.trace(RepLogger.OutputTime_Logger,  s"${key}_bheight=${bheight}_end_time=${t},transcount=${trannum}")
     }
   }
 
