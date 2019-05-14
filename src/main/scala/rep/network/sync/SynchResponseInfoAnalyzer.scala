@@ -60,7 +60,7 @@ class SynchResponseInfoAnalyzer(val systemName: String, val lchaininfo: Blockcha
       //当前本地高度0，没有前序块，不需要检查前序块hash，可以直接进入同步
       this.aresult = AnalysisResult(true, "")
       this.saction = SynchAction(lh, maxheight, reslist.filter(_.response.height == maxheight).head.responser)
-      RepLogger.info(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix("--------info,大于本地高度，同步完成"))
+      RepLogger.info(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"--------info,大于本地高度，同步完成,local height=${lh},maxheight=${maxheight}"))
     } else {
       //本地高度大于0，需要检查前序块的hash是否一致
       val leadingAgreementResult = checkHashAgreement(maxheight, reslist, nodes.size, 2)
@@ -72,7 +72,7 @@ class SynchResponseInfoAnalyzer(val systemName: String, val lchaininfo: Blockcha
           this.saction = SynchAction(lh, maxheight, reslist.filter(_.response.height == maxheight).
             filter(_.response.currentBlockHash.toStringUtf8() == AgreementHash).
             filter(_.ChainInfoOfSpecifiedHeight.currentBlockHash.toStringUtf8() == leadingAgreementResult._2).head.responser)
-          RepLogger.info(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix("--------info,大于本地高度，同步完成"))
+          RepLogger.info(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"--------info,大于本地高度，同步完成,local height=${lh},maxheight=${maxheight}"))
         } else {
           //由于与远端的前序块的hash不一致，需要进一步进入回滚当前块的判断
           val fls = reslist.filter(_.response.height == maxheight).
@@ -89,19 +89,19 @@ class SynchResponseInfoAnalyzer(val systemName: String, val lchaininfo: Blockcha
                 filter(_.ChainInfoOfSpecifiedHeight.currentBlockHash.toStringUtf8() == leadingAgreementResult._2).head.responser)
             } else {
               //本地块的前一块的hash与远端前导块的前一块的hash不一致，输出错误，停止同步
-              this.aresult = AnalysisResult(false, "大于本地高度，本地块的前一块的hash与远端前导块的前一块的hash不一致，输出错误，停止同步")
-              RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix("--------error,大于本地高度，本地块的前一块的hash与远端前导块的前一块的hash不一致，输出错误，停止同步"))
+              this.aresult = AnalysisResult(false, s"大于本地高度，本地块的前一块的hash与远端前导块的前一块的hash不一致，输出错误，停止同步,local height=${lh},maxheight=${maxheight}")
+              RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"--------error,大于本地高度，本地块的前一块的hash与远端前导块的前一块的hash不一致，输出错误，停止同步,local height=${lh},maxheight=${maxheight}"))
             }
           } else {
             //找不到正确的响应信息，输出错误，停止同步
-            this.aresult = AnalysisResult(false, "大于本地高度，找不到正确的响应信息，输出错误，停止同步")
-            RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix("--------error,大于本地高度，找不到正确的响应信息，输出错误，停止同步"))
+            this.aresult = AnalysisResult(false, "大于本地高度，找不到正确的响应信息，输出错误，停止同步,local height=${lh},maxheight=${maxheight}")
+            RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"--------error,大于本地高度，找不到正确的响应信息，输出错误，停止同步,local height=${lh},maxheight=${maxheight}"))
           }
         }
       } else {
         //远端前序块hash不一致，输出错误，停止同步
-        this.aresult = AnalysisResult(false, "大于本地高度，远端前序块hash不一致，输出错误，停止同步")
-        RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix("--------error,大于本地高度，远端前序块hash不一致，输出错误，停止同步"))
+        this.aresult = AnalysisResult(false, s"大于本地高度，远端前序块hash不一致，输出错误，停止同步,local height=${lh},maxheight=${maxheight}")
+        RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"--------error,大于本地高度，远端前序块hash不一致，输出错误，停止同步,local height=${lh},maxheight=${maxheight}"))
       }
     }
   }
@@ -134,11 +134,11 @@ class SynchResponseInfoAnalyzer(val systemName: String, val lchaininfo: Blockcha
       if (seedactor != null) {
         this.aresult = AnalysisResult(true, "")
         this.saction = SynchAction(lh, 1, seedactor)
-        RepLogger.info(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix("--------info,等于本地高度，找到创世节点，启动同步创世块"))
+        RepLogger.info(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"--------info,等于本地高度，找到创世节点，启动同步创世块,local height=${lh},maxheight=${maxheight}"))
       } else {
         ////没有找到创世节点，输出信息，停止同步
         this.aresult = AnalysisResult(false, "--------error,等于本地高度，//找到创世节点，输出信息，停止同步")
-        RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix("--------error,等于本地高度，//找到创世节点，输出信息，停止同步"))
+        RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"--------error,等于本地高度，//找到创世节点，输出信息，停止同步,local height=${lh},maxheight=${maxheight}"))
       }
     } else {
       //系统非初始状态，检查hash一致性
@@ -146,7 +146,7 @@ class SynchResponseInfoAnalyzer(val systemName: String, val lchaininfo: Blockcha
       if (lhash == AgreementHash) {
         //自己同大多数节点hash一致，完成同步
         this.aresult = AnalysisResult(true, "")
-        RepLogger.info(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix("--------error,等于本地高度，自己同大多数节点hash一致，完成同步"))
+        RepLogger.info(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"--------info,等于本地高度，自己同大多数节点hash一致，完成同步,local height=${lh},maxheight=${maxheight}"))
       } else {
         //开始检查回滚
         val tmpres = reslist.filter(_.response.height == maxheight).
@@ -156,11 +156,11 @@ class SynchResponseInfoAnalyzer(val systemName: String, val lchaininfo: Blockcha
           this.aresult = AnalysisResult(true, "")
           this.raction = RollbackAction(lh - 1)
           this.saction = SynchAction(lh - 1, maxheight, tmpres.responser)
-          RepLogger.info(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix("--------info,等于本地高度，回滚完成，完成同步"))
+          RepLogger.info(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"--------info,等于本地高度，回滚完成，完成同步,local height=${lh},maxheight=${maxheight}"))
         } else {
           //前一个块的hash不一致，输出错误，停止同步
-          this.aresult = AnalysisResult(false, "等于本地高度，前一个块的hash不一致，输出错误，停止同步")
-          RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix("--------error,等于本地高度，前一个块的hash不一致，输出错误，停止同步"))
+          this.aresult = AnalysisResult(false, s"等于本地高度，前一个块的hash不一致，输出错误，停止同步,local height=${lh},maxheight=${maxheight}")
+          RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"--------error,等于本地高度，前一个块的hash不一致，输出错误，停止同步,local height=${lh},maxheight=${maxheight}"))
         }
       }
     }
@@ -175,14 +175,14 @@ class SynchResponseInfoAnalyzer(val systemName: String, val lchaininfo: Blockcha
         if (NodeHelp.isSeedNode(this.systemName)) {
           //当前系统是种子节点，并且是创世块，完成同步
           this.aresult = AnalysisResult(true, "小于本地高度，当前系统是种子节点，并且是创世块，完成同步")
-          RepLogger.info(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix("--------info,小于本地高度，当前系统是种子节点，并且是创世块，完成同步"))
+          RepLogger.info(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"--------info,小于本地高度，当前系统是种子节点，并且是创世块，完成同步,local height=${lh},maxheight=${maxheight}"))
         } else {
           this.aresult = AnalysisResult(true, "小于本地高度，当前系统不是种子节点，只有创世块，完成同步")
-          RepLogger.info(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix("--------info,小于本地高度，当前系统不是种子节点，只有创世块，完成同步"))
+          RepLogger.info(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"--------info,小于本地高度，当前系统不是种子节点，只有创世块，完成同步,local height=${lh},maxheight=${maxheight}"))
         }
       } else {
         this.aresult = AnalysisResult(false, "小于本地高度，当前系统不是种子节点，高度大于1，系统错误，停止同步")
-        RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix("--------error,小于本地高度，当前系统不是种子节点，高度大于1，系统错误，停止同步"))
+        RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"--------error,小于本地高度，当前系统不是种子节点，高度大于1，系统错误，停止同步,local height=${lh},maxheight=${maxheight}"))
       }
     } else {
       //大多数节点的高度，hash相同，本地节点高于这些节点，需要回滚，检查回滚信息
@@ -194,7 +194,7 @@ class SynchResponseInfoAnalyzer(val systemName: String, val lchaininfo: Blockcha
         this.raction = RollbackAction(maxheight)
       } else {
         this.aresult = AnalysisResult(false, "小于本地高度，本地找不到对应大多数节点的hash的块，停止同步")
-        RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix("--------error,小于本地高度，本地找不到对应大多数节点的hash的块，停止同步"))
+        RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"--------error,小于本地高度，本地找不到对应大多数节点的hash的块，停止同步,local height=${lh},maxheight=${maxheight}"))
       }
     }
   }

@@ -22,6 +22,11 @@ import scala.collection.immutable._
 import java.nio.ByteBuffer
 import rep.storage.util.pathUtil
 
+import scalapb.json4s.JsonFormat
+import org.json4s.{DefaultFormats, Formats, jackson}
+import org.json4s.jackson.JsonMethods._
+import org.json4s.DefaultFormats._
+
 object blockDataCheck extends App {
   implicit val serialization = jackson.Serialization
   implicit val formats = DefaultFormats
@@ -31,8 +36,8 @@ object blockDataCheck extends App {
   val da4 = ImpDataAccess.GetDataAccess("921000005k36123789.node4")
   val da5 = ImpDataAccess.GetDataAccess("921000006e0012v696.node5")
 
-  val ch = 3744l
-  val ch1 = 3743l //308652l
+  val ch = 2
+  val ch1 = 1 //308652l
 
   /*printlnBlock
   printlnBlocker
@@ -48,6 +53,9 @@ object blockDataCheck extends App {
   case class bcinfo(height:Long,hash:String)
   case class resInfo (req:bcinfo,reqer:String,last:bcinfo)
   
+  
+  
+  
   def longToByte(number:Long):Array[Byte]={
     var buffer = ByteBuffer.allocate(8)
     buffer.putLong(0, number)
@@ -61,7 +69,7 @@ object blockDataCheck extends App {
     buffer.getLong()
   }
   
-  val start = System.currentTimeMillis()
+  /*val start = System.currentTimeMillis()
   for(i<-0 to 100000){
   val mylong : Long = 294723843
   val b = longToByte(mylong)
@@ -79,7 +87,7 @@ object blockDataCheck extends App {
   //println(s"old=${mylong},new=${l}")
   }
   val end1 = System.currentTimeMillis()
-  println("spent time="+(end1-start1))
+  println("spent time="+(end1-start1))*/
   
  /* def  longToByte(number:Long) :Array[Byte]={
       var param = number
@@ -240,8 +248,19 @@ object blockDataCheck extends App {
 
   def readBlockToString(da: ImpDataAccess, h: Long): String = {
     val b = da.getBlock4ObjectByHeight(h)
-    writePretty(b.endorsements)
+     val r = JsonFormat.toJson(b)   
+    pretty(render(r))
+    //writePretty(b.endorsements)
   }
+  
+  println(readBlockToString(da4,1))
+  println(readBlockToString(da4,2))
+  println(readBlockToString(da4,3))
+  
+  /*da5.FindByLike("rechain_", 1).foreach(f=>{
+    println(f._1)
+    println(new String(f._2))
+  })*/
 
   def findEndorseTime(da: ImpDataAccess, h: Long): String = {
     val b = da.getBlock4ObjectByHeight(h)

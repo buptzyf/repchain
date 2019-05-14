@@ -137,18 +137,18 @@ class Blocker(moduleName: String) extends ModuleBase(moduleName) {
   }
 
   private def CreateBlock: Block = {
-    RepTimeTracer.setStartTime(pe.getSysTag, "Block", System.currentTimeMillis())
-    RepTimeTracer.setStartTime(pe.getSysTag, "createBlock", System.currentTimeMillis())
-    RepTimeTracer.setStartTime(pe.getSysTag, "collectTransToBlock", System.currentTimeMillis())
+    RepTimeTracer.setStartTime(pe.getSysTag, "Block", System.currentTimeMillis(),pe.getCurrentHeight + 1,0)
+    RepTimeTracer.setStartTime(pe.getSysTag, "createBlock", System.currentTimeMillis(),pe.getCurrentHeight + 1,0)
+    RepTimeTracer.setStartTime(pe.getSysTag, "collectTransToBlock", System.currentTimeMillis(),pe.getCurrentHeight + 1,0)
     val trans = CollectedTransOfBlock(SystemProfile.getLimitBlockTransNum, SystemProfile.getBlockLength)
     //todo 交易排序
     if (trans.size >= SystemProfile.getMinBlockTransNum) {
-      RepTimeTracer.setEndTime(pe.getSysTag, "collectTransToBlock", System.currentTimeMillis())
+      RepTimeTracer.setEndTime(pe.getSysTag, "collectTransToBlock", System.currentTimeMillis(),pe.getCurrentHeight + 1,trans.size)
       var blc = BlockHelp.WaitingForExecutionOfBlock(pe.getCurrentBlockHash, pe.getCurrentHeight + 1, trans)
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,height=${blc.height},local height=${pe.getCurrentHeight}" + "~" + selfAddr))
-       RepTimeTracer.setStartTime(pe.getSysTag, "PreloadTrans", System.currentTimeMillis())
+       RepTimeTracer.setStartTime(pe.getSysTag, "PreloadTrans", System.currentTimeMillis(),blc.height,blc.transactions.size)
       blc = ExecuteTransactionOfBlock(blc)
-       RepTimeTracer.setEndTime(pe.getSysTag, "PreloadTrans", System.currentTimeMillis())
+       RepTimeTracer.setEndTime(pe.getSysTag, "PreloadTrans", System.currentTimeMillis(),blc.height,blc.transactions.size)
       if (blc != null) {
         RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,prelaod success,height=${blc.height},local height=${pe.getCurrentHeight}" + "~" + selfAddr))
         blc = BlockHelp.AddBlockHash(blc)
@@ -165,12 +165,12 @@ class Blocker(moduleName: String) extends ModuleBase(moduleName) {
     //if (preblock == null) {
     val blc = CreateBlock
     if (blc != null) {
-      RepTimeTracer.setEndTime(pe.getSysTag, "createBlock", System.currentTimeMillis())
+      RepTimeTracer.setEndTime(pe.getSysTag, "createBlock", System.currentTimeMillis(),blc.height,blc.transactions.size)
       this.preblock = blc
       schedulerLink = clearSched()
       //在发出背书时，告诉对方我是当前出块人，取出系统的名称
       //pe.getActorRef(ActorType.endorsementcollectioner) ! EndorseMsg.CollectEndorsement(this.preblock, pe.getBlocker.blocker)
-      RepTimeTracer.setStartTime(pe.getSysTag, "Endorsement", System.currentTimeMillis())
+      RepTimeTracer.setStartTime(pe.getSysTag, "Endorsement", System.currentTimeMillis(),blc.height,blc.transactions.size)
       pe.getActorRef(ActorType.endorsementcollectioner) ! EndorseMsg.CollectEndorsement(this.preblock, pe.getSysTag)
       //schedulerLink = scheduler.scheduleOnce(TimePolicy.getTimeoutEndorse seconds, self, Blocker.EndorseOfBlockTimeOut)
     }

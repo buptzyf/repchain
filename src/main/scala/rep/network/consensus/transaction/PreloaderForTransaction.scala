@@ -131,7 +131,7 @@ class PreloaderForTransaction(moduleName: String) extends ModuleBase(moduleName)
     case PreTransBlock(block,prefixOfDbTag) =>
       
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(  "entry preload"))
-      logTime("block preload inner time", System.currentTimeMillis(), true)
+      //logTime("block preload inner time", System.currentTimeMillis(), true)
       if ((block.previousBlockHash.toStringUtf8().equals(pe.getCurrentBlockHash) || block.previousBlockHash == ByteString.EMPTY) &&
         block.height == (pe.getCurrentHeight + 1)) {
         var preLoadTrans = mutable.HashMap.empty[String, Transaction]
@@ -156,7 +156,7 @@ class PreloaderForTransaction(moduleName: String) extends ModuleBase(moduleName)
           //全部或者部分交易成功
           sender ! PreTransBlockResult(newblock.get,true)
         }
-        logTime("block preload inner time", System.currentTimeMillis(), false)
+        //logTime("block preload inner time", System.currentTimeMillis(), false)
       }
     case _ => //ignore
   }

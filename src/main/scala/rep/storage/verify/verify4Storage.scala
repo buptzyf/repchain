@@ -97,6 +97,9 @@ object verify4Storage {
     var b = true
     RepLogger.info(RepLogger.System_Logger,   "系统开始自检区块文件")
     var errorInfo = "未知问题"
+    if(sysName == "921000006e0012v696.node5"){
+      println("921000006e0012v696.node5")
+    }
     try{
       val sr: ImpDataAccess = ImpDataAccess.GetDataAccess(sysName)
       val bcinfo = sr.getBlockChainInfo()

@@ -132,9 +132,9 @@ class ConfirmOfBlock(moduleName: String) extends ModuleBase(moduleName) {
   override def receive = {
     //Endorsement block
     case ConfirmedBlock(block, actRefOfBlock) =>
-      RepTimeTracer.setStartTime(pe.getSysTag, "blockconfirm", System.currentTimeMillis())
+      RepTimeTracer.setStartTime(pe.getSysTag, "blockconfirm", System.currentTimeMillis(),block.height,block.transactions.size)
       checkedOfConfirmBlock(block, actRefOfBlock)
-      RepTimeTracer.setEndTime(pe.getSysTag, "blockconfirm", System.currentTimeMillis())
+      RepTimeTracer.setEndTime(pe.getSysTag, "blockconfirm", System.currentTimeMillis(),block.height,block.transactions.size)
     case _ => //ignore
   }
 
