@@ -28,7 +28,7 @@ import rep.network.consensus.vote.Voter.{VoteOfBlocker}
 import scala.collection.mutable
 import rep.utils.GlobalUtils.{ ActorType, BlockEvent, EventType, NodeStatus }
 import scala.collection.immutable
-import rep.network.sync.SyncMsg
+import rep.network.sync.SyncMsg.{SyncRequestOfStorager,StartSync}
 import scala.util.control.Breaks._
 import rep.network.util.NodeHelp
 import rep.network.sync.SyncMsg.{BlockDataOfRequest,BlockDataOfResponse}
@@ -77,17 +77,22 @@ class Storager(moduleName: String) extends ModuleBase(moduleName) {
       val result = dataaccess.restoreBlock(blkRestore.blk)
       if (result._1) {
         RepLogger.trace(RepLogger.Storager_Logger, this.getLogMsgPrefix( s"Restore blocks success,node number: ${pe.getSysTag},block number=${blkRestore.blk.height}" + "~" + selfAddr))
+        
+        RepTimeTracer.setEndTime(pe.getSysTag, "storage", System.currentTimeMillis(),blkRestore.blk.height,blkRestore.blk.transactions.size)
+              if(pe.getSysTag == pe.getBlocker.blocker && pe.getBlocker.VoteHeight+1 == blkRestore.blk.height){
+                RepTimeTracer.setEndTime(pe.getSysTag, "Block", System.currentTimeMillis(),blkRestore.blk.height,blkRestore.blk.transactions.size)
+              }
+        
         pe.getTransPoolMgr.removeTrans(blkRestore.blk.transactions)
         pe.resetSystemCurrentChainStatus(new BlockchainInfo(result._2, result._3, ByteString.copyFromUtf8(result._4), ByteString.copyFromUtf8(result._5),ByteString.copyFromUtf8(result._6)))
         pe.getBlockCacheMgr.removeFromCache(blkRestore.blk.height)
         
         if (blkRestore.SourceOfBlock == SourceOfBlock.CONFIRMED_BLOCK) {
-          if (NodeHelp.checkBlocker(selfAddr.toString(), akka.serialization.Serialization.serializedActorPath(blkRestore.blker).toString())) {
+          if (NodeHelp.checkBlocker(selfAddr, akka.serialization.Serialization.serializedActorPath(blkRestore.blker).toString())) {
             mediator ! Publish(Topic.Event, new Event(selfAddr, Topic.Block, Event.Action.BLOCK_NEW, Some(blkRestore.blk)))
           }
         }
-
-        //logTime("create block storeblock time", System.currentTimeMillis(), false)
+        
         RepLogger.trace(RepLogger.Storager_Logger, this.getLogMsgPrefix( s"CurrentHash(After presistence): ${pe.getCurrentBlockHash}" + "~" + selfAddr))
         RepLogger.trace(RepLogger.Storager_Logger, this.getLogMsgPrefix( s"save block success,height=${pe.getCurrentHeight},hash=${pe.getCurrentBlockHash}" + "~" + selfAddr))
       } else {
@@ -104,7 +109,7 @@ class Storager(moduleName: String) extends ModuleBase(moduleName) {
 
   private def NoticeVoteModule = {
     if (pe.getBlockCacheMgr.isEmpty ) {
-      RepLogger.trace(RepLogger.Storager_Logger, this.getLogMsgPrefix(s"presistence is over,this is startup vote" + "~" + selfAddr))
+      RepLogger.trace(RepLogger.Storager_Logger, this.getLogMsgPrefix("presistence is over,this is startup vote" + "~" + selfAddr))
       //通知抽签模块，开始抽签
       pe.getActorRef( ActorType.voter) ! VoteOfBlocker
     }else{
@@ -118,7 +123,7 @@ class Storager(moduleName: String) extends ModuleBase(moduleName) {
       RepLogger.trace(RepLogger.Storager_Logger, this.getLogMsgPrefix( s"presistence is failed,must start sync,start send sync request ,height=${pe.getCurrentHeight} ~" + selfAddr))
       val hs = pe.getBlockCacheMgr.getKeyArray4Sort
       val max = hs(hs.length-1)
-      pe.getActorRef(ActorType.synchrequester) ! SyncMsg.SyncRequestOfStorager(blker,max)
+      pe.getActorRef(ActorType.synchrequester) ! SyncRequestOfStorager(blker,max)
     }
   }
 
@@ -170,11 +175,12 @@ class Storager(moduleName: String) extends ModuleBase(moduleName) {
             re = 0
           } else {
             pe.getBlockCacheMgr.removeFromCache(blkRestore.blk.height)
-            RepLogger.trace(RepLogger.Storager_Logger, this.getLogMsgPrefix(s"block restor is failed in persistence module,must restart height:${blkRestore.blk.height}" + "~" + selfAddr))
+            RepLogger.trace(RepLogger.Storager_Logger, this.getLogMsgPrefix(s"block save is failed in persistence module,must restart height:${blkRestore.blk.height}" + "~" + selfAddr))
           }
         } else {
           pe.getBlockCacheMgr.removeFromCache(blkRestore.blk.height)
-          RepLogger.trace(RepLogger.Storager_Logger, this.getLogMsgPrefix(s"block restor is failed in persistence module,must restart height:${blkRestore.blk.height}" + "~" + selfAddr))
+          pe.getActorRef(ActorType.synchrequester) ! StartSync(false)
+          RepLogger.trace(RepLogger.Storager_Logger, this.getLogMsgPrefix(s"block restor is failed in persistence module,block prehash  error,must restart height:${blkRestore.blk.height}" + "~" + selfAddr))
         }
       } else if (blkRestore.blk.height < (pe.getCurrentHeight + 1)) {
          pe.getBlockCacheMgr.removeFromCache(blkRestore.blk.height)
@@ -192,10 +198,10 @@ class Storager(moduleName: String) extends ModuleBase(moduleName) {
       RepLogger.trace(RepLogger.Storager_Logger, this.getLogMsgPrefix( s"node number:${pe.getSysTag},restore single block,height:${blkRestore.blk.height}" + "~" + selfAddr))
       RepTimeTracer.setStartTime(pe.getSysTag, "storage", System.currentTimeMillis(),blkRestore.blk.height,blkRestore.blk.transactions.size)
       Handler(blkRestore)
-      RepTimeTracer.setEndTime(pe.getSysTag, "storage", System.currentTimeMillis(),blkRestore.blk.height,blkRestore.blk.transactions.size)
+      /*RepTimeTracer.setEndTime(pe.getSysTag, "storage", System.currentTimeMillis(),blkRestore.blk.height,blkRestore.blk.transactions.size)
       if(pe.getSysTag == pe.getBlocker.blocker){
         RepTimeTracer.setEndTime(pe.getSysTag, "Block", System.currentTimeMillis(),blkRestore.blk.height,blkRestore.blk.transactions.size)
-      }
+      }*/
     case _             => //ignore
   }
 

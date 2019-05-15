@@ -71,10 +71,10 @@ class BlockFileWriter(val SystemName: String, val fileIndex: Long, val isPreAllo
         channel.position(startpos);
         var buf: ByteBuffer = ByteBuffer.wrap(bb);
         channel.write(buf);
-        if (channel.size() - this.lastFlushPos > this.FlushLimitLength) {
+        /*if (channel.size() - this.lastFlushPos > this.FlushLimitLength) {
           channel.force(true)
           this.lastFlushPos = channel.size()
-        }
+        }*/
         b = true
       } catch {
         case e: Exception =>
