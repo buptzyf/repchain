@@ -133,8 +133,9 @@ class Voter(moduleName: String) extends ModuleBase(moduleName) with CRFDVoter {
           }
         }
       }
+    }else{
+      RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix( s"sysname=${pe.getSysTag},transaction is not enough,waiting transaction,height=${pe.getCurrentHeight}" + "~" + selfAddr))
     }
-    //logMsg(LogType.INFO, s"current blocker=${this.Blocker.blocker},${this.Blocker.VoteIndex}")
   }
 
   private def voteMsgHandler = {
