@@ -532,6 +532,190 @@
             </HeaderManager>
             <hashTree/>
           </hashTree>
+          <GenericController guiclass="LogicControllerGui" testclass="GenericController" testname="-------------------" enabled="true"/>
+          <hashTree/>
+          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="设置ContractAssets为false /transaction/postTran" enabled="true">
+            <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
+            <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
+              <collectionProp name="Arguments.arguments">
+                <elementProp name="" elementType="HTTPArgument">
+                  <boolProp name="HTTPArgument.always_encode">false</boolProp>
+                  <stringProp name="Argument.value">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&#xd;
+&lt;!--&#xd;
+  ~ Copyright  2019 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.&#xd;
+  ~ Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);&#xd;
+  ~ you may not use this file except in compliance with the License.&#xd;
+  ~ You may obtain a copy of the License at&#xd;
+  ~&#xd;
+  ~      ${scheme}://www.apache.org/licenses/LICENSE-2.0&#xd;
+  ~&#xd;
+  ~ Unless required by applicable law or agreed to in writing, software&#xd;
+  ~ distributed under the License is distributed on an &quot;AS IS&quot; BA SIS,&#xd;
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.&#xd;
+  ~ See the License for the specific language governing permissions and&#xd;
+  ~ limitations under the License.&#xd;
+  ~&#xd;
+  --&gt;&#xd;
+&#xd;
+&lt;!--è¯¥ç&#x94;¨ä¾&#x8b;ä¸»è¦&#x81;æ&#x98;¯å&#x90;¯ç&#x94;¨/ç¦&#x81;ç&#x94;¨ï¼&#x88;stateï¼&#x9a;true/ state: falseï¼&#x89;å&#x90;&#x88;çº¦å¹¶éª&#x8c;è¯&#x81;è¿&#x94;å&#x9b;&#x9e;å&#x80;¼--&gt;&#xd;
+&lt;!--è¿&#x99;ä¸ªåº&#x94;è¯¥æ&#x98;¯å&#x8f;¯ä»¥æ&#x88;&#x90;å&#x8a;&#x9f;å&#x90;¯ç&#x94;¨/ç¦&#x81;ç&#x94;¨ç&#x9a;&#x84;--&gt;&#xd;
+&lt;CSpec&gt;&#xd;
+    &lt;stype&gt;3&lt;/stype&gt;&#xd;
+    &lt;chaincodename&gt;ContractAssetsTPL&lt;/chaincodename&gt;&#xd;
+    &lt;chaincodeversion&gt;1&lt;/chaincodeversion&gt;&#xd;
+    &lt;iptFunc&gt;&lt;/iptFunc&gt;&#xd;
+    &lt;iptArgs&gt;&lt;/iptArgs&gt;&#xd;
+    &lt;timeout&gt;0&lt;/timeout&gt;&#xd;
+    &lt;legal_prose&gt;&lt;/legal_prose&gt;&#xd;
+    &lt;code&gt;&lt;/code&gt;&#xd;
+    &lt;ctype&gt;2&lt;/ctype&gt;&#xd;
+    &lt;state&gt;false&lt;/state&gt;&#xd;
+&lt;/CSpec&gt;</stringProp>
+                  <stringProp name="Argument.metadata">=</stringProp>
+                </elementProp>
+              </collectionProp>
+            </elementProp>
+            <stringProp name="HTTPSampler.domain">${host}</stringProp>
+            <stringProp name="HTTPSampler.port">${port}</stringProp>
+            <stringProp name="HTTPSampler.protocol"></stringProp>
+            <stringProp name="HTTPSampler.contentEncoding"></stringProp>
+            <stringProp name="HTTPSampler.path">/transaction/postTran</stringProp>
+            <stringProp name="HTTPSampler.method">POST</stringProp>
+            <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+            <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
+            <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+            <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
+            <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
+            <stringProp name="HTTPSampler.connect_timeout"></stringProp>
+            <stringProp name="HTTPSampler.response_timeout"></stringProp>
+          </HTTPSamplerProxy>
+          <hashTree>
+            <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="HTTP信息头管理器" enabled="true">
+              <collectionProp name="HeaderManager.headers">
+                <elementProp name="Referer" elementType="Header">
+                  <stringProp name="Header.name">Referer</stringProp>
+                  <stringProp name="Header.value">${scheme}://${host}:${port}/swagger/index.html</stringProp>
+                </elementProp>
+                <elementProp name="Accept-Language" elementType="Header">
+                  <stringProp name="Header.name">Accept-Language</stringProp>
+                  <stringProp name="Header.value">zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2</stringProp>
+                </elementProp>
+                <elementProp name="origin" elementType="Header">
+                  <stringProp name="Header.name">origin</stringProp>
+                  <stringProp name="Header.value">${scheme}://${host}:${port}</stringProp>
+                </elementProp>
+                <elementProp name="content-type" elementType="Header">
+                  <stringProp name="Header.name">content-type</stringProp>
+                  <stringProp name="Header.value">application/xml</stringProp>
+                </elementProp>
+                <elementProp name="Accept-Encoding" elementType="Header">
+                  <stringProp name="Header.name">Accept-Encoding</stringProp>
+                  <stringProp name="Header.value">gzip, deflate</stringProp>
+                </elementProp>
+                <elementProp name="User-Agent" elementType="Header">
+                  <stringProp name="Header.name">User-Agent</stringProp>
+                  <stringProp name="Header.value">Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:62.0) Gecko/20100101 Firefox/62.0</stringProp>
+                </elementProp>
+                <elementProp name="Accept" elementType="Header">
+                  <stringProp name="Header.name">Accept</stringProp>
+                  <stringProp name="Header.value">application/json</stringProp>
+                </elementProp>
+              </collectionProp>
+            </HeaderManager>
+            <hashTree/>
+          </hashTree>
+          <GenericController guiclass="LogicControllerGui" testclass="GenericController" testname="-------------------" enabled="true"/>
+          <hashTree/>
+          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="设置ContractAssets为true /transaction/postTran" enabled="true">
+            <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
+            <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
+              <collectionProp name="Arguments.arguments">
+                <elementProp name="" elementType="HTTPArgument">
+                  <boolProp name="HTTPArgument.always_encode">false</boolProp>
+                  <stringProp name="Argument.value">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&#xd;
+&lt;!--&#xd;
+  ~ Copyright  2019 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.&#xd;
+  ~ Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);&#xd;
+  ~ you may not use this file except in compliance with the License.&#xd;
+  ~ You may obtain a copy of the License at&#xd;
+  ~&#xd;
+  ~      ${scheme}://www.apache.org/licenses/LICENSE-2.0&#xd;
+  ~&#xd;
+  ~ Unless required by applicable law or agreed to in writing, software&#xd;
+  ~ distributed under the License is distributed on an &quot;AS IS&quot; BA SIS,&#xd;
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.&#xd;
+  ~ See the License for the specific language governing permissions and&#xd;
+  ~ limitations under the License.&#xd;
+  ~&#xd;
+  --&gt;&#xd;
+&#xd;
+&lt;!--è¯¥ç&#x94;¨ä¾&#x8b;ä¸»è¦&#x81;æ&#x98;¯å&#x90;¯ç&#x94;¨/ç¦&#x81;ç&#x94;¨ï¼&#x88;stateï¼&#x9a;true/ state: falseï¼&#x89;å&#x90;&#x88;çº¦å¹¶éª&#x8c;è¯&#x81;è¿&#x94;å&#x9b;&#x9e;å&#x80;¼--&gt;&#xd;
+&lt;!--è¿&#x99;ä¸ªåº&#x94;è¯¥æ&#x98;¯å&#x8f;¯ä»¥æ&#x88;&#x90;å&#x8a;&#x9f;å&#x90;¯ç&#x94;¨/ç¦&#x81;ç&#x94;¨ç&#x9a;&#x84;--&gt;&#xd;
+&lt;CSpec&gt;&#xd;
+    &lt;stype&gt;3&lt;/stype&gt;&#xd;
+    &lt;chaincodename&gt;ContractAssetsTPL&lt;/chaincodename&gt;&#xd;
+    &lt;chaincodeversion&gt;1&lt;/chaincodeversion&gt;&#xd;
+    &lt;iptFunc&gt;&lt;/iptFunc&gt;&#xd;
+    &lt;iptArgs&gt;&lt;/iptArgs&gt;&#xd;
+    &lt;timeout&gt;0&lt;/timeout&gt;&#xd;
+    &lt;legal_prose&gt;&lt;/legal_prose&gt;&#xd;
+    &lt;code&gt;&lt;/code&gt;&#xd;
+    &lt;ctype&gt;2&lt;/ctype&gt;&#xd;
+    &lt;state&gt;true&lt;/state&gt;&#xd;
+&lt;/CSpec&gt;</stringProp>
+                  <stringProp name="Argument.metadata">=</stringProp>
+                </elementProp>
+              </collectionProp>
+            </elementProp>
+            <stringProp name="HTTPSampler.domain">${host}</stringProp>
+            <stringProp name="HTTPSampler.port">${port}</stringProp>
+            <stringProp name="HTTPSampler.protocol"></stringProp>
+            <stringProp name="HTTPSampler.contentEncoding"></stringProp>
+            <stringProp name="HTTPSampler.path">/transaction/postTran</stringProp>
+            <stringProp name="HTTPSampler.method">POST</stringProp>
+            <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+            <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
+            <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+            <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
+            <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
+            <stringProp name="HTTPSampler.connect_timeout"></stringProp>
+            <stringProp name="HTTPSampler.response_timeout"></stringProp>
+          </HTTPSamplerProxy>
+          <hashTree>
+            <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="HTTP信息头管理器" enabled="true">
+              <collectionProp name="HeaderManager.headers">
+                <elementProp name="Referer" elementType="Header">
+                  <stringProp name="Header.name">Referer</stringProp>
+                  <stringProp name="Header.value">${scheme}://${host}:${port}/swagger/index.html</stringProp>
+                </elementProp>
+                <elementProp name="Accept-Language" elementType="Header">
+                  <stringProp name="Header.name">Accept-Language</stringProp>
+                  <stringProp name="Header.value">zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2</stringProp>
+                </elementProp>
+                <elementProp name="origin" elementType="Header">
+                  <stringProp name="Header.name">origin</stringProp>
+                  <stringProp name="Header.value">${scheme}://${host}:${port}</stringProp>
+                </elementProp>
+                <elementProp name="content-type" elementType="Header">
+                  <stringProp name="Header.name">content-type</stringProp>
+                  <stringProp name="Header.value">application/xml</stringProp>
+                </elementProp>
+                <elementProp name="Accept-Encoding" elementType="Header">
+                  <stringProp name="Header.name">Accept-Encoding</stringProp>
+                  <stringProp name="Header.value">gzip, deflate</stringProp>
+                </elementProp>
+                <elementProp name="User-Agent" elementType="Header">
+                  <stringProp name="Header.name">User-Agent</stringProp>
+                  <stringProp name="Header.value">Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:62.0) Gecko/20100101 Firefox/62.0</stringProp>
+                </elementProp>
+                <elementProp name="Accept" elementType="Header">
+                  <stringProp name="Header.name">Accept</stringProp>
+                  <stringProp name="Header.value">application/json</stringProp>
+                </elementProp>
+              </collectionProp>
+            </HeaderManager>
+            <hashTree/>
+          </hashTree>
         </hashTree>
         <ResultCollector guiclass="SummaryReport" testclass="ResultCollector" testname="Summary Report" enabled="true">
           <boolProp name="ResultCollector.error_logging">false</boolProp>
