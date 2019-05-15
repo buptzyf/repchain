@@ -12,6 +12,6 @@
 5. 供应链分账
     * SupplyTPL：供应链分账合约；
     * SupplyTPL2：供应链分账合约Version2，用来测试合约版本升级；
-    * SupplyTPL3：供应链分账合约Version3，用来测试合约版本升级；
+    * SupplyTPL3：供应链分账合约Version3，与SupplyTPL2一起用来测试合约版本升级；
 
 * **TODO**  未完待续...
