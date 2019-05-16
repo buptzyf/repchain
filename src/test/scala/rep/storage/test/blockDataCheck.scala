@@ -253,9 +253,9 @@ object blockDataCheck extends App {
     //writePretty(b.endorsements)
   }
   
-  println(readBlockToString(da4,1))
+  /*println(readBlockToString(da4,1))
   println(readBlockToString(da4,2))
-  println(readBlockToString(da4,3))
+  println(readBlockToString(da4,3))*/
   
   /*da5.FindByLike("rechain_", 1).foreach(f=>{
     println(f._1)
@@ -282,6 +282,13 @@ object blockDataCheck extends App {
     }
   }
 
+  var l : Long = 119649
+  for(i<-0 to 10){
+    
+    getblockerForheight(da1, l)
+    l = l + 1
+  }
+  
   def getblockerForheight(da: ImpDataAccess, h: Long) = {
     var nodes = new Array[String](5)
     nodes(0) = "12110107bi45jh675g.node2"
@@ -292,7 +299,7 @@ object blockDataCheck extends App {
     val b = da.getBlock4ObjectByHeight(h)
 
     val candidatorCur = candidators(da.getSystemName, b.hashOfBlock.toStringUtf8(), nodes.toSet, Sha256.hash(b.hashOfBlock.toStringUtf8()))
-    println(s"height=$ch,systemname=${da.SystemName},${candidatorCur.mkString("|")}")
+    println(s"height=$h,systemname=${da.SystemName},${candidatorCur.mkString("|")}")
   }
 
   ///////////////////////////////////////vote code/////////////////////////////////////////////////

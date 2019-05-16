@@ -33,6 +33,8 @@ object EndorseMsg {
   //背书请求者消息
   case class RequesterOfEndorsement(blc: Block, blocker: String, endorer: Address)
   
+  case class ResendEndorseInfo(endorer: Address)
+  
   //给背书人的背书消息
   case class EndorsementInfo(blc: Block, blocker: String)
 

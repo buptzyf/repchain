@@ -6,6 +6,7 @@ import rep.storage.util.pathUtil
 
 class BlockFileMgr(val SystemName: String) {
   private var bw: BlockFileWriter = null
+  private var br: BlockFileReader = new BlockFileReader(this.SystemName)
 
   private def checkFileWriter(fileno: Long) = {
     synchronized {
@@ -84,8 +85,8 @@ class BlockFileMgr(val SystemName: String) {
    * @return	返回读取的区块字节数组
    */
   def readBlock(fileno: Long, startpos: Long, length: Int): Array[Byte] = {
-    var reader = new BlockFileReader(this.SystemName)
-    reader.readBlock(fileno, startpos, length)
+    //var reader = new BlockFileReader(this.SystemName)
+    br.readBlock(fileno, startpos, length)
   }
   
   def longToByte(number:Long):Array[Byte]={

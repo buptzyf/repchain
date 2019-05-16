@@ -34,7 +34,7 @@ import scala.util.control.Breaks._
 import scala.util.control.Exception.Finally
 import java.util.concurrent.ConcurrentHashMap
 import rep.network.consensus.block.Blocker.{ ConfirmedBlock }
-import rep.network.persistence.Storager.{ BlockRestore, SourceOfBlock }
+import rep.network.persistence.Storager.{ BlockRestore, SourceOfBlock ,BatchStore}
 import rep.network.consensus.util.{ BlockVerify, BlockHelp }
 import rep.log.RepLogger
 import rep.log.RepTimeTracer
@@ -102,8 +102,10 @@ class ConfirmOfBlock(moduleName: String) extends ModuleBase(moduleName) {
       if (BlockVerify.VerifyEndorserSorted(block.endorsements.toArray[Signature]) == 1 || (block.height==1 && pe.getCurrentBlockHash == "" && block.previousBlockHash.isEmpty())) {
         //背书信息排序正确
         RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( "confirm verify endorsement sort"))
+        pe.getBlockCacheMgr.addToCache(BlockRestore(block, SourceOfBlock.CONFIRMED_BLOCK, actRefOfBlock))
+        pe.getActorRef(ActorType.storager) ! BatchStore
         sendEvent(EventType.RECEIVE_INFO, mediator, pe.getSysTag, Topic.Block, Event.Action.BLOCK_NEW)
-        pe.getActorRef(ActorType.storager) ! BlockRestore(block, SourceOfBlock.CONFIRMED_BLOCK, actRefOfBlock)
+        //pe.getActorRef(ActorType.storager) ! BlockRestore(block, SourceOfBlock.CONFIRMED_BLOCK, actRefOfBlock)
       } else {
         ////背书信息排序错误
       }

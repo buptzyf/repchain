@@ -158,14 +158,15 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
         //if (info.blc.previousBlockHash.toStringUtf8 == pe.getCurrentBlockHash && NodeHelp.isBlocker(info.blocker, pe.getBlocker.blocker)) {
         if (info.blc.previousBlockHash.toStringUtf8 == pe.getBlocker.voteBlockHash && NodeHelp.isBlocker(info.blocker, pe.getBlocker.blocker)) {
           //可以进入背书
-          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( "vote result equal，allow entry endorse,recv endorse request,endorse height=${info.blc.height},local height=${pe.getCurrentHeight}"))
+          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"vote result equal，allow entry endorse,recv endorse request,endorse height=${info.blc.height},local height=${pe.getCurrentHeight}"))
           0
         } else  {
+          //todo 需要判断区块缓存，再决定是否需要启动同步
           if(info.blc.height > pe.getCurrentHeight+1){
             pe.getActorRef(ActorType.synchrequester) ! StartSync(false)
           }
           //当前块hash和抽签的出块人都不一致，暂时不能够进行背书，可以进行缓存
-          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( "block hash is not equal or blocker is not equal,recv endorse request,endorse height=${info.blc.height},local height=${pe.getCurrentHeight}"))
+          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"block hash is not equal or blocker is not equal,recv endorse request,endorse height=${info.blc.height},local height=${pe.getCurrentHeight}"))
           2
         }
       } else {
@@ -199,8 +200,6 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
     //println(s"${pe.getSysTag}:entry 6")
     if (result1) {
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry 7"))
-      //if(AskPreloadTransactionOfBlock(info.blc)){
-      //println("entry 9")
       val endtime = System.currentTimeMillis()
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"#################endorsement spent time=${endtime-starttime},,recv endorse request,endorse height=${info.blc.height},local height=${pe.getCurrentHeight}"))
       sendEvent(EventType.RECEIVE_INFO, mediator, pe.getSysTag, Topic.Endorsement,Event.Action.ENDORSEMENT)
@@ -218,7 +217,7 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
     r match {
       case 0 =>
         //entry endorse
-        VerifyInfo(info: EndorsementInfo)
+        VerifyInfo(info)
       case 2 =>
         //cache endorse,waiting revote
         sender ! ResultOfEndorsed(ResultFlagOfEndorse.BlockHeightError, null, info.blc.hashOfBlock.toStringUtf8(),pe.getSystemCurrentChainStatus,pe.getBlocker)
@@ -226,7 +225,7 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
       case 1 =>
         //do not endorse
         sender ! ResultOfEndorsed(ResultFlagOfEndorse.BlockerSelfError, null, info.blc.hashOfBlock.toStringUtf8(),pe.getSystemCurrentChainStatus,pe.getBlocker)
-        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"it is blocker,recv endorse request,endorse height=${info.blc.height},local height=${pe.getCurrentHeight}"))
+        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"itself,recv endorse request,endorse height=${info.blc.height},local height=${pe.getCurrentHeight}"))
       case 3 =>
         //do not endorse
         sender ! ResultOfEndorsed(ResultFlagOfEndorse.CandidatorError, null, info.blc.hashOfBlock.toStringUtf8(),pe.getSystemCurrentChainStatus,pe.getBlocker)
@@ -238,9 +237,9 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
     //Endorsement block
     case EndorsementInfo(block, blocker) =>
       if(!pe.isSynching){
-        RepTimeTracer.setStartTime(pe.getSysTag, "recvendorsement", System.currentTimeMillis(),block.height,block.transactions.size)
+        RepTimeTracer.setStartTime(pe.getSysTag, s"recvendorsement-${moduleName}", System.currentTimeMillis(),block.height,block.transactions.size)
         EndorseHandler(EndorsementInfo(block, blocker))
-        RepTimeTracer.setEndTime(pe.getSysTag, "recvendorsement", System.currentTimeMillis(),block.height,block.transactions.size)
+        RepTimeTracer.setEndTime(pe.getSysTag, s"recvendorsement-${moduleName}", System.currentTimeMillis(),block.height,block.transactions.size)
       }else{
         RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"do not endorse,it is synching,recv endorse request,endorse height=${block.height},local height=${pe.getCurrentHeight}"))
       }

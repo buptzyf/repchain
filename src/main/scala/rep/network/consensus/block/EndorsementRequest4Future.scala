@@ -27,7 +27,7 @@ import com.google.protobuf.ByteString
 import com.google.protobuf.timestamp.Timestamp
 import rep.app.conf.{ SystemProfile, TimePolicy }
 import rep.network.base.ModuleBase
-import rep.network.consensus.endorse.EndorseMsg.{ EndorsementInfo, ResultOfEndorsed, RequesterOfEndorsement, ResultOfEndorseRequester, ResultFlagOfEndorse }
+import rep.network.consensus.endorse.EndorseMsg.{ EndorsementInfo, ResultOfEndorsed, RequesterOfEndorsement, ResultOfEndorseRequester, ResultFlagOfEndorse,ResendEndorseInfo }
 import rep.network.tools.PeerExtension
 import rep.network.Topic
 import rep.protos.peer._
@@ -38,6 +38,7 @@ import scala.util.control.Breaks
 import rep.utils.GlobalUtils.{ EventType, ActorType }
 import rep.network.sync.SyncMsg.StartSync
 import rep.log.RepLogger
+import rep.log.RepTimeTracer
 
 object EndorsementRequest4Future {
   def props(name: String): Props = Props(classOf[EndorsementRequest4Future], name)
@@ -49,7 +50,8 @@ class EndorsementRequest4Future(moduleName: String) extends ModuleBase(moduleNam
   import scala.concurrent.duration._
 
   implicit val timeout = Timeout(TimePolicy.getTimeoutEndorse seconds)
-  private val endorsementActorName = "/user/modulemanager/endorser"
+  //private val endorsementActorName = "/user/modulemanager/endorser"
+  private val endorsementActorName = "/user/modulemanager/dispatchofRecvendorsement"
 
   override def preStart(): Unit = {
     RepLogger.info(RepLogger.Consensus_Logger, this.getLogMsgPrefix( "EndorsementRequest4Future Start"))
@@ -78,51 +80,67 @@ class EndorsementRequest4Future(moduleName: String) extends ModuleBase(moduleNam
   private def EndorsementVerify(block: Block, result: ResultOfEndorsed): Boolean = {
     val bb = block.clearEndorsements.toByteArray
     val ev = BlockVerify.VerifyOneEndorseOfBlock(result.endor, bb, pe.getSysTag)
-    if (ev._1) {
-      true
-    } else {
-      false
-    }
+    ev._1
   }
 
   private def handler(reqinfo: RequesterOfEndorsement) = {
     schedulerLink = clearSched()
-    val result = this.ExecuteOfEndorsement(reqinfo.endorer, EndorsementInfo(reqinfo.blc, reqinfo.blocker))
-    if (result != null) {
-      if (result.result == ResultFlagOfEndorse.success) {
-        if (EndorsementVerify(reqinfo.blc, result)) {
-          val re = ResultOfEndorseRequester(true, result.endor, result.BlockHash, reqinfo.endorer)
-          context.parent ! re
-          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"--------endorsementRequest4Future, send endorsement, height=${reqinfo.blc.height},local height=${pe.getCurrentHeight} "))
-        } else {
-          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"--------endorsementRequest4Future recv endorsement result is error, result=${result.result},height=${reqinfo.blc.height},local height=${pe.getCurrentHeight}"))
-          context.parent ! ResultOfEndorseRequester(false, null, reqinfo.blc.hashOfBlock.toStringUtf8(), reqinfo.endorer)
-        }
-      } else {
-        if (result.result == ResultFlagOfEndorse.BlockHeightError) {
-          if (result.endorserOfChainInfo.height > pe.getCurrentHeight + 1) {
-            pe.getActorRef(ActorType.synchrequester) ! StartSync(false)
-            context.parent ! ResultOfEndorseRequester(false, null, reqinfo.blc.hashOfBlock.toStringUtf8(), reqinfo.endorer)
-            RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"--------endorsementRequest4Future recv endorsement result must synch,height=${reqinfo.blc.height},local height=${pe.getCurrentHeight} "))
+    
+      RepTimeTracer.setStartTime(pe.getSysTag, s"Endorsement-request-${moduleName}", System.currentTimeMillis(),reqinfo.blc.height,reqinfo.blc.transactions.size)
+      val result = this.ExecuteOfEndorsement(reqinfo.endorer, EndorsementInfo(reqinfo.blc, reqinfo.blocker))
+      if (result != null) {
+        if (result.result == ResultFlagOfEndorse.success) {
+          if (EndorsementVerify(reqinfo.blc, result)) {
+            val re = ResultOfEndorseRequester(true, result.endor, result.BlockHash, reqinfo.endorer)
+            context.parent ! re
+            RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"--------endorsementRequest4Future, send endorsement, height=${reqinfo.blc.height},local height=${pe.getCurrentHeight} "))
           } else {
-            schedulerLink = scheduler.scheduleOnce(TimePolicy.getTimeoutEndorse seconds, self, RequesterOfEndorsement(reqinfo.blc, reqinfo.blocker, reqinfo.endorer))
+            RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"--------endorsementRequest4Future recv endorsement result is error, result=${result.result},height=${reqinfo.blc.height},local height=${pe.getCurrentHeight}"))
+            context.parent ! ResultOfEndorseRequester(false, null, reqinfo.blc.hashOfBlock.toStringUtf8(), reqinfo.endorer)
           }
         } else {
-          context.parent ! ResultOfEndorseRequester(false, null, reqinfo.blc.hashOfBlock.toStringUtf8(), reqinfo.endorer)
+          if (result.result == ResultFlagOfEndorse.BlockHeightError) {
+            if (result.endorserOfChainInfo.height > pe.getCurrentHeight + 1) {
+              //todo 需要从块缓冲判断是否启动块同步
+              pe.getActorRef(ActorType.synchrequester) ! StartSync(false)
+              context.parent ! ResultOfEndorseRequester(false, null, reqinfo.blc.hashOfBlock.toStringUtf8(), reqinfo.endorer)
+              RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"--------endorsementRequest4Future recv endorsement result must synch,height=${reqinfo.blc.height},local height=${pe.getCurrentHeight} "))
+            } else {
+              //if(pe.getCurrentHeight >= reqinfo.blc.height){
+                //schedulerLink = scheduler.scheduleOnce(30 milliseconds, self, RequesterOfEndorsement(reqinfo.blc, reqinfo.blocker, reqinfo.endorer))
+               // schedulerLink = scheduler.scheduleOnce(30 milliseconds, self, RequesterOfEndorsement(reqinfo.blc, reqinfo.blocker, reqinfo.endorer))
+              //}
+              /*try{
+                Thread.sleep(30)
+                context.parent ! ResendEndorseInfo(reqinfo.endorer)
+              }catch{
+                case e:Exception => 
+                  RepLogger.error(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"--------endorsementRequest4Future sleep happen error,height=${reqinfo.blc.height},local height=${pe.getCurrentHeight} "))
+              }*/
+               context.parent ! ResendEndorseInfo(reqinfo.endorer)
+            }
+          } else {
+            //context.parent ! ResultOfEndorseRequester(false, null, reqinfo.blc.hashOfBlock.toStringUtf8(), reqinfo.endorer)
+             context.parent ! ResendEndorseInfo(reqinfo.endorer)
+          }
         }
+      } else {
+        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"--------endorsementRequest4Future recv endorsement result is null,height=${reqinfo.blc.height},local height=${pe.getCurrentHeight} "))
+        //context.parent ! ResultOfEndorseRequester(false, null, reqinfo.blc.hashOfBlock.toStringUtf8(), reqinfo.endorer)
+         context.parent ! ResendEndorseInfo(reqinfo.endorer)
       }
-    } else {
-      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"--------endorsementRequest4Future recv endorsement result is null,height=${reqinfo.blc.height},local height=${pe.getCurrentHeight} "))
-      context.parent ! ResultOfEndorseRequester(false, null, reqinfo.blc.hashOfBlock.toStringUtf8(), reqinfo.endorer)
-    }
+    
+    RepTimeTracer.setEndTime(pe.getSysTag, s"Endorsement-request-${moduleName}", System.currentTimeMillis(),reqinfo.blc.height,reqinfo.blc.transactions.size)
   }
 
   override def receive = {
     case RequesterOfEndorsement(block, blocker, addr) =>
-      handler(RequesterOfEndorsement(block, blocker, addr))
-
-    //case ResultOfEndorsed(result, endor, blockhash)=>
-    //  handlerOfResult(ResultOfEndorsed(result, endor, blockhash))
+      //待请求背书的块的上一个块的hash不等于系统最新的上一个块的hash，停止发送背书
+      if(block.previousBlockHash.toStringUtf8() == pe.getCurrentBlockHash){
+        handler(RequesterOfEndorsement(block, blocker, addr))
+      }else{
+        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"--------endorsementRequest4Future back out  endorsement,prehash not equal pe.currenthash ,height=${block.height},local height=${pe.getCurrentHeight} "))
+    }
     case _ => //ignore
   }
 }

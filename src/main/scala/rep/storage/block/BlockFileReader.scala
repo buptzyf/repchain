@@ -8,7 +8,35 @@ import java.nio.channels.FileChannel;
 
 class BlockFileReader(val SystemName:String) {
   private val FileName = "Repchain_BlockFile_"
+  private val BlockDataPath = StoreConfig4Scala.getBlockPath(SystemName)
+  private var rf: RandomAccessFile = null;
+  private var channel: FileChannel = null; 
+  private var fileindex:Long = 0
 
+  
+  private def openChannel(fileno:Long)={
+      if(rf == null || (rf != null && fileindex != fileno)){
+        createChannel(fileno)
+      }
+  }
+  
+  private def createChannel(fileno:Long)={
+    synchronized {
+      this.FreeResouce
+      val fn4path = this.BlockDataPath + File.separator + FileName + fileno;
+      try {
+        var f = new File(fn4path)
+        if (f.exists()) {
+          rf = new RandomAccessFile(fn4path, "r");
+          channel = rf.getChannel();
+          fileindex = fileno
+        }
+      } catch {
+        case e: Exception => throw e
+      }
+    }
+  }
+  
   /**
    * @author jiangbuyun
    * @version	1.0
@@ -19,17 +47,12 @@ class BlockFileReader(val SystemName:String) {
    */
   def readBlock(fileno: Long, startpos: Long, length: Int): Array[Byte] = {
     var rb: Array[Byte] = null
-    val np = StoreConfig4Scala.getBlockPath(SystemName) + File.separator + FileName + fileno
+   
     synchronized {
-      var rf: RandomAccessFile = null
-      var channel: FileChannel = null
+      
       try {
-        var f = new File(np)
-        if (!f.exists()) {
-          rb
-        } else {
-          rf = new RandomAccessFile(np, "r")
-          channel = rf.getChannel()
+        openChannel(fileno)
+        if(channel != null){
           channel.position(startpos)
           var buf: ByteBuffer = ByteBuffer.allocate(length)
           channel.read(buf)
@@ -40,27 +63,34 @@ class BlockFileReader(val SystemName:String) {
         case e: Exception =>
           e.printStackTrace()
           throw e
-      } finally {
-        if (channel != null) {
-          try {
-            channel.close();
-          } catch {
-            case e: Exception =>
-              e.printStackTrace()
-          }
-        }
-
-        if (rf != null) {
-          try {
-            rf.close();
-          } catch {
-            case e: Exception =>
-              e.printStackTrace()
-          }
-        }
       }
     }
 
     rb
+  }
+  
+  def FreeResouce = {
+    if (channel != null) {
+      try {
+        channel.close();
+        channel = null
+      } catch {
+        case e: Exception =>
+          channel = null
+          e.printStackTrace()
+      }
+    }
+
+    if (rf != null) {
+      try {
+        rf.close();
+        rf = null
+      } catch {
+        case e: Exception =>
+          rf = null
+          e.printStackTrace();
+      }
+    }
+    this.fileindex = 0
   }
 }

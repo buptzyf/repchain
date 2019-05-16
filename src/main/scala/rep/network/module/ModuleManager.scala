@@ -29,7 +29,7 @@ import rep.network.cluster.MemberListener
 import rep.network.sync.{ SynchronizeResponser, SynchronizeRequester4Future }
 import rep.sc.TransactionDispatcher
 import rep.network.consensus.block.{ GenesisBlocker, ConfirmOfBlock, EndorseCollector, Blocker }
-import rep.network.consensus.endorse.{Endorser4Future}
+import rep.network.consensus.endorse.{Endorser4Future,DispatchOfRecvEndorsement}
 import rep.network.consensus.transaction.{PreloaderForTransaction}
 import rep.network.consensus.vote.Voter
 
@@ -102,8 +102,11 @@ class ModuleManager(moduleName: String, sysTag: String, enableStatistic: Boolean
       context.actorOf(ConfirmOfBlock.props("confirmerofblock"), "confirmerofblock")
       context.actorOf(EndorseCollector.props("endorsementcollectioner"), "endorsementcollectioner")
       
-      //context.actorOf(Endorser.props("endorser"), "endorser")
-      context.actorOf(Endorser4Future.props("endorser"), "endorser")
+      
+      //context.actorOf(Endorser4Future.props("endorser"), "endorser")
+      context.actorOf(DispatchOfRecvEndorsement.props("dispatchofRecvendorsement"), "dispatchofRecvendorsement")
+      
+      
       if(this.isStartup){
         context.actorOf(TransactionDispatcher.props("transactiondispatcher"), "transactiondispatcher")
         //context.actorOf(PreloaderForTransaction.props("preloaderoftransaction"),"preloaderoftransaction")
