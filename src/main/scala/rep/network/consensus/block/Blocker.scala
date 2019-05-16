@@ -144,7 +144,8 @@ class Blocker(moduleName: String) extends ModuleBase(moduleName) {
     //todo 交易排序
     if (trans.size >= SystemProfile.getMinBlockTransNum) {
       RepTimeTracer.setEndTime(pe.getSysTag, "collectTransToBlock", System.currentTimeMillis(),pe.getCurrentHeight + 1,trans.size)
-      var blc = BlockHelp.WaitingForExecutionOfBlock(pe.getCurrentBlockHash, pe.getCurrentHeight + 1, trans)
+      //此处建立新块必须采用抽签模块的抽签结果来进行出块，否则出现刚抽完签，马上有新块的存储完成，就会出现错误
+      var blc = BlockHelp.WaitingForExecutionOfBlock(pe.getBlocker.voteBlockHash, pe.getBlocker.VoteHeight + 1, trans)
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,height=${blc.height},local height=${pe.getCurrentHeight}" + "~" + selfAddr))
        RepTimeTracer.setStartTime(pe.getSysTag, "PreloadTrans", System.currentTimeMillis(),blc.height,blc.transactions.size)
       blc = ExecuteTransactionOfBlock(blc)
@@ -185,30 +186,18 @@ class Blocker(moduleName: String) extends ModuleBase(moduleName) {
           sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Block, Event.Action.CANDIDATOR)
 
           //是出块节点
-          if (preblock == null) {
+          if (preblock == null ||  (preblock.previousBlockHash.toStringUtf8() != pe.getBlocker.voteBlockHash)) {
             CreateBlockHandler
-          } else {
-            if (preblock.previousBlockHash.toStringUtf8() != pe.getBlocker.voteBlockHash) {
-              //上一个块已经变化，需要重新出块
-              CreateBlockHandler
-            } 
           }
         } else {
           //出块标识错误,暂时不用做任何处理
           RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,do not blocker or blocker hash not equal current hash,height=${this.preblock.height}" + "~" + selfAddr))
         }
-
       } else {
         //节点状态不对
         RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,node status error,status is synching,height=${this.preblock.height}" + "~" + selfAddr))
       }
 
-    //出块超时
-    /*case Blocker.EndorseOfBlockTimeOut =>
-      schedulerLink = clearSched()
-      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,send endorse collector,height=${this.preblock.height},local height=${pe.getCurrentHeight}" + "~" + selfAddr))
-      pe.getActorRef(ActorType.endorsementcollectioner) ! EndorseMsg.CollectEndorsement(this.preblock, pe.getBlocker.blocker)
-      schedulerLink = scheduler.scheduleOnce(TimePolicy.getTimeoutEndorse seconds, self, Blocker.EndorseOfBlockTimeOut)*/
     case _ => //ignore
   }
 
