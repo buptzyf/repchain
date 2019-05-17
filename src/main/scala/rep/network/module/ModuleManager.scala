@@ -30,7 +30,7 @@ import rep.network.sync.{ SynchronizeResponser, SynchronizeRequester4Future }
 import rep.sc.TransactionDispatcher
 import rep.network.consensus.block.{ GenesisBlocker, ConfirmOfBlock, EndorseCollector, Blocker }
 import rep.network.consensus.endorse.{Endorser4Future,DispatchOfRecvEndorsement}
-import rep.network.consensus.transaction.{PreloaderForTransaction}
+import rep.network.consensus.transaction.{DispatchOfPreload,PreloaderForTransaction}
 import rep.network.consensus.vote.Voter
 
 import rep.storage.ImpDataAccess
@@ -111,8 +111,8 @@ class ModuleManager(moduleName: String, sysTag: String, enableStatistic: Boolean
         context.actorOf(TransactionDispatcher.props("transactiondispatcher"), "transactiondispatcher")
         //context.actorOf(PreloaderForTransaction.props("preloaderoftransaction"),"preloaderoftransaction")
       }
-      context.actorOf(PreloaderForTransaction.props("preloaderoftransaction"),"preloaderoftransaction")
-      
+      //context.actorOf(PreloaderForTransaction.props("preloaderoftransaction"),"preloaderoftransaction")
+      context.actorOf(DispatchOfPreload.props("dispatchofpreload"), "dispatchofpreload")
       
       context.actorOf(Voter.props("voter"), "voter")
       context.actorOf(TransactionPool.props("transactionpool"), "transactionpool")

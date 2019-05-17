@@ -51,7 +51,8 @@ class BlockStubActor(moduleName: String) extends ModuleBase(moduleName) {
 
   private def ExecuteTransactionOfBlock(block: Block): Block = {
     try {
-      val ref = pe.getActorRef(ActorType.preloaderoftransaction)
+      //val ref = pe.getActorRef(ActorType.preloaderoftransaction)
+      val ref = pe.getActorRef(ActorType.dispatchofpreload)
       //val ref1 = this.transpreload
       val future = ref ? Blocker.PreTransBlock(block, "preload")
       val result = Await.result(future, timeout.duration).asInstanceOf[PreTransBlockResult]

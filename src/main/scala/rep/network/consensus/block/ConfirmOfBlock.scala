@@ -95,13 +95,13 @@ class ConfirmOfBlock(moduleName: String) extends ModuleBase(moduleName) {
   }
 
   private def handler(block: Block, actRefOfBlock: ActorRef) = {
-    RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("confirm verify endorsement start"))
+    RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"confirm verify endorsement start,height=${block.height}"))
     if (asyncVerifyEndorses(block)) {
-      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("confirm verify endorsement end"))
+      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"confirm verify endorsement end,height=${block.height}"))
       //背书人的签名一致
       if (BlockVerify.VerifyEndorserSorted(block.endorsements.toArray[Signature]) == 1 || (block.height==1 && pe.getCurrentBlockHash == "" && block.previousBlockHash.isEmpty())) {
         //背书信息排序正确
-        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( "confirm verify endorsement sort"))
+        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"confirm verify endorsement sort,height=${block.height}"))
         pe.getBlockCacheMgr.addToCache(BlockRestore(block, SourceOfBlock.CONFIRMED_BLOCK, actRefOfBlock))
         pe.getActorRef(ActorType.storager) ! BatchStore
         sendEvent(EventType.RECEIVE_INFO, mediator, pe.getSysTag, Topic.Block, Event.Action.BLOCK_NEW)
@@ -116,11 +116,11 @@ class ConfirmOfBlock(moduleName: String) extends ModuleBase(moduleName) {
 
   private def checkedOfConfirmBlock(block: Block, actRefOfBlock: ActorRef) = {
     if (pe.getCurrentBlockHash == "" && block.previousBlockHash.isEmpty()) {
-      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("confirm verify blockhash"))
+      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"confirm verify blockhash,height=${block.height}"))
       handler(block, actRefOfBlock)
     } else  {
       //与上一个块一致
-      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("confirm verify blockhash"))
+      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"confirm verify blockhash,height=${block.height}"))
       if (NodeHelp.ConsensusConditionChecked(block.endorsements.size, pe.getNodeMgr.getStableNodes.size)) {
         //符合大多数人背书要求
         handler(block, actRefOfBlock)

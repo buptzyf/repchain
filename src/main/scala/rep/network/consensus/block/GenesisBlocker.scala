@@ -79,7 +79,8 @@ class GenesisBlocker(moduleName: String) extends ModuleBase(moduleName) {
 
   private def ExecuteTransactionOfBlock(block: Block): Block = {
     try {
-      val future = pe.getActorRef(ActorType.preloaderoftransaction) ? PreTransBlock(block, "preload")
+      //val future = pe.getActorRef(ActorType.preloaderoftransaction) ? PreTransBlock(block, "preload")
+      val future = pe.getActorRef(ActorType.dispatchofpreload) ? PreTransBlock(block, "preload")
       val result = Await.result(future, timeout.duration).asInstanceOf[PreTransBlockResult]
       if (result.result) {
         result.blc
