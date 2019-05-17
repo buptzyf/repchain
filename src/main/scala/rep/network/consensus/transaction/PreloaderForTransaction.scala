@@ -135,7 +135,7 @@ class PreloaderForTransaction(moduleName: String) extends ModuleBase(moduleName)
         var preLoadTrans = mutable.HashMap.empty[String, Transaction]
         preLoadTrans = block.transactions.map(trans => (trans.id, trans))(breakOut): mutable.HashMap[String, Transaction]
         var transResult = Seq.empty[rep.protos.peer.TransactionResult]
-        val dbtag = prefixOfDbTag+"_"+block.transactions.head.id
+        val dbtag = prefixOfDbTag+"_"+moduleName+"_"+block.transactions.head.id
         //确保提交的时候顺序执行
         block.transactions.map(t => {
           var ts = Handler(t, preLoadTrans, dbtag)

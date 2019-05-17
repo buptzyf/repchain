@@ -62,7 +62,8 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
 
   //背书块的交易预执行,然后验证block
   private def AskPreloadTransactionOfBlock(block: Block): Future[Boolean] =
-    pe.getActorRef(ActorType.preloaderoftransaction).ask(PreTransBlock(block, "endors"))(timeout).mapTo[PreTransBlockResult].flatMap(f => {
+    //pe.getActorRef(ActorType.preloaderoftransaction).ask(PreTransBlock(block, "endors"))(timeout).mapTo[PreTransBlockResult].flatMap(f => {
+    pe.getActorRef(ActorType.dispatchofpreload).ask(PreTransBlock(block, "endors"))(timeout).mapTo[PreTransBlockResult].flatMap(f => {  
       //println(s"${pe.getSysTag}:entry AskPreloadTransactionOfBlock")
       val result = Promise[Boolean]
       var tmpblock = f.blc.withHashOfBlock(block.hashOfBlock)

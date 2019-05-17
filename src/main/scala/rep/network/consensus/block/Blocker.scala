@@ -124,7 +124,8 @@ class Blocker(moduleName: String) extends ModuleBase(moduleName) {
 
   private def ExecuteTransactionOfBlock(block: Block): Block = {
     try {
-      val future = pe.getActorRef(ActorType.preloaderoftransaction) ? Blocker.PreTransBlock(block, "preload")
+      //val future = pe.getActorRef(ActorType.preloaderoftransaction) ? Blocker.PreTransBlock(block, "preload")
+      val future = pe.getActorRef(ActorType.dispatchofpreload) ? Blocker.PreTransBlock(block, "preload")
       val result = Await.result(future, timeout.duration).asInstanceOf[PreTransBlockResult]
       if (result.result) {
         result.blc
@@ -135,6 +136,7 @@ class Blocker(moduleName: String) extends ModuleBase(moduleName) {
       case e: AskTimeoutException => null
     }
   }
+  
 
   private def CreateBlock: Block = {
     RepTimeTracer.setStartTime(pe.getSysTag, "Block", System.currentTimeMillis(),pe.getCurrentHeight + 1,0)
