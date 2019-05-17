@@ -25,11 +25,13 @@
       /transaction/postTranByString <br>
       /transaction/{transactionId} <br>
       /transaction/postTran <br>
+      /transaction/postTranStream
 
 2. 操作步骤
    * 打开jmeter导入jmx脚本
    * `ctrl + R` 执行线程组
 3. 注意事项
-   * jmeter测试脚本中的字符串提交交易的测试用例，其内置的字符串只能提交一次，因为txid是固定唯一的
+   * 该jmeter测试脚本，执行一次过后，清除一下区块，再进行下一次测试演示
+   * 将jmx/7a0fa308-9bba-415f-ae10-39832ef2b52f放到jmeter的目录下，该文件用来测试`/transaction/postTranStream`
    * /transaction/postTran只能在debug模式下使用，在jar部署模式下，该接口不能使用
 4. **TODO**  未完待续
