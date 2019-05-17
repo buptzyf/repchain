@@ -151,12 +151,13 @@ class Blocker(moduleName: String) extends ModuleBase(moduleName) {
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,height=${blc.height},local height=${pe.getCurrentHeight}" + "~" + selfAddr))
        RepTimeTracer.setStartTime(pe.getSysTag, "PreloadTrans", System.currentTimeMillis(),blc.height,blc.transactions.size)
       blc = ExecuteTransactionOfBlock(blc)
-       RepTimeTracer.setEndTime(pe.getSysTag, "PreloadTrans", System.currentTimeMillis(),blc.height,blc.transactions.size)
       if (blc != null) {
+        RepTimeTracer.setEndTime(pe.getSysTag, "PreloadTrans", System.currentTimeMillis(),blc.height,blc.transactions.size)
         RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,prelaod success,height=${blc.height},local height=${pe.getCurrentHeight}" + "~" + selfAddr))
         blc = BlockHelp.AddBlockHash(blc)
         BlockHelp.AddSignToBlock(blc, pe.getSysTag)
       } else {
+        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block error" + "~" + selfAddr))
         null
       }
     } else {
