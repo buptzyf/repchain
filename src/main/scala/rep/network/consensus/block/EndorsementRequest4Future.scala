@@ -106,22 +106,12 @@ class EndorsementRequest4Future(moduleName: String) extends ModuleBase(moduleNam
               context.parent ! ResultOfEndorseRequester(false, null, reqinfo.blc.hashOfBlock.toStringUtf8(), reqinfo.endorer)
               RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"--------endorsementRequest4Future recv endorsement result must synch,height=${reqinfo.blc.height},local height=${pe.getCurrentHeight} "))
             } else {
-              //if(pe.getCurrentHeight >= reqinfo.blc.height){
-                //schedulerLink = scheduler.scheduleOnce(30 milliseconds, self, RequesterOfEndorsement(reqinfo.blc, reqinfo.blocker, reqinfo.endorer))
-               // schedulerLink = scheduler.scheduleOnce(30 milliseconds, self, RequesterOfEndorsement(reqinfo.blc, reqinfo.blocker, reqinfo.endorer))
-              //}
-              /*try{
-                Thread.sleep(30)
-                context.parent ! ResendEndorseInfo(reqinfo.endorer)
-              }catch{
-                case e:Exception => 
-                  RepLogger.error(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"--------endorsementRequest4Future sleep happen error,height=${reqinfo.blc.height},local height=${pe.getCurrentHeight} "))
-              }*/
                context.parent ! ResendEndorseInfo(reqinfo.endorer)
+               RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"--------endorsement node's height low,must resend endorsement ,height=${reqinfo.blc.height},local height=${pe.getCurrentHeight} "))
             }
-          } else {
-            //context.parent ! ResultOfEndorseRequester(false, null, reqinfo.blc.hashOfBlock.toStringUtf8(), reqinfo.endorer)
-             context.parent ! ResendEndorseInfo(reqinfo.endorer)
+          }else if(result.result == ResultFlagOfEndorse.EnodrseNodeIsSynching){
+            context.parent ! ResendEndorseInfo(reqinfo.endorer)
+            RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"--------endorsement node is synching, must resend endorsement,height=${reqinfo.blc.height},local height=${pe.getCurrentHeight} "))
           }
         }
       } else {

@@ -27,6 +27,7 @@ object EndorseMsg {
     val CandidatorError = 2
     val BlockHeightError = 3
     val VerifyError  = 4
+     val EnodrseNodeIsSynching = 5
     val success = 0
   }
   
