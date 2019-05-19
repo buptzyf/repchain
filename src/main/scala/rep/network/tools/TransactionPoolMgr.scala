@@ -26,12 +26,13 @@ class TransactionPoolMgr {
   private val  transLock : Lock = new ReentrantLock();
   private val transactions = LinkedHashMap.empty[ String, TranscationPoolPackage ]
   
-  def getTransListClone(num: Int): Seq[ TranscationPoolPackage ] = {
+  def getTransListClone(num: Int,start:Int=0): Seq[ TranscationPoolPackage ] = {
     val result = ArrayBuffer.empty[ TranscationPoolPackage ]
     transLock.lock()
     try{
-      val len = if (transactions.size < num) transactions.size else num
-      transactions.take(len).foreach(pair => pair._2 +=: result)
+      val data = transactions.slice(start, start+num)
+      data.foreach(pair => pair._2 +=: result)
+      //transactions.take(len).foreach(pair => pair._2 +=: result)
     }finally{
       transLock.unlock()
     }

@@ -17,7 +17,7 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
-import scala.collection.immutable._
+//import scala.collection.immutable._
 
 import java.nio.ByteBuffer
 import rep.storage.util.pathUtil
@@ -26,6 +26,8 @@ import scalapb.json4s.JsonFormat
 import org.json4s.{DefaultFormats, Formats, jackson}
 import org.json4s.jackson.JsonMethods._
 import org.json4s.DefaultFormats._
+
+import scala.collection.mutable.{ArrayBuffer,LinkedHashMap}
 
 object blockDataCheck extends App {
   implicit val serialization = jackson.Serialization
@@ -38,6 +40,28 @@ object blockDataCheck extends App {
 
   val ch = 2
   val ch1 = 1 //308652l
+  
+  val transactions = LinkedHashMap.empty[ String, String ]
+  
+  def gettrans(num:Int,start:Int=0):Seq[ String ]={
+    val result = ArrayBuffer.empty[ String ]
+    val tmp = transactions.slice(start, start+num)
+    tmp.foreach(pair => pair._2 +=: result)
+    result.reverse
+  }
+  
+  transactions += "23"->"xsf1"
+  transactions += "123"->"xsf2"
+  transactions += "223"->"xsf3"
+  transactions += "323"->"xsf4"
+  
+  println(gettrans(5).mkString(","))
+  
+  println(gettrans(5,2).mkString(","))
+  
+  println(gettrans(3,1).mkString(","))
+  
+  println(gettrans(3,10).mkString(","))
 
   /*printlnBlock
   printlnBlocker
@@ -282,12 +306,12 @@ object blockDataCheck extends App {
     }
   }
 
-  var l : Long = 119649
+  /*var l : Long = 119649
   for(i<-0 to 10){
     
     getblockerForheight(da1, l)
     l = l + 1
-  }
+  }*/
   
   def getblockerForheight(da: ImpDataAccess, h: Long) = {
     var nodes = new Array[String](5)

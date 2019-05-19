@@ -88,10 +88,10 @@ class Blocker(moduleName: String) extends ModuleBase(moduleName) {
     //scheduler.scheduleOnce(TimePolicy.getStableTimeDur millis, context.parent, BlockModuleInitFinished)
   }
 
-  private def CollectedTransOfBlock(num: Int, limitsize: Int): Seq[Transaction] = {
+  private def CollectedTransOfBlock(start:Int,num: Int, limitsize: Int): Seq[Transaction] = {
     val result = ArrayBuffer.empty[Transaction]
     try {
-      val tmplist = pe.getTransPoolMgr.getTransListClone(num)
+      val tmplist = pe.getTransPoolMgr.getTransListClone(num,start)
       if (tmplist.size > 0) {
         val currenttime = System.currentTimeMillis() / 1000
         val sr: ImpDataAccess = ImpDataAccess.GetDataAccess(pe.getSysTag)
@@ -138,11 +138,11 @@ class Blocker(moduleName: String) extends ModuleBase(moduleName) {
   }
   
 
-  private def CreateBlock: Block = {
+  private def CreateBlock(start:Int=0): Block = {
     RepTimeTracer.setStartTime(pe.getSysTag, "Block", System.currentTimeMillis(),pe.getCurrentHeight + 1,0)
     RepTimeTracer.setStartTime(pe.getSysTag, "createBlock", System.currentTimeMillis(),pe.getCurrentHeight + 1,0)
     RepTimeTracer.setStartTime(pe.getSysTag, "collectTransToBlock", System.currentTimeMillis(),pe.getCurrentHeight + 1,0)
-    val trans = CollectedTransOfBlock(SystemProfile.getLimitBlockTransNum, SystemProfile.getBlockLength)
+    val trans = CollectedTransOfBlock(start,SystemProfile.getLimitBlockTransNum, SystemProfile.getBlockLength)
     //todo 交易排序
     if (trans.size >= SystemProfile.getMinBlockTransNum) {
       RepTimeTracer.setEndTime(pe.getSysTag, "collectTransToBlock", System.currentTimeMillis(),pe.getCurrentHeight + 1,trans.size)
@@ -157,17 +157,18 @@ class Blocker(moduleName: String) extends ModuleBase(moduleName) {
         blc = BlockHelp.AddBlockHash(blc)
         BlockHelp.AddSignToBlock(blc, pe.getSysTag)
       } else {
-        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block error" + "~" + selfAddr))
-        null
+        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("create new block error,preload error" + "~" + selfAddr))
+        CreateBlock(start+trans.size)
       }
     } else {
+      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("create new block error,trans count error" + "~" + selfAddr))
       null
     }
   }
 
   private def CreateBlockHandler = {
     //if (preblock == null) {
-    val blc = CreateBlock
+    val blc = CreateBlock(0)
     if (blc != null) {
       RepTimeTracer.setEndTime(pe.getSysTag, "createBlock", System.currentTimeMillis(),blc.height,blc.transactions.size)
       this.preblock = blc
