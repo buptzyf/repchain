@@ -102,14 +102,14 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
   def getUserCombinedConf(userConfigFilePath: String): Config = {
     val userConfFile = new File(userConfigFilePath)
     val innerConf = ConfigFactory.load()
-    userConfFile.exists() match {
-      case true =>
-        val combined_conf = ConfigFactory.parseFile(userConfFile).withFallback(innerConf)
-        val final_conf = ConfigFactory.load(combined_conf)
-        final_conf
-      case false =>
-        RepLogger.trace(RepLogger.System_Logger, sysTag+"~"+"ClusterSystem" + " ~ " + "Couldn't find the user config file" )
-        innerConf
+
+    if (userConfFile.exists()) {
+      val combined_conf = ConfigFactory.parseFile(userConfFile).withFallback(innerConf)
+      val final_conf = ConfigFactory.load(combined_conf)
+      final_conf
+    } else {
+      RepLogger.trace(RepLogger.System_Logger, sysTag + "~" + "ClusterSystem" + " ~ " + "Couldn't find the user config file")
+      innerConf
     }
   }
 
@@ -150,7 +150,7 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
    */
   def initSystem(sysName: String): Config = {
     val conf = getConfigBySys(sysName)
-    RepLogger.trace(RepLogger.System_Logger, sysTag + " ~ "+"ClusterSystem"+"~" + "System configuration successfully")
+    RepLogger.trace(RepLogger.System_Logger, sysTag + " ~ " + "ClusterSystem" + "~" + "System configuration successfully")
     enableWebSocket = conf.getInt("system.ws_enable") match {
       case 0 => false
       case 1 => true
@@ -184,20 +184,19 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
    */
   def init = {
     initConsensusNodeOfConfig
-    sysStart match {
-      case true =>
-        sysActor = ActorSystem(SystemConf.SYSTEM_NAME, sysConf)
-        clusterAddr = Cluster(sysActor).selfAddress
-      case false => //ignore
+    if (sysStart) {
+      sysActor = ActorSystem(SystemConf.SYSTEM_NAME, sysConf)
+      clusterAddr = Cluster(sysActor).selfAddress
     }
-    RepLogger.trace(RepLogger.System_Logger, sysTag+"~"+ "System" + " ~ " + s"System(${sysTag}) init successfully" + " ~ ")
+
+    RepLogger.trace(RepLogger.System_Logger, sysTag + "~" + "System" + " ~ " + s"System(${sysTag}) init successfully" + " ~ ")
   }
 
   private def initConsensusNodeOfConfig = {
     val nodelist = sysConf.getStringList("system.vote.vote_node_list")
     if (nodelist.contains(this.sysTag)) {
       var roles: List[String] = new ArrayList[String]
-      roles.add("CRFD-Node:"+this.sysTag)
+      roles.add("CRFD-Node:" + this.sysTag)
       sysConf = sysConf.withValue("akka.cluster.roles", ConfigValueFactory.fromAnyRef(roles))
     }
   }
@@ -207,18 +206,15 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
    */
   def start = {
     SystemProfile.initConfigSystem(sysActor.settings.config)
-    
 
     if (!hasDiskSpace) {
       Cluster(sysActor).down(clusterAddr)
       throw new Exception("not enough disk space")
     }
 
-    
-    
-    moduleManager = sysActor.actorOf(ModuleManager.props("modulemanager", sysTag, enableStatistic, enableWebSocket,true), "modulemanager")
+    moduleManager = sysActor.actorOf(ModuleManager.props("modulemanager", sysTag, enableStatistic, enableWebSocket, true), "modulemanager")
 
-    RepLogger.trace(RepLogger.System_Logger, sysTag+"~"+ "System" + " ~ " + s"ClusterSystem ${sysTag} start" + " ~ ")
+    RepLogger.trace(RepLogger.System_Logger, sysTag + "~" + "System" + " ~ " + s"ClusterSystem ${sysTag} start" + " ~ ")
   }
 
 }

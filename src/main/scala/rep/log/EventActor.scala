@@ -59,7 +59,7 @@ class EventActor extends ActorPublisher[Event] {
     mediator ! Subscribe(Topic.Event, self)   
     //发送当前出块人
     val pe = PeerExtension(context.system)
-    self ! new Event( pe.getBlocker.blocker.toString, "", Event.Action.CANDIDATOR) 
+    self ! new Event( pe.getBlocker.blocker, "", Event.Action.CANDIDATOR) 
     val ref = context.actorSelection("/user/modulemanager/memberlistener")
     if(ref != null) ref ! cluster.state
   }

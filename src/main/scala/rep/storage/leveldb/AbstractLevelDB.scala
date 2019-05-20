@@ -19,12 +19,11 @@ package rep.storage.leveldb
 import scala.collection.immutable
 import scala.collection.mutable
 import rep.utils._
-import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
 import rep.storage.IdxPrefix
 import rep.storage.util.StoreUtil
 import com.google.protobuf.ByteString
-import scala.math._ 
+import scala.math._
 import rep.crypto._
 import org.slf4j.LoggerFactory
 import rep.log.RepLogger
@@ -71,7 +70,7 @@ abstract class AbstractLevelDB(SystemName:String) extends ILevelDB  {
   		}catch{
   			case e:Exception =>{
   			  RepLogger.error(RepLogger.Storager_Logger,  
-  			      s"DBOP toLong failed, error info= "+e.getMessage)
+  			      "DBOP toLong failed, error info= "+e.getMessage)
 			  }
   		}
 		}
@@ -95,7 +94,7 @@ abstract class AbstractLevelDB(SystemName:String) extends ILevelDB  {
   		}catch{
   			case e:Exception =>{
   			  RepLogger.error(RepLogger.Storager_Logger,  
-  			      s"DBOP toInt failed, error info= "+e.getMessage)
+  			      "DBOP toInt failed, error info= "+e.getMessage)
 			  }
   		}
 		}

@@ -35,7 +35,7 @@ object SystemCertList {
         val list = SystemProfile.getVoteNodeList
         val clist = SignTool.getAliasOfTrustkey
         var rlist : scala.collection.mutable.ArrayBuffer[String] = new scala.collection.mutable.ArrayBuffer[String]()
-        for( i <- 0 to clist.size()-1){
+        for( i <- 0 until clist.size()){
            val alias = clist.get(i)
            if(list.contains(alias)){
              rlist += alias

@@ -46,13 +46,13 @@ trait CRFDVoter extends VoterBase {
     }
   }
   
-  private def getRandomList(seed:Long,candidatorLen:Int,candidatorTotal:Int):Array[randomNumber]={
+  private def getRandomList(seed:Long,candidatorTotal:Int):Array[randomNumber]={
     val m = pow(2,20).toLong
     val a = 2045
     val b = 1
     var randomArray = new Array[randomNumber](candidatorTotal)
     var hashSeed = seed.abs
-    for(i<-0 to candidatorTotal-1){
+    for(i<-0 until (candidatorTotal) ){
       var tmpSeed = (a * hashSeed + b) % m
       tmpSeed = tmpSeed.abs
       if(tmpSeed == hashSeed) tmpSeed = tmpSeed + 1
@@ -68,7 +68,7 @@ trait CRFDVoter extends VoterBase {
   }
   
   override def candidators(Systemname:String,hash:String,nodes: Set[String], seed: Array[Byte]): Array[String] = {
-    var nodesSeq = nodes.toSeq.sortBy(f=>(f.toString()))
+    var nodesSeq = nodes.toSeq.sortBy(f=>(f))
     var len = nodes.size / 2 + 1
     val min_len = 4
     len = if(len<min_len){
@@ -82,10 +82,10 @@ trait CRFDVoter extends VoterBase {
     else{
       var candidate = new Array[String](len)
       var hashSeed:Long = pathUtil.bytesToInt(seed)
-      var randomList = getRandomList(hashSeed,len,nodes.size)
+      var randomList = getRandomList(hashSeed,len)//,nodes.size)
       //println(randomList(0).generateSerial)
       RepLogger.trace(RepLogger.Consensus_Logger, randomList.mkString(","))
-      for(j<-0 to len-1){
+      for(j<-0 until len){
         var e = randomList(j)
         candidate(j) = nodesSeq(e.generateSerial)
       }

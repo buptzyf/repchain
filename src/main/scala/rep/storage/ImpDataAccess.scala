@@ -322,7 +322,7 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
     if (rb != null && rb.length > 0) {
       rbo = new Array[Block](rb.length)
       var i = 0
-      for (i <- 0 until (rb.length - 1)) {
+      for (i <- 0 until (rb.length )) {
         val tmpb = Block.parseFrom(rb(i))
         rbo(i) = tmpb
       }

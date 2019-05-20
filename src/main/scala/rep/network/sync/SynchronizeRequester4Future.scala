@@ -134,10 +134,8 @@ class SynchronizeRequester4Future(moduleName: String) extends ModuleBase(moduleN
     if (rh > lh) {
       var height = lh + 1
       while (height <= rh) {
-        if (!pe.getBlockCacheMgr.exist(height)) {
-          if (!getBlockData(height, actorref)) {
+        if (!pe.getBlockCacheMgr.exist(height) && !getBlockData(height, actorref)) {
             getBlockData(height, actorref)
-          }
         }
         height += 1
       }

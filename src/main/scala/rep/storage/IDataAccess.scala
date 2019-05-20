@@ -112,8 +112,7 @@ abstract class IDataAccess(val SystemName: String) extends AbstractLevelDB(Syste
   def BeginTrans = {
     synchObject.synchronized {
       try {
-        if (this.IsTrans) {
-          if (this.batch != null) {
+        if (this.IsTrans  && this.batch != null) {
             try {
               this.batch.close()
             } catch {
@@ -125,7 +124,6 @@ abstract class IDataAccess(val SystemName: String) extends AbstractLevelDB(Syste
             } finally {
               this.batch = null
             }
-          }
         }
         this.IsTrans = true
         this.batch = db.createWriteBatch()

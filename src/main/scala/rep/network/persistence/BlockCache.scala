@@ -38,11 +38,7 @@ class BlockCache {
   }
   
   def exist(height:Long):Boolean={
-    if(this.caches.contains(height)){
-      true
-    }else{
-      false
-    }
+    this.caches.contains(height)
   }
   
   def isEmpty:Boolean={

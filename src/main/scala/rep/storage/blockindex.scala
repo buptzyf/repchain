@@ -84,11 +84,10 @@ class blockindex() {
    private def getAnyType(m:Map[String,Any],key:String):String={
       var rstr = ""
       if(m.contains(key)) {
-        val mv = m(key)
-        if(mv == null){
+        if(m(key) == null){
           rstr = ""
         }else{
-          rstr = mv.toString()
+          rstr = m(key).toString()
         }
       }
       
@@ -99,29 +98,23 @@ class blockindex() {
     
     private def str2Int(str : String):Int={
       var ri = 0
-      if(str != null){
-        if(!str.equalsIgnoreCase("") && !str.equalsIgnoreCase("null")){
+      if(str != null && !str.equalsIgnoreCase("") && !str.equalsIgnoreCase("null")){
           ri = Integer.parseInt(str)
-        }
       }
       ri
     }
     
     private def str2Long(str : String):Long={
       var rl:Long = 0
-      if(str != null){
-        if(!str.equalsIgnoreCase("") && !str.equalsIgnoreCase("null")){
+      if(str != null && !str.equalsIgnoreCase("") && !str.equalsIgnoreCase("null")){
           rl = java.lang.Long.parseLong(str)
-        }
       }
       rl
     }
     
     private def str4null(str : String):String={
       var rs = ""
-      if(str == null){
-        rs = ""
-      }else if(str.equalsIgnoreCase("null")){
+      if(str == null || str.equalsIgnoreCase("null")){
         rs = ""
       }else{
         rs = str
