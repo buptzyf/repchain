@@ -24,6 +24,7 @@ import rep.protos.peer.Certificate
 import rep.storage._
 import rep.utils.SerializeUtils
 import rep.app.conf.SystemProfile
+import rep.storage.IdxPrefix.WorldStateKeyPreFix
 
 object certCache {
   private val  getCertLock : Lock = new ReentrantLock();
@@ -46,7 +47,7 @@ object certCache {
       }else{
         val sr: ImpDataAccess = ImpDataAccess.GetDataAccess(sysTag)
         val accountChaincodeName = SystemProfile.getAccountChaincodeName
-        val cert = Option(sr.Get(accountChaincodeName+"_"+certKey))
+        val cert = Option(sr.Get(WorldStateKeyPreFix + accountChaincodeName  + "_" + certKey))
         if (cert != None){
           if (!(new String(cert.get)).equalsIgnoreCase("null")) {
                 val kvcert = SerializeUtils.deserialise(cert.get).asInstanceOf[Certificate]
