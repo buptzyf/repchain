@@ -98,21 +98,16 @@ class Blocker(moduleName: String) extends ModuleBase(moduleName) {
         var transsize = 0
         breakable(
           tmplist.foreach(f => {
-            //判断交易是否超时，把超时的交易删除
-            if ((currenttime - f.createTime) > TimePolicy.getTranscationWaiting) {
+            //判断交易是否超时，把超时的交易删除;判断交易是否已经被打包入块，如果已经打包入块需要删除
+            if ((currenttime - f.createTime) > TimePolicy.getTranscationWaiting || sr.getBlockByTxId(f.t.id) != null) {
               pe.getTransPoolMgr.removeTranscation(f.t)
             } else {
-              //判断交易是否已经被打包入块，如果已经打包入块需要删除
-              if (sr.getBlockByTxId(f.t.id) != null) {
-                pe.getTransPoolMgr.removeTranscation(f.t)
+              transsize += f.t.toByteArray.size
+              if (transsize * 3 > limitsize) {
+                //区块的长度限制
+                break
               } else {
-                transsize += f.t.toByteArray.size
-                if (transsize * 3 > limitsize) {
-                  //区块的长度限制
-                  break
-                } else {
-                  f.t +=: result
-                }
+                f.t +=: result
               }
             }
           }))

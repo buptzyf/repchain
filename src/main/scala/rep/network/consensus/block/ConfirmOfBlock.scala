@@ -83,7 +83,7 @@ class ConfirmOfBlock(moduleName: String) extends ModuleBase(moduleName) {
     if(result1 == null){
       false
     }else{
-      result1.toList.foreach(f=>{
+      result1.foreach(f=>{
         if(!f){
           result = false
           RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"comfirmOfBlock verify endorse is error, break,block height=${block.height},local height=${pe.getCurrentHeight}"))

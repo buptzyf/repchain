@@ -65,9 +65,7 @@ class ImpECDSASigner extends ISigner {
           if(cert == null){
             isValid = false
           }else{     
-              if(SystemProfile.getCheckCertValidate == 0){
-                isValid = true
-              }else if(SystemProfile.getCheckCertValidate == 1){
+              if(SystemProfile.getCheckCertValidate == 1){
                 if(cert.isInstanceOf[X509Certificate]){
                     var  x509cert :X509Certificate = cert.asInstanceOf[X509Certificate]
                     x509cert.checkValidity(date)

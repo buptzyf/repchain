@@ -44,11 +44,7 @@ class TransactionDispatcher(moduleName: String) extends ModuleBase(moduleName) {
   }
 
   private def HasTransActor(cid: String): Boolean = {
-    if (this.TransActors.contains(cid)) {
-      true
-    } else {
-      false
-    }
+    this.TransActors.contains(cid)
   }
 
   private def CheckTransActor(cid: String): ActorRef = {
@@ -69,7 +65,7 @@ class TransactionDispatcher(moduleName: String) extends ModuleBase(moduleName) {
         val ref: ActorRef = CheckTransActor(IdTool.getTXCId(tr.t))
         ref.forward(tr)
       } else {
-        RepLogger.error(RepLogger.Business_Logger, this.getLogMsgPrefix(s"recv DoTransaction is null"))
+        RepLogger.error(RepLogger.Business_Logger, this.getLogMsgPrefix("recv DoTransaction is null"))
       }
     case _ => //ignore
   }

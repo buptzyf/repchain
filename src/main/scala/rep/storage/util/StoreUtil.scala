@@ -53,8 +53,7 @@ object StoreUtil {
     }
   }
   
-  private def Redo(MerkleTree:mutable.HashMap[Int,ArrayBuffer[Array[Byte]]],MaxGroup: Integer):Int={
-    var rel = 0
+  private def Redo(MerkleTree:mutable.HashMap[Int,ArrayBuffer[Array[Byte]]],MaxGroup: Integer){
     val maxlevel = MerkleTree.size
     var elems = MerkleTree(maxlevel)
     if(elems.length > 1){
@@ -62,7 +61,6 @@ object StoreUtil {
       MerkleTree += currentlevel -> StoreUtil.getNextLevelList4Byte(elems,MaxGroup)
       Redo(MerkleTree,MaxGroup)
     }
-    rel
   }
   
   

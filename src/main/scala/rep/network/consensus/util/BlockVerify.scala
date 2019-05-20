@@ -166,7 +166,7 @@ object BlockVerify {
       }
 
       breakable(
-        for (i <- 1 to srclist.length - 1) {
+        for (i <- 1 until srclist.length ) {
           if (b == 1 && IdTool.getSigner4String(srclist(i).getCertId) < IdTool.getSigner4String(srclist(i - 1).getCertId)) {
             b = 0
             break
@@ -193,7 +193,7 @@ object BlockVerify {
       }
 
       breakable(
-        for (i <- 1 to srclist.length - 1) {
+        for (i <- 1 until srclist.length ) {
           if (b == 1 && srclist(i).id < srclist(i - 1).id) {
             b = 0
             break

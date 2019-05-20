@@ -84,7 +84,7 @@ class ImpDataPreload (SystemName:String,InstanceName:String) extends AbstractLev
 				case e:Exception =>{
 				  rb = null
 				  RepLogger.error(RepLogger.Storager_Logger,  
-  			      "ImpDataPreload_" + SystemName + "_" + s"ImpDataPreload Get failed, error info= "+e.getMessage)
+  			      "ImpDataPreload_" + SystemName + "_" + "ImpDataPreload Get failed, error info= "+e.getMessage)
   			  throw e
   			}
 			}
@@ -104,13 +104,13 @@ class ImpDataPreload (SystemName:String,InstanceName:String) extends AbstractLev
 			try{
 				  if(key == null){
 				    RepLogger.trace(RepLogger.Storager_Logger,  
-  			      "ImpDataPreload_" + SystemName + "_" + s"ImpDataPreload Put failed, error info= key is null")
+  			      "ImpDataPreload_" + SystemName + "_" + "ImpDataPreload Put failed, error info= key is null")
 				  }
 				  var v :Array[Byte] = bb
 				  if(bb == null){
 				    v = None.toArray
 				    RepLogger.trace(RepLogger.Storager_Logger,  
-  			      "ImpDataPreload_" + SystemName + "_" + s"ImpDataPreload Put failed, error info= value is null")
+  			      "ImpDataPreload_" + SystemName + "_" + "ImpDataPreload Put failed, error info= value is null")
 				  }
 				  if(key != null ){
 				    this.update.put(key, v)
@@ -120,7 +120,7 @@ class ImpDataPreload (SystemName:String,InstanceName:String) extends AbstractLev
 			  case e:Exception =>{
 			    b = false
 			    RepLogger.error(RepLogger.Storager_Logger,  
-  			      "ImpDataPreload_" + SystemName + "_" + s"ImpDataPreload Put failed, error info= "+e.getMessage)
+  			      "ImpDataPreload_" + SystemName + "_" + "ImpDataPreload Put failed, error info= "+e.getMessage)
   				throw e
 			  }
 			}
@@ -254,7 +254,7 @@ private class  MultiDBMgr (val SystemName:String) {
   	      }catch{
     		    case e:Exception =>{
     		      RepLogger.error(RepLogger.Storager_Logger,  
-  			      "MultiDBMgr_" + SystemName + "_" + s"ImpDataPreload Create failed, error info= "+e.getMessage)
+  			      "MultiDBMgr_" + SystemName + "_" + "ImpDataPreload Create failed, error info= "+e.getMessage)
     		      throw e
     		    }
   		    }
@@ -276,10 +276,8 @@ private class  MultiDBMgr (val SystemName:String) {
     while (iterator.hasNext) {
       val key = iterator.next()
       val tmp = DBOps(key)
-      if(tmp != null){
-        if((System.currentTimeMillis() - tmp.getUseTime) > this.checktime){
+      if(tmp != null && (System.currentTimeMillis() - tmp.getUseTime) > this.checktime){
           exists += key
-        }
       }
     }
     exists.foreach(f => {
@@ -310,7 +308,7 @@ private class  MultiDBMgr (val SystemName:String) {
      }catch{
         case e:Exception =>{
           RepLogger.error(RepLogger.Storager_Logger,  
-  			      "MultiDBMgr_" + SystemName + "_" + s"ImpDataPreload Free failed, error info= "+e.getMessage)
+  			      "MultiDBMgr_" + SystemName + "_" + "ImpDataPreload Free failed, error info= "+e.getMessage)
     		      throw e
     		    }
       }
@@ -353,7 +351,7 @@ object ImpDataPreloadMgr{
   	      }catch{
     		    case e:Exception =>{
     		      RepLogger.error(RepLogger.Storager_Logger,  
-  			      "ImpDataPreloadMgr_" + SystemName + "_" + s"ImpDataPreload Create failed, error info= "+e.getMessage)
+  			      "ImpDataPreloadMgr_" + SystemName + "_" + "ImpDataPreload Create failed, error info= "+e.getMessage)
     		      throw e
     		    }
   		    }
@@ -400,7 +398,7 @@ object ImpDataPreloadMgr{
   	      }catch{
     		    case e:Exception =>{
     		      RepLogger.error(RepLogger.Storager_Logger,  
-  			      "ImpDataPreloadMgr_" + SystemName + "_" + s"ImpDataPreload Free failed, error info= "+e.getMessage)
+  			      "ImpDataPreloadMgr_" + SystemName + "_" + "ImpDataPreload Free failed, error info= "+e.getMessage)
     		      throw e
     		    }
   		    }

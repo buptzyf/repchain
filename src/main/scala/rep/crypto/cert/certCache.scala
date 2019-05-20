@@ -26,9 +26,9 @@ import rep.utils.SerializeUtils
 import rep.app.conf.SystemProfile
 
 object certCache {
-  private val  getCertLock : Lock = new ReentrantLock();
-  private var  caches : immutable.HashMap[String,(Boolean,java.security.cert.Certificate)] = new immutable.HashMap[String,(Boolean,java.security.cert.Certificate)]()
-  
+  private val getCertLock: Lock = new ReentrantLock();
+  private var caches: immutable.HashMap[String, (Boolean, java.security.cert.Certificate)] = new immutable.HashMap[String, (Boolean, java.security.cert.Certificate)]()
+
   def getCertByPem(pemcert: String): java.security.cert.Certificate = {
     val cf = java.security.cert.CertificateFactory.getInstance("X.509")
     val cert = cf.generateCertificate(
@@ -36,28 +36,26 @@ object certCache {
         Base64.Decoder(pemcert.replaceAll("\r\n", "").stripPrefix("-----BEGIN CERTIFICATE-----").stripSuffix("-----END CERTIFICATE-----")).toByteArray))
     cert
   }
-  
-  def getCertForUser(certKey:String,sysTag:String):java.security.cert.Certificate={
-    var rcert : java.security.cert.Certificate = null
+
+  def getCertForUser(certKey: String, sysTag: String): java.security.cert.Certificate = {
+    var rcert: java.security.cert.Certificate = null
     getCertLock.lock()
-    try{
-      if(caches.contains(certKey)){
+    try {
+      if (caches.contains(certKey)) {
         rcert = caches(certKey)._2
-      }else{
+      } else {
         val sr: ImpDataAccess = ImpDataAccess.GetDataAccess(sysTag)
         val accountChaincodeName = SystemProfile.getAccountChaincodeName
-        val cert = Option(sr.Get(accountChaincodeName+"_"+certKey))
-        if (cert != None){
-          if (!(new String(cert.get)).equalsIgnoreCase("null")) {
-                val kvcert = SerializeUtils.deserialise(cert.get).asInstanceOf[Certificate]
-                if(kvcert != null){
-                  rcert = getCertByPem(kvcert.certificate)
-                  caches += certKey -> (kvcert.certValid,rcert)
-                }
-            }
+        val cert = Option(sr.Get(IdxPrefix.WorldStateKeyPreFix + accountChaincodeName + "_" + certKey))
+        if (cert != None && !(new String(cert.get)).equalsIgnoreCase("null")) {
+          val kvcert = SerializeUtils.deserialise(cert.get).asInstanceOf[Certificate]
+          if (kvcert != null) {
+            rcert = getCertByPem(kvcert.certificate)
+            caches += certKey -> (kvcert.certValid, rcert)
+          }
         }
       }
-    }finally {
+    } finally {
       getCertLock.unlock()
     }
     rcert

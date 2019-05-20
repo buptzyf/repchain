@@ -48,8 +48,8 @@ object verify4Storage {
      val seed = lastHeight-firstHeigh
      breakable(
      for(i<-0 to 9){
-       val rseed = Random.nextLong().abs
-       var h = rseed % seed + firstHeigh
+       val rseed = Random.nextLong()
+       var h = Math.abs(rseed) % seed + firstHeigh
        if(!verfiyBlockOfFile(h,sr)){
          r = false
          break
@@ -115,11 +115,9 @@ object verify4Storage {
             }
           })
           )
-        }else if(bcinfo.height == 1){
-          if(!VerfiyBlock(sr.getBlock4ObjectByHeight(1),sysName)){
+        }else if(bcinfo.height == 1 && !VerfiyBlock(sr.getBlock4ObjectByHeight(1),sysName)){
             errorInfo = "系统自检错误：存储检查失败，LevelDB或者Block文件损坏，请与管理员联系!"
             b = false
-          }
         }
       }else{
         errorInfo = "无法获取链信息，LevelDB可能损坏。"
