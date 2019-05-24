@@ -1,5 +1,5 @@
 /*
- * Copyright  2018 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
+ * Copyright  2019 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -20,22 +20,22 @@ import java.security.cert.Certificate
 
 import com.google.protobuf.ByteString
 
-import akka.actor.{Actor, Address, Props}
+import akka.actor.{ Actor, Address, Props }
 import akka.cluster.pubsub.DistributedPubSubMediator.Publish
 import rep.app.conf.SystemProfile
-import rep.crypto.ECDSASign
+import rep.crypto.cert.SignTool
 import rep.network.{ PeerHelper, Topic }
 import rep.network.base.ModuleBase
 import rep.network.cache.TransactionPool.CheckedTransactionResult
-import rep.network.consensus.vote.CRFDVoterModule.VoteRecover
-import rep.protos.peer.ChaincodeID
+import rep.network.consensus.vote.Voter.VoteOfBlocker
+import rep.protos.peer.ChaincodeId
 import rep.protos.peer.{ Event, Transaction }
 import rep.storage.IdxPrefix.WorldStateKeyPreFix
 import rep.storage.ImpDataAccess
 import rep.utils.{ ActorUtils, GlobalUtils }
 import rep.utils.GlobalUtils.EventType
 import rep.utils.SerializeUtils
-import rep.log.trace.LogType
+import rep.log.RepLogger
 
 /**
  * 交易缓冲池伴生对象
@@ -58,28 +58,28 @@ object TransactionPool {
  */
 
 class TransactionPool(moduleName: String) extends ModuleBase(moduleName) {
-  import akka.actor.ActorSelection 
-  
+  import akka.actor.ActorSelection
+
   val dataaccess: ImpDataAccess = ImpDataAccess.GetDataAccess(pe.getSysTag)
 
   override def preStart(): Unit = {
     //注册接收交易的广播
     SubscribeTopic(mediator, self, selfAddr, Topic.Transaction, true)
   }
-  
-   def toAkkaUrl(sn : Address, actorName:String):String = {  
-        return sn.toString + "/"  + actorName;  
-    }
 
-      def visitStoreService(sn : Address, actorName:String,t1:Transaction) = {  
-        try {  
-          val  selection : ActorSelection  = context.actorSelection(toAkkaUrl(sn , actorName));  
-          selection ! t1 
-        } catch  {  
-             case e: Exception => e.printStackTrace()
-        }  
-    }  
-  
+  def toAkkaUrl(sn: Address, actorName: String): String = {
+    return sn.toString + "/" + actorName;
+  }
+
+  def visitStoreService(sn: Address, actorName: String, t1: Transaction) = {
+    try {
+      val selection: ActorSelection = context.actorSelection(toAkkaUrl(sn, actorName));
+      selection ! t1
+    } catch {
+      case e: Exception => e.printStackTrace()
+    }
+  }
+
   /**
    * 检查交易是否符合规则
    * @param t
@@ -89,27 +89,24 @@ class TransactionPool(moduleName: String) extends ModuleBase(moduleName) {
   def checkTransaction(t: Transaction, dataAccess: ImpDataAccess): CheckedTransactionResult = {
     var resultMsg = ""
     var result = false
-    val sig = t.signature.toByteArray
-    val tOutSig = t.withSignature(ByteString.EMPTY)
-    val cid = ChaincodeID.fromAscii(t.chaincodeID.toStringUtf8).name
-    val certKey = WorldStateKeyPreFix + cid + "_" + "CERT_" + t.cert.toStringUtf8 // 普通用户证书的key
-    try{
-        var cert = ECDSASign.getCertWithCheck(t.cert.toStringUtf8,certKey,pe.getSysTag)
-        if(cert != None){
-          ECDSASign.verify(sig, PeerHelper.getTxHash(tOutSig), cert.get.getPublicKey) match {
-            case true =>
-                dataAccess.getBlockByTxId(t.txid) match {
-                  case null => result = true
-                  case _    => resultMsg = s"The transaction(${t.txid}) is duplicated with txid"
-                }
-              case false => resultMsg = s"The transaction(${t.txid}) is not completed"
-          }
-        }else{
-          throw new RuntimeException("没有证书")
+    val sig = t.getSignature
+    val tOutSig = t.clearSignature //t.withSignature(null)
+    val cert = sig.getCertId
+
+    try {
+      val siginfo = sig.signature.toByteArray()
+
+      if (SignTool.verify(siginfo, tOutSig.toByteArray, cert, pe.getSysTag)) {
+        dataAccess.getBlockByTxId(t.id) match {
+          case null => result = true
+          case _    => resultMsg = s"The transaction(${t.id}) is duplicated with txid"
         }
-      }catch{
-        case e : RuntimeException => throw e
+      } else {
+        resultMsg = s"The transaction(${t.id}) is not completed"
       }
+    } catch {
+      case e: RuntimeException => throw e
+    }
 
     CheckedTransactionResult(result, resultMsg)
   }
@@ -118,40 +115,35 @@ class TransactionPool(moduleName: String) extends ModuleBase(moduleName) {
     //处理接收的交易
     case t: Transaction =>
       //我们在这里并不缓存该Transaction，在接收到同级别的广播时再进行缓存
-      
-     // mediator ! Publish(Topic.Transaction, t)
-        //pe.getStableNodes.foreach(sn=>{
-        //       visitStoreService(sn , "/user/moduleManager/transactionPool",t)                      
-        //})      
-      
+
+      // mediator ! Publish(Topic.Transaction, t)
+      //pe.getStableNodes.foreach(sn=>{
+      //       visitStoreService(sn , "/user/moduleManager/transactionPool",t)
+      //})
+
       if (ActorUtils.isHelper(sender().path.toString) ||
         ActorUtils.isAPI(sender().path.toString)) {
         //广播交易
         mediator ! Publish(Topic.Transaction, t)
-        
-        
-        
+
         //广播发送交易事件
-        sendEvent(EventType.PUBLISH_INFO, mediator, selfAddr, Topic.Transaction, Event.Action.TRANSACTION)
+        sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)
       } else {
         //交易缓存,这里默认各个节点的交易缓存都是一致的。但是因为入网时间不一致，所有可能会有区别。最终以出块人的交易为准
         //TODO kami 验证交易签名和证书
         //val checkedTransactionResult = CheckedTransactionResult(true, "")
-        sendEvent(EventType.RECEIVE_INFO, mediator, selfAddr, Topic.Transaction, Event.Action.TRANSACTION)
+        sendEvent(EventType.RECEIVE_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)
         val checkedTransactionResult = checkTransaction(t, dataaccess)
-        checkedTransactionResult.result match {
-          case false => //ignore
-          case true =>
-            //签名验证成功
-            if(pe.getTransLength() < 100)
-              logMsg(LogType.INFO,s"<<<<<<<<<<<<<>>>>>>>>>transaction=${pe.getTransLength()}" )
-            if (SystemProfile.getMaxCacheTransNum == 0 || pe.getTransLength() < SystemProfile.getMaxCacheTransNum) {
-              pe.putTran(t)
-              //广播接收交易事件
-              if (pe.getTransLength() <= SystemProfile.getMinBlockTransNum)
-                getActorRef(pe.getSysTag, GlobalUtils.ActorType.VOTER_MODULE) ! VoteRecover
-            }
-            
+        if (checkedTransactionResult.result) {
+          //签名验证成功
+          if (pe.getTransPoolMgr.getTransLength() < 100)
+            RepLogger.trace(RepLogger.System_Logger, this.getLogMsgPrefix(s"<<<<<<<<<<<<<>>>>>>>>>transaction=${pe.getTransPoolMgr.getTransLength()}"))
+          if (SystemProfile.getMaxCacheTransNum == 0 || pe.getTransPoolMgr.getTransLength() < SystemProfile.getMaxCacheTransNum) {
+            pe.getTransPoolMgr.putTran(t)
+            //广播接收交易事件
+            if (pe.getTransPoolMgr.getTransLength() >= SystemProfile.getMinBlockTransNum)
+              pe.getActorRef(GlobalUtils.ActorType.voter) ! VoteOfBlocker
+          }
         }
       }
     case _ => //ignore

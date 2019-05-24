@@ -1,5 +1,5 @@
 /*
- * Copyright  2018 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
+ * Copyright  2019 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -50,19 +50,77 @@ object SystemProfile {
   private[this] var _CHECKCERTVALIDATE:Int=0//是否检查证书的有效性，0不检查，1检查
   private[this] var _CONTRACTOPERATIONMODE = 0//设置合约的运行方式，0=debug方式，1=deploy，默认为debug方式，如果发布部署，必须使用deploy方式。
   private[this] var _VOTENODELIST : List[String] = new ArrayList[String]
+  private[this] var _ACCOUNTCHAINCODENAEM : String = "ACCOUNTCHAINCODENAME"
+  private[this] var _ACCOUNTCHAINCODEVERSION: Int = 1
+  private[this] var _GENESISNODENAME:String = ""
+  private[this] var _BLOCK_LENGTH: Int = 120000//区块的最大长度
+  private[this] var _NUMBER_OF_TRANSPROCESSOR = 100 //
+  
+  
+  private[this] var _DBPATH:String = "" //leveldb数据库文件路径
+  private[this] var _BLOCKPATH:String = ""//区块文件的路径
+  private[this] var _FILEMAX: Int = 200000000//区块文件的最大长度
+  
+  
+  //实时图的事件是否发送，如果不发送，前端实时图将收不到任何消息。
+  private[this] var _REALTIMEGRAPH_ENABLE = 1 ////0 unable;1 enable; default 1
+  
+  
   
   
   private def SERVERPORT :Int = _SERVERPORT
   private def CHECKCERTVALIDATE:Int = _CHECKCERTVALIDATE
   private def DISKSPACE_ALARM_NUM :Long = _DISKSPACE_ALARM_NUM
   private def CONTRACTOPERATIONMODE:Int=_CONTRACTOPERATIONMODE
+  private def GENESISNODENAME:String = _GENESISNODENAME
   
   private def VOTENODELIST : List[String] = _VOTENODELIST
+  private def ACCOUNTCHAINCODENAEM = _ACCOUNTCHAINCODENAEM
+  private def ACCOUNTCHAINCODVERSION = _ACCOUNTCHAINCODEVERSION
+  
+  private def NUMBER_OF_TRANSPROCESSOR = _NUMBER_OF_TRANSPROCESSOR
+  
+  private def REALTIMEGRAPH_ENABLE = _REALTIMEGRAPH_ENABLE
+  
+  private def DBPATH:String = _DBPATH
+  private def BLOCKPATH:String = _BLOCKPATH
+  private def FILEMAX: Int = _FILEMAX
+  
+  private def DBPATH_=(value:String):Unit={
+    _DBPATH = value
+  }
+  
+  private def REALTIMEGRAPH_ENABLE_=(value:Int):Unit={
+    _REALTIMEGRAPH_ENABLE = value
+  }
+  
+  private def BLOCKPATH_=(value:String):Unit={
+    _BLOCKPATH = value
+  }
+  
+  private def FILEMAX_=(value:Int):Unit={
+    _FILEMAX = value
+  }
+  
+  private def GENESISNODENAME_=(value:String):Unit={
+    _GENESISNODENAME = value
+  }
+  
+  private def NUMBER_OF_TRANSPROCESSOR_=(value:Int):Unit={
+    _NUMBER_OF_TRANSPROCESSOR = value
+  }
   
   private def VOTENODELIST_=(value: List[String]): Unit = {
       _VOTENODELIST = value
   }
   
+  private def ACCOUNTCHAINCODENAEM_=(value:String):Unit={
+    _ACCOUNTCHAINCODENAEM = value
+  }
+
+  private def ACCOUNTCHAINCODEVERSION_=(value:Int):Unit={
+    _ACCOUNTCHAINCODEVERSION = value
+  }
   
   private def SERVERPORT_=(value: Int): Unit = {
     _SERVERPORT = value
@@ -124,6 +182,11 @@ object SystemProfile {
     _LIMIT_BLOCK_TRANS_NUM = value
   }
 
+  private def BLOCK_LENGTH : Int = _BLOCK_LENGTH
+  
+  private def BLOCK_LENGTH_=(value: Int): Unit = {
+    _BLOCK_LENGTH = value
+  }
   
   /**
     * 初始化配饰信息
@@ -131,6 +194,7 @@ object SystemProfile {
     */
   def initConfigSystem(config:Config): Unit ={
     LIMIT_BLOCK_TRANS_NUM_=(config.getInt("system.block.trans_num_limit"))
+    BLOCK_LENGTH_=(config.getInt("system.block.block_length"))
     MIN_BLOCK_TRANS_NUM_=(config.getInt("system.block.trans_num_min"))
     RETRY_TIME_=(config.getInt("system.block.retry_time"))
     VOTE_NOTE_MIN_=(config.getInt("system.vote.vote_note_min"))
@@ -142,9 +206,30 @@ object SystemProfile {
     SERVERPORT_=(config.getInt("system.httpServicePort"))
     CHECKCERTVALIDATE_=(config.getInt("system.checkCertValidate"))
     CONTRACTOPERATIONMODE_=(config.getInt("system.contractOperationMode"))
+    ACCOUNTCHAINCODENAEM_= (config.getString("system.account.chaincodename"))
+    ACCOUNTCHAINCODEVERSION_=(config.getInt("system.account.chaincodeversion"))
+    GENESISNODENAME_=(config.getString("system.genesis_node_name"))
+    NUMBER_OF_TRANSPROCESSOR_=(config.getInt("system.number_of_transProcessor"))
+    
+    DBPATH_= (config.getString("system.storage.dbpath"))
+    BLOCKPATH_= (config.getString("system.storage.blockpath"))
+    FILEMAX_=(config.getInt("system.storage.filemax"))
+    REALTIMEGRAPH_ENABLE_=(config.getInt("system.realtimegraph_enable"))
   }
   
+  def getRealtimeGraph = REALTIMEGRAPH_ENABLE
+  
+  def getDBPath = DBPATH
+  
+  def getBlockPath = BLOCKPATH
+  
+  def getFileMax = FILEMAX
+  
   def getLimitBlockTransNum = LIMIT_BLOCK_TRANS_NUM
+  
+  def getNumberOfTransProcessor = NUMBER_OF_TRANSPROCESSOR
+  
+  def getBlockLength = BLOCK_LENGTH
 
   def getMinBlockTransNum = MIN_BLOCK_TRANS_NUM
 
@@ -167,4 +252,10 @@ object SystemProfile {
   def getContractOperationMode = CONTRACTOPERATIONMODE
   
   def getVoteNodeList = VOTENODELIST
+  
+  def getAccountChaincodeName = ACCOUNTCHAINCODENAEM
+
+  def getAccountChaincodeVersion = ACCOUNTCHAINCODVERSION
+  
+  def getGenesisNodeName = GENESISNODENAME
 }

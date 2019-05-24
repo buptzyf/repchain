@@ -1,5 +1,5 @@
 /*
- * Copyright  2018 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
+ * Copyright  2019 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,66 +18,52 @@ package rep.app.system
 
 import java.io.File
 
-import akka.actor.{ActorRef, ActorSystem, Address, Props}
+import akka.actor.{ ActorRef, ActorSystem, Address, Props }
 import akka.cluster.Cluster
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.{ Config, ConfigFactory }
 import rep.app.conf.SystemConf
 import rep.app.system.ClusterSystem.InitType
 import rep.network.base.ModuleBase
-import rep.network.cluster.MemberListener
 import rep.network.module.ModuleManager
-import rep.network.tools.Statistic.StatisticCollection
-import rep.network.tools.register.ActorRegister
-import rep.ui.web.EventServer
 import rep.utils.GlobalUtils.ActorType
-import rep.storage.cfg._ 
+import rep.storage.cfg._
 import java.io.File
 import scala.collection.mutable
 import rep.app.conf.SystemProfile
 import com.typesafe.config.ConfigValueFactory
 import java.util.List
 import java.util.ArrayList
-import rep.log.trace.RepLogHelp
-import rep.log.trace.LogType
 import org.slf4j.LoggerFactory
+import rep.log.RepLogger
 
 /**
-  * System创建伴生对象
-  * @author shidianyue
-  * @version	0.7
-  * @update 2018-05 jiangbuyun
-  * */
+ * System创建伴生对象
+ * @author shidianyue
+ * @version	0.7
+ * @update 2018-05 jiangbuyun
+ */
 object ClusterSystem {
 
   /**
-    * 初始化类型
-    */
+   * 初始化类型
+   */
   object InitType {
-    val SINGLE_INIT = 1//单机单节点
-    val MULTI_INIT = 2//单机多节点
+    val SINGLE_INIT = 1 //单机单节点
+    val MULTI_INIT = 2 //单机多节点
   }
-
-  private val actorRegisterList = mutable.HashMap[ String, ActorRegister ]()
-
-  def register(systemName: String, actorRegister: ActorRegister) = actorRegisterList.put(systemName, actorRegister)
-
-  def getActorRegister(sysName: String) = actorRegisterList.get(sysName)
-
-  def unregister(systemName: String) = actorRegisterList.remove(systemName)
-
 }
 /**
-  * System创建类
-  * @author shidianyue
-  * @version	0.7
-  * @since	1.0
-  * @param sysTag 系统system命名
-  * @param initType 初始化类型
-  * @param sysStart 是否开启system（不开启仅用于初始化）
-  * */
-class ClusterSystem(sysTag: String, initType: Int, sysStart:Boolean) {
+ * System创建类
+ * @author shidianyue
+ * @version	0.7
+ * @since	1.0
+ * @param sysTag 系统system命名
+ * @param initType 初始化类型
+ * @param sysStart 是否开启system（不开启仅用于初始化）
+ */
+class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
   protected def log = LoggerFactory.getLogger(this.getClass)
-  
+
   private val USER_CONFIG_PATH = "conf/system.conf"
 
   private val modulePrefix = "RepCluster"
@@ -90,7 +76,7 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart:Boolean) {
 
   private var moduleManager: ActorRef = null
 
-  private var statistics:ActorRef = null
+  private var statistics: ActorRef = null
 
   private var enableWebSocket = false
 
@@ -98,45 +84,45 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart:Boolean) {
 
   private var sysConf: Config = initSystem(sysTag)
 
-  private var sysActor:ActorSystem = null
+  private var sysActor: ActorSystem = null
 
-  private var clusterAddr:Address = null
+  private var clusterAddr: Address = null
 
   /**
-    * 是否开启Web Socket（API）
-    */
+   * 是否开启Web Socket（API）
+   */
   def enableWS() = enableWebSocket = true
+  def disableWS() = enableWebSocket = false
 
   /**
-    * 获取用户和系统的联合配置
-    * @param userConfigFilePath
-    * @return
-    */
+   * 获取用户和系统的联合配置
+   * @param userConfigFilePath
+   * @return
+   */
   def getUserCombinedConf(userConfigFilePath: String): Config = {
     val userConfFile = new File(userConfigFilePath)
     val innerConf = ConfigFactory.load()
-    userConfFile.exists() match {
-      case true =>
-        val combined_conf = ConfigFactory.parseFile(userConfFile).withFallback(innerConf)
-        val final_conf = ConfigFactory.load(combined_conf)
-        final_conf
-      case false =>
-        RepLogHelp.logMsg(log,LogType.WARN, moduleName +  " ~ " + "Couldn't find the user config file" + " ~ " )
-        innerConf
+
+    if (userConfFile.exists()) {
+      val combined_conf = ConfigFactory.parseFile(userConfFile).withFallback(innerConf)
+      val final_conf = ConfigFactory.load(combined_conf)
+      final_conf
+    } else {
+      RepLogger.trace(RepLogger.System_Logger, sysTag + "~" + "ClusterSystem" + " ~ " + "Couldn't find the user config file")
+      innerConf
     }
   }
 
   /**
-    * 获取完整配置信息
-    * 用户系统初始化
-    * @param sysName
-    * @return
-    */
+   * 获取完整配置信息
+   * 用户系统初始化
+   * @param sysName
+   * @return
+   */
   def getConfigBySys(sysName: String): Config = {
-    //TODO 将来找个路径也是可配置的
     val myConfig =
-    ConfigFactory.parseString("akka.remote.netty.ssl.security.key-store = \"jks/mykeystore_" + sysName +
-      ".jks\"")
+      ConfigFactory.parseString("akka.remote.netty.ssl.security.key-store = \"jks/" + sysName +
+        ".jks\"")
     val regularConfig = getUserCombinedConf(USER_CONFIG_PATH)
     val combined =
       myConfig.withFallback(regularConfig)
@@ -147,24 +133,24 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart:Boolean) {
 
   def getConf = sysConf
 
-  def hasDiskSpace:Boolean={
+  def hasDiskSpace: Boolean = {
     var b = true
-    val sc : StoreConfig = StoreConfig.getStoreConfig()
-    val ds = sc.getFreeDiskSpace/(1000*1000)
-    if(SystemProfile.getDiskSpaceAlarm >= ds){
+    //val sc: StoreConfig = StoreConfig.getStoreConfig()
+    val ds = StoreConfig4Scala.getFreeDiskSpace / (1000 * 1000)
+    if (SystemProfile.getDiskSpaceAlarm >= ds) {
       b = false
     }
     b
   }
-  
+
   /**
-    * 初始化系统参数
-    * @param sysName
-    * @return
-    */
+   * 初始化系统参数
+   * @param sysName
+   * @return
+   */
   def initSystem(sysName: String): Config = {
     val conf = getConfigBySys(sysName)
-    RepLogHelp.logMsg(log,LogType.INFO, moduleName +  " ~ " + "System configuration successfully" + " ~ " )
+    RepLogger.trace(RepLogger.System_Logger, sysTag + " ~ " + "ClusterSystem" + "~" + "System configuration successfully")
     enableWebSocket = conf.getInt("system.ws_enable") match {
       case 0 => false
       case 1 => true
@@ -179,10 +165,10 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart:Boolean) {
   def getClusterAddr = clusterAddr
 
   /**
-    * 组网
-    * @param address
-    * @return
-    */
+   * 组网
+   * @param address
+   * @return
+   */
   def joinCluster(address: Address): Boolean = {
     initType match {
       case InitType.SINGLE_INIT =>
@@ -194,61 +180,41 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart:Boolean) {
   }
 
   /**
-    * 初始化
-    */
+   * 初始化
+   */
   def init = {
     initConsensusNodeOfConfig
-    sysStart match {
-      case true =>
-        sysActor = ActorSystem(SystemConf.SYSTEM_NAME, sysConf)
-        clusterAddr = Cluster(sysActor).selfAddress
-      case false => //ignore
+    if (sysStart) {
+      sysActor = ActorSystem(SystemConf.SYSTEM_NAME, sysConf)
+      clusterAddr = Cluster(sysActor).selfAddress
     }
-    ClusterSystem.register(sysTag, new ActorRegister)
-    RepLogHelp.logMsg(log,LogType.INFO, "System" +  " ~ " + s"System(${sysTag}) init successfully" + " ~ " ,sysTag)
+
+    RepLogger.trace(RepLogger.System_Logger, sysTag + "~" + "System" + " ~ " + s"System(${sysTag}) init successfully" + " ~ ")
   }
 
-  private def initConsensusNodeOfConfig={
+  private def initConsensusNodeOfConfig = {
     val nodelist = sysConf.getStringList("system.vote.vote_node_list")
-    if(nodelist.contains(this.sysTag)){
-      //val roles = Array("CRFD-Node")
-      var roles :List[String] = new ArrayList[String]
-      roles.add("CRFD-Node")
-      sysConf = sysConf.withValue("akka.cluster.roles",  ConfigValueFactory.fromAnyRef(roles))
+    if (nodelist.contains(this.sysTag)) {
+      var roles: List[String] = new ArrayList[String]
+      roles.add("CRFD-Node:" + this.sysTag)
+      sysConf = sysConf.withValue("akka.cluster.roles", ConfigValueFactory.fromAnyRef(roles))
     }
   }
-  
+
   /**
-    * 启动系统
-    */
+   * 启动系统
+   */
   def start = {
-        if(enableStatistic) statistics = sysActor.actorOf(Props[StatisticCollection],"statistic")
-        SystemProfile.initConfigSystem(sysActor.settings.config)
-        moduleManager = sysActor.actorOf(ModuleManager.props("moduleManager", sysTag),"moduleManager")
-        ModuleBase.registerActorRef(sysTag, ActorType.MODULE_MANAGER, moduleManager)
-        
-        if(!hasDiskSpace){
-          Cluster(sysActor).down(clusterAddr)
-          throw new Exception("not enough disk space")
-        }
-        if (enableWebSocket) webSocket = sysActor.actorOf(Props[ EventServer ], "ws")
-        memberLis = sysActor.actorOf(Props[ MemberListener ], "memberListener")
-        ModuleBase.registerActorRef(sysTag, ActorType.MEMBER_LISTENER, memberLis)
-        if (enableWebSocket) ModuleBase.registerActorRef(sysTag, ActorType.API_MODULE, webSocket)
-        if(enableStatistic) ModuleBase.registerActorRef(sysTag,ActorType.STATISTIC_COLLECTION, statistics)
-    
-        RepLogHelp.logMsg(log,LogType.INFO, "System" +  " ~ " + s"ClusterSystem ${sysTag} start" + " ~ " ,sysTag)
+    SystemProfile.initConfigSystem(sysActor.settings.config)
+
+    if (!hasDiskSpace) {
+      Cluster(sysActor).down(clusterAddr)
+      throw new Exception("not enough disk space")
+    }
+
+    moduleManager = sysActor.actorOf(ModuleManager.props("modulemanager", sysTag, enableStatistic, enableWebSocket, true), "modulemanager")
+
+    RepLogger.trace(RepLogger.System_Logger, sysTag + "~" + "System" + " ~ " + s"ClusterSystem ${sysTag} start" + " ~ ")
   }
-
-  /**
-    * 离网
-    * @param clusterActor
-    */
-  def leaveCluster(clusterActor:ActorSystem): Unit ={
-    Cluster(clusterActor).leave(getClusterAddr)
-  }
-
-  def getActorSys:ActorSystem = sysActor
-
 
 }

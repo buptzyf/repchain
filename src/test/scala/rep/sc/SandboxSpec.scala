@@ -1,5 +1,5 @@
 /*
- * Copyright  2018 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
+ * Copyright  2019 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,272 +16,146 @@
 
 package rep.sc
 
-import org.scalatest.{ BeforeAndAfterAll, FlatSpecLike, Matchers }
 import akka.actor.ActorSystem
-import akka.testkit.TestKit
-
-import scala.concurrent.Await
-import scala.concurrent.duration._
-import rep.protos.peer._
+import akka.testkit.{TestKit, TestProbe}
+import org.json4s.{DefaultFormats, jackson}
+import org.json4s.native.Serialization.{write, writePretty}
+import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, Matchers}
 import rep.app.system.ClusterSystem
 import rep.app.system.ClusterSystem.InitType
-
-import rep.network.PeerHelper.transactionCreator
-import org.json4s.{ DefaultFormats, jackson }
-import de.heikoseeberger.akkahttpjson4s.Json4sSupport
-import org.json4s._
+import rep.network.PeerHelper
 import rep.network.module.ModuleManager
+import rep.protos.peer.{Certificate, ChaincodeId, Signer}
+import rep.sc.SandboxSpec.{ACTION, SetMap}
+import rep.sc.tpl._
+//.{CertStatus,CertInfo}
+import rep.sc.tpl.Transfer
 import rep.storage.ImpDataAccess
-import rep.utils.Json4s._
-import rep.sc.contract._
-import java.io.IOException
-import java.io.PrintWriter
-import java.io.FileWriter
-import java.io.File
+import rep.utils.SerializeUtils.toJson
+import rep.app.conf.SystemProfile
 
-/** 合约容器实现的单元测试
- *  @author c4w
- *  @param _system 测试用例所在的actor System.
- * 
- */
+import scala.concurrent.duration._
+import scala.collection.mutable.Map
+import rep.sc.SandboxDispatcher.DoTransaction
+
+object SandboxSpec {
+
+  type SetMap = scala.collection.mutable.Map[String, Int]
+
+  object ACTION {
+    val transfer = "transfer"
+    val set = "set"
+    val SignUpSigner = "SignUpSigner"
+    val SignUpCert = "SignUpCert"
+    val UpdateCertStatus = "UpdateCertStatus"
+    val UpdateSigner = "UpdateSigner"
+  }
+
+}
+
+/**
+  * author zyf
+  *
+  * @param _system
+  */
 class SandboxSpec(_system: ActorSystem)
-  extends TestKit(_system)
-  with Matchers
-  with FlatSpecLike
-  with BeforeAndAfterAll {
+  extends TestKit(_system) with Matchers with FlatSpecLike with BeforeAndAfterAll {
 
-  import rep.sc.TransProcessor.DoTransaction
-  import rep.sc.Sandbox.DoTransactionResult
+  def this() = this(ActorSystem("TransferSpec", new ClusterSystem("121000005l35120456.node1", InitType.MULTI_INIT, false).getConf))
 
-  import akka.testkit.TestProbe
-  import akka.testkit.TestActorRef
-  import Json4sSupport._
+  override def afterAll: Unit = {
+    shutdown(system)
+  }
 
   implicit val serialization = jackson.Serialization
   // or native.Serialization
   implicit val formats = DefaultFormats
 
-  def this() = this(ActorSystem("SandBoxSpec", new ClusterSystem("1", InitType.MULTI_INIT, false).getConf))
-
-  override def afterAll: Unit = Await.ready(system.terminate(), Duration.Inf)
-
-  //JavaScript实现的存证合约测试, 包括合约部署、调用、返回结果测试
-  "sandbox" should "deploy functions and call them then" in {
-    val sysName = "1"
-    val dbTag = "1"
+  "ContractAssetsTPL" should "can set assets and transfer from a to b" in {
+    val sysName = "121000005l35120456.node1"
+    val dbTag = "121000005l35120456.node1"
     //建立PeerManager实例是为了调用transactionCreator(需要用到密钥签名)，无他
-    val pm = system.actorOf(ModuleManager.props("pm", sysName))
-    //加载合约脚本
-    val s1 = scala.io.Source.fromFile("scripts/proof/deploy.js")
+    val pm = system.actorOf(ModuleManager.props("modulemanager", sysName, false, false, false), "modulemanager")
+    // 部署资产管理
+    val s1 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/ContractAssetsTPL.scala")
     val l1 = try s1.mkString finally s1.close()
-    //加载合约调用脚本
-    val s2 = scala.io.Source.fromFile("scripts/proof/invoke.js")
+    // 部署账户管理合约
+    val s2 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/ContractCert.scala")
     val l2 = try s2.mkString finally s2.close()
+    val sm: SetMap = Map("121000005l35120456" -> 50, "12110107bi45jh675g" -> 50, "122000002n00123567" -> 50)
+    val sms = write(sm)
+    //val aa = new ContractCert
+    val tcs = Array(
+      Transfer("121000005l35120456", "12110107bi45jh675g", 5),
+      Transfer("121000005l35120456", "12110107bi45jh675g0", 5),
+      Transfer("121000005l35120456", "12110107bi45jh675g", 500))
+    val rcs = Array(None, "目标账户不存在", "余额不足")
+
+    val signer = Signer("node2", "12110107bi45jh675g", "13856789234", Seq("node2"))
+    val cert = scala.io.Source.fromFile("jks/certs/12110107bi45jh675g.node2.cer")
+    val certStr = try cert.mkString finally cert.close()
+    val certinfo = CertInfo("12110107bi45jh675g", "node2", Certificate(certStr, "SHA1withECDSA", true, None, None))
     //准备探针以验证调用返回结果
     val probe = TestProbe()
     val db = ImpDataAccess.GetDataAccess(sysName)
-    var sandbox = system.actorOf(TransProcessor.props("sandbox", "", probe.ref))
+    val sandbox = system.actorOf(TransactionDispatcher.props("transactiondispatcher"), "transactiondispatcher")
+
+    // 该处由于ContractAssetsTPL中判断用的ChainCodeIdName是用的系统设置，因此现在暂定为系统设置的
+    val cid1 = ChaincodeId(SystemProfile.getAccountChaincodeName, 1)
+    val cid2 = ChaincodeId("ContractCert", 1)
+
     //生成deploy交易
-    val t1 = transactionCreator(sysName, rep.protos.peer.Transaction.Type.CHAINCODE_DEPLOY,
-      "", "", List(), l1, None)
-    val msg_send1 = new DoTransaction(t1, probe.ref, "")
+    // 资产管理合约
+    val t1 = PeerHelper.createTransaction4Deploy(sysName, cid1, l1,
+      "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
+
+    val msg_send1 = DoTransaction(t1, "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send1)
     val msg_recv1 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-    val ol1 = msg_recv1.ol
-    val ol1str = compactJson(ol1)
+    msg_recv1.err.isEmpty should be(true)
 
-    //生成invoke交易
-    //获取deploy生成的chainCodeId
-    val cname = t1.payload.get.chaincodeID.get.name
-    val t2 = transactionCreator(sysName, rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE,
-      "", l2, List(), "", Option(cname))
-    val msg_send2 = new DoTransaction(t2, probe.ref, "")
-
-    for (i <- 1 to 10) {
-      println(s"----Span doTransaction-----")
-      probe.send(sandbox, msg_send2)
-      val msg_recv2 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-      val ol2 = msg_recv2.ol
-      val ol2str = compactJson(ol2)
-      //获得交易返回值
-      val rv2 = msg_recv2.r.asInstanceOf[JValue]
-      val re2 = rv2.extract[String]
-      re2 should be("json content")
-
-    }
-  }
-
-  //Scala实现的资产管理合约测试，包括合约的部署、调用、结果返回验证
-  "container" should "deploy scala contract and call it then" in {
-    val sysName = "1"
-    val dbTag = "1"
-    //加载合约脚本
-    //    val s1 = scala.io.Source.fromFile("src/main/scala/ContractAssetsTPL.scala")
-    val s1 = scala.io.Source.fromFile("src/main/scala/NewContract.scala")
-    val l1 = try s1.mkString finally s1.close()
-
-    //val clazz = Compiler.compilef(l1,null)
-
-    //初始化资产
-    val l2 =
-      """
-{
-  "1AqZs6vhcLiiTvFxqS5CEqMw6xWuX9xqyi" : 1000000,
-  "1GvvHCFZPajq5yVY44n7bdmSfv2MJ5LyLs" : 1000000,
-  "16SrzMbzdLyGEUKY5FsdE8SVt5tQV1qmBY" : 100,
-  "12kAzqqhuq7xYgm9YTph1b9zmCpZPyUWxf" : 1000000,
-  "1MH9xedPTkWThJUgT8ZYehiGCM7bEZTVGN" : 1000000
-}
-"""
-    //加载合约调用脚本
-    val l3 =
-      """
-{
-  "from" : "1AqZs6vhcLiiTvFxqS5CEqMw6xWuX9xqyi",
-  "to" : "1GvvHCFZPajq5yVY44n7bdmSfv2MJ5LyLs",
-  "amount" : 50
-}        
-      """
-    //准备探针以验证调用返回结果
-    val probe = TestProbe()
-    val db = ImpDataAccess.GetDataAccess(sysName)
-    var sandbox = system.actorOf(TransProcessor.props("sandbox", "", probe.ref))
-    //生成deploy交易
-    def encodeHex(src: Array[Byte]): String = {
-      val stringBuilder = new StringBuilder("")
-      if (src == null || src.length <= 0) {
-        return null;
-      }
-      for (x <- src) {
-        val v = x & 0xFF
-        val hv = Integer.toHexString(v).toUpperCase()
-        if (hv.length() < 2) {
-          stringBuilder.append(0)
-        }
-        stringBuilder.append(hv)
-      }
-      return stringBuilder.toString()
-    }
-
-    val t1 = transactionCreator(sysName, rep.protos.peer.Transaction.Type.CHAINCODE_DEPLOY,
-      "", "", List(), l1, None, rep.protos.peer.ChaincodeSpec.CodeType.CODE_SCALA)
-
-    val msg_send1 = new DoTransaction(t1, probe.ref, "")
-    probe.send(sandbox, msg_send1)
-    val msg_recv1 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-    val ol1 = msg_recv1.ol
-    val ol1str = compactJson(ol1)
-
-    //生成invoke交易
-    //获取deploy生成的chainCodeId
-    //初始化资产
-    val cname = t1.payload.get.chaincodeID.get.name
-    val t2 = transactionCreator(sysName, rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE,
-      "", "set", Seq(l2), "", Option(cname))
-    val msg_send2 = new DoTransaction(t2, probe.ref, "")
+    // 账户管理合约
+    val t2 = PeerHelper.createTransaction4Deploy(sysName, cid2, l2,
+      "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
+    val msg_send2 = DoTransaction(t2, "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send2)
-    val msg_recv2 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
 
-    val t3 = transactionCreator(sysName, rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE,
-      "", "transfer", Seq(l3), "", Option(cname))
-    val msg_send3 = new DoTransaction(t3, probe.ref, "")
-
-    for (i <- 1 to 10) {
-      println(s"----Span doTransaction-----")
-      probe.send(sandbox, msg_send3)
-      val msg_recv3 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-      val ol3 = msg_recv3.ol
-      val ol3str = compactJson(ol3)
-      //获得交易返回值
-      val rv3 = msg_recv3.r.asInstanceOf[JValue]
-      val re3 = rv3.extract[String]
-      re3 should be("transfer ok")
-    }
-  }
-
-  //JavaScript的合约实现，同一个合约串行执行测试
-  "sandbox" should "process trasactions Synchronously" in {
-    val sysName = "1"
-    //建立PeerManager实例是为了调用transactionCreator(需要用到密钥签名)，无他
-
-    val f1 =
-      """
-var Thread = Java.type("java.lang.Thread");
-function waitprint(span,output) {
-  Thread.sleep(span);
-  print(output);
-  return output
-}
-      """
-    val s1 =
-      """
-   waitprint(5000,"FirstPrint");
-      """
-    val s2 =
-      """
-   waitprint(5,"SecondPrint");
-      """
-
-    val probe = TestProbe()
-    val db = ImpDataAccess.GetDataAccess(sysName)
-    var sandbox = system.actorOf(TransProcessor.props("sandbox", "", probe.ref))
-    //deploy
-    val t1 = transactionCreator(sysName, rep.protos.peer.Transaction.Type.CHAINCODE_DEPLOY,
-      "", "", List(), f1, None)
-    val msg_send1 = new DoTransaction(t1, probe.ref, "")
-    probe.send(sandbox, msg_send1)
-    val msg_recv1 = probe.expectMsgType[Sandbox.DoTransactionResult](10000.seconds)
-
-    //invoke
-    val cname = t1.payload.get.chaincodeID.get.name
-    val t2 = transactionCreator(sysName, rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE,
-      "", s1, List(), "", Option(cname))
-    val msg_send2 = new DoTransaction(t2, probe.ref, "")
-    probe.send(sandbox, msg_send2)
-    val msg_recv2 = probe.expectMsgType[Sandbox.DoTransactionResult](10000.seconds)
-    val rv2 = msg_recv2.r.asInstanceOf[JValue]
-    val re2 = rv2.extract[String]
-    re2 should be("FirstPrint")
-
-    val t3 = transactionCreator(sysName, rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE,
-      "", s2, List(), "", Option(cname))
-    val msg_send3 = new DoTransaction(t3, probe.ref, "")
+    // 生成invoke交易
+    // 注册账户
+    val t3 = PeerHelper.createTransaction4Invoke(sysName, cid2, ACTION.SignUpSigner, Seq(write(signer)))
+    val msg_send3 = DoTransaction(t3, "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send3)
-    val msg_recv3 = probe.expectMsgType[Sandbox.DoTransactionResult](10000.seconds)
-    val rv3 = msg_recv3.r.asInstanceOf[JValue]
-    rv3.extract[String] should be("SecondPrint")
-  }
 
-  //在合约脚本中访问正在处理的签名交易测试
-  "sandbox scripts" should "can access the Trasaction being processed" in {
-    val sysName = "1"
-    val f1 =
-      """
-      print(tx);
-      """
-    val s1 =
-      """
-      r=tx;
-      """
-    val probe = TestProbe()
-    val db = ImpDataAccess.GetDataAccess(sysName)
-    var sandbox = system.actorOf(TransProcessor.props("sandbox", "", probe.ref))
-    //deploy
-    val t1 = transactionCreator(sysName, rep.protos.peer.Transaction.Type.CHAINCODE_DEPLOY,
-      "", "", List(), f1, None)
-    val msg_send1 = new DoTransaction(t1, probe.ref, "")
-    probe.send(sandbox, msg_send1)
-    val msg_recv1 = probe.expectMsgType[Sandbox.DoTransactionResult](10000.seconds)
-    //invoke
-    val cname = t1.payload.get.chaincodeID.get.name
-    val t2 = transactionCreator(sysName, rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE,
-      "", s1, List(), "", Option(cname))
-    val msg_send2 = new DoTransaction(t2, probe.ref, "")
-    probe.send(sandbox, msg_send2)
-    val msg_recv2 = probe.expectMsgType[Sandbox.DoTransactionResult](10000.seconds)
-    val rv2 = msg_recv2.r.asInstanceOf[JValue]
-    val re2 = rv2.extract[Transaction]
-    re2.txid should be(t2.txid)
-  }
+    //deploy紧接invoke测试
+    val msg_recv2 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
+    msg_recv2.err.isEmpty should be(true)
+    val msg_recv3 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
+    msg_recv3.err should be(None)
 
+    // 注册证书
+    val t4 = PeerHelper.createTransaction4Invoke(sysName, cid2, ACTION.SignUpCert, Seq(writePretty(certinfo)))
+    val msg_send4 = DoTransaction(t4, "dbnumber", TypeOfSender.FromAPI)
+    probe.send(sandbox, msg_send4)
+    val msg_recv4 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
+    msg_recv4.err should be(None)
+
+
+    //生成invoke交易
+    val t5 = PeerHelper.createTransaction4Invoke(sysName, cid1, ACTION.set, Seq(sms))
+    val msg_send5 = DoTransaction(t5, "dbnumber", TypeOfSender.FromAPI)
+    probe.send(sandbox, msg_send5)
+    val msg_recv5 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
+    msg_recv5.err should be(None)
+
+    for (i <- 0 until tcs.length) {
+      val t6 = PeerHelper.createTransaction4Invoke(sysName, cid1, ACTION.transfer, Seq(write(tcs(i))))
+      val msg_send6 = DoTransaction(t6, "dbnumber", TypeOfSender.FromAPI)
+      probe.send(sandbox, msg_send6)
+      val msg_recv6 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
+      if (msg_recv6.err.isEmpty && i == 0)
+        msg_recv6.err should be(rcs(0))
+      else
+        msg_recv6.err.get.cause.getMessage should be(rcs(i))
+    }
+  }
 }

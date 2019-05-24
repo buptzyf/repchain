@@ -1,5 +1,5 @@
 /*
- * Copyright  2018 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
+ * Copyright  2019 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -19,6 +19,8 @@ package rep.network.consensus.vote
 import rep.crypto.Sha256
 import scala.collection.mutable
 import rep.storage.util.pathUtil
+import scala.math._
+import rep.log.RepLogger
 
 /**
   * 系统默认
@@ -44,13 +46,13 @@ trait CRFDVoter extends VoterBase {
     }
   }
   
-  private def getRandomList(seed:Long,candidatorLen:Int,candidatorTotal:Int):Array[randomNumber]={
-    val m = 2*2*2*2*2*2*2*2*2*2*2*2*2*2*2*2*2*2*2*2
+  private def getRandomList(seed:Long,candidatorTotal:Int):Array[randomNumber]={
+    val m = pow(2,20).toLong
     val a = 2045
     val b = 1
     var randomArray = new Array[randomNumber](candidatorTotal)
     var hashSeed = seed.abs
-    for(i<-0 to candidatorTotal-1){
+    for(i<-0 until (candidatorTotal) ){
       var tmpSeed = (a * hashSeed + b) % m
       tmpSeed = tmpSeed.abs
       if(tmpSeed == hashSeed) tmpSeed = tmpSeed + 1
@@ -65,8 +67,8 @@ trait CRFDVoter extends VoterBase {
     randomArray
   }
   
-  override def candidators(nodes: Set[String], seed: Array[Byte]): Array[String] = {
-    var nodesSeq = nodes.toSeq.sortBy(f=>(f.toString()))
+  override def candidators(Systemname:String,hash:String,nodes: Set[String], seed: Array[Byte]): Array[String] = {
+    var nodesSeq = nodes.toSeq.sortBy(f=>(f))
     var len = nodes.size / 2 + 1
     val min_len = 4
     len = if(len<min_len){
@@ -80,13 +82,16 @@ trait CRFDVoter extends VoterBase {
     else{
       var candidate = new Array[String](len)
       var hashSeed:Long = pathUtil.bytesToInt(seed)
-      var randomList = getRandomList(hashSeed,len,nodes.size)
-      //PrintRandomArray(randomList)
+      var randomList = getRandomList(hashSeed,len)//,nodes.size)
       //println(randomList(0).generateSerial)
-      for(j<-0 to len-1){
+      RepLogger.trace(RepLogger.Consensus_Logger, randomList.mkString(","))
+      for(j<-0 until len){
         var e = randomList(j)
         candidate(j) = nodesSeq(e.generateSerial)
       }
+      RepLogger.debug(RepLogger.Vote_Logger, s"sysname=${Systemname},hash=${hash},hashvalue=${hashSeed},randomList=${randomList.mkString("|")}")
+      RepLogger.debug(RepLogger.Vote_Logger, s"sysname=${Systemname},candidates=${candidate.mkString("|")}")
+      
       candidate
     }
   }

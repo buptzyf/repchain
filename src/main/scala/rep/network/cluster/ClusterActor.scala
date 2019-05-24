@@ -1,5 +1,5 @@
 /*
- * Copyright  2018 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
+ * Copyright  2019 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -22,6 +22,7 @@ import rep.network.Topic
 import rep.protos.peer.Event
 import rep.utils.ActorUtils
 import rep.utils.GlobalUtils.EventType
+import rep.app.conf.SystemProfile
 
 /**
   * Akka组网类
@@ -55,19 +56,20 @@ import rep.utils.GlobalUtils.EventType
     * @param action
     */
   def sendEvent(eventType: Int, mediator: ActorRef, addr: String, topic: String, action: Event.Action): Unit = {
-    eventType match {
-      case EventType.PUBLISH_INFO =>
-        //publish event(send message)
-        val evt = new Event(addr, topic,
-          action)
-        mediator ! Publish(Topic.Event, evt)
-      case EventType.RECEIVE_INFO =>
-        //receive event
-        val evt = new Event(topic, addr,
-          action)
-        mediator ! Publish(Topic.Event, evt)
+    if(SystemProfile.getRealtimeGraph == 1){
+      eventType match {
+        case EventType.PUBLISH_INFO =>
+          //publish event(send message)
+          val evt = new Event(addr, topic,
+            action)
+          mediator ! Publish(Topic.Event, evt)
+        case EventType.RECEIVE_INFO =>
+          //receive event
+          val evt = new Event(topic, addr,
+            action)
+          mediator ! Publish(Topic.Event, evt)
+      }
     }
-
   }
   
   
@@ -118,27 +120,6 @@ import rep.utils.GlobalUtils.EventType
     mediator ! Subscribe(topic, self)
     //广播本次订阅事件
     if (isEvent) sendEvent(EventType.PUBLISH_INFO, mediator, addr, Topic.Event, Event.Action.SUBSCRIBE_TOPIC)
-  }
-
-  /**
-    * 两个节点是否相同的system
-    * （不完全对，有可能是相同IP和port但是UID不同）
-    * @param from
-    * @param self
-    * @return
-    */
-  def isSameSystem(from:ActorRef, self:ActorRef): Boolean ={
-    ActorUtils.getIpAndPort(getClusterAddr(from)) == ActorUtils.getIpAndPort(getClusterAddr(self))
-  }
-
-  /**
-    * 两个节点是否是相同的system
-    * @param from
-    * @param self
-    * @return
-    */
-  def isSameSystem(from:ActorRef, self:String) :Boolean = {
-    ActorUtils.getIpAndPort(getClusterAddr(from)) == ActorUtils.getIpAndPort(self)
   }
 
 }

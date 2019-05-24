@@ -1,5 +1,5 @@
 /*
- * Copyright  2018 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
+ * Copyright  2019 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -43,23 +43,30 @@ import rep.api.SwaggerDocService
 import rep.api.rest._
 import rep.utils.GlobalUtils
 import rep.sc.Sandbox.SandboxException
-
+import rep.log.RepLogger
 import rep.app.conf.SystemProfile
+
+import rep.log.RecvEventActor
+import rep.log.EventActor4Stage
+import akka.stream.Graph
+import akka.stream.SourceShape
+import akka.NotUsed
 
 /** Event服务伴生对象
  *  @author c4w
  */
 object EventServer {
-
-implicit def myExceptionHandler = ExceptionHandler {
-  //合约执行异常，回送HTTP 200，包容chrome的跨域尝试
-  case e: SandboxException =>
-    extractUri { uri =>
-      complete(HttpResponse(Accepted, 
+//def props(name: String): Props = Props(classOf[EventServer], name)
+  
+  implicit def myExceptionHandler = ExceptionHandler {
+    //合约执行异常，回送HTTP 200，包容chrome的跨域尝试
+    case e: SandboxException =>
+      extractUri { uri =>
+        complete(HttpResponse(Accepted,
           entity = HttpEntity(ContentTypes.`application/json`,
-              s"""{"err": "${e.getMessage}"}"""))
-      )
-    }
+            s"""{"err": "${e.getMessage}"}"""))
+        )
+      }
 }  
 
 /** 启动Event服务
@@ -69,9 +76,13 @@ implicit def myExceptionHandler = ExceptionHandler {
  *  @param port 指定侦听的端口
  */
   def start(sys:ActorSystem ,port:Int) {
-    implicit val _ = sys.dispatcher
     implicit val system =sys
     implicit val materializer = ActorMaterializer()
+    implicit val executionContext = system.dispatcher
+    
+    val evtactor = system.actorOf(Props[RecvEventActor],"RecvEventActor")
+    
+
     
     //提供静态文件的web访问服务
     val route_evt =
@@ -85,29 +96,33 @@ implicit def myExceptionHandler = ExceptionHandler {
       path("event") {
         get {
           //must ref to the same actor
-         val source = Source.actorPublisher[Event](Props[EventActor]).map(evt =>  BinaryMessage(ByteString(evt.toByteArray)))   
+         //val source = Source.actorPublisher[Event](Props[EventActor]).map(evt =>  BinaryMessage(ByteString(evt.toByteArray))) 
+         //val sourceGraph: Graph[SourceShape[Event], NotUsed] = new EventActor4Stage(system)
+          val sourceGraph: Graph[SourceShape[Event], NotUsed] = new EventActor4Stage(evtactor)
+          val source: Source[Event, NotUsed] = Source.fromGraph(sourceGraph)
+          
+          
           extractUpgradeToWebSocket { upgrade =>
-            complete(upgrade.handleMessagesWithSinkSource(Sink.ignore, source))
+            complete(upgrade.handleMessagesWithSinkSource(Sink.ignore, source.map(evt => BinaryMessage(ByteString(evt.toByteArray)))))
           }
+         /*extractUpgradeToWebSocket { upgrade =>
+            complete(upgrade.handleMessagesWithSinkSource(Sink.ignore, source))
+          }*/
         }
       }
 
-    val ra = sys.actorOf(Props[RestActor],"api")
+    val ra = sys.actorOf(RestActor.props("api"), "api")
     //允许跨域访问,以支持在应用中发起请求
     Http().bindAndHandle(
-        route_evt       
-        ~ cors() {new BlockService(ra).route }
-        ~ cors() {new LogMgrService(ra).route }
-        ~ cors() {new ChainService(ra).route }
-        ~ cors() {new TransactionService(ra).route }
-        ~ cors() {new CertService(ra).route }
-        ~ cors() {new HashVerifyService(ra).route }
-        ~ new SwaggerDocService(sys).routes
-        
-        ,"0.0.0.0", port)
-    println(s"Event Server online at http://localhost:$port")
+      route_evt
+        ~ cors() (
+            new BlockService(ra).route ~
+            new ChainService(ra).route ~
+            new TransactionService(ra).route ~
+            SwaggerDocService.routes),
+      "0.0.0.0", port)
+    RepLogger.info(RepLogger.System_Logger, s"Event Server online at http://localhost:$port")
   }
-  
 }
 
 /** Event服务类，提供web实时图、swagger-UI、ws的Event订阅服务

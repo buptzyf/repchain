@@ -1,6 +1,5 @@
-<!DOCTYPE html>
 <!--
-  ~ Copyright  2018 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
+  ~ Copyright  2019 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
   ~ You may obtain a copy of the License at
@@ -14,6 +13,8 @@
   ~ limitations under the License.
   ~
   -->
+
+<!DOCTYPE html>
 
 <html>
 
@@ -60,7 +61,7 @@
         font-size: '12px' list-style: none;
         -webkit-padding-start: 0;
         -webkit-margin-after: 0;
-        -webkit-margin-before: 1em;
+        -webkit-margin-before: 0;
         border: 1px solid #000;
         overflow-y: auto;
         width: 100%;
@@ -303,8 +304,10 @@
         };
 
         socket.onclose = function() {
-            graph.svg.select('#node_RepChain').transition().duration(2000).style({ "fill": "red" });
            	console.error("Disconnected\n");
+           	graph.resetNodes();
+           	addNodes();
+            graph.svg.select('#node_RepChain').transition().duration(2000).style({ "fill": "red" });
            	setTimeout(function(){
            		connect();
         	},5000);
@@ -344,13 +347,13 @@
                     	}
                         graph.cout_blocks++;
                         var blk = msg.blk;
-                        var dt = new Date(blk.timestamp.seconds * 1000 - 8 * 3600 * 1000);
+                        var dt = new Date(blk.endorsements[0].tmLocal.seconds * 1000 - 8 * 3600 * 1000);
                         var blk_hash = bufferToBase64(blk.previousBlockHash);
                         var ts = blk.transactions;
                         var tstr = "<li>本块交易数: " + ts.length + "<ul>";
                         for (var i = 0; i < ts.length; i++) {
                             var t = ts[i];
-                            tstr += "<li><a target='_blank' href='/transaction/" + t.txid + "'>" + t.txid + "</a>"
+                            tstr += "<li><a target='_blank' href='/transaction/" + t.id + "'>" + t.id + "</a>"
                                 //+"<br/>by："+bufferToBase64(t.signature)
                                 +
                                 "</li>";
@@ -393,7 +396,7 @@
                     }
                     console.info("Received: " + msg.action + " from:" + msg.from + " to:" + msg.to + "\n");
                 } //背书
-                else if (msg.action == 3) {
+                else if (msg.action == 4) {
                     //只统计sendEvent
                     if (msg.from != 'Endorsement')
                         graph.cout_endorsements++;
@@ -403,27 +406,29 @@
                 else if (msg.action == 7) {
                     graph.setBlocker(sfrom);
                     console.log("Received: " + msg.action + " from:" + msg.from + " to:" + msg.to + "\n");
-                } //同步完成
-                else if (msg.action == 11) {
+                } else if (msg.action == 9) {//同步chaininfo
+                		var tm = new Date().getTime();
+		    	        	//避免过度频繁刷新
+		    	        	if(!tl_map['Sync'] || tm - tl_map['Sync']>500){
+		    	            	tl_map['Sync'] = tm;
+		    	        	}
+                    console.log("Received: " + msg.action + " from:" + msg.from + " to:" + msg.to + "\n");
+                } else if (msg.action == 10) {//同步blockdata
+                		graph.addDLink(sfrom,sto);
+                    console.log("Received: " + msg.action + " from:" + msg.from + " to:" + msg.to + "\n");
+                } 
+                
+                /*//同步完成
+                else if (msg.action == 10) {
                     graph.setNodeSync(sfrom, 1);
                     console.log("Received: " + msg.action + " from:" + msg.from + " to:" + msg.to + "\n");
-                }
+                }*/
 
                 switch (msg.action) {
                     //节点入网
                 	case 5:
-                        graph.addNode(sfrom);
                         console.log("Received: " + msg.action + " from:" + msg.from + " to:" + msg.to + "\n");
-                        graph.addDLink(sfrom, 'Transaction');
-                        graph.addDLink(sfrom, 'Block');
-                        graph.addDLink(sfrom, 'Endorsement');
-                        //graph.addDLink(sfrom, 'Event');
-                        graph.addSLink('Transaction', sfrom);
-                        graph.addSLink('Block', sfrom);
-                        graph.addSLink('Endorsement', sfrom);
-                        //graph.addSLink('Event', sfrom);
-                        graph.cout_nodes++;
-                        graph.setNodeSta('RepChain', graph.cout_nodes);
+						graph.onAddNode(sfrom);
                         break;
                      //节点离网
                     case 6:
@@ -433,15 +438,17 @@
                         graph.setNodeSta('RepChain', graph.cout_nodes);
                         break;
                      //节点数据同步
-                    case 9:
+                    /*case 9:
                        	graph.addSLink(sto,'Sync');
-                		graph.addSLink('Sync',sfrom);
-                		graph.addDLink(sfrom,sto);
-                		break;
+                			graph.addSLink('Sync',sfrom);
+                			graph.addDLink(sfrom,sto);
+                			break;*/
                 	//发送或收到topic消息
                     case 1:
                     case 2:
                     case 3:
+                    case 4:
+                    case 9:
                     	//防止过度频繁刷新,对每条线分别计时
                     	var tm = new Date().getTime();
                     	//发送消息

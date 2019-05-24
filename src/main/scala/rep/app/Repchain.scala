@@ -1,5 +1,5 @@
 /*
- * Copyright  2018 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
+ * Copyright  2019 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -29,14 +29,20 @@ object Repchain {
   def main(args: Array[String]): Unit = {
 
     //创建系统实例
-    val sys1 = new ClusterSystem("1",InitType.MULTI_INIT,true)
+     var nodelist : Array[String] = new Array[String] (4)
+     nodelist(0) = "12110107bi45jh675g.node2"
+     nodelist(1) = "122000002n00123567.node3"
+     nodelist(2) = "921000005k36123789.node4"
+     nodelist(3) = "921000006e0012v696.node5"
+     
+    val sys1 = new ClusterSystem("121000005l35120456.node1",InitType.MULTI_INIT,true)
     sys1.init//初始化（参数和配置信息）
     val joinAddress = sys1.getClusterAddr//获取组网地址
     sys1.joinCluster(joinAddress)//加入网络
     sys1.enableWS()//开启API接口
     sys1.start//启动系统
 
-    val cluster = sys1.getActorSys//获取内部系统SystemActor实例
+    //val cluster = sys1.getActorSys//获取内部系统SystemActor实例
 
     val node_min = 5
     //如果node_max>node_min 将启动node反复离网和入网的仿真，但是由于system离网后无法复用并重新加入
@@ -50,54 +56,17 @@ object Repchain {
     var nodes_off = Set.empty[ClusterSystem]
 
     for(i <- 2 to node_max) {
-      Thread.sleep(10000)
+      Thread.sleep(2000)
+      //if(i == 5){
+      //  Thread.sleep(60000)
+      //}
       val len = nodes.size
-      val sys = new ClusterSystem(i.toString,InitType.MULTI_INIT,true)
+      val sys = new ClusterSystem(nodelist(i-2),InitType.MULTI_INIT,true)
       sys.init
       sys.joinCluster(joinAddress)
+      sys.disableWS()
       sys.start
       nodes += sys
-    }
-
-    //node数量在最大和最小值之间振荡,仿真node入网和离网
-    //离网的system似乎无法复用,只能重新新建实例
-    if(node_max > node_min){
-      var node_add = false
-      for(i <- 1 to 1000) {
-        Thread.sleep(5000)
-        val len = nodes.size
-        if(len >= node_max){
-          node_add=false
-        }else if(len <= node_min){
-          node_add=true
-        }
-        if(!node_add){
-          val nd_system = nodes.last
-          //nd_system.terminate()
-          //nd_system.shutdown();
-          //Cluster(system0).down(Cluster(nd_system).selfAddress)
-          nd_system.leaveCluster(cluster)
-          try{
-            //Await.ready(nd_system.terminate(), Duration.Inf)
-          }catch{
-            case msg:InvalidAssociationException => msg
-          }
-          //Await.ready(nd_system.whenTerminated, 30.seconds)
-          //nd_system.terminate();
-          //nd_system.shutdown()
-          nodes -= nd_system
-          //nodes_off += nd_system
-        } else{
-          //避免systemName重复
-          val sys = new ClusterSystem(i.toString,InitType.MULTI_INIT,true)
-          sys1.init
-          val joinAddress = sys1.getClusterAddr
-          sys1.joinCluster(joinAddress)
-          sys1.start
-          nodes += sys
-          //nodes_off -= nd_system
-        }
-      }
     }
   }
 }

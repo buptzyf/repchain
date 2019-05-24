@@ -1,5 +1,5 @@
 /*
- * Copyright  2018 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
+ * Copyright  2019 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -19,10 +19,10 @@ package rep.storage
 import rep.utils._
 import scala.collection.mutable
 import rep.storage.leveldb._
-import rep.storage.merkle._
 import scala.collection.mutable.ArrayBuffer
 import rep.protos.peer._;
 import scala.util.control.Breaks
+import rep.log.RepLogger
 
 /**内存数据库的访问类，属于多实例。
  * @constructor	根据SystemName和InstanceName建立实例
@@ -33,13 +33,11 @@ import scala.util.control.Breaks
  * @since	2017-09-28
  * @category	内存数据库的访问类，属于多实例。
  */
-class ImpDataPreload (SystemName:String,InstanceName:String) extends AbstractLevelDB {
+class ImpDataPreload (SystemName:String,InstanceName:String) extends AbstractLevelDB(SystemName:String) {
     private var update :java.util.concurrent.ConcurrentHashMap[String,Array[Byte]] = new java.util.concurrent.ConcurrentHashMap[String,Array[Byte]]
    
     private var dbop = ImpDataAccess.GetDataAccess(SystemName) 
    
-    //private var merkleop : RepBucket = new RepBucket(this)
-    this.ReloadMerkle
    
     /**
 	 * @author jiangbuyun
@@ -85,7 +83,8 @@ class ImpDataPreload (SystemName:String,InstanceName:String) extends AbstractLev
 			}catch{
 				case e:Exception =>{
 				  rb = null
-  			  log.error("ImpDataPreload_" + SystemName + "_" + s"ImpDataPreload Get failed, error info= "+e.getMessage)
+				  RepLogger.error(RepLogger.Storager_Logger,  
+  			      "ImpDataPreload_" + SystemName + "_" + "ImpDataPreload Get failed, error info= "+e.getMessage)
   			  throw e
   			}
 			}
@@ -100,45 +99,28 @@ class ImpDataPreload (SystemName:String,InstanceName:String) extends AbstractLev
 	 * @param	key String 指定的键，bb Array[Byte] 要存储的值
 	 * @return	返回成功或者失败 Boolean
 	 * */
-  	override def Put (key : String,bb : Array[Byte],isWorldState : Boolean):Boolean={
+  	override def Put (key : String,bb : Array[Byte]):Boolean={
   		var b : Boolean = true
 			try{
 				  if(key == null){
-				    log.info("ImpDataPreload_" + SystemName + "_" + s"ImpDataPreload Put failed, error info= key is null")
+				    RepLogger.trace(RepLogger.Storager_Logger,  
+  			      "ImpDataPreload_" + SystemName + "_" + "ImpDataPreload Put failed, error info= key is null")
 				  }
+				  var v :Array[Byte] = bb
 				  if(bb == null){
-				    log.info("ImpDataPreload_" + SystemName + "_" + s"ImpDataPreload Put failed, error info= value is null")
+				    v = None.toArray
+				    RepLogger.trace(RepLogger.Storager_Logger,  
+  			      "ImpDataPreload_" + SystemName + "_" + "ImpDataPreload Put failed, error info= value is null")
 				  }
-				  if(key != null && bb != null){
-				    if(this.update.get(key) != null){
-				      val obbstr = toString(this.update.get(key))
-				      val bbstr = toString(bb)
-				      if(!obbstr.equals(bbstr)){
-				        this.update.put(key, bb)
-				        //this.merkleop.Put(key, bb)
-				        this.PutWorldStateToMerkle(key,bb)
-				      }
-				    }else{
-				      if(this.dbop.Get(key) != null){
-				        val obbstr = toString(this.dbop.Get(key))
-  				      val bbstr = toString(bb)
-  				      if(!obbstr.equals(bbstr)){
-  				        this.update.put(key, bb)
-  				        //this.merkleop.Put(key, bb)
-  				        this.PutWorldStateToMerkle(key,bb)
-  				      }
-				      }else{
-				        this.update.put(key, bb)
-				        //this.merkleop.Put(key, bb)
-				        this.PutWorldStateToMerkle(key,bb)
-				      }
-				    }
+				  if(key != null ){
+				    this.update.put(key, v)
 				  }
 				  setUseTime
 			}catch{
 			  case e:Exception =>{
 			    b = false
-  				log.error("ImpDataPreload_" + SystemName + "_" + s"ImpDataPreload Put failed, error info= "+e.getMessage)
+			    RepLogger.error(RepLogger.Storager_Logger,  
+  			      "ImpDataPreload_" + SystemName + "_" + "ImpDataPreload Put failed, error info= "+e.getMessage)
   				throw e
 			  }
 			}
@@ -205,9 +187,10 @@ class ImpDataPreload (SystemName:String,InstanceName:String) extends AbstractLev
 		       val loopbreak = new Breaks
            loopbreak.breakable(
       		      trans.foreach(f=>{
-      		        if(f.txid.equals(txid)){
-      		          val chainspec = f.payload.get
-      		          rel = chainspec.chaincodeID.get.name
+      		        if(f.id.equals(txid)){
+      		          rel = IdTool.getCid(f.cid.get)
+      		          //val chainspec = f.payload.get
+      		          //rel = chainspec.chaincodeID.get.name
       		          loopbreak.break
       		        }
       		      })
@@ -216,62 +199,6 @@ class ImpDataPreload (SystemName:String,InstanceName:String) extends AbstractLev
 		  }
 		  rel
 		}
-  	
-  	/**
-	 * @author jiangbuyun
-	 * @version	0.7
-	 * @since	2017-09-28
-	 * @category	交易背书时调用，用于验证读写指令集
-	 * @param	block Block 待验证的区块
-	 * @return	如果验证成功返回true，否则false
-	 * */
-  	def  VerifyForEndorsement(block:Block):Boolean={
-  	  var b : Boolean = false
-		  if(block == null) return b
-  		if(block.stateHash == null) return b
-  		  
-  		try{
-  		  var list : scala.collection.mutable.LinkedHashMap[String,Seq[OperLog]] = new scala.collection.mutable.LinkedHashMap[String,Seq[OperLog]]()
-		    val txresults = block.getNonHashData.transactionResults
-		    txresults.foreach(f=>{
-		         list += f.txid -> f.ol
-		        }
-		      )
-  		     
-	        if(list.size > 0){
-	          list.foreach(f=>{
-	            val txid = f._1
-	            val cid = getTxidFormBlock(block,txid)
-	            val jobj = f._2
-	            
-	            if(jobj != null && jobj.length > 0){
-	              jobj.foreach(f=>{
-	                var tmpkeystr = IdxPrefix.WorldStateKeyPreFix+cid+"_"+f.key
-	                this.Put(IdxPrefix.WorldStateKeyPreFix+cid+"_"+f.key, f.newValue.toByteArray())
-	              })  
-	            }
-	          })
-	        }
-  		    val shash4block = block.stateHash.toStringUtf8
-  		    val shash4local = this.GetComputeMerkle4String
-  		    if(shash4block.equals(shash4local)){
-  		      b = true
-  		    }else{
-  		      b = false
-  		      this.log.error("system_name="+this.SystemName+"\t verify World State is failed, hash4block="+shash4block+"\t hash4local="+shash4local)
-  		    }
-      }catch{
-        case e:Exception =>{
-          throw e;
-        }
-		  }finally{
-		    //todo
-		  }
-  		  
-		 b
-
-  }
-  	
   	
   	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   	
@@ -326,7 +253,8 @@ private class  MultiDBMgr (val SystemName:String) {
     	       }
   	      }catch{
     		    case e:Exception =>{
-    		      log.error("MultiDBMgr_" + SystemName + "_" + s"ImpDataPreload Create failed, error info= "+e.getMessage)
+    		      RepLogger.error(RepLogger.Storager_Logger,  
+  			      "MultiDBMgr_" + SystemName + "_" + "ImpDataPreload Create failed, error info= "+e.getMessage)
     		      throw e
     		    }
   		    }
@@ -348,10 +276,8 @@ private class  MultiDBMgr (val SystemName:String) {
     while (iterator.hasNext) {
       val key = iterator.next()
       val tmp = DBOps(key)
-      if(tmp != null){
-        if((System.currentTimeMillis() - tmp.getUseTime) > this.checktime){
+      if(tmp != null && (System.currentTimeMillis() - tmp.getUseTime) > this.checktime){
           exists += key
-        }
       }
     }
     exists.foreach(f => {
@@ -359,7 +285,8 @@ private class  MultiDBMgr (val SystemName:String) {
         DBOps -= f
       }catch{
         case e:Exception =>{
-    		      log.error("MultiDBMgr_" + SystemName + "_" + s"ImpDataPreload clear failed, error info= "+e.getMessage)
+          RepLogger.error(RepLogger.Storager_Logger,  
+  			      "MultiDBMgr_" + SystemName + "_" + s"ImpDataPreload clear failed, error info= "+e.getMessage)
     		      throw e
     		    }
       }
@@ -380,7 +307,8 @@ private class  MultiDBMgr (val SystemName:String) {
       DBOps -= InstanceName
      }catch{
         case e:Exception =>{
-    		      log.error("MultiDBMgr_" + SystemName + "_" + s"ImpDataPreload Free failed, error info= "+e.getMessage)
+          RepLogger.error(RepLogger.Storager_Logger,  
+  			      "MultiDBMgr_" + SystemName + "_" + "ImpDataPreload Free failed, error info= "+e.getMessage)
     		      throw e
     		    }
       }
@@ -422,7 +350,8 @@ object ImpDataPreloadMgr{
     	       dbop = singleobj.GetImpDataPreload(InstanceName)
   	      }catch{
     		    case e:Exception =>{
-    		      log.error("ImpDataPreloadMgr_" + SystemName + "_" + s"ImpDataPreload Create failed, error info= "+e.getMessage)
+    		      RepLogger.error(RepLogger.Storager_Logger,  
+  			      "ImpDataPreloadMgr_" + SystemName + "_" + "ImpDataPreload Create failed, error info= "+e.getMessage)
     		      throw e
     		    }
   		    }
@@ -468,7 +397,8 @@ object ImpDataPreloadMgr{
     	       }
   	      }catch{
     		    case e:Exception =>{
-    		      log.error("ImpDataPreloadMgr_" + SystemName + "_" + s"ImpDataPreload Free failed, error info= "+e.getMessage)
+    		      RepLogger.error(RepLogger.Storager_Logger,  
+  			      "ImpDataPreloadMgr_" + SystemName + "_" + "ImpDataPreload Free failed, error info= "+e.getMessage)
     		      throw e
     		    }
   		    }

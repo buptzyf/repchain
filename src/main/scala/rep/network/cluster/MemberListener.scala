@@ -1,5 +1,5 @@
 /*
- * Copyright  2018 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
+ * Copyright  2019 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,23 +16,26 @@
 
 package rep.network.cluster
 
-import akka.actor.{Actor, Address}
+import akka.actor.{Actor, Address,Props}
 import akka.cluster.ClusterEvent._
 import akka.cluster.pubsub.DistributedPubSub
 import akka.cluster.{Cluster, MemberStatus}
 import rep.app.conf.TimePolicy
+import rep.app.conf.SystemProfile
 import rep.network.Topic
-import rep.network.base.ModuleHelper
-import rep.network.cluster.MemberListener.{MemberDown, Recollection}
-import rep.network.module.ModuleManager.ClusterJoined
+import rep.network.cluster.MemberListener.{ Recollection}
 import rep.network.tools.PeerExtension
-import rep.utils.GlobalUtils.ActorType
+import rep.utils.GlobalUtils.{ActorType,EventType}
 import rep.utils.{ TimeUtils}
-import rep.log.trace.RepLogHelp
-import rep.log.trace.LogType
 import org.slf4j.LoggerFactory
-import scala.collection.mutable
-
+import scala.collection.mutable.HashMap
+import rep.network.base.ModuleBase
+import rep.network.sync.SyncMsg.StartSync
+import scala.util.control.Breaks._
+import scala.collection.mutable.ArrayBuffer
+import rep.log.RepLogger
+import rep.protos.peer.Event
+import rep.network.util.NodeHelp
 
 /**
   * Cluster节点状态监听模块
@@ -42,9 +45,7 @@ import scala.collection.mutable
   * @update 2018-05 jiangbuyun
   **/
 object MemberListener {
-
-  //断网消息
-  case class MemberDown(address: Address)
+  def props(name: String): Props = Props(classOf[MemberListener], name)
   //稳定节点回收请求
   case object Recollection
 
@@ -57,7 +58,7 @@ object MemberListener {
   * @since 1.0
   **/
 
-class MemberListener extends Actor with ClusterActor with ModuleHelper {
+class MemberListener(MoudleName:String) extends ModuleBase(MoudleName) with ClusterActor {
 
   import context.dispatcher
 
@@ -69,9 +70,9 @@ class MemberListener extends Actor with ClusterActor with ModuleHelper {
 
   val cluster = Cluster(context.system)
 
-  var preloadNodesMap = mutable.HashMap[ Address, Long ]()
+  var preloadNodesMap = HashMap[ Address, (Long,String) ]()
 
-  def scheduler = context.system.scheduler
+  //def scheduler = context.system.scheduler
 
 
   override def preStart(): Unit =
@@ -100,83 +101,73 @@ class MemberListener extends Actor with ClusterActor with ModuleHelper {
   //必须缓存，如果memActor跪了则每次出块就会出问题
   //同步的时候一定要把nodes也同步
   var nodes = Set.empty[ Address ]
+  
 
+  
+  
+  
+  
   def receive = {
 
     //系统初始化时状态
     case state: CurrentClusterState =>
-      println("Member call first time")
-      nodes = state.members.collect {
-        case m if m.status == MemberStatus.Up => m.address
-      }
-      pe.resetNodes(nodes)
-      pe.resetStableNodes(nodes)
-      if (!nodes.isEmpty) {
-        pe.resetSeedNode(nodes.head)
-        getActorRef(ActorType.MODULE_MANAGER) ! ClusterJoined
-      }
-
+      RepLogger.trace(RepLogger.System_Logger, this.getLogMsgPrefix("Member call first time"))
+      //nodes = state.members.collect {
+      //  case m if m.status == MemberStatus.Up => m.address
+      //}
+      var snodes  = new ArrayBuffer[(Address ,String)]()
+      state.members.foreach(m=>{
+        if (m.status == MemberStatus.Up){
+          nodes += m.address
+          if(NodeHelp.isCandidatorNode(m.roles)){
+            snodes.append((m.address,NodeHelp.getNodeName(m.roles)))
+            sendEvent(EventType.PUBLISH_INFO, mediator, NodeHelp.getNodeName(m.roles), Topic.Event, Event.Action.MEMBER_UP)
+          }
+        }
+      })
+      
+      pe.getNodeMgr.resetNodes(nodes)
+      pe.getNodeMgr.resetStableNodes(snodes.toSet)
       //成员入网
     case MemberUp(member) =>
       nodes += member.address
-      /*if(member.roles == null || member.roles.isEmpty){
-        print()
-      }*/
-      //log.info("Member is Up: {}. {} nodes in cluster",
-      //  member.address, nodes.size)
-      RepLogHelp.logMsg(log,LogType.INFO, "Member is Up: {}. {} nodes in cluster"+"~"+member.address+"~"+nodes.size)
-      if (nodes.size == 1) pe.resetSeedNode(member.address)
-      
-      pe.putNode(member.address)
-      if(member.roles != null && !member.roles.isEmpty && member.roles.contains("CRFD-Node")){
-        preloadNodesMap.put(member.address, TimeUtils.getCurrentTime())
+      RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("Member is Up: {}. {} nodes in cluster"+"~"+member.address+"~"+nodes.size))
+      pe.getNodeMgr.putNode(member.address)
+      if(member.roles != null && !member.roles.isEmpty && NodeHelp.isCandidatorNode(member.roles)){
+        preloadNodesMap.put(member.address, (TimeUtils.getCurrentTime(),NodeHelp.getNodeName(member.roles)))
+        sendEvent(EventType.PUBLISH_INFO, mediator, NodeHelp.getNodeName(member.roles), Topic.Event, Event.Action.MEMBER_UP)
       }
       
       scheduler.scheduleOnce(TimePolicy.getSysNodeStableDelay millis,
         self, Recollection)
         
-      //判断自己是否已经join到网络中
-      addr_self.contains(member.address.toString) match {
-        case true =>
-          getActorRef(ActorType.MODULE_MANAGER) ! ClusterJoined
-        case false => //ignore
-      }
-      
-      
       //成员离网
     case MemberRemoved(member, _) =>
       nodes -= member.address
       //log.info("Member is Removed: {}. {} nodes cluster",
         //member.address, nodes.size)
-        RepLogHelp.logMsg(log,LogType.INFO, "Member is Removed: {}. {} nodes cluster"+"~"+member.address+"~"+nodes.size)
+      RepLogger.info(RepLogger.System_Logger,  "Member is Removed: {}. {} nodes cluster"+"~"+member.address+"~"+nodes.size)
       preloadNodesMap.remove(member.address)
-      pe.removeNode(member.address)
-      pe.removeStableNode(member.address)
-      //Tell itself voter actor to judge if the downer is blocker or not
-      getActorRef(ActorType.VOTER_MODULE) ! MemberDown(member.address)
+      pe.getNodeMgr.removeNode(member.address)
+      pe.getNodeMgr.removeStableNode(member.address)
+      sendEvent(EventType.PUBLISH_INFO, mediator, NodeHelp.getNodeName(member.roles), Topic.Event, Event.Action.MEMBER_DOWN)
+      
 
-    // For test
-//    case Event(addr, topic, action, blk) =>
-//      topic match {
-//        case Topic.Block =>
-//          action match {
-//            case Event.Action.BLOCK_SYNC_SUC =>
-//              println(s"$addr sync sucess, ${pe.getSysName}")
-//            case _ => //ignore
-//          }
-//        case _ => //ignore
-//      }
-
+   
       //稳定节点收集
     case Recollection =>
       Thread.sleep(TimePolicy.getStableTimeDur) //给一个延迟量
-      println(pe.getSysTag + " MemberListening recollection")
+      RepLogger.trace(RepLogger.System_Logger, this.getLogMsgPrefix(" MemberListening recollection"))
       preloadNodesMap.foreach(node => {
-        if (isStableNode(node._2, TimePolicy.getSysNodeStableDelay)) {
-          pe.putStableNode(node._1)
+        if (isStableNode(node._2._1, TimePolicy.getSysNodeStableDelay)) {
+          pe.getNodeMgr.putStableNode(node._1,node._2._2)
+          if(pe.getNodeMgr.getStableNodes.size >= SystemProfile.getVoteNoteMin){
+            //组网成功之后开始系统同步
+            pe.getActorRef(ActorType.synchrequester) ! StartSync(true)
+          }
         }
       })
-      if (preloadNodesMap.size > 0) pe.getStableNodes.foreach(node => {
+      if (preloadNodesMap.size > 0) pe.getNodeMgr.getStableNodes.foreach(node => {
         if (preloadNodesMap.contains(node)) preloadNodesMap.remove(node)
       })
       if (preloadNodesMap.size > 0) self ! Recollection
@@ -185,32 +176,29 @@ class MemberListener extends Actor with ClusterActor with ModuleHelper {
       nodes -= event.remoteAddress
       log.info("Member is Removed: {}. {} nodes cluster", event.remoteAddress, nodes.size)
       preloadNodesMap.remove(event.remoteAddress)
-      pe.removeNode(event.remoteAddress)
-      pe.removeStableNode(event.remoteAddress)
-      //Tell itself voter actor to judge if the downer is blocker or not
-      getActorRef(ActorType.VOTER_MODULE) ! MemberDown(event.remoteAddress)
+      pe.getNodeMgr.removeNode(event.remoteAddress)
+      pe.getNodeMgr.removeStableNode(event.remoteAddress)
+      
    
     case MemberLeft(member) => //ignore
       nodes -= member.address
       //log.info("Member is Removed: {}. {} nodes cluster",
       //  member.address, nodes.size)
-      RepLogHelp.logMsg(log,LogType.INFO, "Member is Removed: {}. {} nodes cluster"+"~"+member.address+"~"+nodes.size)
+      RepLogger.info(RepLogger.System_Logger, "Member is Removed: {}. {} nodes cluster"+"~"+member.address+"~"+nodes.size)
       preloadNodesMap.remove(member.address)
-      pe.removeNode(member.address)
-      pe.removeStableNode(member.address)
-      //Tell itself voter actor to judge if the downer is blocker or not
-      getActorRef(ActorType.VOTER_MODULE) ! MemberDown(member.address)
+      pe.getNodeMgr.removeNode(member.address)
+      pe.getNodeMgr.removeStableNode(member.address)
+      
       
     case MemberExited(member) => //ignore
       nodes -= member.address
       //log.info("Member is Removed: {}. {} nodes cluster",
       //  member.address, nodes.size)
-       RepLogHelp.logMsg(log,LogType.INFO, "Member is Removed: {}. {} nodes cluster"+"~"+member.address+"~"+nodes.size)
+      RepLogger.info(RepLogger.System_Logger,  "Member is Removed: {}. {} nodes cluster"+"~"+member.address+"~"+nodes.size)
       preloadNodesMap.remove(member.address)
-      pe.removeNode(member.address)
-      pe.removeStableNode(member.address)
-      //Tell itself voter actor to judge if the downer is blocker or not
-      getActorRef(ActorType.VOTER_MODULE) ! MemberDown(member.address)
+      pe.getNodeMgr.removeNode(member.address)
+      pe.getNodeMgr.removeStableNode(member.address)
+      
 
     case _: MemberEvent => // ignore
   }

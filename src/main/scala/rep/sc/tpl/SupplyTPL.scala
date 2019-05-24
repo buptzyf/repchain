@@ -1,7 +1,7 @@
 
 
 /*
- * Copyright  2018 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
+ * Copyright  2019 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,7 +18,6 @@
 
 package rep.sc.tpl
 
-import rep.sc.contract._
 import org.json4s._
 import org.json4s.jackson.JsonMethods._
 import scala.reflect.ManifestFactory.classType
@@ -27,11 +26,15 @@ import org.json4s.native.Serialization
 import org.json4s.native.Serialization.{read, write}
 import org.json4s.{DefaultFormats, Formats, jackson}
 
+import rep.sc.tpl.SupplyType._
+import rep.sc.scalax.IContract
+import rep.sc.scalax.ContractContext
+import rep.protos.peer.ActionResult
+
 /**
  * 供应链分账合约
  */
 class SupplyTPL extends IContract {
-    import rep.sc.tpl.SupplyType._
     
     val SPLIT_CHAR  = "_";
     val TPL_MODE  = "_PM";
@@ -39,62 +42,34 @@ class SupplyTPL extends IContract {
     
     
     def init(ctx: ContractContext){      
-      println(s"tid: $ctx.t.txid")
+      println(s"tid: $ctx.t.id")
     }
     
-    /**
-     * 追加确认签名 TODO 逻辑实现
-     */
-    def confirmSign(ctx: ContractContext, data:IPTConfirm ):Object={
-      null
-    }
-     /**
-     * 取消追加确认签名 TODO 逻辑实现
-     */
-    def cancelSign(ctx: ContractContext, data:IPTConfirm ):Object={
-      null
-    }
-
-   /**
-    *
-    * @param ctx
-    * @param data
-    * @return
-    */
-    def SignUp(ctx: ContractContext, data:Map[String,String]):Object = {
-      var addr = ""
-      for((k,v)<-data){
-        ctx.api.check(ctx.t.cert.toStringUtf8,ctx.t)
-        addr = ctx.api.signup(k,v)
-      }
-      addr
-    }
-
    /**
      * 设计方、原料方、生产方、销售方 签订对销售额的分成合约, 对于销售方账号+产品型号决定唯一的分账合约
      */
-    def signShare(ctx: ContractContext, data:IPTSignShare ):Object={
+    def signShare(ctx: ContractContext, data:IPTSignShare ):ActionResult={
       val sid = data.account_sale +SPLIT_CHAR + data.product_id
       val pid = sid+TPL_MODE
       //签约输入持久化,默认的类型转换无法胜任，以json字符串形式持久化
       ctx.api.setVal(sid, write(data))
       ctx.api.setVal(pid, TPL.Share)
-      sid
+      null
     }
 
-    def signFixed(ctx: ContractContext, data:IPTSignFixed ):Object={
+    def signFixed(ctx: ContractContext, data:IPTSignFixed ):ActionResult={
       val sid = data.account_sale +SPLIT_CHAR + data.product_id
       val pid = sid+TPL_MODE
       //签约输入持久化
       ctx.api.setVal(sid, write(data))
       ctx.api.setVal(pid, TPL.Fixed)
-      sid
+      null
     }
     
     /**
      * 分账的调度方法，负责根据调用相应的分账模版, 传入模版定制参数和销售数据,进行分账
      */
-    def split(ctx: ContractContext, data:IPTSplit ):Object={
+    def split(ctx: ContractContext, data:IPTSplit ):ActionResult={
       //根据销售方账号和产品Id获得分账脚本
       val sid = data.account_sale +SPLIT_CHAR + data.product_id
       val pid = sid + TPL_MODE
@@ -103,7 +78,7 @@ class SupplyTPL extends IContract {
       //根据签约时选择的分账方式模版,验证定制参数
       val mr = tm match {
         case TPL.Share =>
-          val sp0 = ctx.api.getVal(sid)
+          val sp0:Any = ctx.api.getVal(sid)
           val sp = read[IPTSignShare](ctx.api.getVal(sid).asInstanceOf[String])
           splitShare(data.amount, sp.account_remain, sp.tpl_param)
         case TPL.Fixed =>
@@ -112,7 +87,7 @@ class SupplyTPL extends IContract {
       }
       //返回分账计算结果
       addToAccount(ctx, mr)
-      mr
+      null
     }
     
     /**
@@ -120,7 +95,7 @@ class SupplyTPL extends IContract {
      */
     def addToAccount(ctx: ContractContext, mr:Map[String,Int]){
       for ((k, v) <- mr) {
-          val sk =  ctx.api.getVal(k)
+          val sk :Any=  ctx.api.getVal(k)
           var dk = if(sk==null) 0 else sk.toString.toInt
           ctx.api.setVal(k, dk+v)
       }
@@ -128,7 +103,7 @@ class SupplyTPL extends IContract {
     /**
      * 合约方法入口
      */
-    def onAction(ctx: ContractContext,action:String, sdata:String ):Object={
+    def onAction(ctx: ContractContext,action:String, sdata:String ):ActionResult={
       val json = parse(sdata)
       
       action match {
@@ -138,20 +113,7 @@ class SupplyTPL extends IContract {
           signFixed(ctx,json.extract[IPTSignFixed])
         case ACTION.Split => 
           split(ctx, json.extract[IPTSplit])
-        case ACTION.ConfirmSign =>
-          confirmSign(ctx,json.extract[IPTConfirm])
-        case ACTION.CancelSign =>
-          cancelSign(ctx, json.extract[IPTConfirm])
-        case ACTION.SignUp =>
-          println(s"SignUp")
-          SignUp(ctx, json.extract[Map[String,String]])
-
       }
-    }
-    //TODO case  Transaction.Type.CHAINCODE_DESC 增加对合约描述的处理
-    def descAction(ctx: ContractContext,action:String, sdata:String ):String={
-      val json = parse(sdata)
-      null
     }
  
 /**

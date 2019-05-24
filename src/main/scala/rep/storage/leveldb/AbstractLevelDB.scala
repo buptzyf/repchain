@@ -1,5 +1,5 @@
 /*
- * Copyright  2018 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
+ * Copyright  2019 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -19,16 +19,14 @@ package rep.storage.leveldb
 import scala.collection.immutable
 import scala.collection.mutable
 import rep.utils._
-import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
 import rep.storage.IdxPrefix
 import rep.storage.util.StoreUtil
 import com.google.protobuf.ByteString
-import scala.math._ 
+import scala.math._
 import rep.crypto._
-import rep.log.trace.RepLogHelp
-import rep.log.trace.LogType
 import org.slf4j.LoggerFactory
+import rep.log.RepLogger
 
 
 /**
@@ -37,100 +35,7 @@ import org.slf4j.LoggerFactory
  * @since	2017-09-28
  * @category	该类实现公共方法。
  * */
-abstract class AbstractLevelDB extends ILevelDB  {
-  protected def log = LoggerFactory.getLogger(this.getClass)
-  protected var IncrementWorldState : immutable.TreeMap[String,Array[Byte]] = new immutable.TreeMap[String,Array[Byte]]() 
-  protected var GlobalMerkle : Array[Byte] = null
-  
-  /**
-	 * @author jiangbuyun
-	 * @version	0.7
-	 * @since	2017-09-28
-	 * @category	初始化Merkle值
-	 * @param	无
-	 * @return	无
-	 * */
-  protected  def  ReloadMerkle={
-    this.GlobalMerkle = null
-    this.IncrementWorldState = new immutable.TreeMap[String,Array[Byte]]()
-    val key = IdxPrefix.WorldStateForInternetPrefix + IdxPrefix.GlobalWorldStateValue
-    val v = this.Get(key)
-    if(v != null){
-        this.GlobalMerkle = v
-    }
-  }
-  
-  /**
-	 * @author jiangbuyun
-	 * @version	0.7
-	 * @since	2017-09-28
-	 * @category	系统WorldState改变时需要调用该函数完成WorldState的Merkle重新计算
-	 * @param	key 指定的键，value Array[Byte] 修改的键值
-	 * @return	无
-	 * */
-  protected  def PutWorldStateToMerkle(key:String,value:Array[Byte]){
-    val prefix = IdxPrefix.WorldStateKeyPreFix
-    if(key.startsWith(prefix)){
-      val sv = Sha256.hash(value)
-      this.IncrementWorldState += key -> sv
-    }
-  }
-  
-   /**
-	 * @author jiangbuyun
-	 * @version	0.7
-	 * @since	2017-09-28
-	 * @category	计算当前WorldState的Merkle的值
-	 * @param	无
-	 * @return	返回WorldState的Merkle值 Array[Byte]
-	 * */
-  override  def   GetComputeMerkle:Array[Byte]={
-    var rel :Array[Byte] = null
-    val source = this.IncrementWorldState.values.toArray
-    if(source.size > 0){
-       var value : Array[Byte] = null
-       var i = 1
-       if(this.GlobalMerkle != null){
-         i = 0
-         value = this.GlobalMerkle
-       }else{
-         value = source(0)
-         i = 1
-       }
-      
-       while(i < source.size){
-         value = Array.concat(value , source(i))
-         i += 1
-       }
-       rel = Sha256.hash(value)
-    }else{
-      rel = this.GlobalMerkle
-    }
-    if(rel != null){
-      //println("=========################getmerkle value="+BytesHex.bytes2hex(rel)+"\tsource size="+source.size)
-    }else{
-      //println("=========################getmerkle value=null"+"\tsource size="+source.size)
-    }
-    rel
-  }
-  
-  /**
-	 * @author jiangbuyun
-	 * @version	0.7
-	 * @since	2017-09-28
-	 * @category	计算当前WorldState的Merkle的值
-	 * @param	无
-	 * @return	返回WorldState的Merkle值 String
-	 * */
-  override  def   GetComputeMerkle4String:String={
-     var rel:String = "" 
-     val bb = GetComputeMerkle
-     if(bb != null){
-       rel =  BytesHex.bytes2hex(bb)
-     }
-       
-     rel
-  }
+abstract class AbstractLevelDB(SystemName:String) extends ILevelDB  {
   
   /**
 	 * @author jiangbuyun
@@ -164,7 +69,8 @@ abstract class AbstractLevelDB extends ILevelDB  {
   			l = str.toLong
   		}catch{
   			case e:Exception =>{
-  				    log.error( s"DBOP toLong failed, error info= "+e.getMessage)
+  			  RepLogger.error(RepLogger.Storager_Logger,  
+  			      "DBOP toLong failed, error info= "+e.getMessage)
 			  }
   		}
 		}
@@ -187,7 +93,8 @@ abstract class AbstractLevelDB extends ILevelDB  {
   			l = str.toInt
   		}catch{
   			case e:Exception =>{
-  				    log.error( s"DBOP toInt failed, error info= "+e.getMessage)
+  			  RepLogger.error(RepLogger.Storager_Logger,  
+  			      "DBOP toInt failed, error info= "+e.getMessage)
 			  }
   		}
 		}
@@ -221,7 +128,8 @@ abstract class AbstractLevelDB extends ILevelDB  {
 	def printlnHashMap(map : mutable.HashMap[String,Array[Byte]])={
 	  if(map != null){
 	    map.foreach(f=>{
-	      log.warn("\tkey="+f._1 + "\tvalue=" +toString(f._2))
+	      RepLogger.trace(RepLogger.Storager_Logger,  
+  			      "\tkey="+f._1 + "\tvalue=" +toString(f._2))
 	    })
 	  }
 	}

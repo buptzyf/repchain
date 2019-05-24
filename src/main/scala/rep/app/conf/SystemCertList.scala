@@ -1,5 +1,5 @@
 /*
- * Copyright  2018 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
+ * Copyright  2019 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,8 +17,9 @@
 package rep.app.conf
 
 import java.io._
-import rep.crypto.ECDSASign
-
+import rep.utils.IdTool
+import rep.crypto.cert.SignTool
+import rep.log.RepLogger
 
 /**
  * @author jiangbuyun
@@ -32,16 +33,16 @@ object SystemCertList {
     synchronized{
       if(this.mySystemCertList.isEmpty){
         val list = SystemProfile.getVoteNodeList
-        val clist = ECDSASign.getAliasOfTrustkey
+        val clist = SignTool.getAliasOfTrustkey
         var rlist : scala.collection.mutable.ArrayBuffer[String] = new scala.collection.mutable.ArrayBuffer[String]()
-        var i = 0
-        for( i <- 1 to clist.size()-1){
+        for( i <- 0 until clist.size()){
            val alias = clist.get(i)
            if(list.contains(alias)){
              rlist += alias
            }
         }
         this.mySystemCertList = rlist.toSet[String]
+        RepLogger.trace(RepLogger.System_Logger, this.mySystemCertList.mkString(","))
       }
     }
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright  2018 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
+ * Copyright  2019 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -24,93 +24,67 @@ import rep.protos.peer._
 import akka.actor.{Actor, ActorRef, Props, actorRef2Scala}
 import rep.storage._
 import rep.storage.IdxPrefix.WorldStateKeyPreFix
-import rep.log.trace.RepLogHelp
-import rep.log.trace.LogType
 import org.slf4j.LoggerFactory
-import rep.sc.Shim.Oper
-import rep.utils.Json4s._
 import com.google.protobuf.ByteString
 import org.json4s._
-
+import rep.log.RepLogger
+import rep.utils.IdTool
+import rep.sc.SandboxDispatcher.DoTransactionOfSandbox
 
 /**
  * @author c4w
  */
-class SandboxJS(cid:String) extends Sandbox(cid){
+class SandboxJS(cid:ChaincodeId) extends Sandbox(cid){
  
   val sandbox= new ScriptEngineManager().getEngineByName("nashorn")
   sandbox.put("shim",shim)
   
-  override def doTransaction(t:Transaction,from:ActorRef, da:String):DoTransactionResult ={
-   val tm_start = System.currentTimeMillis()
+  override def doTransaction(dotrans: DoTransactionOfSandbox):DoTransactionResult ={
     //上下文可获得交易
+    val t = dotrans.t
+    val da = dotrans.da
     sandbox.put("tx", t)
     //for test print sandbox id
     sandbox.put("addr_self", this.addr_self)
-    sandbox.put("tx_account", t.cert.toStringUtf8)
-    //每次执行脚本之前重置 
-    //shim.reset() 由于DoTransactionResult依赖此两项,不能直接clear,要么clone一份给result,
+    sandbox.put("tx_account", t.signature.get.certId.get.creditCode)
     //要么上一份给result，重新建一份
     shim.sr = ImpDataPreloadMgr.GetImpDataPreload(sTag, da)
-    shim.mb = scala.collection.mutable.Map[String,Array[Byte]]()
-    shim.ol = scala.collection.mutable.ListBuffer.empty[Oper]
+    shim.ol = scala.collection.mutable.ListBuffer.empty[OperLog]
     //如果执行中出现异常,返回异常
     try{
-      val cs = t.payload.get
-      val cid = cs.chaincodeID.get.name
-//      println(s"doTransaction  type:${t.`type`}  cid:$cid addr:$addr_self")
-      val r:JValue = t.`type` match {
+      val cs = t.para.spec.get.codePackage
+      val cid = IdTool.getTXCId(t)
+      val r:ActionResult = t.`type` match {
         //部署合约时执行整个合约脚本，驻留funcs
         case Transaction.Type.CHAINCODE_DEPLOY => 
           //执行并加载functions
-          sandbox.eval(cs.codePackage.toStringUtf8())
+          sandbox.eval(cs)
           //deploy返回chancode.name
           //利用kv记住cid对应的txid,并增加kv操作日志
-          val txid = ByteString.copyFromUtf8(t.txid).toByteArray()
+          val txid = ByteString.copyFromUtf8(t.id).toByteArray()
           val key = WorldStateKeyPreFix+ cid
           shim.sr.Put(key,txid)
           //ol value改为byte array
-          shim.ol.append(new Oper(key, null, txid))
-          encodeJson(cid)
+          shim.ol.append(new OperLog(key, null, ByteString.copyFrom(txid)))
+          new ActionResult(1)
          //调用方法时只需要执行function
         case  Transaction.Type.CHAINCODE_INVOKE =>
-          var tm_start1 = System.currentTimeMillis()  
-
-          val r1 = sandbox.eval(cs.ctorMsg.get.function)
-          //val r2 = r1.asInstanceOf[Any]
-          val r2 = encodeJson(r1)
-         
-          val span1 = System.currentTimeMillis()-tm_start1
-            //println(s"****container span1:$span1")
-            r2
-          //需自行递归处理所有层次的ScriptObjectMirror 二则akka默认的消息java序列化无法处理ScriptObjectMirror
-          //json.callMember("stringify", r1).asInstanceOf[Any].toJson;
+          val r1 = sandbox.eval(t.para.ipt.get.function)
+          r1.asInstanceOf[ActionResult]
+        case _ => throw SandboxException(ERR_UNKNOWN_TRANSACTION_TYPE)
       }
-      //modify by jiangbuyun 20170802
-      val mb = shim.sr.GetComputeMerkle4String//sr.GetComputeMerkle  //mh.computeWorldState4Byte()
-      val mbstr = mb match {
-        case null => None
-        case _ => Option(mb)  //Option(BytesHex.bytes2hex(mb))
-      }
-      new DoTransactionResult(t,from, r, 
-          mbstr,
-         shim.ol.toList,shim.mb,None)
+      new DoTransactionResult(t.id, r, 
+         shim.ol.toList,None)
     }catch{
       case e: Exception => 
-        shim.rollback        
-        log.error(t.txid, e)
+        RepLogger.except(RepLogger.Sandbox_Logger, t.id, e)
         
         //val e1 = new Exception(e.getMessage, e.getCause)
         //akka send 无法序列化原始异常,简化异常信息
         val e1 = new SandboxException(e.getMessage)
-        new DoTransactionResult(t,from, null,
-           None,
-          shim.ol.toList,shim.mb, 
+        new DoTransactionResult(t.id, null,
+          shim.ol.toList, 
           Option(akka.actor.Status.Failure(e1)))           
-    }finally{
-      val span = System.currentTimeMillis()-tm_start
-      RepLogHelp.logMsg(log,LogType.INFO,Sandbox.log_prefix+"~"+ s"Span doTransaction:$span")
-      //  logMsg(LOG_TYPE.INFO, Sandbox.log_prefix, s"Span doTransaction:$span", "")
     }
   }
 }

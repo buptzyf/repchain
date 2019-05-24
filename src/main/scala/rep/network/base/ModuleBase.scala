@@ -1,5 +1,5 @@
 /*
- * Copyright  2018 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
+ * Copyright  2019 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -20,13 +20,12 @@ import akka.actor.{Actor, Address, ActorRef}
 import rep.app.system.ClusterSystem
 import rep.network.cluster.ClusterActor
 import rep.network.tools.PeerExtension
-import rep.network.tools.register.ActorRegister
 import rep.crypto.Sha256
 import scala.collection.mutable
-import rep.log.trace.RepLogHelp
-import rep.log.trace.LogType
 import org.slf4j.LoggerFactory
-import rep.log.trace.RepTimeTrace
+import rep.log.RepTimeTracer
+import rep.log.RepLogger
+import rep.utils.GlobalUtils.{ActorType}
 
 
 /**
@@ -38,16 +37,6 @@ import rep.log.trace.RepTimeTrace
   * @update 2018-05 jiangbuyun
   **/
 object ModuleBase {
-  def registerActorRef(sysTag: String, actorType: Int, actorRef: ActorRef) = {
-    ClusterSystem.getActorRegister(sysTag) match {
-      case None =>
-        val actorRegister = new ActorRegister()
-        actorRegister.register(actorType, actorRef)
-        ClusterSystem.register(sysTag, actorRegister)
-      case actR =>
-        actR.get.register(actorType, actorRef)
-    }
-  }
 }
 
 /**
@@ -58,104 +47,62 @@ object ModuleBase {
   * @param name 模块名称
   **/
 
-abstract class ModuleBase(name: String) extends Actor with ModuleHelper with ClusterActor with BaseActor{
-  val logPrefix = name
-  protected def log = LoggerFactory.getLogger(this.getClass)
-  val ptt :RepTimeTrace = RepTimeTrace.getRepTimeTrace()
-  /**
-    * 日志封装
-    *
-    * @param lOG_TYPE
-    * @param msg
-    */
-  def logMsg(lOG_TYPE: LogType, msg: String): Unit = {
-    RepLogHelp.logMsg(log,lOG_TYPE, pe.getSysTag + "-"  + msg + " ~ " + selfAddr, pe.getSysTag)
+abstract class  ModuleBase(name: String) extends Actor  with ClusterActor with BaseActor{
+  val pe = PeerExtension(context.system)
+  val atype = ModuleNameToIntActorType
+  atype match{
+    case 0 => 
+    case _ => pe.register(atype, self)
   }
-
+  
+  private def ModuleNameToIntActorType:Int={
+    name match{
+      case "memberlistener" => 1
+      case "modulemanager" => 2
+      case "webapi" => 3
+      case "peerhelper" => 4
+      case "blocker" => 5
+      case "preloaderoftransaction" => 6
+      case "endorser" => 7
+      case "voter" => 8
+      case "synchrequester" => 9
+      case "transactionpool" => 10
+      case "storager" => 11
+      case "synchresponser" => 12
+      case "statiscollecter" => 13
+      case "endorsementcollectioner" => 14
+      //case "endorsementrequester" => 15
+      case "confirmerofblock" => 16
+      case "gensisblock"  => 17
+      case "api" => 18
+      case "transactiondispatcher" => 19
+      case "dispatchofRecvendorsement" => 20
+      case "dispatchofpreload" => 21
+      case _ => 0
+    }
+  }
+  
+    
+  /**
+    * 日志前缀
+    *
+    */
+  def getLogMsgPrefix(msg:String):String = {
+    s"${pe.getSysTag}~${this.name}~${msg}~"
+  }
+  
   /**
     * 事件时间戳封装
-    *
     * @param msg
     * @param step
     * @param actorRef
     */
-  def logTime(timetag:String,time:Long,isstart:Boolean): Unit = {
-    ptt.addTimeTrace(pe.getSysTag, timetag, time, isstart)
-  }
-}
-
-/**
-  * 模块帮助功能接口
-  *
-  * @author shidianyue
-  * @version 1.0
-  **/
-trait ModuleHelper extends Actor {
-  val pe = PeerExtension(context.system)
-
-  /**
-    * 从注册中心获取actor引用
-    * @param sysTag
-    * @param actorType
-    * @return
-    */
-  def getActorRef(sysTag: String, actorType: Int): ActorRef = {
-    ClusterSystem.getActorRegister(sysTag).getOrElse(None) match {
-      case None => self
-      case actorReg: ActorRegister => actorReg.getActorRef(actorType).getOrElse(None) match {
-        case None => self
-        case actorRef: ActorRef => actorRef
-      }
-    }
-  }
-
-  /**
-    * 从注册中心获取actor引用
-    * @param actorType
-    * @return
-    */
-  def getActorRef(actorType: Int): ActorRef = {
-    ClusterSystem.getActorRegister(pe.getSysTag).getOrElse(None) match {
-      case None => self
-      case actorReg: ActorRegister => actorReg.getActorRef(actorType).getOrElse(None) match {
-        case None => self
-        case actorRef: ActorRef => actorRef
-      }
-    }
-  }
-
-  /**
-    * 向注册中心注册actor引用
-    * @param sysTag
-    * @param actorType
-    * @param actorRef
-    * @return
-    */
-  def registerActorRef(sysTag: String, actorType: Int, actorRef: ActorRef) = {
-    ClusterSystem.getActorRegister(sysTag) match {
-      case None =>
-        val actorRegister = new ActorRegister()
-        actorRegister.register(actorType, actorRef)
-        ClusterSystem.register(sysTag, actorRegister)
-      case actR =>
-        actR.get.register(actorType, actorRef)
-    }
-  }
-
-  /**
-    * 向注册中心注册actor引用
-    * @param actorType
-    * @param actorRef
-    * @return
-    */
-  def registerActorRef(actorType: Int, actorRef: ActorRef) = {
-    ClusterSystem.getActorRegister(pe.getSysTag) match {
-      case None =>
-        val actorRegister = new ActorRegister()
-        actorRegister.register(actorType, actorRef)
-        ClusterSystem.register(pe.getSysTag, actorRegister)
-      case actR =>
-        actR.get.register(actorType, actorRef)
+  def logTime(timetag:String,time:Long,isstart:Boolean,bheight:Long,trannum:Int): Unit = {
+    if(isstart){
+      RepTimeTracer.setStartTime(pe.getSysTag, timetag, time,bheight,trannum)
+    }else{
+      RepTimeTracer.setEndTime(pe.getSysTag, timetag, time,bheight,trannum)
     }
   }
 }
+

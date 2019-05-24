@@ -1,5 +1,5 @@
 /*
- * Copyright  2018 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
+ * Copyright  2019 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -38,7 +38,7 @@ with Matchers {
               message1: Array[Byte], message2: Array[Byte]) =>
       whenever(!seed1.sameElements(seed2) && !message1.sameElements(message2)) {
         //c4w for keypair from jks
-        val (skey1,pkey1) = ECDSASign.getKeyPairFromJKS(new File("jks/mykeystore_1.jks"),"123","1")
+       /* val (skey1,pkey1) = ECDSASign.getKeyPairFromJKS(new File("jks/mykeystore_1.jks"),"123","1")
         val (skey2,pkey2) = ECDSASign.getKeyPairFromJKS(new File("jks/mytruststore.jks"),"changeme","1")
         val (skey3,pkey3) = ECDSASign.getKeyPairFromJKS(new File("jks/mytruststore.jks"),"changeme","2")
         
@@ -54,7 +54,7 @@ with Matchers {
         ECDSASign.verify(sig, message2, pkey3) shouldNot be (true)
         (pkey1 == pkey2) should be (true)
         (pkey1 == pkey3) shouldNot be (true)
-
+*/
       }
     }
   }

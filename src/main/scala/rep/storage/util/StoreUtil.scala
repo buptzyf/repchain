@@ -1,5 +1,5 @@
 /*
- * Copyright  2018 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
+ * Copyright  2019 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -53,8 +53,7 @@ object StoreUtil {
     }
   }
   
-  private def Redo(MerkleTree:mutable.HashMap[Int,ArrayBuffer[Array[Byte]]],MaxGroup: Integer):Int={
-    var rel = 0
+  private def Redo(MerkleTree:mutable.HashMap[Int,ArrayBuffer[Array[Byte]]],MaxGroup: Integer){
     val maxlevel = MerkleTree.size
     var elems = MerkleTree(maxlevel)
     if(elems.length > 1){
@@ -62,7 +61,6 @@ object StoreUtil {
       MerkleTree += currentlevel -> StoreUtil.getNextLevelList4Byte(elems,MaxGroup)
       Redo(MerkleTree,MaxGroup)
     }
-    rel
   }
   
   

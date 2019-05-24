@@ -1,5 +1,5 @@
 /*
- * Copyright  2018 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
+ * Copyright  2019 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,26 +18,31 @@ package rep.utils
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream, ObjectInputStream, ObjectOutputStream}
 import java.security.cert.Certificate
+import scala.util.{Try, Success, Failure}
 
-import rep.crypto.ECDSASign
-import Json4s._
-import rep.crypto.BytesHex._
+import com.twitter.chill.KryoInjection
+import com.twitter.bijection._
 
+import org.json4s._
+import org.json4s.native.JsonMethods
+import org.json4s.native.JsonMethods._
+
+import org.json4s.native.Serialization.write
+import org.json4s.native.Serialization.read
 /**
   * Created by shidianyue on 2017/6/9.
+  * updated by c4w 2019/3
   */
 object SerializeUtils {
+  implicit val formats = DefaultFormats
+
   /**
     * Java 序列化方法
     * @param value
     * @return
     */
   def serialise(value: Any): Array[Byte] = {
-    val stream: ByteArrayOutputStream = new ByteArrayOutputStream()
-    val oos = new ObjectOutputStream(stream)
-    oos.writeObject(value)
-    oos.close
-    stream.toByteArray
+    KryoInjection(value)
   }
 
   /**
@@ -46,21 +51,31 @@ object SerializeUtils {
     * @return
     */
   def deserialise(bytes: Array[Byte]): Any = {
-    val ois = new ObjectInputStream(new ByteArrayInputStream(bytes))
-    val value = ois.readObject
-    ois.close
-    value
+    if(bytes == null)
+      return null;
+    KryoInjection.invert(bytes) match {
+      case Success(any) =>
+        any
+      case Failure(e) =>
+        null
+    }
   }
+
+def compactJson(src: Any): String = {
+    import org.json4s.native.Serialization
+    import org.json4s.native.JsonMethods._
+
+    implicit val formats = Serialization.formats(NoTypeHints)
+    compact(render(Extraction.decompose(src)))
+  }  
 
   /**
     * Json对象序列化
     * @param value
     * @return
     */
-  def serialiseJson(value: Any): Array[Byte] = {
-    val json = compactJson(value) 
-    //println(s"json $json")
-    json.getBytes
+  def toJson(v: AnyRef): String = {
+    write(v)
   }
 
   /**
@@ -68,22 +83,7 @@ object SerializeUtils {
     * @param bytes
     * @return
     */
-  def deserialiseJson(bytes: Array[Byte]): Any = {
-    if(bytes==null)
-      return null;
-    val json = new String(bytes)
-    parseAny(json)
+  def fromJson[A: Manifest](s: String): A = {
+    read[A](s)
   }
-
-  def main(args: Array[String]): Unit = {
-    import rep.sc.Shim.Oper
-    
-    ECDSASign.apply("1", "jks/mykeystore_1.jks", "123", "jks/mytruststore.jks", "changeme")
-    ECDSASign.preLoadKey("1")
-    val c = ECDSASign.getCert("1")
-    val cA = serialise(c)
-    val cert = deserialise(cA).asInstanceOf[Certificate]
-    println(cert.getPublicKey==c.getPublicKey)
-  }
-
 }

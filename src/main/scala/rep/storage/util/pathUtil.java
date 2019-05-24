@@ -1,5 +1,5 @@
 /*
- * Copyright  2018 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
+ * Copyright  2019 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -156,5 +156,19 @@ public class pathUtil {
 		}
 		
 		return p;
+	}
+	
+	public static byte[] longToByte(long number) {
+	    byte[] b = new byte[8];
+	    for (int i = 7; i >= 0; i--) {
+	      b[i] = (byte) (number % 256);
+	      number >>= 8;
+	    }
+	    return b;
+	}
+	
+	public static long byteToLong(byte[] b) {
+	    return ((((long) b[0] & 0xff) << 56) | (((long) b[1] & 0xff) << 48) | (((long) b[2] & 0xff) << 40) | (((long) b[3] & 0xff) << 32) | (((long) b[4] & 0xff) << 24)
+	        | (((long) b[5] & 0xff) << 16) | (((long) b[6] & 0xff) << 8) | ((long) b[7] & 0xff));
 	}
 }
