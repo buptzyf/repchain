@@ -41,13 +41,13 @@
 - 查看API  http://localhost:8081/swagger/index.html
 
 ## 修改配置
-- 生成RepChain节点密钥对及信任证书列表（见[《RepChain开发者指南》](https://gitee.com/BTAJL/repchain/attach_files/download?i=152687&u=http%3A%2F%2Ffiles.git.oschina.net%2Fgroup1%2FM00%2F04%2F54%2FPaAvDFtX24SAeIxpADEhgca3xCI727.pdf%3Ftoken%3D7afd728970886ea6909f1d49eb2fd081%26ts%3D1532484485%26attname%3DRepChain%25E5%25BC%2580%25E5%258F%2591%25E8%2580%2585%25E6%258C%2587%25E5%258D%2597.pdf) 2.1.5）
-- 制作创世区块（见[《RepChain开发者指南》](https://gitee.com/BTAJL/repchain/attach_files/download?i=152687&u=http%3A%2F%2Ffiles.git.oschina.net%2Fgroup1%2FM00%2F04%2F54%2FPaAvDFtX24SAeIxpADEhgca3xCI727.pdf%3Ftoken%3D7afd728970886ea6909f1d49eb2fd081%26ts%3D1532484485%26attname%3DRepChain%25E5%25BC%2580%25E5%258F%2591%25E8%2580%2585%25E6%258C%2587%25E5%258D%2597.pdf) 2.1.6）
-- 调整系统配置参数（见[《RepChain开发者指南》](https://gitee.com/BTAJL/repchain/attach_files/download?i=152687&u=http%3A%2F%2Ffiles.git.oschina.net%2Fgroup1%2FM00%2F04%2F54%2FPaAvDFtX24SAeIxpADEhgca3xCI727.pdf%3Ftoken%3D7afd728970886ea6909f1d49eb2fd081%26ts%3D1532484485%26attname%3DRepChain%25E5%25BC%2580%25E5%258F%2591%25E8%2580%2585%25E6%258C%2587%25E5%258D%2597.pdf) 2.1.7）
+- 生成RepChain节点密钥对及信任证书列表（见[《RepChain开发者指南》](https://gitee.com/BTAJL/repchain/attach_files/235993/download) 2.1.5）
+- 制作创世区块（见[《RepChain开发者指南》](https://gitee.com/BTAJL/repchain/attach_files/235993/download) 2.1.6）
+- 调整系统配置参数（见[《RepChain开发者指南》](https://gitee.com/BTAJL/repchain/attach_files/235993/download) 2.1.7）
 
 ## 打包
 - assembly 
 打包成jar包，进行分布式部署
 
-## 开源社区
+## 论坛社区
 - http://bbs.repchain.net.cn/ 
