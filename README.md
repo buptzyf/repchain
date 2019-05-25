@@ -1,5 +1,4 @@
 # RepChain
-响应式许可链
 [RepChain说明文档](https://gitee.com/BTAJL/repchain/attach_files)
 
 ## 参考阅读
@@ -11,7 +10,6 @@
 - [swagger-scala](https://github.com/swagger-api/swagger-scala-module)——API支持Swagger UI
 - [json4s](https://github.com/json4s/json4s)——在API层提供输入对象的json反序列化，返回结果的json序列化
 - [d3.js-force layout](https://github.com/d3/d3-3.x-api-reference/blob/master/Force-Layout.md)——入／离网节点的自动布局
-- [delight-nashorn-sandbox](https://github.com/javadelight/delight-nashorn-sandbox)——约束脚本执行时间的JavaScript引擎sandbox
 - [leveldb for java](https://github.com/dain/leveldb)——存取Blocks、Transactions索引
 - [java security](http://docs.oracle.com/javase/8/docs/technotes/guides/security/index.html)——hash、签名、密钥对及证书管理均采用jdk内置方法
 
