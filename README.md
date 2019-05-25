@@ -1,10 +1,9 @@
 # RepChain
 响应式许可链
-[RepChain概述](https://gitee.com/BTAJL/repchain/attach_files/download?i=175301&u=http%3A%2F%2Ffiles.git.oschina.net%2Fgroup1%2FM00%2F05%2F36%2FPaAvDFvFqPOAGc8WAAlT16a_C8E014.pdf%3Ftoken%3D4f3ba8c74c2f177fe4b135e54a5c0431%26ts%3D1539680499%26attname%3DRepChain%25E4%25BB%258B%25E7%25BB%258D.pdf)
-[RepChain开发者指南](https://gitee.com/BTAJL/repchain/attach_files/download?i=152687&u=http%3A%2F%2Ffiles.git.oschina.net%2Fgroup1%2FM00%2F04%2F54%2FPaAvDFtX24SAeIxpADEhgca3xCI727.pdf%3Ftoken%3D6c091eb97db08000fc2f475386fe82b5%26ts%3D1539680499%26attname%3DRepChain%25E5%25BC%2580%25E5%258F%2591%25E8%2580%2585%25E6%258C%2587%25E5%258D%2597.pdf)
+[RepChain说明文档](https://gitee.com/BTAJL/repchain/attach_files)
 
 ## 参考阅读
-- [akka getting start](http://doc.akka.io/docs/akka/current/intro/getting-started.html) ——系统内部模块采用akka actor实现
+- [akka](https://akka.io/) ——系统内部模块采用akka actor实现
 - [akka remoting security](http://doc.akka.io/docs/akka/current/scala/remoting.html) ——节点之间安全通信采用akka Remote支持的TLS
 - [akka serialization](http://doc.akka.io/docs/akka/current/scala/serialization.html)——节点之间消息交互采用protobuf序列化
 - [scalaPB](https://scalapb.github.io/)——从proto定义生成Scala类的工具
