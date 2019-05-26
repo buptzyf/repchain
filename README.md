@@ -33,7 +33,7 @@
 生成eclipse工程文件
 - 打开 Scala IDE, File->Import->Existing Projects,导入项目
 - 右键单击 rep.app.Repchain.scala,Run As->Scala Application(单机组网4个节点)
-- 运行配置VM参数 -Dlogback.configurationFile =conf/logback.xml (使logback配置生效)
+- 运行配置VM参数 -Dlogback.configurationFile=conf/logback.xml (使logback配置生效)
 - 查看实时图 http://localhost:8081/web/g1.html 
 - 查看API  http://localhost:8081/swagger/index.html
 
