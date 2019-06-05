@@ -240,10 +240,14 @@ class RestActor(moduleName: String) extends  ModuleBase(moduleName) {
     // 根据高度检索块的子节流
     case BlockHeightStream(h) =>
       val bb = sr.getBlockByHeight(h)
-      val body = akka.util.ByteString(bb)
-      val entity = HttpEntity.Strict(MediaTypes.`application/octet-stream`, body)
-      val httpResponse = HttpResponse(entity = entity)
-      sender ! httpResponse
+      if (bb == null) {
+        sender ! HttpResponse(entity = HttpEntity.Strict(MediaTypes.`application/octet-stream`,akka.util.ByteString.empty))
+      } else {
+        val body = akka.util.ByteString(bb)
+        val entity = HttpEntity.Strict(MediaTypes.`application/octet-stream`, body)
+        val httpResponse = HttpResponse(entity = entity)
+        sender ! httpResponse
+      }
 
     //根据block hash检索
     case BlockId(bid) =>
@@ -270,11 +274,15 @@ class RestActor(moduleName: String) extends  ModuleBase(moduleName) {
     // 根据txid检索交易字节流
     case TransactionStreamId(txId) =>
       val r = sr.getTransDataByTxId( txId)
-      val t = r.get
-      val body = akka.util.ByteString(t.toByteArray)
-      val entity = HttpEntity.Strict(MediaTypes.`application/octet-stream`, body)
-      val httpResponse = HttpResponse(entity = entity)
-      sender ! httpResponse
+      if (r.isEmpty) {
+        sender ! HttpResponse(entity = HttpEntity.Strict(MediaTypes.`application/octet-stream`,akka.util.ByteString.empty))
+      } else {
+        val t = r.get
+        val body = akka.util.ByteString(t.toByteArray)
+        val entity = HttpEntity.Strict(MediaTypes.`application/octet-stream`, body)
+        val httpResponse = HttpResponse(entity = entity)
+        sender ! httpResponse
+      }
 
     // 获取链信息
     case ChainInfo =>
