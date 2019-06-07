@@ -39,6 +39,19 @@ class TransactionPoolMgr {
     result.reverse
   }
 
+  /*def printlnlist={
+    transLock.lock()
+    try{
+      var i = 0
+      transactions.toList.foreach(f=>{
+        println(s"i=${i},txid=${f._1},time=${f._2.createTime}")
+      })
+      
+    }finally{
+      transLock.unlock()
+    }
+  }*/
+  
   def putTran(tran: Transaction): Unit = {
     transLock.lock()
     try{
