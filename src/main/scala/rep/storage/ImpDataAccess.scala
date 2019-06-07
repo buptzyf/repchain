@@ -505,7 +505,7 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
       if (trans.length > 0) {
         breakable(
         trans.foreach(f => {
-          if (f.id.equals(txid) && f.getCid.chaincodeName == SystemProfile.getAccountChaincodeName && f.`type` == rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE && f.para.ipt.get.function == "UpdateCertStatus") {
+          if (f.id.equals(txid) && f.getCid.chaincodeName == SystemProfile.getAccountChaincodeName && f.`type` == rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE && f.para.ipt.get.function == SystemProfile.getCertStatusChangeFunction) {
               rel = true
               break
           }
