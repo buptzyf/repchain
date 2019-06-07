@@ -145,6 +145,8 @@ class ContractTest(_system: ActorSystem)
     aa.AddElement("cert", Certificate(certStr, "SHA1withECDSA", true, None, None))*/
 
     val certinfo = CertInfo("12110107bi45jh675g", "node2", Certificate(certStr, "SHA1withECDSA", true, None, None))
+    
+    val certstatus = CertStatus("12110107bi45jh675g", "node2", false)
     //val certinfo = aa.toJsonString
 
     //准备探针以验证调用返回结果
@@ -172,6 +174,9 @@ class ContractTest(_system: ActorSystem)
     // t4未持久化，可以继续invoke该合约
     val t5 = this.createCertTransInvoke(sysName, 1, ACTION.SignUpCert, writePretty(certinfo))
     ExecuteTrans(probe, sandbox, t5, "dbnumber1", TypeOfSender.FromAPI, 5, true)
+    
+    val t51 = this.createCertTransInvoke(sysName, 1, ACTION.UpdateCertStatus, writePretty(certstatus))
+    ExecuteTrans(probe, sandbox, t51, "dbnumber1", TypeOfSender.FromAPI, 51, true)
 
     //同一快照中，再次部署同一版本合约（ContractCert），会失败，对比 t1
     val t6 = this.get_ContractCert_Deploy_Trans(sysName, 1)
@@ -189,7 +194,7 @@ class ContractTest(_system: ActorSystem)
     ExecuteTrans(probe, sandbox, t81, "dbnumber1", TypeOfSender.FromAPI, 81, true)
 
     //持久化这些交易
-    val tsls = Array(t1, t2, t3, t4, t5, t81)
+    val tsls = Array(t1, t2, t3, t4, t5,t51, t81)
     val sets = tsls.toSeq
     probe.send(blocker, WriteBlockStub(sets))
     val msg_recv1 = probe.expectMsgType[Int](1000.seconds)

@@ -36,6 +36,9 @@ import rep.log.RepLogger
 import rep.utils.SerializeUtils.deserialise
 import rep.storage.util.pathUtil
 import rep.log.RepTimeTracer
+import rep.app.conf.SystemProfile
+import rep.crypto.cert.certCache
+import scala.util.control.Breaks._
 
 
 /**
@@ -478,15 +481,36 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
     if (block != null) {
       var trans = block.transactions
       if (trans.length > 0) {
+        breakable(
         trans.foreach(f => {
           if (f.id.equals(txid)) {
             //rel = f.getPayload.getChaincodeID.name
             //根据合约编写的时候不添加版本好的规则生成
             //rel = IdTool.getCid(f.cid.get)
             rel = f.getCid.chaincodeName
-            //rel = f.chaincodeID.toStringUtf8()
+            break
           }
         })
+        )
+      }
+    }
+    rel
+  }
+  
+  
+  private def isChangeCertStatus(block:Block, txid: String):Boolean = {
+    var rel = false
+    if (block != null) {
+      var trans = block.transactions
+      if (trans.length > 0) {
+        breakable(
+        trans.foreach(f => {
+          if (f.id.equals(txid) && f.getCid.chaincodeName == SystemProfile.getAccountChaincodeName && f.`type` == rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE && f.para.ipt.get.function == "UpdateCertStatus") {
+              rel = true
+              break
+          }
+        })
+        )
       }
     }
     rel
@@ -499,15 +523,21 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
         txresults.foreach(f => {
           val txid = f.txId
           val cid = getTxidFormBlock(block, txid)
+          val changeCertStatus = isChangeCertStatus(block, txid)
           val logs = f.ol
 
           if (logs != null && logs.length > 0) {
             logs.foreach(f => {
-              val fkey = f.key
+              var fkey = f.key
               if (fkey.startsWith(IdxPrefix.WorldStateKeyPreFix)) {
                 this.Put(f.key, f.newValue.toByteArray())
               } else {
-                this.Put(IdxPrefix.WorldStateKeyPreFix + cid + "_" + f.key, f.newValue.toByteArray())
+                fkey = IdxPrefix.WorldStateKeyPreFix + cid + "_" + f.key
+                this.Put(fkey, f.newValue.toByteArray())
+              }
+              //需要通知证书缓存修改证书状态
+              if(changeCertStatus){
+                certCache.CertStatusUpdate(fkey)
               }
             })
           }
