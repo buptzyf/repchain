@@ -72,7 +72,7 @@ class DeliveryAndStorageProofSpec(_system: ActorSystem)
   // or native.Serialization
   implicit val formats = DefaultFormats
 
-  def this() = this(ActorSystem("SandBoxSpec", new ClusterSystem("121000005l35120456.node1", InitType.MULTI_INIT, false).getConf))
+  def this() = this(ActorSystem("DeliveryAndStorageSpec", new ClusterSystem("121000005l35120456.node1", InitType.MULTI_INIT, false).getConf))
 
   override def afterAll: Unit = Await.ready(system.terminate(), Duration.Inf)
 
@@ -85,7 +85,7 @@ class DeliveryAndStorageProofSpec(_system: ActorSystem)
     val pm = system.actorOf(ModuleManager.props("modulemanager", sysName, false, false, false), "modulemanager")
 
     //加载合约脚本
-    val s1 = scala.io.Source.fromFile("src/main/scala/rep/sc/fops/DeliveryAndStorageProof.scala")
+    val s1 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/DeliveryAndStorageProof.scala")
     val l1 = try s1.mkString finally s1.close()
 
 
@@ -100,7 +100,6 @@ class DeliveryAndStorageProofSpec(_system: ActorSystem)
     val msg_send1 = new DoTransaction(t1, "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send1)
     val msg_recv1 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-    val ol1 = msg_recv1.ol
-
+     msg_recv1.err should be(None)
   }
 }

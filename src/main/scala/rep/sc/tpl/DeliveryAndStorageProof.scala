@@ -1,11 +1,14 @@
 
-package rep.sc.fops
+package rep.sc.tpl
 
 import org.json4s.DefaultFormats
 import org.json4s.jackson.JsonMethods.parse
 import org.json4s.jackson.Serialization.write
 import rep.protos.peer.ActionResult
 import rep.sc.scalax.{ContractContext, IContract, ContractException}
+import org.json4s.jvalue2extractable
+import org.json4s.string2JsonInput
+import scala.reflect.ManifestFactory.classType
 
 final case class  DeliveryAndStorageProof(
     fileID: String, 
@@ -22,10 +25,6 @@ final case class  DeliveryAndStorageProof(
     signAlg: String
 )
 
-final case class DeliveryAndStorageProofWithTxid(
-    proof: DeliveryAndStorageProof,
-    txid: String
-)
 
 final case class AccessAuthAlteringProof(
     fileID: String, 
@@ -62,12 +61,16 @@ final case class DownloadingProofWithTxid(
 )
 
 class filOpsProSto extends IContract{
+  final case class DeliveryAndStorageProofWithTxid(
+      proof: DeliveryAndStorageProof,
+      txid: String
+  )
 
     val delimiter = "+"
     implicit val formats = DefaultFormats
 
-    override def init(ctx: ContractContext): Unit = {
-        println(s"tid: $ctx.t.id")
+    def init(ctx: ContractContext){      
+      println(s"tid: $ctx.t.id")
     }
 
     /**
@@ -138,9 +141,7 @@ class filOpsProSto extends IContract{
         null
     }
 
-    override def onAction(ctx: ContractContext, action: String, sdata: String): ActionResult = {
-        implicit val formats = DefaultFormats
-        //println("-----------"+sdata)
+    def onAction(ctx: ContractContext,action:String, sdata:String ): ActionResult={
         val json = parse(sdata)
 
         println("-----------"+sdata)
