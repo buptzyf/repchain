@@ -55,8 +55,12 @@ class DispatchOfPreload(moduleName: String) extends ModuleBase(moduleName) {
 
   private def createRouter = {
     if (router == null) {
-      var list: Array[Routee] = new Array[Routee](SystemProfile.getVoteNodeList.size())
-      for (i <- 0 to SystemProfile.getVoteNodeList.size() - 1) {
+      var len = SystemProfile.getVoteNodeList.size()
+      if(len <= 0){
+        len  = 1
+      }
+      var list: Array[Routee] = new Array[Routee](len)
+      for (i <- 0 to len-1 ) {
         var ca = context.actorOf(PreloaderForTransaction.props("preloaderoftransaction" + i), "preloaderoftransaction" + i)
         context.watch(ca)
         list(i) = new ActorRefRoutee(ca)

@@ -88,8 +88,8 @@ class Blocker(moduleName: String) extends ModuleBase(moduleName) {
     //scheduler.scheduleOnce(TimePolicy.getStableTimeDur millis, context.parent, BlockModuleInitFinished)
   }
 
-  private def CollectedTransOfBlock(start:Int,num: Int, limitsize: Int): Seq[Transaction] = {
-    val result = ArrayBuffer.empty[Transaction]
+  private def CollectedTransOfBlock(start:Int,num: Int, limitsize: Int): ArrayBuffer[Transaction] = {
+    var result = ArrayBuffer.empty[Transaction]
     try {
       val tmplist = pe.getTransPoolMgr.getTransListClone(num,start)
       if (tmplist.size > 0) {
@@ -101,20 +101,31 @@ class Blocker(moduleName: String) extends ModuleBase(moduleName) {
             //判断交易是否超时，把超时的交易删除;判断交易是否已经被打包入块，如果已经打包入块需要删除
             if ((currenttime - f.createTime) > TimePolicy.getTranscationWaiting || sr.getBlockByTxId(f.t.id) != null) {
               pe.getTransPoolMgr.removeTranscation(f.t)
+              //pe.getTransPoolMgr.printlnlist
+              RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"rm transaction,txid=${f.t.id},currenttime=${currenttime},transtime=${f.createTime}" + "~" + selfAddr))
             } else {
               transsize += f.t.toByteArray.size
               if (transsize * 3 > limitsize) {
                 //区块的长度限制
+                RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"block too length,txid=${f.t.id}" + "~" + selfAddr))
                 break
               } else {
                 f.t +=: result
               }
             }
           }))
+        if(result.isEmpty && tmplist.size == num ){
+          result = CollectedTransOfBlock(start+num,num, limitsize)
+        }
+        /*else{
+          if(result.isEmpty)
+            println("question")
+        }*/
       }
     } finally {
     }
-    result.reverse
+    //result.reverse
+    result
   }
 
   private def ExecuteTransactionOfBlock(block: Block): Block = {
@@ -137,7 +148,7 @@ class Blocker(moduleName: String) extends ModuleBase(moduleName) {
     RepTimeTracer.setStartTime(pe.getSysTag, "Block", System.currentTimeMillis(),pe.getCurrentHeight + 1,0)
     RepTimeTracer.setStartTime(pe.getSysTag, "createBlock", System.currentTimeMillis(),pe.getCurrentHeight + 1,0)
     RepTimeTracer.setStartTime(pe.getSysTag, "collectTransToBlock", System.currentTimeMillis(),pe.getCurrentHeight + 1,0)
-    val trans = CollectedTransOfBlock(start,SystemProfile.getLimitBlockTransNum, SystemProfile.getBlockLength)
+    val trans = CollectedTransOfBlock(start,SystemProfile.getLimitBlockTransNum, SystemProfile.getBlockLength).reverse
     //todo 交易排序
     if (trans.size >= SystemProfile.getMinBlockTransNum) {
       RepTimeTracer.setEndTime(pe.getSysTag, "collectTransToBlock", System.currentTimeMillis(),pe.getCurrentHeight + 1,trans.size)

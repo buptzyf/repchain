@@ -52,6 +52,7 @@ object SystemProfile {
   private[this] var _VOTENODELIST : List[String] = new ArrayList[String]
   private[this] var _ACCOUNTCHAINCODENAEM : String = "ACCOUNTCHAINCODENAME"
   private[this] var _ACCOUNTCHAINCODEVERSION: Int = 1
+  private[this] var _CertStatusChangeFunction : String = "UpdateCertStatus"
   private[this] var _GENESISNODENAME:String = ""
   private[this] var _BLOCK_LENGTH: Int = 120000//区块的最大长度
   private[this] var _NUMBER_OF_TRANSPROCESSOR = 100 //
@@ -77,6 +78,7 @@ object SystemProfile {
   private def VOTENODELIST : List[String] = _VOTENODELIST
   private def ACCOUNTCHAINCODENAEM = _ACCOUNTCHAINCODENAEM
   private def ACCOUNTCHAINCODVERSION = _ACCOUNTCHAINCODEVERSION
+  private def CertStatusChangeFunction = _CertStatusChangeFunction
   
   private def NUMBER_OF_TRANSPROCESSOR = _NUMBER_OF_TRANSPROCESSOR
   
@@ -116,6 +118,10 @@ object SystemProfile {
   
   private def ACCOUNTCHAINCODENAEM_=(value:String):Unit={
     _ACCOUNTCHAINCODENAEM = value
+  }
+  
+  private def CertStatusChangeFunction_=(value:String):Unit={
+    _CertStatusChangeFunction = value
   }
 
   private def ACCOUNTCHAINCODEVERSION_=(value:Int):Unit={
@@ -208,6 +214,8 @@ object SystemProfile {
     CONTRACTOPERATIONMODE_=(config.getInt("system.contractOperationMode"))
     ACCOUNTCHAINCODENAEM_= (config.getString("system.account.chaincodename"))
     ACCOUNTCHAINCODEVERSION_=(config.getInt("system.account.chaincodeversion"))
+    CertStatusChangeFunction_= (config.getString("system.account.CertStatusChangeFunction"))
+    
     GENESISNODENAME_=(config.getString("system.genesis_node_name"))
     NUMBER_OF_TRANSPROCESSOR_=(config.getInt("system.number_of_transProcessor"))
     
@@ -254,6 +262,8 @@ object SystemProfile {
   def getVoteNodeList = VOTENODELIST
   
   def getAccountChaincodeName = ACCOUNTCHAINCODENAEM
+  
+  def getCertStatusChangeFunction = CertStatusChangeFunction
 
   def getAccountChaincodeVersion = ACCOUNTCHAINCODVERSION
   
