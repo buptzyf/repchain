@@ -67,6 +67,8 @@ object Compiler{
        rc = rc.replaceAll("""\[\s*"""+cn+"""\s*\]""".r,  "["+pcn+"]")
        //替换类型声明
        rc = rc.replaceAll(""":\s*"""+cn+"""""".r,  ":"+pcn)
+       //替换构造实例
+        rc = rc.replaceAll("""=(\s*|\s*new\s*)"""+cn+"""\s*\(""".r,  "= "+pcn+"(")
     }
     rc
   }
