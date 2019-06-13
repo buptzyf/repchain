@@ -201,7 +201,7 @@ class PeerHelper(name: String) extends ModuleBase(name) {
           val t3 = createTransaction4Invoke(pe.getSysTag, chaincode,
           "transfer", Seq(li2))
           //pe.getActorRef(ActorType.transactionpool) ! t3
-          pe.getTransPoolMgr.putTran(t3)
+          pe.getTransPoolMgr.putTran(t3,pe.getSysTag)
           //mediator ! Publish(Topic.Transaction, t3)
           //RepLogger.trace(RepLogger.System_Logger,this.getLogMsgPrefix(s"########################create transaction id =${t3.id}"))
           count += 1

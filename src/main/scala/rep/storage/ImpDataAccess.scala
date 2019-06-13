@@ -190,6 +190,25 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
   /**
    * @author jiangbuyun
    * @version	1.0
+   * @since	2019-06-12
+   * @category	根据交易id检查交易是否存在
+   * @param	txid String 交易的id
+   * @return	返回true表示存在；如果没有找到，返回false
+   */
+  def isExistTrans4Txid(txid: String):Boolean={
+    var b = false
+    val key = IdxPrefix.IdxTransaction + txid
+    val value = this.Get(key)
+    val bkey = this.byteToString(value)
+    if (!bkey.equalsIgnoreCase("")) {
+      b = true
+    }
+    b
+  }
+  
+  /**
+   * @author jiangbuyun
+   * @version	1.0
    * @since	2019-04-28
    * @category	根据交易id获取这个交易隶属的block
    * @param	bh String 交易的id

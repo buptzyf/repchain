@@ -97,9 +97,9 @@ class TransactionPool(moduleName: String) extends ModuleBase(moduleName) {
       val siginfo = sig.signature.toByteArray()
 
       if (SignTool.verify(siginfo, tOutSig.toByteArray, cert, pe.getSysTag)) {
-        dataAccess.getBlockByTxId(t.id) match {
-          case null => result = true
-          case _    => resultMsg = s"The transaction(${t.id}) is duplicated with txid"
+        dataAccess.isExistTrans4Txid(t.id) match {
+          case false => result = true
+          case true    => resultMsg = s"The transaction(${t.id}) is duplicated with txid"
         }
       } else {
         resultMsg = s"The transaction(${t.id}) is not completed"
@@ -139,7 +139,7 @@ class TransactionPool(moduleName: String) extends ModuleBase(moduleName) {
           if (pe.getTransPoolMgr.getTransLength() < 100)
             RepLogger.trace(RepLogger.System_Logger, this.getLogMsgPrefix(s"<<<<<<<<<<<<<>>>>>>>>>transaction=${pe.getTransPoolMgr.getTransLength()}"))
           if (SystemProfile.getMaxCacheTransNum == 0 || pe.getTransPoolMgr.getTransLength() < SystemProfile.getMaxCacheTransNum) {
-            pe.getTransPoolMgr.putTran(t)
+            pe.getTransPoolMgr.putTran(t,pe.getSysTag)
             //广播接收交易事件
             if (pe.getTransPoolMgr.getTransLength() >= SystemProfile.getMinBlockTransNum)
               pe.getActorRef(GlobalUtils.ActorType.voter) ! VoteOfBlocker
