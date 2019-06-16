@@ -52,10 +52,12 @@ class NodeMgr {
   }
 
   def resetNodes(nds: Set[Address]): Unit = {
-    nodes.clear
-    nds.foreach(addr => {
-      putNode(addr)
-    })
+    synchronized{
+      nodes.clear
+      nds.foreach(addr => {
+        putNode(addr)
+      })
+    }
   }
 
   def getStableNodes: Set[Address] = {
@@ -75,10 +77,12 @@ class NodeMgr {
   }
 
   def resetStableNodes(nds: Set[(Address, String)]): Unit = {
-    stableNodes.clear()
-    nds.foreach(addr => {
-      putStableNode(addr._1, addr._2)
-    })
+    synchronized{
+      stableNodes.clear()
+      nds.foreach(addr => {
+        putStableNode(addr._1, addr._2)
+      })
+    }
   }
 
   def getNodeAddr4NodeName(nodeName: String): Address = {

@@ -81,11 +81,12 @@ class Blocker(moduleName: String) extends ModuleBase(moduleName) {
   implicit val timeout = Timeout(TimePolicy.getTimeoutPreload seconds)
 
   var preblock: Block = null
+  
+  
 
   override def preStart(): Unit = {
     RepLogger.info(RepLogger.Consensus_Logger, this.getLogMsgPrefix("Block module start"))
-    //SubscribeTopic(mediator, self, selfAddr, Topic.Block, true)
-    //scheduler.scheduleOnce(TimePolicy.getStableTimeDur millis, context.parent, BlockModuleInitFinished)
+    super.preStart()
   }
 
   private def CollectedTransOfBlock(start:Int,num: Int, limitsize: Int): ArrayBuffer[Transaction] = {
@@ -183,6 +184,10 @@ class Blocker(moduleName: String) extends ModuleBase(moduleName) {
   override def receive = {
     //创建块请求（给出块人）
     case Blocker.CreateBlock =>
+      //if(pe.getSysTag == "121000005l35120456.node1" &&  !pe.isSetExcept){
+        //pe.isSetExcept = true
+        //throw new Exception("^^^^^^^^^^^^^^^^exception^^^^^^^^^^")
+      //}
       if (!pe.isSynching) {
         if (NodeHelp.isBlocker(pe.getBlocker.blocker, pe.getSysTag) && pe.getBlocker.voteBlockHash == pe.getCurrentBlockHash) {
           sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Block, Event.Action.CANDIDATOR)
@@ -193,11 +198,11 @@ class Blocker(moduleName: String) extends ModuleBase(moduleName) {
           }
         } else {
           //出块标识错误,暂时不用做任何处理
-          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,do not blocker or blocker hash not equal current hash,height=${this.preblock.height}" + "~" + selfAddr))
+          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,do not blocker or blocker hash not equal current hash,height=${pe.getCurrentHeight}" + "~" + selfAddr))
         }
       } else {
         //节点状态不对
-        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,node status error,status is synching,height=${this.preblock.height}" + "~" + selfAddr))
+        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,node status error,status is synching,height=${pe.getCurrentHeight}" + "~" + selfAddr))
       }
 
     case _ => //ignore

@@ -59,12 +59,21 @@ object blockDataCheck extends App {
   
   val transactions = LinkedHashMap.empty[ String, String ]
   
-  def gettrans(num:Int,start:Int=0):Seq[ String ]={
+  outputblockchaininfo
+  def outputblockchaininfo{
+    println(da1.getBlockChainInfo().toString())
+    println(da2.getBlockChainInfo().toString())
+    println(da3.getBlockChainInfo().toString())
+    println(da4.getBlockChainInfo().toString())
+    println(da5.getBlockChainInfo().toString())
+  }
+  
+  /*def gettrans(num:Int,start:Int=0):Seq[ String ]={
     val result = ArrayBuffer.empty[ String ]
     val tmp = transactions.slice(start, start+num)
     tmp.foreach(pair => pair._2 +=: result)
     result.reverse
-  }
+  }*/
   
   /*transactions += "23"->"xsf1"
   transactions += "123"->"xsf2"

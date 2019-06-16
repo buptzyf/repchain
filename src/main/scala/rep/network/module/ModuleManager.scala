@@ -87,9 +87,9 @@ class ModuleManager(moduleName: String, sysTag: String, enableStatistic: Boolean
 
   def loadModule = {
     loadApiModule
-    loadClusterModule
     loadSystemModule
     loadConsensusModule
+    loadClusterModule
 
     RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"ModuleManager ${sysTag} start"))
   }
