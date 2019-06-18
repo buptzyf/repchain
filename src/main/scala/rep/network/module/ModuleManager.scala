@@ -139,6 +139,7 @@ class ModuleManager(moduleName: String, sysTag: String, enableStatistic: Boolean
   //除了广播消息，P2P的跨域消息都通过其中转（同步，存储等）
   override def receive: Receive = {
     case ModuleManager.startup_Consensus => 
+      RepLogger.trace(RepLogger.System_Logger, this.getLogMsgPrefix( s"trans create type ${SystemProfile.getTransCreateType},actor=${pe.getActorRef(ActorType.peerhelper)}"))
       if (SystemProfile.getTransCreateType == Trans_Create_Type_Enum.AUTO && pe.getActorRef(ActorType.peerhelper) == null) {
           context.actorOf(PeerHelper.props("peerhelper"), "peerhelper")
       }

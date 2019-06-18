@@ -18,7 +18,6 @@ package rep.sc
 
 import com.fasterxml.jackson.core.Base64Variants
 import akka.actor.ActorSystem
-import rep.network.PeerHelper
 import rep.network.tools.PeerExtension
 import rep.protos.peer.{Transaction,OperLog}
 import rep.storage.ImpDataPreload

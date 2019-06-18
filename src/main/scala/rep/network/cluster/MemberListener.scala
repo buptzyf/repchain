@@ -71,6 +71,8 @@ class MemberListener(MoudleName:String) extends ModuleBase(MoudleName) with Clus
   val cluster = Cluster(context.system)
 
   var preloadNodesMap = HashMap[ Address, (Long,String) ]()
+  
+  private var isStartSynch = false
 
   override def preStart(): Unit =
     super.preStart()
@@ -135,25 +137,31 @@ class MemberListener(MoudleName:String) extends ModuleBase(MoudleName) with Clus
       preloadNodesMap.foreach(node => {
         if (isStableNode(node._2._1, TimePolicy.getSysNodeStableDelay)) {
           pe.getNodeMgr.putStableNode(node._1,node._2._2)
-          if(node._2._2 == pe.getSysTag){
+          if(!this.isStartSynch){
             if(pe.getNodeMgr.getStableNodes.size >= SystemProfile.getVoteNoteMin){
               //组网成功之后开始系统同步
               RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"Recollection:  system startup ,start sync,node name=${node._2._2}"))
               pe.getActorRef(ActorType.synchrequester) ! StartSync(true)
+              this.isStartSynch = true
             }else{
               RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"Recollection:  nodes less ${SystemProfile.getVoteNoteMin},node name=${node._2._2}"))
             }
           }else{
-            RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"Recollection:  nodes not self,node name=${node._2._2}"))
+            RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"Recollection:  local consensus start finish,node name=${node._2._2}"))
           }
         }else{
           RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"Recollection:  nodes not stable,node name=${node._2._2}"))
         }
       })
-      if (preloadNodesMap.size > 0) pe.getNodeMgr.getStableNodes.foreach(node => {
-        if (preloadNodesMap.contains(node)) preloadNodesMap.remove(node)
-        RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("Recollection: clear preloadnodemap"))
-      })
+      if (preloadNodesMap.size > 0){ 
+        pe.getNodeMgr.getStableNodes.foreach(node => {
+          if (preloadNodesMap.contains(node)) {
+            preloadNodesMap.remove(node)
+            RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"Recollection: clear preloadnodemap,node=${node}"))
+          }
+        
+        })
+      }
       if (preloadNodesMap.size > 0) self ! Recollection
         
       //成员离网

@@ -24,7 +24,7 @@ import akka.actor.{ Actor, Address, Props }
 import akka.cluster.pubsub.DistributedPubSubMediator.Publish
 import rep.app.conf.SystemProfile
 import rep.crypto.cert.SignTool
-import rep.network.{ PeerHelper, Topic }
+import rep.network.{ Topic }
 import rep.network.base.ModuleBase
 import rep.network.cache.TransactionPool.CheckedTransactionResult
 import rep.network.consensus.vote.Voter.VoteOfBlocker
