@@ -19,6 +19,7 @@ package rep.crypto.cert
 import java.io._
 import fastparse.utils.Base64
 import java.util.concurrent.locks._
+import org.bouncycastle.util.io.pem.PemReader
 import rep.protos.peer.Certificate
 import rep.storage._
 import rep.utils.SerializeUtils
@@ -30,13 +31,22 @@ import rep.log.RepLogger
 
 object certCache {
   private implicit var caches = new ConcurrentHashMap[String, (Boolean, java.security.cert.Certificate)] asScala
-  
-  
+
+
   def getCertByPem(pemcert: String): java.security.cert.Certificate = {
     val cf = java.security.cert.CertificateFactory.getInstance("X.509")
-    val cert = cf.generateCertificate(
-      new ByteArrayInputStream(
-        Base64.Decoder(pemcert.replaceAll("\r\n", "").stripPrefix("-----BEGIN CERTIFICATE-----").stripSuffix("-----END CERTIFICATE-----")).toByteArray))
+//    val cert = cf.generateCertificate(
+//      new ByteArrayInputStream(
+//        Base64.Decoder(
+//          pemcert.replaceAll("\r\n", "")
+//            .replaceAll("\n","")
+//            .stripPrefix("-----BEGIN CERTIFICATE-----")
+//            .stripSuffix("-----END CERTIFICATE-----")).toByteArray
+//      )
+//    )
+    val pemReader = new PemReader(new StringReader(pemcert))
+    val certByte = pemReader.readPemObject().getContent
+    val cert = cf.generateCertificate(new ByteArrayInputStream(certByte))
     cert
   }
 
@@ -69,8 +79,8 @@ object certCache {
     }
     rcert
   }
-  
-  
+
+
   def CertStatusUpdate(ck:String)={
     if(ck != null){
       val pos = ck.lastIndexOf("_")
@@ -82,5 +92,5 @@ object certCache {
       }
     }
   }
-  
+
 }
