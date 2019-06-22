@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="sbt: de.heikoseeberger:akka-http-json4s_2.12:1.25.2:jar">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.ivy2/cache/de.heikoseeberger/akka-http-json4s_2.12/jars/akka-http-json4s_2.12-1.25.2.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.ivy2/cache/de.heikoseeberger/akka-http-json4s_2.12/srcs/akka-http-json4s_2.12-1.25.2-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

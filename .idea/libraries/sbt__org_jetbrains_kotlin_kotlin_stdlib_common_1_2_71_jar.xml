@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="sbt: org.jetbrains.kotlin:kotlin-stdlib-common:1.2.71:jar">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.ivy2/cache/org.jetbrains.kotlin/kotlin-stdlib-common/jars/kotlin-stdlib-common-1.2.71.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.ivy2/cache/org.jetbrains.kotlin/kotlin-stdlib-common/srcs/kotlin-stdlib-common-1.2.71-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

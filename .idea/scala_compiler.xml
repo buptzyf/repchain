@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ScalaCompilerConfiguration">
+    <profile name="sbt 1" modules="repchain_4776" />
+    <profile name="sbt 2" modules="RepChain">
+      <parameters>
+        <parameter value="-P:linter:disable:UseIfExpression+VariableAssignedUnusedValue+UseGetOrElseNotPatMatch" />
+      </parameters>
+      <plugins>
+        <plugin path="RepChainLinter.jar" />
+      </plugins>
+    </profile>
+  </component>
+</project>
