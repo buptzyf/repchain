@@ -537,10 +537,12 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
 
   private def WriteOperLogToDBWithRestoreBlock(block: Block) = {
     try {
+      //var writetodbtxidserial = "write txid result to db for serial="
       val txresults = block.transactionResults
       if (!txresults.isEmpty) {
         txresults.foreach(f => {
           val txid = f.txId
+          //writetodbtxidserial = writetodbtxidserial + txid + ","
           val cid = getTxidFormBlock(block, txid)
           val changeCertStatus = isChangeCertStatus(block, txid)
           val logs = f.ol
@@ -561,12 +563,13 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
             })
           }
         })
+        //RepLogger.error(RepLogger.Business_Logger,  s" current block height=${block.height},trans write serial: ${writetodbtxidserial}")
       }
     } catch {
       case e: RuntimeException => throw e
     }
   }
-
+  
   override def rollbackToheight(toHeight: Long): Boolean = {
     val rs = new Rollback4Storager(this,filemgr)
     rs.rollbackToheight(toHeight)
