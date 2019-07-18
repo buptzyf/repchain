@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ScalaSbtSettings">
+    <option name="customLauncherEnabled" value="true" />
     <option name="customLauncherPath" value="D:\Coding\sbt\bin\sbt-launch.jar" />
     <option name="customVMPath" />
     <option name="linkedExternalProjectsSettings">
@@ -13,11 +14,11 @@
           </set>
         </option>
         <option name="resolveSbtClassifiers" value="true" />
-        <option name="sbtVersion" value="1.2.7" />
         <option name="useAutoImport" value="true" />
         <option name="useSbtShellForBuild" value="true" />
         <option name="useSbtShellForImport" value="true" />
       </SbtProjectSettings>
     </option>
+    <option name="vmParameters" value="-Dsbt.log.format=true -Dsbt.ivy.home=D:/Coding/sbt/.ivy2 -Dsbt.global.base=D:/Coding/sbt/.sbt -Dsbt.repository.config=D:/Coding/sbt/conf/repo.properties" />
   </component>
 </project>

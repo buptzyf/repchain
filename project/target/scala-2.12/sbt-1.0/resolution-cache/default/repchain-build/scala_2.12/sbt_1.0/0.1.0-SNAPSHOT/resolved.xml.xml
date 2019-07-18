@@ -4,7 +4,7 @@
 		module="repchain-build"
 		revision="0.1.0-SNAPSHOT"
 		status="integration"
-		publication="20190705151156"
+		publication="20190718164928"
 		e:sbtVersion="1.0" e:scalaVersion="2.12"
 	>
 		<description>

@@ -3,7 +3,6 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/RepChain.iml" filepath="$PROJECT_DIR$/.idea/modules/RepChain.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/RepChain-build.iml" filepath="$PROJECT_DIR$/.idea/modules/RepChain-build.iml" />
     </modules>
   </component>
 </project>
