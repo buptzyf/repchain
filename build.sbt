@@ -93,4 +93,3 @@ libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "1.0.6"
 
 scalacOptions += "-Xplugin:RepChainLinter.jar"
 scalacOptions += "-P:RepChainLinter:disable:UseIfExpression+VariableAssignedUnusedValue+UseGetOrElseNotPatMatch"
-scalacOptions += "-P:RepChainLinter:mode:debug"
