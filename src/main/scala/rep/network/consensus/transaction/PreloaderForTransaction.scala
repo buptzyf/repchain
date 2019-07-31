@@ -70,6 +70,25 @@ class PreloaderForTransaction(moduleName: String) extends ModuleBase(moduleName)
     }
   }
 
+  /*private def outputTransSerialOfBlock(oldBlock:Block,newBlock:Block):String={
+    var rstr = "old_txserial="
+    oldBlock.transactions.foreach(f=>{
+      rstr = rstr + f.id+","
+    })
+    rstr = rstr + "\r\n"+"new_txserial="
+    
+    newBlock.transactions.foreach(f=>{
+      rstr = rstr + f.id+","
+    })
+    
+    rstr = rstr + "\r\n"+"transresult_txserial="
+    newBlock.transactionResults.foreach(f=>{
+      rstr = rstr + f.txId+","
+    })
+    
+    rstr
+  }*/
+  
   private def AssembleTransResult(block:Block,preLoadTrans:mutable.HashMap[String,Transaction],transResult:Seq[TransactionResult], db_indentifier: String):Option[Block]={
     try{
       var newTranList = mutable.Seq.empty[ Transaction ]
@@ -82,6 +101,7 @@ class PreloaderForTransaction(moduleName: String) extends ModuleBase(moduleName)
         var rblock = tmpblk.withTransactionResults(transResult)
         val statehashstr = Sha256.hashstr(Array.concat(pe.getSystemCurrentChainStatus.currentStateHash.toByteArray() , SerializeUtils.serialise(transResult)))
         rblock = rblock.withStateHash(ByteString.copyFromUtf8(statehashstr))
+        //RepLogger.error(RepLogger.Business_Logger, this.getLogMsgPrefix( s" current block height=${block.height},trans create serial: ${outputTransSerialOfBlock(block,rblock)}"))
         Some(rblock)
       }else{
         None

@@ -27,8 +27,9 @@ import java.util.concurrent.locks._
 import com.google.protobuf.UInt32Value
 import rep.protos.peer._
 import java.util.concurrent.ConcurrentLinkedQueue
-import rep.utils.GlobalUtils.{ TranscationPoolPackage, BlockerInfo, NodeStatus }
+import rep.utils.GlobalUtils.{ BlockerInfo, NodeStatus }
 import rep.network.persistence.BlockCache
+import rep.network.tools.transpool.TransactionPoolMgr
 
 /**
  * Peer business logic node stared space（based on system）

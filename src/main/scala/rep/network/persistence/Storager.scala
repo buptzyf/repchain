@@ -85,7 +85,7 @@ class Storager(moduleName: String) extends ModuleBase(moduleName) {
           RepTimeTracer.setEndTime(pe.getSysTag, "Block", System.currentTimeMillis(),blkRestore.blk.height,blkRestore.blk.transactions.size)
         }
         
-        pe.getTransPoolMgr.removeTrans(blkRestore.blk.transactions)
+        pe.getTransPoolMgr.removeTrans(blkRestore.blk.transactions,pe.getSysTag)
         pe.resetSystemCurrentChainStatus(new BlockchainInfo(result._2, result._3, ByteString.copyFromUtf8(result._4), ByteString.copyFromUtf8(result._5),ByteString.copyFromUtf8(result._6)))
         pe.getBlockCacheMgr.removeFromCache(blkRestore.blk.height)
         
@@ -149,7 +149,10 @@ class Storager(moduleName: String) extends ModuleBase(moduleName) {
               }
               break
             }else{
-              RestoreBlock(_blkRestore)
+              val r = RestoreBlock(_blkRestore)
+              if(r == 0){
+                localchaininfo = pe.getSystemCurrentChainStatus
+              }
             }
             loop += 1l
           }

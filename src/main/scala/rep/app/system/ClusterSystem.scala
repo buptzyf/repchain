@@ -191,6 +191,10 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
 
     RepLogger.trace(RepLogger.System_Logger, sysTag + "~" + "System" + " ~ " + s"System(${sysTag}) init successfully" + " ~ ")
   }
+  
+  def shutdown = {
+    Cluster(sysActor).down(clusterAddr)
+  }
 
   private def initConsensusNodeOfConfig = {
     val nodelist = sysConf.getStringList("system.vote.vote_node_list")

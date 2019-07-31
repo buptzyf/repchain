@@ -49,12 +49,12 @@ class TransactionDispatcher(moduleName: String) extends ModuleBase(moduleName) {
 
   private def CheckTransActor(cid: String): ActorRef = {
     if (HasTransActor(cid)) {
-      RepLogger.debug(RepLogger.Sandbox_Logger, s"sandbox dispatcher for ${cid} is exist.")
+      RepLogger.debug(RepLogger.Sandbox_Logger, s"transaction dispatcher for ${cid} is exist.")
       this.TransActors(cid)
     } else {
       val sd = context.actorOf(SandboxDispatcher.props("sandbox_dispatcher_" + cid, cid), "sandbox_dispatcher_" + cid)
       this.TransActors += cid -> sd
-      RepLogger.debug(RepLogger.Sandbox_Logger, s"create sandbox dispatcher for ${cid} .")
+      RepLogger.debug(RepLogger.Sandbox_Logger, s"create transaction dispatcher for ${cid} .")
       sd
     }
   }

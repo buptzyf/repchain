@@ -25,6 +25,8 @@ libraryDependencies ++= Seq(
   )
 
 libraryDependencies += "com.typesafe.akka" %% "akka-http-xml" % akkaHttpVersion
+libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value
+libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value
 
 libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2"
 
@@ -73,7 +75,8 @@ PB.targets in Compile := Seq(
   scalapb.gen() -> (sourceManaged in Compile).value
 )
 libraryDependencies += "com.thesamet.scalapb" %% "scalapb-runtime" % scalapb.compiler.Version.scalapbVersion % "protobuf"
-
+addCompilerPlugin("org.psywerx.hairyfotr" %% "linter" % "0.1.17")
+scalacOptions += "-P:linter:disable:UseIfExpression+VariableAssignedUnusedValue+UseGetOrElseNotPatMatch"
 scapegoatVersion in ThisBuild := "1.3.3"
 scapegoatDisabledInspections := Seq("OptionGet", "AsInstanceOf","MethodReturningAny")
 
@@ -85,11 +88,3 @@ assemblyMergeStrategy in assembly := {
 }
 
 mainClass in (Compile, packageBin) := Some("rep.app.Repchain_Single")
-
-libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value
-libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value
-libraryDependencies += "org.scala-lang" % "scala-library" % scalaVersion.value
-libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "1.0.6"
-
-scalacOptions += "-Xplugin:RepChainLinter.jar"
-scalacOptions += "-P:RepChainLinter:disable:UseIfExpression+VariableAssignedUnusedValue+UseGetOrElseNotPatMatch"

@@ -36,6 +36,9 @@ import rep.log.RepLogger
 import rep.utils.SerializeUtils.deserialise
 import rep.storage.util.pathUtil
 import rep.log.RepTimeTracer
+import rep.app.conf.SystemProfile
+import rep.crypto.cert.certCache
+import scala.util.control.Breaks._
 
 
 /**
@@ -184,6 +187,25 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
     rb
   }
 
+  /**
+   * @author jiangbuyun
+   * @version	1.0
+   * @since	2019-06-12
+   * @category	根据交易id检查交易是否存在
+   * @param	txid String 交易的id
+   * @return	返回true表示存在；如果没有找到，返回false
+   */
+  def isExistTrans4Txid(txid: String):Boolean={
+    var b = false
+    val key = IdxPrefix.IdxTransaction + txid
+    val value = this.Get(key)
+    val bkey = this.byteToString(value)
+    if (!bkey.equalsIgnoreCase("")) {
+      b = true
+    }
+    b
+  }
+  
   /**
    * @author jiangbuyun
    * @version	1.0
@@ -478,15 +500,36 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
     if (block != null) {
       var trans = block.transactions
       if (trans.length > 0) {
+        breakable(
         trans.foreach(f => {
           if (f.id.equals(txid)) {
             //rel = f.getPayload.getChaincodeID.name
             //根据合约编写的时候不添加版本好的规则生成
             //rel = IdTool.getCid(f.cid.get)
             rel = f.getCid.chaincodeName
-            //rel = f.chaincodeID.toStringUtf8()
+            break
           }
         })
+        )
+      }
+    }
+    rel
+  }
+  
+  
+  private def isChangeCertStatus(block:Block, txid: String):Boolean = {
+    var rel = false
+    if (block != null) {
+      var trans = block.transactions
+      if (trans.length > 0) {
+        breakable(
+        trans.foreach(f => {
+          if (f.id.equals(txid) && f.getCid.chaincodeName == SystemProfile.getAccountChaincodeName && f.`type` == rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE && f.para.ipt.get.function == SystemProfile.getCertStatusChangeFunction) {
+              rel = true
+              break
+          }
+        })
+        )
       }
     }
     rel
@@ -494,30 +537,39 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
 
   private def WriteOperLogToDBWithRestoreBlock(block: Block) = {
     try {
+      //var writetodbtxidserial = "write txid result to db for serial="
       val txresults = block.transactionResults
       if (!txresults.isEmpty) {
         txresults.foreach(f => {
           val txid = f.txId
+          //writetodbtxidserial = writetodbtxidserial + txid + ","
           val cid = getTxidFormBlock(block, txid)
+          val changeCertStatus = isChangeCertStatus(block, txid)
           val logs = f.ol
 
           if (logs != null && logs.length > 0) {
             logs.foreach(f => {
-              val fkey = f.key
+              var fkey = f.key
               if (fkey.startsWith(IdxPrefix.WorldStateKeyPreFix)) {
                 this.Put(f.key, f.newValue.toByteArray())
               } else {
-                this.Put(IdxPrefix.WorldStateKeyPreFix + cid + "_" + f.key, f.newValue.toByteArray())
+                fkey = IdxPrefix.WorldStateKeyPreFix + cid + "_" + f.key
+                this.Put(fkey, f.newValue.toByteArray())
+              }
+              //需要通知证书缓存修改证书状态
+              if(changeCertStatus){
+                certCache.CertStatusUpdate(fkey)
               }
             })
           }
         })
+        //RepLogger.error(RepLogger.Business_Logger,  s" current block height=${block.height},trans write serial: ${writetodbtxidserial}")
       }
     } catch {
       case e: RuntimeException => throw e
     }
   }
-
+  
   override def rollbackToheight(toHeight: Long): Boolean = {
     val rs = new Rollback4Storager(this,filemgr)
     rs.rollbackToheight(toHeight)

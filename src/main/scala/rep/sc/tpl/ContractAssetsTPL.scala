@@ -66,8 +66,8 @@ class ContractAssetsTPL extends IContract{
       var dfrom =sfrom.asInstanceOf[Int]
       if(dfrom < data.amount)
         throw ContractException("余额不足")
-      var dto = ctx.api.getVal(data.to).toString.toInt
       ctx.api.setVal(data.from,dfrom - data.amount)
+      var dto = ctx.api.getVal(data.to).toString.toInt
       ctx.api.setVal(data.to,dto + data.amount)
        null
     }

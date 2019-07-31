@@ -82,9 +82,9 @@ trait CRFDVoter extends VoterBase {
     else{
       var candidate = new Array[String](len)
       var hashSeed:Long = pathUtil.bytesToInt(seed)
-      var randomList = getRandomList(hashSeed,len)//,nodes.size)
+      var randomList = getRandomList(hashSeed,nodes.size)
       //println(randomList(0).generateSerial)
-      RepLogger.trace(RepLogger.Consensus_Logger, randomList.mkString(","))
+      RepLogger.trace(RepLogger.Consensus_Logger, s"sysname=${Systemname},randomList=${randomList.mkString(",")}")
       for(j<-0 until len){
         var e = randomList(j)
         candidate(j) = nodesSeq(e.generateSerial)

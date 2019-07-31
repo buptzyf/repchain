@@ -81,40 +81,39 @@ class Blocker(moduleName: String) extends ModuleBase(moduleName) {
   implicit val timeout = Timeout(TimePolicy.getTimeoutPreload seconds)
 
   var preblock: Block = null
+  
+  
 
   override def preStart(): Unit = {
     RepLogger.info(RepLogger.Consensus_Logger, this.getLogMsgPrefix("Block module start"))
-    //SubscribeTopic(mediator, self, selfAddr, Topic.Block, true)
-    //scheduler.scheduleOnce(TimePolicy.getStableTimeDur millis, context.parent, BlockModuleInitFinished)
+    super.preStart()
   }
 
-  private def CollectedTransOfBlock(start:Int,num: Int, limitsize: Int): Seq[Transaction] = {
-    val result = ArrayBuffer.empty[Transaction]
+  private def CollectedTransOfBlock(start:Int,num: Int, limitsize: Int): ArrayBuffer[Transaction] = {
+    var result = ArrayBuffer.empty[Transaction]
     try {
-      val tmplist = pe.getTransPoolMgr.getTransListClone(num,start)
+      val tmplist = pe.getTransPoolMgr.getTransListClone(start,num,pe.getSysTag)
       if (tmplist.size > 0) {
         val currenttime = System.currentTimeMillis() / 1000
-        val sr: ImpDataAccess = ImpDataAccess.GetDataAccess(pe.getSysTag)
         var transsize = 0
         breakable(
           tmplist.foreach(f => {
-            //判断交易是否超时，把超时的交易删除;判断交易是否已经被打包入块，如果已经打包入块需要删除
-            if ((currenttime - f.createTime) > TimePolicy.getTranscationWaiting || sr.getBlockByTxId(f.t.id) != null) {
-              pe.getTransPoolMgr.removeTranscation(f.t)
-            } else {
-              transsize += f.t.toByteArray.size
+              transsize += f.toByteArray.size
               if (transsize * 3 > limitsize) {
                 //区块的长度限制
+                RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"block too length,txid=${f.id}" + "~" + selfAddr))
                 break
               } else {
-                f.t +=: result
+                f +=: result
               }
-            }
           }))
+        if(result.isEmpty && tmplist.size == num ){
+          result = CollectedTransOfBlock(start+num,num, limitsize)
+        }
       }
     } finally {
     }
-    result.reverse
+    result
   }
 
   private def ExecuteTransactionOfBlock(block: Block): Block = {
@@ -134,22 +133,24 @@ class Blocker(moduleName: String) extends ModuleBase(moduleName) {
   
 
   private def CreateBlock(start:Int=0): Block = {
-    RepTimeTracer.setStartTime(pe.getSysTag, "Block", System.currentTimeMillis(),pe.getCurrentHeight + 1,0)
-    RepTimeTracer.setStartTime(pe.getSysTag, "createBlock", System.currentTimeMillis(),pe.getCurrentHeight + 1,0)
-    RepTimeTracer.setStartTime(pe.getSysTag, "collectTransToBlock", System.currentTimeMillis(),pe.getCurrentHeight + 1,0)
-    val trans = CollectedTransOfBlock(start,SystemProfile.getLimitBlockTransNum, SystemProfile.getBlockLength)
+    RepTimeTracer.setStartTime(pe.getSysTag, "Block", System.currentTimeMillis(),pe.getBlocker.VoteHeight + 1,0)
+    RepTimeTracer.setStartTime(pe.getSysTag, "createBlock", System.currentTimeMillis(),pe.getBlocker.VoteHeight + 1,0)
+    RepTimeTracer.setStartTime(pe.getSysTag, "collectTransToBlock", System.currentTimeMillis(),pe.getBlocker.VoteHeight + 1,0)
+    val trans = CollectedTransOfBlock(start,SystemProfile.getLimitBlockTransNum, SystemProfile.getBlockLength).reverse
     //todo 交易排序
     if (trans.size >= SystemProfile.getMinBlockTransNum) {
-      RepTimeTracer.setEndTime(pe.getSysTag, "collectTransToBlock", System.currentTimeMillis(),pe.getCurrentHeight + 1,trans.size)
+      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,CollectedTransOfBlock success,height=${pe.getBlocker.VoteHeight+1},local height=${pe.getBlocker.VoteHeight}" + "~" + selfAddr))
+      RepTimeTracer.setEndTime(pe.getSysTag, "collectTransToBlock", System.currentTimeMillis(),pe.getBlocker.VoteHeight + 1,trans.size)
       //此处建立新块必须采用抽签模块的抽签结果来进行出块，否则出现刚抽完签，马上有新块的存储完成，就会出现错误
       var blc = BlockHelp.WaitingForExecutionOfBlock(pe.getBlocker.voteBlockHash, pe.getBlocker.VoteHeight + 1, trans)
-      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,height=${blc.height},local height=${pe.getCurrentHeight}" + "~" + selfAddr))
+      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,height=${blc.height},local height=${pe.getBlocker.VoteHeight}" + "~" + selfAddr))
        RepTimeTracer.setStartTime(pe.getSysTag, "PreloadTrans", System.currentTimeMillis(),blc.height,blc.transactions.size)
       blc = ExecuteTransactionOfBlock(blc)
       if (blc != null) {
         RepTimeTracer.setEndTime(pe.getSysTag, "PreloadTrans", System.currentTimeMillis(),blc.height,blc.transactions.size)
-        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,prelaod success,height=${blc.height},local height=${pe.getCurrentHeight}" + "~" + selfAddr))
+        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,prelaod success,height=${blc.height},local height=${pe.getBlocker.VoteHeight}" + "~" + selfAddr))
         blc = BlockHelp.AddBlockHash(blc)
+        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,AddBlockHash success,height=${blc.height},local height=${pe.getBlocker.VoteHeight}" + "~" + selfAddr))
         BlockHelp.AddSignToBlock(blc, pe.getSysTag)
       } else {
         RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("create new block error,preload error" + "~" + selfAddr))
@@ -173,6 +174,9 @@ class Blocker(moduleName: String) extends ModuleBase(moduleName) {
       RepTimeTracer.setStartTime(pe.getSysTag, "Endorsement", System.currentTimeMillis(),blc.height,blc.transactions.size)
       pe.getActorRef(ActorType.endorsementcollectioner) ! EndorseMsg.CollectEndorsement(this.preblock, pe.getSysTag)
       //schedulerLink = scheduler.scheduleOnce(TimePolicy.getTimeoutEndorse seconds, self, Blocker.EndorseOfBlockTimeOut)
+    }else{
+      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("create new block error,CreateBlock is null" + "~" + selfAddr))
+      pe.getActorRef( ActorType.voter) ! VoteOfBlocker
     }
     //}
   }
@@ -180,6 +184,10 @@ class Blocker(moduleName: String) extends ModuleBase(moduleName) {
   override def receive = {
     //创建块请求（给出块人）
     case Blocker.CreateBlock =>
+      //if(pe.getSysTag == "121000005l35120456.node1" &&  !pe.isSetExcept){
+        //pe.isSetExcept = true
+        //throw new Exception("^^^^^^^^^^^^^^^^exception^^^^^^^^^^")
+      //}
       if (!pe.isSynching) {
         if (NodeHelp.isBlocker(pe.getBlocker.blocker, pe.getSysTag) && pe.getBlocker.voteBlockHash == pe.getCurrentBlockHash) {
           sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Block, Event.Action.CANDIDATOR)
@@ -190,11 +198,11 @@ class Blocker(moduleName: String) extends ModuleBase(moduleName) {
           }
         } else {
           //出块标识错误,暂时不用做任何处理
-          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,do not blocker or blocker hash not equal current hash,height=${this.preblock.height}" + "~" + selfAddr))
+          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,do not blocker or blocker hash not equal current hash,height=${pe.getCurrentHeight}" + "~" + selfAddr))
         }
       } else {
         //节点状态不对
-        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,node status error,status is synching,height=${this.preblock.height}" + "~" + selfAddr))
+        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,node status error,status is synching,height=${pe.getCurrentHeight}" + "~" + selfAddr))
       }
 
     case _ => //ignore
