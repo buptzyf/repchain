@@ -25,7 +25,7 @@ import rep.protos.peer.{Transaction}
   * @update 2018-05 jiangbuyun
   */
 object GlobalUtils {
-  case class TranscationPoolPackage(t:Transaction,createTime:Long)
+  //case class TranscationPoolPackage(t:Transaction,createTime:Long)
   case class BlockerInfo(blocker:String,VoteIndex:Int,voteTime:Long,voteBlockHash:String,VoteHeight:Long)
   case object NodeStatus {
     val Blocking = 1

@@ -52,7 +52,9 @@ abstract class  ModuleBase(name: String) extends Actor  with ClusterActor with B
   val atype = ModuleNameToIntActorType
   atype match{
     case 0 => 
-    case _ => pe.register(atype, self)
+    case _ => 
+      RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"--------Actor create,actor name=${name}"))
+      pe.register(atype, self)
   }
   
   private def ModuleNameToIntActorType:Int={

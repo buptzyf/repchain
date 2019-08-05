@@ -141,8 +141,6 @@ class PeerHelper(name: String) extends ModuleBase(name) {
   import scala.concurrent.duration._
   import context.dispatcher
 
-  def rnd = ThreadLocalRandom.current
-
   //val si1 = scala.io.Source.fromFile("scripts/example_invoke_" + pe.getSysTag + ".js")
   //val li1 = try si1.mkString finally si1.close()
   val si2 = scala.io.Source.fromFile("api_req/json/transfer_" + pe.getSysTag + ".json")
@@ -201,7 +199,7 @@ class PeerHelper(name: String) extends ModuleBase(name) {
           val t3 = createTransaction4Invoke(pe.getSysTag, chaincode,
           "transfer", Seq(li2))
           //pe.getActorRef(ActorType.transactionpool) ! t3
-          pe.getTransPoolMgr.putTran(t3)
+          pe.getTransPoolMgr.putTran(t3,pe.getSysTag)
           //mediator ! Publish(Topic.Transaction, t3)
           //RepLogger.trace(RepLogger.System_Logger,this.getLogMsgPrefix(s"########################create transaction id =${t3.id}"))
           count += 1

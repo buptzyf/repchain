@@ -89,7 +89,7 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
       val sr: ImpDataAccess = ImpDataAccess.GetDataAccess(pe.getSysTag)
       breakable(
         trans.foreach(f => {
-          if (sr.getBlockByTxId(f.id) != null) {
+          if (sr.isExistTrans4Txid(f.id)) {
             isRepeat = true
             break
           }

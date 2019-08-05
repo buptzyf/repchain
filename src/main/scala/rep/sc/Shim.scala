@@ -18,7 +18,6 @@ package rep.sc
 
 import com.fasterxml.jackson.core.Base64Variants
 import akka.actor.ActorSystem
-import rep.network.PeerHelper
 import rep.network.tools.PeerExtension
 import rep.protos.peer.{Transaction,OperLog}
 import rep.storage.ImpDataPreload
@@ -71,7 +70,7 @@ class Shim(system: ActorSystem, cName: String) {
   //存储模块提供的system单例
   val pe = PeerExtension(system)
   //从交易传入, 内存中的worldState快照
-  var sr:ImpDataPreload = null;
+  var sr:ImpDataPreload = null
   //记录状态修改日志
   var ol = scala.collection.mutable.ListBuffer.empty[OperLog]
     
@@ -89,6 +88,7 @@ class Shim(system: ActorSystem, cName: String) {
     val ov = if(oldValue == null) ByteString.EMPTY else ByteString.copyFrom(oldValue)
     val nv = if(value == null) ByteString.EMPTY else ByteString.copyFrom(value)
     //记录操作日志
+    //getLogger.trace(s"nodename=${sr.getSystemName},dbname=${sr.getInstanceName},txid=${txid},key=${key},old=${deserialise(oldValue)},new=${deserialise(value)}")
     ol += new OperLog(key,ov, nv)
   }
 

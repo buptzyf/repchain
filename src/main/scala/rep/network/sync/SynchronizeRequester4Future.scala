@@ -165,7 +165,7 @@ class SynchronizeRequester4Future(moduleName: String) extends ModuleBase(moduleN
  
   
  
-  private def Handler = {
+  private def Handler(isStartupSynch:Boolean) = {
     val lh = pe.getCurrentHeight
     val lhash = pe.getCurrentBlockHash
     val lprehash = pe.getSystemCurrentChainStatus.previousBlockHash.toStringUtf8()
@@ -173,12 +173,8 @@ class SynchronizeRequester4Future(moduleName: String) extends ModuleBase(moduleN
     sendEvent(EventType.PUBLISH_INFO, mediator,pe.getSysTag, BlockEvent.CHAIN_INFO_SYNC,  Event.Action.BLOCK_SYNC)
     val res = AsyncGetNodeOfChainInfos(nodes,lh)
     
-    //if(pe.getSysTag == "921000006e0012v696.node5"){
-    //  println("921000006e0012v696.node5")
-    //}
-    
     val parser = new SynchResponseInfoAnalyzer(pe.getSysTag, pe.getSystemCurrentChainStatus, pe.getNodeMgr)
-    parser.Parser(res)
+    parser.Parser(res,isStartupSynch)
     val result = parser.getResult
     val rresult = parser.getRollbackAction
     val sresult = parser.getSynchActiob
@@ -189,6 +185,8 @@ class SynchronizeRequester4Future(moduleName: String) extends ModuleBase(moduleN
        if(da.rollbackToheight(rresult.destHeight)){
          if(sresult != null){
            getBlockDatas(sresult.start,sresult.end,sresult.server)
+         }else{
+           pe.resetSystemCurrentChainStatus(da.getBlockChainInfo())
          }
        }else{
          RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"回滚块失败，failed height=${rresult.destHeight}"))
@@ -216,7 +214,7 @@ class SynchronizeRequester4Future(moduleName: String) extends ModuleBase(moduleN
       if (pe.getNodeMgr.getStableNodes.size >= SystemProfile.getVoteNoteMin && !pe.isSynching) {
         pe.setSynching(true)
         try{
-          Handler
+          Handler(isNoticeModuleMgr)
         }catch{
           case e:Exception =>
             RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"request synch excep,msg=${e.getMessage}"))

@@ -193,7 +193,7 @@ class SynchResponseInfoAnalyzer(val systemName: String, val lchaininfo: Blockcha
           this.aresult = AnalysisResult(true, "小于本地高度，当前系统是种子节点，并且是创世块，完成同步")
           RepLogger.info(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"--------info,小于本地高度，当前系统是种子节点，并且是创世块，完成同步,local height=${lh},maxheight=${maxheight}"))
         } else {
-          this.aresult = AnalysisResult(true, "小于本地高度，当前系统不是种子节点，只有创世块，完成同步")
+          this.aresult = AnalysisResult(true, "小于本地高度，当前系统不是种子节点，可能是创世块，完成同步")
           RepLogger.info(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"--------info,小于本地高度，当前系统不是种子节点，只有创世块，完成同步,local height=${lh},maxheight=${maxheight}"))
         }
       } else {
@@ -215,7 +215,7 @@ class SynchResponseInfoAnalyzer(val systemName: String, val lchaininfo: Blockcha
     }
   }
 
-  def Parser(reslist: List[ResponseInfo]) = {
+  def Parser(reslist: List[ResponseInfo],isStartupSynch:Boolean) = {
     val lh = lchaininfo.height
     val nodes = nodemgr.getNodes
 
@@ -236,8 +236,11 @@ class SynchResponseInfoAnalyzer(val systemName: String, val lchaininfo: Blockcha
           } else if (maxheight == lh) {
             this.equalLocalHeight(reslist, maxheight, agreementResult._2)
           } else {
-            //this.lessThanLocalHeight( maxheight, agreementResult._2)
-            this.aresult = AnalysisResult(true, "")
+            if(isStartupSynch){
+              this.lessThanLocalHeight( maxheight, agreementResult._2)
+            }else{
+              this.aresult = AnalysisResult(true, "")
+            }
             RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix("--------info,本地高度大于远端高度，停止同步"))
           }
         } else {

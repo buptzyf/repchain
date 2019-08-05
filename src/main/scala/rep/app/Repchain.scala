@@ -55,11 +55,11 @@ object Repchain {
 
     var nodes_off = Set.empty[ClusterSystem]
 
+     var tmpsystem : ClusterSystem = null
+     
     for(i <- 2 to node_max) {
       Thread.sleep(2000)
-      //if(i == 5){
-      //  Thread.sleep(60000)
-      //}
+      
       val len = nodes.size
       val sys = new ClusterSystem(nodelist(i-2),InitType.MULTI_INIT,true)
       sys.init
@@ -67,6 +67,21 @@ object Repchain {
       sys.disableWS()
       sys.start
       nodes += sys
+      if(i == 5){
+        tmpsystem = sys
+      }
     }
+     
+   /*  Thread.sleep(1000*60*3)
+     tmpsystem.shutdown
+     
+     
+     Thread.sleep(1000*60*2)
+     val sys = new ClusterSystem(nodelist(3),InitType.MULTI_INIT,true)
+      sys.init
+      sys.joinCluster(joinAddress)
+      sys.disableWS()
+      sys.start*/
+     
   }
 }

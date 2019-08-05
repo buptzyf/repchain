@@ -42,7 +42,6 @@ class Voter(moduleName: String) extends ModuleBase(moduleName) with CRFDVoter {
 
   import context.dispatcher
   import scala.concurrent.duration._
-  import scala.concurrent.forkjoin.ThreadLocalRandom
 
   override def preStart(): Unit = {
     RepLogger.info(RepLogger.Vote_Logger, this.getLogMsgPrefix(  "Vote module start"))
@@ -74,15 +73,15 @@ class Voter(moduleName: String) extends ModuleBase(moduleName) with CRFDVoter {
     pe.getCurrentBlockHash
   }
 
-  private def resetCandidator = {
+  private def resetCandidator(currentblockhash:String) = {
     //this.BlockHashOfVote = pe.getCurrentBlockHash
-    candidator = candidators(pe.getSysTag,pe.getCurrentBlockHash,SystemCertList.getSystemCertList, Sha256.hash(pe.getCurrentBlockHash))
+    candidator = candidators(pe.getSysTag,currentblockhash,SystemCertList.getSystemCertList, Sha256.hash(currentblockhash))
     //pe.getNodeMgr.resetCandidator(candidatorCur)
   }
 
-  private def resetBlocker(idx: Int) = {
+  private def resetBlocker(idx: Int,currentblockhash:String,currentheight:Long) = {
     RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(  s"sysname=${pe.getSysTag},votelist=${candidator.toArray[String].mkString("|")},idx=${idx}"))
-    this.Blocker = BlockerInfo(blocker(candidator.toArray[String], idx), idx, System.currentTimeMillis(),pe.getCurrentBlockHash,pe.getCurrentHeight)
+    this.Blocker = BlockerInfo(blocker(candidator.toArray[String], idx), idx, System.currentTimeMillis(),currentblockhash,currentheight)
     pe.resetBlocker(this.Blocker)
     NoticeBlockerMsg
   }
@@ -103,30 +102,32 @@ class Voter(moduleName: String) extends ModuleBase(moduleName) with CRFDVoter {
 
   private def vote = {
     if (checkTranNum) {
+      val currentblockhash = pe.getCurrentBlockHash
+      val currentheight = pe.getCurrentHeight
       if (this.Blocker.voteBlockHash == "") {
         this.cleanVoteInfo
-        this.resetCandidator
-        this.resetBlocker(0)
+        this.resetCandidator(currentblockhash)
+        this.resetBlocker(0,currentblockhash,currentheight)
         RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(  s"sysname=${pe.getSysTag},first voter,blocker=${this.Blocker.blocker},voteidx=${this.Blocker.VoteIndex}" + "~" + selfAddr))
       } else {
-        if (!this.Blocker.voteBlockHash.equals(pe.getCurrentBlockHash)) {
+        if (!this.Blocker.voteBlockHash.equals(currentblockhash)) {
           //抽签的基础块已经变化，需要重续选择候选人
           this.cleanVoteInfo
-          this.resetCandidator
-          this.resetBlocker(0)
-          RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(  s"sysname=${pe.getSysTag},hash change,reset voter,height=${pe.getCurrentHeight},blocker=${this.Blocker.blocker},voteidx=${this.Blocker.VoteIndex}" + "~" + selfAddr))
+          this.resetCandidator(currentblockhash)
+          this.resetBlocker(0,currentblockhash,currentheight)
+          RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(  s"sysname=${pe.getSysTag},hash change,reset voter,height=${currentheight},hash=${currentblockhash},blocker=${this.Blocker.blocker},voteidx=${this.Blocker.VoteIndex}" + "~" + selfAddr))
         } else {
           if (this.Blocker.blocker == "") {
             this.cleanVoteInfo
-            this.resetCandidator
-            this.resetBlocker(0)
-            RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(  s"sysname=${pe.getSysTag},blocker=null,reset voter,height=${pe.getCurrentHeight},blocker=${this.Blocker.blocker},voteidx=${this.Blocker.VoteIndex}" + "~" + selfAddr))
+            this.resetCandidator(currentblockhash)
+            this.resetBlocker(0,currentblockhash,currentheight)
+            RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(  s"sysname=${pe.getSysTag},blocker=null,reset voter,height=${currentheight},blocker=${this.Blocker.blocker},voteidx=${this.Blocker.VoteIndex}" + "~" + selfAddr))
           } else {
             if ((System.currentTimeMillis() - this.Blocker.voteTime) / 1000 > TimePolicy.getTimeOutBlock) {
               //说明出块超时
               this.voteCount = 0
-              this.resetBlocker(this.Blocker.VoteIndex + 1)
-              RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix( s"sysname=${pe.getSysTag},block timeout,reset voter,height=${pe.getCurrentHeight},blocker=${this.Blocker.blocker},voteidx=${this.Blocker.VoteIndex}" + "~" + selfAddr))
+              this.resetBlocker(this.Blocker.VoteIndex + 1,currentblockhash,currentheight)
+              RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix( s"sysname=${pe.getSysTag},block timeout,reset voter,height=${currentheight},blocker=${this.Blocker.blocker},voteidx=${this.Blocker.VoteIndex}" + "~" + selfAddr))
             } else {
               NoticeBlockerMsg
             }

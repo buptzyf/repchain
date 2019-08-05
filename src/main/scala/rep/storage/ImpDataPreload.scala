@@ -23,6 +23,7 @@ import scala.collection.mutable.ArrayBuffer
 import rep.protos.peer._;
 import scala.util.control.Breaks
 import rep.log.RepLogger
+import rep.utils.SerializeUtils.deserialise
 
 /**内存数据库的访问类，属于多实例。
  * @constructor	根据SystemName和InstanceName建立实例
@@ -75,8 +76,12 @@ class ImpDataPreload (SystemName:String,InstanceName:String) extends AbstractLev
   		var rb : Array[Byte] = null
 			try{
   					if(this.update.containsKey(key)){
+  					  //RepLogger.trace(RepLogger.Business_Logger,  
+  			      //s"nodename=${getSystemName},dbname=${getInstanceName},key=${key},in cache=${deserialise(this.update.get(key))}")
   						rb = this.update.get(key)
   					}else{
+  					 // RepLogger.trace(RepLogger.Business_Logger,  
+  			      //s"nodename=${getSystemName},dbname=${getInstanceName},key=${key},in db=${deserialise(this.dbop.Get(key))}")
   						rb = this.dbop.Get(key)
   					}
   					setUseTime
