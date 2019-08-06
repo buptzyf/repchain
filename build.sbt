@@ -86,10 +86,10 @@ assemblyMergeStrategy in assembly := {
 
 mainClass in (Compile, packageBin) := Some("rep.app.Repchain_Single")
 
-scalacOptions += "-P:linter:disable:UseIfExpression+VariableAssignedUnusedValue+UseGetOrElseNotPatMatch"
 libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value
 libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value
 libraryDependencies += "org.scala-lang" % "scala-library" % scalaVersion.value
 libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "1.0.6"
 
 scalacOptions += "-Xplugin:RepChainLinter.jar"
+scalacOptions += "-P:RepChainLinter:disable:UseIfExpression+VariableAssignedUnusedValue+UseGetOrElseNotPatMatch"
