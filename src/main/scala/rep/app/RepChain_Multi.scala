@@ -28,7 +28,7 @@ import scala.collection.mutable
   * RepChain启动单机超5个节点以上，配合https://gitee.com/BTAJL/RCJava/blob/dev_sdk_preview/src/main/java/com/Example/cert/GenerateJksFiles.java使用
   * @author zyf
   */
-class RepChain_Multi {
+object RepChain_Multi {
 
   def main(args: Array[String]): Unit = {
 
