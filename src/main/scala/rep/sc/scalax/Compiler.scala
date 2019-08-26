@@ -24,7 +24,7 @@ import collection.mutable
 import java.io._
 import org.json4s._
 import org.json4s.jackson.JsonMethods._
-import rep.crypto.Sha256
+import rep.crypto.Sm3
 import rep.app.conf.SystemProfile
 import scala.reflect.runtime.currentMirror
 import scala.tools.reflect.ToolBox
@@ -201,7 +201,7 @@ class Compiler(targetDir: Option[File], bDebug:Boolean) {
    *  @return 类名字符串
    */
   protected def classNameForCode(code: String): String = {
-    PRE_CLS_NAME + Sha256.hashstr(code)
+    PRE_CLS_NAME + Sm3.hashstr(code)
   }
 
 }

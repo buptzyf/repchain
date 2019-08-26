@@ -38,7 +38,7 @@ import rep.utils.GlobalUtils.ActorType
 import rep.utils._
 import scala.collection.mutable
 import akka.pattern.AskTimeoutException
-import rep.crypto.Sha256
+import rep.crypto.Sm3
 import rep.log.RepLogger
 import rep.sc.TypeOfSender
 
@@ -99,7 +99,7 @@ class PreloaderForTransaction(moduleName: String) extends ModuleBase(moduleName)
       if(newTranList.size > 0){
         val tmpblk = block.withTransactions(newTranList)
         var rblock = tmpblk.withTransactionResults(transResult)
-        val statehashstr = Sha256.hashstr(Array.concat(pe.getSystemCurrentChainStatus.currentStateHash.toByteArray() , SerializeUtils.serialise(transResult)))
+        val statehashstr = Sm3.hashstr(Array.concat(pe.getSystemCurrentChainStatus.currentStateHash.toByteArray() , SerializeUtils.serialise(transResult)))
         rblock = rblock.withStateHash(ByteString.copyFromUtf8(statehashstr))
         //RepLogger.error(RepLogger.Business_Logger, this.getLogMsgPrefix( s" current block height=${block.height},trans create serial: ${outputTransSerialOfBlock(block,rblock)}"))
         Some(rblock)

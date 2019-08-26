@@ -30,12 +30,12 @@ object Repchain {
 
     //创建系统实例
      var nodelist : Array[String] = new Array[String] (4)
-     nodelist(0) = "12110107bi45jh675g.node2"
-     nodelist(1) = "122000002n00123567.node3"
-     nodelist(2) = "921000005k36123789.node4"
-     nodelist(3) = "921000006e0012v696.node5"
+     nodelist(0) = "904703631549900672.node2"
+     nodelist(1) = "989038588418990208.node3"
+     nodelist(2) = "645377164372772928.node4"
+     nodelist(3) = "379552050023903168.node5"
      
-    val sys1 = new ClusterSystem("121000005l35120456.node1",InitType.MULTI_INIT,true)
+    val sys1 = new ClusterSystem("215159697776981712.node1",InitType.MULTI_INIT,true)
     sys1.init//初始化（参数和配置信息）
     val joinAddress = sys1.getClusterAddr//获取组网地址
     sys1.joinCluster(joinAddress)//加入网络

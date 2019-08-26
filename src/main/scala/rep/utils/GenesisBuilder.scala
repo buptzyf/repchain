@@ -44,10 +44,10 @@ object GenesisBuilder {
   implicit val formats       = DefaultFormats
 
   def main(args: Array[String]): Unit = {
-    SignTool.loadPrivateKey("121000005l35120456.node1", "123", "jks/121000005l35120456.node1.jks")
-    SignTool.loadNodeCertList("changeme", "jks/mytruststore.jks")
-    SignTool.loadPrivateKey("951002007l78123233.super_admin", "super_admin", "jks/951002007l78123233.super_admin.jks")
-    val sysName = "121000005l35120456.node1"
+    SignTool.loadPrivateKey("215159697776981712.node1", "123", "pfx/215159697776981712.node1.pfx")
+    SignTool.loadNodeCertList("changeme", "pfx/mytruststore.pfx")
+    SignTool.loadPrivateKey("257091603041653856.super_admin", "super_admin", "pfx/257091603041653856.super_admin.pfx")
+    val sysName = "215159697776981712.node1"
     //交易发起人是超级管理员
     //增加scala的资产管理合约   
     // read deploy funcs
@@ -61,7 +61,7 @@ object GenesisBuilder {
     
     //val dep_trans = PeerHelper.createTransaction4Deploy(sysName, cid,
     //           l1, "",5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
-    val dep_trans = PeerHelper.createTransaction4Deploy("951002007l78123233.super_admin", cid,
+    val dep_trans = PeerHelper.createTransaction4Deploy("257091603041653856.super_admin", cid,
                l1, "",5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
     translist(0) = dep_trans
     
@@ -71,31 +71,31 @@ object GenesisBuilder {
     //System.out.println(Json4s.compactJson(dep_trans))
     
     var signers : Array[Signer] = new Array[Signer](6)
-    signers(0) = Signer("node1","121000005l35120456","18912345678",List("node1")) 
-    signers(1) = Signer("node2","12110107bi45jh675g","18912345678",List("node2")) 
-    signers(2) = Signer("node3","122000002n00123567","18912345678",List("node3")) 
-    signers(3) = Signer("node4","921000005k36123789","18912345678",List("node4")) 
-    signers(4) = Signer("node5","921000006e0012v696","18912345678",List("node5")) 
-    signers(5) = Signer("super_admin","951002007l78123233","18912345678",List("super_admin")) 
+    signers(0) = Signer("node1","215159697776981712","18912345678",List("node1"))
+    signers(1) = Signer("node2","904703631549900672","18912345678",List("node2"))
+    signers(2) = Signer("node3","989038588418990208","18912345678",List("node3"))
+    signers(3) = Signer("node4","645377164372772928","18912345678",List("node4"))
+    signers(4) = Signer("node5","379552050023903168","18912345678",List("node5"))
+    signers(5) = Signer("super_admin","257091603041653856","18912345678",List("super_admin"))
     
     
     
     for(i<-0 to 5){
-        translist(i+1) = PeerHelper.createTransaction4Invoke("951002007l78123233.super_admin", cid,
+        translist(i+1) = PeerHelper.createTransaction4Invoke("257091603041653856.super_admin", cid,
                     "SignUpSigner", Seq(SerializeUtils.compactJson(signers(i))))
     }
     
     
     for(i<-0 to 5){
-      val certfile = scala.io.Source.fromFile("jks/"+signers(i).creditCode+"."+signers(i).name+".cer")
+      val certfile = scala.io.Source.fromFile("pfx/"+signers(i).creditCode+"."+signers(i).name+".cer")
       val certstr = try certfile.mkString finally certfile.close()
      // val cert = SignTool.getCertByFile("jks/"+signers(i).creditCode+"."+signers(i).name+".cer")
       val millis = System.currentTimeMillis()
       
-      val tmp = rep.protos.peer.Certificate(certstr,"SHA1withECDSA",true,Option(Timestamp(millis/1000 , ((millis % 1000) * 1000000).toInt)))
+      val tmp = rep.protos.peer.Certificate(certstr,"SM3withSM2",true,Option(Timestamp(millis/1000 , ((millis % 1000) * 1000000).toInt)))
        //val aa = new ContractCert
       val a : CertInfo = CertInfo(signers(i).creditCode,signers(i).name,tmp)
-      translist(i+7) = PeerHelper.createTransaction4Invoke("951002007l78123233.super_admin", cid,
+      translist(i+7) = PeerHelper.createTransaction4Invoke("257091603041653856.super_admin", cid,
                     "SignUpCert", Seq(SerializeUtils.compactJson(a)))
     }
     
@@ -108,10 +108,10 @@ object GenesisBuilder {
     translist(13) = dep_asserts_trans
     
     // read invoke scala contract
-    val s3 = scala.io.Source.fromFile("api_req/json/set.json")
+    val s3 = scala.io.Source.fromFile("api_req/json/gm/setGm.json")
     val ct1 = try s3.mkString finally s3.close()
     
-    translist(14) = PeerHelper.createTransaction4Invoke("951002007l78123233.super_admin", cid2,
+    translist(14) = PeerHelper.createTransaction4Invoke("257091603041653856.super_admin", cid2,
                     "set", Seq(ct1))
     
     

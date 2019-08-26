@@ -20,7 +20,7 @@ import com.google.protobuf.ByteString
 import com.google.protobuf.timestamp.Timestamp
 import scalapb.json4s.JsonFormat
 import rep.app.conf.SystemProfile
-import rep.crypto.{ Sha256 }
+import rep.crypto.Sm3
 import rep.protos.peer.{ Block, Signature, Transaction, ChaincodeId, CertId }
 import rep.utils.TimeUtils
 import rep.storage.IdxPrefix
@@ -95,7 +95,7 @@ object BlockHelp {
     try {
       val blkOutEndorse = block.clearEndorsements
       val blkOutBlockHash = blkOutEndorse.withHashOfBlock(ByteString.EMPTY)
-      Sha256.hashstr(blkOutBlockHash.toByteArray)
+      Sm3.hashstr(blkOutBlockHash.toByteArray)
     } catch {
       case e: RuntimeException => throw e
     }

@@ -37,7 +37,7 @@ import org.bouncycastle.util.io.pem.PemReader
  */
 object SignTool {
   private var signer: ISigner = null
-  private var SignType: String = "ECDSA"
+  private var SignType: String = "SM2"
   private var keypassword = mutable.HashMap[String, String]()
   private var keyStores = mutable.HashMap[String, KeyStore]()
   private var PublickeyCerts = mutable.HashMap[String, Certificate]()
@@ -46,7 +46,13 @@ object SignTool {
 
   synchronized {
     if (this.signer == null) {
-      signer = new ImpECDSASigner()
+      if (SignType.equalsIgnoreCase("ecdsa")) {
+        signer = new ImpECDSASigner()
+      } else if (SignType.equalsIgnoreCase("sm2")) {
+        signer = new ImpSM2Signer()
+      } else {
+        throw  new RuntimeException("无效的算法")
+      }
     }
   }
 
@@ -114,7 +120,8 @@ object SignTool {
       if (keyStores.contains(pkeyname)) {
         keyStores(pkeyname).load(fis, pwd)
       } else {
-        val pkeys = KeyStore.getInstance(KeyStore.getDefaultType)
+        val pkeys = KeyStore.getInstance("PKCS12", "BC")
+//        print(pkeys.getProvider)
         pkeys.load(fis, pwd)
         keyStores(pkeyname) = pkeys
       }
@@ -132,7 +139,8 @@ object SignTool {
       if (!this.isAddPublicKey) {
         val fis = new FileInputStream(new File(path))
         val pwd = password.toCharArray()
-        var trustKeyStore = KeyStore.getInstance(KeyStore.getDefaultType)
+        val trustKeyStore = KeyStore.getInstance("PKCS12","BC")
+//        print(trustKeyStore.getProvider)
         trustKeyStore.load(fis, pwd)
         val enums = trustKeyStore.aliases()
         while (enums.hasMoreElements) {

@@ -28,16 +28,16 @@ import scala.collection.mutable
   * RepChain启动单机超5个节点以上，配合https://gitee.com/BTAJL/RCJava/blob/dev_sdk_preview/src/main/java/com/Example/cert/GenerateJksFiles.java使用
   * @author zyf
   */
-class RepChain_Multi {
+object RepChain_Multi {
 
   def main(args: Array[String]): Unit = {
 
-    val fileDir = new File("jks")
+    val fileDir = new File("pfx")
     // 过滤掉非节点node的jks
     val files = fileDir.listFiles(new FileFilter {
       override def accept(file: File): Boolean = {
         val fileName = file.getName
-        if (fileName.endsWith("jks") && fileName.indexOf("node") != -1) {
+        if (fileName.endsWith("pfx") && fileName.indexOf("node") != -1) {
           true
         } else {
           false

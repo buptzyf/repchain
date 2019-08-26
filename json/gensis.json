@@ -2,7 +2,7 @@
   "version" : 1,
   "height" : "1",
   "transactions" : [ {
-    "id" : "2f0c6be5-c536-405d-9261-8eb270686a30",
+    "id" : "87829e3b-1b8a-4cc3-949d-08151f25051e",
     "type" : "CHAINCODE_DEPLOY",
     "cid" : {
       "chaincodeName" : "ContractCert",
@@ -15,14 +15,14 @@
     },
     "signature" : {
       "certId" : {
-        "creditCode" : "951002007l78123233",
+        "creditCode" : "257091603041653856",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2019-07-25T16:30:38.345Z",
-      "signature" : "MEUCIQDMIkahOfVPXjnzLmZsj4ERrd2XzLTamt7Jd10mJgfesAIgDkbLy82rRG3fcPJ1FiC0vnsZm5I8DX0a83aCu10C3G8="
+      "tmLocal" : "2019-08-21T17:01:39.190Z",
+      "signature" : "MEUCIQDP5qXQPGSeQpwCt6VKkjtuc/RMg7lfcgtjqg/wdZZQjwIgSYF+bvoUJS06PlFQaGyCaL5sHGoS6bAGczlkKd0S088="
     }
   }, {
-    "id" : "95d4f8b0-4a30-421c-af4f-649d16465262",
+    "id" : "2f3e3c37-0be9-4c04-847f-837c1e72d338",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "ContractCert",
@@ -30,18 +30,18 @@
     },
     "ipt" : {
       "function" : "SignUpSigner",
-      "args" : [ "{\"name\":\"node1\",\"creditCode\":\"121000005l35120456\",\"mobile\":\"18912345678\",\"certNames\":[\"node1\"]}" ]
+      "args" : [ "{\"name\":\"node1\",\"creditCode\":\"215159697776981712\",\"mobile\":\"18912345678\",\"certNames\":[\"node1\"]}" ]
     },
     "signature" : {
       "certId" : {
-        "creditCode" : "951002007l78123233",
+        "creditCode" : "257091603041653856",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2019-07-25T16:30:38.906Z",
-      "signature" : "MEUCIGMyn+u7wwHqLMLFBqISYc0EMQAqolIHQV/5ggrF4Fw7AiEA5S5ssuwU7tPpdsElXFdxqOVI6lqyfz9zZasr/M+iyZk="
+      "tmLocal" : "2019-08-21T17:01:39.727Z",
+      "signature" : "MEYCIQDvNHa4aQVyJ4yH0bGJHEj86/YktXKhLtX/r5Cm+3emVwIhALGUqsDu2nVD9wwdxJ/weWM+/5oOQ0cCYQxClEYGTy8U"
     }
   }, {
-    "id" : "62703174-72a8-4574-b4d4-2d48df2ba82d",
+    "id" : "81ec0f20-0984-4974-9021-baf69bca1309",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "ContractCert",
@@ -49,18 +49,18 @@
     },
     "ipt" : {
       "function" : "SignUpSigner",
-      "args" : [ "{\"name\":\"node2\",\"creditCode\":\"12110107bi45jh675g\",\"mobile\":\"18912345678\",\"certNames\":[\"node2\"]}" ]
+      "args" : [ "{\"name\":\"node2\",\"creditCode\":\"904703631549900672\",\"mobile\":\"18912345678\",\"certNames\":[\"node2\"]}" ]
     },
     "signature" : {
       "certId" : {
-        "creditCode" : "951002007l78123233",
+        "creditCode" : "257091603041653856",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2019-07-25T16:30:38.914Z",
-      "signature" : "MEQCIAGSvBGsx0agUy4mZdHK1MFRD2m9WYI0bU2FJLXJ7dJCAiB9T3laoZyOWgWhWeiJxkdgLHS52wrqyvX7Hv7oEB7fQg=="
+      "tmLocal" : "2019-08-21T17:01:39.751Z",
+      "signature" : "MEYCIQDcgbh9BXSVAJltROJnowngVC4St4rZxVfPlJmhqUdL/wIhAKHOHd8fxQ14e/icgygFHccNVMPqxHPqCdj7gk5Y/8IY"
     }
   }, {
-    "id" : "c7cfd74f-4e63-4efd-a97c-2b97b6773c98",
+    "id" : "8e1c4b9d-0467-427c-8aa2-59985183b655",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "ContractCert",
@@ -68,18 +68,18 @@
     },
     "ipt" : {
       "function" : "SignUpSigner",
-      "args" : [ "{\"name\":\"node3\",\"creditCode\":\"122000002n00123567\",\"mobile\":\"18912345678\",\"certNames\":[\"node3\"]}" ]
+      "args" : [ "{\"name\":\"node3\",\"creditCode\":\"989038588418990208\",\"mobile\":\"18912345678\",\"certNames\":[\"node3\"]}" ]
     },
     "signature" : {
       "certId" : {
-        "creditCode" : "951002007l78123233",
+        "creditCode" : "257091603041653856",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2019-07-25T16:30:38.917Z",
-      "signature" : "MEQCIB6bL64WF8HngiK51/x4hcAbLtHCnoO7jv5n8pA28AA6AiAiNeiTxTbNd8AklfWCuEZ81qIA1BuswGd46Zl1YX2Pqw=="
+      "tmLocal" : "2019-08-21T17:01:39.770Z",
+      "signature" : "MEYCIQD1MXasDfI58eYZJH5lvqCgYWRVgskfoq2ioKG9fzY/wwIhAPwEECl7rY1n/4E/Y4niwk3Sq3mGp+D2YAHnILDTa3ks"
     }
   }, {
-    "id" : "7a6e689d-beda-4bc5-bde6-86668872894f",
+    "id" : "bf42056a-2e96-47fe-8b7c-54a32ffb413a",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "ContractCert",
@@ -87,18 +87,18 @@
     },
     "ipt" : {
       "function" : "SignUpSigner",
-      "args" : [ "{\"name\":\"node4\",\"creditCode\":\"921000005k36123789\",\"mobile\":\"18912345678\",\"certNames\":[\"node4\"]}" ]
+      "args" : [ "{\"name\":\"node4\",\"creditCode\":\"645377164372772928\",\"mobile\":\"18912345678\",\"certNames\":[\"node4\"]}" ]
     },
     "signature" : {
       "certId" : {
-        "creditCode" : "951002007l78123233",
+        "creditCode" : "257091603041653856",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2019-07-25T16:30:38.920Z",
-      "signature" : "MEUCIQD/tdJlDSM67ddNzzh68kOIvMtJwqQIdkH1P55Hu78nWgIgZUxtqZLuV8y8b9dv3ez+X1Zh+8LcpYiXkNVpBkXHxuA="
+      "tmLocal" : "2019-08-21T17:01:39.793Z",
+      "signature" : "MEQCIA9ufkPgWr3irsrJTdT14K/FwcJKt20eqmO+PS/fP1WgAiBg/fnjpzlJiBYUV4nlrJLwVMUKjHQ/GpmVZ2OXpBdkyg=="
     }
   }, {
-    "id" : "1b8d78d7-8f5d-45de-8fe6-041a91fe1a27",
+    "id" : "57bc00a2-ac24-4080-89b5-476abe46ff5e",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "ContractCert",
@@ -106,18 +106,18 @@
     },
     "ipt" : {
       "function" : "SignUpSigner",
-      "args" : [ "{\"name\":\"node5\",\"creditCode\":\"921000006e0012v696\",\"mobile\":\"18912345678\",\"certNames\":[\"node5\"]}" ]
+      "args" : [ "{\"name\":\"node5\",\"creditCode\":\"379552050023903168\",\"mobile\":\"18912345678\",\"certNames\":[\"node5\"]}" ]
     },
     "signature" : {
       "certId" : {
-        "creditCode" : "951002007l78123233",
+        "creditCode" : "257091603041653856",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2019-07-25T16:30:38.922Z",
-      "signature" : "MEUCIQDcpMXEz+o0W0DTDIEsmGMZ+0cTOgG5DwBaIv0QDabOjgIgUUohxBJb5FxxGV115pSekjVAvvbjtop9m0bsgkFu8Fc="
+      "tmLocal" : "2019-08-21T17:01:39.813Z",
+      "signature" : "MEYCIQD9EabM96mj6nHRt8HZxh+dFUI/k6ahXmIyikvW2mA2VgIhAM9yDoDC380GTzJaEUDLfm/SqVRHzj9yQFeEopOC9rfS"
     }
   }, {
-    "id" : "67d27f39-a80e-4a23-89c3-2423dfda4186",
+    "id" : "56903c4a-1f84-42ec-ae60-1497b3839ef7",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "ContractCert",
@@ -125,18 +125,18 @@
     },
     "ipt" : {
       "function" : "SignUpSigner",
-      "args" : [ "{\"name\":\"super_admin\",\"creditCode\":\"951002007l78123233\",\"mobile\":\"18912345678\",\"certNames\":[\"super_admin\"]}" ]
+      "args" : [ "{\"name\":\"super_admin\",\"creditCode\":\"257091603041653856\",\"mobile\":\"18912345678\",\"certNames\":[\"super_admin\"]}" ]
     },
     "signature" : {
       "certId" : {
-        "creditCode" : "951002007l78123233",
+        "creditCode" : "257091603041653856",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2019-07-25T16:30:38.925Z",
-      "signature" : "MEUCIBshz7oUgVQW9LzqummVOdH4WCSeM7JsA7cxfJ+IWy+GAiEA2X1hX3Rw5EiPHT7NSh2qQrOuEqpIdhCDGu+f2fCMOqo="
+      "tmLocal" : "2019-08-21T17:01:39.830Z",
+      "signature" : "MEUCIQCkKKGhFcFrFLpgAy8ySW4vybv5klIpEC+SaZ7Xk/3IogIgPN7Jekyl3HrkuvyweKpaB21TYUb0ee8Sf7DdSBbhRGM="
     }
   }, {
-    "id" : "64f1cf02-48e1-4c0a-aa92-ef207da96d76",
+    "id" : "55a1dd11-d3f8-4cf7-ac06-ec67e172d783",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "ContractCert",
@@ -144,18 +144,18 @@
     },
     "ipt" : {
       "function" : "SignUpCert",
-      "args" : [ "{\"credit_code\":\"121000005l35120456\",\"name\":\"node1\",\"cert\":{\"certificate\":\"-----BEGIN CERTIFICATE-----\\r\\nMIIBmjCCAT+gAwIBAgIEXIn07TAKBggqhkjOPQQDAjBWMQswCQYDVQQGEwJjbjEL\\r\\nMAkGA1UECAwCYmoxCzAJBgNVBAcMAmJqMREwDwYDVQQKDAhyZXBjaGFpbjEOMAwG\\r\\nA1UECwwFaXNjYXMxCjAIBgNVBAMMATEwHhcNMTkwMzE0MDYzMDA1WhcNMjAwMzEz\\r\\nMDYzMDA1WjBWMQswCQYDVQQGEwJjbjELMAkGA1UECAwCYmoxCzAJBgNVBAcMAmJq\\r\\nMREwDwYDVQQKDAhyZXBjaGFpbjEOMAwGA1UECwwFaXNjYXMxCjAIBgNVBAMMATEw\\r\\nVjAQBgcqhkjOPQIBBgUrgQQACgNCAASlh+oDBPdwHEkpQT4/g4RX9ubP7jMM2Qod\\r\\niFtsnv+ObQ3dxfQN/S515ePssn3HjPCwfzR3S1KY4O9vFtH1Jql9MAoGCCqGSM49\\r\\nBAMCA0kAMEYCIQCG2NFkYx06oWahUDflmXDkoXyTBIvjnA/M2yJlou3RIQIhAJcA\\r\\n1X1djf5oGPc+6GYh9g4YhQ59HxV3p6kAEuRI13PP\\r\\n-----END CERTIFICATE-----\\r\\n\",\"algType\":\"SHA1withECDSA\",\"certValid\":true,\"regTime\":{\"seconds\":1564043438,\"nanos\":937000000}}}" ]
+      "args" : [ "{\"credit_code\":\"215159697776981712\",\"name\":\"node1\",\"cert\":{\"certificate\":\"-----BEGIN CERTIFICATE-----\\r\\nMIICEjCCAbagAwIBAgIGAWyyKEVUMAwGCCqBHM9VAYN1BQAwdDELMAkGA1UEBhMC\\r\\nQ04xGTAXBgNVBAoeEABSAGUAcABDAGgAYQBpAG4xDzANBgNVBAseBgBTAEQAUjE5\\r\\nMDcGA1UEAx4wADIAMQA1ADEANQA5ADYAOQA3ADcANwA2ADkAOAAxADcAMQAyAC4A\\r\\nbgBvAGQAZQAxMCIYDzIwMTExMjMxMTYwMDAwWhgPMjAyMTEyMzExNjAwMDBaMHQx\\r\\nCzAJBgNVBAYTAkNOMRkwFwYDVQQKHhAAUgBlAHAAQwBoAGEAaQBuMQ8wDQYDVQQL\\r\\nHgYAUwBEAFIxOTA3BgNVBAMeMAAyADEANQAxADUAOQA2ADkANwA3ADcANgA5ADgA\\r\\nMQA3ADEAMgAuAG4AbwBkAGUAMTBZMBMGByqGSM49AgEGCCqBHM9VAYItA0IABJr9\\r\\n7SnDEsJk46bYsh9P4smxabU7I6rJcWMPEL909MLnXGsCG02gYjp1jZgCYmIaQkyF\\r\\n3pmfJQEthwZ9M2X0YLujLjAsMAsGA1UdDwQEAwIAwDAdBgNVHSUEFjAUBggrBgEF\\r\\nBQcDAQYIKwYBBQUHAwIwDAYIKoEcz1UBg3UFAANIADBFAiALobzTI768h7+iSpDN\\r\\nbfg+kkuZ3S4mCxlh3K/77aMktgIhAK4wzwfLEhi+wX/tGvkPR17hybi4aGByiT/C\\r\\nOMp6Hkit\\r\\n-----END CERTIFICATE-----\\r\\n\",\"algType\":\"SM3withSM2\",\"certValid\":true,\"regTime\":{\"seconds\":1566378099,\"nanos\":848000000}}}" ]
     },
     "signature" : {
       "certId" : {
-        "creditCode" : "951002007l78123233",
+        "creditCode" : "257091603041653856",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2019-07-25T16:30:38.970Z",
-      "signature" : "MEUCIQCyM2wNqdRqvHiCEwr8JKrsNAkQqew3Su3ZJpC50Q2CNwIgF6kdWhZA8aUCEAB6Cv30M7TrdAFqQWYaUBSeh605Ucs="
+      "tmLocal" : "2019-08-21T17:01:39.904Z",
+      "signature" : "MEQCIAWasmXGnd0sL3dSHc6f9wH+qtuIEjWIfbq0b2o6UjlQAiB6VEOEFfWsfZW/DjK6TYLyBSI6H0dlndxsmM/dFNP4BA=="
     }
   }, {
-    "id" : "c5fe9700-1828-44d3-aa3f-873416089649",
+    "id" : "4cfe071e-0776-4f31-bc27-fb88c79d6081",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "ContractCert",
@@ -163,18 +163,18 @@
     },
     "ipt" : {
       "function" : "SignUpCert",
-      "args" : [ "{\"credit_code\":\"12110107bi45jh675g\",\"name\":\"node2\",\"cert\":{\"certificate\":\"-----BEGIN CERTIFICATE-----\\r\\nMIIBmTCCAT+gAwIBAgIEXIn2LzAKBggqhkjOPQQDAjBWMQswCQYDVQQGEwJjbjEL\\r\\nMAkGA1UECAwCYmoxCzAJBgNVBAcMAmJqMREwDwYDVQQKDAhyZXBjaGFpbjEOMAwG\\r\\nA1UECwwFaXNjYXMxCjAIBgNVBAMMATIwHhcNMTkwMzE0MDYzNTI3WhcNMjAwMzEz\\r\\nMDYzNTI3WjBWMQswCQYDVQQGEwJjbjELMAkGA1UECAwCYmoxCzAJBgNVBAcMAmJq\\r\\nMREwDwYDVQQKDAhyZXBjaGFpbjEOMAwGA1UECwwFaXNjYXMxCjAIBgNVBAMMATIw\\r\\nVjAQBgcqhkjOPQIBBgUrgQQACgNCAAQbGHprzZj8UABd4LFvAoFVPFc/xDkWybEJ\\r\\noF3iey/BvIVvBrB92xskV8ULlOt+qjQGIz0SdRiCrqs+YacCAo/xMAoGCCqGSM49\\r\\nBAMCA0gAMEUCIDdarnwrREWGu3YQMvcFItU3e5X9J7kwgVw3uvZg77r0AiEAgIhG\\r\\nTTVwdvjjewyeOXoVT/emsGz314jZJTYbtzoZiv8=\\r\\n-----END CERTIFICATE-----\\r\\n\",\"algType\":\"SHA1withECDSA\",\"certValid\":true,\"regTime\":{\"seconds\":1564043438,\"nanos\":979000000}}}" ]
+      "args" : [ "{\"credit_code\":\"904703631549900672\",\"name\":\"node2\",\"cert\":{\"certificate\":\"-----BEGIN CERTIFICATE-----\\r\\nMIICEjCCAbagAwIBAgIGAWyyKEkIMAwGCCqBHM9VAYN1BQAwdDELMAkGA1UEBhMC\\r\\nQ04xGTAXBgNVBAoeEABSAGUAcABDAGgAYQBpAG4xDzANBgNVBAseBgBTAEQAUjE5\\r\\nMDcGA1UEAx4wADkAMAA0ADcAMAAzADYAMwAxADUANAA5ADkAMAAwADYANwAyAC4A\\r\\nbgBvAGQAZQAyMCIYDzIwMTExMjMxMTYwMDAwWhgPMjAyMTEyMzExNjAwMDBaMHQx\\r\\nCzAJBgNVBAYTAkNOMRkwFwYDVQQKHhAAUgBlAHAAQwBoAGEAaQBuMQ8wDQYDVQQL\\r\\nHgYAUwBEAFIxOTA3BgNVBAMeMAA5ADAANAA3ADAAMwA2ADMAMQA1ADQAOQA5ADAA\\r\\nMAA2ADcAMgAuAG4AbwBkAGUAMjBZMBMGByqGSM49AgEGCCqBHM9VAYItA0IABIRp\\r\\nr3hOd1RgGqAwxxch3830dQStesVZOSYfSm+5oZk3twC4xEFMBsHswxLaHWBOAbUG\\r\\nUHh668N1in48wucUi2ijLjAsMAsGA1UdDwQEAwIAwDAdBgNVHSUEFjAUBggrBgEF\\r\\nBQcDAQYIKwYBBQUHAwIwDAYIKoEcz1UBg3UFAANIADBFAiBATr4I/QkDDAvzVSHJ\\r\\nIK2sRXm9DOd6j5d46rHQB5ffawIhAJQCLu1/TM0rpWBs52PGbh3IRAEJ2d9VASNS\\r\\nBFNTWtG/\\r\\n-----END CERTIFICATE-----\\r\\n\",\"algType\":\"SM3withSM2\",\"certValid\":true,\"regTime\":{\"seconds\":1566378099,\"nanos\":931000000}}}" ]
     },
     "signature" : {
       "certId" : {
-        "creditCode" : "951002007l78123233",
+        "creditCode" : "257091603041653856",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2019-07-25T16:30:38.980Z",
-      "signature" : "MEUCIBqAPQh7maJy2QoNekVI11zBe+KkZlF+AaPR0kKceHFoAiEAtg8D8vsiReM40Gcn5q+1g3kedKwMZo47vuKt/Fop4sc="
+      "tmLocal" : "2019-08-21T17:01:39.933Z",
+      "signature" : "MEUCIHpjdrEsa55Fxn/t+SkJ4PhvLIhCfPihgZ4ffEdYQGFGAiEAmgvyP8oO/vge1GfhRuFLRbDU1JWANbCMYEB9V+/c3m4="
     }
   }, {
-    "id" : "172ae52a-9b71-42a8-8b86-76a8199e4553",
+    "id" : "997a071c-a615-414d-a5f5-0681b070b281",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "ContractCert",
@@ -182,18 +182,18 @@
     },
     "ipt" : {
       "function" : "SignUpCert",
-      "args" : [ "{\"credit_code\":\"122000002n00123567\",\"name\":\"node3\",\"cert\":{\"certificate\":\"-----BEGIN CERTIFICATE-----\\r\\nMIIBmTCCAT+gAwIBAgIEXIn6vTAKBggqhkjOPQQDAjBWMQswCQYDVQQGEwJjbjEL\\r\\nMAkGA1UECAwCYmoxCzAJBgNVBAcMAmJqMREwDwYDVQQKDAhyZXBjaGFpbjEOMAwG\\r\\nA1UECwwFaXNjYXMxCjAIBgNVBAMMATMwHhcNMTkwMzE0MDY1NDUzWhcNMjAwMzEz\\r\\nMDY1NDUzWjBWMQswCQYDVQQGEwJjbjELMAkGA1UECAwCYmoxCzAJBgNVBAcMAmJq\\r\\nMREwDwYDVQQKDAhyZXBjaGFpbjEOMAwGA1UECwwFaXNjYXMxCjAIBgNVBAMMATMw\\r\\nVjAQBgcqhkjOPQIBBgUrgQQACgNCAASdBDKlL7mW1NEfYDDb63d6O3/MueUT0Czr\\r\\nbzcmLhrDvRyIO2fHl/zR/qrNy76cuRi7EednNO/G7qTemnJQqC9oMAoGCCqGSM49\\r\\nBAMCA0gAMEUCIEXfvQcCZsnBiCWEPV0gWmxnhBbRRXE9oirBwb4J0Tu+AiEAk7Z8\\r\\n3MRWR022p7AYeshwIXpaDlIu3N4VxatMHh3rs5I=\\r\\n-----END CERTIFICATE-----\\r\\n\",\"algType\":\"SHA1withECDSA\",\"certValid\":true,\"regTime\":{\"seconds\":1564043438,\"nanos\":985000000}}}" ]
+      "args" : [ "{\"credit_code\":\"989038588418990208\",\"name\":\"node3\",\"cert\":{\"certificate\":\"-----BEGIN CERTIFICATE-----\\r\\nMIICEjCCAbagAwIBAgIGAWyyKElLMAwGCCqBHM9VAYN1BQAwdDELMAkGA1UEBhMC\\r\\nQ04xGTAXBgNVBAoeEABSAGUAcABDAGgAYQBpAG4xDzANBgNVBAseBgBTAEQAUjE5\\r\\nMDcGA1UEAx4wADkAOAA5ADAAMwA4ADUAOAA4ADQAMQA4ADkAOQAwADIAMAA4AC4A\\r\\nbgBvAGQAZQAzMCIYDzIwMTExMjMxMTYwMDAwWhgPMjAyMTEyMzExNjAwMDBaMHQx\\r\\nCzAJBgNVBAYTAkNOMRkwFwYDVQQKHhAAUgBlAHAAQwBoAGEAaQBuMQ8wDQYDVQQL\\r\\nHgYAUwBEAFIxOTA3BgNVBAMeMAA5ADgAOQAwADMAOAA1ADgAOAA0ADEAOAA5ADkA\\r\\nMAAyADAAOAAuAG4AbwBkAGUAMzBZMBMGByqGSM49AgEGCCqBHM9VAYItA0IABOsu\\r\\nduOHBqM2HY5GkCn5Gmo0JH+T0Qfnfmd1bxEY/K3AS0vC2TTCJE9FvzwqHJEf/jO6\\r\\njoWRJGFgs56n0pCG3TejLjAsMAsGA1UdDwQEAwIAwDAdBgNVHSUEFjAUBggrBgEF\\r\\nBQcDAQYIKwYBBQUHAwIwDAYIKoEcz1UBg3UFAANIADBFAiEAvWo0B6047iHdKBaX\\r\\nU8bk7RkS39m8V8SLYeFNn3s7/20CIAcXWYE9id6rzz9TlUbJxckhpMyi6rO1ljW2\\r\\nca3nMsRg\\r\\n-----END CERTIFICATE-----\\r\\n\",\"algType\":\"SM3withSM2\",\"certValid\":true,\"regTime\":{\"seconds\":1566378099,\"nanos\":948000000}}}" ]
     },
     "signature" : {
       "certId" : {
-        "creditCode" : "951002007l78123233",
+        "creditCode" : "257091603041653856",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2019-07-25T16:30:38.987Z",
-      "signature" : "MEQCIDMnhA0LVT2H2f/hbg47piee+nue4pCTemepfm5OObHyAiBltrZgXEOBgMrB233VufIWfXGq3Fqvyjvtf87UK0Vdng=="
+      "tmLocal" : "2019-08-21T17:01:39.950Z",
+      "signature" : "MEYCIQDBKgd//R1HHnm9wUwCyp6gG2ienoeTg/CuTXDv1ka9VQIhAMw6cAAsgFT/zbzb2WykXn/FqxghaLsibw3iepz/UVlD"
     }
   }, {
-    "id" : "51abd708-5ac9-495a-bbd8-4da7072c286f",
+    "id" : "8d7e47be-c04f-478a-9908-fe1882f7d075",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "ContractCert",
@@ -201,18 +201,18 @@
     },
     "ipt" : {
       "function" : "SignUpCert",
-      "args" : [ "{\"credit_code\":\"921000005k36123789\",\"name\":\"node4\",\"cert\":{\"certificate\":\"-----BEGIN CERTIFICATE-----\\r\\nMIIBmjCCAT+gAwIBAgIEXIn75TAKBggqhkjOPQQDAjBWMQswCQYDVQQGEwJjbjEL\\r\\nMAkGA1UECAwCYmoxCzAJBgNVBAcMAmJqMREwDwYDVQQKDAhyZXBjaGFpbjEOMAwG\\r\\nA1UECwwFaXNjYXMxCjAIBgNVBAMMATQwHhcNMTkwMzE0MDY1OTQ5WhcNMjAwMzEz\\r\\nMDY1OTQ5WjBWMQswCQYDVQQGEwJjbjELMAkGA1UECAwCYmoxCzAJBgNVBAcMAmJq\\r\\nMREwDwYDVQQKDAhyZXBjaGFpbjEOMAwGA1UECwwFaXNjYXMxCjAIBgNVBAMMATQw\\r\\nVjAQBgcqhkjOPQIBBgUrgQQACgNCAAQy8jrMgX4TF/iuA42wEpYr82qIzBVFZmoJ\\r\\ndyQTu2Pu5Ot4Jfg1sa/ibY4fxXX/Rc2bN8U0+88A7JiEqa0pRAQUMAoGCCqGSM49\\r\\nBAMCA0kAMEYCIQDLBrE3v62ztcucfxZ27M0JqcgKWKT1Cow3JyCLZnhAQwIhANaQ\\r\\nIv1SgKX7fnhR3lga4IKdaFK6bpW/9YnDUsQ22kFL\\r\\n-----END CERTIFICATE-----\\r\\n\",\"algType\":\"SHA1withECDSA\",\"certValid\":true,\"regTime\":{\"seconds\":1564043438,\"nanos\":996000000}}}" ]
+      "args" : [ "{\"credit_code\":\"645377164372772928\",\"name\":\"node4\",\"cert\":{\"certificate\":\"-----BEGIN CERTIFICATE-----\\r\\nMIICEjCCAbagAwIBAgIGAWyyKEmFMAwGCCqBHM9VAYN1BQAwdDELMAkGA1UEBhMC\\r\\nQ04xGTAXBgNVBAoeEABSAGUAcABDAGgAYQBpAG4xDzANBgNVBAseBgBTAEQAUjE5\\r\\nMDcGA1UEAx4wADYANAA1ADMANwA3ADEANgA0ADMANwAyADcANwAyADkAMgA4AC4A\\r\\nbgBvAGQAZQA0MCIYDzIwMTExMjMxMTYwMDAwWhgPMjAyMTEyMzExNjAwMDBaMHQx\\r\\nCzAJBgNVBAYTAkNOMRkwFwYDVQQKHhAAUgBlAHAAQwBoAGEAaQBuMQ8wDQYDVQQL\\r\\nHgYAUwBEAFIxOTA3BgNVBAMeMAA2ADQANQAzADcANwAxADYANAAzADcAMgA3ADcA\\r\\nMgA5ADIAOAAuAG4AbwBkAGUANDBZMBMGByqGSM49AgEGCCqBHM9VAYItA0IABIxB\\r\\nX9xUyeB09lRNzcVpeCJbk9KKde8o3r25prbwXzW9EvOfglf720PNXCJYqO2y7rsZ\\r\\nZ92rpzq/Uxazt30mcHajLjAsMAsGA1UdDwQEAwIAwDAdBgNVHSUEFjAUBggrBgEF\\r\\nBQcDAQYIKwYBBQUHAwIwDAYIKoEcz1UBg3UFAANIADBFAiEAtunTsMTWkBCsc+uE\\r\\nI1iwFwb9ABd3Z36G67hNTRj3JVgCIESQbzMjjwzkaKhxilAhi3/DBfxnuVrSQu/p\\r\\nh/rBB+Vw\\r\\n-----END CERTIFICATE-----\\r\\n\",\"algType\":\"SM3withSM2\",\"certValid\":true,\"regTime\":{\"seconds\":1566378099,\"nanos\":968000000}}}" ]
     },
     "signature" : {
       "certId" : {
-        "creditCode" : "951002007l78123233",
+        "creditCode" : "257091603041653856",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2019-07-25T16:30:38.998Z",
-      "signature" : "MEUCIAR6Qv6KlI8kZsdn8eJDNEZH/6UTcUcM8A08AJnvUOgzAiEA8kKFcA4LM8tzPk1veQDoU7M8Wy7AToQxW175fXeD/kA="
+      "tmLocal" : "2019-08-21T17:01:39.969Z",
+      "signature" : "MEUCIQCxDSVCPqaZnoHtYOf66qXqgI3nXxMB7Wb2TkkHBZmc+QIgQsKyNkKQKZJPqD3Rzmcx27XCQdKKwijYMGJjvgdSihs="
     }
   }, {
-    "id" : "e4cc670b-2347-423d-bba3-b6ce998ef729",
+    "id" : "8fd15397-5544-4e84-9447-ff4f96544092",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "ContractCert",
@@ -220,18 +220,18 @@
     },
     "ipt" : {
       "function" : "SignUpCert",
-      "args" : [ "{\"credit_code\":\"921000006e0012v696\",\"name\":\"node5\",\"cert\":{\"certificate\":\"-----BEGIN CERTIFICATE-----\\r\\nMIIBmTCCAT+gAwIBAgIEXIn8QzAKBggqhkjOPQQDAjBWMQswCQYDVQQGEwJjbjEL\\r\\nMAkGA1UECAwCYmoxCzAJBgNVBAcMAmJqMREwDwYDVQQKDAhyZXBjaGFpbjEOMAwG\\r\\nA1UECwwFaXNjYXMxCjAIBgNVBAMMATUwHhcNMTkwMzE0MDcwMTIzWhcNMjAwMzEz\\r\\nMDcwMTIzWjBWMQswCQYDVQQGEwJjbjELMAkGA1UECAwCYmoxCzAJBgNVBAcMAmJq\\r\\nMREwDwYDVQQKDAhyZXBjaGFpbjEOMAwGA1UECwwFaXNjYXMxCjAIBgNVBAMMATUw\\r\\nVjAQBgcqhkjOPQIBBgUrgQQACgNCAASRkmXqNawcVmoRYCRbxxuGMEhBkNi7mB6E\\r\\nTHeC+CzOw/G7spOXst4AEEcZwNwnu4yBsTI61O59+wWWoVzJMCfHMAoGCCqGSM49\\r\\nBAMCA0gAMEUCIDUg9XvYS5gYplD2XpQIs2yYyG9yC3CYDVU3oHEbAhmgAiEA0857\\r\\njWV0BsnABl2+s/P/WYEuZWixQuO2YNGpwVG/u7g=\\r\\n-----END CERTIFICATE-----\\r\\n\",\"algType\":\"SHA1withECDSA\",\"certValid\":true,\"regTime\":{\"seconds\":1564043439,\"nanos\":17000000}}}" ]
+      "args" : [ "{\"credit_code\":\"379552050023903168\",\"name\":\"node5\",\"cert\":{\"certificate\":\"-----BEGIN CERTIFICATE-----\\r\\nMIICEzCCAbagAwIBAgIGAWyyKEm0MAwGCCqBHM9VAYN1BQAwdDELMAkGA1UEBhMC\\r\\nQ04xGTAXBgNVBAoeEABSAGUAcABDAGgAYQBpAG4xDzANBgNVBAseBgBTAEQAUjE5\\r\\nMDcGA1UEAx4wADMANwA5ADUANQAyADAANQAwADAAMgAzADkAMAAzADEANgA4AC4A\\r\\nbgBvAGQAZQA1MCIYDzIwMTExMjMxMTYwMDAwWhgPMjAyMTEyMzExNjAwMDBaMHQx\\r\\nCzAJBgNVBAYTAkNOMRkwFwYDVQQKHhAAUgBlAHAAQwBoAGEAaQBuMQ8wDQYDVQQL\\r\\nHgYAUwBEAFIxOTA3BgNVBAMeMAAzADcAOQA1ADUAMgAwADUAMAAwADIAMwA5ADAA\\r\\nMwAxADYAOAAuAG4AbwBkAGUANTBZMBMGByqGSM49AgEGCCqBHM9VAYItA0IABOW/\\r\\nwG96y+/mahILa1P/buDlMaGtsddmVDZJku0k6FCCYn6Ny14MSrp0UneSuYF1cNvo\\r\\nPGBvb69NM243qN2gdTmjLjAsMAsGA1UdDwQEAwIAwDAdBgNVHSUEFjAUBggrBgEF\\r\\nBQcDAQYIKwYBBQUHAwIwDAYIKoEcz1UBg3UFAANJADBGAiEAgziKjXGiU4e58AXA\\r\\nre3ZiPP8kNFak1u8rRn0T8HOyloCIQDZGGBe/NRdGZuMGWT86ShQ/F6AHS+pSE1E\\r\\n9apowWJduA==\\r\\n-----END CERTIFICATE-----\\r\\n\",\"algType\":\"SM3withSM2\",\"certValid\":true,\"regTime\":{\"seconds\":1566378099,\"nanos\":986000000}}}" ]
     },
     "signature" : {
       "certId" : {
-        "creditCode" : "951002007l78123233",
+        "creditCode" : "257091603041653856",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2019-07-25T16:30:39.019Z",
-      "signature" : "MEUCICrqdjUY29jPZr9cFO66GZnhDtRX2q/u/b5yxehsFBfuAiEAlePL5n2/bEG5pejx4RG7hFCeC1+qdhp7d1PWyIp4XWE="
+      "tmLocal" : "2019-08-21T17:01:39.988Z",
+      "signature" : "MEUCIFuigm4APDq0q7u7Eb18nrMOwNyw9dUPUicpe7Y81kRSAiEAuTfkV5xVdDJQBv9l9TCVeuQGcHmhC9ekBIoDhgqk8hQ="
     }
   }, {
-    "id" : "fb6bc5e3-b946-4ca3-bce1-c1f327ee0a45",
+    "id" : "a96a7713-2a34-47e8-82f5-9c66768496d6",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "ContractCert",
@@ -239,18 +239,18 @@
     },
     "ipt" : {
       "function" : "SignUpCert",
-      "args" : [ "{\"credit_code\":\"951002007l78123233\",\"name\":\"super_admin\",\"cert\":{\"certificate\":\"-----BEGIN CERTIFICATE-----\\r\\nMIIBrjCCAVOgAwIBAgIEXIn9HTAKBggqhkjOPQQDAjBgMQswCQYDVQQGEwJjbjEL\\r\\nMAkGA1UECAwCYmoxCzAJBgNVBAcMAmJqMREwDwYDVQQKDAhyZXBjaGFpbjEOMAwG\\r\\nA1UECwwFaXNjYXMxFDASBgNVBAMMC3N1cGVyX2FkbWluMB4XDTE5MDMxNDA3MDUw\\r\\nMVoXDTIwMDMxMzA3MDUwMVowYDELMAkGA1UEBhMCY24xCzAJBgNVBAgMAmJqMQsw\\r\\nCQYDVQQHDAJiajERMA8GA1UECgwIcmVwY2hhaW4xDjAMBgNVBAsMBWlzY2FzMRQw\\r\\nEgYDVQQDDAtzdXBlcl9hZG1pbjBWMBAGByqGSM49AgEGBSuBBAAKA0IABBLsxfk6\\r\\nB86BFI3ij2YJylNGzxXNRQb45mZPNfVAkQf0hImHJMP+EgCK7UfJqa1U970ZslSC\\r\\nVTDxNyrb5wfLOIMwCgYIKoZIzj0EAwIDSQAwRgIhANUOIZN0YmYxbtmUlJeMaeEe\\r\\nb2STEd2Z07l1WBUN+mN9AiEAqKXR2Z/F+t0lWELgO4I+fxHiw+GIBYYLlsRVy4zZ\\r\\nvvU=\\r\\n-----END CERTIFICATE-----\\r\\n\",\"algType\":\"SHA1withECDSA\",\"certValid\":true,\"regTime\":{\"seconds\":1564043439,\"nanos\":31000000}}}" ]
+      "args" : [ "{\"credit_code\":\"257091603041653856\",\"name\":\"super_admin\",\"cert\":{\"certificate\":\"-----BEGIN CERTIFICATE-----\\r\\nMIICLDCCAdCgAwIBAgIGAWyyKEnjMAwGCCqBHM9VAYN1BQAwgYAxCzAJBgNVBAYT\\r\\nAkNOMRkwFwYDVQQKHhAAUgBlAHAAQwBoAGEAaQBuMQ8wDQYDVQQLHgYAUwBEAFIx\\r\\nRTBDBgNVBAMePAAyADUANwAwADkAMQA2ADAAMwAwADQAMQA2ADUAMwA4ADUANgAu\\r\\nAHMAdQBwAGUAcgBfAGEAZABtAGkAbjAiGA8yMDExMTIzMTE2MDAwMFoYDzIwMjEx\\r\\nMjMxMTYwMDAwWjCBgDELMAkGA1UEBhMCQ04xGTAXBgNVBAoeEABSAGUAcABDAGgA\\r\\nYQBpAG4xDzANBgNVBAseBgBTAEQAUjFFMEMGA1UEAx48ADIANQA3ADAAOQAxADYA\\r\\nMAAzADAANAAxADYANQAzADgANQA2AC4AcwB1AHAAZQByAF8AYQBkAG0AaQBuMFkw\\r\\nEwYHKoZIzj0CAQYIKoEcz1UBgi0DQgAEiq4EK8AdLut90Y2TdMTZEztqjASKwPi2\\r\\nHbrEsP3yeJdxMHqv+9fEiMcmVx53v/1zHV8BA0DW8uzUFltaIivcHKMuMCwwCwYD\\r\\nVR0PBAQDAgDAMB0GA1UdJQQWMBQGCCsGAQUFBwMBBggrBgEFBQcDAjAMBggqgRzP\\r\\nVQGDdQUAA0gAMEUCIEG3eSNYNcljUNFv4Q4sQrnZp5otA8Dq2I2xalC9uE/HAiEA\\r\\n4YUveuEbr7b0vaUPCXj37NLHXXXDZjmIUlxBHMZNkj0=\\r\\n-----END CERTIFICATE-----\\r\\n\",\"algType\":\"SM3withSM2\",\"certValid\":true,\"regTime\":{\"seconds\":1566378100,\"nanos\":9000000}}}" ]
     },
     "signature" : {
       "certId" : {
-        "creditCode" : "951002007l78123233",
+        "creditCode" : "257091603041653856",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2019-07-25T16:30:39.033Z",
-      "signature" : "MEUCIQCO4Ig5fTfsU4wd9j6Ys9bG94t1mb1KIUu35/I2p/EeggIgZixOb5JBeOMntFUQOPCIBO2czvFmoJX8PZGipowHLt4="
+      "tmLocal" : "2019-08-21T17:01:40.010Z",
+      "signature" : "MEUCID/jIR/uyBog4haoJ4VQgFx+x2JiJSf7JSdWYcH7mZemAiEA7OTETPeDm078T/ayAqgLCIWSl9REn2yaNblqwDBKvl0="
     }
   }, {
-    "id" : "2a6e9cdd-3dfb-4ad1-ab16-6fef3b812022",
+    "id" : "30462be1-173b-4ecd-acdc-a8e481c5c072",
     "type" : "CHAINCODE_DEPLOY",
     "cid" : {
       "chaincodeName" : "ContractAssetsTPL",
@@ -263,14 +263,14 @@
     },
     "signature" : {
       "certId" : {
-        "creditCode" : "121000005l35120456",
+        "creditCode" : "215159697776981712",
         "certName" : "node1"
       },
-      "tmLocal" : "2019-07-25T16:30:39.035Z",
-      "signature" : "MEUCICAol+04vmQclqePiuSF0WrLHYWIBvTFmSyjOa/ha0IrAiEAwRHRlOszUMDUqYIQ0RhDa9j6ayxT8sy7tip2N5yUGxo="
+      "tmLocal" : "2019-08-21T17:01:40.023Z",
+      "signature" : "MEUCIEH9A2Utuz3elou/gBshkKycNjIYuwJGgCnVTQ7Ai7uUAiEA/ByKIib2zSu3xcJknkFuinD1yjAl27ArwIrkCvyC4/c="
     }
   }, {
-    "id" : "130d5715-dad0-4dbb-ba3f-eb8f6402b207",
+    "id" : "21f311c7-5529-4397-8e37-75677ef5d004",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "ContractAssetsTPL",
@@ -278,15 +278,15 @@
     },
     "ipt" : {
       "function" : "set",
-      "args" : [ "{\r\n  \"121000005l35120456\" : 10000000,\r\n  \"12110107bi45jh675g\" : 10000000,\r\n  \"122000002n00123567\" : 10000000,\r\n  \"921000005k36123789\" : 10000000,\r\n  \"921000006e0012v696\" : 10000000\r\n}" ]
+      "args" : [ "{\r\n  \"215159697776981712\" : 10000000,\r\n  \"904703631549900672\" : 10000000,\r\n  \"989038588418990208\" : 10000000,\r\n  \"645377164372772928\" : 10000000,\r\n  \"379552050023903168\" : 10000000\r\n}" ]
     },
     "signature" : {
       "certId" : {
-        "creditCode" : "951002007l78123233",
+        "creditCode" : "257091603041653856",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2019-07-25T16:30:39.037Z",
-      "signature" : "MEUCIQDecVuwJm5/tLAEWZEDbfp6GbQTgcOIFFLnbHdXAyUyxwIgOkZx7+ymhVR/pRPA7WJd8lMQNNR9O+QDhI5QN/VakAM="
+      "tmLocal" : "2019-08-21T17:01:40.039Z",
+      "signature" : "MEYCIQDa9z+cIKUc7vFh54kxpXdynRgLhM9PPzfSCjMbCaIKywIhALw7c+TWJQm3XNCirNC59BSgscYUh+xefVWU4eqHx9zg"
     }
   } ]
 }

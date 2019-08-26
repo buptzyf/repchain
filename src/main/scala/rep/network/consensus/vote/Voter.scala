@@ -18,7 +18,7 @@ package rep.network.consensus.vote
 
 import akka.actor.{ Actor, Address, Props }
 import rep.app.conf.{ SystemProfile, TimePolicy, SystemCertList }
-import rep.crypto.Sha256
+import rep.crypto.Sm3
 import rep.network.base.ModuleBase
 import rep.protos.peer.BlockchainInfo
 import rep.storage.ImpDataAccess
@@ -75,7 +75,7 @@ class Voter(moduleName: String) extends ModuleBase(moduleName) with CRFDVoter {
 
   private def resetCandidator(currentblockhash:String) = {
     //this.BlockHashOfVote = pe.getCurrentBlockHash
-    candidator = candidators(pe.getSysTag,currentblockhash,SystemCertList.getSystemCertList, Sha256.hash(currentblockhash))
+    candidator = candidators(pe.getSysTag,currentblockhash,SystemCertList.getSystemCertList, Sm3.hash(currentblockhash))
     //pe.getNodeMgr.resetCandidator(candidatorCur)
   }
 

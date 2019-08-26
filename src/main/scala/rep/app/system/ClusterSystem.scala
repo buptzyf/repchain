@@ -121,8 +121,7 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
    */
   def getConfigBySys(sysName: String): Config = {
     val myConfig =
-      ConfigFactory.parseString("akka.remote.netty.ssl.security.key-store = \"jks/" + sysName +
-        ".jks\"")
+      ConfigFactory.parseString("akka.remote.netty.ssl.security.key-store = \"pfx/" + sysName + ".pfx\"")
     val regularConfig = getUserCombinedConf(USER_CONFIG_PATH)
     val combined =
       myConfig.withFallback(regularConfig)

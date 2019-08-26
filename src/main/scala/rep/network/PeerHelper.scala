@@ -143,7 +143,7 @@ class PeerHelper(name: String) extends ModuleBase(name) {
 
   //val si1 = scala.io.Source.fromFile("scripts/example_invoke_" + pe.getSysTag + ".js")
   //val li1 = try si1.mkString finally si1.close()
-  val si2 = scala.io.Source.fromFile("api_req/json/transfer_" + pe.getSysTag + ".json")
+  val si2 = scala.io.Source.fromFile("api_req/json/gm/transfer_" + pe.getSysTag + ".json")
   val li2 = try si2.mkString finally si2.close()
   //val sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
@@ -188,8 +188,8 @@ class PeerHelper(name: String) extends ModuleBase(name) {
   //自动循环不间断提交交易到系统，用于压力测试或者tps测试时使用。
   def createTransForLoop = {
     var count: Int = 0;
-    if (pe.getSysTag == "121000005l35120456.node1"|| pe.getSysTag == "12110107bi45jh675g.node2" || pe.getSysTag=="122000002n00123567.node3" || 
-        pe.getSysTag=="921000005k36123789.node4" || pe.getSysTag=="921000006e0012v696.node5")
+    if (pe.getSysTag == "215159697776981712.node1"|| pe.getSysTag == "904703631549900672.node2" || pe.getSysTag=="989038588418990208.node3" ||
+        pe.getSysTag=="645377164372772928.node4" || pe.getSysTag=="379552050023903168.node5")
       while (true) {
         try {
           val start = System.currentTimeMillis()

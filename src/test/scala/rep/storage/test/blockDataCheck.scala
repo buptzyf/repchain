@@ -23,7 +23,7 @@ import rep.protos.peer.CertId
 import rep.protos.peer.Signature
 import java.util.Date
 
-import rep.crypto.Sha256
+import rep.crypto.Sm3
 import scala.collection.mutable
 import rep.storage.util.pathUtil
 import scala.math._
@@ -368,7 +368,7 @@ object blockDataCheck extends App {
     nodes(4) = "921000006e0012v696.node5"
     val b = da.getBlock4ObjectByHeight(h)
 
-    val candidatorCur = candidators(da.getSystemName, b.hashOfBlock.toStringUtf8(), nodes.toSet, Sha256.hash(b.hashOfBlock.toStringUtf8()))
+    val candidatorCur = candidators(da.getSystemName, b.hashOfBlock.toStringUtf8(), nodes.toSet, Sm3.hash(b.hashOfBlock.toStringUtf8()))
     println(s"height=$h,systemname=${da.SystemName},${candidatorCur.mkString("|")}")
   }
 

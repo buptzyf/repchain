@@ -19,7 +19,7 @@ package rep.network.consensus.util
 import rep.protos.peer._
 import rep.crypto.cert.SignTool
 import scala.util.control.Breaks._
-import rep.crypto.Sha256
+import rep.crypto.Sm3
 import com.google.protobuf.ByteString
 import rep.utils.IdTool
 
@@ -125,7 +125,7 @@ object BlockVerify {
       val oldhash = block.hashOfBlock.toStringUtf8()
       val blkOutEndorse = block.clearEndorsements
       val blkOutBlockHash = blkOutEndorse.withHashOfBlock(ByteString.EMPTY)
-      val hash = Sha256.hashstr(blkOutBlockHash.toByteArray)
+      val hash = Sm3.hashstr(blkOutBlockHash.toByteArray)
       if (oldhash.equals(hash)) {
         result = true
       }

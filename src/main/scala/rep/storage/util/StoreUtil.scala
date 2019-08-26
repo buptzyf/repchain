@@ -17,7 +17,8 @@
 package rep.storage.util
 
 import scala.collection.mutable.ArrayBuffer
-import rep.crypto._
+import rep.crypto.Sm3
+
 import scala.collection.mutable
 import scala.collection.immutable
 import rep.utils._
@@ -76,8 +77,8 @@ object StoreUtil {
 		         value = Array.concat(value , src(i))
 		       }
 		       j += 1
-		    }
-		    value = Sha256.hash(value)
+   }
+		    value = Sm3.hash(value)
 		    i+=1
 		    nextlist += value
 		  }
@@ -111,7 +112,7 @@ object StoreUtil {
 		       }
 		       j += 1
 		    }
-      value = Sha256.hash(value)
+      value = Sm3.hash(value)
       i+=1
       cmerkledata.update(UpdateNextIdx, value)
     }
@@ -152,7 +153,7 @@ object StoreUtil {
 		       }
 		       j += 1
 		    }
-		    value = Sha256.hash(value)
+		    value = Sm3.hash(value)
 		    cmerkledata += value
 		    i+=1
 		  }
@@ -202,7 +203,7 @@ object StoreUtil {
 		       }
 		       j += 1
 		    }
-		    value = Sha256.hash(value)
+		    value = Sm3.hash(value)
 		    var tmpidx = loop/MaxGroup
 		    if(tmpidx > cmerkledata.size-1){
 		      cmerkledata += value

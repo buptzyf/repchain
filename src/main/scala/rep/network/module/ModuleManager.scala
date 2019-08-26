@@ -163,15 +163,15 @@ class ConfigerHelper(conf: Config, tag: String, dbTag: String) {
   /**
    * Authorization module init
    *
-   * @param jksFilePath
+   * @param pfxFilePath
    * @param pwd
-   * @param trustJksFilePath
+   * @param trustPfxFilePath
    * @param trustPwd
    */
-  private def authInit(sysTag: String, jksFilePath: String, pwd: String, trustJksFilePath: String, trustPwd: String): Unit = {
+  private def authInit(sysTag: String, pfxFilePath: String, pwd: String, trustPfxFilePath: String, trustPwd: String): Unit = {
     //init the ECDSA param
-    SignTool.loadPrivateKey(sysTag, pwd, jksFilePath)
-    SignTool.loadNodeCertList(trustPwd, trustJksFilePath)
+    SignTool.loadPrivateKey(sysTag, pwd, pfxFilePath)
+    SignTool.loadNodeCertList(trustPwd, trustPfxFilePath)
     //ECDSASign.apply(sysTag, jksFilePath, pwd, trustJksFilePath, trustPwd)
     //ECDSASign.preLoadKey(sysTag)
   }
@@ -180,7 +180,7 @@ class ConfigerHelper(conf: Config, tag: String, dbTag: String) {
    * 根据配置初始化本地安全配置
    */
   private def authInitByCfg(sysTag: String): Unit = {
-    val mykeyPath = conf.getString("akka.remote.netty.ssl.security.base-path") + sysTag + ".jks"
+    val mykeyPath = conf.getString("akka.remote.netty.ssl.security.base-path") + sysTag + ".pfx"
     val psw = conf.getString("akka.remote.netty.ssl.security.key-store-password")
     val trustPath = conf.getString("akka.remote.netty.ssl.security.trust-store")
     val trustPwd = conf.getString("akka.remote.netty.ssl.security.trust-store-password")
