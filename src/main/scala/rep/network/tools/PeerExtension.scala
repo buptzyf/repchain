@@ -30,6 +30,8 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import rep.utils.GlobalUtils.{ BlockerInfo, NodeStatus }
 import rep.network.persistence.BlockCache
 import rep.network.tools.transpool.TransactionPoolMgr
+import java.util.concurrent.ConcurrentHashMap
+import scala.collection.JavaConverters._
 
 /**
  * Peer business logic node stared space（based on system）
@@ -125,25 +127,25 @@ class PeerExtensionImpl extends Extension {
 /*********节点信息相关操作结束************/
 
 /*********系统Actor注册相关操作开始************/
-  private var actorList = mutable.HashMap[Int, ActorRef]().empty
+  private implicit var actorList = new ConcurrentHashMap[Int, ActorRef] asScala
 
   def register(actorName: Int, actorRef: ActorRef) = {
-    actorList += actorName -> actorRef
+    actorList.put(actorName, actorRef)
   }
 
   def getActorRef(actorName: Int): ActorRef = {
     var r: ActorRef = null
-    try {
+    if(actorList.contains(actorName)){
       r = actorList(actorName)
-    } catch {
-      case e: Exception => r = null
     }
+    
     r
   }
 
-  def unregister(actorName: Int) = {
+  /*def unregister(actorName: Int) = {
     actorList -= actorName
-  }
+  }*/
+  
 /*********系统Actor注册相关操作结束************/
 }
 

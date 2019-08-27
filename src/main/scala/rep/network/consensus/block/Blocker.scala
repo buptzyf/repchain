@@ -184,10 +184,10 @@ class Blocker(moduleName: String) extends ModuleBase(moduleName) {
   override def receive = {
     //创建块请求（给出块人）
     case Blocker.CreateBlock =>
-      //if(pe.getSysTag == "121000005l35120456.node1" &&  !pe.isSetExcept){
-        //pe.isSetExcept = true
-        //throw new Exception("^^^^^^^^^^^^^^^^exception^^^^^^^^^^")
-      //}
+      /*if(pe.getSysTag == "121000005l35120456.node1" &&  pe.count <= 10){
+        pe.count = pe.count + 1
+        throw new Exception("^^^^^^^^^^^^^^^^exception^^^^^^^^^^")
+      }*/
       if (!pe.isSynching) {
         if (NodeHelp.isBlocker(pe.getBlocker.blocker, pe.getSysTag) && pe.getBlocker.voteBlockHash == pe.getCurrentBlockHash) {
           sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Block, Event.Action.CANDIDATOR)
