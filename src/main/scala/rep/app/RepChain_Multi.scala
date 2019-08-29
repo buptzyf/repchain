@@ -67,9 +67,9 @@ object RepChain_Multi {
     var nodes = Set.empty[ClusterSystem]
     nodes += sys1
 
-    for (i <- 2 to files.length) {
+    for (i <- 1 to 9) {
       Thread.sleep(2000)
-      val sysN = new ClusterSystem(nodelist(i - 1), InitType.MULTI_INIT, true)
+      val sysN = new ClusterSystem(nodelist(i), InitType.MULTI_INIT, true)
       sysN.init
       //初始化（参数和配置信息）
       sysN.joinCluster(joinAddress)

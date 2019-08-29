@@ -85,7 +85,7 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
   private def CheckAndFinishHandler {
     sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Endorsement, Event.Action.ENDORSEMENT)
     RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("entry collectioner check  "))
-    if (NodeHelp.ConsensusConditionChecked(this.recvedEndorse.size + 1, pe.getNodeMgr.getNodes.size)) {
+    if (NodeHelp.ConsensusConditionChecked(this.recvedEndorse.size + 1, pe.getNodeMgr.getStableNodes.size)) {
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("collectioner package endorsement to block"))
       this.recvedEndorse.foreach(f => {
         this.block = BlockHelp.AddEndorsementToBlock(this.block, f._2)

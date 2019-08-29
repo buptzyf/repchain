@@ -56,8 +56,8 @@ class SynchronizeRequester4Future(moduleName: String) extends ModuleBase(moduleN
     RepLogger.info(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix("SynchronizeRequester4Future Start"))
   }
 
-  private def toAkkaUrl(addr: Address, actorName: String): String = {
-    return addr.toString + "/" + actorName;
+  private def toAkkaUrl(addr: String, actorName: String): String = {
+    return addr + "/" + actorName;
   }
 
   private def AsyncGetNodeOfChainInfo(addr: Address,lh:Long): Future[ResponseInfo] = Future {
@@ -65,7 +65,7 @@ class SynchronizeRequester4Future(moduleName: String) extends ModuleBase(moduleN
     var result: ResponseInfo = null
 
     try {
-      val selection: ActorSelection = context.actorSelection(toAkkaUrl(addr, responseActorName));
+      val selection: ActorSelection = context.actorSelection(toAkkaUrl(addr.toString, responseActorName));
       val future1 = selection ? ChainInfoOfRequest(lh)
       //logMsg(LogType.INFO, "--------AsyncGetNodeOfChainInfo success")
       result = Await.result(future1, timeout.duration).asInstanceOf[ResponseInfo]
@@ -114,7 +114,8 @@ class SynchronizeRequester4Future(moduleName: String) extends ModuleBase(moduleN
   private def getBlockData(height: Long, ref: ActorRef): Boolean = {
     try {
       sendEvent(EventType.PUBLISH_INFO, mediator,pe.getSysTag, pe.getNodeMgr.getNodeName4AddrString(NodeHelp.getNodeAddress(ref)) ,  Event.Action.BLOCK_SYNC_DATA)
-      val future1 = ref ? BlockDataOfRequest(height)
+      val selection: ActorSelection = context.actorSelection(toAkkaUrl(NodeHelp.getNodeAddress(ref), responseActorName));
+      val future1 = selection ? BlockDataOfRequest(height)
       //logMsg(LogType.INFO, "--------AsyncGetNodeOfChainInfo success")
       var result = Await.result(future1, timeout.duration).asInstanceOf[BlockDataOfResponse]
       RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"height=${height}--------getBlockData success"))
@@ -227,12 +228,21 @@ class SynchronizeRequester4Future(moduleName: String) extends ModuleBase(moduleN
       }
 
     case SyncRequestOfStorager(responser, maxHeight) =>
+      //val selection: ActorSelection = context.actorSelection(responser+"/user/modulemanager/synchresponser");
+      RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"entry blockdata synch,maxheight=${maxHeight},responser=${responser}"))
       if (!pe.isSynching) {
         pe.setSynching(true)
+        RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"start blockdata synch,currentheight=${pe.getCurrentHeight},maxheight=${maxHeight}"))
          //if(pe.getSysTag == "921000006e0012v696.node5"){
          //   println("921000006e0012v696.node5")
          // }
-        getBlockDatas(pe.getCurrentHeight,maxHeight,responser)
+        try{
+          getBlockDatas(pe.getCurrentHeight,maxHeight,responser)
+        }catch{
+          case e:Exception  =>
+            pe.setSynching(false)
+        }
+        RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"stop blockdata synch,maxheight=${maxHeight}"))
         pe.setSynching(false)
         //pe.getActorRef(ActorType.modulemanager) ! ModuleManager.startup_Consensus
       }

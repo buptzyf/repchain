@@ -44,14 +44,14 @@ class Voter(moduleName: String) extends ModuleBase(moduleName) with CRFDVoter {
   import scala.concurrent.duration._
 
   override def preStart(): Unit = {
-    RepLogger.info(RepLogger.Vote_Logger, this.getLogMsgPrefix(  "Vote module start"))
+    RepLogger.info(RepLogger.Vote_Logger, this.getLogMsgPrefix("Vote module start"))
   }
 
   val dataaccess: ImpDataAccess = ImpDataAccess.GetDataAccess(pe.getSysTag)
 
   //private var BlockHashOfVote: String = null
   private var candidator: Array[String] = Array.empty[String]
-  private var Blocker: BlockerInfo = BlockerInfo("", -1, 0l,"",-1)
+  private var Blocker: BlockerInfo = BlockerInfo("", -1, 0l, "", -1)
   private var voteCount = 0
 
   def checkTranNum: Boolean = {
@@ -62,7 +62,7 @@ class Voter(moduleName: String) extends ModuleBase(moduleName) with CRFDVoter {
     this.voteCount = 0
     //this.BlockHashOfVote = null
     candidator = Array.empty[String]
-    this.Blocker = BlockerInfo("", -1, 0l,"",-1)
+    this.Blocker = BlockerInfo("", -1, 0l, "", -1)
     pe.resetBlocker(this.Blocker)
   }
 
@@ -73,15 +73,15 @@ class Voter(moduleName: String) extends ModuleBase(moduleName) with CRFDVoter {
     pe.getCurrentBlockHash
   }
 
-  private def resetCandidator(currentblockhash:String) = {
+  private def resetCandidator(currentblockhash: String) = {
     //this.BlockHashOfVote = pe.getCurrentBlockHash
-    candidator = candidators(pe.getSysTag,currentblockhash,SystemCertList.getSystemCertList, Sha256.hash(currentblockhash))
+    candidator = candidators(pe.getSysTag, currentblockhash, SystemCertList.getSystemCertList, Sha256.hash(currentblockhash))
     //pe.getNodeMgr.resetCandidator(candidatorCur)
   }
 
-  private def resetBlocker(idx: Int,currentblockhash:String,currentheight:Long) = {
-    RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(  s"sysname=${pe.getSysTag},votelist=${candidator.toArray[String].mkString("|")},idx=${idx}"))
-    this.Blocker = BlockerInfo(blocker(candidator.toArray[String], idx), idx, System.currentTimeMillis(),currentblockhash,currentheight)
+  private def resetBlocker(idx: Int, currentblockhash: String, currentheight: Long) = {
+    RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},votelist=${candidator.toArray[String].mkString("|")},idx=${idx}"))
+    this.Blocker = BlockerInfo(blocker(candidator.toArray[String], idx), idx, System.currentTimeMillis(), currentblockhash, currentheight)
     pe.resetBlocker(this.Blocker)
     NoticeBlockerMsg
   }
@@ -90,7 +90,7 @@ class Voter(moduleName: String) extends ModuleBase(moduleName) with CRFDVoter {
     if (this.Blocker.blocker.equals(pe.getSysTag)) {
       //发送建立新块的消息
       pe.getActorRef(ActorType.blocker) ! CreateBlock
-    } 
+    }
   }
 
   private def DelayVote = {
@@ -107,62 +107,64 @@ class Voter(moduleName: String) extends ModuleBase(moduleName) with CRFDVoter {
       if (this.Blocker.voteBlockHash == "") {
         this.cleanVoteInfo
         this.resetCandidator(currentblockhash)
-        this.resetBlocker(0,currentblockhash,currentheight)
-        RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(  s"sysname=${pe.getSysTag},first voter,blocker=${this.Blocker.blocker},voteidx=${this.Blocker.VoteIndex}" + "~" + selfAddr))
+        this.resetBlocker(0, currentblockhash, currentheight)
+        RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},first voter,blocker=${this.Blocker.blocker},voteidx=${this.Blocker.VoteIndex}" + "~" + selfAddr))
       } else {
         if (!this.Blocker.voteBlockHash.equals(currentblockhash)) {
           //抽签的基础块已经变化，需要重续选择候选人
           this.cleanVoteInfo
           this.resetCandidator(currentblockhash)
-          this.resetBlocker(0,currentblockhash,currentheight)
-          RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(  s"sysname=${pe.getSysTag},hash change,reset voter,height=${currentheight},hash=${currentblockhash},blocker=${this.Blocker.blocker},voteidx=${this.Blocker.VoteIndex}" + "~" + selfAddr))
+          this.resetBlocker(0, currentblockhash, currentheight)
+          RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},hash change,reset voter,height=${currentheight},hash=${currentblockhash},blocker=${this.Blocker.blocker},voteidx=${this.Blocker.VoteIndex}" + "~" + selfAddr))
         } else {
           if (this.Blocker.blocker == "") {
             this.cleanVoteInfo
             this.resetCandidator(currentblockhash)
-            this.resetBlocker(0,currentblockhash,currentheight)
-            RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(  s"sysname=${pe.getSysTag},blocker=null,reset voter,height=${currentheight},blocker=${this.Blocker.blocker},voteidx=${this.Blocker.VoteIndex}" + "~" + selfAddr))
+            this.resetBlocker(0, currentblockhash, currentheight)
+            RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},blocker=null,reset voter,height=${currentheight},blocker=${this.Blocker.blocker},voteidx=${this.Blocker.VoteIndex}" + "~" + selfAddr))
           } else {
             if ((System.currentTimeMillis() - this.Blocker.voteTime) / 1000 > TimePolicy.getTimeOutBlock) {
               //说明出块超时
               this.voteCount = 0
-              this.resetBlocker(this.Blocker.VoteIndex + 1,currentblockhash,currentheight)
-              RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix( s"sysname=${pe.getSysTag},block timeout,reset voter,height=${currentheight},blocker=${this.Blocker.blocker},voteidx=${this.Blocker.VoteIndex}" + "~" + selfAddr))
+              this.resetBlocker(this.Blocker.VoteIndex + 1, currentblockhash, currentheight)
+              RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},block timeout,reset voter,height=${currentheight},blocker=${this.Blocker.blocker},voteidx=${this.Blocker.VoteIndex}" + "~" + selfAddr))
             } else {
               NoticeBlockerMsg
             }
           }
         }
       }
-    }else{
-      RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix( s"sysname=${pe.getSysTag},transaction is not enough,waiting transaction,height=${pe.getCurrentHeight}" + "~" + selfAddr))
+    } else {
+      RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},transaction is not enough,waiting transaction,height=${pe.getCurrentHeight}" + "~" + selfAddr))
     }
   }
 
   private def voteMsgHandler = {
-    if(pe.getNodeMgr.getStableNodes.size >= SystemProfile.getVoteNoteMin ){
-    //只有共识节点符合要求之后开始工作
-    if (getSystemBlockHash == "") {
-      //系统属于初始化状态
-      if (NodeHelp.isSeedNode(pe.getSysTag)) {
-        // 建立创世块消息
-        pe.getActorRef(ActorType.gensisblock) ! GenesisBlock
+    if (pe.getNodeMgr.getStableNodes.size >= SystemProfile.getVoteNoteMin) {
+      //只有共识节点符合要求之后开始工作
+      if (getSystemBlockHash == "") {
+        //系统属于初始化状态
+        if (NodeHelp.isSeedNode(pe.getSysTag)) {
+          // 建立创世块消息
+          pe.getActorRef(ActorType.gensisblock) ! GenesisBlock
+        } else {
+          // 发出同步消息
+          //pe.setSystemStatus(NodeStatus.Synching)
+          //pe.getActorRef(ActorType.synchrequester) ! StartSync
+        }
       } else {
-        // 发出同步消息
-        //pe.setSystemStatus(NodeStatus.Synching)
-        //pe.getActorRef(ActorType.synchrequester) ! StartSync
+        if (!pe.isSynching) {
+          vote
+        }
       }
-    } else {
-      if (!pe.isSynching) {
-        vote
-      }
-    }
     }
     DelayVote
   }
 
   override def receive = {
     case Voter.VoteOfBlocker =>
-      voteMsgHandler
+      if (NodeHelp.isCandidateNow(pe.getSysTag, SystemCertList.getSystemCertList)) {
+        voteMsgHandler
+      }
   }
 }
