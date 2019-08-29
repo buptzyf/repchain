@@ -34,6 +34,7 @@ import rep.network.util.NodeHelp
 import rep.network.sync.SyncMsg.{BlockDataOfRequest,BlockDataOfResponse}
 import rep.log.RepLogger
 import rep.log.RepTimeTracer
+import rep.app.conf.{ SystemCertList}
 
 
 object Storager {
@@ -108,12 +109,14 @@ class Storager(moduleName: String) extends ModuleBase(moduleName) {
   }
 
   private def NoticeVoteModule = {
-    if (pe.getBlockCacheMgr.isEmpty ) {
-      RepLogger.trace(RepLogger.Storager_Logger, this.getLogMsgPrefix("presistence is over,this is startup vote" + "~" + selfAddr))
-      //通知抽签模块，开始抽签
-      pe.getActorRef( ActorType.voter) ! VoteOfBlocker
-    }else{
-      RepLogger.trace(RepLogger.Storager_Logger, this.getLogMsgPrefix( s"presistence is over,cache has data,do not vote,height=${pe.getCurrentHeight} ~" + selfAddr))
+    if (NodeHelp.isCandidateNow(pe.getSysTag, SystemCertList.getSystemCertList)) {
+      if (pe.getBlockCacheMgr.isEmpty ) {
+        RepLogger.trace(RepLogger.Storager_Logger, this.getLogMsgPrefix("presistence is over,this is startup vote" + "~" + selfAddr))
+        //通知抽签模块，开始抽签
+        pe.getActorRef( ActorType.voter) ! VoteOfBlocker
+      }else{
+        RepLogger.trace(RepLogger.Storager_Logger, this.getLogMsgPrefix( s"presistence is over,cache has data,do not vote,height=${pe.getCurrentHeight} ~" + selfAddr))
+      }
     }
   }
   

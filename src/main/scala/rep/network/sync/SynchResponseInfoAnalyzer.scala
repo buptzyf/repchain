@@ -68,7 +68,7 @@ class SynchResponseInfoAnalyzer(val systemName: String, val lchaininfo: Blockcha
 
   private def greaterThanLocalHeight(reslist: List[ResponseInfo], maxheight: Long, AgreementHash: String) = {
     val lh = this.lchaininfo.height
-    val nodes = this.nodemgr.getNodes
+    val nodes = this.nodemgr.getStableNodes
     val lhash = this.lchaininfo.currentBlockHash.toStringUtf8()
     val lprehash = this.lchaininfo.previousBlockHash.toStringUtf8()
     //待同步高度大于本地高度
@@ -140,7 +140,7 @@ class SynchResponseInfoAnalyzer(val systemName: String, val lchaininfo: Blockcha
 
   private def equalLocalHeight(reslist: List[ResponseInfo], maxheight: Long, AgreementHash: String) = {
     val lh = this.lchaininfo.height
-    val nodes = this.nodemgr.getNodes
+    val nodes = this.nodemgr.getStableNodes
     val lhash = this.lchaininfo.currentBlockHash.toStringUtf8()
     val lprehash = this.lchaininfo.previousBlockHash.toStringUtf8()
     //待同步高度等于本地高度
@@ -217,7 +217,7 @@ class SynchResponseInfoAnalyzer(val systemName: String, val lchaininfo: Blockcha
 
   def Parser(reslist: List[ResponseInfo],isStartupSynch:Boolean) = {
     val lh = lchaininfo.height
-    val nodes = nodemgr.getNodes
+    val nodes = nodemgr.getStableNodes
 
     if (NodeHelp.ConsensusConditionChecked(reslist.length , nodes.size)) {
       //获取到到chaininfo信息的数量，得到大多数节点的响应，进一步判断同步的策略
