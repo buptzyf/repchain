@@ -143,7 +143,7 @@ class PeerHelper(name: String) extends ModuleBase(name) {
 
   //val si1 = scala.io.Source.fromFile("scripts/example_invoke_" + pe.getSysTag + ".js")
   //val li1 = try si1.mkString finally si1.close()
-  val si2 = scala.io.Source.fromFile("api_req/json/transfer_" + pe.getSysTag + ".json")
+  val si2 = scala.io.Source.fromFile("api_req/json/transfer_" + pe.getSysTag + ".json","UTF-8")
   val li2 = try si2.mkString finally si2.close()
   //val sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 

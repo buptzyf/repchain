@@ -50,7 +50,7 @@ object GenesisBuilderMulti {
 
     //交易发起人是超级管理员
     //增加scala的资产管理合约
-    val s1 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/ContractCert.scala")
+    val s1 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/ContractCert.scala","UTF-8")
     val l1 = try s1.mkString finally s1.close()
     val cid1 = new ChaincodeId("ContractCert", 1)
     val dep_trans = PeerHelper.createTransaction4Deploy("951002007l78123233.super_admin", cid1, l1, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
@@ -65,7 +65,7 @@ object GenesisBuilderMulti {
     }
 
     val sysName = "121000005l35120456.node1"
-    val s2 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/ContractAssetsTPL.scala")
+    val s2 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/ContractAssetsTPL.scala","UTF-8")
     val l2 = try s2.mkString finally s2.close()
     val cid2 = new ChaincodeId("ContractAssetsTPL", 1)
     val dep_asserts_trans = PeerHelper.createTransaction4Deploy(sysName, cid2, l2, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)

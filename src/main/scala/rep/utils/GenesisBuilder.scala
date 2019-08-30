@@ -51,7 +51,7 @@ object GenesisBuilder {
     //交易发起人是超级管理员
     //增加scala的资产管理合约   
     // read deploy funcs
-    val s1 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/ContractCert.scala")
+    val s1 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/ContractCert.scala","UTF-8")
     val l1 = try s1.mkString finally s1.close()
     
     val cid = new ChaincodeId("ContractCert",1)
@@ -87,7 +87,7 @@ object GenesisBuilder {
     
     
     for(i<-0 to 5){
-      val certfile = scala.io.Source.fromFile("jks/"+signers(i).creditCode+"."+signers(i).name+".cer")
+      val certfile = scala.io.Source.fromFile("jks/"+signers(i).creditCode+"."+signers(i).name+".cer","UTF-8")
       val certstr = try certfile.mkString finally certfile.close()
      // val cert = SignTool.getCertByFile("jks/"+signers(i).creditCode+"."+signers(i).name+".cer")
       val millis = System.currentTimeMillis()
@@ -100,7 +100,7 @@ object GenesisBuilder {
     }
     
     
-     val s2 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/ContractAssetsTPL.scala")
+     val s2 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/ContractAssetsTPL.scala","UTF-8")
     val c2 = try s2.mkString finally s2.close()
     val cid2 = new ChaincodeId("ContractAssetsTPL",1)
     val dep_asserts_trans = PeerHelper.createTransaction4Deploy(sysName, cid2,
@@ -108,7 +108,7 @@ object GenesisBuilder {
     translist(13) = dep_asserts_trans
     
     // read invoke scala contract
-    val s3 = scala.io.Source.fromFile("api_req/json/set.json")
+    val s3 = scala.io.Source.fromFile("api_req/json/set.json","UTF-8")
     val ct1 = try s3.mkString finally s3.close()
     
     translist(14) = PeerHelper.createTransaction4Invoke("951002007l78123233.super_admin", cid2,
