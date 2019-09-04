@@ -99,7 +99,7 @@ class ConfirmOfBlock(moduleName: String) extends ModuleBase(moduleName) {
     if (asyncVerifyEndorses(block)) {
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"confirm verify endorsement end,height=${block.height}"))
       //背书人的签名一致
-      if (BlockVerify.VerifyEndorserSorted(block.endorsements.toArray[Signature]) == 1 || (block.height==1 && pe.getCurrentBlockHash == "" && block.previousBlockHash.isEmpty())) {
+      if (BlockVerify.verifySort(block.endorsements.toArray[Signature]) == 1 || (block.height==1 && pe.getCurrentBlockHash == "" && block.previousBlockHash.isEmpty())) {
         //背书信息排序正确
         RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"confirm verify endorsement sort,height=${block.height}"))
         pe.getBlockCacheMgr.addToCache(BlockRestore(block, SourceOfBlock.CONFIRMED_BLOCK, actRefOfBlock))
