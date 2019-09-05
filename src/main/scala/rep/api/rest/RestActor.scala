@@ -141,6 +141,11 @@ class RestActor(moduleName: String) extends  ModuleBase(moduleName) {
     if (t.toByteArray.length > tranLimitSize) {
       sender ! PostResult(t.id, None, Option(s"交易大小超出限制： ${tranLimitSize}，请重新检查"))
     }
+    
+    if (pe.getNodeMgr.getStableNodes.size < SystemProfile.getVoteNoteMin)  {
+      sender ! PostResult(t.id, None, Option("系统共识节点数目太少，暂时无法处理交易"))
+    }
+    
     val sig = t.signature.get.signature.toByteArray
     val tOutSig = t.clearSignature
     val certId = t.signature.get.certId.get
