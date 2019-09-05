@@ -154,30 +154,29 @@ object BlockVerify {
 /****************************检查背书是否完成结束**********************************************************/
 
 /****************************验证背书信息是否排序的操作开始**********************************************************/
-  def sort(src: Array[Signature]):Array[Signature]={
-    if(src.length > 1){
+  def sort(src: Array[Signature]): Array[Signature] = {
+    if (src.length > 1) {
       val a = src.slice(1, src.length)
-      val b = a.sortWith((l,r)=>IdTool.getSigner4String(l.getCertId)<IdTool.getSigner4String(r.getCertId))
-      src.patch(1, b, src.length-1)
-    }else{
+      val b = a.sortWith((l, r) => IdTool.getSigner4String(l.getCertId) < IdTool.getSigner4String(r.getCertId))
+      src.patch(1, b, src.length - 1)
+    } else {
       src
     }
   }
-  
-  def verifySort(srclist: Array[Signature]):Int={
+
+  def verifySort(srclist: Array[Signature]): Int = {
     var b: Int = 1
-    if(srclist != null && srclist.length > 1){
+    if (srclist != null && srclist.length > 1) {
       val as = sort(srclist)
       breakable(
-          for (i <- 0 until srclist.length ) {
-            if(IdTool.getSigner4String(srclist(i).getCertId) != IdTool.getSigner4String(as(i).getCertId)){
-              b = 0
-              break
-            }
+        for (i <- 0 until srclist.length) {
+          if (IdTool.getSigner4String(srclist(i).getCertId) != IdTool.getSigner4String(as(i).getCertId)) {
+            b = 0
+            break
           }
-      )
+        })
       b
-    }else{
+    } else {
       b = 0
       b
     }
