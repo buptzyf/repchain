@@ -66,7 +66,7 @@ class ChainService(ra: ActorRef)(implicit executionContext: ExecutionContext)
   implicit val formats = DefaultFormats
   implicit val timeout = Timeout(20.seconds)
 
-  val route = getBlockChainInfo
+  val route = getBlockChainInfo ~ getNodeNumber
 
   @ApiOperation(value = "返回块链信息", notes = "", nickname = "getChainInfo", httpMethod = "GET")
   @ApiResponses(Array(
@@ -77,6 +77,20 @@ class ChainService(ra: ActorRef)(implicit executionContext: ExecutionContext)
         extractClientIP { ip =>
           RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} get chaininfo")
           complete { (ra ? ChainInfo).mapTo[QueryResult] }
+        }
+      }
+    }
+
+  @Path("/node")
+  @ApiOperation(value = "返回组网节点数量", notes = "", nickname = "getNodeNumber", httpMethod = "GET")
+  @ApiResponses(Array(
+    new ApiResponse(code = 200, message = "返回组网节点数量", response = classOf[QueryResult])))
+  def getNodeNumber =
+    path("chaininfo" / "node") {
+      get {
+        extractClientIP { ip =>
+          RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} get node number")
+          complete { (ra ? NodeNumber).mapTo[QueryResult] }
         }
       }
     }
