@@ -91,7 +91,7 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
         this.block = BlockHelp.AddEndorsementToBlock(this.block, f._2)
       })
       var consensus = this.block.endorsements.toArray[Signature]
-      BlockVerify.sort(consensus)
+      consensus=BlockVerify.sort(consensus)
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("collectioner endorsement sort"))
       this.block = this.block.withEndorsements(consensus)
       RepTimeTracer.setEndTime(pe.getSysTag, "Endorsement", System.currentTimeMillis(),this.block.height,this.block.transactions.size)
