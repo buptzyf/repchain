@@ -25,6 +25,8 @@ libraryDependencies ++= Seq(
   )
 
 libraryDependencies += "com.typesafe.akka" %% "akka-http-xml" % akkaHttpVersion
+libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value
+libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value
 
 libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2"
 

@@ -60,13 +60,12 @@ final case class DownloadingProofWithTxid(
     txid: String
 )
 
-final case class DeliveryAndStorageProofWithTxid(
+class filOpsProSto extends IContract{
+  final case class DeliveryAndStorageProofWithTxid(
       proof: DeliveryAndStorageProof,
       txid: String
   )
 
-class filOpsProSto extends IContract{
-  
     val delimiter = "+"
     implicit val formats = DefaultFormats
 
