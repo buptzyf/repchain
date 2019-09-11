@@ -534,7 +534,27 @@ abstract class IDataAccess(val SystemName: String) extends AbstractLevelDB(Syste
    * @return	返回指定长度的Block数组，如果没有找到，返回长度=0的数组
    */
   def getBlocks4ObjectFromHeight(h: Int, limits: Int): Array[Block]
-
+  
+  /**
+   * @author jiangbuyun
+   * @version	0.7
+   * @since	2019-09-11
+   * @category	根据交易ID获取交易入块时间
+   * @param	txid 交易id
+   * @return	返回出块时间
+   */
+  def getBlockTimeOfTxid(txid : String): String
+  
+   /**
+   * @author jiangbuyun
+   * @version	0.7
+   * @since	2019-09-11
+   * @category	根据块的高度获取交易入块时间
+   * @param	h 块高度
+   * @return	返回出块时间
+   */
+  def getBlockTimeOfHeight(h : Long): String
+  
   /**
    * @author jiangbuyun
    * @version	0.7

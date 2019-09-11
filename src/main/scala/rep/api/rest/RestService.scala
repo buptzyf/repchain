@@ -113,7 +113,7 @@ class BlockService(ra: ActorRef)(implicit executionContext: ExecutionContext)
   implicit val serialization = jackson.Serialization // or native.Serialization
   implicit val formats = DefaultFormats
 
-  val route = getBlockById ~ getBlockByHeight ~ getBlockStreamByHeight
+  val route = getBlockById ~ getBlockByHeight ~ getBlockStreamByHeight ~ getBlockTimeOfCreate ~ getBlockTimeOfTransaction
 
   @Path("/hash/{blockId}")
   @ApiOperation(value = "返回指定id的区块", notes = "", nickname = "getBlockById", httpMethod = "GET")
@@ -149,6 +149,42 @@ class BlockService(ra: ActorRef)(implicit executionContext: ExecutionContext)
       }
     }
 
+  @Path("/blocktime/{blockHeight}")
+  @ApiOperation(value = "返回指定高度的区块的出块时间", notes = "", nickname = "getBlockTimeOfCreate", httpMethod = "GET")
+  @ApiImplicitParams(Array(
+    new ApiImplicitParam(name = "blockHeight", value = "区块高度", required = true, dataType = "long", paramType = "path")))
+  @ApiResponses(Array(
+    new ApiResponse(code = 200, message = "返回指定高度的区块的出块时间", response = classOf[QueryResult])))
+  def getBlockTimeOfCreate =
+    path("block" /"blocktime"/ Segment) { blockHeight =>
+      get {
+        extractClientIP { ip =>
+          RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} get block time for Height,block height=${blockHeight}")
+          complete { (ra ? BlockTimeForHeight(blockHeight.toLong)).mapTo[QueryResult] }
+        }
+
+        //complete { (ra ? BlockHeight(blockHeight.toInt)).mapTo[QueryResult] }
+      }
+    }
+  
+  @Path("/blocktimeoftran/{transid}")
+  @ApiOperation(value = "返回指定交易的入块时间", notes = "", nickname = "getBlockTimeOfTransaction", httpMethod = "GET")
+  @ApiImplicitParams(Array(
+    new ApiImplicitParam(name = "transid", value = "交易id", required = true, dataType = "String", paramType = "path")))
+  @ApiResponses(Array(
+    new ApiResponse(code = 200, message = "返回指定交易的入块时间", response = classOf[QueryResult])))
+  def getBlockTimeOfTransaction =
+    path("block" /"blocktimeoftran"/ Segment) { transid =>
+      get {
+        extractClientIP { ip =>
+          RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} get block time for txid,txid=${transid}")
+          complete { (ra ? BlockTimeForTxid(transid)).mapTo[QueryResult] }
+        }
+
+        //complete { (ra ? BlockHeight(blockHeight.toInt)).mapTo[QueryResult] }
+      }
+    }
+  
   @Path("/stream/{blockHeight}")
   @ApiOperation(value = "返回指定高度的区块字节流", notes = "", nickname = "getBlockStreamByHeight", httpMethod = "GET")
   @ApiImplicitParams(Array(
