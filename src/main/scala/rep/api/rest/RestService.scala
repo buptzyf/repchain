@@ -66,7 +66,7 @@ class ChainService(ra: ActorRef)(implicit executionContext: ExecutionContext)
   implicit val formats = DefaultFormats
   implicit val timeout = Timeout(20.seconds)
 
-  val route = getBlockChainInfo ~ getNodeNumber
+  val route = getBlockChainInfo ~ getNodeNumber ~ getCacheTransNumber
 
   @ApiOperation(value = "返回块链信息", notes = "", nickname = "getChainInfo", httpMethod = "GET")
   @ApiResponses(Array(
@@ -91,6 +91,20 @@ class ChainService(ra: ActorRef)(implicit executionContext: ExecutionContext)
         extractClientIP { ip =>
           RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} get node number")
           complete { (ra ? NodeNumber).mapTo[QueryResult] }
+        }
+      }
+    }
+  
+  @Path("/getcachetransnumber")
+  @ApiOperation(value = "返回系统缓存交易数量", notes = "", nickname = "getCacheTransNumber", httpMethod = "GET")
+  @ApiResponses(Array(
+    new ApiResponse(code = 200, message = "返回系统缓存交易数量", response = classOf[QueryResult])))
+  def getCacheTransNumber =
+    path("chaininfo" / "getcachetransnumber") {
+      get {
+        extractClientIP { ip =>
+          RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} get number of cache")
+          complete { (ra ? TransNumber).mapTo[QueryResult] }
         }
       }
     }
@@ -265,6 +279,7 @@ class TransactionService(ra: ActorRef)(implicit executionContext: ExecutionConte
         }
       }
     }
+ 
 
   @Path("/stream/{transactionId}")
   @ApiOperation(value = "返回指定id的交易字节流", notes = "", nickname = "getTransactionStream", httpMethod = "GET", produces = "application/octet-stream")
