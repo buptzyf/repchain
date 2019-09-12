@@ -65,6 +65,8 @@ object RestActor {
 
   case class BlockId(bid: String)
   case class BlockHeight(h: Int)
+  case class BlockTimeForHeight(h:Long)
+  case class BlockTimeForTxid(txid:String)
   case class BlockHeightStream(h: Int)
   case class TransactionId(txid: String)
   case class TransactionStreamId(txid: String)
@@ -237,6 +239,24 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
         case _ =>
           val bl = Block.parseFrom(bb)
           QueryResult(Option(JsonFormat.toJson(bl)))
+      }
+      sender ! r
+      
+      case BlockTimeForHeight(h) =>
+        val bb = sr.getBlockTimeOfHeight(h)
+        val r = bb match {
+        case null => QueryResult(None)
+        case _ =>
+          QueryResult(Option(JsonMethods.parse(string2JsonInput("{"+"\"create time\":\""+bb+"\"}"))))
+      }
+      sender ! r
+      
+      case BlockTimeForTxid(txid)=>
+        val bb = sr.getBlockTimeOfTxid(txid)
+        val r = bb match {
+        case null => QueryResult(None)
+        case _ =>
+          QueryResult(Option(JsonMethods.parse(string2JsonInput("{"+"\"create time\":\""+bb+"\"}"))))
       }
       sender ! r
 
