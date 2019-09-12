@@ -248,7 +248,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
         val r = bb match {
         case null => QueryResult(None)
         case _ =>
-          QueryResult(Option(JsonMethods.parse(string2JsonInput("{"+"\"create time\":\""+bb+"\"}"))))
+          QueryResult(Option(JsonMethods.parse(string2JsonInput("{"+"\"createtime\":\""+bb+"\"}"))))
       }
       sender ! r
       
@@ -257,7 +257,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
         val r = bb match {
         case null => QueryResult(None)
         case _ =>
-          QueryResult(Option(JsonMethods.parse(string2JsonInput("{"+"\"create time\":\""+bb+"\"}"))))
+          QueryResult(Option(JsonMethods.parse(string2JsonInput("{"+"\"createtime\":\""+bb+"\"}"))))
       }
       sender ! r
 
@@ -315,12 +315,12 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
     case NodeNumber =>
       val stablenode = pe.getNodeMgr.getStableNodes.size
       val snode = pe.getNodeMgr.getNodes.size
-      val rs = "{\"consensus nodes\":\""+stablenode+"\",\"nodes\":\""+snode+"\"}"
+      val rs = "{\"consensusnodes\":\""+stablenode+"\",\"nodes\":\""+snode+"\"}"
       sender !  QueryResult(Option(JsonMethods.parse(string2JsonInput(rs))))
       
       case TransNumber =>
       val num = pe.getTransPoolMgr.getTransLength()
-      val rs = "{\"number of cache\":\""+num+"\"}"
+      val rs = "{\"numberofcache\":\""+num+"\"}"
       sender !  QueryResult(Option(JsonMethods.parse(string2JsonInput(rs))))
       
       
