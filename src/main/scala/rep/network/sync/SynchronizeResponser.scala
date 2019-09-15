@@ -62,7 +62,7 @@ class SynchronizeResponser(moduleName: String) extends ModuleBase(moduleName) {
           ChainInfoOfSpecifiedHeight = ChainInfoOfSpecifiedHeight.withPreviousBlockHash(b.previousBlockHash)
           ChainInfoOfSpecifiedHeight = ChainInfoOfSpecifiedHeight.withCurrentStateHash(b.stateHash)
         }
-        sender ! ResponseInfo(responseInfo,self,ChainInfoOfSpecifiedHeight)
+        sender ! ResponseInfo(responseInfo,self,ChainInfoOfSpecifiedHeight,pe.getSysTag)
       //}
 
     case BlockDataOfRequest(startHeight) =>

@@ -34,7 +34,7 @@ import scala.collection._
 import rep.utils.GlobalUtils.{ ActorType, BlockEvent, EventType, NodeStatus }
 import rep.app.conf.SystemProfile
 import rep.network.util.NodeHelp
-import rep.network.sync.SyncMsg.{ ResponseInfo, StartSync,  BlockDataOfRequest, BlockDataOfResponse, SyncRequestOfStorager,ChainInfoOfRequest }
+import rep.network.sync.SyncMsg.{ ResponseInfo, StartSync, BlockDataOfRequest, BlockDataOfResponse, SyncRequestOfStorager, ChainInfoOfRequest }
 import scala.util.control.Breaks._
 import rep.log.RepLogger
 import scala.collection.mutable.HashMap
@@ -60,7 +60,7 @@ class SynchronizeRequester4Future(moduleName: String) extends ModuleBase(moduleN
     return addr + "/" + actorName;
   }
 
-  private def AsyncGetNodeOfChainInfo(addr: Address,lh:Long): Future[ResponseInfo] = Future {
+  private def AsyncGetNodeOfChainInfo(addr: Address, lh: Long): Future[ResponseInfo] = Future {
     //println(s"${pe.getSysTag}:entry AsyncGetNodeOfChainInfo")
     var result: ResponseInfo = null
 
@@ -82,11 +82,11 @@ class SynchronizeRequester4Future(moduleName: String) extends ModuleBase(moduleN
     result
   }
 
-  private def AsyncGetNodeOfChainInfos(stablenodes: Set[Address],lh:Long): List[ResponseInfo] = {
+  private def AsyncGetNodeOfChainInfos(stablenodes: Set[Address], lh: Long): List[ResponseInfo] = {
     //println(s"${pe.getSysTag}:entry AsyncGetNodeOfChainInfos")
     //var result = new immutable.TreeMap[String, ResponseInfo]()
     val listOfFuture: Seq[Future[ResponseInfo]] = stablenodes.toSeq.map(addr => {
-      AsyncGetNodeOfChainInfo(addr,lh)
+      AsyncGetNodeOfChainInfo(addr, lh)
     })
 
     val futureOfList: Future[List[ResponseInfo]] = Future.sequence(listOfFuture.toList).recover({
@@ -109,11 +109,9 @@ class SynchronizeRequester4Future(moduleName: String) extends ModuleBase(moduleN
     }
   }
 
-  
-  
   private def getBlockData(height: Long, ref: ActorRef): Boolean = {
     try {
-      sendEvent(EventType.PUBLISH_INFO, mediator,pe.getSysTag, pe.getNodeMgr.getNodeName4AddrString(NodeHelp.getNodeAddress(ref)) ,  Event.Action.BLOCK_SYNC_DATA)
+      sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, pe.getNodeMgr.getNodeName4AddrString(NodeHelp.getNodeAddress(ref)), Event.Action.BLOCK_SYNC_DATA)
       val selection: ActorSelection = context.actorSelection(toAkkaUrl(NodeHelp.getNodeAddress(ref), responseActorName));
       val future1 = selection ? BlockDataOfRequest(height)
       //logMsg(LogType.INFO, "--------AsyncGetNodeOfChainInfo success")
@@ -131,75 +129,76 @@ class SynchronizeRequester4Future(moduleName: String) extends ModuleBase(moduleN
     }
   }
 
-  private def getBlockDatas(lh:Long,rh:Long,actorref:ActorRef) = {
+  private def getBlockDatas(lh: Long, rh: Long, actorref: ActorRef) = {
     if (rh > lh) {
       var height = lh + 1
       while (height <= rh) {
         if (!pe.getBlockCacheMgr.exist(height) && !getBlockData(height, actorref)) {
-            getBlockData(height, actorref)
+          getBlockData(height, actorref)
         }
         height += 1
       }
     }
   }
 
-  
-  private def checkHashAgreement(h:Long,ls:List[ResponseInfo],ns:Int,checkType:Int):(Boolean,String)={
+  private def checkHashAgreement(h: Long, ls: List[ResponseInfo], ns: Int, checkType: Int): (Boolean, String) = {
     val hls = ls.filter(_.response.height == h)
-    var gls : List[(String, Int)] = null
-    checkType match{
+    var gls: List[(String, Int)] = null
+    checkType match {
       case 1 =>
         //检查远端的最后一个块的hash的一致性
-          gls = hls.groupBy(x => x.response.currentBlockHash.toStringUtf8()).map(x => (x._1,x._2.length)).toList.sortBy(x => -x._2)
+        gls = hls.groupBy(x => x.response.currentBlockHash.toStringUtf8()).map(x => (x._1, x._2.length)).toList.sortBy(x => -x._2)
       case 2 =>
         //检查远端指定高度块的一致性
-        gls = hls.groupBy(x => x.ChainInfoOfSpecifiedHeight.currentBlockHash.toStringUtf8()).map(x => (x._1,x._2.length)).toList.sortBy(x => -x._2)
+        gls = hls.groupBy(x => x.ChainInfoOfSpecifiedHeight.currentBlockHash.toStringUtf8()).map(x => (x._1, x._2.length)).toList.sortBy(x => -x._2)
     }
     val tmpgHash = gls.head._1
     val tmpgCount = gls.head._2
-    if(NodeHelp.ConsensusConditionChecked(tmpgCount, ns)){
-      (true,tmpgHash)
-    }else{
-      (false,"")
+    if (NodeHelp.ConsensusConditionChecked(tmpgCount, ns)) {
+      (true, tmpgHash)
+    } else {
+      (false, "")
     }
   }
- 
-  
- 
-  private def Handler(isStartupSynch:Boolean) = {
+
+  private def Handler(isStartupSynch: Boolean): Boolean = {
+    var rb = true
     val lh = pe.getCurrentHeight
     val lhash = pe.getCurrentBlockHash
     val lprehash = pe.getSystemCurrentChainStatus.previousBlockHash.toStringUtf8()
     val nodes = pe.getNodeMgr.getStableNodes
-    sendEvent(EventType.PUBLISH_INFO, mediator,pe.getSysTag, BlockEvent.CHAIN_INFO_SYNC,  Event.Action.BLOCK_SYNC)
-    val res = AsyncGetNodeOfChainInfos(nodes,lh)
-    
+    sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, BlockEvent.CHAIN_INFO_SYNC, Event.Action.BLOCK_SYNC)
+    val res = AsyncGetNodeOfChainInfos(nodes, lh)
+
     val parser = new SynchResponseInfoAnalyzer(pe.getSysTag, pe.getSystemCurrentChainStatus, pe.getNodeMgr)
-    parser.Parser(res,isStartupSynch)
+    parser.Parser(res, isStartupSynch)
     val result = parser.getResult
     val rresult = parser.getRollbackAction
     val sresult = parser.getSynchActiob
-    
-    if(result.ar){
-      if(rresult != null){
+
+    if (result.ar == 1) {
+      if (rresult != null) {
         val da = ImpDataAccess.GetDataAccess(pe.getSysTag)
-       if(da.rollbackToheight(rresult.destHeight)){
-         if(sresult != null){
-           getBlockDatas(sresult.start,sresult.end,sresult.server)
-         }else{
-           pe.resetSystemCurrentChainStatus(da.getBlockChainInfo())
-         }
-       }else{
-         RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"回滚块失败，failed height=${rresult.destHeight}"))
-       }
-      }else{
-        if(sresult != null){
-          getBlockDatas(sresult.start,sresult.end,sresult.server)
+        if (da.rollbackToheight(rresult.destHeight)) {
+          if (sresult != null) {
+            getBlockDatas(sresult.start, sresult.end, sresult.server)
+          } else {
+            pe.resetSystemCurrentChainStatus(da.getBlockChainInfo())
+          }
+        } else {
+          RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"回滚块失败，failed height=${rresult.destHeight}"))
+        }
+      } else {
+        if (sresult != null) {
+          getBlockDatas(sresult.start, sresult.end, sresult.server)
         }
       }
-    }else{
+    } else if (result.ar == 2) {
+      rb = false
+    } else {
       RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(result.error))
     }
+    rb
   }
 
   private def initSystemChainInfo = {
@@ -211,18 +210,26 @@ class SynchronizeRequester4Future(moduleName: String) extends ModuleBase(moduleN
 
   override def receive: Receive = {
     case StartSync(isNoticeModuleMgr: Boolean) =>
+      schedulerLink = clearSched()
+      var rb = true
       initSystemChainInfo
       if (pe.getNodeMgr.getStableNodes.size >= SystemProfile.getVoteNoteMin && !pe.isSynching) {
         pe.setSynching(true)
-        try{
-          Handler(isNoticeModuleMgr)
-        }catch{
-          case e:Exception =>
+        try {
+          rb = Handler(isNoticeModuleMgr)
+        } catch {
+          case e: Exception =>
+            rb = false
             RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"request synch excep,msg=${e.getMessage}"))
         }
         pe.setSynching(false)
-        if (isNoticeModuleMgr)
-          pe.getActorRef(ActorType.modulemanager) ! ModuleManager.startup_Consensus
+        if (rb) {
+          if (isNoticeModuleMgr)
+            pe.getActorRef(ActorType.modulemanager) ! ModuleManager.startup_Consensus
+        }else{
+          schedulerLink = scheduler.scheduleOnce(1 second, self, StartSync(isNoticeModuleMgr))
+        }
+
       } else {
         RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"too few node,min=${SystemProfile.getVoteNoteMin} or synching  from actorAddr" + "～" + NodeHelp.getNodePath(sender())))
       }
@@ -233,13 +240,13 @@ class SynchronizeRequester4Future(moduleName: String) extends ModuleBase(moduleN
       if (!pe.isSynching) {
         pe.setSynching(true)
         RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"start blockdata synch,currentheight=${pe.getCurrentHeight},maxheight=${maxHeight}"))
-         //if(pe.getSysTag == "921000006e0012v696.node5"){
-         //   println("921000006e0012v696.node5")
-         // }
-        try{
-          getBlockDatas(pe.getCurrentHeight,maxHeight,responser)
-        }catch{
-          case e:Exception  =>
+        //if(pe.getSysTag == "921000006e0012v696.node5"){
+        //   println("921000006e0012v696.node5")
+        // }
+        try {
+          getBlockDatas(pe.getCurrentHeight, maxHeight, responser)
+        } catch {
+          case e: Exception =>
             pe.setSynching(false)
         }
         RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"stop blockdata synch,maxheight=${maxHeight}"))

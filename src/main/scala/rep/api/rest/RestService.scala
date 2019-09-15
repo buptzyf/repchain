@@ -41,17 +41,18 @@ import akka.http.scaladsl.server.Directives
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import spray.json._
 
-
 import akka.http.scaladsl.marshallers.xml.ScalaXmlSupport
-import akka.http.scaladsl.model.{ContentTypes, HttpCharsets, MediaTypes}
-import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
+import akka.http.scaladsl.model.{ ContentTypes, HttpCharsets, MediaTypes }
+import akka.http.scaladsl.unmarshalling.{ FromEntityUnmarshaller, Unmarshaller }
 
 import scala.xml.NodeSeq
 
+import rep.log.RepLogger
 
-/** 获得区块链的概要信息
-  *  @author c4w
-  */
+/**
+ * 获得区块链的概要信息
+ *  @author c4w
+ */
 @Api(value = "/chaininfo", description = "获得当前区块链信息", produces = "application/json")
 @Path("chaininfo")
 class ChainService(ra: ActorRef)(implicit executionContext: ExecutionContext)
@@ -65,7 +66,7 @@ class ChainService(ra: ActorRef)(implicit executionContext: ExecutionContext)
   implicit val formats = DefaultFormats
   implicit val timeout = Timeout(20.seconds)
 
-  val route = getBlockChainInfo
+  val route = getBlockChainInfo ~ getNodeNumber ~ getCacheTransNumber
 
   @ApiOperation(value = "返回块链信息", notes = "", nickname = "getChainInfo", httpMethod = "GET")
   @ApiResponses(Array(
@@ -73,14 +74,46 @@ class ChainService(ra: ActorRef)(implicit executionContext: ExecutionContext)
   def getBlockChainInfo =
     path("chaininfo") {
       get {
-        complete { (ra ? ChainInfo).mapTo[QueryResult] }
+        extractClientIP { ip =>
+          RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} get chaininfo")
+          complete { (ra ? ChainInfo).mapTo[QueryResult] }
+        }
+      }
+    }
+
+  @Path("/node")
+  @ApiOperation(value = "返回组网节点数量", notes = "", nickname = "getNodeNumber", httpMethod = "GET")
+  @ApiResponses(Array(
+    new ApiResponse(code = 200, message = "返回组网节点数量", response = classOf[QueryResult])))
+  def getNodeNumber =
+    path("chaininfo" / "node") {
+      get {
+        extractClientIP { ip =>
+          RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} get node number")
+          complete { (ra ? NodeNumber).mapTo[QueryResult] }
+        }
+      }
+    }
+  
+  @Path("/getcachetransnumber")
+  @ApiOperation(value = "返回系统缓存交易数量", notes = "", nickname = "getCacheTransNumber", httpMethod = "GET")
+  @ApiResponses(Array(
+    new ApiResponse(code = 200, message = "返回系统缓存交易数量", response = classOf[QueryResult])))
+  def getCacheTransNumber =
+    path("chaininfo" / "getcachetransnumber") {
+      get {
+        extractClientIP { ip =>
+          RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} get number of cache")
+          complete { (ra ? TransNumber).mapTo[QueryResult] }
+        }
       }
     }
 }
 
-/** 获得指定区块的详细信息
-  *  @author c4w
-  */
+/**
+ * 获得指定区块的详细信息
+ *  @author c4w
+ */
 
 @Api(value = "/block", description = "获得区块数据", produces = "application/json")
 @Path("block")
@@ -94,7 +127,7 @@ class BlockService(ra: ActorRef)(implicit executionContext: ExecutionContext)
   implicit val serialization = jackson.Serialization // or native.Serialization
   implicit val formats = DefaultFormats
 
-  val route = getBlockById ~ getBlockByHeight ~  getBlockStreamByHeight
+  val route = getBlockById ~ getBlockByHeight ~ getBlockStreamByHeight ~ getBlockTimeOfCreate ~ getBlockTimeOfTransaction
 
   @Path("/hash/{blockId}")
   @ApiOperation(value = "返回指定id的区块", notes = "", nickname = "getBlockById", httpMethod = "GET")
@@ -105,7 +138,10 @@ class BlockService(ra: ActorRef)(implicit executionContext: ExecutionContext)
   def getBlockById =
     path("block" / "hash" / Segment) { blockId =>
       get {
-        complete { (ra ? BlockId(blockId)).mapTo[QueryResult] }
+        extractClientIP { ip =>
+          RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} get block for id,block id=${blockId}")
+          complete { (ra ? BlockId(blockId)).mapTo[QueryResult] }
+        }
       }
     }
 
@@ -118,10 +154,51 @@ class BlockService(ra: ActorRef)(implicit executionContext: ExecutionContext)
   def getBlockByHeight =
     path("block" / Segment) { blockHeight =>
       get {
-        complete { (ra ? BlockHeight(blockHeight.toInt)).mapTo[QueryResult] }
+        extractClientIP { ip =>
+          RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} get block for Height,block height=${blockHeight}")
+          complete { (ra ? BlockHeight(blockHeight.toInt)).mapTo[QueryResult] }
+        }
+
+        //complete { (ra ? BlockHeight(blockHeight.toInt)).mapTo[QueryResult] }
       }
     }
 
+  @Path("/blocktime/{blockHeight}")
+  @ApiOperation(value = "返回指定高度的区块的出块时间", notes = "", nickname = "getBlockTimeOfCreate", httpMethod = "GET")
+  @ApiImplicitParams(Array(
+    new ApiImplicitParam(name = "blockHeight", value = "区块高度", required = true, dataType = "long", paramType = "path")))
+  @ApiResponses(Array(
+    new ApiResponse(code = 200, message = "返回指定高度的区块的出块时间", response = classOf[QueryResult])))
+  def getBlockTimeOfCreate =
+    path("block" /"blocktime"/ Segment) { blockHeight =>
+      get {
+        extractClientIP { ip =>
+          RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} get block time for Height,block height=${blockHeight}")
+          complete { (ra ? BlockTimeForHeight(blockHeight.toLong)).mapTo[QueryResult] }
+        }
+
+        //complete { (ra ? BlockHeight(blockHeight.toInt)).mapTo[QueryResult] }
+      }
+    }
+  
+  @Path("/blocktimeoftran/{transid}")
+  @ApiOperation(value = "返回指定交易的入块时间", notes = "", nickname = "getBlockTimeOfTransaction", httpMethod = "GET")
+  @ApiImplicitParams(Array(
+    new ApiImplicitParam(name = "transid", value = "交易id", required = true, dataType = "String", paramType = "path")))
+  @ApiResponses(Array(
+    new ApiResponse(code = 200, message = "返回指定交易的入块时间", response = classOf[QueryResult])))
+  def getBlockTimeOfTransaction =
+    path("block" /"blocktimeoftran"/ Segment) { transid =>
+      get {
+        extractClientIP { ip =>
+          RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} get block time for txid,txid=${transid}")
+          complete { (ra ? BlockTimeForTxid(transid)).mapTo[QueryResult] }
+        }
+
+        //complete { (ra ? BlockHeight(blockHeight.toInt)).mapTo[QueryResult] }
+      }
+    }
+  
   @Path("/stream/{blockHeight}")
   @ApiOperation(value = "返回指定高度的区块字节流", notes = "", nickname = "getBlockStreamByHeight", httpMethod = "GET")
   @ApiImplicitParams(Array(
@@ -129,17 +206,20 @@ class BlockService(ra: ActorRef)(implicit executionContext: ExecutionContext)
   @ApiResponses(Array(
     new ApiResponse(code = 200, message = "blockbytes")))
   def getBlockStreamByHeight =
-    path("block" / "stream" /Segment) { blockHeight =>
+    path("block" / "stream" / Segment) { blockHeight =>
       get {
-        complete( (ra ? BlockHeightStream(blockHeight.toInt)).mapTo[HttpResponse])
+        extractClientIP { ip =>
+          RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} get block stream for Height,block height=${blockHeight}")
+          complete((ra ? BlockHeightStream(blockHeight.toInt)).mapTo[HttpResponse])
+        }
       }
     }
 }
 
-
-/** 获得指定交易的详细信息，提交签名交易
-  *  @author c4w
-  */
+/**
+ * 获得指定交易的详细信息，提交签名交易
+ *  @author c4w
+ */
 @Api(value = "/transaction", description = "获得交易数据", consumes = "application/json,application/xml", produces = "application/json,application/xml")
 @Path("transaction")
 class TransactionService(ra: ActorRef)(implicit executionContext: ExecutionContext)
@@ -154,7 +234,7 @@ class TransactionService(ra: ActorRef)(implicit executionContext: ExecutionConte
   import ScalaXmlSupport._
   import akka.stream.scaladsl.FileIO
   import akka.util.ByteString
-  import java.nio.file.{Paths, Files}
+  import java.nio.file.{ Paths, Files }
   import akka.stream.scaladsl.Framing
 
   implicit val serialization = jackson.Serialization // or native.Serialization
@@ -177,14 +257,12 @@ class TransactionService(ra: ActorRef)(implicit executionContext: ExecutionConte
           (x \ "legal_prose").text,
           (x \ "code").text,
           (x \ "ctype").text.toInt,
-          (x \ "state").text.toBoolean
-        )
+          (x \ "state").text.toBoolean)
     },
     //只能处理application/json
-    unmarshaller[CSpec].forContentTypes(MediaTypes.`application/json`)
-  )
+    unmarshaller[CSpec].forContentTypes(MediaTypes.`application/json`))
 
-  val route = getTransaction ~ getTransactionStream ~ postSignTransaction ~ postTransaction  ~ postSignTransactionStream
+  val route = getTransaction ~ getTransactionStream ~ postSignTransaction ~ postTransaction ~ postSignTransactionStream
 
   @Path("/{transactionId}")
   @ApiOperation(value = "返回指定id的交易", notes = "", nickname = "getTransaction", httpMethod = "GET")
@@ -195,9 +273,13 @@ class TransactionService(ra: ActorRef)(implicit executionContext: ExecutionConte
   def getTransaction =
     path("transaction" / Segment) { transactionId =>
       get {
-        complete { (ra ? TransactionId(transactionId)).mapTo[QueryResult] }
+        extractClientIP { ip =>
+          RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} get transaction for txid,txid=${transactionId}")
+          complete { (ra ? TransactionId(transactionId)).mapTo[QueryResult] }
+        }
       }
     }
+ 
 
   @Path("/stream/{transactionId}")
   @ApiOperation(value = "返回指定id的交易字节流", notes = "", nickname = "getTransactionStream", httpMethod = "GET", produces = "application/octet-stream")
@@ -206,9 +288,12 @@ class TransactionService(ra: ActorRef)(implicit executionContext: ExecutionConte
   @ApiResponses(Array(
     new ApiResponse(code = 200, message = "返回交易字节流", response = classOf[QueryResult])))
   def getTransactionStream =
-    path("transaction" /"stream"/ Segment) { transactionId =>
+    path("transaction" / "stream" / Segment) { transactionId =>
       get {
-        complete( (ra ? TransactionStreamId(transactionId)).mapTo[HttpResponse])
+        extractClientIP { ip =>
+          RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} get transaction stream for txid,txid=${transactionId}")
+          complete((ra ? TransactionStreamId(transactionId)).mapTo[HttpResponse])
+        }
       }
     }
 
