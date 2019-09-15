@@ -24,7 +24,7 @@ object SyncMsg {
   
   case class ChainInfoOfRequest(height:Long)
   
-  case class ResponseInfo(response: BlockchainInfo, responser: ActorRef,ChainInfoOfSpecifiedHeight:BlockchainInfo)
+  case class ResponseInfo(response: BlockchainInfo, responser: ActorRef,ChainInfoOfSpecifiedHeight:BlockchainInfo,responsername:String)
   
   case class BlockDataOfRequest(startHeight:Long)
   
@@ -32,7 +32,7 @@ object SyncMsg {
   
   case class  SyncRequestOfStorager(responser:ActorRef,maxHeight:Long)
   
-  case class AnalysisResult(ar:Boolean,error:String)
+  case class AnalysisResult(ar:Int,error:String)//0=失败、1=成功、2=数量不够
   
   case class SynchAction(start:Long,end:Long,server:ActorRef)
   
