@@ -20,6 +20,7 @@ import rep.storage.block._
 import rep.storage.leveldb._
 import rep.storage.cfg._
 import rep.protos.peer._
+
 import scala.collection.JavaConverters._
 import com.google.protobuf.ByteString
 import com.fasterxml.jackson.core.Base64Variants
@@ -29,7 +30,10 @@ import org.json4s.jackson.JsonMethods
 import rep.sc.Shim._
 import rep.utils._
 import java.io._
+
+import rep.api.rest.RestActor.BlockTime
 import rep.protos.peer.OperLog
+
 import scala.collection.mutable._
 import rep.network.consensus.util.BlockHelp
 import rep.log.RepLogger
@@ -38,6 +42,7 @@ import rep.storage.util.pathUtil
 import rep.log.RepTimeTracer
 import rep.app.conf.SystemProfile
 import rep.crypto.cert.certCache
+
 import scala.util.control.Breaks._
 
 /**
@@ -393,7 +398,7 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
    * @return	返回出块时间
    */
   override def getBlockTimeOfTxid(txid: String): String = {
-    this.getBlockTime4Block(this.getBlock4ObjectByTxId(txid))
+    SerializeUtils.toJson(this.getBlockTime4Block(this.getBlock4ObjectByTxId(txid)))
   }
 
   /**
@@ -405,18 +410,21 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
    * @return	返回出块时间
    */
   def getBlockTimeOfHeight(h: Long): String = {
-    this.getBlockTime4Block(this.getBlock4ObjectByHeight(h))
+    SerializeUtils.toJson(this.getBlockTime4Block(this.getBlock4ObjectByHeight(h)))
   }
 
-  private def getBlockTime4Block(b: Block): String = {
-    var rs = ""
+  private def getBlockTime4Block(b: Block): BlockTime = {
+    var rs = BlockTime("", "")
     if (b != null && b.endorsements != null && b.endorsements.length >= 1) {
       val signer = b.endorsements(0)
       val date = new java.util.Date(signer.tmLocal.get.seconds * 1000);
       val formatstr = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
       formatstr.setTimeZone(java.util.TimeZone.getTimeZone("ETC/GMT-8"))
       val tmpstr = formatstr.format(date)
-      rs = tmpstr + "."+signer.tmLocal.get.nanos/1000000
+      val createTime =  tmpstr + "."+signer.tmLocal.get.nanos/1000000
+      // 13位,毫秒精度级(utc时间)
+      val createTimeUtc = String.valueOf(signer.tmLocal.get.seconds * 1000 - 8 * 3600 * 1000)
+      rs = BlockTime(createTime, createTimeUtc)
     }
     rs
   }
