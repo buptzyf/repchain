@@ -421,9 +421,10 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
       val formatstr = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
       formatstr.setTimeZone(java.util.TimeZone.getTimeZone("ETC/GMT-8"))
       val tmpstr = formatstr.format(date)
-      val createTime =  tmpstr + "."+signer.tmLocal.get.nanos/1000000
+      val millis = signer.tmLocal.get.nanos/1000000
+      val createTime =  tmpstr + "." + millis
       // 13位,毫秒精度级(utc时间)
-      val createTimeUtc = String.valueOf(signer.tmLocal.get.seconds * 1000 - 8 * 3600 * 1000)
+      val createTimeUtc = String.valueOf((signer.tmLocal.get.seconds * 1000 + millis) - 8 * 3600 * 1000)
       rs = BlockTime(createTime, createTimeUtc)
     }
     rs

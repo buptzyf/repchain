@@ -328,7 +328,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
       sender !  QueryResult(Option(JsonMethods.parse(string2JsonInput(rs))))
 
     case AcceptedTransNumber =>
-      val num = sr.getBlockChainInfo.height + pe.getTransPoolMgr.getTransLength()
+      val num = sr.getBlockChainInfo.totalTransactions + pe.getTransPoolMgr.getTransLength()
       val rs = "{\"acceptedNumber\":\""+num+"\"}"
       sender !  QueryResult(Option(JsonMethods.parse(string2JsonInput(rs))))
   }
