@@ -36,6 +36,7 @@ import rep.utils.{ ActorUtils, GlobalUtils }
 import rep.utils.GlobalUtils.EventType
 import rep.utils.SerializeUtils
 import rep.log.RepLogger
+import rep.network.util.NodeHelp
 
 /**
  * 交易缓冲池伴生对象
@@ -60,6 +61,8 @@ object TransactionPool {
 class TransactionPool(moduleName: String) extends ModuleBase(moduleName) {
   import akka.actor.ActorSelection
 
+  private val transPoolActorName = "/user/modulemanager/transactionpool"
+  private var addr4NonUser = ""
   val dataaccess: ImpDataAccess = ImpDataAccess.GetDataAccess(pe.getSysTag)
 
   override def preStart(): Unit = {
@@ -97,9 +100,10 @@ class TransactionPool(moduleName: String) extends ModuleBase(moduleName) {
       val siginfo = sig.signature.toByteArray()
 
       if (SignTool.verify(siginfo, tOutSig.toByteArray, cert, pe.getSysTag)) {
-        dataAccess.isExistTrans4Txid(t.id) match {
-          case false => result = true
-          case true    => resultMsg = s"The transaction(${t.id}) is duplicated with txid"
+        if (dataAccess.isExistTrans4Txid(t.id)) {
+          resultMsg = s"The transaction(${t.id}) is duplicated with txid"
+        } else {
+          result = true
         }
       } else {
         resultMsg = s"The transaction(${t.id}) is not completed"
@@ -111,41 +115,48 @@ class TransactionPool(moduleName: String) extends ModuleBase(moduleName) {
     CheckedTransactionResult(result, resultMsg)
   }
 
+  private def addTransToCache(t: Transaction) = {
+    val checkedTransactionResult = checkTransaction(t, dataaccess)
+    if (checkedTransactionResult.result) {
+      //签名验证成功
+      if (pe.getTransPoolMgr.getTransLength() < 100)
+        RepLogger.trace(RepLogger.System_Logger, this.getLogMsgPrefix(s"<<<<<<<<<<<<<>>>>>>>>>transaction=${pe.getTransPoolMgr.getTransLength()}"))
+      if (SystemProfile.getMaxCacheTransNum == 0 || pe.getTransPoolMgr.getTransLength() < SystemProfile.getMaxCacheTransNum) {
+        pe.getTransPoolMgr.putTran(t, pe.getSysTag)
+        //广播接收交易事件
+        if (pe.getTransPoolMgr.getTransLength() >= SystemProfile.getMinBlockTransNum)
+          pe.getActorRef(GlobalUtils.ActorType.voter) ! VoteOfBlocker
+      }
+    }
+  }
+
+  private def publishTrans(t: Transaction) = {
+    if (this.addr4NonUser == "" && this.selfAddr.indexOf("/user") > 0) {
+      this.selfAddr.substring(0, this.selfAddr.indexOf("/user"))
+    }
+
+    pe.getNodeMgr.getStableNodes.foreach(f => {
+      if (this.addr4NonUser != "" && !NodeHelp.isSameNode(f.toString, this.addr4NonUser)) {
+        visitStoreService(f, this.transPoolActorName, t)
+      }
+
+    })
+  }
+
   override def receive = {
     //处理接收的交易
     case t: Transaction =>
-      //我们在这里并不缓存该Transaction，在接收到同级别的广播时再进行缓存
+      //保存交易到本地
+      sendEvent(EventType.RECEIVE_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)
+      addTransToCache(t) 
 
-      // mediator ! Publish(Topic.Transaction, t)
-      //pe.getStableNodes.foreach(sn=>{
-      //       visitStoreService(sn , "/user/moduleManager/transactionPool",t)
-      //})
-
-      if (ActorUtils.isHelper(sender().path.toString) ||
-        ActorUtils.isAPI(sender().path.toString)) {
+      //广播交易到其他共识节点
+      if (ActorUtils.isHelper(sender().path.toString) ||  ActorUtils.isAPI(sender().path.toString)) {
         //广播交易
-        mediator ! Publish(Topic.Transaction, t)
-
+        publishTrans(t)
         //广播发送交易事件
         sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)
-      } else {
-        //交易缓存,这里默认各个节点的交易缓存都是一致的。但是因为入网时间不一致，所有可能会有区别。最终以出块人的交易为准
-        //TODO kami 验证交易签名和证书
-        //val checkedTransactionResult = CheckedTransactionResult(true, "")
-        sendEvent(EventType.RECEIVE_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)
-        val checkedTransactionResult = checkTransaction(t, dataaccess)
-        if (checkedTransactionResult.result) {
-          //签名验证成功
-          if (pe.getTransPoolMgr.getTransLength() < 100)
-            RepLogger.trace(RepLogger.System_Logger, this.getLogMsgPrefix(s"<<<<<<<<<<<<<>>>>>>>>>transaction=${pe.getTransPoolMgr.getTransLength()}"))
-          if (SystemProfile.getMaxCacheTransNum == 0 || pe.getTransPoolMgr.getTransLength() < SystemProfile.getMaxCacheTransNum) {
-            pe.getTransPoolMgr.putTran(t,pe.getSysTag)
-            //广播接收交易事件
-            if (pe.getTransPoolMgr.getTransLength() >= SystemProfile.getMinBlockTransNum)
-              pe.getActorRef(GlobalUtils.ActorType.voter) ! VoteOfBlocker
-          }
-        }
-      }
+      } 
     case _ => //ignore
   }
 }

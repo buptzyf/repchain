@@ -59,6 +59,7 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
 
   filemgr = new BlockFileMgr(this.SystemName)
 
+  private var chainInfoCache : ChainInfoInCache = new ChainInfoInCache(this) 
   /**
    * @author jiangbuyun
    * @version	0.7
@@ -439,7 +440,7 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
    * @return	返回链码信息 BlockchainInfo
    */
   override def getBlockChainInfo(): BlockchainInfo = {
-    var rbc = new BlockchainInfo()
+    /*var rbc = new BlockchainInfo()
     val currentheight = this.getBlockHeight()
     val currenttxnumber = this.getBlockAllTxNumber()
     val bidx = this.getBlockIdxByHeight(currentheight)
@@ -470,7 +471,8 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
     rbc = rbc.withHeight(currentheight)
     rbc = rbc.withTotalTransactions(currenttxnumber)
 
-    rbc
+    rbc*/
+    chainInfoCache.getBlockChainInfo()
   }
 
   /**
@@ -614,7 +616,9 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
 
   override def rollbackToheight(toHeight: Long): Boolean = {
     val rs = new Rollback4Storager(this, filemgr)
-    rs.rollbackToheight(toHeight)
+    val b = rs.rollbackToheight(toHeight)
+    chainInfoCache.initChainInfo
+    b
   }
 
   /**
@@ -652,6 +656,11 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
           if (this.commitAndAddBlock(block, oldh, oldno, oldtxnumber)) {
             RepTimeTracer.setEndTime(this.SystemName, "storage-save-commit", System.currentTimeMillis(), block.height, block.transactions.size)
             this.CommitTrans
+            chainInfoCache.setHeight(block.height)
+            chainInfoCache.setTXNumber(oldtxnumber + block.transactions.length)
+            chainInfoCache.setBlockHash(block.hashOfBlock.toStringUtf8())
+            chainInfoCache.setPrevBlockHash(block.previousBlockHash.toStringUtf8())
+            chainInfoCache.setBlockStateHash(block.stateHash.toStringUtf8())
             (true, block.height, oldtxnumber + block.transactions.length, block.hashOfBlock.toStringUtf8(), block.previousBlockHash.toStringUtf8(), block.stateHash.toStringUtf8())
           } else {
             this.RollbackTrans
@@ -741,6 +750,7 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
         filemgr.writeBlock(bidx.getBlockFileNo(), bidx.getBlockFilePos() - 8, pathUtil.longToByte(blenght) ++ rbb)
         RepTimeTracer.setEndTime(this.SystemName, "storage-save-write-file", System.currentTimeMillis(), block.height, block.transactions.size)
         b = true
+        
         RepLogger.trace(
           RepLogger.Storager_Logger,
           "system_name=" + this.SystemName + "\t blockhash=" + bidx.getBlockHash() + "\tcommited success")
