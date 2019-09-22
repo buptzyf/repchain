@@ -132,7 +132,7 @@ class TransactionPool(moduleName: String) extends ModuleBase(moduleName) {
 
   private def publishTrans(t: Transaction) = {
     if (this.addr4NonUser == "" && this.selfAddr.indexOf("/user") > 0) {
-      this.selfAddr.substring(0, this.selfAddr.indexOf("/user"))
+      this.addr4NonUser = this.selfAddr.substring(0, this.selfAddr.indexOf("/user"))
     }
 
     pe.getNodeMgr.getStableNodes.foreach(f => {
