@@ -157,17 +157,17 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
     val tOutSig = t.clearSignature
     val certId = t.signature.get.certId.get
     try {
-      sr.getTransDataByTxId(t.id) match {
-        case st: Some[Transaction] =>
-          sender ! PostResult(t.id, None, Option(s"transactionId is exists, the transaction is \n ${JsonFormat.toJson(st.get)}"))
-        case None =>
+      if (SystemProfile.getHasPreloadTransOfApi) {
+        if (pe.getTransPoolMgr.findTrans(t.id) || sr.isExistTrans4Txid(t.id)) {
+          sender ! PostResult(t.id, None, Option(s"transactionId is exists, the transaction is \n ${t.id}"))
+        } else {
           if (SignTool.verify(sig, tOutSig.toByteArray, certId, pe.getSysTag)) {
 //            RepLogger.info(RepLogger.Business_Logger, s"验证签名成功，txid: ${t.id},creditCode: ${t.signature.get.getCertId.creditCode}, certName: ${t.signature.get.getCertId.certName}")
             val future = pe.getActorRef(ActorType.transactiondispatcher) ? DoTransaction(t, "api_" + t.id, TypeOfSender.FromAPI)
             val result = Await.result(future, timeout.duration).asInstanceOf[DoTransactionResult]
             val rv = result
             // 释放存储实例
-            ImpDataPreloadMgr.Free(pe.getSysTag, t.id)
+
             rv.err match {
               case None =>
                 //预执行正常,提交并广播交易
@@ -183,10 +183,17 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
           } else {
             sender ! PostResult(t.id, None, Option("验证签名出错"))
           }
+        }
+      } else {
+        pe.getActorRef(ActorType.transactionpool) ! t // 给交易池发送消息 ！=》告知（getActorRef）
+        sender ! PostResult(t.id, None, None)
       }
+
     } catch {
       case e: RuntimeException =>
         sender ! PostResult(t.id, None, Option(e.getMessage))
+    } finally {
+      ImpDataPreloadMgr.Free(pe.getSysTag, "api_" + t.id)
     }
   }
 
@@ -246,19 +253,19 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
           QueryResult(Option(JsonFormat.toJson(bl)))
       }
       sender ! r
-      
-      case BlockTimeForHeight(h) =>
-        val bb = sr.getBlockTimeOfHeight(h)
-        val r = bb match {
+
+    case BlockTimeForHeight(h) =>
+      val bb = sr.getBlockTimeOfHeight(h)
+      val r = bb match {
         case null => QueryResult(None)
         case _ =>
           QueryResult(Option(JsonMethods.parse(bb)))
       }
       sender ! r
-      
-      case BlockTimeForTxid(txid)=>
-        val bb = sr.getBlockTimeOfTxid(txid)
-        val r = bb match {
+
+    case BlockTimeForTxid(txid) =>
+      val bb = sr.getBlockTimeOfTxid(txid)
+      val r = bb match {
         case null => QueryResult(None)
         case _ =>
           QueryResult(Option(JsonMethods.parse(bb)))
@@ -319,9 +326,9 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
     case NodeNumber =>
       val stablenode = pe.getNodeMgr.getStableNodes.size
       val snode = pe.getNodeMgr.getNodes.size
-      val rs = "{\"consensusnodes\":\""+stablenode+"\",\"nodes\":\""+snode+"\"}"
-      sender !  QueryResult(Option(JsonMethods.parse(string2JsonInput(rs))))
-      
+      val rs = "{\"consensusnodes\":\"" + stablenode + "\",\"nodes\":\"" + snode + "\"}"
+      sender ! QueryResult(Option(JsonMethods.parse(string2JsonInput(rs))))
+
     case TransNumber =>
       val num = pe.getTransPoolMgr.getTransLength()
       val rs = "{\"numberofcache\":\""+num+"\"}"

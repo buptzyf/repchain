@@ -92,24 +92,29 @@ class TransactionPool(moduleName: String) extends ModuleBase(moduleName) {
   def checkTransaction(t: Transaction, dataAccess: ImpDataAccess): CheckedTransactionResult = {
     var resultMsg = ""
     var result = false
-    val sig = t.getSignature
-    val tOutSig = t.clearSignature //t.withSignature(null)
-    val cert = sig.getCertId
-
-    try {
-      val siginfo = sig.signature.toByteArray()
-
-      if (SignTool.verify(siginfo, tOutSig.toByteArray, cert, pe.getSysTag)) {
-        if (dataAccess.isExistTrans4Txid(t.id)) {
-          resultMsg = s"The transaction(${t.id}) is duplicated with txid"
+    
+    if(SystemProfile.getHasPreloadTransOfApi){
+      val sig = t.getSignature
+      val tOutSig = t.clearSignature //t.withSignature(null)
+      val cert = sig.getCertId
+  
+      try {
+        val siginfo = sig.signature.toByteArray()
+  
+        if (SignTool.verify(siginfo, tOutSig.toByteArray, cert, pe.getSysTag)) {
+          if (pe.getTransPoolMgr.findTrans(t.id) || dataAccess.isExistTrans4Txid(t.id)) {
+            resultMsg = s"The transaction(${t.id}) is duplicated with txid"
+          } else {
+            result = true
+          }
         } else {
-          result = true
+          resultMsg = s"The transaction(${t.id}) is not completed"
         }
-      } else {
-        resultMsg = s"The transaction(${t.id}) is not completed"
+      } catch {
+        case e: RuntimeException => throw e
       }
-    } catch {
-      case e: RuntimeException => throw e
+    }else{
+      result = true
     }
 
     CheckedTransactionResult(result, resultMsg)
@@ -119,8 +124,6 @@ class TransactionPool(moduleName: String) extends ModuleBase(moduleName) {
     val checkedTransactionResult = checkTransaction(t, dataaccess)
     if (checkedTransactionResult.result) {
       //签名验证成功
-      if (pe.getTransPoolMgr.getTransLength() < 100)
-        RepLogger.trace(RepLogger.System_Logger, this.getLogMsgPrefix(s"<<<<<<<<<<<<<>>>>>>>>>transaction=${pe.getTransPoolMgr.getTransLength()}"))
       if (SystemProfile.getMaxCacheTransNum == 0 || pe.getTransPoolMgr.getTransLength() < SystemProfile.getMaxCacheTransNum) {
         pe.getTransPoolMgr.putTran(t, pe.getSysTag)
         //广播接收交易事件
