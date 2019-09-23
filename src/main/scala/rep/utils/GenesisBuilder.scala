@@ -16,19 +16,21 @@
 
 package rep.utils
 
-import java.io.File
+import java.io.{File, PrintWriter}
+
 import rep.network.PeerHelper
 import com.typesafe.config.ConfigFactory
 import com.google.protobuf.ByteString
 import com.google.protobuf.timestamp.Timestamp
 import rep.protos.peer._
 import scalapb.json4s.JsonFormat
-import rep.crypto.{ Sha256}
+import rep.crypto.Sha256
 import org.json4s.{DefaultFormats, Formats, jackson}
 import org.json4s.jackson.JsonMethods._
 import org.json4s.DefaultFormats._
 import rep.network.consensus.util.BlockHelp
 import rep.crypto.cert.SignTool
+
 import scala.collection.mutable
 import rep.sc.tpl._
 import rep.sc.tpl.ContractCert
@@ -138,6 +140,10 @@ object GenesisBuilder {
     val r = JsonFormat.toJson(blk)   
     val rstr = pretty(render(r))
     println(rstr)
-   
+
+    val pw = new PrintWriter("json/gensis.json","UTF-8")
+    pw.write(rstr)
+    pw.flush()
+    pw.close()
   }
 }

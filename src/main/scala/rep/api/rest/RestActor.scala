@@ -42,6 +42,7 @@ import akka.actor.Props
 import rep.crypto.cert.SignTool
 import rep.protos.peer.ActionResult
 import rep.app.conf.SystemProfile
+import rep.log.RepLogger
 import rep.network.base.ModuleBase
 import rep.sc.TypeOfSender
 import rep.sc.SandboxDispatcher.DoTransaction
@@ -60,14 +61,16 @@ object RestActor {
   case object ChainInfo
   case object NodeNumber
   case object TransNumber
+  case object AcceptedTransNumber
 
   case class SystemStart(cout: Int)
   case class SystemStop(from: Int, to: Int)
 
   case class BlockId(bid: String)
   case class BlockHeight(h: Int)
-  case class BlockTimeForHeight(h: Long)
-  case class BlockTimeForTxid(txid: String)
+  case class BlockTime(createTime: String, createTimeUtc: String)
+  case class BlockTimeForHeight(h:Long)
+  case class BlockTimeForTxid(txid:String)
   case class BlockHeightStream(h: Int)
   case class TransactionId(txid: String)
   case class TransactionStreamId(txid: String)
@@ -159,6 +162,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
           sender ! PostResult(t.id, None, Option(s"transactionId is exists, the transaction is \n ${t.id}"))
         } else {
           if (SignTool.verify(sig, tOutSig.toByteArray, certId, pe.getSysTag)) {
+//            RepLogger.info(RepLogger.Business_Logger, s"验证签名成功，txid: ${t.id},creditCode: ${t.signature.get.getCertId.creditCode}, certName: ${t.signature.get.getCertId.certName}")
             val future = pe.getActorRef(ActorType.transactiondispatcher) ? DoTransaction(t, "api_" + t.id, TypeOfSender.FromAPI)
             val result = Await.result(future, timeout.duration).asInstanceOf[DoTransactionResult]
             val rv = result
@@ -255,7 +259,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
       val r = bb match {
         case null => QueryResult(None)
         case _ =>
-          QueryResult(Option(JsonMethods.parse(string2JsonInput("{" + "\"createtime\":\"" + bb + "\"}"))))
+          QueryResult(Option(JsonMethods.parse(bb)))
       }
       sender ! r
 
@@ -264,7 +268,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
       val r = bb match {
         case null => QueryResult(None)
         case _ =>
-          QueryResult(Option(JsonMethods.parse(string2JsonInput("{" + "\"createtime\":\"" + bb + "\"}"))))
+          QueryResult(Option(JsonMethods.parse(bb)))
       }
       sender ! r
 
@@ -327,8 +331,12 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
 
     case TransNumber =>
       val num = pe.getTransPoolMgr.getTransLength()
-      val rs = "{\"numberofcache\":\"" + num + "\"}"
-      sender ! QueryResult(Option(JsonMethods.parse(string2JsonInput(rs))))
+      val rs = "{\"numberofcache\":\""+num+"\"}"
+      sender !  QueryResult(Option(JsonMethods.parse(string2JsonInput(rs))))
 
+    case AcceptedTransNumber =>
+      val num = sr.getBlockChainInfo.totalTransactions + pe.getTransPoolMgr.getTransLength()
+      val rs = "{\"acceptedNumber\":\""+num+"\"}"
+      sender !  QueryResult(Option(JsonMethods.parse(string2JsonInput(rs))))
   }
 }

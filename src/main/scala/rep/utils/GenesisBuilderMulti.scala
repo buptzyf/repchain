@@ -16,7 +16,7 @@
 
 package rep.utils
 
-import java.io.{File, FileFilter}
+import java.io.{File, FileFilter, FileWriter, PrintWriter}
 import java.util
 
 import org.json4s.jackson.JsonMethods.{pretty, render}
@@ -88,6 +88,11 @@ object GenesisBuilderMulti {
     val r = JsonFormat.toJson(blk)
     val rStr = pretty(render(r))
     println(rStr)
+
+    val pw = new PrintWriter("json/gensis.json","UTF-8")
+    pw.write(rStr)
+    pw.flush()
+    pw.close()
   }
 
   /**
