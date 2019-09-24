@@ -57,7 +57,7 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
   import scala.concurrent._
   import java.util.concurrent.Executors
 
-  val ec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(32))
+  val ec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(128))
   implicit val timeout = Timeout(TimePolicy.getTimeoutPreload seconds)
   
   override def preStart(): Unit = {
@@ -81,7 +81,7 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
       case e: Throwable =>
         RepLogger.error(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry AskPreloadTransactionOfBlock error"))
         false
-    })
+    })(ec)
 
   private def checkRepeatOfTrans(trans: Seq[Transaction]): Future[Boolean] = Future {
     //println("entry checkRepeatOfTrans")
@@ -102,7 +102,7 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
     }
     //println(s"${pe.getSysTag}:entry checkRepeatOfTrans after,isrepeat=${isRepeat}")
     isRepeat
-  }
+  }(ec)
 
   private def asyncVerifyTransaction(t: Transaction): Future[Boolean] = Future {
     //println(s"${pe.getSysTag}:entry asyncVerifyTransaction")
@@ -119,7 +119,7 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
     }
     //println(s"${pe.getSysTag}:entry asyncVerifyTransaction after,asyncVerifyTransaction=${result}")
     result
-  }
+  }(ec)
 
   private def asyncVerifyTransactions(block: Block): Future[Boolean] = Future {
     //println(s"${pe.getSysTag}:entry asyncVerifyTransactions")
@@ -142,7 +142,7 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
     })
     //println(s"${pe.getSysTag}:entry asyncVerifyTransactions after,asyncVerifyTransactions=${result}")
     result
-  }
+  }(ec)
 
   private def checkEndorseSign(block: Block): Future[Boolean] = Future {
     //println(s"${pe.getSysTag}:entry checkEndorseSign")
@@ -151,7 +151,7 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
     result = r._1
     //println(s"${pe.getSysTag}:entry checkEndorseSign after,checkEndorseSign=${result}")
     result
-  }
+  }(ec)
 
   private def isAllowEndorse(info: EndorsementInfo): Int = {
     if (info.blocker == pe.getSysTag) {

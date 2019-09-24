@@ -212,7 +212,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
           sender ! PostResult(txr.id, None, Option(s"transaction parser error! + ${e.getMessage}"))
       }
       val tmpend = System.currentTimeMillis()
-      RepLogger.trace(RepLogger.OutputTime_Logger, this.getLogMsgPrefix("API recv trans time,spent time=${tmpend-tmpstart}" + "~" + selfAddr))
+      RepLogger.trace(RepLogger.OutputTime_Logger, this.getLogMsgPrefix(s"API recv trans time,thread-id=${Thread.currentThread().getName+"-"+Thread.currentThread().getId},spent time=${(tmpend-tmpstart)}" + "~" + selfAddr))
 
     //处理post CSpec构造交易的请求
     case c: CSpec =>
