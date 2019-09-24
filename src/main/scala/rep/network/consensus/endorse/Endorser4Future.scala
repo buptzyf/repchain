@@ -44,6 +44,7 @@ import rep.network.sync.SyncMsg.StartSync
 import rep.log.RepLogger
 import rep.log.RepTimeTracer
 
+
 object Endorser4Future {
   def props(name: String): Props = Props(classOf[Endorser4Future], name)
 }
@@ -53,7 +54,10 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
   import scala.concurrent.duration._
   import rep.protos.peer._
   import rep.storage.ImpDataAccess
+  import scala.concurrent._
+  import java.util.concurrent.Executors
 
+  val ec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(32))
   implicit val timeout = Timeout(TimePolicy.getTimeoutPreload seconds)
   
   override def preStart(): Unit = {

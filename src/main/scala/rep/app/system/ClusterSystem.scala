@@ -88,6 +88,9 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
 
   private var clusterAddr: Address = null
 
+  //System.setProperty("scala.concurrent.context.minThreads", "32")
+  //System.setProperty("scala.concurrent.context.maxThreads", "32")
+  
   /**
    * 是否开启Web Socket（API）
    */

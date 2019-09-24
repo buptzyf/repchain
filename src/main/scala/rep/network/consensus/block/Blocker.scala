@@ -76,9 +76,11 @@ class Blocker(moduleName: String) extends ModuleBase(moduleName) {
   import akka.actor.ActorSelection
   import scala.collection.mutable.ArrayBuffer
   import rep.protos.peer.{ Transaction }
+  import java.util.concurrent.Executors
 
   val dataaccess: ImpDataAccess = ImpDataAccess.GetDataAccess(pe.getSysTag)
   implicit val timeout = Timeout(TimePolicy.getTimeoutPreload seconds)
+  val ec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(32))
 
   var preblock: Block = null
   
