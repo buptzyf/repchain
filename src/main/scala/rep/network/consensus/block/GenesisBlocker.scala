@@ -106,7 +106,7 @@ class GenesisBlocker(moduleName: String) extends ModuleBase(moduleName) {
             preblock = BlockHelp.AddBlockHash(preblock)
             preblock = BlockHelp.AddSignToBlock(preblock, pe.getSysTag)
             //sendEvent(EventType.RECEIVE_INFO, mediator, selfAddr, Topic.Block, Event.Action.BLOCK_NEW)
-            mediator ! Publish(Topic.Block, ConfirmedBlock(preblock, sender))
+            mediator ! Publish(Topic.Block, ConfirmedBlock(preblock, self))
             //getActorRef(pe.getSysTag, ActorType.PERSISTENCE_MODULE) ! BlockRestore(blc, SourceOfBlock.CONFIRMED_BLOCK, self)
           } 
         }

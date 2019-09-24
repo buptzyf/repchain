@@ -57,7 +57,7 @@ object SystemProfile {
   private[this] var _BLOCK_LENGTH: Int = 120000//区块的最大长度
   private[this] var _NUMBER_OF_TRANSPROCESSOR = 100 //
   private[this] var _HAS_PRELOAD_TRANS_OF_API = true
-  
+  private[this] var _HAS_SECOND_CONSENSUS = true
   
   private[this] var _DBPATH:String = "" //leveldb数据库文件路径
   private[this] var _BLOCKPATH:String = ""//区块文件的路径
@@ -84,6 +84,8 @@ object SystemProfile {
   private def NUMBER_OF_TRANSPROCESSOR = _NUMBER_OF_TRANSPROCESSOR
   
   private def HAS_PRELOAD_TRANS_OF_API = _HAS_PRELOAD_TRANS_OF_API
+  
+  private def HAS_SECOND_CONSENSUS = _HAS_SECOND_CONSENSUS
   
   private def REALTIMEGRAPH_ENABLE = _REALTIMEGRAPH_ENABLE
   
@@ -117,6 +119,10 @@ object SystemProfile {
   
   private def HAS_PRELOAD_TRANS_OF_API_=(value:Boolean):Unit={
     _HAS_PRELOAD_TRANS_OF_API = value
+  }
+  
+  private def HAS_SECOND_CONSENSUS_=(value:Boolean):Unit={
+    _HAS_SECOND_CONSENSUS = value
   }
   
   private def VOTENODELIST_=(value: List[String]): Unit = {
@@ -226,6 +232,7 @@ object SystemProfile {
     GENESISNODENAME_=(config.getString("system.genesis_node_name"))
     NUMBER_OF_TRANSPROCESSOR_=(config.getInt("system.number_of_transProcessor"))
     HAS_PRELOAD_TRANS_OF_API_=(config.getBoolean("system.has_preload_trans_of_api"))
+    HAS_SECOND_CONSENSUS_=(config.getBoolean("system.has_second_consensus"))
     
     DBPATH_= (config.getString("system.storage.dbpath"))
     BLOCKPATH_= (config.getString("system.storage.blockpath"))
@@ -246,6 +253,8 @@ object SystemProfile {
   def getNumberOfTransProcessor = NUMBER_OF_TRANSPROCESSOR
   
   def getHasPreloadTransOfApi = HAS_PRELOAD_TRANS_OF_API
+  
+  def getHasSecondConsensus = HAS_SECOND_CONSENSUS
   
   def getBlockLength = BLOCK_LENGTH
 

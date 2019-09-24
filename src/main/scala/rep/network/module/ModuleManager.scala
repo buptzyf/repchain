@@ -29,8 +29,8 @@ import rep.network.cluster.MemberListener
 import rep.network.sync.{ SynchronizeResponser, SynchronizeRequester4Future }
 import rep.sc.TransactionDispatcher
 import rep.network.consensus.block.{ GenesisBlocker, ConfirmOfBlock, EndorseCollector, Blocker }
-import rep.network.consensus.endorse.{Endorser4Future,DispatchOfRecvEndorsement}
-import rep.network.consensus.transaction.{DispatchOfPreload,PreloaderForTransaction}
+import rep.network.consensus.endorse.{ Endorser4Future, DispatchOfRecvEndorsement }
+import rep.network.consensus.transaction.{ DispatchOfPreload, PreloaderForTransaction }
 import rep.network.consensus.vote.Voter
 
 import rep.storage.ImpDataAccess
@@ -55,14 +55,14 @@ class ModuleManager(moduleName: String, sysTag: String, enableStatistic: Boolean
   private val conf = context.system.settings.config
 
   init()
-  
-  if(!checkSystemStorage){
+
+  if (!checkSystemStorage) {
     context.system.terminate()
   }
-  
+
   loadModule
 
-  def checkSystemStorage:Boolean={
+  def checkSystemStorage: Boolean = {
     var r = true
     try {
       if (!verify4Storage.verify(sysTag)) {
@@ -76,7 +76,7 @@ class ModuleManager(moduleName: String, sysTag: String, enableStatistic: Boolean
     }
     r
   }
-  
+
   def init(): Unit = {
     val (ip, port) = ActorUtils.getIpAndPort(selfAddr)
     pe.setIpAndPort(ip, port)
@@ -91,7 +91,7 @@ class ModuleManager(moduleName: String, sysTag: String, enableStatistic: Boolean
     loadConsensusModule
     loadClusterModule
 
-    RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"ModuleManager ${sysTag} start"))
+    RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"ModuleManager ${sysTag} start"))
   }
 
   def loadConsensusModule = {
@@ -100,20 +100,17 @@ class ModuleManager(moduleName: String, sysTag: String, enableStatistic: Boolean
       context.actorOf(Blocker.props("blocker"), "blocker")
       context.actorOf(GenesisBlocker.props("gensisblock"), "gensisblock")
       context.actorOf(ConfirmOfBlock.props("confirmerofblock"), "confirmerofblock")
-      context.actorOf(EndorseCollector.props("endorsementcollectioner"), "endorsementcollectioner")
-      
-      
-      //context.actorOf(Endorser4Future.props("endorser"), "endorser")
-      context.actorOf(DispatchOfRecvEndorsement.props("dispatchofRecvendorsement"), "dispatchofRecvendorsement")
-      
-      
-      if(this.isStartup){
-        context.actorOf(TransactionDispatcher.props("transactiondispatcher"), "transactiondispatcher")
-        //context.actorOf(PreloaderForTransaction.props("preloaderoftransaction"),"preloaderoftransaction")
+
+      if (SystemProfile.getHasSecondConsensus) {
+        context.actorOf(EndorseCollector.props("endorsementcollectioner"), "endorsementcollectioner")
+        context.actorOf(DispatchOfRecvEndorsement.props("dispatchofRecvendorsement"), "dispatchofRecvendorsement")
       }
-      //context.actorOf(PreloaderForTransaction.props("preloaderoftransaction"),"preloaderoftransaction")
+
+      if (this.isStartup) {
+        context.actorOf(TransactionDispatcher.props("transactiondispatcher"), "transactiondispatcher")
+      }
       context.actorOf(DispatchOfPreload.props("dispatchofpreload"), "dispatchofpreload")
-      
+
       context.actorOf(Voter.props("voter"), "voter")
       context.actorOf(TransactionPool.props("transactionpool"), "transactionpool")
     }
@@ -122,7 +119,7 @@ class ModuleManager(moduleName: String, sysTag: String, enableStatistic: Boolean
   def loadApiModule = {
     //if (enableStatistic) context.actorOf(Props[StatisticCollection], "statistic")
     if (enableStatistic) RepTimeTracer.openTimeTrace else RepTimeTracer.closeTimeTrace
-    if (enableWebSocket) /*{if(pe.getActorRef(ActorType.webapi) == null) */context.system.actorOf(Props[EventServer], "webapi")
+    if (enableWebSocket) /*{if(pe.getActorRef(ActorType.webapi) == null) */ context.system.actorOf(Props[EventServer], "webapi")
 
   }
 
@@ -138,12 +135,12 @@ class ModuleManager(moduleName: String, sysTag: String, enableStatistic: Boolean
 
   //除了广播消息，P2P的跨域消息都通过其中转（同步，存储等）
   override def receive: Receive = {
-    case ModuleManager.startup_Consensus => 
-      RepLogger.trace(RepLogger.System_Logger, this.getLogMsgPrefix( s"trans create type ${SystemProfile.getTransCreateType},actor=${pe.getActorRef(ActorType.peerhelper)}"))
+    case ModuleManager.startup_Consensus =>
+      RepLogger.trace(RepLogger.System_Logger, this.getLogMsgPrefix(s"trans create type ${SystemProfile.getTransCreateType},actor=${pe.getActorRef(ActorType.peerhelper)}"))
       if (SystemProfile.getTransCreateType == Trans_Create_Type_Enum.AUTO && pe.getActorRef(ActorType.peerhelper) == null) {
-          context.actorOf(PeerHelper.props("peerhelper"), "peerhelper")
+        context.actorOf(PeerHelper.props("peerhelper"), "peerhelper")
       }
-      if(pe.getActorRef(ActorType.voter) == null){
+      if (pe.getActorRef(ActorType.voter) == null) {
         context.actorOf(Voter.props("voter"), "voter")
       }
       pe.getActorRef(ActorType.voter) ! Voter.VoteOfBlocker
