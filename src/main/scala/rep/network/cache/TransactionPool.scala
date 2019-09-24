@@ -122,15 +122,13 @@ class TransactionPool(moduleName: String) extends ModuleBase(moduleName) {
 
   private def addTransToCache(t: Transaction) = {
     val checkedTransactionResult = checkTransaction(t, dataaccess)
-    if (checkedTransactionResult.result) {
       //签名验证成功
-      if (SystemProfile.getMaxCacheTransNum == 0 || pe.getTransPoolMgr.getTransLength() < SystemProfile.getMaxCacheTransNum) {
+      if((checkedTransactionResult.result) && (SystemProfile.getMaxCacheTransNum == 0 || pe.getTransPoolMgr.getTransLength() < SystemProfile.getMaxCacheTransNum) ){
         pe.getTransPoolMgr.putTran(t, pe.getSysTag)
         //广播接收交易事件
         if (pe.getTransPoolMgr.getTransLength() >= SystemProfile.getMinBlockTransNum)
           pe.getActorRef(GlobalUtils.ActorType.voter) ! VoteOfBlocker
       }
-    }
   }
 
   private def publishTrans(t: Transaction) = {

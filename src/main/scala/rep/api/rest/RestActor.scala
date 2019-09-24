@@ -153,11 +153,12 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
       sender ! PostResult(t.id, None, Option("共识节点数目太少，暂时无法处理交易"))
     }
 
-    val sig = t.signature.get.signature.toByteArray
-    val tOutSig = t.clearSignature
-    val certId = t.signature.get.certId.get
+    
     try {
       if (SystemProfile.getHasPreloadTransOfApi) {
+        val sig = t.signature.get.signature.toByteArray
+        val tOutSig = t.clearSignature
+        val certId = t.signature.get.certId.get
         if (pe.getTransPoolMgr.findTrans(t.id) || sr.isExistTrans4Txid(t.id)) {
           sender ! PostResult(t.id, None, Option(s"transactionId is exists, the transaction is \n ${t.id}"))
         } else {
@@ -200,6 +201,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
   def receive: Receive = {
 
     case tranSign(tr: String) =>
+      val tmpstart = System.currentTimeMillis()
       val tr1 = BytesHex.hex2bytes(tr) // 解析交易编码后的16进制字符串,进行解码16进制反解码decode
       var txr = Transaction.defaultInstance
       try {
@@ -209,6 +211,8 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
         case e: Exception =>
           sender ! PostResult(txr.id, None, Option(s"transaction parser error! + ${e.getMessage}"))
       }
+      val tmpend = System.currentTimeMillis()
+      RepLogger.trace(RepLogger.OutputTime_Logger, this.getLogMsgPrefix("API recv trans time,spent time=${tmpend-tmpstart}" + "~" + selfAddr))
 
     //处理post CSpec构造交易的请求
     case c: CSpec =>
