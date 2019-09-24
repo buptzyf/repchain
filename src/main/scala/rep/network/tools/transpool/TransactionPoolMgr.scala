@@ -38,6 +38,7 @@ class TransactionPoolMgr {
   def getTransListClone(start:Int,num: Int,sysName:String): Seq[Transaction] = {
     var translist = scala.collection.mutable.ArrayBuffer[Transaction]()
     transLock.lock()
+    val starttime = System.currentTimeMillis()
     try{
         var deltrans4id = scala.collection.mutable.ArrayBuffer[String]()
         val sr: ImpDataAccess = ImpDataAccess.GetDataAccess(sysName)
@@ -75,6 +76,8 @@ class TransactionPoolMgr {
     }finally{
       transLock.unlock()
     }
+    val end = System.currentTimeMillis()
+    RepLogger.trace(RepLogger.OutputTime_Logger, s"systemname=${sysName},getTransListClone spent time=${end-starttime}")
     
     translist.toSeq
   }
@@ -82,6 +85,7 @@ class TransactionPoolMgr {
   
   def putTran(tran: Transaction,sysName:String): Unit = {
     transLock.lock()
+     val start = System.currentTimeMillis()
     try{
       val time = System.nanoTime()
       val txid = tran.id
@@ -96,13 +100,18 @@ class TransactionPoolMgr {
     }finally {
       transLock.unlock()
     }
+    val end = System.currentTimeMillis()
+    RepLogger.trace(RepLogger.OutputTime_Logger, s"systemname=${sysName},putTran spent time=${end-start}")
   }
   
   def findTrans(txid:String):Boolean = {
     var b :Boolean = false
+    val start = System.currentTimeMillis()
     if(transKeys.contains(txid)){
         b = true
     }
+    val end = System.currentTimeMillis()
+    RepLogger.trace(RepLogger.OutputTime_Logger, s"findTrans spent time=${end-start}")
     b
   }
 
@@ -130,6 +139,7 @@ class TransactionPoolMgr {
   
   def removeTranscation4Txid(txid:String,sysName:String):Unit={
     transLock.lock()
+    val start = System.currentTimeMillis()
     try{
         if(transKeys.contains(txid)){
             transactions.remove(transKeys(txid))
@@ -140,16 +150,21 @@ class TransactionPoolMgr {
     }finally{
         transLock.unlock()
     }
+    val end = System.currentTimeMillis()
+    RepLogger.trace(RepLogger.OutputTime_Logger, s"systemname=${sysName},removeTranscation4Txid spent time=${end-start}")
   }
 
   def getTransLength() : Int = {
     var len = 0
     transLock.lock()
+    val start = System.currentTimeMillis()
     try{
       len = transactions.size
     }finally{
       transLock.unlock()
     }
+    val end = System.currentTimeMillis()
+    RepLogger.trace(RepLogger.OutputTime_Logger, s"getTransLength spent time=${end-start}")
     len
     //this.transNumber.get
   }
