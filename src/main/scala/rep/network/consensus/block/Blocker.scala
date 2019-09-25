@@ -167,13 +167,13 @@ class Blocker(moduleName: String) extends ModuleBase(moduleName) {
       this.preblock = blc
       schedulerLink = clearSched()
 
-      if (SystemProfile.getHasSecondConsensus) {
+      //if (SystemProfile.getHasSecondConsensus) {
         //在发出背书时，告诉对方我是当前出块人，取出系统的名称
         RepTimeTracer.setStartTime(pe.getSysTag, "Endorsement", System.currentTimeMillis(), blc.height, blc.transactions.size)
         pe.getActorRef(ActorType.endorsementcollectioner) ! EndorseMsg.CollectEndorsement(this.preblock, pe.getSysTag)
-      }else{
-        mediator ! Publish(Topic.Block, ConfirmedBlock(preblock, self))
-      }
+      //}else{
+      //  mediator ! Publish(Topic.Block, ConfirmedBlock(preblock, self))
+      //}
     } else {
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("create new block error,CreateBlock is null" + "~" + selfAddr))
       pe.getActorRef(ActorType.voter) ! VoteOfBlocker

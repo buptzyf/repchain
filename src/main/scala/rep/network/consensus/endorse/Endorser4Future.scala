@@ -55,9 +55,8 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
   import rep.protos.peer._
   import rep.storage.ImpDataAccess
   import scala.concurrent._
-  import java.util.concurrent.Executors
+  //import java.util.concurrent.Executors
 
-  val ec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(128))
   implicit val timeout = Timeout(TimePolicy.getTimeoutPreload seconds)
   
   override def preStart(): Unit = {
@@ -81,7 +80,7 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
       case e: Throwable =>
         RepLogger.error(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry AskPreloadTransactionOfBlock error"))
         false
-    })(ec)
+    })
 
   private def checkRepeatOfTrans(trans: Seq[Transaction]): Future[Boolean] = Future {
     //println("entry checkRepeatOfTrans")
@@ -102,7 +101,7 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
     }
     //println(s"${pe.getSysTag}:entry checkRepeatOfTrans after,isrepeat=${isRepeat}")
     isRepeat
-  }(ec)
+  }
 
   private def asyncVerifyTransaction(t: Transaction): Future[Boolean] = Future {
     //println(s"${pe.getSysTag}:entry asyncVerifyTransaction")
@@ -119,7 +118,7 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
     }
     //println(s"${pe.getSysTag}:entry asyncVerifyTransaction after,asyncVerifyTransaction=${result}")
     result
-  }(ec)
+  }
 
   private def asyncVerifyTransactions(block: Block): Future[Boolean] = Future {
     //println(s"${pe.getSysTag}:entry asyncVerifyTransactions")
@@ -142,7 +141,7 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
     })
     //println(s"${pe.getSysTag}:entry asyncVerifyTransactions after,asyncVerifyTransactions=${result}")
     result
-  }(ec)
+  }
 
   private def checkEndorseSign(block: Block): Future[Boolean] = Future {
     //println(s"${pe.getSysTag}:entry checkEndorseSign")
@@ -151,8 +150,15 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
     result = r._1
     //println(s"${pe.getSysTag}:entry checkEndorseSign after,checkEndorseSign=${result}")
     result
-  }(ec)
+  }
 
+  private def checkAllEndorseSign(block: Block):Boolean =  {
+    var result = false
+    val r = BlockVerify.VerifyAllEndorseOfBlock(block, pe.getSysTag)
+    result = r._1
+    result
+  }
+  
   private def isAllowEndorse(info: EndorsementInfo): Int = {
     if (info.blocker == pe.getSysTag) {
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"endorser is itself,do not endorse,recv endorse request,endorse height=${info.blc.height},local height=${pe.getCurrentHeight}"))
@@ -183,7 +189,7 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
   }
 
   private def VerifyInfo(info: EndorsementInfo) = {
-    val starttime = System.currentTimeMillis()
+    //val starttime = System.currentTimeMillis()
     //println(s"${pe.getSysTag}:entry 0")
     val transSign = asyncVerifyTransactions(info.blc)
     //println(s"${pe.getSysTag}:entry 1")
@@ -203,7 +209,7 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
     //println(s"${pe.getSysTag}:entry 5 ")
     val result1 = Await.result(result, timeout.duration).asInstanceOf[Boolean]
     //println(s"${pe.getSysTag}:entry 6")
-    if (result1) {
+    /*if (result1) {
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry 7"))
       val endtime = System.currentTimeMillis()
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"#################endorsement spent time=${endtime-starttime},,recv endorse request,endorse height=${info.blc.height},local height=${pe.getCurrentHeight}"))
@@ -214,6 +220,18 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
       val endtime = System.currentTimeMillis()
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"#################endorsement spent time=${endtime-starttime},recv endorse request,verify error,endorse height=${info.blc.height},local height=${pe.getCurrentHeight}"))
       sender ! ResultOfEndorsed(ResultFlagOfEndorse.VerifyError, null, info.blc.hashOfBlock.toStringUtf8(),pe.getSystemCurrentChainStatus,pe.getBlocker)
+    }*/
+    SendVerifyEndorsementInfo(info,result1)
+  }
+  
+  private def SendVerifyEndorsementInfo(info: EndorsementInfo,result1:Boolean) = {
+    if (result1) {
+      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry 7"))
+      sendEvent(EventType.RECEIVE_INFO, mediator, pe.getSysTag, Topic.Endorsement,Event.Action.ENDORSEMENT)
+      sender ! ResultOfEndorsed(ResultFlagOfEndorse.success, BlockHelp.SignBlock(info.blc, pe.getSysTag), info.blc.hashOfBlock.toStringUtf8(),pe.getSystemCurrentChainStatus,pe.getBlocker)
+    } else {
+      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry 8"))
+      sender ! ResultOfEndorsed(ResultFlagOfEndorse.VerifyError, null, info.blc.hashOfBlock.toStringUtf8(),pe.getSystemCurrentChainStatus,pe.getBlocker)
     }
   }
 
@@ -221,8 +239,12 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
     val r = isAllowEndorse(info)
     r match {
       case 0 =>
-        //entry endorse
-        VerifyInfo(info)
+        if (SystemProfile.getHasSecondConsensus) {
+          //entry endorse
+          VerifyInfo(info)
+        }else{
+          SendVerifyEndorsementInfo(info,checkAllEndorseSign(info.blc))
+        }
       case 2 =>
         //cache endorse,waiting revote
         sender ! ResultOfEndorsed(ResultFlagOfEndorse.BlockHeightError, null, info.blc.hashOfBlock.toStringUtf8(),pe.getSystemCurrentChainStatus,pe.getBlocker)

@@ -101,10 +101,10 @@ class ModuleManager(moduleName: String, sysTag: String, enableStatistic: Boolean
       context.actorOf(GenesisBlocker.props("gensisblock"), "gensisblock")
       context.actorOf(ConfirmOfBlock.props("confirmerofblock"), "confirmerofblock")
 
-      if (SystemProfile.getHasSecondConsensus) {
+      //if (SystemProfile.getHasSecondConsensus) {
         context.actorOf(EndorseCollector.props("endorsementcollectioner"), "endorsementcollectioner")
         context.actorOf(DispatchOfRecvEndorsement.props("dispatchofRecvendorsement"), "dispatchofRecvendorsement")
-      }
+      //}
 
       if (this.isStartup) {
         context.actorOf(TransactionDispatcher.props("transactiondispatcher"), "transactiondispatcher")
