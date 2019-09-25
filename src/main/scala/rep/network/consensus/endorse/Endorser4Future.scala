@@ -32,7 +32,7 @@ import rep.app.conf.{ SystemProfile, TimePolicy, SystemCertList }
 import rep.storage.{ ImpDataPreload, ImpDataPreloadMgr }
 import rep.utils.GlobalUtils.{ ActorType, BlockEvent, EventType, NodeStatus }
 import com.sun.beans.decoder.FalseElementHandler
-import rep.network.consensus.vote.Voter.VoteOfBlocker
+//import rep.network.consensus.vote.Voter.VoteOfBlocker
 import sun.font.TrueTypeFont
 import scala.util.control.Breaks._
 import scala.util.control.Exception.Finally
@@ -239,11 +239,12 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
     val r = isAllowEndorse(info)
     r match {
       case 0 =>
-        if (SystemProfile.getHasSecondConsensus) {
+        if (SystemProfile.getIsVerifyOfEndorsement) {
           //entry endorse
           VerifyInfo(info)
         }else{
-          SendVerifyEndorsementInfo(info,checkAllEndorseSign(info.blc))
+          //SendVerifyEndorsementInfo(info,checkAllEndorseSign(info.blc))
+          SendVerifyEndorsementInfo(info,true)
         }
       case 2 =>
         //cache endorse,waiting revote

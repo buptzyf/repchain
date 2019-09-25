@@ -57,7 +57,8 @@ object SystemProfile {
   private[this] var _BLOCK_LENGTH: Int = 120000//区块的最大长度
   private[this] var _NUMBER_OF_TRANSPROCESSOR = 100 //
   private[this] var _HAS_PRELOAD_TRANS_OF_API = true
-  private[this] var _HAS_SECOND_CONSENSUS = true
+  private[this] var _IS_VERIFY_OF_ENDORSEMENT = true//is_verify_of_endorsement
+  private[this] var _NUMBER_OF_ENDORSEMENT: Int = 2
   
   private[this] var _DBPATH:String = "" //leveldb数据库文件路径
   private[this] var _BLOCKPATH:String = ""//区块文件的路径
@@ -85,7 +86,9 @@ object SystemProfile {
   
   private def HAS_PRELOAD_TRANS_OF_API = _HAS_PRELOAD_TRANS_OF_API
   
-  private def HAS_SECOND_CONSENSUS = _HAS_SECOND_CONSENSUS
+  private def IS_VERIFY_OF_ENDORSEMENT = _IS_VERIFY_OF_ENDORSEMENT
+  
+  private def NUMBER_OF_ENDORSEMENT = _NUMBER_OF_ENDORSEMENT
   
   private def REALTIMEGRAPH_ENABLE = _REALTIMEGRAPH_ENABLE
   
@@ -121,8 +124,12 @@ object SystemProfile {
     _HAS_PRELOAD_TRANS_OF_API = value
   }
   
-  private def HAS_SECOND_CONSENSUS_=(value:Boolean):Unit={
-    _HAS_SECOND_CONSENSUS = value
+  private def IS_VERIFY_OF_ENDORSEMENT_=(value:Boolean):Unit={
+    _IS_VERIFY_OF_ENDORSEMENT = value
+  }
+  
+  private def NUMBER_OF_ENDORSEMENT_=(value:Int):Unit={
+    _NUMBER_OF_ENDORSEMENT = value
   }
   
   private def VOTENODELIST_=(value: List[String]): Unit = {
@@ -232,7 +239,9 @@ object SystemProfile {
     GENESISNODENAME_=(config.getString("system.genesis_node_name"))
     NUMBER_OF_TRANSPROCESSOR_=(config.getInt("system.number_of_transProcessor"))
     HAS_PRELOAD_TRANS_OF_API_=(config.getBoolean("system.has_preload_trans_of_api"))
-    HAS_SECOND_CONSENSUS_=(config.getBoolean("system.has_second_consensus"))
+    IS_VERIFY_OF_ENDORSEMENT_=(config.getBoolean("system.is_verify_of_endorsement"))
+    NUMBER_OF_ENDORSEMENT_=(config.getInt("system.number_of_endorsement"))
+    
     
     DBPATH_= (config.getString("system.storage.dbpath"))
     BLOCKPATH_= (config.getString("system.storage.blockpath"))
@@ -254,7 +263,9 @@ object SystemProfile {
   
   def getHasPreloadTransOfApi = HAS_PRELOAD_TRANS_OF_API
   
-  def getHasSecondConsensus = HAS_SECOND_CONSENSUS
+  def getIsVerifyOfEndorsement = IS_VERIFY_OF_ENDORSEMENT
+  
+  def getNumberOfEndorsement = NUMBER_OF_ENDORSEMENT
   
   def getBlockLength = BLOCK_LENGTH
 

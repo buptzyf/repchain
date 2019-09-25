@@ -55,9 +55,18 @@ object NodeHelp {
   }
 
   def ConsensusConditionChecked(inputNumber: Int, nodeNumber: Int): Boolean = {
-    (inputNumber - 1) >= Math.floor(((nodeNumber) * 1.0) / 2)
+    var scaledata = SystemProfile.getNumberOfEndorsement
+     if(SystemProfile.getNumberOfEndorsement == 1){
+       scaledata = 2
+     }
+    
+    if(scaledata == 2){
+      (inputNumber - 1) >= Math.floor(((nodeNumber) * 1.0) / scaledata)
+    }else{
+      (inputNumber - 1) >= Math.floor((((nodeNumber) * 1.0) / scaledata)*2)
+    }
   }
-
+  
   def isCandidateNow(Systemname: String, candidates: Set[String]): Boolean = {
     val list = candidates.toList
     list.contains(Systemname)

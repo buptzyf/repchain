@@ -38,6 +38,8 @@ import rep.network.persistence.Storager.{ BlockRestore, SourceOfBlock, BatchStor
 import rep.network.consensus.util.{ BlockVerify, BlockHelp }
 import rep.log.RepLogger
 import rep.log.RepTimeTracer
+import rep.network.sync.SyncMsg.SyncRequestOfStorager
+import rep.network.consensus.vote.Voter.VoteOfBlocker
 
 object ConfirmOfBlock {
   def props(name: String): Props = Props(classOf[ConfirmOfBlock], name)
@@ -96,7 +98,7 @@ class ConfirmOfBlock(moduleName: String) extends ModuleBase(moduleName) {
 
   private def handler(block: Block, actRefOfBlock: ActorRef) = {
     RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"confirm verify endorsement start,height=${block.height}"))
-    if (SystemProfile.getHasSecondConsensus) {
+    if (SystemProfile.getIsVerifyOfEndorsement) {
       if (asyncVerifyEndorses(block)) {
         RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"confirm verify endorsement end,height=${block.height}"))
         //背书人的签名一致
@@ -127,16 +129,23 @@ class ConfirmOfBlock(moduleName: String) extends ModuleBase(moduleName) {
     } else {
       //与上一个块一致
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"confirm verify blockhash,height=${block.height}"))
-      if (SystemProfile.getHasSecondConsensus) {
+      /*if (SystemProfile.getNumberOfEndorsement == 1) {
+        if (block.height > pe.getCurrentHeight + 1) {
+          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"confirm verify height,height=${block.height}，localheight=${pe.getCurrentHeight }"))
+          //pe.getActorRef(ActorType.synchrequester) ! StartSync(false)
+          pe.getActorRef(ActorType.synchrequester) ! SyncRequestOfStorager(sender,block.height)
+        } else {
+          handler(block, actRefOfBlock)
+        }
+        pe.getActorRef(ActorType.voter) ! VoteOfBlocker
+      } else {*/
         if (NodeHelp.ConsensusConditionChecked(block.endorsements.size, pe.getNodeMgr.getStableNodes.size)) {
           //符合大多数人背书要求
           handler(block, actRefOfBlock)
         } else {
           //错误，没有符合大多人背书要求。
         }
-      } else {
-        handler(block, actRefOfBlock)
-      }
+      //}
     }
   }
 
