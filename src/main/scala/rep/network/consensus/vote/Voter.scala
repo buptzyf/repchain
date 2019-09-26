@@ -100,6 +100,18 @@ class Voter(moduleName: String) extends ModuleBase(moduleName) with CRFDVoter {
     schedulerLink = scheduler.scheduleOnce(TimePolicy.getVoteRetryDelay millis, self, Voter.VoteOfBlocker)
   }
 
+  private def vote4One = {
+    if(this.Blocker.blocker == ""){
+      val currentblockhash = pe.getCurrentBlockHash
+      val currentheight = pe.getCurrentHeight
+      this.cleanVoteInfo
+      this.resetCandidator(currentblockhash)
+      this.resetBlocker(0, currentblockhash, currentheight)
+    }else{
+      NoticeBlockerMsg
+    }
+  }
+  
   private def vote = {
     if (checkTranNum) {
       val currentblockhash = pe.getCurrentBlockHash
@@ -154,7 +166,11 @@ class Voter(moduleName: String) extends ModuleBase(moduleName) with CRFDVoter {
         }
       } else {
         if (!pe.isSynching) {
-          vote
+          if(SystemProfile.getNumberOfEndorsement == 1){
+            vote4One
+          }else{
+            vote
+          }
         }
       }
     }

@@ -129,23 +129,23 @@ class ConfirmOfBlock(moduleName: String) extends ModuleBase(moduleName) {
     } else {
       //与上一个块一致
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"confirm verify blockhash,height=${block.height}"))
-      /*if (SystemProfile.getNumberOfEndorsement == 1) {
-        if (block.height > pe.getCurrentHeight + 1) {
+      if (SystemProfile.getNumberOfEndorsement == 1) {
+        /*if (block.height > pe.getCurrentHeight + 1) {
           RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"confirm verify height,height=${block.height}，localheight=${pe.getCurrentHeight }"))
           //pe.getActorRef(ActorType.synchrequester) ! StartSync(false)
           pe.getActorRef(ActorType.synchrequester) ! SyncRequestOfStorager(sender,block.height)
-        } else {
+        } else {*/
           handler(block, actRefOfBlock)
-        }
-        pe.getActorRef(ActorType.voter) ! VoteOfBlocker
-      } else {*/
+        //}
+        //pe.getActorRef(ActorType.voter) ! VoteOfBlocker
+      } else {
         if (NodeHelp.ConsensusConditionChecked(block.endorsements.size, pe.getNodeMgr.getStableNodes.size)) {
           //符合大多数人背书要求
           handler(block, actRefOfBlock)
         } else {
           //错误，没有符合大多人背书要求。
         }
-      //}
+      }
     }
   }
 
