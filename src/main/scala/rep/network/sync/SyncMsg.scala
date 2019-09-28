@@ -37,5 +37,7 @@ object SyncMsg {
   case class SynchAction(start:Long,end:Long,server:ActorRef)
   
   case class RollbackAction(destHeight:Long)
+  
+  case class MaxBlockInfo(height:Long,hash:String)
 
 }

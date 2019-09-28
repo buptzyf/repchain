@@ -205,6 +205,7 @@ class Blocker(moduleName: String) extends ModuleBase(moduleName) {
       schedulerLink = clearSched()
 
       if (SystemProfile.getNumberOfEndorsement == 1) {
+        pe.setCreateHeight(preblock.height)
         mediator ! Publish(Topic.Block, ConfirmedBlock(preblock, self))
       }else{
         //在发出背书时，告诉对方我是当前出块人，取出系统的名称

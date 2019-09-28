@@ -32,6 +32,7 @@ import rep.network.persistence.BlockCache
 import rep.network.tools.transpool.TransactionPoolMgr
 import java.util.concurrent.ConcurrentHashMap
 import scala.collection.JavaConverters._
+import rep.network.sync.SyncMsg.MaxBlockInfo
 
 /**
  * Peer business logic node stared space（based on system）
@@ -66,6 +67,39 @@ class PeerExtensionImpl extends Extension {
     this.nodemgr
   }
 /*********组网节点信息管理，包括抽签候选人信息结束************/
+private var startVoteInfo:AtomicReference[MaxBlockInfo] = new AtomicReference[MaxBlockInfo](new MaxBlockInfo(0,""))
+
+def setStartVoteInfo(value:MaxBlockInfo)={
+  this.startVoteInfo.set(value)
+}
+
+def getStartVoteInfo:MaxBlockInfo={
+  this.startVoteInfo.get
+}
+
+private var createBlockHeight : AtomicLong = new AtomicLong(0)
+
+def setCreateHeight(value:Long)={
+  this.createBlockHeight.set(value)
+}
+
+def getCreateHeight:Long={
+  this.createBlockHeight.get
+}
+  
+private var confirmBlockHeight : AtomicLong = new AtomicLong(0)
+
+def setConfirmHeight(value:Long)={
+  this.confirmBlockHeight.set(value)
+}
+
+def getConfirmHeight:Long={
+  this.confirmBlockHeight.get
+}
+
+def getMaxHeight4SimpleRaft:Long={
+  scala.math.max(scala.math.max(this.getConfirmHeight, this.getConfirmHeight),this.getCurrentHeight)
+}
 
 /*********节点当前链信息开始************/
   private var SystemCurrentChainInfo: AtomicReference[BlockchainInfo] =

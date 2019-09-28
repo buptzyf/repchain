@@ -80,6 +80,11 @@ class Voter(moduleName: String) extends ModuleBase(moduleName) with CRFDVoter {
   }
 
   private def resetBlocker(idx: Int, currentblockhash: String, currentheight: Long) = {
+    if(SystemProfile.getNumberOfEndorsement == 1){
+      pe.setConfirmHeight(0)
+      pe.setCreateHeight(0)
+    }
+    
     RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},votelist=${candidator.toArray[String].mkString("|")},idx=${idx}"))
     this.Blocker = BlockerInfo(blocker(candidator.toArray[String], idx), idx, System.currentTimeMillis(), currentblockhash, currentheight)
     pe.resetBlocker(this.Blocker)
@@ -101,12 +106,34 @@ class Voter(moduleName: String) extends ModuleBase(moduleName) with CRFDVoter {
   }
 
   private def vote4One = {
+    
     if(this.Blocker.blocker == ""){
-      val currentblockhash = pe.getCurrentBlockHash
-      val currentheight = pe.getCurrentHeight
-      this.cleanVoteInfo
-      this.resetCandidator(currentblockhash)
-      this.resetBlocker(0, currentblockhash, currentheight)
+      val maxinfo = pe.getStartVoteInfo
+      var currentblockhash:String = ""
+      var currentheight : Long = 0
+      if(maxinfo.height > 0){
+        currentblockhash = maxinfo.hash
+        currentheight = maxinfo.height
+      }else{
+        currentblockhash = pe.getCurrentBlockHash
+        currentheight = pe.getCurrentHeight
+      }
+      if(currentheight > 0){
+        this.cleanVoteInfo
+        this.resetCandidator(currentblockhash)
+        this.resetBlocker(0, currentblockhash, currentheight)
+      }
+    }else if((this.Blocker.VoteHeight +SystemProfile.getBlockNumberOfRaft) <= pe.getMaxHeight4SimpleRaft){
+      val block = dataaccess.getBlock4ObjectByHeight(this.Blocker.VoteHeight +SystemProfile.getBlockNumberOfRaft)
+      if(block != null){
+        val currentblockhash = block.hashOfBlock.toStringUtf8()
+        val currentheight = block.height
+        this.cleanVoteInfo
+        this.resetCandidator(currentblockhash)
+        this.resetBlocker(0, currentblockhash, currentheight)
+      }else{
+        pe.getActorRef(ActorType.synchrequester) ! StartSync(false)
+      }
     }else{
       NoticeBlockerMsg
     }
@@ -182,5 +209,7 @@ class Voter(moduleName: String) extends ModuleBase(moduleName) with CRFDVoter {
       if (NodeHelp.isCandidateNow(pe.getSysTag, SystemCertList.getSystemCertList)) {
         voteMsgHandler
       }
+      
+     
   }
 }

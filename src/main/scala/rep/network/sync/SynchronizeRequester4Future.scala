@@ -171,12 +171,19 @@ class SynchronizeRequester4Future(moduleName: String) extends ModuleBase(moduleN
     val res = AsyncGetNodeOfChainInfos(nodes, lh)
 
     val parser = new SynchResponseInfoAnalyzer(pe.getSysTag, pe.getSystemCurrentChainStatus, pe.getNodeMgr)
-    parser.Parser(res, isStartupSynch)
+    if (SystemProfile.getNumberOfEndorsement == 1) {
+      parser.Parser4One(res)
+    } else {
+      parser.Parser(res, isStartupSynch)
+    }
     val result = parser.getResult
     val rresult = parser.getRollbackAction
     val sresult = parser.getSynchActiob
 
     if (result.ar == 1) {
+      if (SystemProfile.getNumberOfEndorsement == 1) {
+        pe.setStartVoteInfo(parser.getMaxBlockInfo)
+      }
       if (rresult != null) {
         val da = ImpDataAccess.GetDataAccess(pe.getSysTag)
         if (da.rollbackToheight(rresult.destHeight)) {
@@ -211,12 +218,22 @@ class SynchronizeRequester4Future(moduleName: String) extends ModuleBase(moduleN
   override def receive: Receive = {
     case StartSync(isNoticeModuleMgr: Boolean) =>
       schedulerLink = clearSched()
+      /*if (pe.getSysTag == "121000005l35120456.node1") {
+        println("node1")
+      }*/
       var rb = true
       initSystemChainInfo
       if (pe.getNodeMgr.getStableNodes.size >= SystemProfile.getVoteNoteMin && !pe.isSynching) {
         pe.setSynching(true)
         try {
-          rb = Handler(isNoticeModuleMgr)
+          if(SystemProfile.getNumberOfEndorsement == 1){
+            val ssize = pe.getNodeMgr.getStableNodes.size
+            if(SystemProfile.getVoteNodeList.size() == ssize){
+              rb = Handler(isNoticeModuleMgr)
+            }
+          }else{
+            rb = Handler(isNoticeModuleMgr)
+          }
         } catch {
           case e: Exception =>
             rb = false
@@ -226,7 +243,7 @@ class SynchronizeRequester4Future(moduleName: String) extends ModuleBase(moduleN
         if (rb) {
           if (isNoticeModuleMgr)
             pe.getActorRef(ActorType.modulemanager) ! ModuleManager.startup_Consensus
-        }else{
+        } else {
           schedulerLink = scheduler.scheduleOnce(1 second, self, StartSync(isNoticeModuleMgr))
         }
 

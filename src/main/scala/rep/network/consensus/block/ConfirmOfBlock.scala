@@ -136,6 +136,7 @@ class ConfirmOfBlock(moduleName: String) extends ModuleBase(moduleName) {
           pe.getActorRef(ActorType.synchrequester) ! SyncRequestOfStorager(sender,block.height)
         } else {*/
           handler(block, actRefOfBlock)
+          pe.setConfirmHeight(block.height)
         //}
         //pe.getActorRef(ActorType.voter) ! VoteOfBlocker
       } else {

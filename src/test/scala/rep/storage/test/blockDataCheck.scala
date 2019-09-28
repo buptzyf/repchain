@@ -54,19 +54,19 @@ object blockDataCheck extends App {
   val da4 = ImpDataAccess.GetDataAccess("921000005k36123789.node4")
   val da5 = ImpDataAccess.GetDataAccess("921000006e0012v696.node5")
 
-  val ch = 2
-  val ch1 = 1 //308652l
+  val ch = 58502
+  val ch1 = 58502 //308652l
   
   val transactions = LinkedHashMap.empty[ String, String ]
   
-  outputblockchaininfo
+  /*outputblockchaininfo
   def outputblockchaininfo{
     println(da1.getBlockChainInfo().toString())
     println(da2.getBlockChainInfo().toString())
     println(da3.getBlockChainInfo().toString())
     println(da4.getBlockChainInfo().toString())
     println(da5.getBlockChainInfo().toString())
-  }
+  }*/
   
   /*def gettrans(num:Int,start:Int=0):Seq[ String ]={
     val result = ArrayBuffer.empty[ String ]
@@ -88,7 +88,7 @@ object blockDataCheck extends App {
   
   println(gettrans(3,10).mkString(","))*/
 
-  /*printlnBlock
+  printlnBlock
   printlnBlocker
   printlnBlockHash
 
@@ -96,7 +96,7 @@ object blockDataCheck extends App {
   getblockerForheight(da2,ch1)
   getblockerForheight(da3,ch1)
   getblockerForheight(da4,ch1)
-  getblockerForheight(da5,ch1)*/
+  getblockerForheight(da5,ch1)
 
   //fileOp
   case class bcinfo(height:Long,hash:String)
@@ -339,7 +339,7 @@ object blockDataCheck extends App {
   }*/
   
  // println(getblockerForheight(da2, 344))
-  println(getblockerForheight(da2, 345))
+ /* println(getblockerForheight(da2, 345))
   println(getblockerForheight(da2, 346))
   println(getblockerForheight(da2, 347))
   
@@ -357,7 +357,7 @@ object blockDataCheck extends App {
   println(getblockerForheight(da4, 345))
   println(getblockerForheight(da4, 346))
   println(getblockerForheight(da4, 347))
-  println(getblockerForheight(da4, 348))
+  println(getblockerForheight(da4, 348))*/
   
   def getblockerForheight(da: ImpDataAccess, h: Long) = {
     var nodes = new Array[String](5)
