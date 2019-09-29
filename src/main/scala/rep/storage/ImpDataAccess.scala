@@ -59,7 +59,7 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
 
   filemgr = new BlockFileMgr(this.SystemName)
 
-  private var chainInfoCache : ChainInfoInCache = new ChainInfoInCache(this) 
+  private var chainInfoCache: ChainInfoInCache = new ChainInfoInCache(this)
   /**
    * @author jiangbuyun
    * @version	0.7
@@ -169,6 +169,15 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
     val bidx = getBlockIdxByHeight(h)
     if (bidx != null) {
       rs = bidx.getBlockHash()
+    }
+    rs
+  }
+
+  def getNumberOfTransInBlockByHeight(h: Long): Int = {
+    var rs = 0
+    val bidx = getBlockIdxByHeight(h)
+    if (bidx != null) {
+      rs = bidx.getNumberOfTrans
     }
     rs
   }
@@ -422,8 +431,8 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
       val formatstr = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
       formatstr.setTimeZone(java.util.TimeZone.getTimeZone("ETC/GMT-8"))
       val tmpstr = formatstr.format(date)
-      val millis = signer.tmLocal.get.nanos/1000000
-      val createTime =  tmpstr + "." + millis
+      val millis = signer.tmLocal.get.nanos / 1000000
+      val createTime = tmpstr + "." + millis
       // 13位,毫秒精度级(utc时间)
       val createTimeUtc = String.valueOf((signer.tmLocal.get.seconds * 1000 + millis) - 8 * 3600 * 1000)
       rs = BlockTime(createTime, createTimeUtc)
@@ -750,7 +759,7 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
         filemgr.writeBlock(bidx.getBlockFileNo(), bidx.getBlockFilePos() - 8, pathUtil.longToByte(blenght) ++ rbb)
         RepTimeTracer.setEndTime(this.SystemName, "storage-save-write-file", System.currentTimeMillis(), block.height, block.transactions.size)
         b = true
-        
+
         RepLogger.trace(
           RepLogger.Storager_Logger,
           "system_name=" + this.SystemName + "\t blockhash=" + bidx.getBlockHash() + "\tcommited success")

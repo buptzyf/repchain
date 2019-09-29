@@ -156,6 +156,14 @@ class blockindex() {
       val rb = rstr.getBytes("UTF-8")
       rb
     }
+
+  def getNumberOfTrans: Int = {
+      var c : Int= 0
+      if(this.txids != null){
+        c = this.txids.length
+      }
+      c
+    }
     
     def getBlockNum():String={
       this.blockNum

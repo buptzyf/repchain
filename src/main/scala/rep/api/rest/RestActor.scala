@@ -69,11 +69,12 @@ object RestActor {
   case class BlockId(bid: String)
   case class BlockHeight(h: Int)
   case class BlockTime(createTime: String, createTimeUtc: String)
-  case class BlockTimeForHeight(h:Long)
-  case class BlockTimeForTxid(txid:String)
+  case class BlockTimeForHeight(h: Long)
+  case class BlockTimeForTxid(txid: String)
   case class BlockHeightStream(h: Int)
   case class TransactionId(txid: String)
   case class TransactionStreamId(txid: String)
+  case class TransNumberOfBlock(height: Long)
 
   case class PostResult(txid: String, result: Option[ActionResult], err: Option[String])
   case class QueryResult(result: Option[JValue])
@@ -156,7 +157,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
     /*if (pe.getTransPoolMgr.findTrans(t.id) || sr.isExistTrans4Txid(t.id)) {
           sender ! PostResult(t.id, None, Option(s"transactionId is exists, the transaction is \n ${t.id}"))
     }*/
-    
+
     try {
       if (SystemProfile.getHasPreloadTransOfApi) {
         val sig = t.signature.get.signature.toByteArray
@@ -166,7 +167,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
           sender ! PostResult(t.id, None, Option(s"transactionId is exists, the transaction is \n ${t.id}"))
         } else {
           if (SignTool.verify(sig, tOutSig.toByteArray, certId, pe.getSysTag)) {
-//            RepLogger.info(RepLogger.Business_Logger, s"验证签名成功，txid: ${t.id},creditCode: ${t.signature.get.getCertId.creditCode}, certName: ${t.signature.get.getCertId.certName}")
+            //            RepLogger.info(RepLogger.Business_Logger, s"验证签名成功，txid: ${t.id},creditCode: ${t.signature.get.getCertId.creditCode}, certName: ${t.signature.get.getCertId.certName}")
             val future = pe.getActorRef(ActorType.transactiondispatcher) ? DoTransaction(t, "api_" + t.id, TypeOfSender.FromAPI)
             val result = Await.result(future, timeout.duration).asInstanceOf[DoTransactionResult]
             val rv = result
@@ -215,7 +216,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
           sender ! PostResult(txr.id, None, Option(s"transaction parser error! + ${e.getMessage}"))
       }
       val tmpend = System.currentTimeMillis()
-      RepLogger.trace(RepLogger.OutputTime_Logger, this.getLogMsgPrefix(s"API recv trans time,thread-id=${Thread.currentThread().getName+"-"+Thread.currentThread().getId},spent time=${(tmpend-tmpstart)}" + "~" + selfAddr))
+      RepLogger.trace(RepLogger.OutputTime_Logger, this.getLogMsgPrefix(s"API recv trans time,thread-id=${Thread.currentThread().getName + "-" + Thread.currentThread().getId},spent time=${(tmpend - tmpstart)}" + "~" + selfAddr))
 
     //处理post CSpec构造交易的请求
     case c: CSpec =>
@@ -338,12 +339,18 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
 
     case TransNumber =>
       val num = pe.getTransPoolMgr.getTransLength()
-      val rs = "{\"numberofcache\":\""+num+"\"}"
-      sender !  QueryResult(Option(JsonMethods.parse(string2JsonInput(rs))))
+      val rs = "{\"numberofcache\":\"" + num + "\"}"
+      sender ! QueryResult(Option(JsonMethods.parse(string2JsonInput(rs))))
 
     case AcceptedTransNumber =>
       val num = sr.getBlockChainInfo.totalTransactions + pe.getTransPoolMgr.getTransLength()
-      val rs = "{\"acceptedNumber\":\""+num+"\"}"
-      sender !  QueryResult(Option(JsonMethods.parse(string2JsonInput(rs))))
+      val rs = "{\"acceptedNumber\":\"" + num + "\"}"
+      sender ! QueryResult(Option(JsonMethods.parse(string2JsonInput(rs))))
+
+    case TransNumberOfBlock(h) =>
+      val num = sr.getNumberOfTransInBlockByHeight(h)
+      val rs = "{\"transnumberofblock\":\"" + num + "\"}"
+      sender ! QueryResult(Option(JsonMethods.parse(string2JsonInput(rs))))
+
   }
 }

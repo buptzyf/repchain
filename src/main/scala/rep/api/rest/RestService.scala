@@ -16,8 +16,8 @@
 
 package rep.api.rest
 
-import scala.concurrent.{ExecutionContext, Future}
-import akka.actor.{ActorRef, ActorSelection}
+import scala.concurrent.{ ExecutionContext, Future }
+import akka.actor.{ ActorRef, ActorSelection }
 import akka.util.Timeout
 import akka.http.scaladsl.model.Uri.Path.Segment
 import akka.http.scaladsl.server.Directives
@@ -34,22 +34,22 @@ import de.heikoseeberger.akkahttpjson4s.Json4sSupport
 import rep.protos.peer._
 import rep.api.rest.RestActor._
 import spray.json.DefaultJsonProtocol._
-import org.json4s.{DefaultFormats, Formats, jackson}
+import org.json4s.{ DefaultFormats, Formats, jackson }
 import akka.http.scaladsl.server.Directives
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import spray.json._
 import akka.http.scaladsl.marshallers.xml.ScalaXmlSupport
-import akka.http.scaladsl.model.{ContentTypes, HttpCharsets, MediaTypes}
-import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
+import akka.http.scaladsl.model.{ ContentTypes, HttpCharsets, MediaTypes }
+import akka.http.scaladsl.unmarshalling.{ FromEntityUnmarshaller, Unmarshaller }
 
 import scala.xml.NodeSeq
 import rep.log.RepLogger
 
 /**
-  * 获得区块链的概要信息
-  *
-  * @author c4w
-  */
+ * 获得区块链的概要信息
+ *
+ * @author c4w
+ */
 @Api(value = "/chaininfo", description = "获得当前区块链信息", produces = "application/json")
 @Path("chaininfo")
 class ChainService(ra: ActorRef)(implicit executionContext: ExecutionContext)
@@ -125,10 +125,10 @@ class ChainService(ra: ActorRef)(implicit executionContext: ExecutionContext)
 }
 
 /**
-  * 获得指定区块的详细信息
-  *
-  * @author c4w
-  */
+ * 获得指定区块的详细信息
+ *
+ * @author c4w
+ */
 
 @Api(value = "/block", description = "获得区块数据", produces = "application/json")
 @Path("block")
@@ -145,7 +145,7 @@ class BlockService(ra: ActorRef)(implicit executionContext: ExecutionContext)
   implicit val serialization = jackson.Serialization // or native.Serialization
   implicit val formats = DefaultFormats
 
-  val route = getBlockById ~ getBlockByHeight ~ getBlockByHeightToo ~ getBlockStreamByHeight ~ getBlockTimeOfCreate ~ getBlockTimeOfTxrByTxid ~ getBlockTimeOfTransaction
+  val route = getBlockById ~ getBlockByHeight ~ getBlockByHeightToo ~ getTransNumberOfBlock ~ getBlockStreamByHeight ~ getBlockTimeOfCreate ~ getBlockTimeOfTxrByTxid ~ getBlockTimeOfTransaction
 
   @Path("/hash/{blockId}")
   @ApiOperation(value = "返回指定id的区块", notes = "", nickname = "getBlockById", httpMethod = "GET")
@@ -198,7 +198,22 @@ class BlockService(ra: ActorRef)(implicit executionContext: ExecutionContext)
       }
     }
 
-
+  @Path("/getTransNumberOfBlock")
+  @ApiOperation(value = "返回指定高度区块包含的交易数", notes = "", nickname = "getTransNumberOfBlock", httpMethod = "POST")
+  @ApiImplicitParams(Array(
+    new ApiImplicitParam(name = "height", value = "区块高度", required = true, dataType = "String", paramType = "body")))
+  @ApiResponses(Array(
+    new ApiResponse(code = 200, message = "返回指定高度区块包含的交易数", response = classOf[QueryResult])))
+  def getTransNumberOfBlock =
+    path("block" / "getTransNumberOfBlock") {
+      post {
+        entity(as[Map[String, Long]]) { blockQuery =>
+          complete {
+            (ra ? TransNumberOfBlock(blockQuery("height"))).mapTo[QueryResult]
+          }
+        }
+      }
+    }
 
   @Path("/blocktime/{blockHeight}")
   @ApiOperation(value = "返回指定高度的区块的出块时间", notes = "", nickname = "getBlockTimeOfCreate", httpMethod = "GET")
@@ -225,7 +240,7 @@ class BlockService(ra: ActorRef)(implicit executionContext: ExecutionContext)
   @ApiResponses(Array(
     new ApiResponse(code = 200, message = "返回指定交易的入块时间", response = classOf[QueryResult])))
   def getBlockTimeOfTransaction =
-    path("block" /"blocktimeoftran"/ Segment) { transid =>
+    path("block" / "blocktimeoftran" / Segment) { transid =>
       get {
         extractClientIP { ip =>
           RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} get block time for txid,txid=${transid}")
@@ -236,14 +251,13 @@ class BlockService(ra: ActorRef)(implicit executionContext: ExecutionContext)
       }
     }
 
-
   @Path("/blocktimeoftran")
   @ApiOperation(value = "返回指定交易的入块时间", notes = "", nickname = "getBlockTimeOfTransaction", httpMethod = "POST")
   @ApiImplicitParams(Array(
     new ApiImplicitParam(name = "txid", value = "交易id", required = true, dataType = "String", paramType = "body")))
   @ApiResponses(Array(
     new ApiResponse(code = 200, message = "返回指定交易的入块时间", response = classOf[QueryResult])))
-  def getBlockTimeOfTxrByTxid=
+  def getBlockTimeOfTxrByTxid =
     path("block" / "blocktimeoftran") {
       post {
         entity(as[Map[String, String]]) { trans =>
@@ -270,10 +284,10 @@ class BlockService(ra: ActorRef)(implicit executionContext: ExecutionContext)
 }
 
 /**
-  * 获得指定交易的详细信息，提交签名交易
-  *
-  * @author c4w
-  */
+ * 获得指定交易的详细信息，提交签名交易
+ *
+ * @author c4w
+ */
 @Api(value = "/transaction", description = "获得交易数据", consumes = "application/json,application/xml", produces = "application/json,application/xml")
 @Path("transaction")
 class TransactionService(ra: ActorRef)(implicit executionContext: ExecutionContext)
@@ -289,7 +303,7 @@ class TransactionService(ra: ActorRef)(implicit executionContext: ExecutionConte
   import ScalaXmlSupport._
   import akka.stream.scaladsl.FileIO
   import akka.util.ByteString
-  import java.nio.file.{Paths, Files}
+  import java.nio.file.{ Paths, Files }
   import akka.stream.scaladsl.Framing
 
   implicit val serialization = jackson.Serialization // or native.Serialization
@@ -334,7 +348,6 @@ class TransactionService(ra: ActorRef)(implicit executionContext: ExecutionConte
         }
       }
     }
-
 
   @Path("/stream/{transactionId}")
   @ApiOperation(value = "返回指定id的交易字节流", notes = "", nickname = "getTransactionStream", httpMethod = "GET", produces = "application/octet-stream")
