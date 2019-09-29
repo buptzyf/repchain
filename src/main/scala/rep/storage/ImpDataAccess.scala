@@ -201,6 +201,17 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
     rb
   }
 
+  def getBlockIdxByTxid(bh: String): blockindex = {
+    var bidx: blockindex = null
+    val key = IdxPrefix.IdxTransaction + bh
+    val value = this.Get(key)
+    val bkey = this.byteToString(value)
+    if (!bkey.equalsIgnoreCase("")) {
+      bidx = this.getBlockIdxByHash(bkey)
+    }
+    bidx
+  }
+
   /**
    * @author jiangbuyun
    * @version	1.0
@@ -408,7 +419,8 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
    * @return	返回出块时间
    */
   override def getBlockTimeOfTxid(txid: String): String = {
-    SerializeUtils.toJson(this.getBlockTime4Block(this.getBlock4ObjectByTxId(txid)))
+    //SerializeUtils.toJson(this.getBlockTime4Block(this.getBlock4ObjectByTxId(txid)))
+    SerializeUtils.toJson(this.getBlockTime4Block(txid))
   }
 
   /**
@@ -420,10 +432,10 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
    * @return	返回出块时间
    */
   def getBlockTimeOfHeight(h: Long): String = {
-    SerializeUtils.toJson(this.getBlockTime4Block(this.getBlock4ObjectByHeight(h)))
+    SerializeUtils.toJson(this.getBlockTime4BlockByHeight(h))
   }
 
-  private def getBlockTime4Block(b: Block): BlockTime = {
+  /*private def getBlockTime4Block(b: Block): BlockTime = {
     var rs = BlockTime("", "")
     if (b != null && b.endorsements != null && b.endorsements.length >= 1) {
       val signer = b.endorsements(0)
@@ -437,6 +449,26 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
       val createTimeUtc = String.valueOf((signer.tmLocal.get.seconds * 1000 + millis) - 8 * 3600 * 1000)
       rs = BlockTime(createTime, createTimeUtc)
     }
+    rs
+  }*/
+
+  private def getBlockTime4Block(txid: String): BlockTime = {
+    var rs = BlockTime("", "")
+    val idx = this.getBlockIdxByTxid(txid)
+    if (idx != null) {
+      rs = BlockTime(idx.getCreateTime, idx.getCreateTimeUtc)
+    }
+
+    rs
+  }
+
+  private def getBlockTime4BlockByHeight(height: Long): BlockTime = {
+    var rs = BlockTime("", "")
+    val idx = this.getBlockIdxByHeight(height)
+    if (idx != null) {
+      rs = BlockTime(idx.getCreateTime, idx.getCreateTimeUtc)
+    }
+
     rs
   }
 
