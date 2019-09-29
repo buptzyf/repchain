@@ -53,6 +53,7 @@ class Voter(moduleName: String) extends ModuleBase(moduleName) with CRFDVoter {
   private var candidator: Array[String] = Array.empty[String]
   private var Blocker: BlockerInfo = BlockerInfo("", -1, 0l, "", -1)
   private var voteCount = 0
+  private var HeightOfBlocked : String = ""
 
   def checkTranNum: Boolean = {
     pe.getTransPoolMgr.getTransLength() >= SystemProfile.getMinBlockTransNum
@@ -123,7 +124,9 @@ class Voter(moduleName: String) extends ModuleBase(moduleName) with CRFDVoter {
         this.resetCandidator(currentblockhash)
         this.resetBlocker(0, currentblockhash, currentheight)
       }
+      RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},first voter,currentHeight=${currentheight},currentHash=${currentblockhash}" + "~" + selfAddr))
     }else if((this.Blocker.VoteHeight +SystemProfile.getBlockNumberOfRaft) <= pe.getMaxHeight4SimpleRaft){
+      RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},second voter,currentHeight=${pe.getMaxHeight4SimpleRaft}" + "~" + selfAddr))
       val block = dataaccess.getBlock4ObjectByHeight(this.Blocker.VoteHeight +SystemProfile.getBlockNumberOfRaft)
       if(block != null){
         val currentblockhash = block.hashOfBlock.toStringUtf8()
@@ -131,7 +134,9 @@ class Voter(moduleName: String) extends ModuleBase(moduleName) with CRFDVoter {
         this.cleanVoteInfo
         this.resetCandidator(currentblockhash)
         this.resetBlocker(0, currentblockhash, currentheight)
+        RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},read block voter,currentHeight=${this.Blocker.VoteHeight +SystemProfile.getBlockNumberOfRaft},currentHash=${currentblockhash}" + "~" + selfAddr))
       }else{
+        RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},second voter in synch,currentHeight=${this.Blocker.VoteHeight +SystemProfile.getBlockNumberOfRaft}" + "~" + selfAddr))
         pe.getActorRef(ActorType.synchrequester) ! StartSync(false)
       }
     }else{
