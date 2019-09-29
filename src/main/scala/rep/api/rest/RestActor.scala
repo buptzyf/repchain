@@ -153,9 +153,9 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
       sender ! PostResult(t.id, None, Option("共识节点数目太少，暂时无法处理交易"))
     }
 
-    if (pe.getTransPoolMgr.findTrans(t.id) || sr.isExistTrans4Txid(t.id)) {
+    /*if (pe.getTransPoolMgr.findTrans(t.id) || sr.isExistTrans4Txid(t.id)) {
           sender ! PostResult(t.id, None, Option(s"transactionId is exists, the transaction is \n ${t.id}"))
-    }
+    }*/
     
     try {
       if (SystemProfile.getHasPreloadTransOfApi) {

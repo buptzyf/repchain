@@ -49,16 +49,16 @@ class TransactionPoolMgr {
         transactions.foreach(f=>{
           if(count < num){
             val txid = f._2.id
-            if ((currenttime - f._1/1000000000) > TimePolicy.getTranscationWaiting || sr.isExistTrans4Txid(txid) ){
+            /*if ((currenttime - f._1/1000000000) > TimePolicy.getTranscationWaiting || sr.isExistTrans4Txid(txid) ){
               deltrans4id += txid
-            }else{
+            }else{*/
               if(pos < start){
                 pos += 1
               }else{
                 translist += f._2
                 count += 1
               }
-            }
+            //}
           }else{
             break
           }
