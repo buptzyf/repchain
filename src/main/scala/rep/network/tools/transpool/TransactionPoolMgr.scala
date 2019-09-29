@@ -47,7 +47,7 @@ class TransactionPoolMgr {
         var pos = 0
         breakable(
         transactions.foreach(f=>{
-          if(count < num){
+          if(count <= num){
             val txid = f._2.id
             /*if ((currenttime - f._1/1000000000) > TimePolicy.getTranscationWaiting || sr.isExistTrans4Txid(txid) ){
               deltrans4id += txid

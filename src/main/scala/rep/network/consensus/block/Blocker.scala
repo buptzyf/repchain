@@ -105,7 +105,7 @@ class Blocker(moduleName: String) extends ModuleBase(moduleName) {
               f +=: result
             }
           }))
-        if (result.isEmpty && tmplist.size == num) {
+        if (result.isEmpty && tmplist.size >= SystemProfile.getMinBlockTransNum) {
           result = CollectedTransOfBlock(start + num, num, limitsize)
         }
       }
