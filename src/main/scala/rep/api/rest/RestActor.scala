@@ -75,6 +75,8 @@ object RestActor {
   case class TransactionId(txid: String)
   case class TransactionStreamId(txid: String)
   case class TransNumberOfBlock(height: Long)
+  case object LoadBlockInfo
+  case object IsLoadBlockInfo
 
   case class PostResult(txid: String, result: Option[ActionResult], err: Option[String])
   case class QueryResult(result: Option[JValue])
@@ -352,5 +354,13 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
       val rs = "{\"transnumberofblock\":\"" + num + "\"}"
       sender ! QueryResult(Option(JsonMethods.parse(string2JsonInput(rs))))
 
+    case LoadBlockInfo =>
+      sr.loadBlockInfoToCache
+      val rs = "{\"startup\":\"" + "true" + "\"}"
+      sender ! QueryResult(Option(JsonMethods.parse(string2JsonInput(rs))))
+    case IsLoadBlockInfo =>
+      val num = sr.isFinish
+      val rs = "{\"isfinish\":\"" + num + "\"}"
+      sender ! QueryResult(Option(JsonMethods.parse(string2JsonInput(rs))))
   }
 }

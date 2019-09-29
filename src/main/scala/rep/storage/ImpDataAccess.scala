@@ -60,6 +60,44 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
   filemgr = new BlockFileMgr(this.SystemName)
 
   private var chainInfoCache: ChainInfoInCache = new ChainInfoInCache(this)
+
+  private var bheight4bidx = new HashMap[Long, blockindex]()
+  private var txid4bheight = new HashMap[String, Long]()
+
+  def loadBlockInfoToCache: Boolean = {
+    var b: Boolean = false
+    val chaininfo = this.getBlockChainInfo()
+    val mh = chaininfo.height
+    var h: Long = 2
+    var start : Long = System.currentTimeMillis()
+    while (h <= mh) {
+      val hidx = this.getBlockIdxByHeight(h)
+      bheight4bidx += h -> hidx
+      val ts = hidx.getTxIds()
+      ts.foreach(f => {
+        txid4bheight += f -> h
+      })
+      h += 1 
+      if(h % 1000 == 0){
+        var end1 = System.currentTimeMillis()
+        println(h+" load time ="+(end1 - start)/1000+"s")
+      }
+    }
+    var end = System.currentTimeMillis()
+    println(s"load finish,h=${h},mh=${mh} time ="+(end - start)/1000+"s")
+    b
+  }
+
+  def isFinish: String = {
+    var b = "0"
+    val chaininfo = this.getBlockChainInfo()
+    var idx = this.bheight4bidx(chaininfo.height)
+    if (idx != null) {
+      b = "1"
+    }
+    b
+  }
+
   /**
    * @author jiangbuyun
    * @version	0.7
@@ -174,8 +212,14 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
   }
 
   def getNumberOfTransInBlockByHeight(h: Long): Int = {
-    var rs = 0
+    /*var rs = 0
     val bidx = getBlockIdxByHeight(h)
+    if (bidx != null) {
+      rs = bidx.getNumberOfTrans
+    }
+    rs*/
+    var rs = 0
+    val bidx = this.bheight4bidx(h)
     if (bidx != null) {
       rs = bidx.getNumberOfTrans
     }
@@ -453,18 +497,34 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
   }*/
 
   private def getBlockTime4Block(txid: String): BlockTime = {
-    var rs = BlockTime("", "")
+    /*var rs = BlockTime("", "")
     val idx = this.getBlockIdxByTxid(txid)
     if (idx != null) {
       rs = BlockTime(idx.getCreateTime, idx.getCreateTimeUtc)
     }
-
+    rs*/
+    var rs = BlockTime("", "")
+    try {
+      val th = this.txid4bheight(txid)
+      val idx = this.bheight4bidx(th)
+      if (idx != null) {
+        rs = BlockTime(idx.getCreateTime, idx.getCreateTimeUtc)
+      }
+    } catch {
+      case e: Exception =>
+    }
     rs
   }
 
   private def getBlockTime4BlockByHeight(height: Long): BlockTime = {
-    var rs = BlockTime("", "")
+    /*var rs = BlockTime("", "")
     val idx = this.getBlockIdxByHeight(height)
+    if (idx != null) {
+      rs = BlockTime(idx.getCreateTime, idx.getCreateTimeUtc)
+    }
+    rs*/
+    var rs = BlockTime("", "")
+    val idx = this.bheight4bidx(height)
     if (idx != null) {
       rs = BlockTime(idx.getCreateTime, idx.getCreateTimeUtc)
     }

@@ -64,7 +64,7 @@ class ChainService(ra: ActorRef)(implicit executionContext: ExecutionContext)
   implicit val formats = DefaultFormats
   implicit val timeout = Timeout(20.seconds)
 
-  val route = getBlockChainInfo ~ getNodeNumber ~ getCacheTransNumber ~ getAcceptedTransNumber
+  val route = getBlockChainInfo ~ getNodeNumber ~ getCacheTransNumber ~ getAcceptedTransNumber ~ loadBlockInfoToCache ~ IsLoadBlockInfoToCache
 
   @ApiOperation(value = "返回块链信息", notes = "", nickname = "getChainInfo", httpMethod = "GET")
   @ApiResponses(Array(
@@ -92,6 +92,36 @@ class ChainService(ra: ActorRef)(implicit executionContext: ExecutionContext)
         }
       }
     }
+  
+  
+  @Path("/loadBlockInfoToCache")
+  @ApiOperation(value = "初始化装载区块索引到缓存", notes = "", nickname = "loadBlockInfoToCache", httpMethod = "GET")
+  @ApiResponses(Array(
+    new ApiResponse(code = 200, message = "初始化装载区块索引到缓存量", response = classOf[QueryResult])))
+  def loadBlockInfoToCache =
+    path("chaininfo" / "loadBlockInfoToCache") {
+      get {
+        extractClientIP { ip =>
+          RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} get loadBlockInfoToCache")
+          complete { (ra ? LoadBlockInfo).mapTo[QueryResult] }
+        }
+      }
+    }
+  
+  @Path("/IsLoadBlockInfoToCache")
+  @ApiOperation(value = "是否完成始化装载区块索引到缓存", notes = "", nickname = "IsLoadBlockInfoToCache", httpMethod = "GET")
+  @ApiResponses(Array(
+    new ApiResponse(code = 200, message = "是否完成初始化装载区块索引到缓存量", response = classOf[QueryResult])))
+  def IsLoadBlockInfoToCache =
+    path("chaininfo" / "IsLoadBlockInfoToCache") {
+      get {
+        extractClientIP { ip =>
+          RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} get IsLoadBlockInfoToCache")
+          complete { (ra ? IsLoadBlockInfo).mapTo[QueryResult] }
+        }
+      }
+    }
+  
 
   @Path("/getcachetransnumber")
   @ApiOperation(value = "返回系统缓存交易数量", notes = "", nickname = "getCacheTransNumber", httpMethod = "GET")
@@ -250,7 +280,9 @@ class BlockService(ra: ActorRef)(implicit executionContext: ExecutionContext)
         //complete { (ra ? BlockHeight(blockHeight.toInt)).mapTo[QueryResult] }
       }
     }
-
+  
+  
+  
   @Path("/blocktimeoftran")
   @ApiOperation(value = "返回指定交易的入块时间", notes = "", nickname = "getBlockTimeOfTransaction", httpMethod = "POST")
   @ApiImplicitParams(Array(
