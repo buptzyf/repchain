@@ -68,8 +68,8 @@ object RepChain_Multi {
     nodes += sys1
 
     // 可以根据自己的需要将nodelist.length改成对应的节点数
-    for (i <- 1 to 4) {
-      Thread.sleep(500)
+    for (i <- 1 to args(0).toInt) {
+      Thread.sleep(1000)
       val sysN = new ClusterSystem(nodelist(i), InitType.MULTI_INIT, true)
       sysN.init
       //初始化（参数和配置信息）
