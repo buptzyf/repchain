@@ -44,10 +44,7 @@
 
 ## 打包
 - assembly 
-打包成jar包，进行分布式部署
-
-## 论坛社区
-- http://bbs.repchain.net.cn/ 
+打包成jar包，进行分布式部署 
 
 ## 示范应用
 - [BAR](https://gitee.com/linkel/bar)(Base App of RepChain)：提供了通用的基础功能实现，区块链应用实施者既可以直接复用其提供的功能， 也可以在其源代码的基础上进行开发，快速开发自己的DAppp
