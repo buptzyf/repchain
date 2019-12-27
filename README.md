@@ -14,11 +14,11 @@
 - [java security](http://docs.oracle.com/javase/8/docs/technotes/guides/security/index.html)——hash、签名、密钥对及证书管理均采用jdk内置方法
 
 ## 安装
-- install [zuluJdk11+](https://www.azul.com/downloads/zulu-community/?&architecture=x86-64-bit&package=jdk)
+- install [zuluJdk8](https://www.azul.com/downloads/zulu-community/?&architecture=x86-64-bit&package=jdk)
 - install [Python](http://www.python.org/downloads/)
 - install [Scala](https://www.scala-lang.org/download/)
 - install [SBT](http://www.scala-sbt.org/release/docs/Setup.html)
-- install [Idea IDE](https://www.jetbrains.com/idea/download/#section=windows)
+- install [Idea IDE](https://www.jetbrains.com/idea/download/#section=windows)，安装scala插件
 - install [keystore-explorer](http://keystore-explorer.org/) ——用于生成密钥对的工具,非必须
 - install [protobuf editor](https://github.com/Enide/polyglot-maven-editors)——编辑protobuf定义工具，非必须
 
@@ -28,8 +28,11 @@
 - `导入` 
   - 打开Idea IDE，File->New->Project or Project from VersionControl
   - 使用Idea的sbt插件导入
+- ` 启用OpenJSSE `
+  - 增加OpenJSSE provider：jre/lib/security/java.security 配置文件中加security.provider.11=org.openjsse.net.ssl.OpenJSSE <br>
+  - 使用OpenJSSE 替换sunJSSE：替换com.sun.net.ssl.internal.ssl.Provider 为 org.openjsse.net.ssl.OpenJSSE
 - 右键单击 rep.app.Repchain.scala，Run 'RepChain'(单机组网4个节点)
-- 运行配置VM参数 -Dlogback.configurationFile=conf/logback.xml (使logback配置生效)
+- 运行配置VM参数 -Dlogback.configurationFile=conf/logback.xml (使logback配置生效)，-XX:+UseOpenJSSE
 - 查看实时图 http://localhost:8081/web/g1.html 
 - 查看API  http://localhost:8081/swagger/index.html
 
