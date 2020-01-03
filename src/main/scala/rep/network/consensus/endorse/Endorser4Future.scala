@@ -57,7 +57,7 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
   import scala.concurrent._
   //import java.util.concurrent.Executors
 
-  implicit val timeout = Timeout(TimePolicy.getTimeoutPreload seconds)
+  implicit val timeout = Timeout(TimePolicy.getTimeoutPreload.seconds)
   
   override def preStart(): Unit = {
     RepLogger.info(RepLogger.Consensus_Logger, this.getLogMsgPrefix("Endorser4Future Start"))

@@ -37,7 +37,7 @@ class SynchronizeResponser(moduleName: String) extends ModuleBase(moduleName) {
   import scala.util.control.Breaks._
 
   override def preStart(): Unit = {
-    SubscribeTopic(mediator, self, selfAddr, BlockEvent.CHAIN_INFO_SYNC, true)
+    //SubscribeTopic(mediator, self, selfAddr, BlockEvent.CHAIN_INFO_SYNC, true)
     RepLogger.info(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix( "SynchronizeResponse start"))
   }
 

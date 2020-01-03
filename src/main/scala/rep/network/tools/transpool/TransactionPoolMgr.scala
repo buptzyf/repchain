@@ -16,10 +16,10 @@
 
 package rep.network.tools.transpool
 
-import scala.collection.mutable.{ArrayBuffer,LinkedHashMap}
 import rep.protos.peer.Transaction
 import java.util.concurrent.locks._
 import rep.log.RepLogger
+//import scala.jdk.CollectionConverters._
 import scala.collection.JavaConverters._
 import java.util.concurrent.ConcurrentSkipListMap
 import java.util.concurrent.ConcurrentHashMap

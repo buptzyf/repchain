@@ -2,16 +2,17 @@ name := """RepChain"""
 
 version := "1.0"
 
-scalaVersion := "2.13.1"
+scalaVersion := "2.12.10"
 
 lazy val akkaVersion = "2.6.1"
 val akkaHttpVersion   = "10.1.11"
 
+
 dependencyOverrides ++= Seq(
-  "org.json4s" % "json4s-jackson_2.13" % "3.6.7",
+  "org.json4s" % "json4s-jackson" % "3.6.7",
   "com.google.guava" % "guava" % "21.0",
-  "com.thesamet.scalapb" % "scalapb-runtime_2.13" % "0.10.0-M2",
-  "org.scala-lang.modules" % "scala-xml_2.13" % "2.0.0-M1"
+  "com.thesamet.scalapb" % "scalapb-runtime" % "0.10.0-M2",
+  "org.scala-lang.modules" % "scala-xml" % "2.0.0-M1"
 )
 
 libraryDependencies ++= Seq(
@@ -22,7 +23,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
   "com.typesafe.akka" %% "akka-persistence" % akkaVersion,
   "com.typesafe.akka" %% "akka-distributed-data" % akkaVersion
-  )
+)
 
 libraryDependencies += "com.typesafe.akka" %% "akka-http-xml" % akkaHttpVersion
 libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value
@@ -50,26 +51,31 @@ libraryDependencies += "org.javadelight" % "delight-nashorn-sandbox" % "0.1.27"
 libraryDependencies += "io.spray" %%  "spray-json" % "1.3.5"
 
 //libraryDependencies += "com.gilt" %% "gfc-timeuuid" % "0.0.8"
+libraryDependencies += "io.netty" % "netty" % "3.10.6.Final"
 
 libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.3"
 
 libraryDependencies += "org.codehaus.janino" % "janino" % "3.0.12"
 
 libraryDependencies += "org.bouncycastle" % "bcprov-jdk15on" % "1.61"
+libraryDependencies += "javax.xml.bind" % "jaxb-api" % "2.3.1"
 
 libraryDependencies ++= Seq(
   "io.swagger" % "swagger-jaxrs" % "1.6.0",
-  "com.github.swagger-akka-http" %% "swagger-akka-http" % "2.0.3",
+  "com.github.swagger-akka-http" %% "swagger-akka-http" % "1.1.1",
   "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
   "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpVersion,
   "org.json4s" %% "json4s-native" % "3.6.7",
   "org.json4s" %% "json4s-jackson" % "3.6.7",
 
-  "ch.megard" %% "akka-http-cors" % "0.4.2",
-  "de.heikoseeberger" % "akka-http-json4s_2.13" % "1.30.0"
-//  "com.twitter" %% "chill-akka" % "0.9.4",
-//  "com.twitter" % "chill-bijection_2.12" % "0.9.4"
+  "ch.megard" %% "akka-http-cors" % "0.4.0",
+  "de.heikoseeberger" % "akka-http-json4s_2.12" % "1.26.0",
+  "com.twitter" %% "chill-akka" % "0.9.4",
+  "com.twitter" % "chill-bijection_2.12" % "0.9.4"
 )
+
+
+
 
 javacOptions ++= Seq("-encoding", "UTF-8")
 

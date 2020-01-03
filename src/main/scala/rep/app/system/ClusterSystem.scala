@@ -123,8 +123,11 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
    * @return
    */
   def getConfigBySys(sysName: String): Config = {
-    val myConfig =
+    /*val myConfig =
       ConfigFactory.parseString("akka.remote.netty.ssl.security.key-store = \"jks/" + sysName +
+        ".jks\"")*/
+    val myConfig =
+      ConfigFactory.parseString("akka.remote.artery.ssl.config-ssl-engine.key-store = \"jks/" + sysName +
         ".jks\"")
     val regularConfig = getUserCombinedConf(USER_CONFIG_PATH)
     val combined =
@@ -193,6 +196,22 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
     }
 
     RepLogger.trace(RepLogger.System_Logger, sysTag + "~" + "System" + " ~ " + s"System(${sysTag}) init successfully" + " ~ ")
+  }
+
+  def init2(port:Int):Unit = {
+    var myConfig :Config = null
+    if(this.sysConf.getBoolean("akka.remote.artery.enabled")){
+      myConfig  = ConfigFactory.parseString("akka.remote.artery.canonical.port = " + port )
+    }else{
+      myConfig  = ConfigFactory.parseString("akka.remote.classic.netty.tcp.port = " + port )
+    }
+
+    var combined  = myConfig.withFallback(this.sysConf)
+
+    this.sysConf = ConfigFactory.load(combined)
+
+
+    this.init
   }
   
   def shutdown = {

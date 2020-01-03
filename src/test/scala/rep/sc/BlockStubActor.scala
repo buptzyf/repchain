@@ -39,7 +39,6 @@ object BlockStubActor {
 class BlockStubActor(moduleName: String) extends ModuleBase(moduleName) {
 
   import context.dispatcher
-  import scala.collection.breakOut
   import scala.concurrent.duration._
   import rep.utils.IdTool
   import rep.sc.BlockStubActor._
@@ -47,7 +46,7 @@ class BlockStubActor(moduleName: String) extends ModuleBase(moduleName) {
   import rep.network.consensus.util.BlockHelp
   import rep.network.persistence.Storager.{SourceOfBlock, BlockRestore}
 
-  implicit val timeout = Timeout(6 seconds)
+  implicit val timeout = Timeout(6.seconds)
 
   private def ExecuteTransactionOfBlock(block: Block): Block = {
     try {

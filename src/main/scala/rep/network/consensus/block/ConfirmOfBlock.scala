@@ -55,7 +55,7 @@ class ConfirmOfBlock(moduleName: String) extends ModuleBase(moduleName) {
   import scala.concurrent.duration._
   import rep.protos.peer._
 
-  implicit val timeout = Timeout(3 seconds)
+  implicit val timeout = Timeout(3.seconds)
 
   private def asyncVerifyEndorse(e: Signature, byteOfBlock: Array[Byte]): Future[Boolean] = {
     val result = Promise[Boolean]

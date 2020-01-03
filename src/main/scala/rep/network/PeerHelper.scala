@@ -28,7 +28,6 @@ import rep.protos.peer._
 import rep.utils.GlobalUtils.ActorType
 import rep.utils.{ IdTool, TimeUtils }
 import akka.cluster.pubsub.DistributedPubSubMediator.Publish
-import scala.concurrent.forkjoin.ThreadLocalRandom
 import java.text.SimpleDateFormat
 import rep.crypto.cert.SignTool
 import rep.log.RepLogger

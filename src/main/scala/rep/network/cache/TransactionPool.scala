@@ -125,6 +125,7 @@ class TransactionPool(moduleName: String) extends ModuleBase(moduleName) {
       //签名验证成功
       if((checkedTransactionResult.result) && (SystemProfile.getMaxCacheTransNum == 0 || pe.getTransPoolMgr.getTransLength() < SystemProfile.getMaxCacheTransNum) ){
         pe.getTransPoolMgr.putTran(t, pe.getSysTag)
+        RepLogger.trace(RepLogger.System_Logger,this.getLogMsgPrefix(s"${pe.getSysTag} trans pool recv,txid=${t.id}"))
         //广播接收交易事件
         if (pe.getTransPoolMgr.getTransLength() >= SystemProfile.getMinBlockTransNum)
           pe.getActorRef(GlobalUtils.ActorType.voter) ! VoteOfBlocker
@@ -155,9 +156,12 @@ class TransactionPool(moduleName: String) extends ModuleBase(moduleName) {
       if (ActorUtils.isHelper(sender().path.toString) ||  ActorUtils.isAPI(sender().path.toString)) {
         //广播交易
         publishTrans(t)
+        RepLogger.trace(RepLogger.System_Logger,this.getLogMsgPrefix(s"${pe.getSysTag}  recv self created tran,txid=${t.id}"))
         //广播发送交易事件
         sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)
-      } 
+      } else{
+        RepLogger.trace(RepLogger.System_Logger,this.getLogMsgPrefix(s"${pe.getSysTag}  recv broadcast tran,txid=${t.id}"))
+      }
     case _ => //ignore
   }
 }

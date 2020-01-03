@@ -27,7 +27,7 @@ import java.util.{ArrayList, List}
 import rep.app.conf.SystemProfile
 
 import scala.util.control.Breaks._
-import fastparse.utils.Base64
+//import fastparse.internal..utils.Base64
 import org.bouncycastle.util.io.pem.PemReader
 
 /**

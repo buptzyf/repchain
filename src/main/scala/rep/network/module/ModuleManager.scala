@@ -175,10 +175,15 @@ class ConfigerHelper(conf: Config, tag: String, dbTag: String) {
    * 根据配置初始化本地安全配置
    */
   private def authInitByCfg(sysTag: String): Unit = {
-    val mykeyPath = conf.getString("akka.remote.netty.ssl.security.base-path") + sysTag + ".jks"
+    /*val mykeyPath = conf.getString("akka.remote.netty.ssl.security.base-path") + sysTag + ".jks"
     val psw = conf.getString("akka.remote.netty.ssl.security.key-store-password")
     val trustPath = conf.getString("akka.remote.netty.ssl.security.trust-store-mm")
-    val trustPwd = conf.getString("akka.remote.netty.ssl.security.trust-store-password-mm")
+    val trustPwd = conf.getString("akka.remote.netty.ssl.security.trust-store-password-mm")*/
+
+    val mykeyPath = conf.getString("akka.remote.artery.ssl.config-ssl-engine.base-path") + sysTag + ".jks"
+    val psw = conf.getString("akka.remote.artery.ssl.config-ssl-engine.key-store-password")
+    val trustPath = conf.getString("akka.remote.artery.ssl.config-ssl-engine.trust-store-mm")
+    val trustPwd = conf.getString("akka.remote.artery.ssl.config-ssl-engine.trust-store-password-mm")
     authInit(sysTag, mykeyPath, psw, trustPath, trustPwd)
   }
 

@@ -18,7 +18,6 @@ package rep.log
 
 import rep.network.Topic
 import rep.protos.peer._
-import akka.stream.actor._
 import akka.actor.{ Props, Address, Actor, ActorRef, Terminated }
 import akka.cluster.pubsub.DistributedPubSub
 import akka.cluster.pubsub.DistributedPubSubMediator.{ Publish, Subscribe }

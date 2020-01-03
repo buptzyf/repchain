@@ -58,7 +58,7 @@ class TransferSpec3(_system: ActorSystem) extends TestKit(_system) with Matchers
 
   import scala.concurrent.duration._
 
-  implicit val timeout = Timeout(3 seconds)
+  implicit val timeout = Timeout(3.seconds)
 
   def this() = this(ActorSystem("TransferSpec", new ClusterSystem("121000005l35120456.node1", InitType.MULTI_INIT, false).getConf))
 

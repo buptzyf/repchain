@@ -32,7 +32,6 @@ object TransactionDispatcher {
 
 class TransactionDispatcher(moduleName: String) extends ModuleBase(moduleName) {
   import context.dispatcher
-  import scala.collection.breakOut
   import scala.concurrent.duration._
   import scala.collection.immutable._
   import rep.utils.IdTool

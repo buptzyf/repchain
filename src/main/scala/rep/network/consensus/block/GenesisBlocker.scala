@@ -66,7 +66,7 @@ class GenesisBlocker(moduleName: String) extends ModuleBase(moduleName) {
   import rep.protos.peer.{ Transaction }
 
   val dataaccess: ImpDataAccess = ImpDataAccess.GetDataAccess(pe.getSysTag)
-  implicit val timeout = Timeout(TimePolicy.getTimeoutPreload*20 seconds)
+  implicit val timeout = Timeout(TimePolicy.getTimeoutPreload*20.seconds)
 
   var preblock: Block = null
 

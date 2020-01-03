@@ -19,16 +19,16 @@ package rep.utils
 import rep.protos.peer.ChaincodeId
 import rep.protos.peer.CertId
 import java.util.UUID
-import com.gilt.timeuuid.TimeUuid
+//import com.gilt.timeuuid.TimeUuid
 import rep.protos.peer.Transaction
 
 
 object IdTool {
   
-  def getUUID: String = {
+  /*def getUUID: String = {
     val uuid = TimeUuid()
     uuid.toString
-  }
+  }*/
 
   def getRandomUUID: String = {
     UUID.randomUUID().toString

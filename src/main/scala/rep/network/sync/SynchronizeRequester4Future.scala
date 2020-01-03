@@ -49,7 +49,7 @@ class SynchronizeRequester4Future(moduleName: String) extends ModuleBase(moduleN
   import context.dispatcher
   import scala.concurrent.duration._
 
-  implicit val timeout = Timeout(TimePolicy.getTimeoutSync seconds)
+  implicit val timeout = Timeout(TimePolicy.getTimeoutSync.seconds)
   private val responseActorName = "/user/modulemanager/synchresponser"
 
   override def preStart(): Unit = {
@@ -244,7 +244,7 @@ class SynchronizeRequester4Future(moduleName: String) extends ModuleBase(moduleN
           if (isNoticeModuleMgr)
             pe.getActorRef(ActorType.modulemanager) ! ModuleManager.startup_Consensus
         } else {
-          schedulerLink = scheduler.scheduleOnce(1 second, self, StartSync(isNoticeModuleMgr))
+          schedulerLink = scheduler.scheduleOnce(1.second, self, StartSync(isNoticeModuleMgr))
         }
 
       } else {

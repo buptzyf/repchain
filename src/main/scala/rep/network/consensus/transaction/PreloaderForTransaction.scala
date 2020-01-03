@@ -48,10 +48,10 @@ object PreloaderForTransaction {
 
 class PreloaderForTransaction(moduleName: String) extends ModuleBase(moduleName) {
   import context.dispatcher
-  import scala.collection.breakOut
   import scala.concurrent.duration._
+  import scala.collection.breakOut
 
-  implicit val timeout = Timeout(TimePolicy.getTimeoutPreload*10 seconds)
+  implicit val timeout = Timeout(TimePolicy.getTimeoutPreload*10.seconds)
 
   override def preStart(): Unit = {
     RepLogger.info(RepLogger.Consensus_Logger, this.getLogMsgPrefix( "PreloaderForTransaction Start"))
@@ -97,7 +97,7 @@ class PreloaderForTransaction(moduleName: String) extends ModuleBase(moduleName)
           newTranList = newTranList :+ preLoadTrans(tran.txId)
       }
       if(newTranList.size > 0){
-        val tmpblk = block.withTransactions(newTranList)
+        val tmpblk = block.withTransactions(newTranList.toSeq)
         var rblock = tmpblk.withTransactionResults(transResult)
         val statehashstr = Sha256.hashstr(Array.concat(pe.getSystemCurrentChainStatus.currentStateHash.toByteArray() , SerializeUtils.serialise(transResult)))
         rblock = rblock.withStateHash(ByteString.copyFromUtf8(statehashstr))
@@ -153,6 +153,8 @@ class PreloaderForTransaction(moduleName: String) extends ModuleBase(moduleName)
       if ((block.previousBlockHash.toStringUtf8() == pe.getCurrentBlockHash || block.previousBlockHash == ByteString.EMPTY) &&
         block.height == (pe.getCurrentHeight + 1)) {
         var preLoadTrans = mutable.HashMap.empty[String, Transaction]
+        //preLoadTrans = block.transactions.map(trans => (trans.id, trans))(breakOut): mutable.HashMap[String, Transaction]
+        //preLoadTrans = block.transactions.map(trans => (trans.id, trans)).to(mutable.HashMap)  //.HashMap[String, Transaction]
         preLoadTrans = block.transactions.map(trans => (trans.id, trans))(breakOut): mutable.HashMap[String, Transaction]
         var transResult = Seq.empty[rep.protos.peer.TransactionResult]
         val dbtag = prefixOfDbTag+"_"+moduleName+"_"+block.transactions.head.id

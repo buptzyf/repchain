@@ -31,22 +31,29 @@ object Repchain {
     //创建系统实例
      var nodelist : Array[String] = new Array[String] (4)
      nodelist(0) = "12110107bi45jh675g.node2"
-     nodelist(1) = "122000002n00123567.node3"
-     nodelist(2) = "921000005k36123789.node4"
-     nodelist(3) = "921000006e0012v696.node5"
+    nodelist(1) = "122000002n00123567.node3"
+    nodelist(2) = "921000005k36123789.node4"
+    nodelist(3) = "921000006e0012v696.node5"
+    var nodeports : Array[Int] = new Array[Int](4)
+    nodeports(0) = 22523
+    nodeports(1) = 22524
+    nodeports(2) = 22525
+    nodeports(3) = 22526
      
-    val sys1 = new ClusterSystem("121000005l35120456.node1",InitType.MULTI_INIT,true)
-    sys1.init//初始化（参数和配置信息）
+    //val sys1 = new ClusterSystem("121000005l35120456.node1",InitType.MULTI_INIT,true)
+    val sys1 = new ClusterSystem("121000005l35120456.node1",InitType.SINGLE_INIT,true)
+    //sys1.init//初始化（参数和配置信息）
+    sys1.init2(22522)//初始化（参数和配置信息）
     val joinAddress = sys1.getClusterAddr//获取组网地址
-    sys1.joinCluster(joinAddress)//加入网络
     sys1.enableWS()//开启API接口
+    //sys1.joinCluster(joinAddress)//加入网络
     sys1.start//启动系统
 
     //val cluster = sys1.getActorSys//获取内部系统SystemActor实例
 
     val node_min = 5
     //如果node_max>node_min 将启动node反复离网和入网的仿真，但是由于system离网后无法复用并重新加入
-    //运行一定时间会内存溢出
+    //    //运行一定时间会内存溢出
     val node_max = 5
     var node_add = true
 
@@ -58,13 +65,16 @@ object Repchain {
      var tmpsystem : ClusterSystem = null
      
     for(i <- 2 to node_max) {
-      Thread.sleep(2000)
+      Thread.sleep(5000)
       
       val len = nodes.size
-      val sys = new ClusterSystem(nodelist(i-2),InitType.MULTI_INIT,true)
-      sys.init
-      sys.joinCluster(joinAddress)
+      //val sys = new ClusterSystem(nodelist(i-2),InitType.MULTI_INIT,true)
+      //sys.init
+      val sys = new ClusterSystem(nodelist(i-2),InitType.SINGLE_INIT,true)
+      sys.init2(nodeports(i-2))
       sys.disableWS()
+      //sys.joinCluster(joinAddress)
+
       sys.start
       nodes += sys
       if(i == 5){

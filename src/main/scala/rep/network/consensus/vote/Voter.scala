@@ -103,7 +103,7 @@ class Voter(moduleName: String) extends ModuleBase(moduleName) with CRFDVoter {
     this.voteCount += 1
     var time = this.voteCount * TimePolicy.getVoteRetryDelay
     schedulerLink = clearSched()
-    schedulerLink = scheduler.scheduleOnce(TimePolicy.getVoteRetryDelay millis, self, Voter.VoteOfBlocker)
+    schedulerLink = scheduler.scheduleOnce(TimePolicy.getVoteRetryDelay.millis, self, Voter.VoteOfBlocker)
   }
 
   private def vote4One = {

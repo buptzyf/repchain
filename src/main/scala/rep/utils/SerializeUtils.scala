@@ -18,17 +18,16 @@ package rep.utils
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream, ObjectInputStream, ObjectOutputStream}
 import java.security.cert.Certificate
-import scala.util.{Try, Success, Failure}
 
+import scala.util.{Failure, Success, Try}
 import com.twitter.chill.KryoInjection
 import com.twitter.bijection._
-
 import org.json4s._
 import org.json4s.native.JsonMethods
 import org.json4s.native.JsonMethods._
-
 import org.json4s.native.Serialization.write
 import org.json4s.native.Serialization.read
+
 /**
   * Created by shidianyue on 2017/6/9.
   * updated by c4w 2019/3
@@ -61,7 +60,7 @@ object SerializeUtils {
     }
   }
 
-def compactJson(src: Any): String = {
+  def compactJson(src: Any): String = {
     import org.json4s.native.Serialization
     import org.json4s.native.JsonMethods._
 
@@ -71,7 +70,7 @@ def compactJson(src: Any): String = {
 
   /**
     * Json对象序列化
-    * @param value
+    * @param v
     * @return
     */
   def toJson(v: AnyRef): String = {
@@ -80,7 +79,7 @@ def compactJson(src: Any): String = {
 
   /**
     * Json对象反序列化
-    * @param bytes
+    * @param s
     * @return
     */
   def fromJson[A: Manifest](s: String): A = {

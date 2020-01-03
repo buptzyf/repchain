@@ -18,19 +18,12 @@ package rep.network.tools
 
 import akka.actor.{ ActorSystem, Address, ExtendedActorSystem, ActorRef, Extension, ExtensionId, ExtensionIdProvider }
 import rep.protos.peer.{ Transaction, BlockchainInfo }
-import scala.collection.immutable
-import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
 import java.util.concurrent.atomic._
-import org.bouncycastle.asn1.cmp.ProtectedPart
-import java.util.concurrent.locks._
-import com.google.protobuf.UInt32Value
-import rep.protos.peer._
-import java.util.concurrent.ConcurrentLinkedQueue
 import rep.utils.GlobalUtils.{ BlockerInfo, NodeStatus }
 import rep.network.persistence.BlockCache
 import rep.network.tools.transpool.TransactionPoolMgr
 import java.util.concurrent.ConcurrentHashMap
+//import scala.jdk.CollectionConverters._
 import scala.collection.JavaConverters._
 import rep.network.sync.SyncMsg.MaxBlockInfo
 

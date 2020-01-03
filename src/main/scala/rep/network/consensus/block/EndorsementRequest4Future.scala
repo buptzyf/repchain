@@ -46,10 +46,9 @@ object EndorsementRequest4Future {
 
 class EndorsementRequest4Future(moduleName: String) extends ModuleBase(moduleName) {
   import context.dispatcher
-  import scala.collection.breakOut
   import scala.concurrent.duration._
 
-  implicit val timeout = Timeout(TimePolicy.getTimeoutEndorse seconds)
+  implicit val timeout = Timeout(TimePolicy.getTimeoutEndorse.seconds)
   //private val endorsementActorName = "/user/modulemanager/endorser"
   private val endorsementActorName = "/user/modulemanager/dispatchofRecvendorsement"
 
