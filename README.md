@@ -49,4 +49,4 @@
 ## 示范应用
 - [BAR](https://gitee.com/linkel/bar)(Base App of RepChain)：提供了通用的基础功能实现，区块链应用实施者既可以直接复用其提供的功能， 也可以在其源代码的基础上进行开发，快速开发自己的DAppp
 - [SBR](https://gitee.com/JayTsang/bar)(Storage Based on RepChain)：基于BAR开发的可举证云存储应用示例
-- [CRBB](https://gitee.com/BTAJL/CRBB)(Copyright Register Based on Blockchain)：基于RepChain的数字版权登记保护应用示例
+- [CRBB](https://gitee.com/linkel/CRBBV1.0)(Copyright Register Based on Blockchain)：基于RepChain的数字版权登记保护应用示例
