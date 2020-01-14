@@ -43,7 +43,8 @@
 - 打开 Scala IDE, File->Import->Existing Projects,导入项目
 - 右键单击 rep.app.Repchain.scala,Run As->Scala Application(单机组网4个节点)
 - 运行配置VM参数 -Dlogback.configurationFile=conf/logback.xml (使logback配置生效)
-- 查看实时图 http://localhost:8081/web/g1.html 
+- 查看实时图 http://localhost:8081/web/g1.html
+![实时状态图](https://images.gitee.com/uploads/images/2020/0114/174424_b02748a4_1598833.gif) 
 - 查看API  http://localhost:8081/swagger/index.html
 ![Swagger-UI](https://images.gitee.com/uploads/images/2020/0114/165836_553469bc_1598833.png "swagger-ui.png")
 
