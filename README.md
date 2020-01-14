@@ -45,6 +45,7 @@
 - 运行配置VM参数 -Dlogback.configurationFile=conf/logback.xml (使logback配置生效)
 - 查看实时图 http://localhost:8081/web/g1.html 
 - 查看API  http://localhost:8081/swagger/index.html
+![Swagger-UI](https://images.gitee.com/uploads/images/2020/0114/165836_553469bc_1598833.png "swagger-ui.png")
 
 ## 修改配置
 - 生成RepChain节点密钥对及信任证书列表（见[《RepChain开发者指南》](https://gitee.com/BTAJL/repchain/attach_files/235993/download) 2.1.5）
