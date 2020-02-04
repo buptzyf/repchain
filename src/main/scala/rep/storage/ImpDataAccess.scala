@@ -59,7 +59,7 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
 
   filemgr = new BlockFileMgr(this.SystemName)
 
-  private var chainInfoCache: ChainInfoInCache = new ChainInfoInCache(this)
+  //private var chainInfoCache: ChainInfoInCache = new ChainInfoInCache(this)
 
   private var bheight4bidx = new HashMap[Long, blockindex]()
   private var txid4bheight = new HashMap[String, Long]()
@@ -541,7 +541,7 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
    * @return	返回链码信息 BlockchainInfo
    */
   override def getBlockChainInfo(): BlockchainInfo = {
-    /*var rbc = new BlockchainInfo()
+    var rbc = new BlockchainInfo()
     val currentheight = this.getBlockHeight()
     val currenttxnumber = this.getBlockAllTxNumber()
     val bidx = this.getBlockIdxByHeight(currentheight)
@@ -572,8 +572,8 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
     rbc = rbc.withHeight(currentheight)
     rbc = rbc.withTotalTransactions(currenttxnumber)
 
-    rbc*/
-    chainInfoCache.getBlockChainInfo()
+    rbc
+    //chainInfoCache.getBlockChainInfo()
   }
 
   /**
@@ -718,7 +718,7 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
   override def rollbackToheight(toHeight: Long): Boolean = {
     val rs = new Rollback4Storager(this, filemgr)
     val b = rs.rollbackToheight(toHeight)
-    chainInfoCache.initChainInfo
+    //chainInfoCache.initChainInfo
     b
   }
 
@@ -757,11 +757,11 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
           if (this.commitAndAddBlock(block, oldh, oldno, oldtxnumber)) {
             RepTimeTracer.setEndTime(this.SystemName, "storage-save-commit", System.currentTimeMillis(), block.height, block.transactions.size)
             this.CommitTrans
-            chainInfoCache.setHeight(block.height)
+            /*chainInfoCache.setHeight(block.height)
             chainInfoCache.setTXNumber(oldtxnumber + block.transactions.length)
             chainInfoCache.setBlockHash(block.hashOfBlock.toStringUtf8())
             chainInfoCache.setPrevBlockHash(block.previousBlockHash.toStringUtf8())
-            chainInfoCache.setBlockStateHash(block.stateHash.toStringUtf8())
+            chainInfoCache.setBlockStateHash(block.stateHash.toStringUtf8())*/
             (true, block.height, oldtxnumber + block.transactions.length, block.hashOfBlock.toStringUtf8(), block.previousBlockHash.toStringUtf8(), block.stateHash.toStringUtf8())
           } else {
             this.RollbackTrans
