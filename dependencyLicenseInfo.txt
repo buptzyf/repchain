@@ -1,0 +1,150 @@
+No license specified
+	 default:repchain_2.12:0.9
+
+CDDL License
+	 javax.ws.rs:jsr311-api:1.1.1
+
+3-Clause BSD License
+	 com.esotericsoftware:kryo-shaded:4.0.2
+	 com.google.protobuf:protobuf-java:3.5.0
+
+Apache 2
+	 com.twitter:chill-bijection_2.12:0.9.3
+	 com.twitter:bijection-core_2.12:0.9.4
+	 com.twitter:chill-akka_2.12:0.9.3
+	 com.twitter:chill_2.12:0.9.3
+	 com.twitter:chill-java:0.9.3
+	 org.objenesis:objenesis:2.5.1
+	 ch.megard:akka-http-cors_2.12:0.4.0
+	 com.thesamet.scalapb:scalapb-json4s_2.12:0.7.0
+	 io.spray:spray-json_2.12:1.3.5
+	 com.thesamet.scalapb:scalapb-runtime_2.12:0.7.0
+	 com.thesamet.scalapb:lenses_2.12:0.7.0-test2
+
+Apache 2.0 License
+	 com.typesafe.scala-logging:scala-logging_2.12:3.9.2
+
+Apache License 2.0
+	 io.swagger:swagger-jaxrs:1.5.20
+	 io.swagger:swagger-core:1.5.20
+	 io.swagger:swagger-models:1.5.20
+	 io.swagger:swagger-annotations:1.5.20
+	 org.iq80.leveldb:leveldb:0.11
+	 org.iq80.leveldb:leveldb-api:0.11
+
+Apache License, Version 2.0
+	 org.yaml:snakeyaml:1.18
+	 com.typesafe.akka:akka-distributed-data_2.12:2.5.22
+	 com.typesafe.akka:akka-persistence_2.12:2.5.22
+	 com.typesafe.akka:akka-slf4j_2.12:2.5.22
+	 com.typesafe.akka:akka-cluster-tools_2.12:2.5.22
+	 com.typesafe.akka:akka-coordination_2.12:2.5.22
+	 com.typesafe.akka:akka-cluster_2.12:2.5.22
+	 com.typesafe.akka:akka-remote_2.12:2.5.22
+	 io.netty:netty:3.10.6.Final
+	 com.typesafe.akka:akka-stream_2.12:2.5.22
+	 com.typesafe.akka:akka-protobuf_2.12:2.5.22
+	 com.typesafe.akka:akka-actor_2.12:2.5.22
+	 com.typesafe:config:1.3.3
+
+Apache-2.0
+	 de.heikoseeberger:akka-http-json4s_2.12:1.25.2
+	 org.json4s:json4s-native_2.12:3.6.5
+	 com.typesafe.akka:akka-http-spray-json_2.12:10.1.8
+	 org.json4s:json4s-jackson_2.12:3.6.5
+	 org.json4s:json4s-core_2.12:3.6.5
+	 org.json4s:json4s-scalap_2.12:3.6.5
+	 org.json4s:json4s-ast_2.12:3.6.5
+	 com.typesafe.akka:akka-http-xml_2.12:10.1.8
+	 com.typesafe.akka:akka-http_2.12:10.1.8
+	 com.typesafe.akka:akka-http-core_2.12:10.1.8
+	 com.typesafe.akka:akka-parsing_2.12:10.1.8
+	 com.typesafe:ssl-config-core_2.12:0.3.7
+	 org.scala-lang:scala-compiler:2.12.8
+	 org.scala-lang:scala-reflect:2.12.8
+
+Apache-style
+	 com.gilt:gfc-timeuuid_2.12:0.0.8
+
+BSD
+	 com.thoughtworks.paranamer:paranamer:2.8
+	 org.ow2.asm:asm-util:5.0.3
+	 org.ow2.asm:asm-analysis:5.0.3
+	 org.ow2.asm:asm-commons:5.0.3
+	 org.ow2.asm:asm-tree:5.0.3
+	 org.ow2.asm:asm:5.0.3
+
+BSD 3-clause
+	 org.scala-lang.modules:scala-parser-combinators_2.12:1.1.1
+	 org.scala-lang.modules:scala-java8-compat_2.12:0.8.0
+	 org.scala-lang.modules:scala-xml_2.12:1.1.1
+
+Bouncy Castle Licence
+	 org.bouncycastle:bcprov-jdk15on:1.61
+
+CC0
+	 org.reactivestreams:reactive-streams:1.0.2
+
+Eclipse Public License - v 1.0
+	 org.eclipse.collections:eclipse-collections-forkjoin:7.0.0
+	 org.eclipse.collections:eclipse-collections:7.0.0
+	 org.eclipse.collections:eclipse-collections-api:7.0.0
+	 ch.qos.logback:logback-classic:1.2.3
+	 ch.qos.logback:logback-core:1.2.3
+
+MIT
+	 org.webjars.bower:js-beautify:1.6.12
+	 com.lihaoyi:sourcecode_2.12:0.1.4
+
+MIT License
+	 com.github.jnr:jnr-x86asm:1.0.2
+	 org.slf4j:slf4j-api:1.7.25
+
+MIT license
+	 com.lihaoyi:fastparse_2.12:1.0.0
+	 com.lihaoyi:fastparse-utils_2.12:1.0.0
+
+MPL 1.1
+	 org.javassist:javassist:3.21.0-GA
+
+New BSD License
+	 com.esotericsoftware:minlog:1.3.0
+	 org.codehaus.janino:janino:3.0.12
+	 org.codehaus.janino:commons-compiler:3.0.12
+
+The Apache License, Version 2.0
+	 org.javadelight:delight-nashorn-sandbox:0.1.22
+	 org.jetbrains.kotlin:kotlin-stdlib:1.2.71
+	 org.jetbrains.kotlin:kotlin-stdlib-common:1.2.71
+	 io.aeron:aeron-driver:1.15.1
+	 io.aeron:aeron-client:1.15.1
+	 org.agrona:agrona:0.9.31
+
+The Apache Software License, Version 2.0
+	 com.github.swagger-akka-http:swagger-akka-http_2.12:1.0.0
+	 com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.9.6
+	 com.fasterxml.jackson.module:jackson-module-scala_2.12:2.9.6
+	 com.fasterxml.jackson.module:jackson-module-paranamer:2.9.6
+	 com.fasterxml.jackson.core:jackson-annotations:2.9.6
+	 javax.validation:validation-api:1.1.0.Final
+	 org.apache.commons:commons-lang3:3.2.1
+	 org.mapdb:mapdb:3.0.7
+	 org.mapdb:elsa:3.0.0-M5
+	 net.jpountz.lz4:lz4:1.3.0
+	 org.jetbrains:annotations:13.0
+	 com.google.guava:guava:21.0
+	 com.fasterxml.jackson.core:jackson-databind:2.9.8
+	 com.fasterxml.jackson.core:jackson-core:2.9.8
+	 org.lmdbjava:lmdbjava:0.6.1
+	 com.github.jnr:jnr-constants:0.9.9
+	 com.github.jnr:jnr-ffi:2.1.7
+	 com.github.jnr:jffi:1.2.16
+
+The BSD 3-Clause License
+	 org.fusesource.leveldbjni:leveldbjni-all:1.8
+
+WTFPL
+	 org.reflections:reflections:0.9.11
+
+the Apache License, ASL Version 2.0
+	 org.scalactic:scalactic_2.12:3.0.7
