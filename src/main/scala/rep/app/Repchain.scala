@@ -21,16 +21,17 @@ import rep.app.system.ClusterSystem
 import rep.app.system.ClusterSystem.InitType
 
 /**
-  * Repchain app start
-  * @author c4w 2017/9/24.
-  */
+ * Repchain app start
+ * @author c4w 2017/9/24.
+ *         -Djavax.net.debug=ssl:handshake:verbose
+ */
 object Repchain {
 
   def main(args: Array[String]): Unit = {
 
     //创建系统实例
-     var nodelist : Array[String] = new Array[String] (4)
-     nodelist(0) = "12110107bi45jh675g.node2"
+    var nodelist : Array[String] = new Array[String] (4)
+    nodelist(0) = "12110107bi45jh675g.node2"
     nodelist(1) = "122000002n00123567.node3"
     nodelist(2) = "921000005k36123789.node4"
     nodelist(3) = "921000006e0012v696.node5"
@@ -39,15 +40,16 @@ object Repchain {
     nodeports(1) = 22524
     nodeports(2) = 22525
     nodeports(3) = 22526
-     
-    //val sys1 = new ClusterSystem("121000005l35120456.node1",InitType.MULTI_INIT,true)
+
+    /*//val sys1 = new ClusterSystem("121000005l35120456.node1",InitType.MULTI_INIT,true)
     val sys1 = new ClusterSystem("121000005l35120456.node1",InitType.SINGLE_INIT,true)
     //sys1.init//初始化（参数和配置信息）
     sys1.init2(22522)//初始化（参数和配置信息）
     val joinAddress = sys1.getClusterAddr//获取组网地址
     sys1.enableWS()//开启API接口
     //sys1.joinCluster(joinAddress)//加入网络
-    sys1.start//启动系统
+    sys1.start//启动系统*/
+    RepChainMgr.Startup4Multi("121000005l35120456.node1",22522)
 
     //val cluster = sys1.getActorSys//获取内部系统SystemActor实例
 
@@ -57,17 +59,17 @@ object Repchain {
     val node_max = 5
     var node_add = true
 
-    var nodes = Set.empty[ClusterSystem]
-    nodes+= sys1
+    //var nodes = Set.empty[ClusterSystem]
+    //nodes+= sys1
 
     var nodes_off = Set.empty[ClusterSystem]
 
-     var tmpsystem : ClusterSystem = null
-     
+    var tmpsystem : ClusterSystem = null
+
     for(i <- 2 to node_max) {
       Thread.sleep(5000)
-      
-      val len = nodes.size
+      RepChainMgr.Startup4Multi(nodelist(i-2),nodeports(i-2))
+      /*val len = nodes.size
       //val sys = new ClusterSystem(nodelist(i-2),InitType.MULTI_INIT,true)
       //sys.init
       val sys = new ClusterSystem(nodelist(i-2),InitType.SINGLE_INIT,true)
@@ -79,19 +81,24 @@ object Repchain {
       nodes += sys
       if(i == 5){
         tmpsystem = sys
-      }
+      }*/
     }
-     
-   /*  Thread.sleep(1000*60*3)
-     tmpsystem.shutdown
-     
-     
-     Thread.sleep(1000*60*2)
-     val sys = new ClusterSystem(nodelist(3),InitType.MULTI_INIT,true)
-      sys.init
-      sys.joinCluster(joinAddress)
-      sys.disableWS()
-      sys.start*/
-     
+
+
+    //以下代码只能在测试系统稳定性，即测试系统离网之后再入网时可以用，发布时一定要删除
+    Thread.sleep(10000)
+    RepChainMgr.StartClusterStub
+
+    /*  Thread.sleep(1000*60*3)
+      tmpsystem.shutdown
+
+
+      Thread.sleep(1000*60*2)
+      val sys = new ClusterSystem(nodelist(3),InitType.MULTI_INIT,true)
+       sys.init
+       sys.joinCluster(joinAddress)
+       sys.disableWS()
+       sys.start*/
+
   }
 }

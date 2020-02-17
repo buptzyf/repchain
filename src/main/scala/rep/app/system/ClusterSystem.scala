@@ -18,9 +18,9 @@ package rep.app.system
 
 import java.io.File
 
-import akka.actor.{ ActorRef, ActorSystem, Address, Props }
+import akka.actor.{ActorRef, ActorSystem, Address, Props}
 import akka.cluster.Cluster
-import com.typesafe.config.{ Config, ConfigFactory }
+import com.typesafe.config.{Config, ConfigFactory}
 import rep.app.conf.SystemConf
 import rep.app.system.ClusterSystem.InitType
 import rep.network.base.ModuleBase
@@ -28,13 +28,17 @@ import rep.network.module.ModuleManager
 import rep.utils.GlobalUtils.ActorType
 import rep.storage.cfg._
 import java.io.File
+
 import scala.collection.mutable
 import rep.app.conf.SystemProfile
 import com.typesafe.config.ConfigValueFactory
 import java.util.List
 import java.util.ArrayList
+
 import org.slf4j.LoggerFactory
 import rep.log.RepLogger
+
+import scala.concurrent.Await
 
 /**
  * System创建伴生对象
@@ -216,6 +220,12 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
   
   def shutdown = {
     Cluster(sysActor).down(clusterAddr)
+    System.err.println(s"shutdown ~~ address=${clusterAddr.toString},systemname=${this.sysTag}")
+  }
+
+  def terminateOfSystem={
+    val result = sysActor.terminate
+    //val result1 = Await.result(result, timeout.duration).asInstanceOf[Terminated]
   }
 
   private def initConsensusNodeOfConfig = {
