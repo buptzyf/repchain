@@ -368,7 +368,7 @@ class TransactionService(ra: RestRouter)(implicit executionContext: ExecutionCon
     //只能处理application/json
     unmarshaller[CSpec].forContentTypes(MediaTypes.`application/json`))
 
-  val route = getTransaction ~ getTransactionStream ~ postSignTransaction ~ postTransaction ~ postSignTransactionStream
+  val route = getTransaction ~ getTransactionStream ~ tranInfoAndHeightOfTranId ~ postSignTransaction ~ postTransaction ~ postSignTransactionStream
 
   @Path("/{transactionId}")
   @ApiOperation(value = "返回指定id的交易", notes = "", nickname = "getTransaction", httpMethod = "GET")
@@ -398,6 +398,22 @@ class TransactionService(ra: RestRouter)(implicit executionContext: ExecutionCon
         extractClientIP { ip =>
           RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} get transaction stream for txid,txid=${transactionId}")
           complete((ra.getRestActor ? TransactionStreamId(transactionId)).mapTo[HttpResponse])
+        }
+      }
+    }
+
+  @Path("/tranInfoAndHeight/{transactionId}")
+  @ApiOperation(value = "返回指定id的交易信息及所在区块高度", notes = "", nickname = "tranInfoAndHeightOfTranId", httpMethod = "GET")
+  @ApiImplicitParams(Array(
+    new ApiImplicitParam(name = "transactionId", value = "交易id", required = false, dataType = "string", paramType = "path")))
+  @ApiResponses(Array(
+    new ApiResponse(code = 200, message = "返回指定id的交易信息及所在区块高度", response = classOf[QueryResult])))
+  def tranInfoAndHeightOfTranId =
+    path("transaction"/"tranInfoAndHeight"/Segment) { transactionId =>
+      get {
+        extractClientIP { ip =>
+          RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} get transactionInfo and blockHeight for txid,txid=${transactionId}")
+          complete((ra.getRestActor ? TranInfoAndHeightId(transactionId)).mapTo[QueryResult])
         }
       }
     }
