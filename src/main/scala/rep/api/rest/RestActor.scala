@@ -74,6 +74,8 @@ object RestActor {
   case class BlockHeightStream(h: Int)
   case class TransactionId(txid: String)
   case class TransactionStreamId(txid: String)
+  case class TranInfoAndHeightId(txid: String)
+  case class TranInfoHeight(tranInfo: JValue, height: Long)
   case class TransNumberOfBlock(height: Long)
   case object LoadBlockInfo
   case object IsLoadBlockInfo
@@ -327,6 +329,18 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
         val httpResponse = HttpResponse(entity = entity)
         sender ! httpResponse
       }
+
+    case TranInfoAndHeightId(txId) =>
+      implicit val fomats = DefaultFormats
+      var r = sr.getTransDataByTxId(txId) match {
+        case None =>
+          QueryResult(None)
+        case t: Some[Transaction] =>
+          val txr = t.get
+          val tranInfoHeight = TranInfoHeight(JsonFormat.toJson(txr), sr.getBlockIdxByTxid(txr.id).getBlockHeight())
+          QueryResult(Option(Extraction.decompose(tranInfoHeight)))
+      }
+      sender ! r
 
     // 获取链信息
     case ChainInfo =>
