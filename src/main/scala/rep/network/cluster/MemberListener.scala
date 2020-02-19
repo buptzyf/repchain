@@ -36,6 +36,7 @@ import scala.collection.mutable.ArrayBuffer
 import rep.log.RepLogger
 import rep.protos.peer.Event
 import rep.network.util.NodeHelp
+import rep.app.RepChainMgr
 
 /**
  * Cluster节点状态监听模块
@@ -78,7 +79,8 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
     super.preStart()
 
   cluster.subscribe(self, classOf[MemberEvent])
-  context.system.eventStream.subscribe(self, classOf[akka.remote.DisassociatedEvent])
+  cluster.subscribe(self,classOf[ClusterDomainEvent])
+  //context.system.eventStream.subscribe(self, classOf[akka.remote.DisassociatedEvent])
 
   SubscribeTopic(mediator, self, addr_self, Topic.Event, false)
 
@@ -128,9 +130,12 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
       } else {
         RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"Member is Up:  nodes is not condidator,node address=${member.address.toString}"))
       }
-      scheduler.scheduleOnce(TimePolicy.getSysNodeStableDelay + TimePolicy.getStableTimeDur millis, self, Recollection)
+      schedulerLink = scheduler.scheduleOnce((
+        //TimePolicy.getSysNodeStableDelay +
+          TimePolicy.getStableTimeDur).millis, self, Recollection)
     //稳定节点收集
     case Recollection =>
+      schedulerLink = clearSched()
       RepLogger.trace(RepLogger.System_Logger, this.getLogMsgPrefix(" MemberListening recollection"))
       preloadNodesMap.foreach(node => {
         if (isStableNode(node._2._1, TimePolicy.getSysNodeStableDelay)) {
@@ -149,10 +154,6 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
         })
       }
 
-      if(pe.getSysTag == "720123045610369920.node6"){
-        print("")
-      }
-      
       if (!this.isStartSynch) {
         if (pe.getNodeMgr.getStableNodes.size >= SystemProfile.getVoteNoteMin) {
           //组网成功之后开始系统同步
@@ -166,31 +167,46 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
         RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"Recollection:  local consensus start finish,node name=${pe.getSysTag}"))
       }
 
-      if (preloadNodesMap.size > 0) self ! Recollection
+      if (preloadNodesMap.size > 0) {
+        //self ! Recollection
+        schedulerLink = scheduler.scheduleOnce((
+          TimePolicy.getStableTimeDur/5).millis, self, Recollection)
+      }
 
     //成员离网
     case MemberRemoved(member, _) =>
       RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("Member is Removed: {}. {} nodes cluster" + "~" + member.address))
+
+      System.err.println(s"MemberRemoved:printer=${pe.getSysTag} ~~ removed=${pe.getNodeMgr.getNodeName4AddrString(member.address.toString)}")
+
+      val tmp = pe.getNodeMgr.getNodeName4AddrString(member.address.toString)
+      if(tmp.equals(pe.getSysTag)){
+        RepChainMgr.ReStart(pe.getSysTag)
+      }
+
       preloadNodesMap.remove(member.address)
       pe.getNodeMgr.removeNode(member.address)
       pe.getNodeMgr.removeStableNode(member.address)
       sendEvent(EventType.PUBLISH_INFO, mediator, NodeHelp.getNodeName(member.roles), Topic.Event, Event.Action.MEMBER_DOWN)
 
-    case event: akka.remote.DisassociatedEvent => //ignore
+
+
+    /*case event: akka.remote.DisassociatedEvent => //ignore
       RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("DisassociatedEvent: {}. {} nodes cluster" + "~" + event.remoteAddress.toString))
       preloadNodesMap.remove(event.remoteAddress)
       pe.getNodeMgr.removeNode(event.remoteAddress)
-      pe.getNodeMgr.removeStableNode(event.remoteAddress)
+      pe.getNodeMgr.removeStableNode(event.remoteAddress)*/
     case MemberLeft(member) => //ignore
       RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("MemberLeft: {}. {} nodes cluster" + "~" + member.address.toString))
-      preloadNodesMap.remove(member.address)
+      /*preloadNodesMap.remove(member.address)
       pe.getNodeMgr.removeNode(member.address)
-      pe.getNodeMgr.removeStableNode(member.address)
+      pe.getNodeMgr.removeStableNode(member.address)*/
+
     case MemberExited(member) => //ignore
       RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("MemberExited: {}. {} nodes cluster" + "~" + member.address.toString))
-      preloadNodesMap.remove(member.address)
+      /*preloadNodesMap.remove(member.address)
       pe.getNodeMgr.removeNode(member.address)
-      pe.getNodeMgr.removeStableNode(member.address)
+      pe.getNodeMgr.removeStableNode(member.address)*/
 
     case _: MemberEvent => // ignore
   }

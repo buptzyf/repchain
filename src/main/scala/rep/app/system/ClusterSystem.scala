@@ -18,9 +18,9 @@ package rep.app.system
 
 import java.io.File
 
-import akka.actor.{ ActorRef, ActorSystem, Address, Props }
+import akka.actor.{ActorRef, ActorSystem, Address, Props}
 import akka.cluster.Cluster
-import com.typesafe.config.{ Config, ConfigFactory }
+import com.typesafe.config.{Config, ConfigFactory}
 import rep.app.conf.SystemConf
 import rep.app.system.ClusterSystem.InitType
 import rep.network.base.ModuleBase
@@ -28,13 +28,17 @@ import rep.network.module.ModuleManager
 import rep.utils.GlobalUtils.ActorType
 import rep.storage.cfg._
 import java.io.File
+
 import scala.collection.mutable
 import rep.app.conf.SystemProfile
 import com.typesafe.config.ConfigValueFactory
 import java.util.List
 import java.util.ArrayList
+
 import org.slf4j.LoggerFactory
 import rep.log.RepLogger
+
+import scala.concurrent.Await
 
 /**
  * System创建伴生对象
@@ -90,7 +94,7 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
 
   //System.setProperty("scala.concurrent.context.minThreads", "32")
   //System.setProperty("scala.concurrent.context.maxThreads", "32")
-  
+
   /**
    * 是否开启Web Socket（API）
    */
@@ -123,8 +127,11 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
    * @return
    */
   def getConfigBySys(sysName: String): Config = {
-    val myConfig =
+    /*val myConfig =
       ConfigFactory.parseString("akka.remote.netty.ssl.security.key-store = \"jks/" + sysName +
+        ".jks\"")*/
+    val myConfig =
+      ConfigFactory.parseString("akka.remote.artery.ssl.config-ssl-engine.key-store = \"jks/" + sysName +
         ".jks\"")
     val regularConfig = getUserCombinedConf(USER_CONFIG_PATH)
     val combined =
@@ -194,9 +201,31 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
 
     RepLogger.trace(RepLogger.System_Logger, sysTag + "~" + "System" + " ~ " + s"System(${sysTag}) init successfully" + " ~ ")
   }
-  
+
+  def init2(port:Int):Unit = {
+    var myConfig :Config = null
+    if(this.sysConf.getBoolean("akka.remote.artery.enabled")){
+      myConfig  = ConfigFactory.parseString("akka.remote.artery.canonical.port = " + port )
+    }else{
+      myConfig  = ConfigFactory.parseString("akka.remote.classic.netty.tcp.port = " + port )
+    }
+
+    var combined  = myConfig.withFallback(this.sysConf)
+
+    this.sysConf = ConfigFactory.load(combined)
+
+
+    this.init
+  }
+
   def shutdown = {
     Cluster(sysActor).down(clusterAddr)
+    System.err.println(s"shutdown ~~ address=${clusterAddr.toString},systemname=${this.sysTag}")
+  }
+
+  def terminateOfSystem={
+    val result = sysActor.terminate
+    //val result1 = Await.result(result, timeout.duration).asInstanceOf[Terminated]
   }
 
   private def initConsensusNodeOfConfig = {

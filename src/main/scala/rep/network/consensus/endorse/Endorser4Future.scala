@@ -43,6 +43,7 @@ import rep.network.consensus.util.{ BlockVerify, BlockHelp }
 import rep.network.sync.SyncMsg.StartSync
 import rep.log.RepLogger
 import rep.log.RepTimeTracer
+import rep.network.consensus.vote.Voter
 
 
 object Endorser4Future {
@@ -57,7 +58,7 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
   import scala.concurrent._
   //import java.util.concurrent.Executors
 
-  implicit val timeout = Timeout(TimePolicy.getTimeoutPreload seconds)
+  implicit val timeout = Timeout(TimePolicy.getTimeoutPreload.seconds)
   
   override def preStart(): Unit = {
     RepLogger.info(RepLogger.Consensus_Logger, this.getLogMsgPrefix("Endorser4Future Start"))
@@ -175,6 +176,8 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
           //todo 需要判断区块缓存，再决定是否需要启动同步
           if(info.blc.height > pe.getCurrentHeight+1){
             pe.getActorRef(ActorType.synchrequester) ! StartSync(false)
+          }else if(info.blc.height > pe.getCurrentHeight+1){
+            pe.getActorRef(ActorType.voter) ! Voter.VoteOfForce
           }
           //当前块hash和抽签的出块人都不一致，暂时不能够进行背书，可以进行缓存
           RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"block hash is not equal or blocker is not equal,recv endorse request,endorse height=${info.blc.height},local height=${pe.getCurrentHeight}"))
