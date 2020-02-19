@@ -35,6 +35,7 @@ object Voter {
   def props(name: String): Props = Props(classOf[Voter], name)
 
   case object VoteOfBlocker
+  case object VoteOfForce
 
 }
 
@@ -103,7 +104,7 @@ class Voter(moduleName: String) extends ModuleBase(moduleName) with CRFDVoter {
     this.voteCount += 1
     var time = this.voteCount * TimePolicy.getVoteRetryDelay
     schedulerLink = clearSched()
-    schedulerLink = scheduler.scheduleOnce(TimePolicy.getVoteRetryDelay millis, self, Voter.VoteOfBlocker)
+    schedulerLink = scheduler.scheduleOnce(TimePolicy.getVoteRetryDelay.millis, self, Voter.VoteOfBlocker)
   }
 
   private def vote4One = {
@@ -144,8 +145,8 @@ class Voter(moduleName: String) extends ModuleBase(moduleName) with CRFDVoter {
     }
   }
   
-  private def vote = {
-    if (checkTranNum) {
+  private def vote(isForce:Boolean) = {
+    if (checkTranNum || isForce) {
       val currentblockhash = pe.getCurrentBlockHash
       val currentheight = pe.getCurrentHeight
       if (this.Blocker.voteBlockHash == "") {
@@ -183,7 +184,7 @@ class Voter(moduleName: String) extends ModuleBase(moduleName) with CRFDVoter {
     }
   }
 
-  private def voteMsgHandler = {
+  private def voteMsgHandler(isForce:Boolean) = {
     if (pe.getNodeMgr.getStableNodes.size >= SystemProfile.getVoteNoteMin) {
       //只有共识节点符合要求之后开始工作
       if (getSystemBlockHash == "") {
@@ -201,7 +202,7 @@ class Voter(moduleName: String) extends ModuleBase(moduleName) with CRFDVoter {
           if(SystemProfile.getNumberOfEndorsement == 1){
             vote4One
           }else{
-            vote
+            vote(isForce)
           }
         }
       }
@@ -212,9 +213,10 @@ class Voter(moduleName: String) extends ModuleBase(moduleName) with CRFDVoter {
   override def receive = {
     case Voter.VoteOfBlocker =>
       if (NodeHelp.isCandidateNow(pe.getSysTag, SystemCertList.getSystemCertList)) {
-        voteMsgHandler
+        voteMsgHandler(false)
       }
-      
+    case Voter.VoteOfForce=>
+      voteMsgHandler(true)
      
   }
 }

@@ -16,10 +16,10 @@
 
 package rep.network.tools.transpool
 
-import scala.collection.mutable.{ArrayBuffer,LinkedHashMap}
 import rep.protos.peer.Transaction
 import java.util.concurrent.locks._
 import rep.log.RepLogger
+//import scala.jdk.CollectionConverters._
 import scala.collection.JavaConverters._
 import java.util.concurrent.ConcurrentSkipListMap
 import java.util.concurrent.ConcurrentHashMap
@@ -77,7 +77,7 @@ class TransactionPoolMgr {
       transLock.unlock()
     }
     val end = System.currentTimeMillis()
-    RepLogger.trace(RepLogger.OutputTime_Logger, s"systemname=${sysName},getTransListClone spent time=${end-starttime}")
+    RepLogger.trace(RepLogger.OutputTime_Logger, s"systemname=${sysName},transNumber=${transNumber},getTransListClone spent time=${end-starttime}")
     
     translist.toSeq
   }
@@ -95,7 +95,7 @@ class TransactionPoolMgr {
         transactions.put(time, tran)
         transKeys.put(txid, time)
         transNumber.addAndGet(1)
-        RepLogger.info(RepLogger.TransLifeCycle_Logger,  s"systemname=${sysName},trans entry pool,${tran.id},entry time = ${time}")
+        RepLogger.info(RepLogger.TransLifeCycle_Logger,  s"systemname=${sysName},transNumber=${transNumber},trans entry pool,${tran.id},entry time = ${time}")
       }
     }finally {
       transLock.unlock()
@@ -166,6 +166,7 @@ class TransactionPoolMgr {
     val end = System.currentTimeMillis()
     RepLogger.trace(RepLogger.OutputTime_Logger, s"getTransLength spent time=${end-start}")
     len*/
-    this.transNumber.get
+    transactions.size
+    //this.transNumber.get
   }
 }
