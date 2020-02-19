@@ -35,11 +35,19 @@ object Repchain {
     nodelist(1) = "122000002n00123567.node3"
     nodelist(2) = "921000005k36123789.node4"
     nodelist(3) = "921000006e0012v696.node5"
-    /*var nodeports : Array[Int] = new Array[Int](4)
-    nodeports(0) = 22523
-    nodeports(1) = 22524
-    nodeports(2) = 22525
-    nodeports(3) = 22526*/
+    var nodeports : Array[Int] = new Array[Int](4)
+    if(RepChainMgr.isJDK8OfRunEnv){
+      nodeports(0) = 0
+      nodeports(1) = 0
+      nodeports(2) = 0
+      nodeports(3) = 0
+    }else{
+      nodeports(0) = 22523
+      nodeports(1) = 22524
+      nodeports(2) = 22525
+      nodeports(3) = 22526
+    }
+
 
     /*//val sys1 = new ClusterSystem("121000005l35120456.node1",InitType.MULTI_INIT,true)
     val sys1 = new ClusterSystem("121000005l35120456.node1",InitType.SINGLE_INIT,true)
@@ -49,7 +57,13 @@ object Repchain {
     sys1.enableWS()//开启API接口
     //sys1.joinCluster(joinAddress)//加入网络
     sys1.start//启动系统*/
-    RepChainMgr.Startup4Multi("121000005l35120456.node1",0)
+
+    if(RepChainMgr.isJDK8OfRunEnv){
+      RepChainMgr.Startup4Multi("121000005l35120456.node1",0)
+    }else{
+      RepChainMgr.Startup4Multi("121000005l35120456.node1",22522)
+    }
+
 
     //val cluster = sys1.getActorSys//获取内部系统SystemActor实例
 
@@ -68,7 +82,7 @@ object Repchain {
 
     for(i <- 2 to node_max) {
       Thread.sleep(5000)
-      RepChainMgr.Startup4Multi(nodelist(i-2),0)
+      RepChainMgr.Startup4Multi(nodelist(i-2),nodeports(i-2))
       /*val len = nodes.size
       //val sys = new ClusterSystem(nodelist(i-2),InitType.MULTI_INIT,true)
       //sys.init

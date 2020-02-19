@@ -14,7 +14,7 @@ object RepChainMgr {
   private var isSingle = false
   private var nodelist : ArrayBuffer[String] = new ArrayBuffer[String]()
 
-  private def isJDK8OfRunEnv:Boolean={
+  def isJDK8OfRunEnv:Boolean={
     var defaultvalue = false//默认未13
     val javaVersion = System.getProperty("java.version").split("[+.\\-]+", 3)
     if(javaVersion != null && javaVersion.length >= 2){
@@ -119,9 +119,9 @@ object RepChainMgr {
       threadPool.shutdown()
     }*/
     //try{
-      this.scheduledExecutorService.scheduleWithFixedDelay(//).scheduleAtFixedRate(
-        new ClusterTestStub,100,600, TimeUnit.SECONDS
-      )
+    this.scheduledExecutorService.scheduleWithFixedDelay(//).scheduleAtFixedRate(
+      new ClusterTestStub,100,600, TimeUnit.SECONDS
+    )
     /*}catch {
       case e:Exception =>
               try{
@@ -159,16 +159,22 @@ object RepChainMgr {
       try{
         //sleep 90 s
         //Thread.sleep(90000)
-        System.err.println(s"start terminate systemName")
-        var rd = scala.util.Random.nextInt(100)
-        rd = rd % 5
-        if(rd == 0) rd =  rd + 1
-        val systemname = nodelist(rd)
+        if(nodelist.length > 1){
+          System.err.println(s"start terminate systemName")
+          var rd = scala.util.Random.nextInt(100)
+          rd = rd % 5
+          if(rd == 0) rd =  rd + 1
+          val systemname = nodelist(rd)
 
-        RepChainMgr.Stop(systemname)
-        System.err.println(s"stop system,systemName=${systemname}")
-        //sleep 120 s
-        //Thread.sleep(120000)
+          RepChainMgr.Stop(systemname)
+          System.err.println(s"stop system,systemName=${systemname}")
+        }else{
+          //单机启动时，需要做测试时启动该节点的动态停止，模拟断网
+          System.err.println(s"start terminate systemName")
+          val systemname = nodelist(0)
+          RepChainMgr.Stop(systemname)
+          System.err.println(s"stop system,systemName=${systemname}")
+        }
       }catch{
         case e:Exception=>e.printStackTrace()
       }
