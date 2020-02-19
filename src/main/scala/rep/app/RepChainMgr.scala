@@ -14,7 +14,16 @@ object RepChainMgr {
   private var isSingle = false
   private var nodelist : ArrayBuffer[String] = new ArrayBuffer[String]()
 
-
+  private def isJDK8OfRunEnv:Boolean={
+    var defaultvalue = false//默认未13
+    val javaVersion = System.getProperty("java.version").split("[+.\\-]+", 3)
+    if(javaVersion != null && javaVersion.length >= 2){
+      if(javaVersion(1) == "8"){
+        defaultvalue = true
+      }
+    }
+    defaultvalue
+  }
 
   def Startups(param:Array[(String,Int)])={
     param.foreach(f=>{
@@ -36,14 +45,22 @@ object RepChainMgr {
 
   def Startup4Multi(SystemName:String,port:Int)={
     val sys1 = new ClusterSystem(SystemName,InitType.MULTI_INIT,true)
-    sys1.init2(port)//初始化（参数和配置信息）
+    if(this.isJDK8OfRunEnv){
+      sys1.init
+    }else{
+      sys1.init2(port)//初始化（参数和配置信息）
+    }
+
     if(this.clusterAddr == null){
       this.clusterAddr = sys1.getClusterAddr//获取组网地址
       sys1.enableWS()//开启API接口
     }else{
       sys1.disableWS()
     }
-    //sys1.joinCluster(this.clusterAddr)//加入网络
+
+    if(this.isJDK8OfRunEnv){
+      sys1.joinCluster(this.clusterAddr)//加入网络
+    }
     this.instanceOfCluster += SystemName -> (sys1,port)
     this.nodelist += SystemName
     sys1.start//启动系统
@@ -102,9 +119,9 @@ object RepChainMgr {
       threadPool.shutdown()
     }*/
     //try{
-      this.scheduledExecutorService.scheduleWithFixedDelay(//).scheduleAtFixedRate(
-        new ClusterTestStub,100,600, TimeUnit.SECONDS
-      )
+    this.scheduledExecutorService.scheduleWithFixedDelay(//).scheduleAtFixedRate(
+      new ClusterTestStub,100,600, TimeUnit.SECONDS
+    )
     /*}catch {
       case e:Exception =>
               try{
