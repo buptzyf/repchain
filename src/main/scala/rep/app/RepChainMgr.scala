@@ -38,8 +38,10 @@ object RepChainMgr {
     sys1.init
     val joinAddress = sys1.getClusterAddr
     sys1.joinCluster(joinAddress)
+    if(!this.instanceOfCluster.contains(SystemName)){
+      this.nodelist += SystemName
+    }
     this.instanceOfCluster += SystemName -> (sys1,0)
-    this.nodelist += SystemName
     sys1.start
   }
 
@@ -61,8 +63,10 @@ object RepChainMgr {
     if(this.isJDK8OfRunEnv){
       sys1.joinCluster(this.clusterAddr)//加入网络
     }
+    if(!this.instanceOfCluster.contains(SystemName)){
+      this.nodelist += SystemName
+    }
     this.instanceOfCluster += SystemName -> (sys1,port)
-    this.nodelist += SystemName
     sys1.start//启动系统
   }
 
@@ -137,7 +141,7 @@ object RepChainMgr {
     override def run(){
       try{
         shutdown(systemName)
-        Thread.sleep(60000)
+        Thread.sleep(120000)
         System.err.println(s"terminateOfSystem finished,systemName=${systemName}")
         if(isSingle){
           Startup4Single(systemName)
@@ -159,7 +163,8 @@ object RepChainMgr {
       try{
         //sleep 90 s
         //Thread.sleep(90000)
-        if(nodelist.length > 1){
+        if(!isSingle){
+          //单机模拟多节点时，采用随机down某个节点
           System.err.println(s"start terminate systemName")
           var rd = scala.util.Random.nextInt(100)
           rd = rd % 5
@@ -172,8 +177,11 @@ object RepChainMgr {
           //单机启动时，需要做测试时启动该节点的动态停止，模拟断网
           System.err.println(s"start terminate systemName")
           val systemname = nodelist(0)
-          RepChainMgr.Stop(systemname)
-          System.err.println(s"stop system,systemName=${systemname}")
+          //如果想down某个节点，就在条件中注明down的节点名称，例子里面down节点5
+          if(systemname == "921000006e0012v696.node5"){
+            RepChainMgr.Stop(systemname)
+            System.err.println(s"stop system,systemName=${systemname}")
+          }
         }
       }catch{
         case e:Exception=>e.printStackTrace()
