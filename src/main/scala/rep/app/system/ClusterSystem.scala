@@ -21,7 +21,7 @@ import java.io.File
 import akka.actor.{ActorRef, ActorSystem, Address, Props}
 import akka.cluster.Cluster
 import com.typesafe.config.{Config, ConfigFactory}
-import rep.app.conf.SystemConf
+import rep.app.conf.{SystemConf, SystemProfile, TimePolicy}
 import rep.app.system.ClusterSystem.InitType
 import rep.network.base.ModuleBase
 import rep.network.module.ModuleManager
@@ -30,15 +30,18 @@ import rep.storage.cfg._
 import java.io.File
 
 import scala.collection.mutable
-import rep.app.conf.SystemProfile
 import com.typesafe.config.ConfigValueFactory
 import java.util.List
 import java.util.ArrayList
 
+import akka.util.Timeout
 import org.slf4j.LoggerFactory
 import rep.log.RepLogger
 
 import scala.concurrent.Await
+import scala.concurrent.duration._
+import akka.actor.Terminated
+
 
 /**
  * System创建伴生对象
@@ -94,7 +97,7 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
 
   //System.setProperty("scala.concurrent.context.minThreads", "32")
   //System.setProperty("scala.concurrent.context.maxThreads", "32")
-  
+
   /**
    * 是否开启Web Socket（API）
    */
@@ -217,15 +220,24 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
 
     this.init
   }
-  
+
   def shutdown = {
     Cluster(sysActor).down(clusterAddr)
     System.err.println(s"shutdown ~~ address=${clusterAddr.toString},systemname=${this.sysTag}")
   }
 
   def terminateOfSystem={
-    val result = sysActor.terminate
-    //val result1 = Await.result(result, timeout.duration).asInstanceOf[Terminated]
+    var r = true
+    implicit val timeout = Timeout(120.seconds)
+    try{
+      val result = sysActor.terminate
+      val result1 = Await.result(result, timeout.duration).asInstanceOf[Terminated]
+    }catch{
+      case e:Exception =>
+        r = false
+    }
+
+    r
   }
 
   private def initConsensusNodeOfConfig = {
