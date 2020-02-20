@@ -140,8 +140,10 @@ object RepChainMgr {
   class RestartThread(systemName:String) extends Runnable{
     override def run(){
       try{
+        System.err.println(s"shutdown start time=${System.currentTimeMillis()}")
         shutdown(systemName)
-        Thread.sleep(120000)
+        System.err.println(s"shutdown end time=${System.currentTimeMillis()}")
+        //Thread.sleep(120000)
         System.err.println(s"terminateOfSystem finished,systemName=${systemName}")
         if(isSingle){
           Startup4Single(systemName)
