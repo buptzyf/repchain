@@ -2,7 +2,7 @@ package rep.app
 
 import java.util.concurrent._
 
-import akka.actor.Address
+import akka.actor.{Address, Terminated}
 import rep.app.system.ClusterSystem
 import rep.app.system.ClusterSystem.InitType
 import scala.collection.mutable.ArrayBuffer
@@ -141,19 +141,23 @@ object RepChainMgr {
     override def run(){
       try{
         System.err.println(s"shutdown start time=${System.currentTimeMillis()}")
-        shutdown(systemName)
-        System.err.println(s"shutdown end time=${System.currentTimeMillis()}")
-        //Thread.sleep(120000)
-        System.err.println(s"terminateOfSystem finished,systemName=${systemName}")
-        if(isSingle){
-          Startup4Single(systemName)
-        }else{
-          val  sys1 = instanceOfCluster(systemName)
-          if(sys1 != null){
-            val port = sys1._2
-            Startup4Multi(systemName,port)
+        shutdown(systemName).asInstanceOf[CompletionStage[Terminated]].whenComplete((result, throwable) => {
+          System.err.println(s"terminateOfSystem finished,systemName=${systemName},finished time=${System.currentTimeMillis()}")
+          if (throwable == null) {
+            if(isSingle){
+              Startup4Single(systemName)
+            }else{
+              val sys1 = instanceOfCluster(systemName)
+              if(sys1 != null){
+                val port = sys1._2
+                Startup4Multi(systemName,port)
+              }
+            }
+          } else {
+            throw new RuntimeException(throwable)
           }
-        }
+        })
+        System.err.println(s"shutdown end time=${System.currentTimeMillis()}")
       }catch{
         case e:Exception=>e.printStackTrace()
       }

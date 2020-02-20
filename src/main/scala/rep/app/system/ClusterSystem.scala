@@ -227,17 +227,7 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
   }
 
   def terminateOfSystem={
-    var r = true
-    implicit val timeout = Timeout(120.seconds)
-    try{
-      val result = sysActor.terminate
-      val result1 = Await.result(result, timeout.duration).asInstanceOf[Terminated]
-    }catch{
-      case e:Exception =>
-        r = false
-    }
-
-    r
+    sysActor.getWhenTerminated
   }
 
   private def initConsensusNodeOfConfig = {
