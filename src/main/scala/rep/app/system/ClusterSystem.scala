@@ -226,6 +226,16 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
     this.init
   }
 
+  def init3(port:Int):Unit = {
+    var myConfig :Config = null
+
+    myConfig  = ConfigFactory.parseString("akka.remote.netty.ssl.port = " + port )
+    var combined  = myConfig.withFallback(this.sysConf)
+    this.sysConf = ConfigFactory.load(combined)
+
+    this.init
+  }
+
   def shutdown = {
     Cluster(sysActor).down(clusterAddr)
     System.err.println(s"shutdown ~~ address=${clusterAddr.toString},systemname=${this.sysTag}")

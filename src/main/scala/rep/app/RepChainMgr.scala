@@ -45,8 +45,8 @@ object RepChainMgr {
     this.isSingle = true
     val sys1 = new ClusterSystem(SystemName, InitType.SINGLE_INIT,true)
     sys1.init
-    val joinAddress = sys1.getClusterAddr
-    sys1.joinCluster(joinAddress)
+    //val joinAddress = sys1.getClusterAddr
+    //sys1.joinCluster(joinAddress)
     if(!this.instanceOfCluster.contains(SystemName)){
       this.nodelist += SystemName
     }
@@ -57,10 +57,12 @@ object RepChainMgr {
   def Startup4Multi(SystemName:String,port:Int)={
     val sys1 = new ClusterSystem(SystemName,InitType.MULTI_INIT,true)
     if(this.isJDK8OfRunEnv){
-      sys1.init
+      sys1.init3(port)//
     }else{
       sys1.init2(port)//初始化（参数和配置信息）
     }
+
+
 
     if(this.clusterAddr == null){
       this.clusterAddr = sys1.getClusterAddr//获取组网地址
@@ -69,9 +71,12 @@ object RepChainMgr {
       sys1.disableWS()
     }
 
-    if(this.isJDK8OfRunEnv){
+    //val clusterAddr = sys1.getClusterAddr
+    //sys1.joinCluster(clusterAddr)
+
+    /*if(this.isJDK8OfRunEnv){
       sys1.joinCluster(this.clusterAddr)//加入网络
-    }
+    }*/
     if(!this.instanceOfCluster.contains(SystemName)){
       this.nodelist += SystemName
     }
