@@ -95,6 +95,8 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
 
   private var clusterAddr: Address = null
 
+  private var clusterOfInner : Cluster = null
+
   //System.setProperty("scala.concurrent.context.minThreads", "32")
   //System.setProperty("scala.concurrent.context.maxThreads", "32")
 
@@ -177,6 +179,8 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
 
   def getClusterAddr = clusterAddr
 
+  def getClusterInstance : Cluster = clusterOfInner
+
   /**
    * 组网
    * @param address
@@ -185,9 +189,10 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
   def joinCluster(address: Address): Boolean = {
     initType match {
       case InitType.SINGLE_INIT =>
-        Cluster(sysActor)
+        clusterOfInner = Cluster(sysActor)
       case InitType.MULTI_INIT =>
-        Cluster(sysActor).join(address)
+        clusterOfInner = Cluster(sysActor)
+        clusterOfInner.join(address)
     }
     true
   }
@@ -232,6 +237,7 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
     try{
       val result = sysActor.terminate
       val result1 = Await.result(result, timeout.duration).asInstanceOf[Terminated]
+      r = result1.getAddressTerminated
     }catch{
       case e:Exception =>
         r = false
