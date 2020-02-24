@@ -12,6 +12,7 @@
 - [d3.js-force layout](https://github.com/d3/d3-3.x-api-reference/blob/master/Force-Layout.md)——入／离网节点的自动布局
 - [leveldb for java](https://github.com/dain/leveldb)——存取Blocks、Transactions索引
 - [java security](http://docs.oracle.com/javase/8/docs/technotes/guides/security/index.html)——hash、签名、密钥对及证书管理均采用jdk内置方法
+- [stainless说明文档](https://gitee.com/BTAJL/repchain/blob/c504f829f14c00e824bc2197ca2b5a533558d39a/src/main/scala/rep/sc/tpl/Stainless.md)——stainless形式化证明简介
 
 ## 安装
 - install [jdk8+](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)
