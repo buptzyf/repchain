@@ -16,8 +16,10 @@
 
 package rep.api.rest
 
-import scala.concurrent.{ ExecutionContext, Future }
-import akka.actor.{ ActorRef, ActorSelection }
+import java.security.cert.X509Certificate
+
+import scala.concurrent.{ExecutionContext, Future}
+import akka.actor.{ActorRef, ActorSelection}
 import akka.util.Timeout
 import akka.http.scaladsl.model.Uri.Path.Segment
 import akka.http.scaladsl.server.Directives
@@ -34,13 +36,15 @@ import de.heikoseeberger.akkahttpjson4s.Json4sSupport
 import rep.protos.peer._
 import rep.api.rest.RestActor._
 import spray.json.DefaultJsonProtocol._
-import org.json4s.{ DefaultFormats, Formats, jackson }
+import org.json4s.{DefaultFormats, Formats, jackson, string2JsonInput}
 import akka.http.scaladsl.server.Directives
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import spray.json._
 import akka.http.scaladsl.marshallers.xml.ScalaXmlSupport
-import akka.http.scaladsl.model.{ ContentTypes, HttpCharsets, MediaTypes }
-import akka.http.scaladsl.unmarshalling.{ FromEntityUnmarshaller, Unmarshaller }
+import akka.http.scaladsl.model.{ContentTypes, HttpCharsets, MediaTypes}
+import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
+import akka.http.scaladsl.model.headers.`Tls-Session-Info`
+import org.json4s.jackson.JsonMethods
 
 import scala.xml.NodeSeq
 import rep.log.RepLogger
@@ -74,7 +78,25 @@ class ChainService(ra: ActorRef)(implicit executionContext: ExecutionContext)
       get {
         extractClientIP { ip =>
           RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} get chaininfo")
-          complete { (ra ? ChainInfo).mapTo[QueryResult] }
+          headerValueByType[`Tls-Session-Info`]() { sessionInfo =>
+            val sslSession = sessionInfo.getSession()
+            try {
+              // 如果是强制验证客户端证书话（Need），这里就能获取到，但是如果客户端没有加上证书，就会抛错
+              val peerCertificates = sslSession.getPeerCertificates
+              System.err.print(peerCertificates(0).asInstanceOf[X509Certificate])
+              complete {
+                (ra ? ChainInfo).mapTo[QueryResult]
+              }
+            } catch {
+              case ex: Exception => {
+//                ex.printStackTrace(System.err)
+                complete {
+//                  QueryResult(Option(JsonMethods.parse(string2JsonInput(ex.getMessage))))
+                  (ra ? ChainInfo).mapTo[QueryResult]
+                }
+              }
+            }
+          }
         }
       }
     }

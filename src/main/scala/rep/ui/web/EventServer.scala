@@ -112,15 +112,21 @@ object EventServer {
       }
 
     val ra = sys.actorOf(RestActor.props("api"), "api")
+
+    val httpsContext = HttpsServer.HttpsContext
+
+    // sets default context to HTTPS – all Http() bound servers for this ActorSystem will use HTTPS from now on
+    // Http().setDefaultServerHttpContext(httpsContext)
+
     //允许跨域访问,以支持在应用中发起请求
+    Http().bindAndHandle(route_evt ~  new ChainService(ra).route ~ SwaggerDocService.routes, "0.0.0.0", port)
     Http().bindAndHandle(
-      route_evt
-        ~ cors() (
-            new BlockService(ra).route ~
-            new ChainService(ra).route ~
-            new TransactionService(ra).route ~
-            SwaggerDocService.routes),
-      "0.0.0.0", port)
+      cors()(
+        new BlockService(ra).route ~
+          new ChainService(ra).route ~
+          new TransactionService(ra).route
+      ), "0.0.0.0", 8083, httpsContext)
+
     RepLogger.info(RepLogger.System_Logger, s"Event Server online at http://localhost:$port")
   }
 }

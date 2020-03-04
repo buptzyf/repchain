@@ -29,6 +29,11 @@ object Repchain_Single {
     var systemTag = "1"
     if(args!=null && args.length>0) systemTag = args(0)
     RepChainMgr.Startup4Single(systemTag)
+    //以下代码只能在测试系统稳定性，即测试系统离网之后再入网时可以用，发布时一定要删除
+//    if (systemTag.equals("921000006e0012v696.node5")) {
+//      Thread.sleep(120000)
+//      RepChainMgr.StartClusterStub
+//    }
     /*val sys1 = new ClusterSystem(systemTag, InitType.SINGLE_INIT,true)
     sys1.init
     val joinAddress = sys1.getClusterAddr
