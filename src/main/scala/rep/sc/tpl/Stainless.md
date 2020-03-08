@@ -90,3 +90,97 @@ object Example {
 
 ### 结论
 手动证明其实就是在stainless无法自行推断或化简表达式遇到困难时，人为地将证明过程的全部或部分写出来，给stainless一些提示（hints）让它继续证明下去。
+
+## 封装scala代码
+
+stainless的该特性可重用现有的java或scala库做验证。
+
+### 重用TrieMap
+
+以scala.collection.concurrent.TrieMap类为例，将它封装为stainless的数据类型：
+
+```
+import stainless.lang._
+import stainless.annotation._
+
+import scala.collection.concurrent.TrieMap
+
+case class TrieMapWrapper[K, V](@extern theMap: TrieMap[K, V])
+```
+
+然而，stainless对TrieMap还是一无所知，为了解决这个问题，以上代码使用@extern注解，stainless将把这个类型当作“透明”。
+
+### 外部方法
+
+定义TrieMap的contains方法：
+```
+import stainless.lang._
+import stainless.annotation._
+
+import scala.collection.concurrent.TrieMap
+
+case class TrieMapWrapper[K, V](@extern theMap: TrieMap[K, V]) {
+
+  @extern
+  def contains(k: K): Boolean = {
+    theMap contains k
+  }
+}
+```
+
+由于theMap是一个“透明”的类型因此没有contain方法。标注该方法为@extern，stainless就不再抽取该方法的主体，在该方法内可以任意使用TrieMap的方法。
+
+### Contracts
+
+定义一个创建空map的方法：
+```
+object TrieMapWrapper {
+  @extern
+  def empty[K, V]: TrieMapWrapper[K, V] = {
+    TrieMapWrapper(TrieMap.empty[K, V])
+  }
+}
+
+def prop1 = {
+  val wrapper = TrieMapWrapper.empty[Int, String]
+  assert(!wrapper.contains(42)) // invalid
+}
+```
+由于stainless对empty方法一无所知，因此在调用TrieMapWrapper.empty后stainless对wrapper性质无法作出任何推断。为了弥补这一缺憾，可以对empty方法加一个后置条件——对于任意类型K的键值k，调用TrieMapWrapper.empty后的结果不会contain任何键值k。可描述如下：
+```
+object TrieMapWrapper {
+  @extern
+  def empty[K, V]: TrieMapWrapper[K, V] = {
+    TrieMapWrapper(TrieMap.empty[K, V])
+  } ensuring { res =>
+    forall((k: K) => !res.contains(k))
+  }
+}
+```
+
+### 将方法标注为“纯”
+
+如果调用contain方法两次：
+```
+def prop1 = {
+  val wrapper = TrieMapWrapper.empty[Int, String]
+  assert(!wrapper.contains(42))
+  assert(!wrapper.contains(42))
+}
+```
+第二次断言将失败。原因是stainless默认外部的方法会修改该内部的状态。（因为stainless不关心该方法的内部实现，所以不知道该方法是否“纯”），如果将该方法添加@pure这一注解，stainless就会将这一方法当作纯函数看待：
+```
+case class TrieMapWrapper[K, V](@extern theMap: TrieMap[K, V]) {
+
+  @extern @pure
+  def contains(k: K): Boolean = {
+    theMap contains k
+  }
+}
+```
+自此，两次断言将会成功。
+
+### 在repchain中使用
+目前想到的点主要有两个：
+* 浮点数的表示：stainless提供的数据类型主要是使用real来顶替浮点数，但是由于使用不方便（比如想表示1.5需要传入Real(3,2)，第一个参数是分子，第二个参数是分母），且部分性质验证时会超时，因此可以考虑封装一个新的可以表示浮点的数据类型。
+* kv：在repchain读写kv时，会访问外部的数据类型，可以类比上述的TrieMap来封装kv，将kv和现有的验证逻辑更好地结合。
