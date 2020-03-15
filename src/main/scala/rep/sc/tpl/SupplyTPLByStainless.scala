@@ -1,3 +1,5 @@
+package rep.sc.tpl
+
 import stainless.lang._
 import stainless.proof._
 import stainless.annotation._
@@ -127,4 +129,12 @@ object SupplyTPLByStainless {
             }
         }
     }.holds
+
+    def prop (wrapper: ContractContext)= {
+        require(!wrapper.contains("1"))
+        assert(!wrapper.contains("1"))
+        wrapper.setVal("1", "test")
+        assert(wrapper.contains("1"))
+        assert(getVal("1") == "test")
+    }
 }
