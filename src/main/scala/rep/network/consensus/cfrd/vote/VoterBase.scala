@@ -14,7 +14,7 @@
  *
  */
 
-package rep.network.consensus.vote
+package rep.network.consensus.cfrd.vote
 
 
 

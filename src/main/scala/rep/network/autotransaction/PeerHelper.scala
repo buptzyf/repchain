@@ -14,23 +14,18 @@
  *
  */
 
-package rep.network
+package rep.network.autotransaction
 
-import akka.actor.{ Actor, Address, Props }
+import akka.actor.Props
 import com.google.protobuf.ByteString
 import com.google.protobuf.timestamp.Timestamp
 import rep.app.conf.SystemProfile
-import rep.crypto.{ Sha256 }
-import rep.network.base.ModuleBase
-import rep.network.cluster.ClusterActor
-import rep.network.tools.PeerExtension
-import rep.protos.peer._
-import rep.utils.GlobalUtils.ActorType
-import rep.utils.{ IdTool, TimeUtils }
-import akka.cluster.pubsub.DistributedPubSubMediator.Publish
-import java.text.SimpleDateFormat
 import rep.crypto.cert.SignTool
 import rep.log.RepLogger
+import rep.network.base.ModuleBase
+import rep.protos.peer._
+import rep.utils.{IdTool, TimeUtils}
+import rep.network.module.ModuleActorType
 /**
  *
  * 代理节点辅助类
@@ -136,9 +131,10 @@ object PeerHelper {
 }
 
 class PeerHelper(name: String) extends ModuleBase(name) {
-  import rep.network.PeerHelper._
-  import scala.concurrent.duration._
+  import PeerHelper._
   import context.dispatcher
+
+  import scala.concurrent.duration._
 
   //val si1 = scala.io.Source.fromFile("scripts/example_invoke_" + pe.getSysTag + ".js")
   //val li1 = try si1.mkString finally si1.close()
@@ -176,7 +172,7 @@ class PeerHelper(name: String) extends ModuleBase(name) {
         val t3 = createTransaction4Invoke(pe.getSysTag, chaincode,
           "transfer", Seq(li2))
         
-        pe.getActorRef(ActorType.transactionpool) ! t3
+        pe.getActorRef(ModuleActorType.ActorType.transactionpool) ! t3
          RepLogger.trace(RepLogger.System_Logger,this.getLogMsgPrefix(s"########################create transaction id =${t3.id}"))
       } catch {
         case e: RuntimeException => throw e

@@ -14,31 +14,34 @@
  *
  */
 
-package rep.network.consensus.block
+package rep.network.consensus.cfrd.block
 
 import akka.util.Timeout
+
 import scala.concurrent.duration._
 import akka.pattern.ask
 import akka.pattern.AskTimeoutException
-import scala.concurrent._
 
-import akka.actor.{ Actor, ActorRef, Props, Address, ActorSelection }
+import scala.concurrent._
+import akka.actor.{Actor, ActorRef, ActorSelection, Address, Props}
 import com.google.protobuf.ByteString
 import com.google.protobuf.timestamp.Timestamp
-import rep.app.conf.{ SystemProfile, TimePolicy }
+import rep.app.conf.{SystemProfile, TimePolicy}
 import rep.network.base.ModuleBase
-import rep.network.consensus.endorse.EndorseMsg.{ EndorsementInfo, ResultOfEndorsed, RequesterOfEndorsement, ResultOfEndorseRequester, ResultFlagOfEndorse,ResendEndorseInfo }
+import rep.network.consensus.cfrd.endorse.EndorseMsg.{EndorsementInfo, RequesterOfEndorsement, ResendEndorseInfo, ResultFlagOfEndorse, ResultOfEndorseRequester, ResultOfEndorsed}
 import rep.network.tools.PeerExtension
-import rep.network.Topic
 import rep.protos.peer._
 import rep.utils._
 import akka.pattern.AskTimeoutException
 import rep.network.consensus.util.BlockVerify
+
 import scala.util.control.Breaks
-import rep.utils.GlobalUtils.{ EventType, ActorType }
+import rep.utils.GlobalUtils.{ EventType}
 import rep.network.sync.SyncMsg.StartSync
 import rep.log.RepLogger
 import rep.log.RepTimeTracer
+import rep.network.autotransaction.Topic
+import rep.network.module.cfrd.CFRDActorType
 
 object EndorsementRequest4Future {
   def props(name: String): Props = Props(classOf[EndorsementRequest4Future], name)
@@ -101,7 +104,7 @@ class EndorsementRequest4Future(moduleName: String) extends ModuleBase(moduleNam
           if (result.result == ResultFlagOfEndorse.BlockHeightError) {
             if (result.endorserOfChainInfo.height > pe.getCurrentHeight + 1) {
               //todo 需要从块缓冲判断是否启动块同步
-              pe.getActorRef(ActorType.synchrequester) ! StartSync(false)
+              pe.getActorRef(CFRDActorType.ActorType.synchrequester) ! StartSync(false)
               context.parent ! ResultOfEndorseRequester(false, null, reqinfo.blc.hashOfBlock.toStringUtf8(), reqinfo.endorer)
               RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"--------endorsementRequest4Future recv endorsement result must synch,height=${reqinfo.blc.height},local height=${pe.getCurrentHeight} "))
             } else {

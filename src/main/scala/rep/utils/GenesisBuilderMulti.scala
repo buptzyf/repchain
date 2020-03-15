@@ -22,7 +22,7 @@ import java.util
 import org.json4s.jackson.JsonMethods.{pretty, render}
 import org.json4s.{DefaultFormats, jackson}
 import rep.crypto.cert.SignTool
-import rep.network.PeerHelper
+import rep.network.autotransaction.PeerHelper
 import rep.protos.peer.{Block, ChaincodeId, Signer, Transaction}
 import scalapb.json4s.JsonFormat
 

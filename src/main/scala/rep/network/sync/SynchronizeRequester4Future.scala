@@ -26,17 +26,18 @@ import akka.actor.{ ActorRef, Props, Address, ActorSelection }
 import akka.cluster.pubsub.DistributedPubSubMediator.Publish
 import rep.network.base.ModuleBase
 import rep.app.conf.TimePolicy
-import rep.network.module.ModuleManager
+import rep.network.module.IModuleManager
 import rep.storage.ImpDataAccess
 import rep.protos.peer._
 import rep.network.persistence.Storager.{ BlockRestore, SourceOfBlock }
 import scala.collection._
-import rep.utils.GlobalUtils.{ ActorType, BlockEvent, EventType, NodeStatus }
+import rep.utils.GlobalUtils.{  BlockEvent, EventType, NodeStatus }
 import rep.app.conf.SystemProfile
 import rep.network.util.NodeHelp
 import rep.network.sync.SyncMsg.{ ResponseInfo, StartSync, BlockDataOfRequest, BlockDataOfResponse, SyncRequestOfStorager, ChainInfoOfRequest }
 import scala.util.control.Breaks._
 import rep.log.RepLogger
+import rep.network.module.ModuleActorType
 import scala.collection.mutable.HashMap
 import scala.collection.mutable.ArrayBuffer
 
@@ -117,7 +118,7 @@ class SynchronizeRequester4Future(moduleName: String) extends ModuleBase(moduleN
       //logMsg(LogType.INFO, "--------AsyncGetNodeOfChainInfo success")
       var result = Await.result(future1, timeout.duration).asInstanceOf[BlockDataOfResponse]
       RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"height=${height}--------getBlockData success"))
-      pe.getActorRef(ActorType.storager) ! BlockRestore(result.data, SourceOfBlock.SYNC_BLOCK, ref)
+      pe.getActorRef(ModuleActorType.ActorType.storager) ! BlockRestore(result.data, SourceOfBlock.SYNC_BLOCK, ref)
       true
     } catch {
       case e: AskTimeoutException =>
@@ -242,7 +243,7 @@ class SynchronizeRequester4Future(moduleName: String) extends ModuleBase(moduleN
         pe.setSynching(false)
         if (rb) {
           if (isNoticeModuleMgr)
-            pe.getActorRef(ActorType.modulemanager) ! ModuleManager.startup_Consensus
+            pe.getActorRef(ModuleActorType.ActorType.modulemanager) ! IModuleManager.startup_Consensus
         } else {
           schedulerLink = scheduler.scheduleOnce(1.second, self, StartSync(isNoticeModuleMgr))
         }

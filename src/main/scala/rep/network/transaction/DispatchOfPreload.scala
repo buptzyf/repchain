@@ -14,27 +14,14 @@
  *
  */
 
-package rep.network.consensus.transaction
+package rep.network.transaction
 
-import akka.actor.{ Actor, ActorRef, Props, Address, ActorSelection }
-import akka.cluster.pubsub.DistributedPubSubMediator.Publish
-import akka.routing._;
-import rep.app.conf.{ SystemProfile, TimePolicy }
-import rep.network.base.ModuleBase
-import rep.network.tools.PeerExtension
-import rep.network.Topic
-import rep.protos.peer._
-import rep.utils.GlobalUtils.{ EventType }
-import rep.utils._
-import scala.collection.mutable._
-import rep.network.consensus.util.BlockVerify
-import scala.util.control.Breaks
-import rep.network.util.NodeHelp
-import rep.network.consensus.util.BlockHelp
-import rep.network.consensus.util.BlockVerify
+import akka.actor.Props
+import akka.routing._
+import rep.app.conf.SystemProfile
 import rep.log.RepLogger
-import rep.log.RepTimeTracer
-import rep.network.consensus.block.Blocker.{ PreTransBlock}
+import rep.network.base.ModuleBase
+import rep.network.consensus.cfrd.block.Blocker.PreTransBlock
 
 
 object DispatchOfPreload  {
@@ -43,8 +30,6 @@ object DispatchOfPreload  {
 
 
 class DispatchOfPreload(moduleName: String) extends ModuleBase(moduleName) {
-  import context.dispatcher
-  import scala.concurrent.duration._
   import scala.collection.immutable._
 
   private var router: Router = null

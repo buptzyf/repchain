@@ -17,20 +17,21 @@
 package rep.sc
 
 import akka.util.Timeout
+
 import scala.concurrent.duration._
 import akka.pattern.ask
 import akka.pattern.AskTimeoutException
-import scala.concurrent._
 
-import akka.actor.{ActorSystem, ActorRef, ActorSelection}
+import scala.concurrent._
+import akka.actor.{ActorRef, ActorSelection, ActorSystem}
 import akka.testkit.{TestKit, TestProbe}
 import org.json4s.{DefaultFormats, jackson}
 import org.json4s.native.Serialization.{write, writePretty}
 import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, Matchers}
 import rep.app.system.ClusterSystem
 import rep.app.system.ClusterSystem.InitType
-import rep.network.PeerHelper
-import rep.network.module.ModuleManager
+import rep.network.autotransaction.PeerHelper
+import rep.network.module.cfrd.ModuleManagerOfCFRD
 import rep.protos.peer.{Certificate, ChaincodeId, Signer}
 import rep.sc.tpl._
 //.{CertStatus,CertInfo}
@@ -42,7 +43,7 @@ import rep.app.conf.SystemProfile
 
 import scala.concurrent.duration._
 import scala.collection.mutable.Map
-import rep.utils.GlobalUtils.ActorType
+import rep.network.module.cfrd.CFRDActorType
 import rep.protos.peer.Transaction
 
 import scala.concurrent.ExecutionContext.Implicits._
@@ -75,7 +76,7 @@ class TransferSpec3(_system: ActorSystem) extends TestKit(_system) with Matchers
     val sysName = "121000005l35120456.node1"
     val dbTag = "121000005l35120456.node1"
     //建立PeerManager实例是为了调用transactionCreator(需要用到密钥签名)，无他
-    val pm = system.actorOf(ModuleManager.props("modulemanager", sysName, false, false, false), "modulemanager")
+    val pm = system.actorOf(ModuleManagerOfCFRD.props("modulemanager", sysName, false, false, false), "modulemanager")
 
     //val path = pm.path.address.toString +  "/user/modulemanager/preloadtransrouter"
     //val sandbox2 = system.actorOf(TransactionDispatcher.props("transactiondispatcher"),"transactiondispatcher")

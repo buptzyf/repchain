@@ -14,42 +14,35 @@
  *
  */
 
-package rep.network.consensus.transaction
+package rep.network.transaction
 
+import akka.actor.Props
+import akka.pattern.{AskTimeoutException, ask}
 import akka.util.Timeout
-import scala.concurrent.duration._
-import akka.pattern.ask
-import akka.pattern.AskTimeoutException
-import scala.concurrent._
-
-import akka.actor.{ Actor, ActorRef, Props }
 import com.google.protobuf.ByteString
-import com.google.protobuf.timestamp.Timestamp
-import rep.app.conf.{ SystemProfile, TimePolicy }
-import rep.network.base.ModuleBase
-import rep.network.consensus.block.Blocker.{ PreTransBlock, PreTransBlockResult}
-import rep.network.tools.PeerExtension
-import rep.network.Topic
-import rep.protos.peer._
-import rep.sc.SandboxDispatcher.DoTransaction
-import rep.sc.Sandbox.DoTransactionResult
-import rep.storage.{ ImpDataPreloadMgr }
-import rep.utils.GlobalUtils.ActorType
-import rep.utils._
-import scala.collection.mutable
-import akka.pattern.AskTimeoutException
+import rep.app.conf.TimePolicy
 import rep.crypto.Sha256
 import rep.log.RepLogger
+import rep.network.base.ModuleBase
+import rep.network.consensus.cfrd.block.Blocker.{PreTransBlock, PreTransBlockResult}
+import rep.protos.peer._
+import rep.sc.Sandbox.DoTransactionResult
+import rep.sc.SandboxDispatcher.DoTransaction
 import rep.sc.TypeOfSender
+import rep.storage.ImpDataPreloadMgr
+import rep.network.module.ModuleActorType
+import rep.utils._
+
+import scala.collection.mutable
+import scala.concurrent._
 
 object PreloaderForTransaction {
   def props(name: String): Props = Props(classOf[PreloaderForTransaction], name)
 }
 
 class PreloaderForTransaction(moduleName: String) extends ModuleBase(moduleName) {
-  import context.dispatcher
-  import scala.concurrent.duration._
   import scala.collection.breakOut
+  import scala.concurrent.duration._
 
   implicit val timeout = Timeout(TimePolicy.getTimeoutPreload*10.seconds)
 
@@ -59,7 +52,7 @@ class PreloaderForTransaction(moduleName: String) extends ModuleBase(moduleName)
 
   private def ExecuteTransaction(t: Transaction, db_identifier: String): (Int, DoTransactionResult) = {
     try {
-      val future1 = pe.getActorRef(ActorType.transactiondispatcher) ? new DoTransaction(t,  db_identifier,TypeOfSender.FromPreloader)
+      val future1 = pe.getActorRef(ModuleActorType.ActorType.transactiondispatcher) ? new DoTransaction(t,  db_identifier,TypeOfSender.FromPreloader)
       //val future1 = pe.getActorRef(ActorType.preloadtransrouter) ? new DoTransaction(t,  db_identifier)
       val result = Await.result(future1, timeout.duration).asInstanceOf[DoTransactionResult]
       (0, result)

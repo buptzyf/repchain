@@ -14,7 +14,7 @@
  *
  */
 
-package rep.network.consensus.vote
+package rep.network.consensus.cfrd.vote
 
 import akka.actor.{ Actor, Address, Props }
 import rep.app.conf.{ SystemProfile, TimePolicy, SystemCertList }
@@ -22,13 +22,14 @@ import rep.crypto.Sha256
 import rep.network.base.ModuleBase
 import rep.protos.peer.BlockchainInfo
 import rep.storage.ImpDataAccess
-import rep.utils.GlobalUtils.{ ActorType, BlockEvent, BlockerInfo, NodeStatus }
+import rep.utils.GlobalUtils.{  BlockEvent, BlockerInfo, NodeStatus }
 import com.sun.beans.decoder.FalseElementHandler
 import rep.network.util.NodeHelp
-import rep.network.consensus.block.Blocker.{ CreateBlock }
+import rep.network.consensus.cfrd.block.Blocker.{ CreateBlock }
 import rep.network.sync.SyncMsg.StartSync
-import rep.network.consensus.block.GenesisBlocker.GenesisBlock
+import rep.network.consensus.cfrd.block.GenesisBlocker.GenesisBlock
 import rep.log.RepLogger
+import rep.network.module.cfrd.CFRDActorType
 
 object Voter {
 
@@ -96,7 +97,7 @@ class Voter(moduleName: String) extends ModuleBase(moduleName) with CRFDVoter {
   private def NoticeBlockerMsg = {
     if (this.Blocker.blocker.equals(pe.getSysTag)) {
       //发送建立新块的消息
-      pe.getActorRef(ActorType.blocker) ! CreateBlock
+      pe.getActorRef(CFRDActorType.ActorType.blocker) ! CreateBlock
     }
   }
 
@@ -138,7 +139,7 @@ class Voter(moduleName: String) extends ModuleBase(moduleName) with CRFDVoter {
         RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},read block voter,currentHeight=${this.Blocker.VoteHeight +SystemProfile.getBlockNumberOfRaft},currentHash=${currentblockhash}" + "~" + selfAddr))
       }else{
         RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},second voter in synch,currentHeight=${this.Blocker.VoteHeight +SystemProfile.getBlockNumberOfRaft}" + "~" + selfAddr))
-        pe.getActorRef(ActorType.synchrequester) ! StartSync(false)
+        pe.getActorRef(CFRDActorType.ActorType.synchrequester) ! StartSync(false)
       }
     }else{
       NoticeBlockerMsg
@@ -191,7 +192,7 @@ class Voter(moduleName: String) extends ModuleBase(moduleName) with CRFDVoter {
         //系统属于初始化状态
         if (NodeHelp.isSeedNode(pe.getSysTag)) {
           // 建立创世块消息
-          pe.getActorRef(ActorType.gensisblock) ! GenesisBlock
+          pe.getActorRef(CFRDActorType.ActorType.gensisblock) ! GenesisBlock
         } else {
           // 发出同步消息
           //pe.setSystemStatus(NodeStatus.Synching)

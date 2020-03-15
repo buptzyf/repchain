@@ -18,7 +18,6 @@ package rep.utils
 
 import java.io.{File, PrintWriter}
 
-import rep.network.PeerHelper
 import com.typesafe.config.ConfigFactory
 import com.google.protobuf.ByteString
 import com.google.protobuf.timestamp.Timestamp
@@ -30,6 +29,7 @@ import org.json4s.jackson.JsonMethods._
 import org.json4s.DefaultFormats._
 import rep.network.consensus.util.BlockHelp
 import rep.crypto.cert.SignTool
+import rep.network.autotransaction.PeerHelper
 
 import scala.collection.mutable
 import rep.sc.tpl._

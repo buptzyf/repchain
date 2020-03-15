@@ -19,24 +19,25 @@ package rep.network.cache
 import java.security.cert.Certificate
 
 import com.google.protobuf.ByteString
-
-import akka.actor.{ Actor, Address, Props }
+import akka.actor.{Actor, Address, Props}
 import akka.cluster.pubsub.DistributedPubSubMediator.Publish
 import rep.app.conf.SystemProfile
 import rep.crypto.cert.SignTool
-import rep.network.{ Topic }
 import rep.network.base.ModuleBase
 import rep.network.cache.TransactionPool.CheckedTransactionResult
-import rep.network.consensus.vote.Voter.VoteOfBlocker
+import rep.network.consensus.cfrd.vote.Voter.VoteOfBlocker
 import rep.protos.peer.ChaincodeId
-import rep.protos.peer.{ Event, Transaction }
+import rep.protos.peer.{Event, Transaction}
 import rep.storage.IdxPrefix.WorldStateKeyPreFix
 import rep.storage.ImpDataAccess
-import rep.utils.{ ActorUtils, GlobalUtils }
+import rep.utils.{ActorUtils, GlobalUtils}
 import rep.utils.GlobalUtils.EventType
 import rep.utils.SerializeUtils
 import rep.log.RepLogger
+import rep.network.autotransaction.Topic
 import rep.network.util.NodeHelp
+import rep.network.module._
+import rep.network.module.cfrd.CFRDActorType
 
 /**
  * 交易缓冲池伴生对象
@@ -128,7 +129,7 @@ class TransactionPool(moduleName: String) extends ModuleBase(moduleName) {
         RepLogger.trace(RepLogger.System_Logger,this.getLogMsgPrefix(s"${pe.getSysTag} trans pool recv,txid=${t.id}"))
         //广播接收交易事件
         if (pe.getTransPoolMgr.getTransLength() >= SystemProfile.getMinBlockTransNum)
-          pe.getActorRef(GlobalUtils.ActorType.voter) ! VoteOfBlocker
+          pe.getActorRef(CFRDActorType.ActorType.voter) ! VoteOfBlocker
       }
   }
 

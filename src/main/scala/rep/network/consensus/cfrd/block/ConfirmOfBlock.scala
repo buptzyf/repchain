@@ -14,32 +14,37 @@
  *
  */
 
-package rep.network.consensus.block
+package rep.network.consensus.cfrd.block
 
 import akka.util.Timeout
+
 import scala.concurrent.duration._
 import akka.pattern.ask
 import akka.pattern.AskTimeoutException
+
 import scala.concurrent._
-import rep.app.conf.{ SystemProfile }
-import akka.actor.{ ActorRef, Props, Address }
+import rep.app.conf.SystemProfile
+import akka.actor.{ActorRef, Address, Props}
 import rep.crypto.Sha256
 import rep.network.base.ModuleBase
-import rep.network.Topic
 import rep.network.util.NodeHelp
-import rep.protos.peer.{ Event, Transaction }
-import rep.utils.GlobalUtils.{ ActorType, BlockEvent, EventType, NodeStatus }
+import rep.protos.peer.{Event, Transaction}
+import rep.utils.GlobalUtils.{ BlockEvent, EventType, NodeStatus}
 import com.sun.beans.decoder.FalseElementHandler
+
 import scala.util.control.Breaks._
 import scala.util.control.Exception.Finally
 import java.util.concurrent.ConcurrentHashMap
-import rep.network.consensus.block.Blocker.{ ConfirmedBlock }
-import rep.network.persistence.Storager.{ BlockRestore, SourceOfBlock, BatchStore }
-import rep.network.consensus.util.{ BlockVerify, BlockHelp }
+
+import rep.network.consensus.cfrd.block.Blocker.ConfirmedBlock
+import rep.network.persistence.Storager.{BatchStore, BlockRestore, SourceOfBlock}
+import rep.network.consensus.util.{BlockHelp, BlockVerify}
 import rep.log.RepLogger
 import rep.log.RepTimeTracer
+import rep.network.autotransaction.Topic
+import rep.network.module.ModuleActorType
 import rep.network.sync.SyncMsg.SyncRequestOfStorager
-import rep.network.consensus.vote.Voter.VoteOfBlocker
+import rep.network.consensus.cfrd.vote.Voter.VoteOfBlocker
 
 object ConfirmOfBlock {
   def props(name: String): Props = Props(classOf[ConfirmOfBlock], name)
@@ -106,7 +111,7 @@ class ConfirmOfBlock(moduleName: String) extends ModuleBase(moduleName) {
           //背书信息排序正确
           RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"confirm verify endorsement sort,height=${block.height}"))
           pe.getBlockCacheMgr.addToCache(BlockRestore(block, SourceOfBlock.CONFIRMED_BLOCK, actRefOfBlock))
-          pe.getActorRef(ActorType.storager) ! BatchStore
+          pe.getActorRef(ModuleActorType.ActorType.storager) ! BatchStore
           sendEvent(EventType.RECEIVE_INFO, mediator, pe.getSysTag, Topic.Block, Event.Action.BLOCK_NEW)
         } else {
           ////背书信息排序错误
@@ -117,7 +122,7 @@ class ConfirmOfBlock(moduleName: String) extends ModuleBase(moduleName) {
     } else {
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"confirm verify endorsement sort,height=${block.height}"))
       pe.getBlockCacheMgr.addToCache(BlockRestore(block, SourceOfBlock.CONFIRMED_BLOCK, actRefOfBlock))
-      pe.getActorRef(ActorType.storager) ! BatchStore
+      pe.getActorRef(ModuleActorType.ActorType.storager) ! BatchStore
       sendEvent(EventType.RECEIVE_INFO, mediator, pe.getSysTag, Topic.Block, Event.Action.BLOCK_NEW)
     }
   }

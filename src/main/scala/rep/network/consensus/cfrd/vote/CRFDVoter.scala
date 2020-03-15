@@ -14,7 +14,7 @@
  *
  */
 
-package rep.network.consensus.vote
+package rep.network.consensus.cfrd.vote
 
 import rep.crypto.Sha256
 import scala.collection.mutable

@@ -24,8 +24,7 @@ import com.typesafe.config.{Config, ConfigFactory}
 import rep.app.conf.{SystemConf, SystemProfile, TimePolicy}
 import rep.app.system.ClusterSystem.InitType
 import rep.network.base.ModuleBase
-import rep.network.module.ModuleManager
-import rep.utils.GlobalUtils.ActorType
+import rep.network.module.cfrd.ModuleManagerOfCFRD
 import rep.storage.cfg._
 import java.io.File
 
@@ -276,7 +275,17 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
       throw new Exception("not enough disk space")
     }
 
-    moduleManager = sysActor.actorOf(ModuleManager.props("modulemanager", sysTag, enableStatistic, enableWebSocket, true), "modulemanager")
+    val typeConsensus = SystemProfile.getTypeOfConsensus
+    if (typeConsensus == "CRFD") {
+      moduleManager = sysActor.actorOf(ModuleManagerOfCFRD.props("modulemanager", sysTag, enableStatistic, enableWebSocket, true), "modulemanager")
+    }else if(typeConsensus == "RAFT"){
+
+    }else if(typeConsensus == "PBFT"){
+
+    }else{
+      RepLogger.error(RepLogger.System_Logger, sysTag + "~" + "System" + " ~ " + s"ClusterSystem ${sysTag} not startup,unknow consensus" + " ~ ")
+    }
+
 
     RepLogger.trace(RepLogger.System_Logger, sysTag + "~" + "System" + " ~ " + s"ClusterSystem ${sysTag} start" + " ~ ")
   }

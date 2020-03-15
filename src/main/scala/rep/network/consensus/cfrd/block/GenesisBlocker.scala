@@ -14,33 +14,39 @@
  *
  */
 
-package rep.network.consensus.block
+package rep.network.consensus.cfrd.block
 
 import akka.util.Timeout
+
 import scala.concurrent.duration._
 import akka.pattern.ask
 import akka.pattern.AskTimeoutException
-import scala.concurrent._
 
-import akka.actor.{ ActorRef, Address, Props }
+import scala.concurrent._
+import akka.actor.{ActorRef, Address, Props}
 import akka.cluster.pubsub.DistributedPubSubMediator.Publish
 import com.google.protobuf.ByteString
-import rep.app.conf.{ SystemProfile, TimePolicy }
+import rep.app.conf.{SystemProfile, TimePolicy}
 import rep.crypto.Sha256
 import rep.network._
 import rep.network.base.ModuleBase
-import rep.network.consensus.block.Blocker.{ConfirmedBlock,PreTransBlock,PreTransBlockResult}
+import rep.network.consensus.cfrd.block.Blocker.{ConfirmedBlock, PreTransBlock, PreTransBlockResult}
 import rep.protos.peer._
 import rep.storage.ImpDataAccess
-import rep.utils.GlobalUtils.{ ActorType, BlockEvent, EventType, NodeStatus }
+import rep.network.module.ModuleActorType
+import rep.utils.GlobalUtils.{ BlockEvent, EventType, NodeStatus}
+
 import scala.collection.mutable
 import com.sun.beans.decoder.FalseElementHandler
+
 import scala.util.control.Breaks
 import rep.utils.IdTool
+
 import scala.util.control.Breaks._
-import rep.network.consensus.util.{ BlockHelp, BlockVerify }
+import rep.network.consensus.util.{BlockHelp, BlockVerify}
 import rep.network.util.NodeHelp
 import rep.log.RepLogger
+import rep.network.autotransaction.Topic
 
 object GenesisBlocker {
   def props(name: String): Props = Props(classOf[GenesisBlocker], name)
@@ -80,7 +86,7 @@ class GenesisBlocker(moduleName: String) extends ModuleBase(moduleName) {
   private def ExecuteTransactionOfBlock(block: Block): Block = {
     try {
       //val future = pe.getActorRef(ActorType.preloaderoftransaction) ? PreTransBlock(block, "preload")
-      val future = pe.getActorRef(ActorType.dispatchofpreload) ? PreTransBlock(block, "preload")
+      val future = pe.getActorRef(ModuleActorType.ActorType.dispatchofpreload) ? PreTransBlock(block, "preload")
       val result = Await.result(future, timeout.duration).asInstanceOf[PreTransBlockResult]
       if (result.result) {
         result.blc

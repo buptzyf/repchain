@@ -14,27 +14,29 @@
  *
  */
 
-package rep.network.consensus.endorse
+package rep.network.consensus.cfrd.endorse
 
-import akka.actor.{ Actor, ActorRef, Props, Address, ActorSelection }
+import akka.actor.{Actor, ActorRef, ActorSelection, Address, Props}
 import akka.cluster.pubsub.DistributedPubSubMediator.Publish
-import akka.routing._;
-import rep.app.conf.{ SystemProfile, TimePolicy }
+import akka.routing._
+import rep.app.conf.{SystemProfile, TimePolicy}
 import rep.network.base.ModuleBase
 import rep.network.tools.PeerExtension
-import rep.network.Topic
 import rep.protos.peer._
-import rep.utils.GlobalUtils.{ EventType }
+import rep.utils.GlobalUtils.EventType
 import rep.utils._
+
 import scala.collection.mutable._
 import rep.network.consensus.util.BlockVerify
+
 import scala.util.control.Breaks
 import rep.network.util.NodeHelp
 import rep.network.consensus.util.BlockHelp
 import rep.network.consensus.util.BlockVerify
 import rep.log.RepLogger
 import rep.log.RepTimeTracer
-import rep.network.consensus.endorse.EndorseMsg.{ EndorsementInfo}
+import rep.network.autotransaction.Topic
+import rep.network.consensus.cfrd.endorse.EndorseMsg.EndorsementInfo
 
 object DispatchOfRecvEndorsement {
   def props(name: String): Props = Props(classOf[DispatchOfRecvEndorsement], name)

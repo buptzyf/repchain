@@ -17,7 +17,6 @@
 package rep.api.rest
 
 import akka.actor.Actor
-
 import akka.util.Timeout
 import rep.network._
 
@@ -28,7 +27,7 @@ import scala.concurrent._
 import rep.protos.peer._
 import rep.crypto._
 import rep.sc.Shim._
-import rep.network.PeerHelper._
+import rep.network.autotransaction.PeerHelper._
 import rep.storage._
 import spray.json._
 import scalapb.json4s.JsonFormat
@@ -37,12 +36,13 @@ import org.json4s._
 import org.json4s.jackson.JsonMethods
 import rep.network.tools.PeerExtension
 import rep.network.base.ModuleBase
-import rep.utils.GlobalUtils.ActorType
+import rep.network.module.ModuleActorType
 import akka.actor.Props
 import rep.crypto.cert.SignTool
 import rep.protos.peer.ActionResult
 import rep.app.conf.SystemProfile
 import rep.log.RepLogger
+import rep.network.autotransaction.PeerHelper
 import rep.network.base.ModuleBase
 import rep.sc.TypeOfSender
 import rep.sc.SandboxDispatcher.DoTransaction
@@ -170,7 +170,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
         } else {
           if (SignTool.verify(sig, tOutSig.toByteArray, certId, pe.getSysTag)) {
             //            RepLogger.info(RepLogger.Business_Logger, s"验证签名成功，txid: ${t.id},creditCode: ${t.signature.get.getCertId.creditCode}, certName: ${t.signature.get.getCertId.certName}")
-            val future = pe.getActorRef(ActorType.transactiondispatcher) ? DoTransaction(t, "api_" + t.id, TypeOfSender.FromAPI)
+            val future = pe.getActorRef(ModuleActorType.ActorType.transactiondispatcher) ? DoTransaction(t, "api_" + t.id, TypeOfSender.FromAPI)
             val result = Await.result(future, timeout.duration).asInstanceOf[DoTransactionResult]
             val rv = result
             // 释放存储实例
@@ -178,7 +178,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
             rv.err match {
               case None =>
                 //预执行正常,提交并广播交易
-                pe.getActorRef(ActorType.transactionpool) ! t // 给交易池发送消息 ！=》告知（getActorRef）
+                pe.getActorRef(ModuleActorType.ActorType.transactionpool) ! t // 给交易池发送消息 ！=》告知（getActorRef）
                 if (rv.r == null)
                   sender ! PostResult(t.id, None, None)
                 else
@@ -192,7 +192,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
           }
         }
       } else {
-        pe.getActorRef(ActorType.transactionpool) ! t // 给交易池发送消息 ！=》告知（getActorRef）
+        pe.getActorRef(ModuleActorType.ActorType.transactionpool) ! t // 给交易池发送消息 ！=》告知（getActorRef）
         sender ! PostResult(t.id, None, None)
       }
 

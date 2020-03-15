@@ -20,18 +20,20 @@ import com.google.protobuf.ByteString
 import com.google.protobuf.timestamp.Timestamp
 import scalapb.json4s.JsonFormat
 import rep.app.conf.SystemProfile
-import rep.crypto.{ Sha256 }
-import rep.protos.peer.{ Block, Signature, Transaction, ChaincodeId, CertId }
+import rep.crypto.Sha256
+import rep.protos.peer.{Block, CertId, ChaincodeId, Signature, Transaction}
 import rep.utils.TimeUtils
 import rep.storage.IdxPrefix
 import rep.sc.Shim._
 import rep.storage._
-import java.security.cert.{ Certificate }
-import rep.network.PeerHelper
+import java.security.cert.Certificate
+
 import rep.utils.SerializeUtils
+
 import scala.util.control.Breaks
 import org.slf4j.LoggerFactory
 import rep.crypto.cert.SignTool
+import rep.network.autotransaction.PeerHelper
 import rep.utils.IdTool
 
 object BlockHelp {

@@ -19,7 +19,7 @@ package rep.network.sync
 import akka.actor.{ ActorRef, Props }
 import akka.cluster.pubsub.DistributedPubSubMediator.Publish
 import rep.network.base.ModuleBase
-import rep.utils.GlobalUtils.{ ActorType, BlockEvent, EventType }
+import rep.utils.GlobalUtils.{  BlockEvent, EventType }
 import rep.storage.ImpDataAccess
 import rep.protos.peer._
 import rep.network.util.NodeHelp

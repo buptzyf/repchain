@@ -17,24 +17,27 @@
 package rep.network.persistence
 
 
-import akka.actor.{ ActorRef, Props }
+import akka.actor.{ActorRef, Props}
 import akka.cluster.pubsub.DistributedPubSubMediator.Publish
 import com.google.protobuf.ByteString
 import rep.network.base.ModuleBase
-import rep.network.Topic
 import rep.protos.peer._
 import rep.storage.ImpDataAccess
-import rep.network.consensus.vote.Voter.{VoteOfBlocker}
+import rep.network.consensus.cfrd.vote.Voter.VoteOfBlocker
+
 import scala.collection.mutable
-import rep.utils.GlobalUtils.{ ActorType, BlockEvent, EventType, NodeStatus }
+import rep.utils.GlobalUtils.{ BlockEvent, EventType, NodeStatus}
+
 import scala.collection.immutable
-import rep.network.sync.SyncMsg.{SyncRequestOfStorager,StartSync}
+import rep.network.sync.SyncMsg.{StartSync, SyncRequestOfStorager}
+import rep.network.module.cfrd.CFRDActorType
 import scala.util.control.Breaks._
 import rep.network.util.NodeHelp
-import rep.network.sync.SyncMsg.{BlockDataOfRequest,BlockDataOfResponse}
+import rep.network.sync.SyncMsg.{BlockDataOfRequest, BlockDataOfResponse}
 import rep.log.RepLogger
 import rep.log.RepTimeTracer
-import rep.app.conf.{ SystemCertList}
+import rep.app.conf.SystemCertList
+import rep.network.autotransaction.Topic
 
 
 object Storager {
@@ -113,7 +116,7 @@ class Storager(moduleName: String) extends ModuleBase(moduleName) {
       if (pe.getBlockCacheMgr.isEmpty ) {
         RepLogger.trace(RepLogger.Storager_Logger, this.getLogMsgPrefix("presistence is over,this is startup vote" + "~" + selfAddr))
         //通知抽签模块，开始抽签
-        pe.getActorRef( ActorType.voter) ! VoteOfBlocker
+        pe.getActorRef( CFRDActorType.ActorType.voter) ! VoteOfBlocker
       }else{
         RepLogger.trace(RepLogger.Storager_Logger, this.getLogMsgPrefix( s"presistence is over,cache has data,do not vote,height=${pe.getCurrentHeight} ~" + selfAddr))
       }
@@ -126,7 +129,7 @@ class Storager(moduleName: String) extends ModuleBase(moduleName) {
       RepLogger.trace(RepLogger.Storager_Logger, this.getLogMsgPrefix( s"presistence is failed,must start sync,start send sync request ,height=${pe.getCurrentHeight} ~" + selfAddr))
       val hs = pe.getBlockCacheMgr.getKeyArray4Sort
       val max = hs(hs.length-1)
-      pe.getActorRef(ActorType.synchrequester) ! SyncRequestOfStorager(blker,max)
+      pe.getActorRef(CFRDActorType.ActorType.synchrequester) ! SyncRequestOfStorager(blker,max)
     }
   }
 
@@ -185,7 +188,7 @@ class Storager(moduleName: String) extends ModuleBase(moduleName) {
           }
         } else {
           pe.getBlockCacheMgr.removeFromCache(blkRestore.blk.height)
-          pe.getActorRef(ActorType.synchrequester) ! StartSync(false)
+          pe.getActorRef(CFRDActorType.ActorType.synchrequester) ! StartSync(false)
           RepLogger.trace(RepLogger.Storager_Logger, this.getLogMsgPrefix(s"block restor is failed in persistence module,block prehash  error,must restart height:${blkRestore.blk.height}" + "~" + selfAddr))
         }
       } else if (blkRestore.blk.height < (pe.getCurrentHeight + 1)) {

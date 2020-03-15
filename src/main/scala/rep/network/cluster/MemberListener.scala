@@ -16,27 +16,29 @@
 
 package rep.network.cluster
 
-import akka.actor.{ Actor, Address, Props }
+import akka.actor.{Actor, Address, Props}
 import akka.cluster.ClusterEvent._
 import akka.cluster.pubsub.DistributedPubSub
-import akka.cluster.{ Cluster, MemberStatus }
+import akka.cluster.{Cluster, MemberStatus}
 import rep.app.conf.TimePolicy
 import rep.app.conf.SystemProfile
-import rep.network.Topic
-import rep.network.cluster.MemberListener.{ Recollection }
-import rep.network.tools.PeerExtension
-import rep.utils.GlobalUtils.{ ActorType, EventType }
-import rep.utils.{ TimeUtils }
+import rep.network.cluster.MemberListener.Recollection
+import rep.network.module.cfrd.CFRDActorType
+import rep.utils.GlobalUtils.{ EventType}
+import rep.utils.TimeUtils
 import org.slf4j.LoggerFactory
+
 import scala.collection.mutable.HashMap
 import rep.network.base.ModuleBase
 import rep.network.sync.SyncMsg.StartSync
+
 import scala.util.control.Breaks._
 import scala.collection.mutable.ArrayBuffer
 import rep.log.RepLogger
 import rep.protos.peer.Event
 import rep.network.util.NodeHelp
 import rep.app.RepChainMgr
+import rep.network.autotransaction.Topic
 
 /**
  * Cluster节点状态监听模块
@@ -158,7 +160,7 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
         if (pe.getNodeMgr.getStableNodes.size >= SystemProfile.getVoteNoteMin) {
           //组网成功之后开始系统同步
           RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"Recollection:  system startup ,start sync,node name=${pe.getSysTag}"))
-          pe.getActorRef(ActorType.synchrequester) ! StartSync(true)
+          pe.getActorRef(CFRDActorType.ActorType.synchrequester) ! StartSync(true)
           this.isStartSynch = true
         } else {
           RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"Recollection:  nodes less ${SystemProfile.getVoteNoteMin},node name=${pe.getSysTag}"))

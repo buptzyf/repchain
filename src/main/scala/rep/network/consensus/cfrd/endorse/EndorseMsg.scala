@@ -14,7 +14,7 @@
  *
  */
 
-package rep.network.consensus.endorse
+package rep.network.consensus.cfrd.endorse
 
 import akka.actor.{ Address}
 import rep.protos.peer.{Signature,Block,BlockchainInfo}

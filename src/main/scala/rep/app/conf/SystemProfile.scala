@@ -59,6 +59,7 @@ object SystemProfile {
   private[this] var _HAS_PRELOAD_TRANS_OF_API = true
   private[this] var _IS_VERIFY_OF_ENDORSEMENT = true//is_verify_of_endorsement
   private[this] var _NUMBER_OF_ENDORSEMENT: Int = 2
+  private[this] var _TYPE_OF_CONSENSUS:String = "CFRD"
   
   private[this] var _BLOCKNUMBER_OF_RAFT: Int = 100
   
@@ -94,11 +95,17 @@ object SystemProfile {
   private def BLOCKNUMBER_OF_RAFT = _BLOCKNUMBER_OF_RAFT
   
   private def REALTIMEGRAPH_ENABLE = _REALTIMEGRAPH_ENABLE
+
+  private def TYPE_OF_CONSENSUS : String = _TYPE_OF_CONSENSUS
   
   private def DBPATH:String = _DBPATH
   private def BLOCKPATH:String = _BLOCKPATH
   private def FILEMAX: Int = _FILEMAX
-  
+
+  private def TYPE_OF_CONSENSUS_=(value:String):Unit={
+    _TYPE_OF_CONSENSUS = value
+  }
+
   private def DBPATH_=(value:String):Unit={
     _DBPATH = value
   }
@@ -249,6 +256,7 @@ object SystemProfile {
     IS_VERIFY_OF_ENDORSEMENT_=(config.getBoolean("system.is_verify_of_endorsement"))
     NUMBER_OF_ENDORSEMENT_=(config.getInt("system.number_of_endorsement"))
     BLOCKNUMBER_OF_RAFT_=(config.getInt("system.consensus.blocknumberofraft"))
+    TYPE_OF_CONSENSUS_=(config.getString("system.consensus.type"))
     
     DBPATH_= (config.getString("system.storage.dbpath"))
     BLOCKPATH_= (config.getString("system.storage.blockpath"))
@@ -269,6 +277,8 @@ object SystemProfile {
   def getNumberOfTransProcessor = NUMBER_OF_TRANSPROCESSOR
   
   def getBlockNumberOfRaft = BLOCKNUMBER_OF_RAFT
+
+  def getTypeOfConsensus : String = TYPE_OF_CONSENSUS
   
   def getHasPreloadTransOfApi = HAS_PRELOAD_TRANS_OF_API
   

@@ -1,30 +1,32 @@
 package rep.sc
 
 import akka.util.Timeout
+
 import scala.concurrent.duration._
 import akka.pattern.ask
 import akka.pattern.AskTimeoutException
-import scala.concurrent._
 
-import akka.actor.{ Actor, ActorRef, Props }
+import scala.concurrent._
+import akka.actor.{Actor, ActorRef, Props}
 import com.google.protobuf.ByteString
 import com.google.protobuf.timestamp.Timestamp
-import rep.app.conf.{ SystemProfile, TimePolicy }
+import rep.app.conf.{SystemProfile, TimePolicy}
 import rep.network.base.ModuleBase
-import rep.network.consensus.block.Blocker.{ PreTransBlock, PreTransBlockResult }
+import rep.network.consensus.cfrd.block.Blocker.{PreTransBlock, PreTransBlockResult}
 import rep.network.tools.PeerExtension
-import rep.network.Topic
 import rep.protos.peer._
 import rep.sc.Sandbox.DoTransactionResult
 import rep.sc.SandboxDispatcher.DoTransaction
-import rep.storage.{ ImpDataPreloadMgr }
-import rep.utils.GlobalUtils.ActorType
+import rep.storage.ImpDataPreloadMgr
+
 import rep.utils._
+
 import scala.collection.mutable
 import akka.pattern.AskTimeoutException
 import rep.crypto.Sha256
 import rep.log.RepLogger
-import akka.routing._;
+import akka.routing._
+import rep.network.autotransaction.Topic;
 
 object TransactionDispatcher {
   def props(name: String): Props = Props(classOf[TransactionDispatcher], name)

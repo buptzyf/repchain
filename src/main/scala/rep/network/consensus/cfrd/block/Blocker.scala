@@ -14,36 +14,41 @@
  *
  */
 
-package rep.network.consensus.block
+package rep.network.consensus.cfrd.block
 
 import akka.util.Timeout
+
 import scala.concurrent.duration._
 import akka.pattern.ask
 import akka.pattern.AskTimeoutException
-import scala.concurrent._
 
-import akka.actor.{ ActorRef, Address, Props }
+import scala.concurrent._
+import akka.actor.{ActorRef, Address, Props}
 import akka.cluster.pubsub.DistributedPubSubMediator.Publish
 import com.google.protobuf.ByteString
-import rep.app.conf.{ SystemProfile, TimePolicy }
+import rep.app.conf.{SystemProfile, TimePolicy}
 import rep.crypto.Sha256
-import rep.network.consensus.vote.Voter.VoteOfBlocker
+import rep.network.consensus.cfrd.vote.Voter.VoteOfBlocker
 import rep.network.base.ModuleBase
-import rep.network.consensus.block.Blocker.{ ConfirmedBlock, PreTransBlock, PreTransBlockResult }
+import rep.network.consensus.cfrd.block.Blocker.{ConfirmedBlock, PreTransBlock, PreTransBlockResult}
 import rep.protos.peer._
 import rep.storage.ImpDataAccess
-import rep.utils.GlobalUtils.{ ActorType, BlockEvent, EventType, NodeStatus }
+import rep.utils.GlobalUtils.{BlockEvent, EventType, NodeStatus}
+
 import scala.collection.mutable
 import com.sun.beans.decoder.FalseElementHandler
+
 import scala.util.control.Breaks
-import rep.utils.IdTool
+import rep.network.module.ModuleActorType
+
 import scala.util.control.Breaks._
-import rep.network.consensus.util.{ BlockHelp, BlockVerify }
+import rep.network.consensus.util.{BlockHelp, BlockVerify}
 import rep.network.util.NodeHelp
-import rep.network.Topic
-import rep.network.consensus.endorse.EndorseMsg
+import rep.network.consensus.cfrd.endorse.EndorseMsg
 import rep.log.RepLogger
 import rep.log.RepTimeTracer
+import rep.network.autotransaction.Topic
+import rep.network.module.cfrd.CFRDActorType
 
 object Blocker {
   def props(name: String): Props = Props(classOf[Blocker], name)
@@ -117,7 +122,7 @@ class Blocker(moduleName: String) extends ModuleBase(moduleName) {
   private def ExecuteTransactionOfBlock(block: Block): Block = {
     try {
       //val future = pe.getActorRef(ActorType.preloaderoftransaction) ? Blocker.PreTransBlock(block, "preload")
-      val future = pe.getActorRef(ActorType.dispatchofpreload) ? Blocker.PreTransBlock(block, "preload")
+      val future = pe.getActorRef(ModuleActorType.ActorType.dispatchofpreload) ? Blocker.PreTransBlock(block, "preload")
       val result = Await.result(future, timeout.duration).asInstanceOf[PreTransBlockResult]
       if (result.result) {
         result.blc
@@ -210,11 +215,11 @@ class Blocker(moduleName: String) extends ModuleBase(moduleName) {
       }else{
         //在发出背书时，告诉对方我是当前出块人，取出系统的名称
         RepTimeTracer.setStartTime(pe.getSysTag, "Endorsement", System.currentTimeMillis(), blc.height, blc.transactions.size)
-        pe.getActorRef(ActorType.endorsementcollectioner) ! EndorseMsg.CollectEndorsement(this.preblock, pe.getSysTag)
+        pe.getActorRef(CFRDActorType.ActorType.endorsementcollectioner) ! EndorseMsg.CollectEndorsement(this.preblock, pe.getSysTag)
       }
     } else {
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("create new block error,CreateBlock is null" + "~" + selfAddr))
-      pe.getActorRef(ActorType.voter) ! VoteOfBlocker
+      pe.getActorRef(CFRDActorType.ActorType.voter) ! VoteOfBlocker
     }
     //}
   }

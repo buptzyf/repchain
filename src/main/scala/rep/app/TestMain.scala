@@ -27,7 +27,7 @@ import scala.concurrent.{Await, Future}
 import akka.remote.transport.Transport._
 import rep.network._
 import rep.network.cluster.MemberListener
-import rep.network.module.{ModuleManager}
+import rep.network.module.IModuleManager
 import rep.ui.web.EventServer
 
 import scala.collection.mutable._
@@ -53,7 +53,7 @@ object TestMain {
           nd_system.actorOf(Props[MemberListener], name_MemberListener)
           //等待网络稳定
           Thread.sleep(5000)
-          nd_system.actorOf(Props[ModuleManager], name_PeerManager + i.toString)
+          nd_system.actorOf(Props[IModuleManager], name_PeerManager + i.toString)
           m += i -> nd_system
           ma += i -> Cluster(nd_system).selfAddress
         }
@@ -113,7 +113,7 @@ object TestMain {
     system0.actorOf(Props[MemberListener], name_MemberListener)
     //等待网络稳定
     Thread.sleep(5000)
-    val nd0 = system0.actorOf(Props[ModuleManager], name_PeerManager + "0")
+    val nd0 = system0.actorOf(Props[IModuleManager], name_PeerManager + "0")
     val ws0 = system0.actorOf(Props[EventServer], "ws")
   }
 }

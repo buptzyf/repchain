@@ -14,36 +14,39 @@
  *
  */
 
-package rep.network.consensus.endorse
+package rep.network.consensus.cfrd.endorse
 
 import akka.util.Timeout
+
 import scala.concurrent.duration._
 import akka.pattern.ask
 import akka.pattern.AskTimeoutException
-import scala.concurrent._
 
-import akka.actor.{ ActorRef, Props, Address, ActorSystemImpl }
+import scala.concurrent._
+import akka.actor.{ActorRef, ActorSystemImpl, Address, Props}
 import rep.crypto.Sha256
 import rep.network.base.ModuleBase
-import rep.network.Topic
 import rep.network.util.NodeHelp
-import rep.protos.peer.{ Event, Transaction }
-import rep.app.conf.{ SystemProfile, TimePolicy, SystemCertList }
-import rep.storage.{ ImpDataPreload, ImpDataPreloadMgr }
-import rep.utils.GlobalUtils.{ ActorType, BlockEvent, EventType, NodeStatus }
+import rep.protos.peer.{Event, Transaction}
+import rep.app.conf.{SystemCertList, SystemProfile, TimePolicy}
+import rep.storage.{ImpDataPreload, ImpDataPreloadMgr}
+import rep.utils.GlobalUtils.{ BlockEvent, EventType, NodeStatus}
 import com.sun.beans.decoder.FalseElementHandler
-//import rep.network.consensus.vote.Voter.VoteOfBlocker
+import rep.network.autotransaction.Topic
+//import rep.network.consensus.cfrd.vote.Voter.VoteOfBlocker
 import sun.font.TrueTypeFont
 import scala.util.control.Breaks._
+import rep.network.module.ModuleActorType
+import rep.network.module.cfrd.CFRDActorType
 import scala.util.control.Exception.Finally
 import java.util.concurrent.ConcurrentHashMap
-import rep.network.consensus.endorse.EndorseMsg.{ EndorsementInfo, ResultOfEndorsed, ResultFlagOfEndorse }
-import rep.network.consensus.block.Blocker.{ PreTransBlock, PreTransBlockResult }
+import rep.network.consensus.cfrd.endorse.EndorseMsg.{ EndorsementInfo, ResultOfEndorsed, ResultFlagOfEndorse }
+import rep.network.consensus.cfrd.block.Blocker.{ PreTransBlock, PreTransBlockResult }
 import rep.network.consensus.util.{ BlockVerify, BlockHelp }
 import rep.network.sync.SyncMsg.StartSync
 import rep.log.RepLogger
 import rep.log.RepTimeTracer
-import rep.network.consensus.vote.Voter
+import rep.network.consensus.cfrd.vote.Voter
 
 
 object Endorser4Future {
@@ -67,7 +70,7 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
   //背书块的交易预执行,然后验证block
   private def AskPreloadTransactionOfBlock(block: Block): Future[Boolean] =
     //pe.getActorRef(ActorType.preloaderoftransaction).ask(PreTransBlock(block, "endors"))(timeout).mapTo[PreTransBlockResult].flatMap(f => {
-    pe.getActorRef(ActorType.dispatchofpreload).ask(PreTransBlock(block, "endors"))(timeout).mapTo[PreTransBlockResult].flatMap(f => {  
+    pe.getActorRef(ModuleActorType.ActorType.dispatchofpreload).ask(PreTransBlock(block, "endors"))(timeout).mapTo[PreTransBlockResult].flatMap(f => {
       //println(s"${pe.getSysTag}:entry AskPreloadTransactionOfBlock")
       val result = Promise[Boolean]
       var tmpblock = f.blc.withHashOfBlock(block.hashOfBlock)
@@ -175,9 +178,9 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
         } else  {
           //todo 需要判断区块缓存，再决定是否需要启动同步
           if(info.blc.height > pe.getCurrentHeight+1){
-            pe.getActorRef(ActorType.synchrequester) ! StartSync(false)
+            pe.getActorRef(CFRDActorType.ActorType.synchrequester) ! StartSync(false)
           }else if(info.blc.height > pe.getCurrentHeight+1){
-            pe.getActorRef(ActorType.voter) ! Voter.VoteOfForce
+            pe.getActorRef(CFRDActorType.ActorType.voter) ! Voter.VoteOfForce
           }
           //当前块hash和抽签的出块人都不一致，暂时不能够进行背书，可以进行缓存
           RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"block hash is not equal or blocker is not equal,recv endorse request,endorse height=${info.blc.height},local height=${pe.getCurrentHeight}"))

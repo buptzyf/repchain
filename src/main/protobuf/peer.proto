@@ -75,7 +75,7 @@ message Signature {
     CertId cert_id = 1;
     google.protobuf.Timestamp tm_local = 2; //签名时间
     //签名
-     bytes signature = 3;     
+     bytes signature = 3;
 }
 
 //合约方法调用及实际参数
