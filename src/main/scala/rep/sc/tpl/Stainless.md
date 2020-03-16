@@ -184,3 +184,34 @@ case class TrieMapWrapper[K, V](@extern theMap: TrieMap[K, V]) {
 目前想到的点主要有两个：
 * 浮点数的表示：stainless提供的数据类型主要是使用real来顶替浮点数，但是由于使用不方便（比如想表示1.5需要传入Real(3,2)，第一个参数是分子，第二个参数是分母），且部分性质验证时会超时，因此可以考虑封装一个新的可以表示浮点的数据类型。（早期的想法：估计无法实现）
 * kv：在repchain读写kv时，会访问外部的数据类型，可以类比上述的TrieMap来封装kv，将kv和现有的验证逻辑更好地结合。
+
+## 超时问题
+
+在进行一些定理时，有些证明在参数是BigInt时可以正常证明，但更换为Real则会超时，本质上是由于Stainless所依赖的SMT求解器中BigInt和Real的理论基础不同，详见[该回答](https://www.zhihu.com/question/65438076/answer/233925406)
+
+### 为何无法封装一个浮点类型取代Real？
+
+1. Real是Stainless的基本类型，Stainless的类型检查器做了检查
+2. Stainless所调用的SMT求解器也是支持Real，详见[SMT的标准库](http://smtlib.cs.uiowa.edu/theories-Reals.shtml)
+
+### 结论
+
+通过封装创造基础类型得不到前端检查和底层理论的支持。
+
+注：SMT求解器含有FloatingPoint，但因为不满足结合律，同时Stainless也没有进行支持，无法使用。
+
+### 目前的解决方案
+
+1. 设计一些简单的Real逻辑验证，保证Stainless不会超时
+2. 复杂逻辑改用BigInt做
+
+## 封装KV
+
+### 目的
+为了让Stainless协同现有Repchain代码工作，使用ContractContextWrapper封装ContractContext。
+
+### 好处
+可以将读写KV与纯函数代码部分写在一起，不必要每次接触KV都离开纯函数。简单的说，让Stainless将KV视作一个普通的Map，ContractContext的细节对于Stainless是透明的，Stainless只要调用ContractContextWrapper所提供的set和get等方法就可以完成与KV的交互。
+
+### 做法
+为了进行形式化验证，对从KV中读出的数值类型在装饰器中做类型转化，使得读或写的数据是支持Stainless的（比如BigInt、Real等）。但在装饰器所封装的ContractContext中，可以任意使用数据类型。
