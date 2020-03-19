@@ -21,7 +21,12 @@ import akka.routing._
 import rep.app.conf.SystemProfile
 import rep.log.RepLogger
 import rep.network.base.ModuleBase
-import rep.network.consensus.cfrd.block.Blocker.PreTransBlock
+import rep.network.consensus.common.MsgOfConsensus.PreTransBlock
+
+/**
+ * Created by jiangbuyun on 2018/03/19.
+ * 分派预执行actor
+ */
 
 
 object DispatchOfPreload  {

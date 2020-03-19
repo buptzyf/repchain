@@ -12,9 +12,10 @@ import com.google.protobuf.ByteString
 import com.google.protobuf.timestamp.Timestamp
 import rep.app.conf.{SystemProfile, TimePolicy}
 import rep.network.base.ModuleBase
-import rep.network.consensus.cfrd.block.Blocker.{PreTransBlock, PreTransBlockResult}
+import rep.network.consensus.common.MsgOfConsensus.{PreTransBlock, PreTransBlockResult}
 import rep.network.tools.PeerExtension
 import rep.protos.peer._
+import rep.network.consensus.common.MsgOfConsensus.BlockRestore
 import rep.sc.SandboxDispatcher.DoTransaction
 import rep.sc.Sandbox.DoTransactionResult
 import rep.storage.ImpDataPreloadMgr
@@ -44,9 +45,9 @@ class BlockStubActor(moduleName: String) extends ModuleBase(moduleName) {
   import scala.concurrent.duration._
   import rep.utils.IdTool
   import rep.sc.BlockStubActor._
-  import rep.network.consensus.cfrd.block.Blocker
+  import rep.network.consensus.cfrd.block.BlockerOfCFRD
   import rep.network.consensus.util.BlockHelp
-  import rep.network.persistence.Storager.{SourceOfBlock, BlockRestore}
+  import rep.network.persistence.IStorager.{SourceOfBlock}
 
   implicit val timeout = Timeout(6.seconds)
 
@@ -55,7 +56,7 @@ class BlockStubActor(moduleName: String) extends ModuleBase(moduleName) {
       //val ref = pe.getActorRef(ActorType.preloaderoftransaction)
       val ref = pe.getActorRef(ModuleActorType.ActorType.dispatchofpreload)
       //val ref1 = this.transpreload
-      val future = ref ? Blocker.PreTransBlock(block, "preload")
+      val future = ref ? PreTransBlock(block, "preload")
       val result = Await.result(future, timeout.duration).asInstanceOf[PreTransBlockResult]
       if (result.result) {
         result.blc

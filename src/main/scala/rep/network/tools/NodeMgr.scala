@@ -22,6 +22,12 @@ import java.util.concurrent.ConcurrentHashMap
 //import scala.jdk.CollectionConverters._
 import scala.collection.JavaConverters._
 
+/**
+ * Created by jiangbuyun on 2018/03/19.
+ * 共识节点管理与存储类
+ */
+
+
 class NodeMgr {
   //private val nodesLock: Lock = new ReentrantLock();
   //private val nodesStableLock: Lock = new ReentrantLock();

@@ -1,12 +1,24 @@
 package rep.network.module.cfrd
 
-import akka.actor.{ Props}
-import rep.network.consensus.cfrd.block.{Blocker, ConfirmOfBlock, EndorseCollector, GenesisBlocker}
+import akka.actor.Props
+import rep.log.RepLogger
+import rep.network.cache.cfrd.TransactionPoolOfCFRD
+import rep.network.confirmblock.common.ConfirmOfBlock
+import rep.network.consensus.cfrd.block.EndorseCollector
 import rep.network.consensus.cfrd.endorse.DispatchOfRecvEndorsement
-import rep.network.consensus.cfrd.vote.Voter
+import rep.network.consensus.cfrd.MsgOfCFRD.VoteOfBlocker
 import rep.network.module.{IModuleManager, ModuleActorType}
-import rep.network.sync.{SynchronizeRequester4Future, SynchronizeResponser}
+import rep.network.sync.response.SynchronizeResponser
+import rep.network.sync.request.cfrd.SynchRequesterOfCFRD
+import rep.network.consensus.cfrd.block.BlockerOfCFRD
+import rep.network.consensus.cfrd.vote.VoterOfCFRD
+import rep.network.persistence.cfrd.StoragerOfCFRD
 
+
+/**
+ * Created by jiangbuyun on 2020/03/15.
+ * CFRD的模块管理类，继承公共的模块管理类，实现CFRD的自己的模块
+ */
 object ModuleManagerOfCFRD{
   def props(name: String, sysTag: String, enableStatistic: Boolean, enableWebSocket: Boolean, isStartup: Boolean): Props = Props(classOf[ModuleManagerOfCFRD], name, sysTag, enableStatistic: Boolean, enableWebSocket: Boolean, isStartup: Boolean)
 
@@ -14,20 +26,26 @@ object ModuleManagerOfCFRD{
 
 class ModuleManagerOfCFRD(moduleName: String, sysTag: String, enableStatistic: Boolean, enableWebSocket: Boolean, isStartup: Boolean) extends IModuleManager(moduleName,sysTag, enableStatistic, enableWebSocket, isStartup){
 
+  override def preStart(): Unit = {
+    RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix( "ModuleManagerOfCFRD Start"))
+  }
+
   //启动共识模块，启动CFRD共识
   override def startupConsensus: Unit = {
-    pe.getActorRef(CFRDActorType.ActorType.voter) ! Voter.VoteOfBlocker
+    pe.getActorRef(CFRDActorType.ActorType.voter) ! VoteOfBlocker
   }
 
   override def loadConsensusModule = {
-    pe.register(CFRDActorType.ActorType.blocker,context.actorOf(Blocker.props("blocker"), "blocker"))
+    pe.register(ModuleActorType.ActorType.transactionpool, context.actorOf(TransactionPoolOfCFRD.props("transactionpool"), "transactionpool"))
+    pe.register(ModuleActorType.ActorType.storager,context.actorOf(StoragerOfCFRD.props("storager"), "storager"))
+    pe.register(CFRDActorType.ActorType.blocker,context.actorOf(BlockerOfCFRD.props("blocker"), "blocker"))
+    pe.register(CFRDActorType.ActorType.confirmerofblock,context.actorOf(ConfirmOfBlock.props("confirmerofblock"), "confirmerofblock"))
     pe.register(CFRDActorType.ActorType.endorsementcollectioner,context.actorOf(EndorseCollector.props("endorsementcollectioner"), "endorsementcollectioner"))
     pe.register(CFRDActorType.ActorType.dispatchofRecvendorsement,context.actorOf(DispatchOfRecvEndorsement.props("dispatchofRecvendorsement"), "dispatchofRecvendorsement"))
-    pe.register(CFRDActorType.ActorType.voter,context.actorOf(Voter.props("voter"), "voter"))
-    pe.register(CFRDActorType.ActorType.gensisblock,context.actorOf(GenesisBlocker.props("gensisblock"), "gensisblock"))
-    pe.register(CFRDActorType.ActorType.confirmerofblock,context.actorOf(ConfirmOfBlock.props("confirmerofblock"), "confirmerofblock"))
+    pe.register(CFRDActorType.ActorType.voter,context.actorOf(VoterOfCFRD.props("voter"), "voter"))
 
-    pe.register(CFRDActorType.ActorType.synchrequester,context.actorOf(SynchronizeRequester4Future.props("synchrequester"), "synchrequester"))
+
+    pe.register(CFRDActorType.ActorType.synchrequester,context.actorOf(SynchRequesterOfCFRD.props("synchrequester"), "synchrequester"))
     pe.register(CFRDActorType.ActorType.synchresponser,context.actorOf(SynchronizeResponser.props("synchresponser"), "synchresponser"))
   }
 

@@ -17,31 +17,24 @@
 package rep.network.consensus.cfrd.block
 
 import akka.util.Timeout
-
-import scala.concurrent.duration._
 import akka.pattern.ask
-import akka.pattern.AskTimeoutException
-
 import scala.concurrent._
-import akka.actor.{Actor, ActorRef, ActorSelection, Address, Props}
-import com.google.protobuf.ByteString
-import com.google.protobuf.timestamp.Timestamp
-import rep.app.conf.{SystemProfile, TimePolicy}
+import akka.actor.{ ActorSelection, Address, Props}
+import rep.app.conf.{TimePolicy}
 import rep.network.base.ModuleBase
-import rep.network.consensus.cfrd.endorse.EndorseMsg.{EndorsementInfo, RequesterOfEndorsement, ResendEndorseInfo, ResultFlagOfEndorse, ResultOfEndorseRequester, ResultOfEndorsed}
-import rep.network.tools.PeerExtension
 import rep.protos.peer._
-import rep.utils._
 import akka.pattern.AskTimeoutException
 import rep.network.consensus.util.BlockVerify
-
-import scala.util.control.Breaks
-import rep.utils.GlobalUtils.{ EventType}
+import rep.network.consensus.cfrd.MsgOfCFRD.{ResultOfEndorsed,ResultOfEndorseRequester,ResendEndorseInfo,RequesterOfEndorsement,EndorsementInfo,ResultFlagOfEndorse}
 import rep.network.sync.SyncMsg.StartSync
 import rep.log.RepLogger
 import rep.log.RepTimeTracer
-import rep.network.autotransaction.Topic
 import rep.network.module.cfrd.CFRDActorType
+
+/**
+ * Created by jiangbuyun on 2020/03/19.
+ * 背书请求的actor
+ */
 
 object EndorsementRequest4Future {
   def props(name: String): Props = Props(classOf[EndorsementRequest4Future], name)

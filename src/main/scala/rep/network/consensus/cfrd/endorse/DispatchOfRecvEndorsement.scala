@@ -36,7 +36,12 @@ import rep.network.consensus.util.BlockVerify
 import rep.log.RepLogger
 import rep.log.RepTimeTracer
 import rep.network.autotransaction.Topic
-import rep.network.consensus.cfrd.endorse.EndorseMsg.EndorsementInfo
+import rep.network.consensus.cfrd.MsgOfCFRD.EndorsementInfo
+
+/**
+ * Created by jiangbuyun on 2020/03/19.
+ * 接收并分派背书请求actor
+ */
 
 object DispatchOfRecvEndorsement {
   def props(name: String): Props = Props(classOf[DispatchOfRecvEndorsement], name)

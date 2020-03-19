@@ -169,4 +169,8 @@ class TransactionPoolMgr {
     transactions.size
     //this.transNumber.get
   }
+
+  def isEmpty:Boolean={
+    transactions.isEmpty
+  }
 }

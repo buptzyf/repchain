@@ -40,6 +40,7 @@ import rep.log.RepLogger
 import scala.concurrent.Await
 import scala.concurrent.duration._
 import akka.actor.Terminated
+import rep.network.module.raft.ModuleManagerOfRAFT
 
 
 /**
@@ -276,10 +277,10 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
     }
 
     val typeConsensus = SystemProfile.getTypeOfConsensus
-    if (typeConsensus == "CRFD") {
+    if (typeConsensus == "CFRD") {
       moduleManager = sysActor.actorOf(ModuleManagerOfCFRD.props("modulemanager", sysTag, enableStatistic, enableWebSocket, true), "modulemanager")
     }else if(typeConsensus == "RAFT"){
-
+      moduleManager = sysActor.actorOf(ModuleManagerOfRAFT.props("modulemanager", sysTag, enableStatistic, enableWebSocket, true), "modulemanager")
     }else if(typeConsensus == "PBFT"){
 
     }else{

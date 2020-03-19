@@ -1,65 +1,30 @@
-/*
- * Copyright  2019 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BA SIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
-
 package rep.network.cache
 
-import java.security.cert.Certificate
-
-import com.google.protobuf.ByteString
-import akka.actor.{Actor, Address, Props}
-import akka.cluster.pubsub.DistributedPubSubMediator.Publish
+import akka.actor.{Address, Props}
 import rep.app.conf.SystemProfile
 import rep.crypto.cert.SignTool
-import rep.network.base.ModuleBase
-import rep.network.cache.TransactionPool.CheckedTransactionResult
-import rep.network.consensus.cfrd.vote.Voter.VoteOfBlocker
-import rep.protos.peer.ChaincodeId
-import rep.protos.peer.{Event, Transaction}
-import rep.storage.IdxPrefix.WorldStateKeyPreFix
-import rep.storage.ImpDataAccess
-import rep.utils.{ActorUtils, GlobalUtils}
-import rep.utils.GlobalUtils.EventType
-import rep.utils.SerializeUtils
 import rep.log.RepLogger
 import rep.network.autotransaction.Topic
+import rep.network.base.ModuleBase
+import rep.network.cache.ITransactionPool.CheckedTransactionResult
 import rep.network.util.NodeHelp
-import rep.network.module._
-import rep.network.module.cfrd.CFRDActorType
+import rep.protos.peer.{Event, Transaction}
+import rep.storage.ImpDataAccess
+import rep.utils.ActorUtils
+import rep.utils.GlobalUtils.EventType
 
 /**
- * 交易缓冲池伴生对象
- *
- * @author shidianyue
- * @version 1.0
+ * Created by jiangbuyun on 2020/03/19.
+ * 抽象的交易池actor
  */
-object TransactionPool {
-  def props(name: String): Props = Props(classOf[TransactionPool], name)
+
+object ITransactionPool{
+  def props(name: String): Props = Props(classOf[ITransactionPool], name)
   //交易检查结果
   case class CheckedTransactionResult(result: Boolean, msg: String)
-
 }
-/**
- * 交易缓冲池类
- *
- * @author shidianyue
- * @version 1.0
- * @param moduleName
- */
 
-class TransactionPool(moduleName: String) extends ModuleBase(moduleName) {
+abstract class ITransactionPool (moduleName: String) extends ModuleBase(moduleName) {
   import akka.actor.ActorSelection
 
   private val transPoolActorName = "/user/modulemanager/transactionpool"
@@ -93,15 +58,15 @@ class TransactionPool(moduleName: String) extends ModuleBase(moduleName) {
   def checkTransaction(t: Transaction, dataAccess: ImpDataAccess): CheckedTransactionResult = {
     var resultMsg = ""
     var result = false
-    
+
     if(SystemProfile.getHasPreloadTransOfApi){
       val sig = t.getSignature
       val tOutSig = t.clearSignature //t.withSignature(null)
       val cert = sig.getCertId
-  
+
       try {
         val siginfo = sig.signature.toByteArray()
-  
+
         if (SignTool.verify(siginfo, tOutSig.toByteArray, cert, pe.getSysTag)) {
           if (pe.getTransPoolMgr.findTrans(t.id) || dataAccess.isExistTrans4Txid(t.id)) {
             resultMsg = s"The transaction(${t.id}) is duplicated with txid"
@@ -121,16 +86,20 @@ class TransactionPool(moduleName: String) extends ModuleBase(moduleName) {
     CheckedTransactionResult(result, resultMsg)
   }
 
+  protected def sendVoteMessage:Unit
+
   private def addTransToCache(t: Transaction) = {
     val checkedTransactionResult = checkTransaction(t, dataaccess)
-      //签名验证成功
-      if((checkedTransactionResult.result) && (SystemProfile.getMaxCacheTransNum == 0 || pe.getTransPoolMgr.getTransLength() < SystemProfile.getMaxCacheTransNum) ){
-        pe.getTransPoolMgr.putTran(t, pe.getSysTag)
-        RepLogger.trace(RepLogger.System_Logger,this.getLogMsgPrefix(s"${pe.getSysTag} trans pool recv,txid=${t.id}"))
-        //广播接收交易事件
-        if (pe.getTransPoolMgr.getTransLength() >= SystemProfile.getMinBlockTransNum)
-          pe.getActorRef(CFRDActorType.ActorType.voter) ! VoteOfBlocker
-      }
+    //签名验证成功
+    val poolIsEmpty = pe.getTransPoolMgr.isEmpty
+    if((checkedTransactionResult.result) && (SystemProfile.getMaxCacheTransNum == 0 || pe.getTransPoolMgr.getTransLength() < SystemProfile.getMaxCacheTransNum) ){
+      pe.getTransPoolMgr.putTran(t, pe.getSysTag)
+      RepLogger.trace(RepLogger.System_Logger,this.getLogMsgPrefix(s"${pe.getSysTag} trans pool recv,txid=${t.id}"))
+      //广播接收交易事件
+      //if (pe.getTransPoolMgr.getTransLength() >= SystemProfile.getMinBlockTransNum)
+      if (poolIsEmpty)//加入交易之前交易池为空，发送抽签消息
+        sendVoteMessage
+    }
   }
 
   private def publishTrans(t: Transaction) = {
@@ -151,7 +120,7 @@ class TransactionPool(moduleName: String) extends ModuleBase(moduleName) {
     case t: Transaction =>
       //保存交易到本地
       sendEvent(EventType.RECEIVE_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)
-      addTransToCache(t) 
+      addTransToCache(t)
 
       //广播交易到其他共识节点
       if (ActorUtils.isHelper(sender().path.toString) ||  ActorUtils.isAPI(sender().path.toString)) {

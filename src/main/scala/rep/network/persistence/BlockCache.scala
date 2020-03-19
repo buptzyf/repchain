@@ -19,8 +19,12 @@ package rep.network.persistence
 import java.util.concurrent.ConcurrentHashMap
 //import scala.jdk.CollectionConverters._
 import scala.collection.JavaConverters._
-import rep.network.persistence.Storager.{ BlockRestore}
+import rep.network.consensus.common.MsgOfConsensus.BlockRestore
 
+/**
+ * Created by jiangbuyun on 2020/03/19.
+ * 缓存经过确认后的块
+ */
 
 class BlockCache {
   private implicit var caches  = new ConcurrentHashMap[Long, BlockRestore] asScala

@@ -8,15 +8,15 @@ import rep.crypto.cert.SignTool
 import rep.log.{RepLogger, RepTimeTracer}
 import rep.network.autotransaction.PeerHelper
 import rep.network.base.ModuleBase
-import rep.network.cache.TransactionPool
 import rep.network.cluster.MemberListener
+import rep.network.module.cfrd.CFRDActorType
 import rep.network.transaction.DispatchOfPreload
-import rep.network.persistence.Storager
 import rep.sc.TransactionDispatcher
 import rep.storage.ImpDataAccess
 import rep.storage.verify.verify4Storage
 import rep.ui.web.EventServer
 import rep.utils.ActorUtils
+import rep.network.genesis.GenesisBlocker
 
 
 /**
@@ -74,7 +74,7 @@ class IModuleManager(moduleName: String, sysTag: String, enableStatistic: Boolea
   private def loadCommonActor:Unit = {
     loadApiModule
     loadTransModule
-    loadStorageModule
+    loadGensisModule
     loadClusterModule
   }
 
@@ -96,15 +96,16 @@ class IModuleManager(moduleName: String, sysTag: String, enableStatistic: Boolea
       pe.register(ModuleActorType.ActorType.transactiondispatcher, context.actorOf(TransactionDispatcher.props("transactiondispatcher"), "transactiondispatcher"))
     }
     pe.register(ModuleActorType.ActorType.dispatchofpreload, context.actorOf(DispatchOfPreload.props("dispatchofpreload"), "dispatchofpreload"))
-    pe.register(ModuleActorType.ActorType.transactionpool, context.actorOf(TransactionPool.props("transactionpool"), "transactionpool"))
-  }
 
-  private def loadStorageModule:Any={
-    pe.register(ModuleActorType.ActorType.storager,context.actorOf(Storager.props("storager"), "storager"))
   }
 
   private def loadClusterModule = {
     context.actorOf(MemberListener.props("memberlistener"), "memberlistener")
+  }
+
+  private def loadGensisModule:Any={
+    pe.register(CFRDActorType.ActorType.gensisblock,context.actorOf(GenesisBlocker.props("gensisblock"), "gensisblock"))
+
   }
 
   //启动共识模块，不同的共识方式启动的actor也不相同，继承模块需要重载此方法

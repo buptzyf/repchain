@@ -24,7 +24,7 @@ import rep.app.conf.TimePolicy
 import rep.crypto.Sha256
 import rep.log.RepLogger
 import rep.network.base.ModuleBase
-import rep.network.consensus.cfrd.block.Blocker.{PreTransBlock, PreTransBlockResult}
+import rep.network.consensus.common.MsgOfConsensus.{PreTransBlock, PreTransBlockResult}
 import rep.protos.peer._
 import rep.sc.Sandbox.DoTransactionResult
 import rep.sc.SandboxDispatcher.DoTransaction
@@ -32,9 +32,14 @@ import rep.sc.TypeOfSender
 import rep.storage.ImpDataPreloadMgr
 import rep.network.module.ModuleActorType
 import rep.utils._
-
 import scala.collection.mutable
 import scala.concurrent._
+
+/**
+ * Created by jiangbuyun on 2018/03/19.
+ * 执行预执行actor
+ */
+
 
 object PreloaderForTransaction {
   def props(name: String): Props = Props(classOf[PreloaderForTransaction], name)

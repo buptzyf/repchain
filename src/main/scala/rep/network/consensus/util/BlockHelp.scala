@@ -37,6 +37,8 @@ import rep.network.autotransaction.PeerHelper
 import rep.utils.IdTool
 
 object BlockHelp {
+
+  private val  versionOfBlock = 1
 /****************************背书相关的操作开始**********************************************************/
   def SignDataOfBlock(NonEndorseDataOfBlock: Array[Byte], alise: String): Signature = {
     try {
@@ -108,7 +110,7 @@ object BlockHelp {
     try {
       val millis = TimeUtils.getCurrentTime()
       new Block(
-        1,
+        versionOfBlock,
         h,
         trans,
         null,

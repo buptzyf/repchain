@@ -19,6 +19,12 @@ package rep.network.sync
 import rep.protos.peer._
 import akka.actor.{ ActorRef, Props }
 
+/**
+ * Created by jiangbuyun on 2020/03/19.
+ * 区块同步的消息以及数据的结构
+ */
+
+
 object SyncMsg {
   case class StartSync(isNoticeModuleMgr:Boolean)
   

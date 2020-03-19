@@ -16,28 +16,26 @@
 
 package rep.network.consensus.cfrd.block
 
-import akka.actor.{Actor, ActorRef, ActorSelection, Address, Props}
+import akka.actor.{Props}
 import akka.cluster.pubsub.DistributedPubSubMediator.Publish
 import akka.routing._
-import rep.app.conf.{SystemProfile, TimePolicy}
+import rep.app.conf.{SystemProfile}
 import rep.network.base.ModuleBase
-import rep.network.consensus.cfrd.endorse.EndorseMsg.{CollectEndorsement, RequesterOfEndorsement, ResendEndorseInfo, ResultOfEndorseRequester}
-import rep.network.consensus.cfrd.block.Blocker.ConfirmedBlock
-import rep.network.tools.PeerExtension
+import rep.network.consensus.common.MsgOfConsensus.ConfirmedBlock
+import rep.network.consensus.cfrd.MsgOfCFRD.{CollectEndorsement,ResultOfEndorseRequester,ResendEndorseInfo,RequesterOfEndorsement}
 import rep.protos.peer._
 import rep.utils.GlobalUtils.EventType
-import rep.utils._
-
-import scala.collection.mutable._
-import rep.network.consensus.util.BlockVerify
-
-import scala.util.control.Breaks
 import rep.network.util.NodeHelp
 import rep.network.consensus.util.BlockHelp
 import rep.network.consensus.util.BlockVerify
 import rep.log.RepLogger
 import rep.log.RepTimeTracer
 import rep.network.autotransaction.Topic
+
+/**
+ * Created by jiangbuyun on 2020/03/19.
+ * 背书的收集的actor
+ */
 
 object EndorseCollector {
   def props(name: String): Props = Props(classOf[EndorseCollector], name)

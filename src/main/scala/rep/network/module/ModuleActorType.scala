@@ -1,5 +1,10 @@
 package rep.network.module
 
+
+/**
+ * Created by jiangbuyun on 2020/03/15.
+ * 共识模块中管理的公共的actor
+ */
 object ModuleActorType {
 
   //系统的actor类型的注册，关键字以10开头

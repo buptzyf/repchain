@@ -14,17 +14,23 @@
  *
  */
 
-package rep.network.sync
+package rep.network.sync.response
 
-import akka.actor.{ ActorRef, Props }
-import akka.cluster.pubsub.DistributedPubSubMediator.Publish
-import rep.network.base.ModuleBase
-import rep.utils.GlobalUtils.{  BlockEvent, EventType }
-import rep.storage.ImpDataAccess
-import rep.protos.peer._
-import rep.network.util.NodeHelp
-import rep.network.sync.SyncMsg.{ResponseInfo,BlockDataOfResponse,ChainInfoOfRequest,BlockDataOfRequest}
+import akka.actor.Props
 import rep.log.RepLogger
+import rep.network.base.ModuleBase
+import rep.network.sync.SyncMsg
+import rep.network.sync.SyncMsg.{BlockDataOfRequest, ChainInfoOfRequest, ResponseInfo}
+import rep.network.util.NodeHelp
+import rep.protos.peer._
+import rep.storage.ImpDataAccess
+import rep.utils.GlobalUtils.{BlockEvent, EventType}
+
+
+/**
+ * Created by jiangbuyun on 2020/03/19.
+ * 区块同步时，接收请求区块信息的actor
+ */
 
 object SynchronizeResponser {
   def props(name: String): Props = Props(classOf[SynchronizeResponser], name)
@@ -32,12 +38,7 @@ object SynchronizeResponser {
 
 class SynchronizeResponser(moduleName: String) extends ModuleBase(moduleName) {
 
-  import context.dispatcher
-  import scala.concurrent.duration._
-  import scala.util.control.Breaks._
-
   override def preStart(): Unit = {
-    //SubscribeTopic(mediator, self, selfAddr, BlockEvent.CHAIN_INFO_SYNC, true)
     RepLogger.info(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix( "SynchronizeResponse start"))
   }
 

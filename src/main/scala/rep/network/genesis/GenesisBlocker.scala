@@ -14,62 +14,35 @@
  *
  */
 
-package rep.network.consensus.cfrd.block
+package rep.network.genesis
 
-import akka.util.Timeout
-
-import scala.concurrent.duration._
-import akka.pattern.ask
-import akka.pattern.AskTimeoutException
-
-import scala.concurrent._
-import akka.actor.{ActorRef, Address, Props}
+import akka.actor.Props
 import akka.cluster.pubsub.DistributedPubSubMediator.Publish
-import com.google.protobuf.ByteString
-import rep.app.conf.{SystemProfile, TimePolicy}
-import rep.crypto.Sha256
-import rep.network._
-import rep.network.base.ModuleBase
-import rep.network.consensus.cfrd.block.Blocker.{ConfirmedBlock, PreTransBlock, PreTransBlockResult}
-import rep.protos.peer._
-import rep.storage.ImpDataAccess
-import rep.network.module.ModuleActorType
-import rep.utils.GlobalUtils.{ BlockEvent, EventType, NodeStatus}
-
-import scala.collection.mutable
-import com.sun.beans.decoder.FalseElementHandler
-
-import scala.util.control.Breaks
-import rep.utils.IdTool
-
-import scala.util.control.Breaks._
-import rep.network.consensus.util.{BlockHelp, BlockVerify}
-import rep.network.util.NodeHelp
+import akka.pattern.{AskTimeoutException, ask}
+import akka.util.Timeout
+import rep.app.conf.TimePolicy
 import rep.log.RepLogger
 import rep.network.autotransaction.Topic
-
-object GenesisBlocker {
-  def props(name: String): Props = Props(classOf[GenesisBlocker], name)
-
-  case object GenesisBlock
-
-}
+import rep.network.base.ModuleBase
+import rep.network.consensus.util.BlockHelp
+import rep.network.module.ModuleActorType
+import rep.network.util.NodeHelp
+import rep.protos.peer._
+import rep.storage.ImpDataAccess
+import rep.network.consensus.common.MsgOfConsensus.{ConfirmedBlock,GenesisBlock,PreTransBlockResult,PreTransBlock}
+import scala.concurrent._
 
 /**
- * 出块模块
- *
- * @author shidianyue
- * @version 1.0
- * @since 1.0
- * @param moduleName 模块名称
+ * Created by jiangbuyun on 2020/03/19.
+ * 建立创世块actor
  */
+object GenesisBlocker {
+  def props(name: String): Props = Props(classOf[GenesisBlocker], name)
+}
+
 class GenesisBlocker(moduleName: String) extends ModuleBase(moduleName) {
 
-  import context.dispatcher
   import scala.concurrent.duration._
-  import akka.actor.ActorSelection
-  import scala.collection.mutable.ArrayBuffer
-  import rep.protos.peer.{ Transaction }
 
   val dataaccess: ImpDataAccess = ImpDataAccess.GetDataAccess(pe.getSysTag)
   implicit val timeout = Timeout(TimePolicy.getTimeoutPreload*20.seconds)
@@ -100,7 +73,7 @@ class GenesisBlocker(moduleName: String) extends ModuleBase(moduleName) {
 
   override def receive = {
     //创建块请求（给出块人）
-    case GenesisBlocker.GenesisBlock =>
+    case GenesisBlock =>
       if(dataaccess.getBlockChainInfo().height == 0 && NodeHelp.isSeedNode(pe.getSysTag)  ){
         if(this.preblock != null){
           mediator ! Publish(Topic.Block, ConfirmedBlock(preblock, sender))
