@@ -10,6 +10,15 @@
 ## 执行命令
 到对应目录，执行stainless --timeout=200 SupplyTPLByStainless.scala。其中timeout选项指定超时时间。
 
+## Docker镜像
+```
+docker run -it yuexincs/repchain   // 镜像内已含repchain和stainless环境
+
+cd /root/repchain
+sbt
+> compile                          // 已安装stainless插件，在compile阶段自动检查
+```
+
 ## 定理证明
 以下使用一个简单的定理证明对Stainless的使用做一个介绍。
 
