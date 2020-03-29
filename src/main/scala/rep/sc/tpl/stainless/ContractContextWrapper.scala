@@ -1,4 +1,4 @@
-package rep.sc.tpl
+package rep.sc.tpl.stainless
 
 import stainless.lang._
 import stainless.annotation._
@@ -6,14 +6,15 @@ import scala.annotation.meta.field
 
 import rep.sc.scalax.IContract
 import rep.sc.scalax.ContractContext
+import rep.sc.Shim
 
 case class ContractContextWrapper[K, V](
   @extern
-  ctx: ContractContext
+  ctx: rep.sc.scalax.ContractContext
 ) {
 
   @extern
-  def setVal(key: Key, value: Any): Unit = {
+  def setVal(key: String, value: Int): Unit = {
     ctx.api.setVal(key, value)
   } ensuring {
     this.contains(key) &&
@@ -21,14 +22,14 @@ case class ContractContextWrapper[K, V](
   }
 
   @extern @pure
-  def getVal(key: Key): Any = {
+  def getVal(key: rep.sc.Shim.Key): Any = {
     // require(contains(key))
     ctx.api.getVal(key)
   }
 
   @extern @pure
-  def contains(key: Key): Boolean = {
-    ctx.api.getVal(pid) != null
+  def contains(key: String): Boolean = {
+    ctx.api.getVal(key) != null
   }
 
 }

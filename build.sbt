@@ -5,6 +5,9 @@ version := "0.9"
 scalaVersion := "2.12.8"
 
 lazy val akkaVersion = "2.5.22"
+
+lazy val root = (project in file("."))
+
 val akkaHttpVersion   = "10.1.8"
 
 dependencyOverrides ++= Seq(
@@ -88,3 +91,9 @@ assemblyMergeStrategy in assembly := {
 }
 
 mainClass in (Compile, packageBin) := Some("rep.app.Repchain_Single")
+
+lazy val algorithm = project
+  .in(file("src/main/scala/rep/sc/tpl/stainless"))
+  .enablePlugins(StainlessPlugin)
+  .settings(scalaVersion := "2.12.9")
+  .dependsOn(root)

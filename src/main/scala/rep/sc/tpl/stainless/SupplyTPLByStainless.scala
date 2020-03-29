@@ -1,4 +1,4 @@
-package rep.sc.tpl
+package rep.sc.tpl.stainless
 
 import stainless.lang._
 import stainless.proof._
@@ -58,15 +58,18 @@ object SupplyTPLByStainless {
     //     check(mr.map((k:BigInt) => sr * k).foldLeft(0)((i:BigInt, j:BigInt) => i + j) == mr.foldLeft(0)((i:BigInt, j:BigInt) => i + j) * sr)
     // }.holds
 
-    def splitShare(sr: BigInt, rule: Map[String, Map[String, BigInt]]): Boolean = {
-        var xsMap = rule.values
-        checkAllMap(sr, xsMap)
-    }
+    //////////////////////////////////////////////////////
 
-    def checkAllMap(sr: BigInt, xs: List[Map[String,BigInt]]): Boolean = xs match {
-        case Nil() => true
-        case Cons(xsMap, xsMaps) => checkMapValues(sr, xsMap) && checkAllMap(sr, xsMaps)
-    }
+
+    // def splitShare(sr: BigInt, rule: Map[String, Map[String, BigInt]]): Boolean = {
+    //     var xsMap = rule.values
+    //     checkAllMap(sr, xsMap)
+    // }
+
+    // def checkAllMap(sr: BigInt, xs: List[Map[String,BigInt]]): Boolean = xs match {
+    //     case Nil() => true
+    //     case Cons(xsMap, xsMaps) => checkMapValues(sr, xsMap) && checkAllMap(sr, xsMaps)
+    // }
 
     def splitFixedRatio(sr: BigInt, xsMap: Map[String, BigInt]): Boolean = {
         checkMapValues(sr, xsMap)
@@ -105,36 +108,36 @@ object SupplyTPLByStainless {
         newAccount1 + newAccount2 == sum
     }.holds
 
-    def test2(xsMap: Map[String, BigInt], sr: BigInt): Boolean = {
-        var xs = xsMap.values
-        foldMap(xs, sr) == sum(xs) * sr because {
-            xs match {
-                case Nil() => check ( 0 == 0 * sr )
-                case Cons(y, ys) => check ( y * sr + foldMap(ys, sr) == (y + sum(ys)) * sr because
-                                            y * sr + foldMap(ys, sr) == y * sr + sum(ys) * sr because
-                                            test2(ys, sr) )
-            }
-        }
-    }.holds
+    // def test2(xsMap: Map[String, BigInt], sr: BigInt): Boolean = {
+    //     var xs = xsMap.values
+    //     foldMap(xs, sr) == sum(xs) * sr because {
+    //         xs match {
+    //             case Nil() => check ( 0 == 0 * sr )
+    //             case Cons(y, ys) => check ( y * sr + foldMap(ys, sr) == (y + sum(ys)) * sr because
+    //                                         y * sr + foldMap(ys, sr) == y * sr + sum(ys) * sr because
+    //                                         test2(ys, sr) )
+    //         }
+    //     }
+    // }.holds
 
-    def test3(xs: List[BigInt], sr: BigInt): Boolean = {
-        decreases(xs)
-        foldMap(xs, sr) == xs.foldLeft(BigInt(0))((i:BigInt, j:BigInt) => i + j) * sr because {//foldLeft(0)(_ + _)
-            xs match {
-                case Nil() => check ( 0 == 0 * sr )
-                case Cons(y, ys) => check ( y * sr + foldMap(ys, sr) == (y :: ys).foldLeft(BigInt(0))((i:BigInt, j:BigInt) => i + j) * sr because
-                                            y * sr + foldMap(ys, sr) == ys.SupplyTPLSupplyTPLSupplyTPLSupplyTPL(BigInt(0) + y)((i:BigInt, j:BigInt) => i + j) * sr because
-                                            y * sr + foldMap(ys, sr) == y * sr + ys.foldLeft(BigInt(0))((i:BigInt, j:BigInt) => i + j) * sr because
-                                            test3(ys, sr) )
-            }
-        }
-    }.holds
+    // def test3(xs: List[BigInt], sr: BigInt): Boolean = {
+    //     decreases(xs)
+    //     foldMap(xs, sr) == xs.foldLeft(BigInt(0))((i:BigInt, j:BigInt) => i + j) * sr because {//foldLeft(0)(_ + _)
+    //         xs match {
+    //             case Nil() => check ( 0 == 0 * sr )
+    //             case Cons(y, ys) => check ( y * sr + foldMap(ys, sr) == (y :: ys).foldLeft(BigInt(0))((i:BigInt, j:BigInt) => i + j) * sr because
+    //                                         y * sr + foldMap(ys, sr) == ys.SupplyTPLSupplyTPLSupplyTPLSupplyTPL(BigInt(0) + y)((i:BigInt, j:BigInt) => i + j) * sr because
+    //                                         y * sr + foldMap(ys, sr) == y * sr + ys.foldLeft(BigInt(0))((i:BigInt, j:BigInt) => i + j) * sr because
+    //                                         test3(ys, sr) )
+    //         }
+    //     }
+    // }.holds
 
-    def prop (wrapper: ContractContext)= {
-        require(!wrapper.contains("1"))
-        assert(!wrapper.contains("1"))
-        wrapper.setVal("1", "test")
-        assert(wrapper.contains("1"))
-        assert(getVal("1") == "test")
-    }
+    // def prop (wrapper: ContractContext)= {
+    //     require(!wrapper.contains("1"))
+    //     assert(!wrapper.contains("1"))
+    //     wrapper.setVal("1", "test")
+    //     assert(wrapper.contains("1"))
+    //     assert(getVal("1") == "test")
+    // }
 }
