@@ -224,3 +224,30 @@ case class TrieMapWrapper[K, V](@extern theMap: TrieMap[K, V]) {
 
 ### 做法
 为了进行形式化验证，对从KV中读出的数值类型在装饰器中做类型转化，使得读或写的数据是支持Stainless的（比如BigInt、Real等）。但在装饰器所封装的ContractContext中，可以任意使用数据类型。
+## 精简 docker 镜像
+
+### 好处
+* 减少安全隐患
+* 节省存储空间和带宽
+* 减少构建时间、提高部署速度
+
+### 方法
+
+#### 优化基础镜像
+alpine 是一个精简又包含基本工具的 Linux 发行版，基础镜像只有 5.6M 。
+
+#### 优化 apk
+使用第一个命令安装的所有软件包将被下一个命令卸载，可用于临时软件包的安装与卸载。
+```
+apk add --virtual=build-dependencies package
+apk del build-dependencies
+```
+
+缓存占用大量不需要的空间，所以总是 apk add 用 --no-cache 参数运行。
+```
+apk add --no-cache package
+```
+
+#### 串联 Dockerfile 指令
+* Dockerfile 中的每条指令都会创建一个镜像层，继而会增加整体镜像的尺寸，应该把多个命令串联合并为一个 RUN ；
+* 尤其是组件的安装和清理要串联在一条指令里面，因为 Dockerfile 的每条指令都会产生一个文件层，如果安装清理命令分开将无法减小 apk 命令产生的文件层的大小。
