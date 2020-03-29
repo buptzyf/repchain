@@ -16,6 +16,7 @@ docker run -it yuexincs/repchain   // 镜像内已含repchain和stainless环境
 
 cd /root/repchain
 sbt
+> project algorithm
 > compile                          // 已安装stainless插件，在compile阶段自动检查
 ```
 
