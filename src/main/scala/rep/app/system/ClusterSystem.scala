@@ -40,6 +40,7 @@ import rep.log.RepLogger
 import scala.concurrent.Await
 import scala.concurrent.duration._
 import akka.actor.Terminated
+import rep.network.module.pbft.ModuleManagerOfPBFT
 import rep.network.module.raft.ModuleManagerOfRAFT
 
 
@@ -282,7 +283,7 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
     }else if(typeConsensus == "RAFT"){
       moduleManager = sysActor.actorOf(ModuleManagerOfRAFT.props("modulemanager", sysTag, enableStatistic, enableWebSocket, true), "modulemanager")
     }else if(typeConsensus == "PBFT"){
-
+      moduleManager = sysActor.actorOf(ModuleManagerOfPBFT.props("modulemanager", sysTag, enableStatistic, enableWebSocket, true), "modulemanager")
     }else{
       RepLogger.error(RepLogger.System_Logger, sysTag + "~" + "System" + " ~ " + s"ClusterSystem ${sysTag} not startup,unknow consensus" + " ~ ")
     }

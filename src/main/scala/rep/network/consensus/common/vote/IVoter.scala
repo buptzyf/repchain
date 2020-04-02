@@ -76,7 +76,7 @@ abstract class IVoter(moduleName: String) extends ModuleBase(moduleName) {
         //系统属于初始化状态
         if (NodeHelp.isSeedNode(pe.getSysTag)) {
           // 建立创世块消息
-          pe.getActorRef(CFRDActorType.ActorType.gensisblock) ! GenesisBlock
+          pe.getActorRef(CFRDActorType.ActorType.gensisblock) ! GenesisBlock //zhj CFRD?
         }
       } else {
         if (!pe.isSynching) {

@@ -59,8 +59,11 @@ object SystemProfile {
   private[this] var _HAS_PRELOAD_TRANS_OF_API = true
   private[this] var _IS_VERIFY_OF_ENDORSEMENT = true//is_verify_of_endorsement
   private[this] var _NUMBER_OF_ENDORSEMENT: Int = 2
-  private[this] var _TYPE_OF_CONSENSUS:String = "CFRD"
-  
+  private[this] var _TYPE_OF_CONSENSUS:String = "PBFT"
+
+  //zhj
+  private[this] var _PBFT_F: Int = 1
+
   private[this] var _BLOCKNUMBER_OF_RAFT: Int = 100
   
   private[this] var _DBPATH:String = "" //leveldb数据库文件路径
@@ -97,7 +100,10 @@ object SystemProfile {
   private def REALTIMEGRAPH_ENABLE = _REALTIMEGRAPH_ENABLE
 
   private def TYPE_OF_CONSENSUS : String = _TYPE_OF_CONSENSUS
-  
+
+  //zhj
+  private def PBFT_F = _PBFT_F
+
   private def DBPATH:String = _DBPATH
   private def BLOCKPATH:String = _BLOCKPATH
   private def FILEMAX: Int = _FILEMAX
@@ -263,7 +269,10 @@ object SystemProfile {
     FILEMAX_=(config.getInt("system.storage.filemax"))
     REALTIMEGRAPH_ENABLE_=(config.getInt("system.realtimegraph_enable"))
   }
-  
+
+  //zhj
+  def getPbftF = PBFT_F
+
   def getRealtimeGraph = REALTIMEGRAPH_ENABLE
   
   def getDBPath = DBPATH
