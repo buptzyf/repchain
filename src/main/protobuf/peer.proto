@@ -175,3 +175,20 @@ message BlockchainInfo {
     bytes  currentStateHash = 5;
 }
 
+
+//zhj
+message MPbftPrepare {
+    Signature signature = 1;
+}
+
+//zhj
+message MPbftCommit {
+    repeated MPbftPrepare prepares = 1;
+    Signature signature = 2;
+}
+
+//zhj
+message MPbftReply {
+    repeated MPbftCommit commits = 1;
+    Signature signature = 2;
+}
