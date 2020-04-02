@@ -18,21 +18,26 @@ package rep.network.consensus.cfrd.endorse
 
 import akka.util.Timeout
 import akka.pattern.ask
-import akka.actor.{ Props}
+import akka.actor.Props
+import com.google.protobuf.ByteString
 import rep.network.base.ModuleBase
 import rep.network.util.NodeHelp
 import rep.app.conf.{SystemCertList, SystemProfile, TimePolicy}
-import rep.utils.GlobalUtils.{EventType}
+import rep.crypto.Sha256
+import rep.utils.GlobalUtils.EventType
 import rep.network.autotransaction.Topic
+
 import scala.util.control.Breaks._
 import rep.network.module.ModuleActorType
 import rep.network.module.cfrd.CFRDActorType
-import rep.network.consensus.common.MsgOfConsensus.{ PreTransBlock, PreTransBlockResult }
-import rep.network.consensus.cfrd.MsgOfCFRD.{EndorsementInfo,ResultOfEndorsed,ResultFlagOfEndorse,VoteOfForce}
-import rep.network.consensus.util.{ BlockVerify, BlockHelp }
+import rep.network.consensus.common.MsgOfConsensus.{PreTransBlock, PreTransBlockResult}
+import rep.network.consensus.cfrd.MsgOfCFRD.{CreateBlockTPS, EndorsementInfo, ResultFlagOfEndorse, ResultOfEndorsed, VoteOfForce}
+import rep.network.consensus.util.{BlockHelp, BlockVerify}
 import rep.network.sync.SyncMsg.StartSync
 import rep.log.RepLogger
 import rep.log.RepTimeTracer
+import rep.network.consensus.common.algorithm.{IAlgorithmOfVote, IRandomAlgorithmOfVote}
+import scala.collection.mutable.ArrayBuffer
 
 /**
  * Created by jiangbuyun on 2020/03/19.
@@ -51,19 +56,66 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
   import scala.concurrent._
 
   implicit val timeout = Timeout(TimePolicy.getTimeoutPreload.seconds)
-  
+
+  //zhjtps
+  protected var algorithmInVoted:IAlgorithmOfVote = new IRandomAlgorithmOfVote
+
   override def preStart(): Unit = {
     RepLogger.info(RepLogger.Consensus_Logger, this.getLogMsgPrefix("Endorser4Future Start"))
   }
 
   //背书块的交易预执行,然后验证block
-  private def AskPreloadTransactionOfBlock(block: Block): Future[Boolean] =
-    //pe.getActorRef(ActorType.preloaderoftransaction).ask(PreTransBlock(block, "endors"))(timeout).mapTo[PreTransBlockResult].flatMap(f => {
-    pe.getActorRef(ModuleActorType.ActorType.dispatchofpreload).ask(PreTransBlock(block, "endors"))(timeout).mapTo[PreTransBlockResult].flatMap(f => {
-      //println(s"${pe.getSysTag}:entry AskPreloadTransactionOfBlock")
+  //zhjtps
+  private def AskPreloadTransactionOfBlock(block: Block): Future[Boolean] = {
+
+    var blc2: Block = null
+    val isMe = isNextBlocker(block)
+    var nextTrans: Seq[Transaction] = null
+    if (isMe) {
+      nextTrans = CollectedTransOfBlockTPS(0, block.transactions, SystemProfile.getLimitBlockTransNum, SystemProfile.getBlockLength).reverse
+      blc2 = block.withTransactions(block.transactions ++ nextTrans.toSeq)
+    } else {
+      blc2 = block
+    }
+
+    pe.getActorRef(ModuleActorType.ActorType.dispatchofpreload).ask(PreTransBlock(blc2, "endors"))(timeout)
+      .mapTo[PreTransBlockResult].flatMap(f => {
       val result = Promise[Boolean]
-      var tmpblock = f.blc.withHashOfBlock(block.hashOfBlock)
+
+      var tr = ArrayBuffer[TransactionResult]()
+      var nextTr = ArrayBuffer[TransactionResult]()
+      if (isMe) {
+        val txId1 : Seq[String] = block.transactions.map(_.id)
+        val txId2 : Seq[String] = nextTrans.map(_.id)
+        f.blc.transactionResults.foreach(x=>{
+          if (txId1.contains(x.txId))
+            tr.append(x)
+          if (txId2.contains(x.txId))
+            nextTr.append(x)
+        })
+      }
+      var tmpblock : Block = null
+      if (isMe) {
+        tmpblock = f.blc.withTransactions(block.transactions).withTransactionResults(tr.toSeq)
+        //val statehashstr = Sha256.hashstr(Array.concat(pe.getSystemCurrentChainStatus.currentStateHash.toByteArray() ,
+        //  SerializeUtils.serialise(tr)))
+        tmpblock = tmpblock.withStateHash(ByteString.copyFromUtf8(block.stateHash.toStringUtf8))//zhj todo
+        tmpblock = tmpblock.withHashOfBlock(block.hashOfBlock)
+        tmpblock = BlockHelp.AddSignToBlock(tmpblock, pe.getSysTag)
+      } else
+        tmpblock = f.blc.withHashOfBlock(block.hashOfBlock)
+
+      /*val b1 = block.clearEndorsements.withHashOfBlock(ByteString.EMPTY).toByteArray
+      val b2 = tmpblock.clearEndorsements.withHashOfBlock(ByteString.EMPTY).toByteArray
+      for (i<-0 to b1.size-1){
+        if (b1(i)!=b2(i))
+          1
+      }*/
+
       if (BlockVerify.VerifyHashOfBlock(tmpblock)) {
+        if (isMe) {
+          pe.getActorRef(CFRDActorType.ActorType.blocker) ! CreateBlockTPS(nextTrans,nextTr)
+        }
         result.success(true)
       } else {
         result.success(false)
@@ -74,6 +126,7 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
         RepLogger.error(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry AskPreloadTransactionOfBlock error"))
         false
     })
+  }
 
   private def checkRepeatOfTrans(trans: Seq[Transaction]): Future[Boolean] = Future {
     //println("entry checkRepeatOfTrans")
@@ -183,17 +236,11 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
     }
   }
 
-  private def VerifyInfo(info: EndorsementInfo) = {
-    //val starttime = System.currentTimeMillis()
-    //println(s"${pe.getSysTag}:entry 0")
-    val transSign = asyncVerifyTransactions(info.blc)
-    //println(s"${pe.getSysTag}:entry 1")
-    val transRepeat = checkRepeatOfTrans(info.blc.transactions)
-    //println(s"${pe.getSysTag}:entry 2")
-    val endorseSign = checkEndorseSign(info.blc)
-    //println(s"${pe.getSysTag}:entry 3")
-    val transExe = AskPreloadTransactionOfBlock(info.blc)
-    //println("entry 4")
+  private def VerifyInfo(blc: Block) = {
+    val transSign = asyncVerifyTransactions(blc)
+    val transRepeat = checkRepeatOfTrans(blc.transactions)
+    val endorseSign = checkEndorseSign(blc)
+    val transExe = AskPreloadTransactionOfBlock(blc)
     val result = for {
       v1 <- transSign
       v2 <- transRepeat
@@ -201,59 +248,87 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
       v4 <- transExe
     } yield (v1 && !v2 && v3 && v4)
 
-    //println(s"${pe.getSysTag}:entry 5 ")
     val result1 = Await.result(result, timeout.duration).asInstanceOf[Boolean]
-    //println(s"${pe.getSysTag}:entry 6")
-    /*if (result1) {
-      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry 7"))
-      val endtime = System.currentTimeMillis()
-      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"#################endorsement spent time=${endtime-starttime},,recv endorse request,endorse height=${info.blc.height},local height=${pe.getCurrentHeight}"))
-      sendEvent(EventType.RECEIVE_INFO, mediator, pe.getSysTag, Topic.Endorsement,Event.Action.ENDORSEMENT)
-      sender ! ResultOfEndorsed(ResultFlagOfEndorse.success, BlockHelp.SignBlock(info.blc, pe.getSysTag), info.blc.hashOfBlock.toStringUtf8(),pe.getSystemCurrentChainStatus,pe.getBlocker)
-    } else {
-      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry 8"))
-      val endtime = System.currentTimeMillis()
-      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"#################endorsement spent time=${endtime-starttime},recv endorse request,verify error,endorse height=${info.blc.height},local height=${pe.getCurrentHeight}"))
-      sender ! ResultOfEndorsed(ResultFlagOfEndorse.VerifyError, null, info.blc.hashOfBlock.toStringUtf8(),pe.getSystemCurrentChainStatus,pe.getBlocker)
-    }*/
-    SendVerifyEndorsementInfo(info,result1)
+    //SendVerifyEndorsementInfo(blc,result1)
+    result1
   }
   
-  private def SendVerifyEndorsementInfo(info: EndorsementInfo,result1:Boolean) = {
+  private def SendVerifyEndorsementInfo(blc: Block,result1:Boolean) = {
     if (result1) {
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry 7"))
       sendEvent(EventType.RECEIVE_INFO, mediator, pe.getSysTag, Topic.Endorsement,Event.Action.ENDORSEMENT)
-      sender ! ResultOfEndorsed(ResultFlagOfEndorse.success, BlockHelp.SignBlock(info.blc, pe.getSysTag), info.blc.hashOfBlock.toStringUtf8(),pe.getSystemCurrentChainStatus,pe.getBlocker)
+      sender ! ResultOfEndorsed(ResultFlagOfEndorse.success, BlockHelp.SignBlock(blc, pe.getSysTag),
+        blc.hashOfBlock.toStringUtf8(),pe.getSystemCurrentChainStatus,pe.getBlocker)
+
     } else {
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry 8"))
-      sender ! ResultOfEndorsed(ResultFlagOfEndorse.VerifyError, null, info.blc.hashOfBlock.toStringUtf8(),pe.getSystemCurrentChainStatus,pe.getBlocker)
+      sender ! ResultOfEndorsed(ResultFlagOfEndorse.VerifyError, null, blc.hashOfBlock.toStringUtf8(),
+        pe.getSystemCurrentChainStatus,pe.getBlocker)
     }
   }
 
-  private def EndorseHandler(info: EndorsementInfo) = {
-    val r = isAllowEndorse(info)
-    r match {
-      case 0 =>
-        if (SystemProfile.getIsVerifyOfEndorsement) {
-          //entry endorse
-          VerifyInfo(info)
-        }else{
-          //SendVerifyEndorsementInfo(info,checkAllEndorseSign(info.blc))
-          SendVerifyEndorsementInfo(info,true)
-        }
-      case 2 =>
-        //cache endorse,waiting revote
-        sender ! ResultOfEndorsed(ResultFlagOfEndorse.BlockHeightError, null, info.blc.hashOfBlock.toStringUtf8(),pe.getSystemCurrentChainStatus,pe.getBlocker)
-        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"endorsement entry cache,self height=${pe.getCurrentHeight},block height=${info.blc.height}"))
-      case 1 =>
-        //do not endorse
-        sender ! ResultOfEndorsed(ResultFlagOfEndorse.BlockerSelfError, null, info.blc.hashOfBlock.toStringUtf8(),pe.getSystemCurrentChainStatus,pe.getBlocker)
-        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"itself,recv endorse request,endorse height=${info.blc.height},local height=${pe.getCurrentHeight}"))
-      case 3 =>
-        //do not endorse
-        sender ! ResultOfEndorsed(ResultFlagOfEndorse.CandidatorError, null, info.blc.hashOfBlock.toStringUtf8(),pe.getSystemCurrentChainStatus,pe.getBlocker)
-        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"it is not candator,do not endorse,recv endorse request,endorse height=${info.blc.height},local height=${pe.getCurrentHeight}"))
+
+  //zhjtps
+  protected def isNextBlocker(blc:Block) : Boolean =
+  {
+    var candidator: Array[String] = Array.empty[String]
+    candidator = algorithmInVoted.candidators(pe.getSysTag, blc.hashOfBlock.toStringUtf8,
+      SystemCertList.getSystemCertList, Sha256.hash(blc.hashOfBlock.toStringUtf8))
+    val nextBlocker = algorithmInVoted.blocker(candidator.toArray[String], 0)
+    nextBlocker.equals(pe.getSysTag)
+
+  }
+
+  //zhjtps
+  protected def CollectedTransOfBlockTPS(start: Int, bypassTrans : Seq[Transaction], num: Int, limitsize: Int): ArrayBuffer[Transaction] = {
+    var result = ArrayBuffer.empty[Transaction]
+    try {
+      val tmplist = pe.getTransPoolMgr.getTransListClone(start, num + bypassTrans.size, pe.getSysTag)
+      if (tmplist.size > 0) {
+        var transsize = 0
+        breakable(
+          tmplist.foreach(f => {
+            transsize += f.toByteArray.size
+            if (transsize * 3 > limitsize) {
+              break
+            } else {
+              if (!bypassTrans.contains(f))
+                f +=: result
+              if (result.size >= num)
+                break
+            }
+          }))
+      }
+    } finally {
     }
+    result
+  }
+
+  private def EndorseHandler(info: EndorsementInfo) = {
+      val r = isAllowEndorse(info)
+      r match {
+        case 0 =>
+
+          var result1 = true
+          if (SystemProfile.getIsVerifyOfEndorsement) {
+            result1 = VerifyInfo(info.blc)
+          }
+
+           SendVerifyEndorsementInfo(info.blc, true)
+
+        case 2 =>
+          //cache endorse,waiting revote
+          sender ! ResultOfEndorsed(ResultFlagOfEndorse.BlockHeightError, null, info.blc.hashOfBlock.toStringUtf8(), pe.getSystemCurrentChainStatus, pe.getBlocker)
+          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"endorsement entry cache,self height=${pe.getCurrentHeight},block height=${info.blc.height}"))
+        case 1 =>
+          //do not endorse
+          sender ! ResultOfEndorsed(ResultFlagOfEndorse.BlockerSelfError, null, info.blc.hashOfBlock.toStringUtf8(), pe.getSystemCurrentChainStatus, pe.getBlocker)
+          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"itself,recv endorse request,endorse height=${info.blc.height},local height=${pe.getCurrentHeight}"))
+        case 3 =>
+          //do not endorse
+          sender ! ResultOfEndorsed(ResultFlagOfEndorse.CandidatorError, null, info.blc.hashOfBlock.toStringUtf8(), pe.getSystemCurrentChainStatus, pe.getBlocker)
+          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"it is not candator,do not endorse,recv endorse request,endorse height=${info.blc.height},local height=${pe.getCurrentHeight}"))
+      }
   }
 
   override def receive = {

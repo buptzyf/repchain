@@ -110,7 +110,7 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
         if (this.block != null && this.block.hashOfBlock.toStringUtf8() == block.hashOfBlock.toStringUtf8()) {
           RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"collectioner is waiting endorse result,height=${block.height},local height=${pe.getCurrentHeight}"))
         } else {
-          if(block.previousBlockHash.toStringUtf8() == pe.getCurrentBlockHash){
+          if( block.previousBlockHash.toStringUtf8() == pe.getCurrentBlockHash){
             RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"collectioner recv endorsement,height=${block.height},local height=${pe.getCurrentHeight}"))
             resetEndorseInfo(block, blocker)
             pe.getNodeMgr.getStableNodes.foreach(f => {

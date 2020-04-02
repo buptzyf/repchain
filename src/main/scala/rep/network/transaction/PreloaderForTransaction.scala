@@ -86,7 +86,7 @@ class PreloaderForTransaction(moduleName: String) extends ModuleBase(moduleName)
     
     rstr
   }*/
-  
+
   private def AssembleTransResult(block:Block,preLoadTrans:mutable.HashMap[String,Transaction],transResult:Seq[TransactionResult], db_indentifier: String):Option[Block]={
     try{
       var newTranList = mutable.Seq.empty[ Transaction ]
@@ -163,9 +163,9 @@ class PreloaderForTransaction(moduleName: String) extends ModuleBase(moduleName)
             transResult = (transResult :+ ts.get)
           }
         })
-        
+
         var newblock = AssembleTransResult(block,preLoadTrans,transResult,dbtag)
-        
+
         if(newblock == None){
           //所有交易执行失败
           RepLogger.error(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s" All Transaction failed, error: ${block.height}"))

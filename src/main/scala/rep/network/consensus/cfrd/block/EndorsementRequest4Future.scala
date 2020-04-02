@@ -19,13 +19,13 @@ package rep.network.consensus.cfrd.block
 import akka.util.Timeout
 import akka.pattern.ask
 import scala.concurrent._
-import akka.actor.{ ActorSelection, Address, Props}
-import rep.app.conf.{TimePolicy}
+import akka.actor.{ActorSelection, Address, Props}
+import rep.app.conf.{ TimePolicy}
 import rep.network.base.ModuleBase
 import rep.protos.peer._
 import akka.pattern.AskTimeoutException
 import rep.network.consensus.util.BlockVerify
-import rep.network.consensus.cfrd.MsgOfCFRD.{ResultOfEndorsed,ResultOfEndorseRequester,ResendEndorseInfo,RequesterOfEndorsement,EndorsementInfo,ResultFlagOfEndorse}
+import rep.network.consensus.cfrd.MsgOfCFRD.{CreateBlockTPS, EndorsementInfo, RequesterOfEndorsement, ResendEndorseInfo, ResultFlagOfEndorse, ResultOfEndorseRequester, ResultOfEndorsed}
 import rep.network.sync.SyncMsg.StartSync
 import rep.log.RepLogger
 import rep.log.RepTimeTracer

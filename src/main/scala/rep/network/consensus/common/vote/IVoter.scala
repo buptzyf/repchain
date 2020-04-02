@@ -5,13 +5,12 @@ import rep.app.conf.{SystemCertList, SystemProfile}
 import rep.crypto.Sha256
 import rep.log.RepLogger
 import rep.network.base.ModuleBase
-import rep.network.consensus.common.algorithm.IRandomAlgorithmOfVote
+import rep.network.consensus.common.algorithm.{IAlgorithmOfVote}
 import rep.network.module.cfrd.CFRDActorType
 import rep.network.util.NodeHelp
 import rep.storage.ImpDataAccess
 import rep.utils.GlobalUtils.BlockerInfo
 import rep.network.consensus.common.MsgOfConsensus.GenesisBlock
-import rep.network.consensus.common.algorithm.IAlgorithmOfVote
 
 /**
  * Created by jiangbuyun on 2020/03/17.

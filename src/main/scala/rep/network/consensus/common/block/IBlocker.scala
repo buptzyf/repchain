@@ -3,14 +3,17 @@ package rep.network.consensus.common.block
 import akka.actor.Props
 import akka.pattern.{AskTimeoutException, ask}
 import akka.util.Timeout
+import com.google.protobuf.ByteString
 import rep.app.conf.{SystemProfile, TimePolicy}
+import rep.crypto.Sha256
 import rep.log.{RepLogger, RepTimeTracer}
 import rep.network.base.ModuleBase
 import rep.network.consensus.common.MsgOfConsensus.{PreTransBlock, PreTransBlockResult}
 import rep.network.consensus.util.BlockHelp
 import rep.network.module.ModuleActorType
-import rep.protos.peer.Block
+import rep.protos.peer.{Block, TransactionResult}
 import rep.storage.ImpDataAccess
+import rep.utils.SerializeUtils
 
 import scala.concurrent.Await
 import scala.util.control.Breaks.{break, breakable}
@@ -61,7 +64,6 @@ abstract class IBlocker(moduleName: String) extends ModuleBase(moduleName) {
     }
     result
   }
-
 
   protected def ExecuteTransactionOfBlock(block: Block): Block = {
     try {
@@ -132,6 +134,21 @@ abstract class IBlocker(moduleName: String) extends ModuleBase(moduleName) {
         RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("create new block error,preload error" + "~" + selfAddr))
         PackedBlock(start + trans.size)
       }
+    } else {
+      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("create new block error,trans count error" + "~" + selfAddr))
+      null
+    }
+  }
+
+  //zhjtps
+  protected def PackedBlockTPS(ts : Seq[Transaction], trs : Seq[TransactionResult],start: Int = 0): Block = {
+    var blc = BlockHelp.WaitingForExecutionOfBlock(pe.getBlocker.voteBlockHash, pe.getBlocker.VoteHeight + 1, ts.toSeq)
+    if (blc != null) {
+      blc = blc.withVersion(5).withTransactionResults(trs)
+      val statehashstr = Sha256.hashstr(Array.concat(pe.getSystemCurrentChainStatus.currentStateHash.toByteArray() , SerializeUtils.serialise(trs)))
+      blc = blc.withStateHash(ByteString.copyFromUtf8(statehashstr))
+      blc = BlockHelp.AddBlockHash(blc)
+      BlockHelp.AddSignToBlock(blc, pe.getSysTag)
     } else {
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("create new block error,trans count error" + "~" + selfAddr))
       null
