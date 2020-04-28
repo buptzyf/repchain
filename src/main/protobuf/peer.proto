@@ -58,15 +58,15 @@ message Signer{
     string	signer_info = 9;//存放用户身份的详细信息，采用json格式。通常不用存储，由身份管理者存储
     google.protobuf.Timestamp 	create_time = 10; //建立时间
     google.protobuf.Timestamp 	disable_time = 11; //禁用时间
-    bool    signer_valid = 12[default=true];//是否有效，默认有效，否则为禁用，值=false
-	string	version=13 [default=1];//默认1.0
+    bool    signer_valid = 12;//是否有效，默认有效，否则为禁用，值=false
+	string	version=13 ;//默认1.0
 }
 
 //账户证书标示
 message CertId {
     string 	credit_code = 1;//社会信用代码（个人或机构）或者DID，推荐使用DID
     string 	cert_name = 2;//当前用户注册证书的名称
-	string	version=3[default=1];//默认1.0
+	string	version=3;//默认1.0
 }
 
 //账户证书标示
@@ -84,14 +84,14 @@ message Certificate {
     CertType 	cert_type = 6; //1=普通证书，2=身份验证证书，
     CertId 	id = 7; //证书名称
     string 	cert_hash = 8;//证书的SHA256
-	string	version=9[default=1];//默认1.0
+	string	version=9;//默认1.0
 }
 
 message	Operate{
 	string 	op_id = 1;//操作的id，通过uuid自动生成，合约需要查重
-	string	description = 3;//操作的描述，用于显示
+	string	description = 2;//操作的描述，用于显示
 	string	register = 3;//操作的注册者，使用credit code或者rdid
-	bool		is_publish = 4[default=false];//操作是否属于公开，公开表示不需要授权，只要拥有rdid就可以调用；不公开，需要授权
+	bool	is_publish = 4;//操作是否属于公开，公开表示不需要授权，只要拥有rdid就可以调用；不公开，需要授权；默认false
 	enum OperateType {
           	OPERATE_UNDEFINED = 0;
          	OPERATE_CONTRACT = 1;
@@ -103,8 +103,8 @@ message	Operate{
     string	auth_full_name = 8;//限制内容，具体操作限制，如访问的链的合约的方法
     google.protobuf.Timestamp 	create_time = 9; //建立时间
     google.protobuf.Timestamp 	disable_time = 10; //禁用时间
-    bool    op_valid = 11[default=true];//是否有效，默认有效，否则为禁用，值=false
-	string	version=12[default=1];//默认1.0
+    bool    op_valid = 11;//是否有效，默认有效，否则为禁用，值=false
+	string	version=12;//默认1.0
 }
 
 message Authorize{
@@ -120,20 +120,20 @@ message Authorize{
     TransferType 	is_transfer = 5;//TRANSFER_DISABLE 不能让渡；TRANSFER_ONCE 让渡一次；TRANSFER_REPEATEDLY 可以无限让渡
     google.protobuf.Timestamp 	create_time = 6; //建立时间
     google.protobuf.Timestamp 	disable_time = 7; //禁用时间
-    bool    authorize_valid = 8[default=true];//是否有效，默认有效，否则为禁用，值=false
-	string	version=9 [default=1];//默认1.0
+    bool    authorize_valid = 8;//是否有效，默认有效，否则为禁用，值=false
+	string	version=9;//默认1.0
 }
 
 message BindCertToAuthorize{
     string authorize_id = 1 ;//权限id
     CertId granted = 2;//
-    string	version=3 [default=1];//默认1.0
+    string	version=3;//默认1.0
 }
 
 message Credential{
 	string	id=1;//凭据id，用于查询方便
 	string	credential_type = 2;//凭据数据的类型
-	string	credential_type_version=3 [default=1];//凭据数据的类型的版本
+	string	credential_type_version=3 ;//凭据数据的类型的版本
 	CertId 	granter = 4;//凭据的授予人
 	google.protobuf.Timestamp	grant_time = 5;//凭据的发放授予时间
 	string		credential_holder = 6;//凭据的持有人，使用did
@@ -142,10 +142,10 @@ message Credential{
 	string		signature_alg_type  = 9;//签名算法
 	string		signature_value  = 10;//签名值
 	bool		credential_valid = 11;//凭据是否有效
-	string		version=12[default=1];//默认1.0
+	string		version=12;//默认1.0
 }
 
-Message  MetadataDefine{
+message  MetadataDefine{
 	string	key = 1;
     bool  is_open = 2;
     repeated    MetadataDefine  childs = 3;
@@ -157,7 +157,7 @@ message CredentialContentMetadata{
 	repeated	MetadataDefine  metadata = 3;
     string	meta_version = 4;
     google.protobuf.Timestamp update_time = 5; //建立时间
-	string	version = 6[default=1];
+	string	version = 6;
 }
 
 
