@@ -64,6 +64,11 @@ class NodeMgr {
     }
   }
 
+  //zhj add
+  def getStableNodeNames: Set[String] = {
+    stableNodes.values.toSet
+  }
+
   def getStableNodes: Set[Address] = {
     stableNodes.keys.toSet
   }
