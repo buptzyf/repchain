@@ -5,6 +5,7 @@ import org.json4s.jackson.JsonMethods.parse
 import rep.protos.peer._
 import rep.sc.scalax.{ContractContext, IContract}
 import rep.sc.tpl.did.operation.AuthOperation.AuthorizeStatus
+import rep.sc.tpl.did.operation.CertOperation.CertStatus
 import rep.sc.tpl.did.operation.OperOperation.OperateStatus
 import rep.sc.tpl.did.operation.SignerOperation.SignerStatus
 import rep.sc.tpl.did.operation.{AuthOperation, CertOperation, OperOperation, SignerOperation}
@@ -75,6 +76,9 @@ class RdidOperateAuthorizeTPL extends IContract {
       case ACTION.Certificate.signUpCertificate =>
         CertOperation.signUpCertificate(ctx, param.extract[Certificate])
 
+      case ACTION.Certificate.disableCertificate =>
+        CertOperation.disableCertificate(ctx, param.extract[CertStatus])
+
       case ACTION.Operate.signUpOperate =>
         OperOperation.signUpOperate(ctx, param.extract[Operate])
 
@@ -90,6 +94,8 @@ class RdidOperateAuthorizeTPL extends IContract {
       case ACTION.Authorize.disableGrantOperate =>
         AuthOperation.disableGrantOperate(ctx, param.extract[AuthorizeStatus])
 
+      case _ =>
+        null
     }
   }
 }
