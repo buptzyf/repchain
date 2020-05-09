@@ -1,6 +1,6 @@
 package rep.sc.tpl.did.operation
 
-import rep.protos.peer.{ActionResult, Credential, CredentialContentMetadata, Signer}
+import rep.protos.peer.{ActionResult, Credential, CredentialContentMetadata}
 import rep.sc.scalax.{ContractContext, ContractException}
 
 /**
@@ -8,10 +8,10 @@ import rep.sc.scalax.{ContractContext, ContractException}
   */
 object CredentialOperation extends DidOperation {
 
-  val ccMetadataExists = "CredentialMetadata已存在"
-  val ccMetadataNotExists = "CredentialMetadata不存在"
-  val publisherNotTranPoster = "元数据注册者非交易提交者"
-  val credentialExists = "Credential已存在"
+  val ccMetadataExists = ActionResult(16001, "CredentialMetadata已存在")
+  val ccMetadataNotExists = ActionResult(16002, "CredentialMetadata不存在")
+  val publisherNotTranPoster = ActionResult(16003, "元数据注册者非交易提交者")
+  val credentialExists = ActionResult(16004, "Credential已存在")
 
 
   object ACTION {
@@ -38,10 +38,10 @@ object CredentialOperation extends DidOperation {
         ctx.api.setVal(ccMetadata.publisher, newSigner)
         ctx.api.setVal(ccMetaKey, ccMetadata)
       } else {
-        throw ContractException(ccMetadataExists)
+        throw ContractException(toJsonErrMsg(ccMetadataExists))
       }
     } else {
-      throw ContractException(publisherNotTranPoster)
+      throw ContractException(toJsonErrMsg(publisherNotTranPoster))
     }
     null
   }
@@ -62,10 +62,10 @@ object CredentialOperation extends DidOperation {
         // 直接覆盖
         ctx.api.setVal(ccMetaKey, ccMetadata)
       } else {
-        throw ContractException(ccMetadataNotExists)
+        throw ContractException(toJsonErrMsg(ccMetadataNotExists))
       }
     } else {
-      throw ContractException(publisherNotTranPoster)
+      throw ContractException(toJsonErrMsg(publisherNotTranPoster))
     }
     null
   }
@@ -83,10 +83,10 @@ object CredentialOperation extends DidOperation {
       if (ctx.api.getVal(credential.id) == null) {
         ctx.api.setVal(credential.id, credential)
       } else {
-        throw ContractException(credentialExists)
+        throw ContractException(toJsonErrMsg(credentialExists))
       }
     } else {
-      throw ContractException(publisherNotTranPoster)
+      throw ContractException(toJsonErrMsg(publisherNotTranPoster))
     }
     null
   }

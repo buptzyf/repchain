@@ -2,18 +2,21 @@ package rep.sc.tpl.did.operation
 
 import rep.protos.peer._
 import rep.sc.scalax.{ContractContext, ContractException}
-import rep.sc.tpl.did.operation.SignerOperation.stateNotMatchFunction
 
 /**
   * @author zyf
   */
 object AuthOperation extends DidOperation {
 
-  val someOperateNotExistsOrNotValid = "部分操作不存在或者无效"
+  val someOperateNotExistsOrNotValid = ActionResult(15001, "部分操作不存在或者无效")
+  val authorizeExistsCode = 15002
   val authorizeExists = "grantedId为%s,已包含为%s的authId"
+  val authorizeNotExistsCode = 15003
   val authorizeNotExists = "authId为%s的Authorize不存在"
+  val authorizeNotValidCode = 15004
   val authorizeNotValid = "authId为%s的Authorize无效"
-  val signerNotGranter = "签名者非权限的授权者"
+  val signerNotGranter = ActionResult(15005, "签名交易提交者非权限的授权者")
+  val grantedNotTranPoster = ActionResult(15006, "不能绑定Authorize到非签名交易提交者的证书上")
 
   case class AuthorizeStatus(authId: String, state: Boolean)
 
@@ -29,6 +32,7 @@ object AuthOperation extends DidOperation {
     val grantSigner = checkSignerValid(ctx, authorize.grant)
     val operateIds = grantSigner.operateIds
     val authorizeIds = grantSigner.authorizeIds
+    // 保证交易的提交者才能授权自己拥有的操作
     if (ctx.t.getSignature.getCertId.creditCode.equals(authorize.grant)) {
       // 检查granter是否具有该操作，并且该操作有效
       val checkOpIdValid = (opId: String) => {
@@ -54,15 +58,15 @@ object AuthOperation extends DidOperation {
             // 保存授权权限
             ctx.api.setVal(authorize.id, authorize)
           } else {
-            throw ContractException(authorizeExists.format(grantedId, authorize.id))
+            throw ContractException(toJsonErrMsg(authorizeExistsCode, authorizeExists.format(grantedId, authorize.id)))
           }
         })
         null
       } else {
-        throw ContractException(someOperateNotExistsOrNotValid)
+        throw ContractException(toJsonErrMsg(someOperateNotExistsOrNotValid))
       }
     } else {
-      throw ContractException(signerNotGranter)
+      throw ContractException(toJsonErrMsg(signerNotGranter))
     }
   }
 
@@ -76,7 +80,7 @@ object AuthOperation extends DidOperation {
   def disableGrantOperate(ctx: ContractContext, status: AuthorizeStatus): ActionResult = {
     val oldAuthorize = ctx.api.getVal(status.authId)
     if (status.state) {
-      throw ContractException(stateNotMatchFunction)
+      throw ContractException(toJsonErrMsg(stateNotMatchFunction))
     } else {
       if (oldAuthorize != null) {
         val authorize = oldAuthorize.asInstanceOf[Authorize]
@@ -88,10 +92,10 @@ object AuthOperation extends DidOperation {
           val newAuthorize = authorize.withAuthorizeValid(status.state).withDisableTime(disableTime)
           ctx.api.setVal(authorize.id, newAuthorize)
         } else {
-          throw ContractException(signerNotGranter)
+          throw ContractException(toJsonErrMsg(signerNotGranter))
         }
       } else {
-        throw ContractException(authorizeNotExists.format(status.authId))
+        throw ContractException(toJsonErrMsg(authorizeNotExistsCode, authorizeNotExists.format(status.authId)))
       }
     }
     null
@@ -117,18 +121,22 @@ object AuthOperation extends DidOperation {
     * @return
     */
   def bindCertToAuthorize(ctx: ContractContext, bindCertToAuthorize: BindCertToAuthorize): ActionResult = {
-    val signer = ctx.api.getVal(ctx.t.getSignature.getCertId.creditCode).asInstanceOf[Signer]
+    val signer = checkSignerValid(ctx, ctx.t.getSignature.getCertId.creditCode)
     val authId = bindCertToAuthorize.authorizeId
-    if (signer.authorizeIds.contains(authId)) {
-      val authorize = ctx.api.getVal(authId).asInstanceOf[Authorize]
-      // 如果未被禁用，这可以绑定，此处不判断证书有效性，因为有效无效，验签时候会判断
-      if (authorize.authorizeValid) {
-        ctx.api.setVal(authId + "_" + bindCertToAuthorize.getGranted.creditCode, bindCertToAuthorize)
+    if (bindCertToAuthorize.getGranted.creditCode.equals(ctx.t.getSignature.getCertId.creditCode)) {
+      if (signer.authorizeIds.contains(authId)) {
+        val authorize = ctx.api.getVal(authId).asInstanceOf[Authorize]
+        // 如果未被禁用，这可以绑定，此处不判断证书有效性，因为有效无效，验签时候会判断
+        if (authorize.authorizeValid) {
+          ctx.api.setVal(authId + "_" + bindCertToAuthorize.getGranted.creditCode, bindCertToAuthorize)
+        } else {
+          throw ContractException(toJsonErrMsg(authorizeNotValidCode, authorizeNotValid.format(authId)))
+        }
       } else {
-        throw ContractException(authorizeNotValid.format(authId))
+        throw ContractException(toJsonErrMsg(authorizeNotExistsCode, authorizeNotExists.format(authId)))
       }
     } else {
-      throw ContractException(authorizeNotExists.format(authId))
+      throw ContractException(toJsonErrMsg(grantedNotTranPoster))
     }
     null
   }
