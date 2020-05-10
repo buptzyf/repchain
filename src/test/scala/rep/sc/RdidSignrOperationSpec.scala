@@ -43,9 +43,9 @@ import scala.io.BufferedSource
   * @author zyf
   * @param _system
   */
-class RdidOperateAuthorizeSpec(_system: ActorSystem) extends TestKit(_system) with Matchers with FunSuiteLike with BeforeAndAfterAll {
+class RdidSignrOperationSpec(_system: ActorSystem) extends TestKit(_system) with Matchers with FunSuiteLike with BeforeAndAfterAll {
 
-  def this() = this(ActorSystem("TransferSpec", new ClusterSystem("121000005l35120456.node1", InitType.MULTI_INIT, false).getConf))
+  def this() = this(ActorSystem("RdidSignrOperationSpec", new ClusterSystem("121000005l35120456.node1", InitType.MULTI_INIT, false).getConf))
 
   override def afterAll: Unit = {
     shutdown(system)

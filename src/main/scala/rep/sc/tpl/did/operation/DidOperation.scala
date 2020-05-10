@@ -13,8 +13,7 @@ protected trait DidOperation {
 
   val signerNotValid = ActionResult(11001, "Signer状态是无效的")
   val notChainCert = ActionResult(11002, "非链证书")
-  val notAuthCert = ActionResult(11003, "非身份校验证书")
-  val stateNotMatchFunction = ActionResult(11004, "状态参数与方法名不匹配")
+  val stateNotMatchFunction = ActionResult(11003, "状态参数与方法名不匹配")
 
   /**
     * format errMsg

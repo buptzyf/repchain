@@ -11,8 +11,9 @@ object CertOperation extends DidOperation {
   val isAuthCert = ActionResult(13001, "被注册证书为身份校验证书，而非普通证书")
   val creditCodeNotMatchCode = 13002
   val creditCodeNotMatch = "creditCode不匹配，交易签名者为%s，参数证书为%s"
-  val customCertExists = ActionResult(13003, "证书已存在")
-  val certNotExists = ActionResult(13004, "证书不存在")
+  val posterNotAuthCert = ActionResult(13003, "交易提交者非身份校验证书")
+  val customCertExists = ActionResult(13004, "证书已存在")
+  val certNotExists = ActionResult(13005, "证书不存在")
 
   case class CertStatus(creditCode: String, certName: String, state: Boolean)
 
@@ -27,7 +28,7 @@ object CertOperation extends DidOperation {
     val tranCertId = ctx.t.getSignature.getCertId
     val tranCert = ctx.api.getVal(tranCertId.creditCode + "_" + tranCertId.certName).asInstanceOf[Certificate]
     if (!tranCert.certType.isCertAuthentication) {
-      throw ContractException(toJsonErrMsg(notAuthCert))
+      throw ContractException(toJsonErrMsg(posterNotAuthCert))
     } else if (!tranCert.getId.creditCode.equals(customCert.getId.creditCode)) {
       // 需要是同一账户下的身份证书与普通证书
       throw ContractException(toJsonErrMsg(creditCodeNotMatchCode, creditCodeNotMatch.format(tranCert.getId.creditCode, customCert.getId.creditCode)))
