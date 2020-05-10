@@ -17,6 +17,7 @@ object SignerOperation extends DidOperation {
   val authCertNotExists = ActionResult(12006, "Signer未包含任何身份校验证书")
   val emptyAuthCertHashExists = ActionResult(12007, "存在Hash为空的身份校验证书")
   val customCertExists = ActionResult(12008, "存在普通用户证书或undefinedType证书")
+  val SignerCertificateNotMatch = ActionResult(12009, "Signer的creditCode与Certificate中的creditCode不一致")
 
   case class SignerStatus(creditCode: String, state: Boolean)
 
@@ -75,7 +76,9 @@ object SignerOperation extends DidOperation {
           throw ContractException(toJsonErrMsg(authCertExistsCode, authCertExists.format(cert.certHash)))
         } else if (ctx.api.getVal(certKey) != null) {
           throw ContractException(toJsonErrMsg(authCertExistsCode, authCertExists.format(certKey)))
-        } else {
+        } else if (!signer.creditCode.equals(certId.creditCode)) {
+          throw ContractException(toJsonErrMsg(SignerCertificateNotMatch))
+        }else {
           // 身份校验用
           ctx.api.setVal(cert.certHash, certKey)
           // 验签用（身份密钥对也可以签名的）
