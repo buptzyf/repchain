@@ -138,7 +138,16 @@ class RdidCertOperationSpec(_system: ActorSystem) extends TestKit(_system) with 
     msg_recv.err.isEmpty should be(true)
   }
 
-  test("使用普通证书来调用signUpCert，应该失败") {
+  test("使用普通证书来调用signUpCert，应该失败，checkChainCert设置为true") {
+    // CERT_3被注册为普通证书，使用cert3构建的交易，不能调用signUpCertificate
+    val t = createTransaction4Invoke(nodeName = "121000005l35120456.node1", cid, CertId("121000005l35120456", "CERT_3", "1"), chaincodeInputFunc = "signUpCert", params = Seq(JsonFormat.toJsonString(cert3)))
+    val msg_send = DoTransaction(t, "dbnumber", TypeOfSender.FromAPI)
+    probe.send(sandbox, msg_send)
+    val msg_recv = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
+    JsonFormat.parser.fromJsonString(msg_recv.err.get.cause.getMessage)(ActionResult) should be(CertOperation.customCertExists)
+  }
+
+  test("使用普通证书来调用signUpCert，应该失败，checkChainCert设置为false") {
     // CERT_3被注册为普通证书，使用cert3构建的交易，不能调用signUpCertificate
     val t = createTransaction4Invoke(nodeName = "121000005l35120456.node1", cid, CertId("121000005l35120456", "CERT_3", "1"), chaincodeInputFunc = "signUpCert", params = Seq(JsonFormat.toJsonString(cert3)))
     val msg_send = DoTransaction(t, "dbnumber", TypeOfSender.FromAPI)
@@ -155,7 +164,15 @@ class RdidCertOperationSpec(_system: ActorSystem) extends TestKit(_system) with 
     msg_recv.err.isEmpty should be(true)
   }
 
-  test("使用普通证书来调用disableCert，应该失败") {
+  test("禁用不存在的证书") {
+    val t = createTransaction4Invoke(nodeName = "121000005l35120456.node1", cid, CertId("121000005l35120456", "CERT_1", "1"), chaincodeInputFunc = "disableCert", params = Seq(write(CertStatus("121000005l35120456", "CERT_4", false))))
+    val msg_send = DoTransaction(t, "dbnumber", TypeOfSender.FromAPI)
+    probe.send(sandbox, msg_send)
+    val msg_recv = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
+    JsonFormat.parser.fromJsonString(msg_recv.err.get.cause.getMessage)(ActionResult) should be(CertOperation.certNotExists)
+  }
+
+  test("被注册证书已存在，应该失败，注：checkChainCert设置为false") {
     // CERT_3被注册为普通证书，使用cert3构建的交易，不能调用signUpCertificate
     val t = createTransaction4Invoke(nodeName = "121000005l35120456.node1", cid, CertId("121000005l35120456", "CERT_3", "1"), chaincodeInputFunc = "disableCert", params = Seq(write(CertStatus("121000005l35120456", "CERT_3", false))))
     val msg_send = DoTransaction(t, "dbnumber", TypeOfSender.FromAPI)
