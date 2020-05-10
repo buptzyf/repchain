@@ -9,6 +9,7 @@ import rep.sc.tpl.did.operation.CertOperation.CertStatus
 import rep.sc.tpl.did.operation.OperOperation.OperateStatus
 import rep.sc.tpl.did.operation.SignerOperation.SignerStatus
 import rep.sc.tpl.did.operation.{AuthOperation, CertOperation, OperOperation, SignerOperation}
+import scalapb.json4s.JsonFormat
 
 
 /**
@@ -65,31 +66,32 @@ class RdidOperateAuthorizeTPL extends IContract {
   def onAction(ctx: ContractContext, action: String, sdata: String): ActionResult = {
 
     val param = parse(sdata)
+    val parser = JsonFormat.parser
 
     action match {
       case ACTION.Signer.signUpSigner =>
-        SignerOperation.signUpSigner(ctx, param.extract[Signer])
+        SignerOperation.signUpSigner(ctx, parser.fromJsonString(sdata)(Signer))
 
       case ACTION.Signer.disableSigner =>
         SignerOperation.disableSigner(ctx, param.extract[SignerStatus])
 
       case ACTION.Certificate.signUpCertificate =>
-        CertOperation.signUpCertificate(ctx, param.extract[Certificate])
+        CertOperation.signUpCertificate(ctx, parser.fromJsonString(sdata)(Certificate))
 
       case ACTION.Certificate.disableCertificate =>
         CertOperation.disableCertificate(ctx, param.extract[CertStatus])
 
       case ACTION.Operate.signUpOperate =>
-        OperOperation.signUpOperate(ctx, param.extract[Operate])
+        OperOperation.signUpOperate(ctx, parser.fromJsonString(sdata)(Operate))
 
       case ACTION.Operate.disableOperate =>
         OperOperation.disableOperate(ctx, param.extract[OperateStatus])
 
       case ACTION.Authorize.grantOperate =>
-        AuthOperation.grantOperate(ctx, param.extract[Authorize])
+        AuthOperation.grantOperate(ctx, parser.fromJsonString(sdata)(Authorize))
 
       case ACTION.Authorize.bindCertToAuthorize =>
-        AuthOperation.bindCertToAuthorize(ctx, param.extract[BindCertToAuthorize])
+        AuthOperation.bindCertToAuthorize(ctx, parser.fromJsonString(sdata)(BindCertToAuthorize))
 
       case ACTION.Authorize.disableGrantOperate =>
         AuthOperation.disableGrantOperate(ctx, param.extract[AuthorizeStatus])
