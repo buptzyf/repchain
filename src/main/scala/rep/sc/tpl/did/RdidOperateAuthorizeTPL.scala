@@ -3,7 +3,7 @@ package rep.sc.tpl.did
 import org.json4s.DefaultFormats
 import org.json4s.jackson.JsonMethods.parse
 import rep.protos.peer._
-import rep.sc.scalax.{ContractContext, IContract}
+import rep.sc.scalax.{ContractContext, ContractException, IContract}
 import rep.sc.tpl.did.operation.AuthOperation.AuthorizeStatus
 import rep.sc.tpl.did.operation.CertOperation.CertStatus
 import rep.sc.tpl.did.operation.OperOperation.OperateStatus
@@ -97,7 +97,7 @@ class RdidOperateAuthorizeTPL extends IContract {
         AuthOperation.disableGrantOperate(ctx, param.extract[AuthorizeStatus])
 
       case _ =>
-        null
+        throw ContractException(JsonFormat.toJsonString(ActionResult(100000, "没有对应的方法")))
     }
   }
 }

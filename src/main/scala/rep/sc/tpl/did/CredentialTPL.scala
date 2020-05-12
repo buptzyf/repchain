@@ -3,8 +3,9 @@ package rep.sc.tpl.did
 import org.json4s.DefaultFormats
 import org.json4s.jackson.JsonMethods.parse
 import rep.protos.peer.{ActionResult, Credential, CredentialContentMetadata}
-import rep.sc.scalax.{ContractContext, IContract}
+import rep.sc.scalax.{ContractContext, ContractException, IContract}
 import rep.sc.tpl.did.operation.CredentialOperation
+import scalapb.json4s.JsonFormat
 
 /**
   * @author zyf
@@ -39,7 +40,7 @@ class CredentialTPL extends IContract {
         CredentialOperation.publishCredential(ctx, param.extract[Credential])
         
       case _ =>
-        null
+        throw ContractException(JsonFormat.toJsonString(ActionResult(100000, "没有对应的方法")))
     }
   }
 

@@ -202,6 +202,7 @@ class RdidCertOperationSpec(_system: ActorSystem) extends TestKit(_system) with 
     val pwd = "123".toCharArray
     val pkeys = KeyStore.getInstance(KeyStore.getDefaultType)
     pkeys.load(fis, pwd)
+    fis.close()
     pkeys.getKey(pkeyname, "123".toCharArray).asInstanceOf[PrivateKey]
   }
 }
