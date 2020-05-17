@@ -67,6 +67,7 @@ class RdidOperateAuthorizeTPL extends IContract {
 
     val param = parse(sdata)
     val parser = JsonFormat.parser
+    type AuthorizeJString = String
 
     action match {
       case ACTION.Signer.signUpSigner =>
@@ -88,7 +89,7 @@ class RdidOperateAuthorizeTPL extends IContract {
         OperOperation.disableOperate(ctx, param.extract[OperateStatus])
 
       case ACTION.Authorize.grantOperate =>
-        AuthOperation.grantOperate(ctx, parser.fromJsonString(sdata)(Authorize))
+        AuthOperation.grantOperate(ctx, param.extract[List[AuthorizeJString]])
 
       case ACTION.Authorize.bindCertToAuthorize =>
         AuthOperation.bindCertToAuthorize(ctx, parser.fromJsonString(sdata)(BindCertToAuthorize))
