@@ -60,6 +60,7 @@ object SystemProfile {
   private[this] var _IS_VERIFY_OF_ENDORSEMENT = true//is_verify_of_endorsement
   private[this] var _NUMBER_OF_ENDORSEMENT: Int = 2
   private[this] var _TYPE_OF_CONSENSUS:String = "PBFT"
+  private[this] var _CHAIN_CERT_NAME = ""
 
   //zhj
   private[this] var _PBFT_F: Int = 1
@@ -100,6 +101,7 @@ object SystemProfile {
   private def REALTIMEGRAPH_ENABLE = _REALTIMEGRAPH_ENABLE
 
   private def TYPE_OF_CONSENSUS : String = _TYPE_OF_CONSENSUS
+  private def CHAIN_CERT_NAME : String =  _CHAIN_CERT_NAME
 
   //zhj
   private def PBFT_F = _PBFT_F
@@ -107,6 +109,10 @@ object SystemProfile {
   private def DBPATH:String = _DBPATH
   private def BLOCKPATH:String = _BLOCKPATH
   private def FILEMAX: Int = _FILEMAX
+
+  private def CHAIN_CERT_NAME_=(value:String):Unit={
+    _CHAIN_CERT_NAME = value
+  }
 
   private def TYPE_OF_CONSENSUS_=(value:String):Unit={
     _TYPE_OF_CONSENSUS = value
@@ -257,6 +263,7 @@ object SystemProfile {
     CertStatusChangeFunction_= (config.getString("system.account.CertStatusChangeFunction"))
     
     GENESISNODENAME_=(config.getString("system.genesis_node_name"))
+    CHAIN_CERT_NAME_=(config.getString("system.chain_cert_name"))
     NUMBER_OF_TRANSPROCESSOR_=(config.getInt("system.number_of_transProcessor"))
     HAS_PRELOAD_TRANS_OF_API_=(config.getBoolean("system.has_preload_trans_of_api"))
     IS_VERIFY_OF_ENDORSEMENT_=(config.getBoolean("system.is_verify_of_endorsement"))
@@ -326,4 +333,6 @@ object SystemProfile {
   def getAccountChaincodeVersion = ACCOUNTCHAINCODVERSION
   
   def getGenesisNodeName = GENESISNODENAME
+
+  def getChainCertName = CHAIN_CERT_NAME
 }
