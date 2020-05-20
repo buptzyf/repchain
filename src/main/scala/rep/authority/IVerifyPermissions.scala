@@ -21,6 +21,6 @@ trait IVerifyPermissions{
    * auth_full_name//权限约束内容
    * certid  //包含RDID和证书名称
    */
-  /
+
   def VerifyOfContract(operate_endpoint:String,operate_service_name:String,auth_full_name:String,certid:String):ResultOfVerify
 }

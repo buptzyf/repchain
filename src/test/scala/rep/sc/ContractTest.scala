@@ -14,7 +14,7 @@ import rep.storage.ImpDataAccess
 import rep.utils.SerializeUtils.toJson
 import rep.app.conf.SystemProfile
 import rep.network.autotransaction.PeerHelper
-
+import rep.protos.peer.Certificate.CertType.CERT_CUSTOM
 import scala.concurrent.duration._
 import scala.collection.mutable.Map
 import rep.sc.SandboxDispatcher.DoTransaction
@@ -144,7 +144,9 @@ class ContractTest(_system: ActorSystem)
     aa.AddElement("name", "node2")
     aa.AddElement("cert", Certificate(certStr, "SHA1withECDSA", true, None, None))*/
 
-    val certinfo = CertInfo("12110107bi45jh675g", "node2", Certificate(certStr, "SHA1withECDSA", true, None, None))
+
+    val certinfo = CertInfo("12110107bi45jh675g", "node2", Certificate(certStr, "SHA1withECDSA", true, None, None,
+      rep.protos.peer.Certificate.CertType.CERT_CUSTOM,None,"xxxxx","1"))
     
     val certstatus = CertStatus("12110107bi45jh675g", "node2", false)
     //val certinfo = aa.toJsonString

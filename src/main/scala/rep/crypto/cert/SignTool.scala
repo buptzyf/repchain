@@ -105,6 +105,7 @@ object SignTool {
     this.signer.verify(signature, message, publicKey)
   }
 
+
   //节点启动时需要调用该函数初始化节点私钥
   def loadPrivateKey(pkeyname: String, password: String, path: String) = {
     synchronized {

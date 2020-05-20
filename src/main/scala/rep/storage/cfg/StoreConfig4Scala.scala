@@ -21,8 +21,8 @@ import java.io.File
 import rep.storage.util.pathUtil
 
 object StoreConfig4Scala {
-  private val dbpath="/repchaindata/data/leveldbdata"
-  private val blockpath="/repchaindata/data/blockdata"
+  private val dbpath="/Users/jiangbuyun/repchaindata/data/leveldbdata" //"repchaindata/data/leveldbdata"
+  private val blockpath="/Users/jiangbuyun/repchaindata/data/leveldbdata"//"/repchaindata/data/blockdata"
   private val filemax=200000000
   
   /**
