@@ -11,7 +11,7 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 class VerifySignThread {
   implicit val ec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(100))
 
-  private def asyncVerifySign(srcstr:String,SignStr:ByteString,keyword:CertId,sysname:String): Future[Boolean] = Future {
+  def asyncVerifySign(srcstr:String,SignStr:ByteString,keyword:CertId,sysname:String): Future[Boolean] = Future {
     var result  = false
 
     try{

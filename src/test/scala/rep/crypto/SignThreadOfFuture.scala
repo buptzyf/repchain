@@ -50,7 +50,7 @@ class SignThreadOfFuture {
   }
 */
 
-  private def asyncSign(srcstr:String,keyword:String): Future[ByteString] = Future {
+  def asyncSign(srcstr:String,keyword:String): Future[ByteString] = Future {
     var result : ByteString = ByteString.EMPTY
 
     try{
