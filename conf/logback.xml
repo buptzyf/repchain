@@ -16,7 +16,7 @@
   -->
 
 <!-- 配置scan和scanPeriod 让日志器定时扫描配置文件，发现日志文件修改后可以动态的调整输出内容，定期时间不宜太短，默认设置为3min-->
-<configuration DEBUG="true" scan="true" scanPeriod="180000">
+<configuration DEBUG="false" scan="true" scanPeriod="180000">
     <appender name="Business_Appender" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
             <fileNamePattern>logs/RepChain-Business-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
@@ -27,7 +27,7 @@
 
         </rollingPolicy>
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>TRACE</level>
+            <level>ERROR</level>
         </filter>
 
         <immediateFlush>false</immediateFlush>
@@ -48,7 +48,7 @@
 
         </rollingPolicy>
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>TRACE</level>
+            <level>ERROR</level>
         </filter>
 
         <immediateFlush>false</immediateFlush>
@@ -69,7 +69,7 @@
 
         </rollingPolicy>
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>TRACE</level>
+            <level>ERROR</level>
         </filter>
 
         <immediateFlush>false</immediateFlush>
@@ -90,7 +90,7 @@
 
         </rollingPolicy>
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>TRACE</level>
+            <level>ERROR</level>
         </filter>
 
         <immediateFlush>false</immediateFlush>
@@ -111,7 +111,7 @@
 
         </rollingPolicy>
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>TRACE</level>
+            <level>ERROR</level>
         </filter>
 
         <immediateFlush>false</immediateFlush>
@@ -132,7 +132,7 @@
 
         </rollingPolicy>
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>TRACE</level>
+            <level>ERROR</level>
         </filter>
 
         <immediateFlush>false</immediateFlush>
@@ -153,7 +153,7 @@
 
         </rollingPolicy>
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>TRACE</level>
+            <level>ERROR</level>
         </filter>
 
         <immediateFlush>false</immediateFlush>
@@ -174,7 +174,7 @@
 
         </rollingPolicy>
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>TRACE</level>
+            <level>ERROR</level>
         </filter>
 
         <immediateFlush>false</immediateFlush>
@@ -195,7 +195,7 @@
 
         </rollingPolicy>
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>TRACE</level>
+            <level>ERROR</level>
         </filter>
 
         <immediateFlush>false</immediateFlush>
@@ -216,7 +216,7 @@
 
         </rollingPolicy>
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>TRACE</level>
+            <level>ERROR</level>
         </filter>
 
         <immediateFlush>false</immediateFlush>
@@ -237,7 +237,7 @@
 
         </rollingPolicy>
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>TRACE</level>
+            <level>ERROR</level>
         </filter>
 
         <immediateFlush>false</immediateFlush>
@@ -252,7 +252,7 @@
         <target>System.out</target>
         <!--level过滤器简化版-->
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>TRACE</level>
+            <level>ERROR</level>
         </filter>
         
         <encoder>
@@ -263,51 +263,51 @@
 
     <!--<logger name="akka" level="INFO" />-->
 
-	<logger name="Business_Logger" additivity="false" level="TRACE">
+	<logger name="Business_Logger" additivity="false" level="ERROR">
         <appender-ref ref="Business_Appender"/>
     </logger>
     
-    <logger name="System_Logger" additivity="false" level="TRACE">
+    <logger name="System_Logger" additivity="false" level="ERROR">
         <appender-ref ref="System_Appender"/>
     </logger>
     
-    <logger name="Consensus_Logger" additivity="false" level="TRACE">
+    <logger name="Consensus_Logger" additivity="false" level="ERROR">
         <appender-ref ref="Consensus_Appender"/>
     </logger>
     
-    <logger name="Vote_Logger" additivity="false" level="TRACE">
+    <logger name="Vote_Logger" additivity="false" level="ERROR">
         <appender-ref ref="Vote_Appender"/>
     </logger>
     
-    <logger name="BlockSyncher_Logger" additivity="false" level="TRACE">
+    <logger name="BlockSyncher_Logger" additivity="false" level="ERROR">
         <appender-ref ref="BlockSyncher_Appender"/>
     </logger>
     
-    <logger name="Storager_Logger" additivity="false" level="TRACE">
+    <logger name="Storager_Logger" additivity="false" level="ERROR">
         <appender-ref ref="Storager_Appender"/>
     </logger>
     
-    <logger name="StatisTime_Logger" additivity="false" level="TRACE">
+    <logger name="StatisTime_Logger" additivity="false" level="ERROR">
         <appender-ref ref="StatisTime_Appender"/>
     </logger>
     
-    <logger name="OutputTime_Logger" additivity="false" level="TRACE">
+    <logger name="OutputTime_Logger" additivity="false" level="ERROR">
         <appender-ref ref="OutputTime_Appender"/>
     </logger>
     
-    <logger name="Sandbox_Logger" additivity="false" level="TRACE">
+    <logger name="Sandbox_Logger" additivity="false" level="ERROR">
         <appender-ref ref="Sandbox_Appender"/>
     </logger>
     
-    <logger name="TransLifeCycle_Logger" additivity="false" level="TRACE">
+    <logger name="TransLifeCycle_Logger" additivity="false" level="ERROR">
         <appender-ref ref="TransLifeCycle_Appender"/>
     </logger>
     
-    <logger name="APIAccess_Logger" additivity="false" level="TRACE">
+    <logger name="APIAccess_Logger" additivity="false" level="ERROR">
         <appender-ref ref="APIAccess_Appender"/>
     </logger>
 
-    <root level="DEBUG">
+    <root level="ERROR">
         <appender-ref ref="STDOUT" additivity="false"/>
     </root>
 </configuration>

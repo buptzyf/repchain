@@ -44,10 +44,10 @@ object Repchain {
 
     //val cluster = sys1.getActorSys//获取内部系统SystemActor实例
 
-    val node_min = 5
+    val node_min = 1
     //如果node_max>node_min 将启动node反复离网和入网的仿真，但是由于system离网后无法复用并重新加入
     //运行一定时间会内存溢出
-    val node_max = 5
+    val node_max = 1
     var node_add = true
 
     var nodes = Set.empty[ClusterSystem]

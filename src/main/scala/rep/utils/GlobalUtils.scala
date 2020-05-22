@@ -83,6 +83,7 @@ object GlobalUtils {
     val transactiondispatcher = 19
     val dispatchofRecvendorsement = 20
     val dispatchofpreload = 21
+    val vsigndispatcher = 22
   }
   
   

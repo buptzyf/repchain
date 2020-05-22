@@ -80,6 +80,7 @@ abstract class  ModuleBase(name: String) extends Actor  with ClusterActor with B
       case "transactiondispatcher" => 19
       case "dispatchofRecvendorsement" => 20
       case "dispatchofpreload" => 21
+      case "vsigndispatcher" => 22
       case _ => 0
     }
   }

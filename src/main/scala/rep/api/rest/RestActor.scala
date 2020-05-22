@@ -17,7 +17,6 @@
 package rep.api.rest
 
 import akka.actor.Actor
-
 import akka.util.Timeout
 import rep.network._
 
@@ -39,6 +38,7 @@ import rep.network.tools.PeerExtension
 import rep.network.base.ModuleBase
 import rep.utils.GlobalUtils.ActorType
 import akka.actor.Props
+import akka.routing.{ActorRefRoutee, Routee, Router, SmallestMailboxRoutingLogic}
 import rep.crypto.cert.SignTool
 import rep.protos.peer.ActionResult
 import rep.app.conf.SystemProfile
@@ -47,6 +47,8 @@ import rep.network.base.ModuleBase
 import rep.sc.TypeOfSender
 import rep.sc.SandboxDispatcher.DoTransaction
 import rep.sc.Sandbox.DoTransactionResult
+
+import scala.collection.immutable.IndexedSeq
 /**
  * RestActor伴生object，包含可接受的传入消息定义，以及处理的返回结果定义。
  * 以及用于建立Tranaction，检索Tranaction的静态方法
@@ -138,12 +140,42 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
 
   import RestActor._
   import spray.json._
+  import scala.concurrent.duration._
+  import java.util.concurrent.Executors
   import akka.http.scaladsl.model.{ HttpResponse, MediaTypes, HttpEntity }
-
+  //implicit val ec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(10))
   //import rep.utils.JsonFormat.AnyJsonFormat
 
   implicit val timeout = Timeout(1000.seconds)
+  //implicit val ec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(100))
   val sr: ImpDataAccess = ImpDataAccess.GetDataAccess(pe.getSysTag)
+
+  /*def asyncVerifySign(signresult:Array[Byte],message:Array[Byte],keyword:CertId,sysname:String): Future[Boolean] = Future {
+    var result  = false
+
+    try{
+      result = SignTool.verify(signresult,message,keyword,sysname)
+    }catch{
+      case e:Exception => throw e
+    }
+    result
+  } recover { case e: Exception => false }*/
+
+  private var sign_router: Router = null
+
+  private def createRouter = {
+    val num = 50
+    if (sign_router == null) {
+      var list: Array[Routee] = new Array[Routee](num)
+      for (i <- 0 to num - 1) {
+        var ca = context.actorOf(VerifySignActor.props("verifysignactor_" + i), "verifysignactor_" + i)
+        context.watch(ca)
+        list(i) = new ActorRefRoutee(ca)
+      }
+      val rlist: IndexedSeq[Routee] = list.toIndexedSeq
+      sign_router = Router(SmallestMailboxRoutingLogic(), rlist)
+    }
+  }
 
   // 先检查交易大小，然后再检查交易是否已存在，再去验证签名，如果没有问题，则广播
   def preTransaction(t: Transaction): Unit = {
@@ -152,9 +184,9 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
       sender ! PostResult(t.id, None, Option(s"交易大小超出限制： ${tranLimitSize}，请重新检查"))
     }
 
-    if (pe.getNodeMgr.getStableNodes.size < SystemProfile.getVoteNoteMin) {
+    /*if (pe.getNodeMgr.getStableNodes.size < SystemProfile.getVoteNoteMin) {
       sender ! PostResult(t.id, None, Option("共识节点数目太少，暂时无法处理交易"))
-    }
+    }*/
 
     /*if (pe.getTransPoolMgr.findTrans(t.id) || sr.isExistTrans4Txid(t.id)) {
           sender ! PostResult(t.id, None, Option(s"transactionId is exists, the transaction is \n ${t.id}"))
@@ -162,37 +194,55 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
 
     try {
       if (SystemProfile.getHasPreloadTransOfApi) {
-        val sig = t.signature.get.signature.toByteArray
-        val tOutSig = t.clearSignature
-        val certId = t.signature.get.certId.get
-        if (pe.getTransPoolMgr.findTrans(t.id) || sr.isExistTrans4Txid(t.id)) {
-          sender ! PostResult(t.id, None, Option(s"transactionId is exists, the transaction is \n ${t.id}"))
-        } else {
-          if (SignTool.verify(sig, tOutSig.toByteArray, certId, pe.getSysTag)) {
-            //            RepLogger.info(RepLogger.Business_Logger, s"验证签名成功，txid: ${t.id},creditCode: ${t.signature.get.getCertId.creditCode}, certName: ${t.signature.get.getCertId.certName}")
-            val future = pe.getActorRef(ActorType.transactiondispatcher) ? DoTransaction(t, "api_" + t.id, TypeOfSender.FromAPI)
-            val result = Await.result(future, timeout.duration).asInstanceOf[DoTransactionResult]
-            val rv = result
-            // 释放存储实例
+        //val vfuture = pe.getActorRef(ActorType.vsigndispatcher) ? VerifySignDispatcher.RequestVerifySign(t)
+        //val result = Await.result(vfuture, timeout.duration).asInstanceOf[VerifySignDispatcher.ResponseVerifySign]
+        createRouter
+        sign_router.route(VerifySignDispatcher.RequestVerifySign(t,sender()), sender())
+        //pe.getActorRef(ActorType.vsigndispatcher) ! VerifySignDispatcher.RequestVerifySign(t,sender())
 
-            rv.err match {
-              case None =>
-                //预执行正常,提交并广播交易
-                pe.getActorRef(ActorType.transactionpool) ! t // 给交易池发送消息 ！=》告知（getActorRef）
-                if (rv.r == null)
-                  sender ! PostResult(t.id, None, None)
-                else
-                  sender ! PostResult(t.id, Some(rv.r), None) // legal_prose need
-              case Some(err) =>
-                //预执行异常,废弃交易，向api调用者发送异常
-                sender ! PostResult(t.id, None, Option(err.cause.getMessage))
-            }
-          } else {
-            sender ! PostResult(t.id, None, Option("验证签名出错"))
-          }
-        }
+        /*if(result.result) {
+          sender ! PostResult(t.id, None, None)
+        }else {
+          sender ! PostResult(t.id, None, Option("验证签名出错"))
+        }*/
+        //val sig = t.signature.get.signature.toByteArray
+        //val tOutSig = t.clearSignature
+        //val certId = t.signature.get.certId.get
+        /*if (pe.getTransPoolMgr.findTrans(t.id) || sr.isExistTrans4Txid(t.id)) {
+          sender ! PostResult(t.id, None, Option(s"transactionId is exists, the transaction is \n ${t.id}"))
+        } else {*/
+        //val a = SignTool.verify(sig, tOutSig.toByteArray, certId, pe.getSysTag)
+        //val fut = asyncVerifySign( sig, tOutSig.toByteArray,certId, pe.getSysTag)
+        //val sv :Boolean = Await.result(fut,10.seconds)
+        //if (sv) {
+          //if (SignTool.verify(sig, tOutSig.toByteArray, certId, pe.getSysTag)) {
+            //            RepLogger.info(RepLogger.Business_Logger, s"验证签名成功，txid: ${t.id},creditCode: ${t.signature.get.getCertId.creditCode}, certName: ${t.signature.get.getCertId.certName}")
+            /*val future = pe.getActorRef(ActorType.transactiondispatcher) ? DoTransaction(t, "api_" + t.id, TypeOfSender.FromAPI)
+            val result = Await.result(future, timeout.duration).asInstanceOf[DoTransactionResult]
+            val rv = result*/
+            // 释放存储实例
+            //pe.getActorRef(ActorType.transactionpool) ! t
+
+
+
+        /*rv.err match {
+          case None =>
+            //预执行正常,提交并广播交易
+            pe.getActorRef(ActorType.transactionpool) ! t // 给交易池发送消息 ！=》告知（getActorRef）
+            if (rv.r == null)
+              sender ! PostResult(t.id, None, None)
+            else
+              sender ! PostResult(t.id, Some(rv.r), None) // legal_prose need
+          case Some(err) =>
+            //预执行异常,废弃交易，向api调用者发送异常
+            sender ! PostResult(t.id, None, Option(err.cause.getMessage))
+        }*/
+          //} else {
+          //  sender ! PostResult(t.id, None, Option("验证签名出错"))
+          //}
+        //}
       } else {
-        pe.getActorRef(ActorType.transactionpool) ! t // 给交易池发送消息 ！=》告知（getActorRef）
+        //pe.getActorRef(ActorType.transactionpool) ! t // 给交易池发送消息 ！=》告知（getActorRef）
         sender ! PostResult(t.id, None, None)
       }
 

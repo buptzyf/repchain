@@ -40,6 +40,7 @@ import rep.crypto.cert.SignTool
 import rep.log.RepLogger
 import rep.storage.verify.verify4Storage
 import rep.log.RepTimeTracer
+import rep.api.rest.VerifySignDispatcher
 
 /**
  * Created by shidianyue on 2017/9/22.
@@ -97,6 +98,7 @@ class ModuleManager(moduleName: String, sysTag: String, enableStatistic: Boolean
   def loadConsensusModule = {
     val typeConsensus = context.system.settings.config.getString("system.consensus.type")
     if (typeConsensus == "CRFD") {
+      //context.actorOf(VerifySignDispatcher.props("vsigndispatcher"), "vsigndispatcher")
       context.actorOf(Blocker.props("blocker"), "blocker")
       context.actorOf(GenesisBlocker.props("gensisblock"), "gensisblock")
       context.actorOf(ConfirmOfBlock.props("confirmerofblock"), "confirmerofblock")

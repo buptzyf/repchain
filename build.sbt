@@ -36,6 +36,8 @@ libraryDependencies += "com.thesamet.scalapb" %% "scalapb-json4s" % "0.7.0"
 libraryDependencies += "org.iq80.leveldb" % "leveldb" % "0.11"
 libraryDependencies += "org.fusesource.leveldbjni" % "leveldbjni-all" % "1.8"
 
+libraryDependencies += "org.rocksdb" % "rocksdbjni" % "6.4.6"
+
 libraryDependencies += "org.mapdb" % "mapdb" % "3.0.7"
 
 libraryDependencies += "org.scalacheck" %% "scalacheck" % "1.14.0" % "test"
