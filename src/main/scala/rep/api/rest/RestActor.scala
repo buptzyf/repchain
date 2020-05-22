@@ -142,7 +142,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
   import spray.json._
   import scala.concurrent.duration._
   import java.util.concurrent.Executors
-  import akka.http.scaladsl.model.{ HttpResponse, MediaTypes, HttpEntity }
+  import akka.http.scaladsl.model.{HttpResponse, MediaTypes, HttpEntity}
   //implicit val ec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(10))
   //import rep.utils.JsonFormat.AnyJsonFormat
 
@@ -150,16 +150,6 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
   //implicit val ec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(100))
   val sr: ImpDataAccess = ImpDataAccess.GetDataAccess(pe.getSysTag)
 
-  /*def asyncVerifySign(signresult:Array[Byte],message:Array[Byte],keyword:CertId,sysname:String): Future[Boolean] = Future {
-    var result  = false
-
-    try{
-      result = SignTool.verify(signresult,message,keyword,sysname)
-    }catch{
-      case e:Exception => throw e
-    }
-    result
-  } recover { case e: Exception => false }*/
 
   private var sign_router: Router = null
 
@@ -176,9 +166,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
       sign_router = Router(SmallestMailboxRoutingLogic(), rlist)
     }
   }
-
-  // 先检查交易大小，然后再检查交易是否已存在，再去验证签名，如果没有问题，则广播
-  def preTransaction(t: Transaction): Unit = {
+  def preTransaction1(t: Transaction): Unit = {
     val tranLimitSize = SystemProfile.getBlockLength / 3
     if (t.toByteArray.length > tranLimitSize) {
       sender ! PostResult(t.id, None, Option(s"交易大小超出限制： ${tranLimitSize}，请重新检查"))
@@ -194,53 +182,60 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
 
     try {
       if (SystemProfile.getHasPreloadTransOfApi) {
-        //val vfuture = pe.getActorRef(ActorType.vsigndispatcher) ? VerifySignDispatcher.RequestVerifySign(t)
-        //val result = Await.result(vfuture, timeout.duration).asInstanceOf[VerifySignDispatcher.ResponseVerifySign]
+        val sig = t.signature.get.signature.toByteArray
+        val tOutSig = t.clearSignature
+        val certId = t.signature.get.certId.get
+        if (pe.getTransPoolMgr.findTrans(t.id) || sr.isExistTrans4Txid(t.id)) {
+          sender ! PostResult(t.id, None, Option(s"transactionId is exists, the transaction is \n ${t.id}"))
+        } else {
+          if (SignTool.verify(sig, tOutSig.toByteArray, certId, pe.getSysTag)) {
+            //            RepLogger.info(RepLogger.Business_Logger, s"验证签名成功，txid: ${t.id},creditCode: ${t.signature.get.getCertId.creditCode}, certName: ${t.signature.get.getCertId.certName}")
+            val future = pe.getActorRef(ActorType.transactiondispatcher) ? DoTransaction(t, "api_" + t.id, TypeOfSender.FromAPI)
+            val result = Await.result(future, timeout.duration).asInstanceOf[DoTransactionResult]
+            val rv = result
+            // 释放存储实例
+
+            rv.err match {
+              case None =>
+                //预执行正常,提交并广播交易
+                pe.getActorRef(ActorType.transactionpool) ! t // 给交易池发送消息 ！=》告知（getActorRef）
+                if (rv.r == null)
+                  sender ! PostResult(t.id, None, None)
+                else
+                  sender ! PostResult(t.id, Some(rv.r), None) // legal_prose need
+              case Some(err) =>
+                //预执行异常,废弃交易，向api调用者发送异常
+                sender ! PostResult(t.id, None, Option(err.cause.getMessage))
+            }
+          } else {
+            sender ! PostResult(t.id, None, Option("验证签名出错"))
+          }
+        }
+      } else {
+        pe.getActorRef(ActorType.transactionpool) ! t // 给交易池发送消息 ！=》告知（getActorRef）
+        sender ! PostResult(t.id, None, None)
+      }
+
+    } catch {
+      case e: RuntimeException =>
+        sender ! PostResult(t.id, None, Option(e.getMessage))
+    } finally {
+      ImpDataPreloadMgr.Free(pe.getSysTag, "api_" + t.id)
+    }
+}
+
+  // 先检查交易大小，然后再检查交易是否已存在，再去验证签名，如果没有问题，则广播
+  def preTransaction(t: Transaction): Unit = {
+    val tranLimitSize = SystemProfile.getBlockLength / 3
+    if (t.toByteArray.length > tranLimitSize) {
+      sender ! PostResult(t.id, None, Option(s"交易大小超出限制： ${tranLimitSize}，请重新检查"))
+    }
+
+    try {
+      if (SystemProfile.getHasPreloadTransOfApi) {
         createRouter
         sign_router.route(VerifySignDispatcher.RequestVerifySign(t,sender()), sender())
-        //pe.getActorRef(ActorType.vsigndispatcher) ! VerifySignDispatcher.RequestVerifySign(t,sender())
 
-        /*if(result.result) {
-          sender ! PostResult(t.id, None, None)
-        }else {
-          sender ! PostResult(t.id, None, Option("验证签名出错"))
-        }*/
-        //val sig = t.signature.get.signature.toByteArray
-        //val tOutSig = t.clearSignature
-        //val certId = t.signature.get.certId.get
-        /*if (pe.getTransPoolMgr.findTrans(t.id) || sr.isExistTrans4Txid(t.id)) {
-          sender ! PostResult(t.id, None, Option(s"transactionId is exists, the transaction is \n ${t.id}"))
-        } else {*/
-        //val a = SignTool.verify(sig, tOutSig.toByteArray, certId, pe.getSysTag)
-        //val fut = asyncVerifySign( sig, tOutSig.toByteArray,certId, pe.getSysTag)
-        //val sv :Boolean = Await.result(fut,10.seconds)
-        //if (sv) {
-          //if (SignTool.verify(sig, tOutSig.toByteArray, certId, pe.getSysTag)) {
-            //            RepLogger.info(RepLogger.Business_Logger, s"验证签名成功，txid: ${t.id},creditCode: ${t.signature.get.getCertId.creditCode}, certName: ${t.signature.get.getCertId.certName}")
-            /*val future = pe.getActorRef(ActorType.transactiondispatcher) ? DoTransaction(t, "api_" + t.id, TypeOfSender.FromAPI)
-            val result = Await.result(future, timeout.duration).asInstanceOf[DoTransactionResult]
-            val rv = result*/
-            // 释放存储实例
-            //pe.getActorRef(ActorType.transactionpool) ! t
-
-
-
-        /*rv.err match {
-          case None =>
-            //预执行正常,提交并广播交易
-            pe.getActorRef(ActorType.transactionpool) ! t // 给交易池发送消息 ！=》告知（getActorRef）
-            if (rv.r == null)
-              sender ! PostResult(t.id, None, None)
-            else
-              sender ! PostResult(t.id, Some(rv.r), None) // legal_prose need
-          case Some(err) =>
-            //预执行异常,废弃交易，向api调用者发送异常
-            sender ! PostResult(t.id, None, Option(err.cause.getMessage))
-        }*/
-          //} else {
-          //  sender ! PostResult(t.id, None, Option("验证签名出错"))
-          //}
-        //}
       } else {
         //pe.getActorRef(ActorType.transactionpool) ! t // 给交易池发送消息 ！=》告知（getActorRef）
         sender ! PostResult(t.id, None, None)
