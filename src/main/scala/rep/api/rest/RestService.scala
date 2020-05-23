@@ -16,8 +16,8 @@
 
 package rep.api.rest
 
-import scala.concurrent.{ ExecutionContext, Future }
-import akka.actor.{ ActorRef, ActorSelection }
+import scala.concurrent.{ExecutionContext, Future}
+import akka.actor.{ActorRef, ActorSelection}
 import akka.util.Timeout
 import akka.http.scaladsl.model.Uri.Path.Segment
 import akka.http.scaladsl.server.Directives
@@ -34,13 +34,14 @@ import de.heikoseeberger.akkahttpjson4s.Json4sSupport
 import rep.protos.peer._
 import rep.api.rest.RestActor._
 import spray.json.DefaultJsonProtocol._
-import org.json4s.{ DefaultFormats, Formats, jackson }
+import org.json4s.{DefaultFormats, Formats, jackson}
 import akka.http.scaladsl.server.Directives
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import spray.json._
 import akka.http.scaladsl.marshallers.xml.ScalaXmlSupport
-import akka.http.scaladsl.model.{ ContentTypes, HttpCharsets, MediaTypes }
-import akka.http.scaladsl.unmarshalling.{ FromEntityUnmarshaller, Unmarshaller }
+import akka.http.scaladsl.model.{ContentTypes, HttpCharsets, MediaTypes}
+import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
+import akka.stream.scaladsl.StreamConverters
 
 import scala.xml.NodeSeq
 import rep.log.RepLogger
@@ -431,14 +432,17 @@ class TransactionService(ra: ActorRef)(implicit executionContext: ExecutionConte
 
           fileUpload("signedTrans") {
             case (fileInfo, fileStream) =>
-              val fp = Paths.get("/tmp") resolve fileInfo.fileName
-              val sink = FileIO.toPath(fp)
-              val writeResult = fileStream.runWith(sink)
-              onSuccess(writeResult) { result =>
-                //TODO protobuf 反序列化字节流及后续处理
-                complete(s"Successfully written ${result.count} bytes")
-                complete { (ra ? Transaction.parseFrom(new FileInputStream(fp.toFile()))).mapTo[PostResult] }
-              }
+              val sink = StreamConverters.asInputStream()
+              val inputStream = fileStream.runWith(sink)
+              complete { (ra ? Transaction.parseFrom(inputStream)).mapTo[PostResult] }
+//              val fp = Paths.get("/tmp") resolve fileInfo.fileName
+//              val sink = FileIO.toPath(fp)
+//              val writeResult = fileStream.runWith(sink)
+//              onSuccess(writeResult) { result =>
+//                //TODO protobuf 反序列化字节流及后续处理
+//                complete(s"Successfully written ${result.count} bytes")
+//                complete { (ra ? Transaction.parseFrom(new FileInputStream(fp.toFile()))).mapTo[PostResult] }
+//              }
           }
         }
       }

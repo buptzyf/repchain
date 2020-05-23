@@ -50,11 +50,11 @@ import rep.sc.Sandbox.DoTransactionResult
 
 import scala.collection.immutable.IndexedSeq
 /**
- * RestActor伴生object，包含可接受的传入消息定义，以及处理的返回结果定义。
- * 以及用于建立Tranaction，检索Tranaction的静态方法
- * @author c4w created
- *
- */
+  * RestActor伴生object，包含可接受的传入消息定义，以及处理的返回结果定义。
+  * 以及用于建立Tranaction，检索Tranaction的静态方法
+  * @author c4w created
+  *
+  */
 
 object RestActor {
   def props(name: String): Props = Props(classOf[RestActor], name)
@@ -94,10 +94,10 @@ object RestActor {
   case class tranSign(tran: String)
 
   /**
-   * 根据节点名称和chainCode定义建立交易实例
-   * @param nodeName 节点名称
-   * @param c chainCode定义
-   */
+    * 根据节点名称和chainCode定义建立交易实例
+    * @param nodeName 节点名称
+    * @param c chainCode定义
+    */
   def buildTranaction(nodeName: String, c: CSpec): Transaction = {
     val stype = c.stype match {
       case 1 =>
@@ -133,9 +133,9 @@ object RestActor {
 }
 
 /**
- * RestActor负责处理rest api请求
- *
- */
+  * RestActor负责处理rest api请求
+  *
+  */
 class RestActor(moduleName: String) extends ModuleBase(moduleName) {
 
   import RestActor._
@@ -168,37 +168,34 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
   }
   def preTransaction1(t: Transaction): Unit = {
     val tranLimitSize = SystemProfile.getBlockLength / 3
-    if (t.toByteArray.length > tranLimitSize) {
-      sender ! PostResult(t.id, None, Option(s"交易大小超出限制： ${tranLimitSize}，请重新检查"))
-    }
-
-    /*if (pe.getNodeMgr.getStableNodes.size < SystemProfile.getVoteNoteMin) {
+    if (pe.getNodeMgr.getStableNodes.size < SystemProfile.getVoteNoteMin) {
       sender ! PostResult(t.id, None, Option("共识节点数目太少，暂时无法处理交易"))
-    }*/
-
-    /*if (pe.getTransPoolMgr.findTrans(t.id) || sr.isExistTrans4Txid(t.id)) {
-          sender ! PostResult(t.id, None, Option(s"transactionId is exists, the transaction is \n ${t.id}"))
-    }*/
-
-    try {
-      if (SystemProfile.getHasPreloadTransOfApi) {
-        val sig = t.signature.get.signature.toByteArray
-        val tOutSig = t.clearSignature
-        val certId = t.signature.get.certId.get
-        if (pe.getTransPoolMgr.findTrans(t.id) || sr.isExistTrans4Txid(t.id)) {
-          sender ! PostResult(t.id, None, Option(s"transactionId is exists, the transaction is \n ${t.id}"))
-        } else {
+    } else if (t.toByteArray.length > tranLimitSize) {
+      sender ! PostResult(t.id, None, Option(s"交易大小超出限制： ${tranLimitSize}，请重新检查"))
+    } else if (pe.getTransPoolMgr.findTrans(t.id) || sr.isExistTrans4Txid(t.id)) {
+      sender ! PostResult(t.id, None, Option(s"transactionId is exists, the transaction is \n ${t.id}"))
+    } else {
+      try {
+        if (SystemProfile.getHasPreloadTransOfApi) {
+          val sig = t.signature.get.signature.toByteArray
+          val tOutSig = t.clearSignature
+          val certId = t.signature.get.certId.get
           if (SignTool.verify(sig, tOutSig.toByteArray, certId, pe.getSysTag)) {
-            //            RepLogger.info(RepLogger.Business_Logger, s"验证签名成功，txid: ${t.id},creditCode: ${t.signature.get.getCertId.creditCode}, certName: ${t.signature.get.getCertId.certName}")
+//            RepLogger.info(RepLogger.Business_Logger, s"验证签名成功，txid: ${t.id},creditCode: ${t.signature.get.getCertId.creditCode}, certName: ${t.signature.get.getCertId.certName}")
+            val startTime = System.nanoTime()
             val future = pe.getActorRef(ActorType.transactiondispatcher) ? DoTransaction(t, "api_" + t.id, TypeOfSender.FromAPI)
             val result = Await.result(future, timeout.duration).asInstanceOf[DoTransactionResult]
             val rv = result
-            // 释放存储实例
+            val spentTime = (System.nanoTime() - startTime).toDouble / (1000 * 1000)
+            RepLogger.debug(RepLogger.APIAccess_Logger, s"doTranSpentTime: $spentTime")
 
             rv.err match {
               case None =>
                 //预执行正常,提交并广播交易
+                val publishStart = System.nanoTime().toDouble
                 pe.getActorRef(ActorType.transactionpool) ! t // 给交易池发送消息 ！=》告知（getActorRef）
+                val publishEnd = System.nanoTime().toDouble
+                RepLogger.debug(RepLogger.APIAccess_Logger, s"publishSpentTime: ${(publishEnd - publishStart) / (1000 * 1000)}")
                 if (rv.r == null)
                   sender ! PostResult(t.id, None, None)
                 else
@@ -210,48 +207,47 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
           } else {
             sender ! PostResult(t.id, None, Option("验证签名出错"))
           }
+        } else {
+          pe.getActorRef(ActorType.transactionpool) ! t // 给交易池发送消息 ！=》告知（getActorRef）
+          sender ! PostResult(t.id, None, None)
         }
-      } else {
-        pe.getActorRef(ActorType.transactionpool) ! t // 给交易池发送消息 ！=》告知（getActorRef）
-        sender ! PostResult(t.id, None, None)
+      } catch {
+        case e: RuntimeException =>
+          sender ! PostResult(t.id, None, Option(e.getMessage))
+      } finally {
+        // 释放存储实例
+        ImpDataPreloadMgr.Free(pe.getSysTag, "api_" + t.id)
       }
-
-    } catch {
-      case e: RuntimeException =>
-        sender ! PostResult(t.id, None, Option(e.getMessage))
-    } finally {
-      ImpDataPreloadMgr.Free(pe.getSysTag, "api_" + t.id)
     }
-}
+  }
 
   // 先检查交易大小，然后再检查交易是否已存在，再去验证签名，如果没有问题，则广播
   def preTransaction(t: Transaction): Unit = {
     val tranLimitSize = SystemProfile.getBlockLength / 3
     if (t.toByteArray.length > tranLimitSize) {
       sender ! PostResult(t.id, None, Option(s"交易大小超出限制： ${tranLimitSize}，请重新检查"))
-    }
-
-    try {
-      if (SystemProfile.getHasPreloadTransOfApi) {
-        createRouter
-        sign_router.route(VerifySignDispatcher.RequestVerifySign(t,sender()), sender())
-
-      } else {
-        //pe.getActorRef(ActorType.transactionpool) ! t // 给交易池发送消息 ！=》告知（getActorRef）
-        sender ! PostResult(t.id, None, None)
+    } else {
+      try {
+        if (SystemProfile.getHasPreloadTransOfApi) {
+          createRouter
+          sign_router.route(VerifySignDispatcher.RequestVerifySign(t,sender()), sender())
+        } else {
+          //pe.getActorRef(ActorType.transactionpool) ! t // 给交易池发送消息 ！=》告知（getActorRef）
+          sender ! PostResult(t.id, None, None)
+        }
+      } catch {
+        case e: RuntimeException =>
+          sender ! PostResult(t.id, None, Option(e.getMessage))
+      } finally {
+        ImpDataPreloadMgr.Free(pe.getSysTag, "api_" + t.id)
       }
-
-    } catch {
-      case e: RuntimeException =>
-        sender ! PostResult(t.id, None, Option(e.getMessage))
-    } finally {
-      ImpDataPreloadMgr.Free(pe.getSysTag, "api_" + t.id)
     }
   }
 
   def receive: Receive = {
 
     case tranSign(tr: String) =>
+      //      sender ! PostResult("1234567890", None, None)
       val tmpstart = System.currentTimeMillis()
       val tr1 = BytesHex.hex2bytes(tr) // 解析交易编码后的16进制字符串,进行解码16进制反解码decode
       var txr = Transaction.defaultInstance
