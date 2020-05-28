@@ -24,7 +24,7 @@ object VerifySignActor{
 
 class VerifySignActor(moduleName: String) extends ModuleBase(moduleName) {
   import scala.concurrent.duration._
-  implicit val ec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(10))
+  implicit val ec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(2))
 
   implicit val timeout = Timeout(1000.seconds)
 

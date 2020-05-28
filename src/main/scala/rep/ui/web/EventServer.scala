@@ -111,15 +111,29 @@ object EventServer {
         }
       }
 
-    val ra = sys.actorOf(RestActor.props("api"), "api")
+    val api_count = 10
+    val apilist : Array[ActorRef] = new Array[ActorRef](api_count)
+    for (i <- 0 to api_count - 1) {
+      val ra = sys.actorOf(RestActor.props("api"+i), "api"+i)
+      apilist(i) = ra
+    }
+    //val ra = sys.actorOf(RestActor.props("api"), "api")
     //允许跨域访问,以支持在应用中发起请求
-    Http().bindAndHandle(
+    /*Http().bindAndHandle(
       route_evt
         ~ cors() (
             new BlockService(ra).route ~
             new ChainService(ra).route ~
             new TransactionService(ra).route ~
             SwaggerDocService.routes),
+      "0.0.0.0", port)*/
+    Http().bindAndHandle(
+      route_evt
+        ~ cors() (
+        new BlockService(apilist).route ~
+          new ChainService(apilist).route ~
+          new TransactionService(apilist).route ~
+          SwaggerDocService.routes),
       "0.0.0.0", port)
     RepLogger.info(RepLogger.System_Logger, s"Event Server online at http://localhost:$port")
   }
