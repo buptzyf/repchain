@@ -3,8 +3,9 @@ import rep.protos.peer.{Transaction,OperLog}
 import rep.storage.ImpDataPreload
 import akka.actor.ActorSystem
 import rep.network.tools.PeerExtension
-import scala.collection.mutable.ArrayBuffer 
+import scala.collection.mutable.{ListBuffer,ArrayBuffer} 
 import java.io._
+import  _root_.com.google.protobuf.ByteString 
 
 object ShimRecord{
   type Key = String  
@@ -15,18 +16,45 @@ object ShimRecord{
   val PRE_CERT = "CERT_"
   val NOT_PERR_CERT = "非节点证书"
   
+  def serialise(value: Any): Array[Byte] = {
+    val stream: ByteArrayOutputStream = new ByteArrayOutputStream()
+    val oos = new ObjectOutputStream(stream)
+    oos.writeObject(value)
+    oos.close()
+    stream.toByteArray
+  }
+
+  def deserialise(bytes: Array[Byte]): Any = {
+    val ois = new ObjectInputStream(new ByteArrayInputStream(bytes))
+    val value = ois.readObject
+    ois.close()
+    value
+  }
+  
 }
 
-class Invoker(){
+class Invoker(shim: Shim){
   var count = 0
   val command_list: ArrayBuffer[BaseCommand] = ArrayBuffer()
   
   def pushCommand(cmd: BaseCommand):Any = {
     cmd.pos = count
-    val r:Any = cmd.execute()             //先运行才有结果
-    System.out.println(cmd)
+    val exec_result: Option[Any] = cmd.execute()
+    val r =exec_result.getOrElse(null) //这个无所谓，反正是最后返回给Shim中方法用的
+    
     command_list.append(cmd) //为啥我这里只能append，没有addOne的方法？
                              //另外cmd序列化成什么样子
+    
+    val args = cmd.args.toString()
+    val second: ByteString = cmd.result match{
+      case None => ByteString.EMPTY
+      case Some(rs) => rs match{
+        case rs: Shim.Value => ByteString.copyFrom(rs)
+        case default => ByteString.copyFrom(ShimRecord.serialise(rs)) 
+      }
+    }
+    val cmd_log = OperLog(args, second ,ByteString.EMPTY)
+    shim.ol.append(cmd_log)
     count += 1
     return r
   }
@@ -42,7 +70,7 @@ class Invoker(){
 
 
 trait ICommand{
-  def execute(): Any
+  def execute(): Option[Any]
   
 }
 
@@ -50,7 +78,7 @@ final case class WorldState(key:String, value:Any, other:Map[String,String] = nu
 //是否需要序列化方法？
 abstract class BaseCommand(val api: Shim, val args: WorldState) extends ICommand with Serializable{
   var pos: Int = 0
-  var result: Any = null
+  var result: Option[Any] = None
   var method: String = null
 
   def checkSame(target: BaseCommand):Boolean = {
@@ -77,43 +105,44 @@ abstract class BaseCommand(val api: Shim, val args: WorldState) extends ICommand
 }
 class RecordSetVal(api: Shim, args: WorldState) extends BaseCommand(api, args){
   this.method = "setVal"
-  def execute():Any={
-    api.setVal(args.key, args.value)
+  def execute():Option[Any]={
+    this.result = Option(api.setVal(args.key, args.value))
+    return this.result
   }
 }
 
 class RecordGetVal(api: Shim, args: WorldState) extends BaseCommand(api, args){
   this.method = "getVal"
-  def execute():Any={
-    this.result=api.getVal(args.key)
-    this.result
+  def execute():Option[Any]={
+    this.result=Option(api.getVal(args.key))
+    return this.result
   }
 }
 class RecordSetState(api: Shim, args: WorldState) extends BaseCommand(api, args){
   this.method = "setState"
-  def execute():Any={
-    api.setState(args.key, args.value.asInstanceOf[ShimRecord.Value])
+  def execute():Option[Any]={
+    this.result = Option(api.setState(args.key, args.value.asInstanceOf[ShimRecord.Value]))
+    return this.result
   }
 }
 class RecordGetState(api: Shim, args: WorldState) extends BaseCommand(api, args){
   this.method = "getState"
-  def execute():Any={
-    this.result = api.getState(args.key)
+  def execute():Option[Any]={
+    this.result = Option(api.getState(args.key))
     this.result
   }
 }
 class RecordGetStateEx(api: Shim, args: WorldState) extends BaseCommand(api, args){
   this.method = "getStateEx"
-  def execute():Any={
-    this.result = api.getStateEx(args.other.get("cName").get, args.key)
-    println("args:"+this.args+"|result: "+this.result)
+  def execute():Option[Any]={
+    this.result = Option(api.getStateEx(args.other.get("cName").get, args.key))
     this.result
   }
 }
 class RecordbNodeCreditCode(api: Shim, args: WorldState) extends BaseCommand(api, args){
   this.method = "bNodeCreditCode"
-  def execute():Any={
-    this.result = api.bNodeCreditCode(args.other.get("credit_code").get )
+  def execute():Option[Any]={
+    this.result = Option(api.bNodeCreditCode(args.other.get("credit_code").get))
     this.result
   }
 }
@@ -133,7 +162,7 @@ class ShimRecord(system: ActorSystem, cName: String) extends IShim{
       this.shim.ol=some_ol
     }
     
-    var invoker: Invoker = new Invoker() //以后需要改，目前是与ShimRecord生命周期相同，一个记录全部
+    var invoker: Invoker = new Invoker(this.shim) //以后需要改，目前是与ShimRecord生命周期相同，一个记录全部
     
     
     
@@ -158,7 +187,7 @@ class ShimRecord(system: ActorSystem, cName: String) extends IShim{
       this.invoker.pushCommand(cmd).asInstanceOf[Value]
     } 
     
-    def getStateEx(cName:String, key: Key)={
+    def getStateEx(cName:String, key: Key):Value={
       val args = new WorldState(key,null, Map("cName"-> cName))
       val cmd = new RecordGetStateEx(shim, args)
       this.invoker.pushCommand(cmd).asInstanceOf[Value]
