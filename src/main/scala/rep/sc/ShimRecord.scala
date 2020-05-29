@@ -45,7 +45,7 @@ class Invoker(shim: Shim){
     command_list.append(cmd) //为啥我这里只能append，没有addOne的方法？
                              //另外cmd序列化成什么样子
     
-    val args = cmd.args.toString()
+   
     val second: ByteString = cmd.result match{
       case None => ByteString.EMPTY
       case Some(rs) => rs match{
@@ -53,6 +53,15 @@ class Invoker(shim: Shim){
         case default => ByteString.copyFrom(ShimRecord.serialise(rs)) 
       }
     }
+    val sresult: String = cmd.result match{
+      case None => ""
+      case Some(rs) => rs match{
+        case rs: String => rs
+        case rs: Int => rs.toString()
+        case default => ""
+      }
+    }
+    val args = "args: "+ cmd.args.toString()+"|method: "+cmd.method + "|result: " + sresult
     val cmd_log = OperLog(args, second ,ByteString.EMPTY)
     shim.ol.append(cmd_log)
     count += 1
