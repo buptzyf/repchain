@@ -6,6 +6,9 @@ import rep.network.tools.PeerExtension
 import scala.collection.mutable.{ListBuffer,ArrayBuffer} 
 import java.io._
 import  _root_.com.google.protobuf.ByteString 
+import rep.utils.SerializeUtils
+import rep.utils.SerializeUtils.deserialise
+import rep.utils.SerializeUtils.serialise
 
 object ShimRecord{
   type Key = String  
@@ -15,22 +18,6 @@ object ShimRecord{
   val PRE_CERT_INFO = "CERT_INFO_"
   val PRE_CERT = "CERT_"
   val NOT_PERR_CERT = "非节点证书"
-  
-  def serialise(value: Any): Array[Byte] = {
-    val stream: ByteArrayOutputStream = new ByteArrayOutputStream()
-    val oos = new ObjectOutputStream(stream)
-    oos.writeObject(value)
-    oos.close()
-    stream.toByteArray
-  }
-
-  def deserialise(bytes: Array[Byte]): Any = {
-    val ois = new ObjectInputStream(new ByteArrayInputStream(bytes))
-    val value = ois.readObject
-    ois.close()
-    value
-  }
-  
 }
 
 class Invoker(shim: Shim){
@@ -50,7 +37,7 @@ class Invoker(shim: Shim){
       case None => ByteString.EMPTY
       case Some(rs) => rs match{
         case rs: Shim.Value => ByteString.copyFrom(rs)
-        case default => ByteString.copyFrom(ShimRecord.serialise(rs)) 
+        case default => ByteString.copyFrom(serialise(rs)) 
       }
     }
     val sresult: String = cmd.result match{
@@ -62,7 +49,7 @@ class Invoker(shim: Shim){
       }
     }
     val args = "args: "+ cmd.args.toString()+"|method: "+cmd.method + "|result: " + sresult
-    val cmd_log = OperLog(args, second ,ByteString.EMPTY)
+    val cmd_log = OperLog("", ByteString.EMPTY, ByteString.EMPTY, args)
     shim.ol.append(cmd_log)
     count += 1
     return r

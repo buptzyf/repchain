@@ -152,6 +152,7 @@ message OperLog{
 	string key =1;
 	bytes oldValue =2;
 	bytes newValue=3;
+	string record=4;
 }
 message ActionResult{
 	int32 code = 1;
