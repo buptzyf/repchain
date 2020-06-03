@@ -242,47 +242,8 @@
 
     <!--<logger name="akka" level="INFO" />-->
 
-	<logger name="Business_Logger" additivity="false" level="TRACE">
-        <appender-ref ref="Business_Appender"/>
-    </logger>
-    
-    <logger name="System_Logger" additivity="false" level="TRACE">
-        <appender-ref ref="System_Appender"/>
-    </logger>
-    
-    <logger name="Consensus_Logger" additivity="false" level="TRACE">
-        <appender-ref ref="Consensus_Appender"/>
-    </logger>
-    
-    <logger name="Vote_Logger" additivity="false" level="TRACE">
-        <appender-ref ref="Vote_Appender"/>
-    </logger>
-    
-    <logger name="BlockSyncher_Logger" additivity="false" level="TRACE">
-        <appender-ref ref="BlockSyncher_Appender"/>
-    </logger>
-    
-    <logger name="Storager_Logger" additivity="false" level="TRACE">
-        <appender-ref ref="Storager_Appender"/>
-    </logger>
-    
-    <logger name="StatisTime_Logger" additivity="false" level="TRACE">
-        <appender-ref ref="StatisTime_Appender"/>
-    </logger>
-    
-    <logger name="OutputTime_Logger" additivity="false" level="TRACE">
-        <appender-ref ref="OutputTime_Appender"/>
-    </logger>
-    
-    <logger name="Sandbox_Logger" additivity="false" level="TRACE">
-        <appender-ref ref="Sandbox_Appender"/>
-    </logger>
-    
-    <logger name="TransLifeCycle_Logger" additivity="false" level="TRACE">
-        <appender-ref ref="TransLifeCycle_Appender"/>
-    </logger>
 
-    <root level="DEBUG">
+    <root level="WARN">
         <appender-ref ref="STDOUT" additivity="false"/>
     </root>
 </configuration>

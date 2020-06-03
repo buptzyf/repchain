@@ -182,7 +182,7 @@ class PeerHelper(name: String) extends ModuleBase(name) {
       } catch {
         case e: RuntimeException => throw e
       }
-      scheduler.scheduleOnce(SystemProfile.getTranCreateDur.millis, self, TickInvoke)
+      scheduler.scheduleOnce(SystemProfile.getTranCreateDur.seconds, self, TickInvoke)
   }
 
   //自动循环不间断提交交易到系统，用于压力测试或者tps测试时使用。
