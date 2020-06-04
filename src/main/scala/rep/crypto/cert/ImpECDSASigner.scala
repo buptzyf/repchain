@@ -48,11 +48,18 @@ class ImpECDSASigner extends ISigner {
     s1.sign()
   }
 
+  //private var s2 : Signature = null
+
+
   override def verify(signature: Array[Byte], message: Array[Byte], publicKey: PublicKey): Boolean = {
     if(publicKey == null) throw new RuntimeException("验证签名时公钥为空！") 
     if(signature == null || signature.length <= 0) throw new RuntimeException("待验证的签名信息为空！") 
     if(message == null || message.length <= 0 ) throw new RuntimeException("待签名内容为空！")
-    val s2 = Signature.getInstance(alg);
+    /*if(s2 == null) {
+      s2 = Signature.getInstance(alg)
+      s2.initVerify(publicKey)
+    }*/
+    val s2 = Signature.getInstance(alg)
     s2.initVerify(publicKey)
     s2.update(message)
     s2.verify(signature)

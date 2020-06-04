@@ -61,11 +61,11 @@ class VerifySignActor(moduleName: String) extends ModuleBase(moduleName) {
 
   private def asyncExecuteAllTask(tran:Transaction):Boolean={
     val vrf = asyncVerifySign(tran,pe.getSysTag)
-    val ptf = AsyncExecuteTransaction(tran)
+    //val ptf = AsyncExecuteTransaction(tran)
     val result = for {
       v1 <- vrf
-      v2 <- ptf
-    } yield (v1 && v2 )
+      //v2 <- ptf
+    } yield (v1 )//&& v2 )
     val result1 = Await.result(result, timeout.duration).asInstanceOf[Boolean]
     result1
   }

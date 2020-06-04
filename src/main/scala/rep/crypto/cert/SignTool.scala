@@ -93,8 +93,15 @@ object SignTool {
     pkcert.getPublicKey
   }
 
+  //private var tmpkey : PublicKey = null
+
   //根据CertId实现验签
   def verify(signature: Array[Byte], message: Array[Byte], certinfo: CertId, sysName: String): Boolean = {
+    /*if(tmpkey == null){
+      val k = certinfo.creditCode + "." + certinfo.certName
+      tmpkey = getVerifyCert(k, sysName)
+    }
+    this.signer.verify(signature, message, tmpkey)*/
     val k = certinfo.creditCode + "." + certinfo.certName
     var pk = getVerifyCert(k, sysName)
     this.signer.verify(signature, message, pk)

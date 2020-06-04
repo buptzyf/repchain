@@ -231,6 +231,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
         if (SystemProfile.getHasPreloadTransOfApi) {
           createRouter
           sign_router.route(VerifySignDispatcher.RequestVerifySign(t,sender()), sender())
+          //sender ! PostResult(t.id, None, None)
         } else {
           //pe.getActorRef(ActorType.transactionpool) ! t // 给交易池发送消息 ！=》告知（getActorRef）
           sender ! PostResult(t.id, None, None)
