@@ -1,5 +1,6 @@
 package rep.sc.tpl.did.operation
 
+import rep.crypto.Sha256
 import rep.protos.peer.{ActionResult, Signer}
 import rep.sc.scalax.{ContractContext, ContractException}
 
@@ -18,6 +19,7 @@ object SignerOperation extends DidOperation {
   val emptyAuthCertHashExists = ActionResult(12007, "存在Hash为空的身份校验证书")
   val customCertExists = ActionResult(12008, "存在普通用户证书或undefinedType证书")
   val SignerCertificateNotMatch = ActionResult(12009, "Signer的creditCode与Certificate中的creditCode不一致")
+  val hashNotMatch = ActionResult(12010, "Certificate中hash字段与certificate字段计算得到的Hash不相等")
 
   case class SignerStatus(creditCode: String, state: Boolean)
 
@@ -51,16 +53,16 @@ object SignerOperation extends DidOperation {
     if (ctx.api.getVal(signer.creditCode) != null) {
       throw ContractException(toJsonErrMsg(signerExists))
     } else if (signer.creditCode.isEmpty) {
-      // 校验creditCode是否为空
+      // 校验creditCode是否为空，不能为空
       throw ContractException(toJsonErrMsg(creditCodeEmpty))
     } else if (signer.certNames.nonEmpty || signer.authorizeIds.nonEmpty || signer.operateIds.nonEmpty || signer.credentialMetadataIds.nonEmpty) {
-      // 校验部分字段是否为非空
+      // 校验部分字段是否为非空，必须为空
       throw ContractException(toJsonErrMsg(someFieldsNonEmpty))
     } else if (signer.authenticationCerts.isEmpty) {
-      // 判断身份校验证书是否为空
+      // 判断身份校验证书是否为空，不能为空
       throw ContractException(toJsonErrMsg(authCertNotExists))
     } else if (signer.authenticationCerts.exists(cert => cert.certHash.isBlank)) {
-      // 存在Hash为空的身份校验证书
+      // 存在Hash为空的身份校验证书，不能为空
       throw ContractException(toJsonErrMsg(emptyAuthCertHashExists))
     } else if (signer.authenticationCerts.exists(cert => cert.certType.isCertCustom || cert.certType.isCertUndefined)) {
       // 判断身份校验证书列表是否存在非身份校验证书
@@ -78,6 +80,8 @@ object SignerOperation extends DidOperation {
           throw ContractException(toJsonErrMsg(authCertExistsCode, authCertExists.format(certKey)))
         } else if (!signer.creditCode.equals(certId.creditCode)) {
           throw ContractException(toJsonErrMsg(SignerCertificateNotMatch))
+        } else if (!Sha256.hashstr(cert.certificate).equals(cert.certHash)) {
+          throw ContractException(toJsonErrMsg(hashNotMatch))
         }else {
           // 身份校验用
           ctx.api.setVal(cert.certHash, certKey)
