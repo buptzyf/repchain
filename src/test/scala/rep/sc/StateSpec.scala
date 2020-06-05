@@ -25,7 +25,7 @@ import rep.app.system.ClusterSystem
 import rep.app.system.ClusterSystem.InitType
 import rep.network.autotransaction.PeerHelper
 import rep.network.module.cfrd.ModuleManagerOfCFRD
-import rep.protos.peer.{Certificate, ChaincodeId, Signer}
+import rep.protos.peer.{Certificate, ChaincodeDeploy, ChaincodeId, Signer}
 import rep.sc.TransferSpec.{ACTION, SetMap}
 import rep.sc.tpl._
 //.{CertStatus,CertInfo}
@@ -106,13 +106,13 @@ class StateSpec(_system: ActorSystem)
     val cid1 = ChaincodeId("ContractAssetsTPL", 1)
 
     //生成deploy交易
-    val t1 = PeerHelper.createTransaction4Deploy(sysName, cid1, l1, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
+    val t1 = PeerHelper.createTransaction4Deploy(sysName, cid1, l1, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA,ChaincodeDeploy.ContractClassification.CONTRACT_CUSTOM)
     val msg_send1 = DoTransaction(t1, "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send1)
     val msg_recv1 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
     msg_recv1.err.isEmpty should be(true)
 
-    val t2 = PeerHelper.createTransaction4Deploy(sysName, cid2, l2, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
+    val t2 = PeerHelper.createTransaction4Deploy(sysName, cid2, l2, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA,ChaincodeDeploy.ContractClassification.CONTRACT_CUSTOM)
     val msg_send2 = DoTransaction(t2, "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send2)
     val msg_recv2 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)

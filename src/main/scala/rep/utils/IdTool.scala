@@ -55,7 +55,7 @@ object IdTool {
   def getCertIdFromName(name:String):CertId={
     if(name != null && name.indexOf(".")> 0){
         CertId(name.substring(0,name.indexOf(".")),
-                name.substring(name.indexOf(".")+1,name.length()))
+                name.substring(name.indexOf(".")+1,name.length()),"1.0")
     }else{
       null
     }

@@ -118,7 +118,7 @@ object RestActor {
 
     val chaincodeId = new ChaincodeId(c.chaincodename, c.chaincodeversion)
     if (stype == Transaction.Type.CHAINCODE_DEPLOY) {
-      PeerHelper.createTransaction4Deploy(nodeName, chaincodeId, c.code, c.legal_prose, c.timeout, ctype)
+      PeerHelper.createTransaction4Deploy(nodeName, chaincodeId, c.code, c.legal_prose, c.timeout, ctype,ChaincodeDeploy.ContractClassification.CONTRACT_CUSTOM)
     } else if (stype == Transaction.Type.CHAINCODE_INVOKE) {
       PeerHelper.createTransaction4Invoke(nodeName, chaincodeId, c.iptFunc, c.iptArgs)
     } else if (stype == Transaction.Type.CHAINCODE_SET_STATE) {

@@ -93,7 +93,7 @@ class DeploySpec(_system: ActorSystem)
     var sandbox = system.actorOf(TransactionDispatcher.props("transactiondispatcher"), "transactiondispatcher")
     //生成deploy交易
     val cid = new ChaincodeId("Assets", 1)
-    val t1 = PeerHelper.createTransaction4Deploy(sysName, cid, l1, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
+    val t1 = PeerHelper.createTransaction4Deploy(sysName, cid, l1, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA,ChaincodeDeploy.ContractClassification.CONTRACT_CUSTOM)
 
     val msg_send1 = new DoTransaction(t1, "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send1)
@@ -108,7 +108,7 @@ class DeploySpec(_system: ActorSystem)
 
     val cid3 = new ChaincodeId("Assets", 2)
     //同一合约部署者允许部署同样名称不同版本合约
-    val t3 = PeerHelper.createTransaction4Deploy(sysName, cid3, l1, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
+    val t3 = PeerHelper.createTransaction4Deploy(sysName, cid3, l1, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA,ChaincodeDeploy.ContractClassification.CONTRACT_CUSTOM)
     val msg_send3 = new DoTransaction(t3, "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send3)
     val msg_recv3 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
@@ -120,7 +120,7 @@ class DeploySpec(_system: ActorSystem)
     //在这里添加一个私钥的装载，因为系统默认只装载自己的节点私钥
     SignTool.loadPrivateKey("12110107bi45jh675g.node2", "123", "jks/12110107bi45jh675g.node2.jks")
 
-    val t4 = PeerHelper.createTransaction4Deploy(sysName2, cid4, l1, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
+    val t4 = PeerHelper.createTransaction4Deploy(sysName2, cid4, l1, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA,ChaincodeDeploy.ContractClassification.CONTRACT_CUSTOM)
     val msg_send4 = new DoTransaction(t4, "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send4)
     val msg_recv4 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)

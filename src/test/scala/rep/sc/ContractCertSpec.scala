@@ -27,7 +27,8 @@ import rep.app.system.ClusterSystem
 import rep.app.system.ClusterSystem.InitType
 import rep.network.autotransaction.PeerHelper
 import rep.network.module.cfrd.ModuleManagerOfCFRD
-import rep.protos.peer.{Certificate, ChaincodeId, Signer}
+import rep.protos.peer.Transaction.Type.CHAINCODE_DEPLOY
+import rep.protos.peer.{Certificate, ChaincodeDeploy, ChaincodeId, Signer}
 import rep.sc.TransferSpec.ACTION
 import rep.sc.tpl._
 import rep.sc.tpl.ContractCert
@@ -94,7 +95,7 @@ class ContractCertSpec(_system: ActorSystem) extends TestKit(_system) with Match
     val contractCert = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/ContractCert.scala")
     val contractCertStr = try contractCert.mkString finally contractCert.close()
     val t = PeerHelper.createTransaction4Deploy(sysName, cid,
-      contractCertStr, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
+      contractCertStr, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA,ChaincodeDeploy.ContractClassification.CONTRACT_SYSTEM)
     val msg_send = DoTransaction(t, "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)

@@ -25,7 +25,7 @@ import rep.app.system.ClusterSystem
 import rep.app.system.ClusterSystem.InitType
 import rep.network.autotransaction.PeerHelper
 import rep.network.module.cfrd.ModuleManagerOfCFRD
-import rep.protos.peer.{Certificate, ChaincodeId, Signer}
+import rep.protos.peer.{Certificate, ChaincodeDeploy, ChaincodeId, Signer}
 import rep.sc.SandboxSpec.{ACTION, SetMap}
 import rep.sc.tpl._
 //.{CertStatus,CertInfo}
@@ -107,7 +107,7 @@ class SandboxSpec(_system: ActorSystem)
     //生成deploy交易
     // 资产管理合约
     val t1 = PeerHelper.createTransaction4Deploy(sysName, cid1, l1,
-      "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
+      "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA,ChaincodeDeploy.ContractClassification.CONTRACT_CUSTOM)
 
     val msg_send1 = DoTransaction(t1, "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send1)
@@ -116,7 +116,7 @@ class SandboxSpec(_system: ActorSystem)
 
     // 账户管理合约
     val t2 = PeerHelper.createTransaction4Deploy(sysName, cid2, l2,
-      "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
+      "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA,ChaincodeDeploy.ContractClassification.CONTRACT_CUSTOM)
     val msg_send2 = DoTransaction(t2, "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send2)
 

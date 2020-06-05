@@ -64,7 +64,7 @@ object GenesisBuilder {
     //val dep_trans = PeerHelper.createTransaction4Deploy(sysName, cid,
     //           l1, "",5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
     val dep_trans = PeerHelper.createTransaction4Deploy("951002007l78123233.super_admin", cid,
-               l1, "",5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
+               l1, "",5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA,ChaincodeDeploy.ContractClassification.CONTRACT_SYSTEM)
     translist(0) = dep_trans
     
     //val dep_trans_state = PeerHelper.createTransaction4State(sysName, cid, true)
@@ -106,7 +106,7 @@ object GenesisBuilder {
     val c2 = try s2.mkString finally s2.close()
     val cid2 = new ChaincodeId("ContractAssetsTPL",1)
     val dep_asserts_trans = PeerHelper.createTransaction4Deploy(sysName, cid2,
-               c2, "",5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
+               c2, "",5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA,ChaincodeDeploy.ContractClassification.CONTRACT_CUSTOM)
     translist(13) = dep_asserts_trans
     
     // read invoke scala contract

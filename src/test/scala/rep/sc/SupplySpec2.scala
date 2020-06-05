@@ -113,7 +113,7 @@ class SupplySpec2(_system: ActorSystem)
 
     //生成deploy交易
     val cid = new ChaincodeId("Supply", 1)
-    val t1 = PeerHelper.createTransaction4Deploy(sysName, cid, l1, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
+    val t1 = PeerHelper.createTransaction4Deploy(sysName, cid, l1, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA,ChaincodeDeploy.ContractClassification.CONTRACT_CUSTOM)
     val msg_send1 = new DoTransaction(t1, "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send1)
     val msg_recv1 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
@@ -139,7 +139,7 @@ class SupplySpec2(_system: ActorSystem)
 
     //部署版本2
     val cid2 = new ChaincodeId("Supply", 2)
-    t = PeerHelper.createTransaction4Deploy(sysName, cid2, l7, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
+    t = PeerHelper.createTransaction4Deploy(sysName, cid2, l7, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA,ChaincodeDeploy.ContractClassification.CONTRACT_CUSTOM)
     msg_send = new DoTransaction(t, "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
     msg_recv = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)

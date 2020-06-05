@@ -88,7 +88,7 @@ class RdidOperOperationSpec(_system: ActorSystem) extends TestKit(_system) with 
     // 部署账户管理合约
     val contractCert = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/did/RdidOperateAuthorizeTPL.scala")
     val contractCertStr = try contractCert.mkString finally contractCert.close()
-    val t = PeerHelper.createTransaction4Deploy(sysName, cid, contractCertStr, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
+    val t = PeerHelper.createTransaction4Deploy(sysName, cid, contractCertStr, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA,ChaincodeDeploy.ContractClassification.CONTRACT_SYSTEM)
     val msg_send = DoTransaction(t, "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)

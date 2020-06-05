@@ -189,12 +189,18 @@ message ChaincodeDeploy {
     //合约规则的法律描述文本
     string legal_prose =3;
     enum CodeType {
-	CODE_UNDEFINED = 0;
+	    CODE_UNDEFINED = 0;
         CODE_JAVASCRIPT = 1;
         CODE_SCALA = 2;
         CODE_SCALA_PARALLEL = 3;
     }
     CodeType ctype = 4;
+    enum ContractClassification {
+    	CONTRACT_UNDEFINED = 0;
+        CONTRACT_SYSTEM = 1;
+        CONTRACT_CUSTOM = 2;
+        }
+    ContractClassification  cclassification = 5;
 } 
 
 /*

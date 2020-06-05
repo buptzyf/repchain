@@ -83,7 +83,8 @@ object PeerHelper {
 
   def createTransaction4Deploy(nodeName: String, chaincodeId: ChaincodeId,
                                spcPackage: String, legal_prose: String, timeout: Int,
-                               ctype: rep.protos.peer.ChaincodeDeploy.CodeType): Transaction = {
+                               ctype: rep.protos.peer.ChaincodeDeploy.CodeType,
+                               cclassfiction:rep.protos.peer.ChaincodeDeploy.ContractClassification): Transaction = {
     var t: Transaction = new Transaction()
     val millis = TimeUtils.getCurrentTime()
     if (chaincodeId == null) t
@@ -93,6 +94,7 @@ object PeerHelper {
     cip = cip.withCodePackage(spcPackage)
     cip = cip.withLegalProse(legal_prose)
     cip = cip.withCtype(ctype)
+    cip = cip.withCclassification(cclassfiction)
     t = t.withId(txid)
     t = t.withCid(chaincodeId)
     t = t.withSpec(cip)

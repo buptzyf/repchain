@@ -8,17 +8,17 @@ import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, Matchers}
 import rep.app.system.ClusterSystem
 import rep.app.system.ClusterSystem.InitType
 import rep.network.module.cfrd.ModuleManagerOfCFRD
-import rep.protos.peer.{Certificate, ChaincodeId, Signer}
+import rep.protos.peer.{Certificate, ChaincodeDeploy, ChaincodeId, Signer, Transaction}
 import rep.sc.TransferSpec.{ACTION, SetMap}
 import rep.storage.ImpDataAccess
 import rep.utils.SerializeUtils.toJson
 import rep.app.conf.SystemProfile
 import rep.network.autotransaction.PeerHelper
 import rep.protos.peer.Certificate.CertType.CERT_CUSTOM
+
 import scala.concurrent.duration._
 import scala.collection.mutable.Map
 import rep.sc.SandboxDispatcher.DoTransaction
-import rep.protos.peer.Transaction
 import rep.sc.BlockStubActor.WriteBlockStub
 import rep.sc.tpl._
 //.{CertStatus,CertInfo}
@@ -60,7 +60,7 @@ class ContractTest(_system: ActorSystem)
     val cid1 = ChaincodeId("ContractAssetsTPL", version)
     //生成deploy交易
     val t1 = PeerHelper.createTransaction4Deploy(sysName, cid1,
-      l1, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
+      l1, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA,ChaincodeDeploy.ContractClassification.CONTRACT_CUSTOM)
     t1
   }
 
@@ -76,7 +76,7 @@ class ContractTest(_system: ActorSystem)
     val l2 = try s2.mkString finally s2.close()
     val cid2 = ChaincodeId(SystemProfile.getAccountChaincodeName, version)
     val t2 = PeerHelper.createTransaction4Deploy(sysName, cid2,
-      l2, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
+      l2, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA,ChaincodeDeploy.ContractClassification.CONTRACT_SYSTEM)
     t2
   }
 
@@ -92,7 +92,7 @@ class ContractTest(_system: ActorSystem)
     val l3 = try s3.mkString finally s3.close()
     val cid3 = ChaincodeId("parallelPutProofTPL", version)
     val t3 = PeerHelper.createTransaction4Deploy(sysName, cid3,
-      l3, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA_PARALLEL)
+      l3, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA_PARALLEL,ChaincodeDeploy.ContractClassification.CONTRACT_CUSTOM)
     t3
   }
 
