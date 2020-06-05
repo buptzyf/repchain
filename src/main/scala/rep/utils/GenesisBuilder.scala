@@ -17,6 +17,7 @@
 package rep.utils
 
 import java.io.File
+import java.io.PrintWriter
 import rep.network.PeerHelper
 import com.typesafe.config.ConfigFactory
 import com.google.protobuf.ByteString
@@ -138,6 +139,10 @@ object GenesisBuilder {
     val r = JsonFormat.toJson(blk)   
     val rstr = pretty(render(r))
     println(rstr)
+    val pw = new PrintWriter("json/gensis.json","UTF-8")
+    pw.write(rstr)
+    pw.flush()
+    pw.close()
    
   }
 }

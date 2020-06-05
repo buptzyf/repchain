@@ -87,4 +87,4 @@ assemblyMergeStrategy in assembly := {
     oldStrategy(x)
 }
 
-mainClass in (Compile, packageBin) := Some("rep.app.Repchain_Single")
+mainClass in (Compile, packageBin) := Some("rep.app.Repchain")
