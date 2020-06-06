@@ -95,7 +95,7 @@ class Shim(system: ActorSystem, cName: String) extends IShim {
   }
 
   private def get(key: Key): Array[Byte] = {
-    System.out.println("private get, key: "+key)
+    //System.out.println("private get, key: "+key)
     sr.Get(key)
   }
 
@@ -104,7 +104,7 @@ class Shim(system: ActorSystem, cName: String) extends IShim {
   }
 
   def getStateEx(cName:String, key: Key): Array[Byte] = {    
-    System.out.println(WorldStateKeyPreFix + cName + PRE_SPLIT + key)
+    //System.out.println(WorldStateKeyPreFix + cName + PRE_SPLIT + key)
     get(WorldStateKeyPreFix + cName + PRE_SPLIT + key)
            
   }
