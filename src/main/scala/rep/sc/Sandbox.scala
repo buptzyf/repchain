@@ -53,12 +53,9 @@ object Sandbox {
   //t:中含txid可以找到原始交易; r:执行结果; merkle:执行完worldstate的hash; err:执行异常
   /**
    * 交易执行结果类
-   * @param t 传入交易实例
-   * @param from 来源actor指向
+   * @param txId 传入交易实例
    * @param r 执行结果,任意类型
-   * @param merkle 交易执行后worldState的merkle结果，用于验证和达成输出共识
    * @param ol 合约执行中对worldState的写入操作
-   * @param mb 合约执行涉及的key-value集合
    * @param err 执行中抛出的异常信息
    */
   case class DoTransactionResult(txId: String, r: ActionResult,
@@ -131,9 +128,7 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
 
   /**
    * 交易处理抽象方法，接受待处理交易，返回处理结果
-   *  @param t 待处理交易
-   *  @param from 发出交易请求的actor
-   * 	@param da 存储访问标示
+   *  @param dotrans 交易分派消息
    *  @return 交易执行结果
    */
   def doTransaction(dotrans: DoTransactionOfSandbox): DoTransactionResult
@@ -149,6 +144,8 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
       Some(state)
     }
   }
+
+
 
   private def IsCurrentSigner(dotrans: DoTransactionOfSandbox) {
     val cn = dotrans.t.cid.get.chaincodeName

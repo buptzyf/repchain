@@ -44,15 +44,16 @@ object SandboxDispatcher {
   val ERR_CODER = "合约只能由部署者升级更新"
   val ERR_DISABLE_CID = "合约处于禁用状态"
 
+  //权限检查异常消息预定义
+  val ERR_NO_PERMISSION_OF_DEPLOY = "没有合约部署的权限"
+  val ERR_NO_PERMISSION_OF_SETSTATE = "没有改变合约状态的权限"
+  val ERR_NO_PERMISSION_OF_INVOKE = "没有执行合约方法的权限"
+  val ERR_NO_FOUND_Signer = "没有找到合约部署的签名者信息"
+  val ERR_Signer_INVAILD = "合约部署的签名者信息无效"
+
   //下属actor的命名前缀
   val PRE_SUB_ACTOR = "sb_"
   val PRE_STATE = "_STATE"
-
-  /**
-   * 从api请求传入的 处理的预执行交易的输入消息
-   *  @constructor 对交易简单封装
-   *  @param t 需要预执行的交易
-   */
 
   /**
    * 从共识层传入的执行交易请求
@@ -76,7 +77,6 @@ object SandboxDispatcher {
    * 本消息用于从存储恢复合约对应的sandbox
    *  @constructor 根据待执行交易、来源actor指向、数据访问标示建立实例
    * 	@param t 待执行交易
-   *  @param from 来源actor指向
    *  @param da 数据访问标示
    */
   final case class DeployTransaction(t: Transaction, da: String)
@@ -87,9 +87,8 @@ object SandboxDispatcher {
  * 负责调度合约容器的actor
  * @author c4w
  * @constructor 以actor名称、数据访问实例标示、父actor指向创建调度actor
- * @param name actor名称
- * @param da 数据访问实例标示
- * @param parent 父actor指向
+ * @param moduleName 模块名称
+ * @param cid 链码id
  */
 class SandboxDispatcher(moduleName: String, cid: String) extends ModuleBase(moduleName) {
   import SandboxDispatcher._
