@@ -7,7 +7,7 @@ import rep.sc.SandboxDispatcher.{DoTransactionOfSandbox,
         ERR_Signer_INVAILD, ERR_NO_FOUND_Signer,ERR_NO_PERMISSION_OF_DEPLOY,
         ERR_NO_PERMISSION_OF_SETSTATE,ERR_NO_PERMISSION_OF_INVOKE}
 import rep.sc.Shim
-import rep.storage.{ ImpDataPreload,IDataAccess}
+import rep.storage.{ ImpDataPreload}
 import rep.utils.{IdTool}
 
 
@@ -15,7 +15,8 @@ class Account4RDidByContract(shim:Shim) {
   val sr: ImpDataPreload = shim.sr
 
   private def CheckOps(dotrans: DoTransactionOfSandbox): Array[Operate] ={
-    val pmgr = new PermissionMgr(sr.asInstanceOf[IDataAccess])
+
+    val pmgr = new PermissionMgr(sr)
     val certid_ts = dotrans.t.signature.get.certId
 
     //不是链证书，检查是否有合约部署权限

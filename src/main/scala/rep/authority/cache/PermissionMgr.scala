@@ -2,12 +2,12 @@ package rep.authority.cache
 
 import rep.app.conf.SystemProfile
 import rep.protos.peer.{Authorize, CertId, Operate, Signer}
-import rep.storage.{IDataAccess, IdxPrefix}
+import rep.storage.{IDataAccess, IdxPrefix, ImpDataPreload}
 import rep.utils.SerializeUtils
 
 import scala.collection.mutable.ArrayBuffer
 
-class PermissionMgr(sr:IDataAccess) {
+class PermissionMgr(sr:ImpDataPreload) {
   val perfix = IdxPrefix.WorldStateKeyPreFix + SystemProfile.getAccountChaincodeName + "_"
 
   //通过证书id字符串获取签名者
@@ -94,7 +94,7 @@ class PermissionMgr(sr:IDataAccess) {
         if(oa != null){
           if(oa.authorizeValid){
             //授权有效
-            oas ++= oa.opId.toArray
+            oas ++= oa.opId.toArray[String]
           }
         }
       })
@@ -113,7 +113,7 @@ class PermissionMgr(sr:IDataAccess) {
     var opids = getAllAuthOfSignerOnCert(signer,certId)
     if(!signer.operateIds.isEmpty){
       //签名者拥有自有的操作
-      opids = opids ++ signer.operateIds.toArray
+      opids = opids ++ signer.operateIds.toArray[String]
       opids = opids.distinct
     }
     var tmp = getAllOpenOperate

@@ -16,7 +16,7 @@
 
 package rep.sc
 
-import akka.actor.{ Actor, ActorRef, Props, actorRef2Scala }
+import akka.actor.{Actor, ActorRef, Props, actorRef2Scala}
 import rep.utils._
 import rep.api.rest._
 import rep.protos.peer._
@@ -25,12 +25,14 @@ import java.util.concurrent.Executors
 import java.lang.Exception
 import java.lang.Thread._
 import java.io.File._
+
 import org.slf4j.LoggerFactory
-import org.json4s.{ DefaultFormats, Formats, jackson }
+import org.json4s.{DefaultFormats, Formats, jackson}
 import de.heikoseeberger.akkahttpjson4s.Json4sSupport
 import org.json4s._
 import akka.util.Timeout
 import Shim._
+import rep.authority.cache.Account4RDidByContract
 import rep.crypto.BytesHex
 import rep.network.tools.PeerExtension
 import rep.storage.IdxPrefix.WorldStateKeyPreFix
@@ -177,12 +179,14 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
             throw new SandboxException(ERR_REPEATED_CID)
           case _ =>
             //检查合约部署者
-            IsCurrentSigner(dotrans)
+            //IsCurrentSigner(dotrans)
+            new Account4RDidByContract(shim).hasPermissionOfDeployContract(dotrans)
         }
 
       case Transaction.Type.CHAINCODE_SET_STATE =>
         ContraceIsExist(txcid)
-        IsCurrentSigner(dotrans)
+        //IsCurrentSigner(dotrans)
+        new Account4RDidByContract(shim).hasPermissionOfSetStateContract(dotrans)
 
       case Transaction.Type.CHAINCODE_INVOKE =>
         ContraceIsExist(txcid)
@@ -202,8 +206,8 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
             } else {
               //ignore
             }
-
         }
+        new Account4RDidByContract(shim).hasPermissionOfInvokeContract(dotrans)
       case _ => throw SandboxException(ERR_UNKNOWN_TRANSACTION_TYPE)
     }
   }
