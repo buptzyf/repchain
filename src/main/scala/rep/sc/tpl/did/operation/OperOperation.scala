@@ -56,6 +56,17 @@ object OperOperation extends DidOperation {
         ctx.api.setVal(operate.register, newSigner)
         // 保存operate
         ctx.api.setVal(operate.opId, operate)
+        // 如果operate为publish的（无需授权），则加到公共列表里
+        if (operate.isPublish) {
+          val openList = ctx.api.getVal("open_ops")
+          if (openList == null) {
+            val newOpenList = List(operate.opId)
+            ctx.api.setVal("open_ops", newOpenList)
+          } else {
+            val newOpenList = openList.asInstanceOf[List].:+(operate.opId)
+            ctx.api.setVal("open_ops", newOpenList)
+          }
+        }
       } else {
         throw ContractException(toJsonErrMsg(operateExists))
       }

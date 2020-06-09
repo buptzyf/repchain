@@ -65,8 +65,10 @@ class RdidOperateAuthorizeTPL extends IContract {
 
   def onAction(ctx: ContractContext, action: String, sdata: String): ActionResult = {
 
+    // 两种序列化方式，如果复杂的 pb 结构体（比如带有枚举类型），则只能使用 pb 自带的 json 序列化方式
     val param = parse(sdata)
     val parser = JsonFormat.parser
+    type AuthorizeJString = String
 
     action match {
       case ACTION.Signer.signUpSigner =>
@@ -88,7 +90,7 @@ class RdidOperateAuthorizeTPL extends IContract {
         OperOperation.disableOperate(ctx, param.extract[OperateStatus])
 
       case ACTION.Authorize.grantOperate =>
-        AuthOperation.grantOperate(ctx, parser.fromJsonString(sdata)(Authorize))
+        AuthOperation.grantOperate(ctx, param.extract[List[AuthorizeJString]])
 
       case ACTION.Authorize.bindCertToAuthorize =>
         AuthOperation.bindCertToAuthorize(ctx, parser.fromJsonString(sdata)(BindCertToAuthorize))
