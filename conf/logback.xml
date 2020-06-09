@@ -242,8 +242,13 @@
 
     <!--<logger name="akka" level="INFO" />-->
 
-
-    <root level="WARN">
+	<logger name="OutputTime_Logger" additivity="false" level="TRACE">
+      <appender-ref ref="OutputTime_Appender"/>
+  </logger>
+  <logger name="StatisTime_Logger" additivity="false" level="TRACE">
+        <appender-ref ref="StatisTime_Appender"/>
+    </logger>
+    <root level="DEBUG">
         <appender-ref ref="STDOUT" additivity="false"/>
     </root>
 </configuration>
