@@ -72,7 +72,7 @@ object SignerOperation extends DidOperation {
       // 保存所有的身份校验证书，身份校验证书也可签名用
       signer.authenticationCerts.foreach(cert => {
         val certId = cert.getId
-        val certKey = certId.creditCode + "_" + certId.certName
+        val certKey = certId.creditCode + "." + certId.certName
         // 需同时判断certHash与certId的存在性，因为对于身份证书，他俩是同时存在，一一对应的
         if (ctx.api.getVal(cert.certHash) != null) {
           throw ContractException(toJsonErrMsg(authCertExistsCode, authCertExists.format(cert.certHash)))
@@ -87,7 +87,7 @@ object SignerOperation extends DidOperation {
           ctx.api.setVal(cert.certHash, certKey)
           // 验签用（身份密钥对也可以签名的）
           ctx.api.setVal(certKey, cert)
-          // 用来更新signer的certNames列表，存放的为"did_certName"
+          // 用来更新signer的certNames列表，存放的为"${did}.${certName}"
           certNames = certNames.:+(certKey)
         }
       })

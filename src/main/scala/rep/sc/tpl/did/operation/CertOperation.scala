@@ -26,7 +26,7 @@ object CertOperation extends DidOperation {
     */
   def checkAuthCertAndRule(ctx: ContractContext, customCert: Certificate): Boolean = {
     val tranCertId = ctx.t.getSignature.getCertId
-    val tranCert = ctx.api.getVal(tranCertId.creditCode + "_" + tranCertId.certName).asInstanceOf[Certificate]
+    val tranCert = ctx.api.getVal(tranCertId.creditCode + "." + tranCertId.certName).asInstanceOf[Certificate]
     if (!tranCert.certType.isCertAuthentication) {
       throw ContractException(toJsonErrMsg(posterNotAuthCert))
     } else if (!tranCert.getId.creditCode.equals(customCert.getId.creditCode)) {
@@ -49,7 +49,7 @@ object CertOperation extends DidOperation {
     val customCertId = customCert.getId
     // 检查账户的有效性，其实也是交易提交账户的有效性（如果验签时候校验了，此处可以不用校验）
     val signer = checkSignerValid(ctx, customCertId.creditCode)
-    val certKey = customCertId.creditCode + "_" + customCertId.certName
+    val certKey = customCertId.creditCode + "." + customCertId.certName
     if (ctx.api.getVal(certKey) != null) {
       throw ContractException(toJsonErrMsg(customCertExists))
     } else if (customCert.certType.isCertAuthentication || customCert.certType.isCertUndefined) {
@@ -57,7 +57,7 @@ object CertOperation extends DidOperation {
       throw ContractException(toJsonErrMsg(isAuthCert))
     } else {
       ctx.api.setVal(certKey, customCert)
-      // 更新signer的certNames列表，存放的为"did_certName"
+      // 更新signer的certNames列表，存放的为"${did}.${certName}"
       val newSinger = signer.withCertNames(signer.certNames.:+(certKey))
       ctx.api.setVal(customCertId.creditCode, newSinger)
     }
@@ -77,7 +77,7 @@ object CertOperation extends DidOperation {
     } else {
       // 检查账户的有效性
       checkSignerValid(ctx, status.creditCode)
-      val certKey = status.creditCode + "_" + status.certName
+      val certKey = status.creditCode + "." + status.certName
       val oldCert = ctx.api.getVal(certKey)
       if (oldCert != null) {
         val cert = oldCert.asInstanceOf[Certificate]
