@@ -63,7 +63,7 @@ object OperOperation extends DidOperation {
             val newOpenList = List(operate.opId)
             ctx.api.setVal("open_ops", newOpenList)
           } else {
-            val newOpenList = openList.asInstanceOf[List].:+(operate.opId)
+            val newOpenList = openList.asInstanceOf[List[String]].:+(operate.opId)
             ctx.api.setVal("open_ops", newOpenList)
           }
         }
