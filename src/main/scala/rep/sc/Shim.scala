@@ -58,7 +58,7 @@ object Shim {
  * @param system 所属的actorSystem
  * @param cName 合约的链码id
  */
-class Shim(system: ActorSystem, cName: String) {
+class Shim(system: ActorSystem, cName: String) extends IShim {
 
   import Shim._
   import rep.storage.IdxPrefix._
@@ -70,8 +70,10 @@ class Shim(system: ActorSystem, cName: String) {
   val pe = PeerExtension(system)
   //从交易传入, 内存中的worldState快照
   var sr:ImpDataPreload = null
+
   //记录状态修改日志
   var ol = scala.collection.mutable.ListBuffer.empty[OperLog]
+    
     
   def setVal(key: Key, value: Any):Unit ={
     setState(key, serialise(value))
@@ -92,6 +94,7 @@ class Shim(system: ActorSystem, cName: String) {
   }
 
   private def get(key: Key): Array[Byte] = {
+    //System.out.println("private get, key: "+key)
     sr.Get(key)
   }
 
@@ -100,7 +103,9 @@ class Shim(system: ActorSystem, cName: String) {
   }
 
   def getStateEx(cName:String, key: Key): Array[Byte] = {
+    //System.out.println(WorldStateKeyPreFix + cName + PRE_SPLIT + key)
     get(WorldStateKeyPreFix + cName + PRE_SPLIT + key)
+           
   }
   
   //判断账号是否节点账号 TODO
@@ -109,7 +114,7 @@ class Shim(system: ActorSystem, cName: String) {
   }
   
   //通过该接口获取日志器，合约使用此日志器输出业务日志。
-  def getLogger:Logger={
+  override def getLogger:Logger={
     RepLogger.Business_Logger
   }
 }

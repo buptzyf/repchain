@@ -22,6 +22,15 @@
 - install [keystore-explorer](http://keystore-explorer.org/) ——用于生成密钥对的工具,非必须
 - install [protobuf editor](https://github.com/Enide/polyglot-maven-editors)——编辑protobuf定义工具，非必须
 
+## 分层架构
+![RepChain分层架构图](https://images.gitee.com/uploads/images/2020/0115/170029_4e469133_1598833.png "分层架构图.png")
+- 数据层：负责数据格式定义，数据结构采用Protocol Buffers定义文件，并以此为基础实现数据的交换、验证、存储、读取及检索
+- 网络层：采用JDK内置的TLS实现，支持入网许可验证，在此基础上进行去中心化的gossip组网，网络传播支持P2P和Pub/Sub两种方式
+- 共识层：完成区块的输入共识和输出共识。采用兼顾实时性和安全性的CFRD算法，既照顾到交易的实时性要求，又能在一定程度防止节点串通作弊；输入共识对入块的交易顺序达成一致，输出共识对交易顺序执行的结果达成一致
+- 合约层：为合约执行提供上下文环境，支持合约的动态部署、运行时加载和编译执行
+- API层：提供外部接口，允许第三方应用以Restful的形式与系统交互，并允许开发者通过Swagger UI进行在线测试。API层提供交易签名提交、区块和交易检索等基本功能
+- 监控层：在区块链网络中收集事件/日志,并将其以Protocol Buffers的格式推送至Web端,以H5图形技术进行实时状态的可视化展示和日志回放
+
 ## 运行
 - ` 下载项目到本地`
   - git clone https://gitee.com/BTAJL/repchain.git
@@ -31,7 +40,9 @@
 - 右键单击 rep.app.Repchain.scala，Run 'RepChain'(单机组网4个节点)
 - 运行配置VM参数 -Dlogback.configurationFile=conf/logback.xml (使logback配置生效)
 - 查看实时图 http://localhost:8081/web/g1.html 
+![实时状态图](https://images.gitee.com/uploads/images/2020/0114/174424_b02748a4_1598833.gif) 
 - 查看API  http://localhost:8081/swagger/index.html
+![Swagger-UI](https://images.gitee.com/uploads/images/2020/0114/165836_553469bc_1598833.png "swagger-ui.png")
 
 ## 修改配置
 - 生成RepChain节点密钥对及信任证书列表（见[《RepChain开发者指南》](https://gitee.com/BTAJL/repchain/attach_files/235993/download) 2.1.5）
@@ -42,5 +53,7 @@
 - assembly 
   - 打包成jar包，进行分布式部署
 
-## 论坛社区
-- http://bbs.repchain.net.cn/ 
+## 示范应用
+- [BAR](https://gitee.com/linkel/bar)(Base App of RepChain)：提供了通用的基础功能实现，区块链应用实施者既可以直接复用其提供的功能， 也可以在其源代码的基础上进行开发，快速开发自己的DAppp
+- [SBR](https://gitee.com/JayTsang/bar)(Storage Based on RepChain)：基于BAR开发的可举证云存储应用示例
+- [CRBB](https://gitee.com/linkel/CRBBV1.0)(Copyright Register Based on Blockchain)：基于RepChain的数字版权登记保护应用示例

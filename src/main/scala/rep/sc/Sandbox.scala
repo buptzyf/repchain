@@ -31,6 +31,7 @@ import de.heikoseeberger.akkahttpjson4s.Json4sSupport
 import org.json4s._
 import akka.util.Timeout
 import Shim._
+import ShimRecord._
 import rep.crypto.BytesHex
 import rep.network.tools.PeerExtension
 import rep.storage.IdxPrefix.WorldStateKeyPreFix
@@ -94,7 +95,7 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
   val sTag = pe.getSysTag
 
   //与底层交互的api实例,不同版本的合约KV空间重叠
-  val shim = new Shim(context.system, cid.chaincodeName)
+  val shim = new ShimRecord(context.system, cid.chaincodeName)
   val addr_self = akka.serialization.Serialization.serializedActorPath(self)
 
   def errAction(errCode: Int): ActionResult = {

@@ -16,8 +16,8 @@
 
 package rep.utils
 
-import java.io.{File, PrintWriter}
-
+import java.io.File
+import java.io.PrintWriter
 import com.typesafe.config.ConfigFactory
 import com.google.protobuf.ByteString
 import com.google.protobuf.timestamp.Timestamp

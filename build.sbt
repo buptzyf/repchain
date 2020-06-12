@@ -89,10 +89,12 @@ libraryDependencies += "com.thesamet.scalapb" %% "scalapb-runtime" % scalapb.com
 //scapegoatDisabledInspections := Seq("OptionGet", "AsInstanceOf","MethodReturningAny")
 
 assemblyMergeStrategy in assembly := {
+  case PathList("module-info.class") => MergeStrategy.discard
+  case PathList("google", "protobuf", "field_mask.proto") => MergeStrategy.discard
   case PathList("org", "iq80", "leveldb", xs @ _*) => MergeStrategy.first
   case x =>
     val oldStrategy = (assemblyMergeStrategy in assembly).value
     oldStrategy(x)
 }
 
-mainClass in (Compile, packageBin) := Some("rep.app.Repchain_Single")
+mainClass in (Compile, packageBin) := Some("rep.app.Repchain")
