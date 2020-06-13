@@ -2,6 +2,7 @@ package rep.sc.tpl.did.operation
 
 import rep.protos.peer.{ActionResult, Operate}
 import rep.sc.scalax.{ContractContext, ContractException}
+import rep.sc.tpl.did.DidTplPrefix.{signerPrefix, operPrefix}
 
 /**
   * @author zyf
@@ -48,22 +49,22 @@ object OperOperation extends DidOperation {
         throw ContractException(toJsonErrMsg(registerNotTranPoster))
       }
       // 链密钥对为普通合约拥有者注册，普通合约拥有者（操作拥有者）给自己注册
-      if (ctx.api.getVal(operate.opId) == null) {
+      if (ctx.api.getVal(operPrefix + operate.opId) == null) {
         // 检查账户的有效性
         val signer = checkSignerValid(ctx, operate.register)
         val newSigner = signer.withOperateIds(signer.operateIds.:+(operate.opId))
         // 将operateId注册到Signer里
-        ctx.api.setVal(operate.register, newSigner)
+        ctx.api.setVal(signerPrefix + operate.register, newSigner)
         // 保存operate
-        ctx.api.setVal(operate.opId, operate)
+        ctx.api.setVal(operPrefix + operate.opId, operate)
         // 如果operate为publish的（无需授权），则加到公共列表里
         if (operate.isPublish) {
           val openList = ctx.api.getVal("open_ops")
           if (openList == null) {
-            val newOpenList = List(operate.opId)
+            val newOpenList = List(operPrefix + operate.opId)
             ctx.api.setVal("open_ops", newOpenList)
           } else {
-            val newOpenList = openList.asInstanceOf[List[String]].:+(operate.opId)
+            val newOpenList = openList.asInstanceOf[List[String]].:+(operPrefix + operate.opId)
             ctx.api.setVal("open_ops", newOpenList)
           }
         }
@@ -87,7 +88,7 @@ object OperOperation extends DidOperation {
     if (status.state) {
       throw ContractException(toJsonErrMsg(stateNotMatchFunction))
     } else {
-      val oldOperate = ctx.api.getVal(status.opId)
+      val oldOperate = ctx.api.getVal(operPrefix + status.opId)
       if (oldOperate != null) {
         val operate = oldOperate.asInstanceOf[Operate]
         val res1 = checkChainCert(ctx)
@@ -102,7 +103,7 @@ object OperOperation extends DidOperation {
           checkSignerValid(ctx, operate.register)
           val disableTime = ctx.t.getSignature.getTmLocal
           val newOperate = operate.withOpValid(status.state).withDisableTime(disableTime)
-          ctx.api.setVal(status.opId, newOperate)
+          ctx.api.setVal(operPrefix + status.opId, newOperate)
         } else {
           throw ContractException(toJsonErrMsg(notContractDeployerOrChainAdmin))
         }

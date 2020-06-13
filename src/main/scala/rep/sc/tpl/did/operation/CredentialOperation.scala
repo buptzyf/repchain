@@ -2,6 +2,7 @@ package rep.sc.tpl.did.operation
 
 import rep.protos.peer.{ActionResult, Credential, CredentialContentMetadata}
 import rep.sc.scalax.{ContractContext, ContractException}
+import rep.sc.tpl.did.DidTplPrefix.{signerPrefix, ccmdPrefix, credPrefix}
 
 /**
   * @author zyf
@@ -28,15 +29,15 @@ object CredentialOperation extends DidOperation {
     * @return
     */
   def signUpCredentialMetadata(ctx: ContractContext, ccMetadata: CredentialContentMetadata): ActionResult = {
-    val ccMetaKey = ccMetadata.id + ccMetadata.metaVersion
+    val ccMetaKey = ccmdPrefix + ccMetadata.id + ccMetadata.metaVersion
     val ccMeta = ctx.api.getVal(ccMetaKey)
     if (ctx.t.getSignature.getCertId.creditCode.equals(ccMetadata.publisher)) {
       if (ccMeta == null) {
         val signer = checkSignerValid(ctx, ccMetadata.publisher)
         val ccMetadataIds = signer.credentialMetadataIds
         val newSigner = signer.withCredentialMetadataIds(ccMetadataIds.:+(ccMetadata.id))
-        ctx.api.setVal(ccMetadata.publisher, newSigner)
-        ctx.api.setVal(ccMetaKey, ccMetadata)
+        ctx.api.setVal(signerPrefix + ccMetadata.publisher, newSigner)
+        ctx.api.setVal(ccmdPrefix + ccMetaKey, ccMetadata)
       } else {
         throw ContractException(toJsonErrMsg(ccMetadataExists))
       }
@@ -54,7 +55,7 @@ object CredentialOperation extends DidOperation {
     * @return
     */
   def updateCredentialMetadata(ctx: ContractContext, ccMetadata: CredentialContentMetadata): ActionResult = {
-    val ccMetaKey = ccMetadata.id + ccMetadata.metaVersion
+    val ccMetaKey = ccmdPrefix + ccMetadata.id + ccMetadata.metaVersion
     val ccMeta = ctx.api.getVal(ccMetaKey)
     if (ctx.t.getSignature.getCertId.creditCode.equals(ccMetadata.publisher)) {
       if (ccMeta != null) {
@@ -80,8 +81,8 @@ object CredentialOperation extends DidOperation {
     */
   def publishCredential(ctx: ContractContext, credential: Credential): ActionResult = {
     if (ctx.t.getSignature.getCertId.creditCode.equals(credential.getGranter.creditCode)) {
-      if (ctx.api.getVal(credential.id) == null) {
-        ctx.api.setVal(credential.id, credential)
+      if (ctx.api.getVal(credPrefix + credential.id) == null) {
+        ctx.api.setVal(credPrefix + credential.id, credential)
       } else {
         throw ContractException(toJsonErrMsg(credentialExists))
       }

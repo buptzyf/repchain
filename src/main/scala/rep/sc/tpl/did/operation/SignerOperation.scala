@@ -3,6 +3,7 @@ package rep.sc.tpl.did.operation
 import rep.crypto.Sha256
 import rep.protos.peer.{ActionResult, Signer}
 import rep.sc.scalax.{ContractContext, ContractException}
+import rep.sc.tpl.did.DidTplPrefix.{signerPrefix, certPrefix, hashPrefix}
 
 /**
   * @author zyf
@@ -50,7 +51,7 @@ object SignerOperation extends DidOperation {
     // 检查是否为链证书，非链证书，异常抛出
     checkChainCert(ctx)
     // 判断signer是否已经存在
-    if (ctx.api.getVal(signer.creditCode) != null) {
+    if (ctx.api.getVal(signerPrefix + signer.creditCode) != null) {
       throw ContractException(toJsonErrMsg(signerExists))
     } else if (signer.creditCode.isEmpty) {
       // 校验creditCode是否为空，不能为空
@@ -72,9 +73,9 @@ object SignerOperation extends DidOperation {
       // 保存所有的身份校验证书，身份校验证书也可签名用
       signer.authenticationCerts.foreach(cert => {
         val certId = cert.getId
-        val certKey = certId.creditCode + "." + certId.certName
+        val certKey = certPrefix + certId.creditCode + "." + certId.certName
         // 需同时判断certHash与certId的存在性，因为对于身份证书，他俩是同时存在，一一对应的
-        if (ctx.api.getVal(cert.certHash) != null) {
+        if (ctx.api.getVal(hashPrefix + cert.certHash) != null) {
           throw ContractException(toJsonErrMsg(authCertExistsCode, authCertExists.format(cert.certHash)))
         } else if (ctx.api.getVal(certKey) != null) {
           throw ContractException(toJsonErrMsg(authCertExistsCode, authCertExists.format(certKey)))
@@ -84,16 +85,16 @@ object SignerOperation extends DidOperation {
           throw ContractException(toJsonErrMsg(hashNotMatch))
         }else {
           // 身份校验用
-          ctx.api.setVal(cert.certHash, certKey)
+          ctx.api.setVal(hashPrefix + cert.certHash, certKey)
           // 验签用（身份密钥对也可以签名的）
           ctx.api.setVal(certKey, cert)
           // 用来更新signer的certNames列表，存放的为"${did}.${certName}"
-          certNames = certNames.:+(certKey)
+          certNames = certNames.:+(certId.creditCode + "." + certId.certName)
         }
       })
       // 保存did账户实体，certNames列表已经更新了
       val newSinger = signer.withCertNames(certNames)
-      ctx.api.setVal(signer.creditCode, newSinger)
+      ctx.api.setVal(signerPrefix + signer.creditCode, newSinger)
     }
     null
   }
@@ -123,13 +124,13 @@ object SignerOperation extends DidOperation {
     } else {
       // 检查是否为链证书，非链证书，异常抛出
       checkChainCert(ctx)
-      val oldSigner = ctx.api.getVal(status.creditCode)
+      val oldSigner = ctx.api.getVal(signerPrefix + status.creditCode)
       // 判断是否有值
       if (oldSigner != null) {
         val signer = oldSigner.asInstanceOf[Signer]
         val disableTime = ctx.t.getSignature.getTmLocal
         val newSigner = signer.withSignerValid(status.state).withDisableTime(disableTime)
-        ctx.api.setVal(status.creditCode, newSigner)
+        ctx.api.setVal(signerPrefix + status.creditCode, newSigner)
       } else {
         throw ContractException(toJsonErrMsg(signerNotExists))
       }
