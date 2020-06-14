@@ -2,6 +2,7 @@ package rep.sc.tpl.did.operation
 
 import rep.protos.peer._
 import rep.sc.scalax.{ContractContext, ContractException}
+import rep.sc.tpl.did.DidTplPrefix._
 import scalapb.json4s.JsonFormat
 
 /**
@@ -43,12 +44,12 @@ object AuthOperation extends DidOperation {
         val checkOpIdValid = (opId: String) => {
           val operateIdsCheck: Boolean = operateIds.contains(opId)
           val authorizeIdsCheck: Boolean = authorizeIds.exists(authorizeId => {
-            val authorize = ctx.api.getVal(authorizeId).asInstanceOf[Authorize]
+            val authorize = ctx.api.getVal(authPrefix + authorizeId).asInstanceOf[Authorize]
             // 拥有，同时可被无限让渡
             authorize.opId.contains(opId) && authorize.isTransfer.isTransferRepeatedly
           })
           // 拥有操作，或者被授权了操作，在满足二者的前提下，操作还需要满足valid==true
-          (operateIdsCheck || authorizeIdsCheck) && ctx.api.getVal(opId).asInstanceOf[Operate].opValid
+          (operateIdsCheck || authorizeIdsCheck) && ctx.api.getVal(operPrefix + opId).asInstanceOf[Operate].opValid
         }
         // granter 拥有 operateId 且 有效
         if (authorize.opId.forall(opId => checkOpIdValid(opId))) {
@@ -59,9 +60,9 @@ object AuthOperation extends DidOperation {
               val newAuthIds = grantedSigner.authorizeIds.+:(authorize.id)
               val newGrantedSigner = grantedSigner.withAuthorizeIds(newAuthIds)
               // 更新signer
-              ctx.api.setVal(grantedId, newGrantedSigner)
+              ctx.api.setVal(signerPrefix + grantedId, newGrantedSigner)
               // 保存授权权限
-              ctx.api.setVal(authorize.id, authorize)
+              ctx.api.setVal(authPrefix + authorize.id, authorize)
             } else {
               throw ContractException(toJsonErrMsg(authorizeExistsCode, authorizeExists.format(grantedId, authorize.id)))
             }
@@ -84,7 +85,7 @@ object AuthOperation extends DidOperation {
     * @return
     */
   def disableGrantOperate(ctx: ContractContext, status: AuthorizeStatus): ActionResult = {
-    val oldAuthorize = ctx.api.getVal(status.authId)
+    val oldAuthorize = ctx.api.getVal(authPrefix + status.authId)
     if (status.state) {
       throw ContractException(toJsonErrMsg(stateNotMatchFunction))
     } else {
@@ -96,7 +97,7 @@ object AuthOperation extends DidOperation {
           checkSignerValid(ctx, authorize.grant)
           val disableTime = ctx.t.getSignature.getTmLocal
           val newAuthorize = authorize.withAuthorizeValid(status.state).withDisableTime(disableTime)
-          ctx.api.setVal(authorize.id, newAuthorize)
+          ctx.api.setVal(authPrefix + authorize.id, newAuthorize)
         } else {
           throw ContractException(toJsonErrMsg(signerNotGranter))
         }
@@ -131,15 +132,15 @@ object AuthOperation extends DidOperation {
     val authId = bindCertToAuthorize.authorizeId
     if (bindCertToAuthorize.getGranted.creditCode.equals(ctx.t.getSignature.getCertId.creditCode)) {
       if (signer.authorizeIds.contains(authId)) {
-        val authorize = ctx.api.getVal(authId).asInstanceOf[Authorize]
+        val authorize = ctx.api.getVal(authPrefix + authId).asInstanceOf[Authorize]
         // 如果未被禁用，这可以绑定，此处不判断证书有效性，因为有效无效，验签时候会判断
         if (authorize.authorizeValid) {
-          val certKey = bindCertToAuthorize.getGranted.creditCode + "_" + bindCertToAuthorize.getGranted.certName
+          val certKey = certPrefix + bindCertToAuthorize.getGranted.creditCode + "_" + bindCertToAuthorize.getGranted.certName
           val cert = ctx.api.getVal(certKey)
           if (cert == null) {
             throw ContractException(toJsonErrMsg(bindCertNotExists))
           } else if (cert.asInstanceOf[Certificate].certValid) {
-            ctx.api.setVal(authId + "_" + bindCertToAuthorize.getGranted.creditCode, bindCertToAuthorize)
+            ctx.api.setVal(bindPrefix + authId + "_" + bindCertToAuthorize.getGranted.creditCode, bindCertToAuthorize)
           } else {
             throw ContractException(toJsonErrMsg(bindCertNotValid))
           }

@@ -3,6 +3,7 @@ package rep.sc.tpl.did.operation
 import rep.protos.peer.{ActionResult, Signer}
 import rep.sc.scalax.{ContractContext, ContractException}
 import rep.sc.tpl.did.operation.SignerOperation.signerNotExists
+import rep.sc.tpl.did.DidTplPrefix.signerPrefix
 import scalapb.json4s.JsonFormat
 
 
@@ -79,8 +80,8 @@ protected trait DidOperation {
     * @return
     */
   def checkSignerValid(ctx: ContractContext, creditCode: String): Signer = {
-    if (ctx.api.getVal(creditCode) != null) {
-      val signer = ctx.api.getVal(creditCode).asInstanceOf[Signer]
+    if (ctx.api.getVal(signerPrefix + creditCode) != null) {
+      val signer = ctx.api.getVal(signerPrefix + creditCode).asInstanceOf[Signer]
       if (signer.signerValid) {
         signer
       } else {
