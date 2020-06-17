@@ -16,6 +16,7 @@
 
 package rep.app
 
+import akka.actor.ActorRef
 import akka.remote.transport.Transport.InvalidAssociationException
 import rep.app.system.ClusterSystem
 import rep.app.system.ClusterSystem.InitType
@@ -26,6 +27,34 @@ import rep.app.system.ClusterSystem.InitType
  *         -Djavax.net.debug=ssl:handshake:verbose
  */
 object Repchain {
+
+  def h4(h:String) = {
+    if (h.size >= 4)
+      h.substring(0,4)
+    else
+      h
+  }
+
+  def nn(s:String) = {
+    var r = ""
+    if (s.contains("121000005l35120456.node1")) r = "node1"
+    if (s.contains("12110107bi45jh675g.node2")) r = "node2"
+    if (s.contains("122000002n00123567.node3")) r = "node3"
+    if (s.contains("921000005k36123789.node4")) r = "node4"
+    if (s.contains("921000006e0012v696.node5")) r = "node5"
+    r
+  }
+
+  def nn(sender:ActorRef) = {
+    val s = sender.path.toString
+    var r = ""
+    if (s.contains("22522")) r = "node1"
+    if (s.contains("22523")) r = "node2"
+    if (s.contains("22524")) r = "node3"
+    if (s.contains("22525")) r = "node4"
+    if (s.contains("22526")) r = "node5"
+    r
+  }
 
   def main(args: Array[String]): Unit = {
 
@@ -53,7 +82,7 @@ object Repchain {
 
 
     //以下代码只能在测试系统稳定性，即测试系统离网之后再入网时可以用，发布时一定要删除
-    Thread.sleep(10000)
+    //Thread.sleep(10000)
     //RepChainMgr.StartClusterStub
 
 

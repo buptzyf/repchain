@@ -18,6 +18,7 @@ package rep.network.confirmblock.pbft
 
 import akka.actor.{ActorRef, Props}
 import akka.util.Timeout
+import rep.app.Repchain
 import rep.app.conf.SystemProfile
 import rep.log.{RepLogger, RepTimeTracer}
 import rep.network.autotransaction.Topic
@@ -39,6 +40,10 @@ object ConfirmOfBlockOfPBFT {
 
 class ConfirmOfBlockOfPBFT(moduleName: String) extends IConfirmOfBlock(moduleName) {
   import context.dispatcher
+
+  private var lastBlockTime = System.currentTimeMillis()
+  private var transCount = 0
+  private var tpsstr = ""
 
   override def preStart(): Unit = {
     RepLogger.info(RepLogger.Consensus_Logger, this.getLogMsgPrefix("confirm Block module start"))
@@ -104,7 +109,17 @@ class ConfirmOfBlockOfPBFT(moduleName: String) extends IConfirmOfBlock(moduleNam
     if (SystemProfile.getIsVerifyOfEndorsement)
         b = asyncVerifyEndorses(block,replies)
     if (b) {
-        pe.getBlockCacheMgr.addToCache(BlockRestore(block, SourceOfBlock.CONFIRMED_BLOCK, actRefOfBlock))
+        transCount += block.transactions.size
+        val ms = System.currentTimeMillis()
+        val delta = ms - lastBlockTime
+        if (delta > 300000) {
+          val tps = transCount *1000 / delta
+          tpsstr += tps + ", "
+          RepLogger.debug(RepLogger.zLogger,pe.getSysTag + ", TPS=" + tpsstr)
+          transCount = 0;
+          lastBlockTime = System.currentTimeMillis()
+        }
+      pe.getBlockCacheMgr.addToCache(BlockRestore(block, SourceOfBlock.CONFIRMED_BLOCK, actRefOfBlock))
         pe.getActorRef(ActorType.storager) ! BatchStore
         sendEvent(EventType.RECEIVE_INFO, mediator, pe.getSysTag, Topic.Block, Event.Action.BLOCK_NEW)
     }
@@ -140,12 +155,12 @@ class ConfirmOfBlockOfPBFT(moduleName: String) extends IConfirmOfBlock(moduleNam
   override def receive = {
     //Endorsement block
     case MsgOfConsensus.ConfirmedBlock(block, actRefOfBlock) =>
-      //RepLogger.print(RepLogger.zLogger,pe.getSysTag + ", ConfirmOfBlockOfPBFT recv ConfirmedBlock(2 params): " + ", " + block.hashOfBlock)
+      RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", ConfirmedBlock(2p): " + ", " + Repchain.h4(block.hashOfBlock.toStringUtf8))
       RepTimeTracer.setStartTime(pe.getSysTag, "blockconfirm", System.currentTimeMillis(), block.height, block.transactions.size)
       checkedOfConfirmBlock(block, actRefOfBlock, Seq.empty)
       RepTimeTracer.setEndTime(pe.getSysTag, "blockconfirm", System.currentTimeMillis(), block.height, block.transactions.size)
     case MsgOfPBFT.ConfirmedBlock(block, actRefOfBlock, replies) =>
-      //RepLogger.print(RepLogger.zLogger,pe.getSysTag + ", ConfirmOfBlockOfPBFT recv ConfirmedBlock: " + ", " + block.hashOfBlock)
+      RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", ConfirmedBlock: " + ", " + Repchain.h4(block.hashOfBlock.toStringUtf8))
       RepTimeTracer.setStartTime(pe.getSysTag, "blockconfirm", System.currentTimeMillis(), block.height, block.transactions.size)
       checkedOfConfirmBlock(block, actRefOfBlock, replies)
       RepTimeTracer.setEndTime(pe.getSysTag, "blockconfirm", System.currentTimeMillis(), block.height, block.transactions.size)

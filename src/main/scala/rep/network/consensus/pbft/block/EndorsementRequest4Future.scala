@@ -16,15 +16,17 @@
 //zhj
 package rep.network.consensus.pbft.block
 
+import akka.pattern.ask
 import akka.actor.{ActorSelection, Address, Props}
 import akka.pattern.AskTimeoutException
 import akka.util.Timeout
 import com.google.protobuf.ByteString
+import rep.app.Repchain
 import rep.app.conf.{SystemProfile, TimePolicy}
 import rep.log.RepLogger
 import rep.network.base.ModuleBase
 import rep.network.consensus.pbft.MsgOfPBFT
-import rep.network.consensus.pbft.MsgOfPBFT.{MsgPbftPrePrepare, MsgPbftReply, MsgPbftReplyOk, RequesterOfEndorsement}
+import rep.network.consensus.pbft.MsgOfPBFT.{MsgPbftPrePrepare, MsgPbftPrePrepareResend, MsgPbftReply, MsgPbftReplyOk, RequesterOfEndorsement, ResendEndorseInfo, ResultFlagOfEndorse, ResultOfEndorsed}
 import rep.network.consensus.util.BlockVerify
 import rep.protos.peer._
 
@@ -36,9 +38,10 @@ object EndorsementRequest4Future {
 
 class EndorsementRequest4Future(moduleName: String) extends ModuleBase(moduleName) {
   import scala.concurrent.duration._
-  case class HashReply(hash:ByteString, reply:MPbftReply)
-  private var recvedReplies = scala.collection.mutable.Buffer[HashReply]()
-  private var recvedRepliesCount = scala.collection.mutable.HashMap[ByteString, Int]()
+  //case class HashReply(hash:ByteString, reply:MPbftReply)
+  private var recvedHash : ByteString = null
+  private var recvedReplies = scala.collection.mutable.Buffer[MPbftReply]()
+  //private var recvedRepliesCount = scala.collection.mutable.HashMap[ByteString, Int]()
 
   implicit val timeout = Timeout(TimePolicy.getTimeoutEndorse.seconds)
   //private val endorsementActorName = "/user/modulemanager/endorser"
@@ -58,9 +61,8 @@ class EndorsementRequest4Future(moduleName: String) extends ModuleBase(moduleNam
       try {
         val selection: ActorSelection = context.actorSelection(toAkkaUrl(reqinfo.endorer, endorsementActorName));
         val data = MsgPbftPrePrepare("", reqinfo.blc, reqinfo.blocker)
+
         selection ! data
-        //val future1 = selection ? data
-        //Await.result(future1, timeout.duration).asInstanceOf[MsgPbftPrepare]
       }  catch {
         case e: AskTimeoutException =>
 
@@ -79,20 +81,19 @@ class EndorsementRequest4Future(moduleName: String) extends ModuleBase(moduleNam
   private def ProcessMsgPbftReply(reply: MsgPbftReply){
     if (VerifyReply(reply.block,reply.reply)) {
       val hash = reply.block.hashOfBlock
-      recvedReplies += HashReply(hash, reply.reply)
-      var count = 1
-      if (recvedRepliesCount.contains(hash)) {
-        count = recvedRepliesCount.get(hash).get + 1
+      if ( hash.equals(recvedHash)) {
+        recvedReplies += reply.reply
+      } else {
+        recvedHash = hash
+        recvedReplies.clear()
+        recvedReplies += reply.reply
       }
-      recvedRepliesCount.put(hash, count)
-      if (count >= (SystemProfile.getPbftF + 1)) {
-        val replies = recvedReplies.filter(_.hash == reply.block.hashOfBlock).map(f=>f.reply)
+      if (recvedReplies.size >= (SystemProfile.getPbftF + 1)) {
+        val replies = recvedReplies
           .sortWith( (left,right)=> left.signature.get.certId.toString < right.signature.get.certId.toString)
-        //val blockWithReplies = reply.block.withReplies(replies)
         context.parent ! MsgPbftReplyOk(reply.block, replies)
-
-        recvedRepliesCount.remove(reply.block.hashOfBlock)
-        replies.foreach(f=> recvedReplies -= HashReply(reply.block.hashOfBlock, f))
+        recvedHash = null
+        recvedReplies.clear()
       }
     }
   }
@@ -100,12 +101,15 @@ class EndorsementRequest4Future(moduleName: String) extends ModuleBase(moduleNam
 
   override def receive = {
     case MsgPbftReply(block,reply,chainInfo) =>
-      //RepLogger.print(RepLogger.zLogger,pe.getSysTag + ", EndorsementRequest4Future recv reply: " + ", " + block.hashOfBlock)
+      RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", MsgPbftReply: " + ", " + Repchain.h4(block.hashOfBlock.toStringUtf8))
       ProcessMsgPbftReply(MsgPbftReply(block,reply,chainInfo))
+
+    case MsgPbftPrePrepareResend(senderPath,block, blocker) =>
+      sender ! MsgPbftPrePrepare(senderPath,block, blocker)
 
     case RequesterOfEndorsement(block, blocker, addr) =>
       //待请求背书的块的上一个块的hash不等于系统最新的上一个块的hash，停止发送背书
-      //RepLogger.print(RepLogger.zLogger,pe.getSysTag + ", EndorsementRequest4Future recv RequesterOfEndorsement: " + ", " + block.hashOfBlock)
+      RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", RequesterOfEndorsement: " + ", " + Repchain.h4(block.hashOfBlock.toStringUtf8))
       if(block.previousBlockHash.toStringUtf8() == pe.getCurrentBlockHash){
         handler(RequesterOfEndorsement(block, blocker, addr))
       }else{

@@ -21,12 +21,16 @@ package rep.network.consensus.pbft.endorse
 import akka.actor.Props
 import akka.pattern.ask
 import akka.util.Timeout
+import rep.app.Repchain
 import rep.app.conf.{SystemCertList, SystemProfile, TimePolicy}
+import rep.log.RepTimeTracer
 import rep.network.base.ModuleBase
 import rep.network.consensus.common.MsgOfConsensus.{PreTransBlock, PreTransBlockResult}
-import rep.network.consensus.pbft.MsgOfPBFT.{MsgPbftCommit, MsgPbftPrePrepare, MsgPbftPrepare, ResultFlagOfEndorse}
+import rep.network.consensus.pbft.MsgOfPBFT.{MsgPbftCommit, MsgPbftPrePrepare, MsgPbftPrePrepareResend, MsgPbftPrepare, ResultFlagOfEndorse, ResultOfEndorsed}
 import rep.network.module.ModuleActorType
 import rep.network.module.pbft.PBFTActorType
+import rep.network.persistence.IStorager
+import rep.network.util
 import rep.network.util.NodeHelp
 //import rep.network.consensus.vote.Voter.VoteOfBlocker
 import rep.log.RepLogger
@@ -143,33 +147,59 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
       Await.result(result, timeout.duration).asInstanceOf[Boolean]
   }
 
-  private def CheckMessage(block : Block, blocker: String):Boolean = {
-    var r = false
+  private def CheckMessage(block : Block, blocker: String) = {
+    var r = ResultFlagOfEndorse.success
+    RepLogger.debug(RepLogger.zLogger, "R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) +
+      ", PrePrepare 3a: " + Repchain.nn(blocker) + ", " + Repchain.h4(block.hashOfBlock.toStringUtf8))
     if (block.height > pe.getCurrentHeight + 1) {
       pe.getActorRef(PBFTActorType.ActorType.synchrequester) ! StartSync(false)
+      RepLogger.debug(RepLogger.zLogger, Repchain.nn(pe.getSysTag) +
+       ", BlockHeightError: " + Repchain.nn(block.hashOfBlock.toStringUtf8) + ", " + block.height + "," +
+        Repchain.h4(pe.getCurrentBlockHash) + "," + pe.getCurrentHeight)
+      r = ResultFlagOfEndorse.BlockHeightError
     } else {
       if (NodeHelp.isCandidateNow(pe.getSysTag, SystemCertList.getSystemCertList)
         //是候选节点，可以背书
         && (!pe.isSynching)
         && (block.previousBlockHash.toStringUtf8 == pe.getBlocker.voteBlockHash)
         && NodeHelp.isBlocker(blocker, pe.getBlocker.blocker)) {
-        r = true
+        r = ResultFlagOfEndorse.success
+      }else{
+        RepLogger.debug(RepLogger.zLogger, "R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) +
+          ",  MsgPbftPrePrepare 6: " + pe.isSynching + "," +
+          Repchain.h4(block.previousBlockHash.toStringUtf8) + "," + Repchain.h4(pe.getBlocker.voteBlockHash) +"," +
+          Repchain.nn(blocker) + ", " + Repchain.nn(pe.getBlocker.blocker))
+        r = ResultFlagOfEndorse.CandidatorError
       }
     }
     r
   }
 
-  private def ProcessMsgPbftPrePrepare(prePrepare: MsgPbftPrePrepare): Unit = {
-    if (CheckMessage(prePrepare.block,prePrepare.blocker))
+  private def CheckMessage2(block : Block, blocker: String):Boolean = {
+    val r : Boolean = (block.previousBlockHash.toStringUtf8 == pe.getBlocker.voteBlockHash) &&
+            NodeHelp.isBlocker(blocker, pe.getBlocker.blocker)
+    r
+  }
+
+  private def ProcessMsgPbftPrePrepare(prePrepare: MsgPbftPrePrepare): Int = {
+    var r = CheckMessage(prePrepare.block,prePrepare.blocker)
+    if (r==ResultFlagOfEndorse.success) {
+      RepLogger.debug(RepLogger.zLogger, "R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", PrePrepare 3: " + Repchain.nn(prePrepare.blocker) + ", " + Repchain.h4(prePrepare.block.hashOfBlock.toStringUtf8))
       if (prePrepare.blocker != pe.getSysTag) {
         var b = true;
         if (SystemProfile.getIsVerifyOfEndorsement)
           b = VerifyInfo(prePrepare)
-        if (b)
+        RepLogger.debug(RepLogger.zLogger, "R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", PrePrepare 4: " + Repchain.nn(prePrepare.blocker) + ", " + Repchain.h4(prePrepare.block.hashOfBlock.toStringUtf8))
+        if (b) {
+          RepLogger.debug(RepLogger.zLogger, "R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", PrePrepare 5: " + Repchain.nn(prePrepare.blocker) + ", " + Repchain.h4(prePrepare.block.hashOfBlock.toStringUtf8))
           pe.getActorRef(PBFTActorType.ActorType.pbftpreprepare) ! prePrepare
-        else
-          sender ! MsgPbftPrepare("",ResultFlagOfEndorse.VerifyError, null, null,null, pe.getSystemCurrentChainStatus)
+
+        } else
+          r = ResultFlagOfEndorse.VerifyError
+      } else {
       }
+    }
+    r
   }
   //preprepare end-------------------------------------------
 
@@ -182,7 +212,7 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
   }
 
   private def ProcessMsgPbftPepare(prepare:MsgPbftPrepare){
-    if (CheckMessage(prepare.block,prepare.blocker))
+    if (CheckMessage2(prepare.block,prepare.blocker))
     if (prepare.result == ResultFlagOfEndorse.success) {
         if (VerifyPrepare(prepare.block, prepare.prepare)) {
           pe.getActorRef(PBFTActorType.ActorType.pbftprepare) ! prepare
@@ -201,7 +231,7 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
   }
 
   private def ProcessMsgPbftCommit(commit: MsgPbftCommit){
-    if (CheckMessage(commit.block,commit.blocker))
+    if (CheckMessage2(commit.block,commit.blocker))
         if (VerifyCommit(commit.block, commit.commit)) {
           pe.getActorRef(PBFTActorType.ActorType.pbftcommit) ! commit
         }
@@ -211,17 +241,30 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
   override def receive = {
     //Endorsement block
     case MsgPbftPrePrepare(senderPath,block, blocker) =>
-      //RepLogger.print(RepLogger.zLogger,pe.getSysTag + ", Endorser4Future recv preprepare: " + blocker + ", " + block.hashOfBlock)
-      ProcessMsgPbftPrePrepare(MsgPbftPrePrepare(sender.path.toString, block, blocker))
+      RepLogger.debug(RepLogger.zLogger, "R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", PrePrepare 1: " + Repchain.nn(blocker) + ", " + Repchain.h4(block.hashOfBlock.toStringUtf8))
+      var r = ResultFlagOfEndorse.success
+      if(!pe.isSynching){
+        RepTimeTracer.setStartTime(pe.getSysTag, s"recvendorsement-${moduleName}", System.currentTimeMillis(),block.height,block.transactions.size)
+        RepLogger.debug(RepLogger.zLogger, "R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", PrePrepare 2: " + Repchain.nn(blocker) + ", " + Repchain.h4(block.hashOfBlock.toStringUtf8))
+        r = ProcessMsgPbftPrePrepare(MsgPbftPrePrepare(sender.path.toString, block, blocker))
+        RepTimeTracer.setEndTime(pe.getSysTag, s"recvendorsement-${moduleName}", System.currentTimeMillis(),block.height,block.transactions.size)
+      } else
+        r = ResultFlagOfEndorse.EnodrseNodeIsSynching
 
+        if (r != ResultFlagOfEndorse.success) {
+          if (block.height >= pe.getCurrentHeight) {//zhj0623
+            sender ! MsgPbftPrePrepareResend(senderPath,block, blocker)
+            RepLogger.debug(RepLogger.zLogger, "R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", PrePrepare resend: " + r + ", " + Repchain.nn(blocker) + ", " + Repchain.h4(block.hashOfBlock.toStringUtf8) +","+Repchain.h4(pe.getBlocker.voteBlockHash))
+          } //else
+            //RepLogger.debug(RepLogger.zLogger, "R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", PrePrepare not resend: " + r + ", " + Repchain.nn(blocker) + ", " + Repchain.h4(block.hashOfBlock.toStringUtf8) +","+Repchain.h4(pe.getBlocker.voteBlockHash))
+        }
 
     case MsgPbftPrepare(senderPath,result, block, blocker, prepare, chainInfo) =>
-      //RepLogger.print(RepLogger.zLogger,pe.getSysTag + ", Endorser4Future recv prepare: " + blocker + ", " + block.hashOfBlock)
+      RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", Prepare: " + Repchain.nn(blocker) + ", " + Repchain.h4(block.hashOfBlock.toStringUtf8))
       ProcessMsgPbftPepare(MsgPbftPrepare(senderPath,result, block, blocker, prepare, chainInfo))
 
-
     case MsgPbftCommit(senderPath,block,blocker,commit,chainInfo) =>
-      //RepLogger.print(RepLogger.zLogger,pe.getSysTag + ", Endorser4Future recv commit: " + blocker + ", " + block.hashOfBlock)
+      RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", Commit: " + Repchain.nn(blocker) + ", " + Repchain.h4(block.hashOfBlock.toStringUtf8))
       ProcessMsgPbftCommit(MsgPbftCommit(senderPath,block,blocker,commit,chainInfo))
 
     case _ => //ignore

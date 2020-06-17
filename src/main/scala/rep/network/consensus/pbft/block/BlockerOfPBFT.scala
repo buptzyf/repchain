@@ -19,6 +19,7 @@ package rep.network.consensus.pbft.block
 import akka.actor.{ActorRef, Props}
 import akka.pattern.{AskTimeoutException, ask}
 import akka.util.Timeout
+import rep.app.Repchain
 import rep.app.conf.{SystemProfile, TimePolicy}
 import rep.log.{RepLogger, RepTimeTracer}
 import rep.network.autotransaction.Topic
@@ -181,6 +182,7 @@ class BlockerOfPBFT(moduleName: String) extends ModuleBase(moduleName) {
     if (blc != null) {
       RepTimeTracer.setEndTime(pe.getSysTag, "createBlock", System.currentTimeMillis(), blc.height, blc.transactions.size)
       this.preblock = blc
+      RepLogger.debug(RepLogger.zLogger, pe.getSysTag + ", preblock= " + preblock.height + "," +Repchain.h4(preblock.hashOfBlock.toStringUtf8) )
       schedulerLink = clearSched()
 
       // if (SystemProfile.getNumberOfEndorsement == 1) {
@@ -190,7 +192,7 @@ class BlockerOfPBFT(moduleName: String) extends ModuleBase(moduleName) {
         //在发出背书时，告诉对方我是当前出块人，取出系统的名称
         RepTimeTracer.setStartTime(pe.getSysTag, "Endorsement", System.currentTimeMillis(), blc.height, blc.transactions.size)
         val ar = pe.getActorRef(PBFTActorType.ActorType.endorsementcollectioner)
-        //RepLogger.print(RepLogger.zLogger, pe.getSysTag + ", send CollectEndorsement to " + ar )
+        RepLogger.debug(RepLogger.zLogger, pe.getSysTag + ", send CollectEndorsement to " + ar )
         ar ! CollectEndorsement(this.preblock, pe.getSysTag)
       //}
     } else {
@@ -203,34 +205,15 @@ class BlockerOfPBFT(moduleName: String) extends ModuleBase(moduleName) {
   override def receive = {
     //创建块请求（给出块人）
     case MsgOfPBFT.CreateBlock =>
-      // //RepLogger.print(RepLogger.zLogger,pe.getSysTag + ", Blocker recv CreateBlock: " + "Now blocker=" + pe.getBlocker.blocker)
-      /*if(pe.getSysTag == "121000005l35120456.node1" &&  pe.count <= 10){
-        pe.count = pe.count + 1
-        throw new Exception("^^^^^^^^^^^^^^^^exception^^^^^^^^^^")
-      }*/
+      RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", CreateBlock: " + Repchain.nn(pe.getBlocker.blocker))
       if (!pe.isSynching) {
-
-        //
-        /*if(SystemProfile.getNumberOfEndorsement == 1){
-          if (NodeHelp.isBlocker(pe.getBlocker.blocker, pe.getSysTag)){
-            sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Block, Event.Action.CANDIDATOR)
-             if (preblock == null || (preblock.previousBlockHash.toStringUtf8() != pe.getCurrentBlockHash)) {
-              //是出块节点
-              CreateBlockHandler
-             }
-          }
-          
-        }else{ */
-        ////RepLogger.print(RepLogger.zLogger, pe.getBlocker.voteBlockHash)
-        ////RepLogger.print(RepLogger.zLogger, pe.getCurrentBlockHash)
-        ////RepLogger.print(RepLogger.zLogger, if (preblock == null) null else preblock.previousBlockHash.toStringUtf8)
           if (NodeHelp.isBlocker(pe.getBlocker.blocker, pe.getSysTag)
             && pe.getBlocker.voteBlockHash == pe.getCurrentBlockHash) {
             sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Block, Event.Action.CANDIDATOR)
 
             //是出块节点
             if (preblock == null || (preblock.previousBlockHash.toStringUtf8() != pe.getBlocker.voteBlockHash)) {
-              //RepLogger.print(RepLogger.zLogger, "CreateBlockHandler, " + "Me: "+pe.getSysTag)
+              RepLogger.debug(RepLogger.zLogger, "CreateBlockHandler, " + "Me: "+Repchain.nn(pe.getSysTag))
               CreateBlockHandler
             }
           } else {

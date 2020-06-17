@@ -23,9 +23,9 @@ import rep.network.sync.SyncMsg
 import rep.network.sync.SyncMsg.{BlockDataOfRequest, ChainInfoOfRequest, ResponseInfo}
 import rep.network.util.NodeHelp
 import rep.protos.peer._
-import rep.storage.ImpDataAccess
+import rep.storage.{ImpDataAccess, JsonUtil}
 import rep.utils.GlobalUtils.{BlockEvent, EventType}
-
+import rep.network.tools.transpool.TransactionPoolMgr
 
 /**
  * Created by jiangbuyun on 2020/03/19.
@@ -51,12 +51,17 @@ class SynchronizeResponser(moduleName: String) extends ModuleBase(moduleName) {
         RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(  "recv sync chaininfo request,it is self,do not response, from actorAddr" + "～" + NodeHelp.getNodePath(sender())))
       } //else {
         RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix( "recv sync chaininfo request from actorAddr" + "～" + NodeHelp.getNodePath(sender())))
+
+        val ti0 = System.currentTimeMillis()
         val responseInfo = dataaccess.getBlockChainInfo()
+        RepLogger.debug(RepLogger.zLogger, "getBlockChainInfo,time=" + (System.currentTimeMillis() - ti0))
         var ChainInfoOfSpecifiedHeight : BlockchainInfo = BlockchainInfo(0l, 0l, _root_.com.google.protobuf.ByteString.EMPTY,
                                                                         _root_.com.google.protobuf.ByteString.EMPTY,
                                                                         _root_.com.google.protobuf.ByteString.EMPTY)
         if(height >0 && height < responseInfo.height){
+          val ti1 = System.currentTimeMillis()
           val b = dataaccess.getBlock4ObjectByHeight(height)
+          RepLogger.debug(RepLogger.zLogger, "getBlock4ObjectByHeight,time=" + (System.currentTimeMillis() - ti1) + "," + pe.getTransPoolMgr.getTransLength())
           RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(  s"node number:${pe.getSysTag},recv synch chaininfo request,request height:${height},local chaininof=${responseInfo.height}"))
           ChainInfoOfSpecifiedHeight = ChainInfoOfSpecifiedHeight.withHeight(height)
           ChainInfoOfSpecifiedHeight = ChainInfoOfSpecifiedHeight.withCurrentBlockHash(b.hashOfBlock)
