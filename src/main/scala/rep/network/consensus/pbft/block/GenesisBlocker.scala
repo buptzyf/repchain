@@ -36,6 +36,7 @@ import rep.utils.GlobalUtils.{BlockEvent, EventType, NodeStatus}
 
 import scala.collection.mutable
 import com.sun.beans.decoder.FalseElementHandler
+import rep.app.Repchain
 
 import scala.util.control.Breaks
 import rep.utils.IdTool
@@ -104,7 +105,7 @@ class GenesisBlocker(moduleName: String) extends ModuleBase(moduleName) {
   override def receive = {
     //创建块请求（给出块人）
     case GenesisBlocker.GenesisBlock =>
-      //RepLogger.print(RepLogger.zLogger,pe.getSysTag + ", pbft.block.GenesisBlock recv GenesisBlock: ")
+      RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", GenesisBlock: ")
       if(dataaccess.getBlockChainInfo().height == 0 && NodeHelp.isSeedNode(pe.getSysTag)  ){
         if(this.preblock != null){
           mediator ! Publish(Topic.Block, MsgOfPBFT.ConfirmedBlock(preblock, sender, Seq.empty))

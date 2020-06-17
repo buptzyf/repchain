@@ -3,6 +3,7 @@
 package rep.network.consensus.pbft.vote
 
 import akka.actor.Props
+import rep.app.Repchain
 import rep.app.conf.{SystemCertList, TimePolicy}
 import rep.log.RepLogger
 import rep.network.consensus.pbft.MsgOfPBFT.{CreateBlock, VoteOfBlocker, VoteOfForce}
@@ -82,12 +83,12 @@ class VoterOfPBFT(moduleName: String) extends IVoter(moduleName: String) {
 
   override def receive: Receive = {
     case VoteOfBlocker(flag:String) =>
-      ////RepLogger.print(RepLogger.zLogger,pe.getSysTag + ", Voter recv VoteOfBlocker: " + flag)
+      RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", VoteOfBlocker: " + flag)
       if (NodeHelp.isCandidateNow(pe.getSysTag, SystemCertList.getSystemCertList)) {
         voteMsgHandler(false)
       }
     case VoteOfForce=>
-      //RepLogger.print(RepLogger.zLogger,pe.getSysTag + ", Voter recv VoteOfForce: ")
+      RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", VoteOfForce: ")
       voteMsgHandler(true)
   }
 }

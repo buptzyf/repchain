@@ -24,6 +24,7 @@ import akka.actor.{ActorSelection, Props}
 import akka.util.Timeout
 import com.google.protobuf.ByteString
 import com.google.protobuf.timestamp.Timestamp
+import rep.app.Repchain
 import rep.app.conf.{SystemProfile, TimePolicy}
 import rep.crypto.cert.SignTool
 import rep.log.RepLogger
@@ -40,10 +41,8 @@ class PbftPrepare(moduleName: String) extends ModuleBase(moduleName) {
 
   import scala.concurrent.duration._
 
-  case class HashPrepare(hash:ByteString, prepare:MPbftPrepare)
-
-  private var recvedPrepares = scala.collection.mutable.Buffer[HashPrepare]()
-  private val recvedPreparesCount = scala.collection.mutable.HashMap[ByteString, Int]()
+  private var recvedHash : ByteString = null
+  private var recvedPrepares = scala.collection.mutable.Buffer[MPbftPrepare]()
 
   implicit val timeout = Timeout(TimePolicy.getTimeoutPreload.seconds)
 
@@ -52,7 +51,7 @@ class PbftPrepare(moduleName: String) extends ModuleBase(moduleName) {
   }
 
   private def ProcessMsgPbftPepare(prepare:MsgPbftPrepare) = {
-    val prepares = recvedPrepares.filter(_.hash == prepare.block.hashOfBlock).map(f=>f.prepare)
+    val prepares = recvedPrepares
       .sortWith( (left,right)=> left.signature.get.certId.toString < right.signature.get.certId.toString)
     val bytes = MPbftCommit().withPrepares(prepares).toByteArray//prepares.reduce((a,f)=>a.toByteString.concat(f.toByteString))
     val certId = IdTool.getCertIdFromName(pe.getSysTag)
@@ -69,23 +68,25 @@ class PbftPrepare(moduleName: String) extends ModuleBase(moduleName) {
       actor ! MsgPbftCommit(prepare.senderPath,prepare.block,prepare.blocker,commit,pe.getSystemCurrentChainStatus)
     })
 
-    recvedPreparesCount.remove(prepare.block.hashOfBlock)
-    prepares.foreach(f=> recvedPrepares -= HashPrepare(prepare.block.hashOfBlock, f))
+    recvedHash = null
+    recvedPrepares.clear()
+    val i = 0
   }
 
   override def receive = {
 
     case MsgPbftPrepare(senderPath,result, block, blocker, prepare, chainInfo) =>
           //already verified
-          //RepLogger.print(RepLogger.zLogger,pe.getSysTag + ", PbftPrepare recv prepare: " + blocker + ", " + block.hashOfBlock)
+          RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", PbftPrepare prepare: " + blocker + ", " + block.hashOfBlock.toStringUtf8)
           val hash = block.hashOfBlock
-          recvedPrepares += HashPrepare(hash, prepare)
-          var count = 1
-          if (recvedPreparesCount.contains(hash)) {
-            count = recvedPreparesCount.get(hash).get +1
+          if ( hash.equals(recvedHash)) {
+            recvedPrepares += prepare
+          } else {
+            recvedHash = hash
+            recvedPrepares.clear()
+            recvedPrepares += prepare
           }
-          recvedPreparesCount.put(hash,count)
-          if ( count >= 2*SystemProfile.getPbftF)
+          if ( recvedPrepares.size >= 2*SystemProfile.getPbftF)
             ProcessMsgPbftPepare(MsgPbftPrepare(senderPath,result, block, blocker, prepare, chainInfo))
 
     case _ => //ignore

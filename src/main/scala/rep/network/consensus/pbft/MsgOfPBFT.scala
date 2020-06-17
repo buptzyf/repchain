@@ -48,6 +48,7 @@ object MsgOfPBFT {
   //EndorsementInfo => MsgPbftPrePrepare
   //给背书人的背书消息
   case class MsgPbftPrePrepare(senderPath:String,block: Block, blocker: String)
+  case class MsgPbftPrePrepareResend(senderPath:String,block: Block, blocker: String)
 
   //背书收集者消息
   case class CollectEndorsement(blc: Block, blocker: String)

@@ -8,6 +8,7 @@ import akka.actor.Props
 import akka.util.Timeout
 import com.google.protobuf.ByteString
 import com.google.protobuf.timestamp.Timestamp
+import rep.app.Repchain
 import rep.app.conf.{SystemProfile, TimePolicy}
 import rep.crypto.cert.SignTool
 import rep.log.RepLogger
@@ -24,11 +25,8 @@ class PbftCommit(moduleName: String) extends ModuleBase(moduleName) {
 
   import scala.concurrent.duration._
 
-  case class HashCommit(hash:ByteString, commit:MPbftCommit)
-
-
-  private var recvedCommits = scala.collection.mutable.Buffer[HashCommit]()
-  private var recvedCommitsCount = scala.collection.mutable.HashMap[ByteString, Int]()
+  private var recvedHash : ByteString = null
+  private var recvedCommits = scala.collection.mutable.Buffer[MPbftCommit]()
 
   implicit val timeout = Timeout(TimePolicy.getTimeoutPreload.seconds)
 
@@ -37,10 +35,9 @@ class PbftCommit(moduleName: String) extends ModuleBase(moduleName) {
   }
 
   private def ProcessMsgPbftCommit(commit: MsgPbftCommit){
-    val commits = recvedCommits.filter(_.hash == commit.block.hashOfBlock).map(f=>f.commit)
+    val commits = recvedCommits
       .sortWith( (left,right)=> left.signature.get.certId.toString < right.signature.get.certId.toString)
     val bytes = MPbftReply().withCommits(commits).toByteArray
-    //commits.map(f=>f.toByteString).reduce((a,f)=>a.concat(f))
     val certId = IdTool.getCertIdFromName(pe.getSysTag)
     val millis = TimeUtils.getCurrentTime()
     val sig = Signature(Option(certId),Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)),
@@ -52,24 +49,24 @@ class PbftCommit(moduleName: String) extends ModuleBase(moduleName) {
     val actor = context.actorSelection(commit.senderPath)
     actor ! MsgPbftReply(commit.block,reply,pe.getSystemCurrentChainStatus)
 
-    recvedCommitsCount.remove(commit.block.hashOfBlock)
-    commits.foreach(f=> recvedCommits -= HashCommit(commit.block.hashOfBlock, f))
-
+    recvedHash = null
+    recvedCommits.clear()
   }
 
   override def receive = {
 
     case MsgPbftCommit(senderPath,block,blocker,commit,chainInfo) =>
-      //RepLogger.print(RepLogger.zLogger,pe.getSysTag + ", PbftCommit recv commit: " + blocker + ", " + block.hashOfBlock)
+      RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", PbftCommit commit: " + blocker + ", " + block.hashOfBlock.toStringUtf8)
       //already verified
       val hash = block.hashOfBlock
-      recvedCommits += HashCommit(hash, commit)
-      var count = 1
-      if (recvedCommitsCount.contains(hash)) {
-        count = recvedCommitsCount.get(hash).get +1
+      if ( hash.equals(recvedHash)) {
+        recvedCommits += commit
+      } else {
+        recvedHash = hash
+        recvedCommits.clear()
+        recvedCommits += commit
       }
-      recvedCommitsCount.put(hash,count)
-      if ( count >= (2*SystemProfile.getPbftF+1))
+      if ( recvedCommits.size >= (2*SystemProfile.getPbftF+1))
         ProcessMsgPbftCommit(MsgPbftCommit(senderPath,block,blocker,commit,chainInfo))
 
     case _ => //ignore

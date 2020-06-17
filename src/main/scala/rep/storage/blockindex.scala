@@ -16,11 +16,12 @@
 
 package rep.storage
 
-import scala.util.parsing.json._;
-import rep.protos.peer._;
-import rep.storage.leveldb._;
-import rep.storage.cfg._;
-import rep.crypto._;
+import scala.util.parsing.json._
+import rep.protos.peer._
+import rep.storage.leveldb._
+import rep.storage.cfg._
+import rep.crypto._
+import rep.log.RepLogger;
 
 /**
  * @author jiangbuyun
@@ -84,6 +85,7 @@ class blockindex() {
     if (ab != null) {
       val jstr = new String(ab, "UTF-8")
       if (jstr != null) {
+
         var m: Map[String, Any] = JsonUtil.json2Map(jstr)
         this.blockNum = this.str4null(getAnyType(m, "blockNum"))
         this.blockHeight = str2Long(getAnyType(m, "blockHeight"))

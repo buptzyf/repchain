@@ -19,10 +19,12 @@ package rep.network.consensus.pbft.block
 import akka.actor.Props
 import akka.cluster.pubsub.DistributedPubSubMediator.Publish
 import akka.routing._
+import rep.app.Repchain
 import rep.app.conf.SystemProfile
 import rep.log.RepLogger
 import rep.network.autotransaction.Topic
 import rep.network.base.ModuleBase
+import rep.network.consensus.cfrd.MsgOfCFRD.{ResultFlagOfEndorse, ResultOfEndorsed}
 import rep.network.consensus.pbft.MsgOfPBFT
 import rep.network.consensus.pbft.MsgOfPBFT.{CollectEndorsement, MsgPbftReplyOk, RequesterOfEndorsement}
 import rep.protos.peer._
@@ -41,7 +43,6 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
   private var recvedEndorse = new HashMap[String, Signature]()
 
   override def preStart(): Unit = {
-    //RepLogger.print(RepLogger.zLogger,pe.getSysTag + ", EndorseCollector Start: " + ", " + self)
     RepLogger.info(RepLogger.Consensus_Logger, this.getLogMsgPrefix( "EndorseCollector Start"))
   }
 
@@ -72,7 +73,7 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
 
   override def receive = {
     case CollectEndorsement(block, blocker) =>
-      //RepLogger.print(RepLogger.zLogger,pe.getSysTag + ", EndorseCollector recv CollectEndorsement: " + ", " + block.hashOfBlock)
+      RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", CollectEndorsement: " + ", " + Repchain.h4(block.hashOfBlock.toStringUtf8) +","+block.height)
       if(!pe.isSynching){
         createRouter
         if (this.block != null && this.block.hashOfBlock.toStringUtf8() == block.hashOfBlock.toStringUtf8()) {
@@ -92,7 +93,7 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
       }
 
     case MsgPbftReplyOk(block, replies) =>
-      //RepLogger.print(RepLogger.zLogger,pe.getSysTag + ", EndorseCollector recv replyok: " + ", " + block.hashOfBlock)
+      RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", MsgPbftReplyOk: " + ", " + Repchain.h4(block.hashOfBlock.toStringUtf8))
       if(!pe.isSynching) {
         //block不空，该块的上一个块等于最后存储的hash，背书结果的块hash跟当前发出的块hash一致
         val hash = pe.getCurrentBlockHash
@@ -105,10 +106,11 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
               clearEndorseInfo
         }
       } else{
+        RepLogger.debug(RepLogger.zLogger,pe.getSysTag + ", MsgPbftReplyOk ignored")
         RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"collectioner back out endorsement result,local height=${pe.getCurrentHeight}"))
       }
 
     case _ =>
-      //RepLogger.print(RepLogger.zLogger, pe.getSysTag + ", EndorseCollector recv other message")
+      RepLogger.debug(RepLogger.zLogger, "R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", EndorseCollector recv other message")
   }
 }

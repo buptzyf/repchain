@@ -22,6 +22,7 @@ package rep.network.consensus.pbft.endorse
 
 import akka.actor.{ActorSelection, Props}
 import akka.util.Timeout
+import rep.app.Repchain
 import rep.app.conf.TimePolicy
 import rep.network.base.ModuleBase
 import rep.log.RepLogger
@@ -54,7 +55,7 @@ class PbftPrePrepare(moduleName: String) extends ModuleBase(moduleName) {
 
   override def receive = {
     case MsgPbftPrePrepare(senderPath,block, blocker) =>
-      //RepLogger.print(RepLogger.zLogger,pe.getSysTag + ", PbftPrePrepare recv preprepare: " + blocker + ", " + block.hashOfBlock)
+      RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", PbftPrePrepare preprepare: " + blocker + ", " + block.hashOfBlock.toStringUtf8)
       ProcessMsgPbftPrePrepare(MsgPbftPrePrepare(senderPath, block, blocker))
 
     case _ => //ignore
