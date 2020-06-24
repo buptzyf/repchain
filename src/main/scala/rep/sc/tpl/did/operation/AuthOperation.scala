@@ -61,12 +61,12 @@ object AuthOperation extends DidOperation {
               val newGrantedSigner = grantedSigner.withAuthorizeIds(newAuthIds)
               // 更新signer
               ctx.api.setVal(signerPrefix + grantedId, newGrantedSigner)
-              // 保存授权权限
-              ctx.api.setVal(authPrefix + authorize.id, authorize)
             } else {
               throw ContractException(toJsonErrMsg(authorizeExistsCode, authorizeExists.format(grantedId, authorize.id)))
             }
           })
+          // 保存授权权限
+          ctx.api.setVal(authPrefix + authorize.id, authorize)
         } else {
           throw ContractException(toJsonErrMsg(someOperateNotExistsOrNotValid))
         }
