@@ -46,8 +46,8 @@ object Repchain {
   }
 
   def nn(sender:ActorRef) = {
-    val s = sender.path.toString
     var r = ""
+    val s = sender.path.toString
     if (s.contains("22522")) r = "node1"
     if (s.contains("22523")) r = "node2"
     if (s.contains("22524")) r = "node3"
