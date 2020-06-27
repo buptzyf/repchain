@@ -38,7 +38,8 @@ class ContractAssetsTPL extends IContract{
 
   // 需要跨合约读账户
   val chaincodeName = SystemProfile.getAccountChaincodeName
-  val chaincodeVersion = SystemProfile.getAccountChaincodeVersion 
+  val chaincodeVersion = SystemProfile.getAccountChaincodeVersion
+  val signerPrefix = "signer_"
   //val prefix = IdTool.getCid(ChaincodeId(chaincodeName, chaincodeVersion))
 
   implicit val formats = DefaultFormats
@@ -50,7 +51,7 @@ class ContractAssetsTPL extends IContract{
     def set(ctx: ContractContext, data:Map[String,Int]) :ActionResult={
       println(s"set data:$data")
       for((k,v)<-data){
-        ctx.api.setVal(k, v)
+        ctx.api.setVal(signerPrefix+k, v)
       }
       null
     }
@@ -60,26 +61,26 @@ class ContractAssetsTPL extends IContract{
         throw ContractException("只允许从本人账户转出")      
       val signerKey =  data.to
       // 跨合约读账户，该处并未反序列化
-      if(ctx.api.getStateEx(chaincodeName,data.to)==null)
+      if(ctx.api.getStateEx(chaincodeName,signerPrefix+data.to)==null)
         throw ContractException("目标账户不存在")
-      val sfrom:Any =  ctx.api.getVal(data.from)
+      val sfrom:Any =  ctx.api.getVal(signerPrefix+data.from)
       var dfrom =sfrom.asInstanceOf[Int]
       if(dfrom < data.amount)
         throw ContractException("余额不足")
-      ctx.api.setVal(data.from,dfrom - data.amount)
-      var dto = ctx.api.getVal(data.to).toString.toInt
-      ctx.api.setVal(data.to,dto + data.amount)
+      ctx.api.setVal(signerPrefix+data.from,dfrom - data.amount)
+      var dto = ctx.api.getVal(signerPrefix+data.to).toString.toInt
+      ctx.api.setVal(signerPrefix+data.to,dto + data.amount)
        null
     }
 
     def put_proof(ctx: ContractContext, data:Map[String,Any]): ActionResult={
     //先检查该hash是否已经存在,如果已存在,抛异常
     for((k,v)<-data){
-      var pv0:Any = ctx.api.getVal(k)
+      var pv0:Any = ctx.api.getVal(signerPrefix+k)
       if(pv0 != null)
 //        throw new Exception("["+k+"]已存在，当前值["+pv0+"]");
         throw ContractException(s"$k 已存在，当前值为 $pv0")
-      ctx.api.setVal(k,v)
+      ctx.api.setVal(signerPrefix+k,v)
       print("putProof:"+k+":"+v)
     }
       null

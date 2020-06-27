@@ -58,16 +58,16 @@ object OperOperation extends DidOperation {
         // 保存operate
         ctx.api.setVal(operPrefix + operate.opId, operate)
         // 如果operate为publish的（无需授权），则加到公共列表里
-        if (operate.isPublish) {
-          val openList = ctx.api.getVal("open_ops")
+        //if (operate.isPublish) {
+          val openList = ctx.api.getVal("all_ops")
           if (openList == null) {
-            val newOpenList = List(operPrefix + operate.opId)
-            ctx.api.setVal("open_ops", newOpenList)
+            val newOpenList = List(operate.opId)
+            ctx.api.setVal("all_ops", newOpenList)
           } else {
-            val newOpenList = openList.asInstanceOf[List[String]].:+(operPrefix + operate.opId)
-            ctx.api.setVal("open_ops", newOpenList)
+            val newOpenList = openList.asInstanceOf[List[String]].:+(operate.opId)
+            ctx.api.setVal("all_ops", newOpenList)
           }
-        }
+        //}
       } else {
         throw ContractException(toJsonErrMsg(operateExists))
       }

@@ -18,28 +18,13 @@ package rep.sc
 
 import akka.actor.{Actor, ActorRef, Props, actorRef2Scala}
 import rep.utils._
-import rep.api.rest._
 import rep.protos.peer._
-import delight.nashornsandbox._
-import java.util.concurrent.Executors
-import java.lang.Exception
-import java.lang.Thread._
-import java.io.File._
-
-import org.slf4j.LoggerFactory
-import org.json4s.{DefaultFormats, Formats, jackson}
-import de.heikoseeberger.akkahttpjson4s.Json4sSupport
-import org.json4s._
-import akka.util.Timeout
-import Shim._
-import rep.authority.cache.Account4RDidByContract
-import rep.crypto.BytesHex
 import rep.network.tools.PeerExtension
 import rep.storage.IdxPrefix.WorldStateKeyPreFix
 import rep.storage._
 import rep.utils.SerializeUtils.deserialise
-import rep.utils.SerializeUtils.serialise
 import rep.log.RepLogger
+import rep.authority.check.PermissionVerify
 
 /**
  * 合约容器的抽象类伴生对象,定义了交易执行结果的case类
@@ -95,6 +80,7 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
   //与底层交互的api实例,不同版本的合约KV空间重叠
   val shim = new Shim(context.system, cid.chaincodeName)
   val addr_self = akka.serialization.Serialization.serializedActorPath(self)
+  val permissioncheck = PermissionVerify.GetPermissionVerify(pe.getSysTag)
 
   def errAction(errCode: Int): ActionResult = {
     errCode match {
@@ -180,13 +166,15 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
           case _ =>
             //检查合约部署者
             //IsCurrentSigner(dotrans)
-            new Account4RDidByContract(shim).hasPermissionOfDeployContract(dotrans)
+            permissioncheck.CheckPermissionOfDeployContract(dotrans,shim)
+
         }
 
       case Transaction.Type.CHAINCODE_SET_STATE =>
         ContraceIsExist(txcid)
         //IsCurrentSigner(dotrans)
-        new Account4RDidByContract(shim).hasPermissionOfSetStateContract(dotrans)
+        //new Account4RDidByContract(shim).hasPermissionOfSetStateContract(dotrans)
+        permissioncheck.CheckPermissionOfSetStateContract(dotrans,shim)
 
       case Transaction.Type.CHAINCODE_INVOKE =>
         ContraceIsExist(txcid)
@@ -207,7 +195,8 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
               //ignore
             }
         }
-        new Account4RDidByContract(shim).hasPermissionOfInvokeContract(dotrans)
+        //new Account4RDidByContract(shim).hasPermissionOfInvokeContract(dotrans)
+        permissioncheck.CheckPermissionOfInvokeContract(dotrans,shim)
       case _ => throw SandboxException(ERR_UNKNOWN_TRANSACTION_TYPE)
     }
   }

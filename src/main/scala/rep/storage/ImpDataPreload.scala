@@ -16,13 +16,20 @@
 
 package rep.storage
 
+import rep.authority.cache.authcache.ImpAuthorizeCacheOfPreload
+import rep.authority.cache.opcache.ImpOperateCacheOfPreload
+import rep.authority.cache.signercache.ImpSignerCacheOfPreload
 import rep.utils._
+
 import scala.collection.mutable
 import rep.storage.leveldb._
+
 import scala.collection.mutable.ArrayBuffer
-import rep.protos.peer._;
+import rep.protos.peer._
+
 import scala.util.control.Breaks
 import rep.log.RepLogger
+import rep.sc.tpl.did.DidTplPrefix
 import rep.utils.SerializeUtils.deserialise
 
 /**内存数据库的访问类，属于多实例。
@@ -37,7 +44,11 @@ import rep.utils.SerializeUtils.deserialise
 class ImpDataPreload (SystemName:String,InstanceName:String) extends AbstractLevelDB(SystemName:String) {
     private var update :java.util.concurrent.ConcurrentHashMap[String,Array[Byte]] = new java.util.concurrent.ConcurrentHashMap[String,Array[Byte]]
    
-    private var dbop = ImpDataAccess.GetDataAccess(SystemName) 
+    private var dbop = ImpDataAccess.GetDataAccess(SystemName)
+
+		private var op_cache : ImpOperateCacheOfPreload = new ImpOperateCacheOfPreload(SystemName,this)
+		private var auth_cache : ImpAuthorizeCacheOfPreload = new ImpAuthorizeCacheOfPreload(SystemName,this)
+		private var signer_cache : ImpSignerCacheOfPreload = new ImpSignerCacheOfPreload(SystemName,this)
    
    
     /**
@@ -45,7 +56,6 @@ class ImpDataPreload (SystemName:String,InstanceName:String) extends AbstractLev
 	 * @version	0.7
 	 * @since	2017-09-28
 	 * @category	获取当前系统的名称
-	 * @param	无
 	 * @return	返回当前系统的名称 String
 	 * */
     override def   getSystemName:String={
@@ -57,13 +67,96 @@ class ImpDataPreload (SystemName:String,InstanceName:String) extends AbstractLev
 	 * @version	0.7
 	 * @since	2017-09-28
 	 * @category	获取当前实例的名称
-	 * @param	无
 	 * @return	返回当前实例的名称 String
 	 * */
     override def getInstanceName:String={
       InstanceName
     }
-   
+
+	/**
+	 * @author jiangbuyun
+	 * @version	0.7
+	 * @since	2020-06-09
+	 * @category	从缓存中获取获取指定的键值
+	 * @param	key String 指定的键
+	 * @return	返回对应键的值 Array[Byte]
+	 * */
+	def GetFormCache(key : String):Array[Byte]={
+		var rb : Array[Byte] = null
+		try{
+			if(this.update.containsKey(key)){
+				//RepLogger.trace(RepLogger.Business_Logger,
+				//s"nodename=${getSystemName},dbname=${getInstanceName},key=${key},in cache=${deserialise(this.update.get(key))}")
+				rb = this.update.get(key)
+			}
+			setUseTime
+		}catch{
+			case e:Exception =>{
+				rb = null
+				RepLogger.error(RepLogger.Storager_Logger,
+					"ImpDataPreload_" + SystemName + "_" + "ImpDataPreload GetFormCache failed, error info= "+e.getMessage)
+				throw e
+			}
+		}
+		rb
+	}
+
+	/**
+	 * @author jiangbuyun
+	 * @version	1.0
+	 * @since	2020-06-21
+	 * @category	从缓存中获取获取指定的键值
+	 * @param	key String 指定的键
+	 * @return	返回对应键的值是否存在，存在=true，否则false
+	 * */
+	def IsExistCache(key : String):Boolean={
+		var rb  = false
+		try{
+			if(this.update.containsKey(key)){
+				//RepLogger.trace(RepLogger.Business_Logger,
+				//s"nodename=${getSystemName},dbname=${getInstanceName},key=${key},in cache=${deserialise(this.update.get(key))}")
+				rb = true
+			}
+			setUseTime
+		}catch{
+			case e:Exception =>{
+				RepLogger.error(RepLogger.Storager_Logger,
+					"ImpDataPreload_" + SystemName + "_" + "ImpDataPreload IsExistCache failed, error info= "+e.getMessage)
+				throw e
+			}
+		}
+		rb
+	}
+
+	/**
+	 * @author jiangbuyun
+	 * @version	1.0
+	 * @since	2020-06-24
+	 * @category	从缓存中获取指定标识中改变的key
+	 *
+	 * @return	key的数组
+	 * */
+	def getKeysOfChange(keyFlag:String):Array[String]={
+		var rs : ArrayBuffer[String] = new ArrayBuffer[String]()
+		this.update.keySet.forEach(k=>{
+			if(k.indexOf(keyFlag) > 0){
+				rs += k
+			}
+		})
+		rs.toArray
+	}
+
+	def getOpCache:ImpOperateCacheOfPreload={
+		this.op_cache
+	}
+
+	def getAuthCache:ImpAuthorizeCacheOfPreload={
+		this.auth_cache
+	}
+
+	def getSignerCache:ImpSignerCacheOfPreload={
+		this.signer_cache
+	}
     /**
 	 * @author jiangbuyun
 	 * @version	0.7
@@ -119,6 +212,7 @@ class ImpDataPreload (SystemName:String,InstanceName:String) extends AbstractLev
 				  }
 				  if(key != null ){
 				    this.update.put(key, v)
+						UpdatePermission(key,v)
 				  }
 				  setUseTime
 			}catch{
@@ -131,7 +225,21 @@ class ImpDataPreload (SystemName:String,InstanceName:String) extends AbstractLev
 			}
   		b
   	}
-  	
+
+	private def UpdatePermission(key:String,bb:Array[Byte])={
+		if(key.indexOf("_"+DidTplPrefix.operPrefix)>0){
+			this.op_cache.ChangeValue(key)
+		}
+
+		if(key.indexOf("_"+DidTplPrefix.authPrefix)>0){
+			this.auth_cache.ChangeValue(key)
+		}
+
+		if(key.indexOf("_"+DidTplPrefix.signerPrefix)>0){
+			this.signer_cache.ChangeValue(key)
+		}
+	}
+
   	/**
 	 * @author jiangbuyun
 	 * @version	0.7
@@ -155,7 +263,6 @@ class ImpDataPreload (SystemName:String,InstanceName:String) extends AbstractLev
 	 * @version	0.7
 	 * @since	2017-09-28
 	 * @category	内部使用，更新实例的访问时间，每次访问的时候都会调用该方法
-	 * @param	key String 指定的键
 	 * @return	无
 	 * */
   	def setUseTime{
@@ -167,7 +274,6 @@ class ImpDataPreload (SystemName:String,InstanceName:String) extends AbstractLev
 	 * @version	0.7
 	 * @since	2017-09-28
 	 * @category	内部使用，获取该实例最后一次使用时间
-	 * @param	无
 	 * @return	长整型，最后一次的使用时间
 	 * */
   	def getUseTime:Long={
@@ -272,7 +378,6 @@ private class  MultiDBMgr (val SystemName:String) {
 	 * @version	0.7
 	 * @since	2017-09-28
 	 * @category	清理系统中空闲超时的实例
-	 * @param	无
 	 * @return	无
 	 * */
   def clear{
@@ -369,7 +474,6 @@ object ImpDataPreloadMgr{
 	 * @version	0.7
 	 * @since	2017-09-28
 	 * @category	从多实例管理器中清理系统中空闲超时的实例
-	 * @param	无
 	 * @return	无
 	 * */
  private def clear{

@@ -12,7 +12,7 @@ import rep.network.autotransaction.PeerHelper
 import rep.protos.peer.Authorize.TransferType
 import rep.protos.peer.Certificate.CertType
 import rep.protos.peer.Operate.OperateType
-import rep.protos.peer.{Block, ChaincodeId, Signer, Transaction}
+import rep.protos.peer.{Authorize, Block, ChaincodeId, Signer, Transaction}
 import scalapb.json4s.JsonFormat
 
 object CreateGenesisInfo {
@@ -64,17 +64,17 @@ object CreateGenesisInfo {
     //注册操作
     //权限管理合约操作注册
     var opsOfContract : Array[(String,String,String)] = new Array[(String,String,String)](11)
-    opsOfContract(0) = (IdTool.getRandomUUID,"注册RDID","RdidOperateAuthorizeTPL.signUpSigner")
-    opsOfContract(1) = (IdTool.getRandomUUID,"禁用RDID","RdidOperateAuthorizeTPL.disableSigner")
-    opsOfContract(2) = (IdTool.getRandomUUID,"注册证书","RdidOperateAuthorizeTPL.signUpCertificate")
-    opsOfContract(3) = (IdTool.getRandomUUID,"禁用证书","RdidOperateAuthorizeTPL.disableCertificate")
-    opsOfContract(4) = (IdTool.getRandomUUID,"注册操作","RdidOperateAuthorizeTPL.signUpOperate")
-    opsOfContract(5) = (IdTool.getRandomUUID,"禁用操作","RdidOperateAuthorizeTPL.disableOperate")
-    opsOfContract(6) = (IdTool.getRandomUUID,"授权操作","RdidOperateAuthorizeTPL.grantOperate")
-    opsOfContract(7) = (IdTool.getRandomUUID,"禁用授权","RdidOperateAuthorizeTPL.disableGrantOperate")
-    opsOfContract(8) = (IdTool.getRandomUUID,"绑定证书到授权操作","RdidOperateAuthorizeTPL.bindCertToAuthorize")
-    opsOfContract(9) = (IdTool.getRandomUUID,"发布合约操作","*.deploy")//*表示可以发布任意合约
-    opsOfContract(10) = (IdTool.getRandomUUID,"改变合约状态操作","*.setState")//*表示可以设置任意合约状态
+    opsOfContract(0) = (Sha256.hashstr("RdidOperateAuthorizeTPL.signUpSigner"),"注册RDID","RdidOperateAuthorizeTPL.signUpSigner")
+    opsOfContract(1) = (Sha256.hashstr("RdidOperateAuthorizeTPL.disableSigner"),"禁用RDID","RdidOperateAuthorizeTPL.disableSigner")
+    opsOfContract(2) = (Sha256.hashstr("RdidOperateAuthorizeTPL.signUpCertificate"),"注册证书","RdidOperateAuthorizeTPL.signUpCertificate")
+    opsOfContract(3) = (Sha256.hashstr("RdidOperateAuthorizeTPL.disableCertificate"),"禁用证书","RdidOperateAuthorizeTPL.disableCertificate")
+    opsOfContract(4) = (Sha256.hashstr("RdidOperateAuthorizeTPL.signUpOperate"),"注册操作","RdidOperateAuthorizeTPL.signUpOperate")
+    opsOfContract(5) = (Sha256.hashstr("RdidOperateAuthorizeTPL.disableOperate"),"禁用操作","RdidOperateAuthorizeTPL.disableOperate")
+    opsOfContract(6) = (Sha256.hashstr("RdidOperateAuthorizeTPL.grantOperate"),"授权操作","RdidOperateAuthorizeTPL.grantOperate")
+    opsOfContract(7) = (Sha256.hashstr("RdidOperateAuthorizeTPL.disableGrantOperate"),"禁用授权","RdidOperateAuthorizeTPL.disableGrantOperate")
+    opsOfContract(8) = (Sha256.hashstr("RdidOperateAuthorizeTPL.bindCertToAuthorize"),"绑定证书到授权操作","RdidOperateAuthorizeTPL.bindCertToAuthorize")
+    opsOfContract(9) = (Sha256.hashstr("*.deploy"),"发布合约操作","*.deploy")//*表示可以发布任意合约
+    opsOfContract(10) = (Sha256.hashstr("*.setState"),"改变合约状态操作","*.setState")//*表示可以设置任意合约状态
 
     for(i<-0 to 10){
       val millis = System.currentTimeMillis()
@@ -89,23 +89,23 @@ object CreateGenesisInfo {
 
     //api操作注册
     var opsOfAPI : Array[(String,String,String)] = new Array[(String,String,String)](15)
-    opsOfAPI(0) = (IdTool.getRandomUUID,"获取链信息","chaininfo.chaininfo")
-    opsOfAPI(1) = (IdTool.getRandomUUID,"返回组网节点数量","chaininfo.node")
-    opsOfAPI(2) = (IdTool.getRandomUUID,"返回系统缓存交易数量","chaininfo.getcachetransnumber")
-    opsOfAPI(3) = (IdTool.getRandomUUID,"返回系统接收到的交易数量","chaininfo.getAcceptedTransNumber")
+    opsOfAPI(0) = (Sha256.hashstr("chaininfo.chaininfo"),"获取链信息","chaininfo.chaininfo")
+    opsOfAPI(1) = (Sha256.hashstr("chaininfo.node"),"返回组网节点数量","chaininfo.node")
+    opsOfAPI(2) = (Sha256.hashstr("chaininfo.getcachetransnumber"),"返回系统缓存交易数量","chaininfo.getcachetransnumber")
+    opsOfAPI(3) = (Sha256.hashstr("chaininfo.getAcceptedTransNumber"),"返回系统接收到的交易数量","chaininfo.getAcceptedTransNumber")
 
-    opsOfAPI(4) = (IdTool.getRandomUUID,"返回指定id的区块","block.hash")
-    opsOfAPI(5) = (IdTool.getRandomUUID,"返回指定高度的区块","block.blockHeight")
-    opsOfAPI(6) = (IdTool.getRandomUUID,"返回指定高度区块包含的交易数","block.getTransNumberOfBlock")
-    opsOfAPI(7) = (IdTool.getRandomUUID,"返回指定高度的区块的出块时间","block.blocktime")
-    opsOfAPI(8) = (IdTool.getRandomUUID,"返回指定交易的入块时间","block.blocktimeoftran")
-    opsOfAPI(9) = (IdTool.getRandomUUID,"返回指定高度的区块字节流","block.stream")
+    opsOfAPI(4) = (Sha256.hashstr("block.hash"),"返回指定id的区块","block.hash")
+    opsOfAPI(5) = (Sha256.hashstr("block.blockHeight"),"返回指定高度的区块","block.blockHeight")
+    opsOfAPI(6) = (Sha256.hashstr("block.getTransNumberOfBlock"),"返回指定高度区块包含的交易数","block.getTransNumberOfBlock")
+    opsOfAPI(7) = (Sha256.hashstr("block.blocktime"),"返回指定高度的区块的出块时间","block.blocktime")
+    opsOfAPI(8) = (Sha256.hashstr("block.blocktimeoftran"),"返回指定交易的入块时间","block.blocktimeoftran")
+    opsOfAPI(9) = (Sha256.hashstr("block.stream"),"返回指定高度的区块字节流","block.stream")
 
-    opsOfAPI(10) = (IdTool.getRandomUUID,"返回指定id的交易","transaction")
-    opsOfAPI(11) = (IdTool.getRandomUUID,"返回指定id的交易字节流","transaction.stream")
-    opsOfAPI(12) = (IdTool.getRandomUUID,"提交带签名的交易","transaction.postTranByString")
-    opsOfAPI(13) = (IdTool.getRandomUUID,"提交带签名的交易字节流","transaction.postTranStream")
-    opsOfAPI(14) = (IdTool.getRandomUUID,"提交交易","transaction.postTran")
+    opsOfAPI(10) = (Sha256.hashstr("transaction"),"返回指定id的交易","transaction")
+    opsOfAPI(11) = (Sha256.hashstr("transaction.stream"),"返回指定id的交易字节流","transaction.stream")
+    opsOfAPI(12) = (Sha256.hashstr("transaction.postTranByString"),"提交带签名的交易","transaction.postTranByString")
+    opsOfAPI(13) = (Sha256.hashstr("transaction.postTranStream"),"提交带签名的交易字节流","transaction.postTranStream")
+    opsOfAPI(14) = (Sha256.hashstr("transaction.postTran"),"提交交易","transaction.postTran")
 
     for(i<-0 to 14){
       val millis = System.currentTimeMillis()
@@ -138,8 +138,9 @@ object CreateGenesisInfo {
     val at = rep.protos.peer.Authorize(IdTool.getRandomUUID,super_credit,granteds,opids,
       TransferType.TRANSFER_REPEATEDLY,Option(Timestamp(tmpmillis/1000 , ((tmpmillis % 1000) * 1000000).toInt)),
       _root_.scala.None,true,"1.0")
+    var als : List[String]  =  List(JsonFormat.toJsonString(at))
     translist(33) = PeerHelper.createTransaction4Invoke(superAdmin, cid,
-      "grantOperate", Seq(JsonFormat.toJsonString(at)))
+      "grantOperate", Seq(SerializeUtils.compactJson(als)))
 
     //部署应用合约--分账合约
     val s2 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/ContractAssetsTPL.scala","UTF-8")
@@ -152,9 +153,9 @@ object CreateGenesisInfo {
 
     //建立应用合约的操作
     var opsOfCustomContract : Array[(String,String,String)] = new Array[(String,String,String)](3)
-    opsOfCustomContract(0) = (IdTool.getRandomUUID,"转账交易","ContractAssetsTPL.transfer")
-    opsOfCustomContract(1) = (IdTool.getRandomUUID,"初始化账户","ContractAssetsTPL.set")
-    opsOfCustomContract(2) = (IdTool.getRandomUUID,"存证", "ContractAssetsTPL.putProof")
+    opsOfCustomContract(0) = (Sha256.hashstr("ContractAssetsTPL.transfer"),"转账交易","ContractAssetsTPL.transfer")
+    opsOfCustomContract(1) = (Sha256.hashstr("ContractAssetsTPL.set"),"初始化账户","ContractAssetsTPL.set")
+    opsOfCustomContract(2) = (Sha256.hashstr("ContractAssetsTPL.putProof"),"存证", "ContractAssetsTPL.putProof")
 
     val tmillis = System.currentTimeMillis()
     val snls = List("transaction.stream","transaction.postTranByString","transaction.postTranStream","transaction.postTran")

@@ -247,6 +247,27 @@
             <charset>UTF-8</charset>
         </encoder>
     </appender>
+
+    <appender name="Permission_Appender" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>logs/RepChain-Permission-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <!-- each file should be at most 100MB, keep 30 days worth of history, but at most 3GB -->
+            <maxFileSize>100MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>3GB</totalSizeCap>
+
+        </rollingPolicy>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>TRACE</level>
+        </filter>
+
+        <immediateFlush>false</immediateFlush>
+        <append>false</append>
+        <encoder charset="UTF-8">
+            <pattern>%date{ISO8601} %-5level %logger{36} %X{akkaSource} - %msg%n</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
     
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <target>System.out</target>
@@ -305,6 +326,10 @@
     
     <logger name="APIAccess_Logger" additivity="false" level="TRACE">
         <appender-ref ref="APIAccess_Appender"/>
+    </logger>
+
+    <logger name="Permission_Logger" additivity="false" level="TRACE">
+        <appender-ref ref="Permission_Appender"/>
     </logger>
 
     <root level="DEBUG">

@@ -31,7 +31,9 @@ import rep.sc.SandboxDispatcher.DoTransaction
 import rep.sc.TypeOfSender
 import rep.storage.ImpDataPreloadMgr
 import rep.network.module.ModuleActorType
+import rep.protos.peer.Transaction.Type
 import rep.utils._
+
 import scala.collection.mutable
 import scala.concurrent._
 
@@ -57,6 +59,9 @@ class PreloaderForTransaction(moduleName: String) extends ModuleBase(moduleName)
 
   private def ExecuteTransaction(t: Transaction, db_identifier: String): (Int, DoTransactionResult) = {
     try {
+      if(t.`type` == Type.CHAINCODE_DEPLOY && t.cid.get.chaincodeName == "ContractAssetsTPL"){
+        System.out.println("")
+      }
       val future1 = pe.getActorRef(ModuleActorType.ActorType.transactiondispatcher) ? new DoTransaction(t,  db_identifier,TypeOfSender.FromPreloader)
       //val future1 = pe.getActorRef(ActorType.preloadtransrouter) ? new DoTransaction(t,  db_identifier)
       val result = Await.result(future1, timeout.duration).asInstanceOf[DoTransactionResult]
