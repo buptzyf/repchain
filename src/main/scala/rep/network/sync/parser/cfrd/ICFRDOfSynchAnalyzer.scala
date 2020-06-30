@@ -46,22 +46,22 @@ class ICFRDOfSynchAnalyzer(systemName: String, lchaininfo: BlockchainInfo, nodem
             } else {
               this.aresult = AnalysisResult(1, "")
             }
-            RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix("--------info,本地高度大于远端高度，停止同步"))
+            RepLogger.info(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix("--------info,本地高度大于远端高度，停止同步"))
           }
         } else {
           //当前同步高度的最后高度的块hash不一致，输出错误信息，停止同步
           this.aresult = AnalysisResult(0, "当前同步高度的最后高度的块hash不一致，输出错误信息，停止同步")
-          RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix("--------error,当前同步高度的最后高度的块hash不一致，输出错误信息，停止同步"))
+          RepLogger.info(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix("--------error,当前同步高度的最后高度的块hash不一致，输出错误信息，停止同步"))
         }
       } else {
         //最多数量的高度，达不到共识的要求，输出错误信息停止同步
         this.aresult = AnalysisResult(2, s"最多数量的高度，达不到共识的要求，输出错误信息停止同步 response size=${reslist.size}")
-        RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"--------error,最多数量的高度，达不到共识的要求，输出错误信息停止同步 response size=${reslist.size}"))
+        RepLogger.info(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"--------error,最多数量的高度，达不到共识的要求，输出错误信息停止同步 response size=${reslist.size}"))
       }
     } else {
       //获取到到chaininfo信息的数量，没有得到大多数节点的响应，输出错误信息停止同步
       this.aresult = AnalysisResult(0, s"获取到到chaininfo信息的数量，没有得到大多数节点的响应，输出错误信息停止同步 response size=${reslist.size}")
-      RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"--------error,获取到到chaininfo信息的数量，没有得到大多数节点的响应，输出错误信息停止同步 response size=${reslist.size}"))
+      RepLogger.info(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"--------error,获取到到chaininfo信息的数量，没有得到大多数节点的响应，输出错误信息停止同步 response size=${reslist.size}"))
     }
   }
 
