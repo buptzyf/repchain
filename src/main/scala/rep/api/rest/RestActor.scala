@@ -44,6 +44,7 @@ import rep.app.conf.SystemProfile
 import rep.log.RepLogger
 import rep.network.autotransaction.PeerHelper
 import rep.network.base.ModuleBase
+import rep.network.consensus.byzantium.ConsensusCondition
 import rep.sc.TypeOfSender
 import rep.sc.SandboxDispatcher.DoTransaction
 import rep.sc.Sandbox.DoTransactionResult
@@ -152,7 +153,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
       sender ! PostResult(t.id, None, Option(s"交易大小超出限制： ${tranLimitSize}，请重新检查"))
     }
 
-    if (pe.getNodeMgr.getStableNodes.size < SystemProfile.getVoteNoteMin) {
+    if (!ConsensusCondition.CheckWorkConditionOfSystem(pe.getNodeMgr.getStableNodes.size)) {
       sender ! PostResult(t.id, None, Option("共识节点数目太少，暂时无法处理交易"))
     }
 

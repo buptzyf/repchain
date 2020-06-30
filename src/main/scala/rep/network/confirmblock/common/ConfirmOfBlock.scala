@@ -23,6 +23,7 @@ import rep.log.{RepLogger, RepTimeTracer}
 import rep.network.autotransaction.Topic
 import rep.network.base.ModuleBase
 import rep.network.confirmblock.IConfirmOfBlock
+import rep.network.consensus.byzantium.ConsensusCondition
 import rep.network.consensus.common.MsgOfConsensus.{BatchStore, BlockRestore, ConfirmedBlock}
 import rep.network.consensus.util.BlockVerify
 import rep.network.module.ModuleActorType
@@ -85,7 +86,7 @@ class ConfirmOfBlock(moduleName: String) extends IConfirmOfBlock(moduleName) {
     } else {
       //与上一个块一致
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"confirm verify blockhash,height=${block.height}"))
-        if (NodeHelp.ConsensusConditionChecked(block.endorsements.size, pe.getNodeMgr.getStableNodes.size)) {
+        if (ConsensusCondition.ConsensusConditionChecked(block.endorsements.size)) {
           //符合大多数人背书要求
           handler(block, actRefOfBlock)
         } else {

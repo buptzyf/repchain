@@ -5,6 +5,7 @@ import rep.app.conf.{SystemCertList, SystemProfile}
 import rep.crypto.Sha256
 import rep.log.RepLogger
 import rep.network.base.ModuleBase
+import rep.network.consensus.byzantium.ConsensusCondition
 import rep.network.consensus.common.algorithm.IRandomAlgorithmOfVote
 import rep.network.module.cfrd.CFRDActorType
 import rep.network.util.NodeHelp
@@ -70,7 +71,7 @@ abstract class IVoter(moduleName: String) extends ModuleBase(moduleName) {
 
 
   protected def voteMsgHandler(isForce:Boolean) = {
-    if (pe.getNodeMgr.getStableNodes.size >= SystemProfile.getVoteNoteMin) {
+    if (ConsensusCondition.CheckWorkConditionOfSystem(pe.getNodeMgr.getStableNodes.size)) {
       //只有共识节点符合要求之后开始工作
       if (getSystemBlockHash == "") {
         //系统属于初始化状态

@@ -4,12 +4,12 @@ package rep.network.sync.request.pbft
 import akka.actor.Props
 import rep.app.conf.SystemProfile
 import rep.log.RepLogger
+import rep.network.consensus.byzantium.ConsensusCondition
 import rep.network.module.{IModuleManager, ModuleActorType}
 import rep.network.sync.SyncMsg.{MaxBlockInfo, StartSync, SyncRequestOfStorager}
 import rep.network.sync.parser.ISynchAnalyzer
 import rep.network.sync.request.ISynchRequester
 import rep.network.sync.parser.pbft.IPBFTOfSynchAnalyzer
-
 import rep.network.util.NodeHelp
 
 import scala.concurrent.duration._
@@ -35,7 +35,7 @@ class SynchRequesterOfPBFT(moduleName: String) extends ISynchRequester(moduleNam
       schedulerLink = clearSched()
       var rb = true
       initSystemChainInfo
-      if (pe.getNodeMgr.getStableNodes.size >= SystemProfile.getVoteNoteMin && !pe.isSynching) {
+      if (ConsensusCondition.CheckWorkConditionOfSystem(pe.getNodeMgr.getStableNodes.size) && !pe.isSynching) {
         pe.setSynching(true)
         try {
             rb = Handler(isNoticeModuleMgr)
@@ -53,7 +53,7 @@ class SynchRequesterOfPBFT(moduleName: String) extends ISynchRequester(moduleNam
         }
 
       } else {
-        RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"too few node,min=${SystemProfile.getVoteNoteMin} or synching  from actorAddr" + "～" + NodeHelp.getNodePath(sender())))
+        RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"too few node,min=${SystemProfile.getVoteNodeMin} or synching  from actorAddr" + "～" + NodeHelp.getNodePath(sender())))
       }
 
     case SyncRequestOfStorager(responser, maxHeight) =>

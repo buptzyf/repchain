@@ -84,6 +84,8 @@ object RepChainMgr {
     sys1.start//启动系统
   }
 
+  var isStopped = false
+
 
 
   def Stop(SystemName:String)={
@@ -226,25 +228,13 @@ object RepChainMgr {
   var scheduledExecutorService = Executors.newSingleThreadScheduledExecutor
 
   def StartClusterStub={
-    /*val threadPool:ExecutorService=Executors.newFixedThreadPool(1)
-    try {
-      threadPool.execute(new ClusterTestStub)
-    }finally {
-      threadPool.shutdown()
-    }*/
-    //try{
     this.scheduledExecutorService.scheduleWithFixedDelay(//).scheduleAtFixedRate(
       new ClusterTestStub,100,60, TimeUnit.SECONDS
     )
-    /*}catch {
-      case e:Exception =>
-              try{
-                scheduledExecutorService.shutdown()
-              }catch{
-                case e:Exception => e.printStackTrace()
-              }
-    }*/
+  }
 
+  def StopNodeService={
+    this.scheduledExecutorService.schedule(new ClusterTestStub,120,TimeUnit.SECONDS)
   }
 
   class RestartThread(systemName:String) extends Runnable{
@@ -299,6 +289,8 @@ object RepChainMgr {
             }
           }
         }
+        //临时使用
+        //scheduledExecutorService.shutdown()
       }catch{
         case e:Exception=>e.printStackTrace()
       }

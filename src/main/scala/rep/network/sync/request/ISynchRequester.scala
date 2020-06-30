@@ -6,6 +6,7 @@ import akka.util.Timeout
 import rep.app.conf.{SystemProfile, TimePolicy}
 import rep.log.RepLogger
 import rep.network.base.ModuleBase
+import rep.network.consensus.byzantium.ConsensusCondition
 import rep.network.module.ModuleActorType
 import rep.network.persistence.IStorager.SourceOfBlock
 import rep.network.sync.SyncMsg.{BlockDataOfRequest, BlockDataOfResponse, ChainInfoOfRequest, MaxBlockInfo, ResponseInfo}
@@ -71,7 +72,7 @@ abstract class ISynchRequester(moduleName: String) extends ModuleBase(moduleName
     })
     RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry AsyncGetNodeOfChainInfos 1"))
     try {
-      val result1 = Await.result(futureOfList, timeout.duration).asInstanceOf[List[ResponseInfo]]
+      val result1 = Await.result(futureOfList, timeout.duration*stablenodes.size).asInstanceOf[List[ResponseInfo]]
       RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry AsyncGetNodeOfChainInfos 2"))
       if (result1 == null) {
         List.empty
@@ -80,7 +81,7 @@ abstract class ISynchRequester(moduleName: String) extends ModuleBase(moduleName
       }
     } catch {
       case te: TimeoutException =>
-        RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix("--------AsyncGetNodeOfChainInfo java timeout"))
+        RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix("--------AsyncGetNodeOfChainInfos java timeout"))
         null
     }
   }
@@ -130,7 +131,7 @@ abstract class ISynchRequester(moduleName: String) extends ModuleBase(moduleName
     }
     val tmpgHash = gls.head._1
     val tmpgCount = gls.head._2
-    if (NodeHelp.ConsensusConditionChecked(tmpgCount, ns)) {
+    if (ConsensusCondition.ConsensusConditionChecked(tmpgCount)) {
       (true, tmpgHash)
     } else {
       (false, "")
