@@ -12,8 +12,8 @@ object testCompile extends App {
   val mirror = ju.runtimeMirror(getClass.getClassLoader)*/
 
   var cobj: IContract = null
-  val s2 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/MultiSignErr.scala","UTF-8")
-  //val s2 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/ContractAssetsTPL.scala","UTF-8")
+  //val s2 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/MultiSignErr.scala","UTF-8")
+  val s2 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/ContractAssetsTPL.scala","UTF-8")
   val c2 = try s2.mkString finally s2.close()
 
   val code = c2
