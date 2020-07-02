@@ -43,8 +43,8 @@ class ContractAssetsTPL extends IContract{
   //val prefix = IdTool.getCid(ChaincodeId(chaincodeName, chaincodeVersion))
 
   implicit val formats = DefaultFormats
-  
-    def init(ctx: ContractContext){      
+
+    def init(ctx: ContractContext){
       println(s"tid: $ctx.t.id")
     }
     

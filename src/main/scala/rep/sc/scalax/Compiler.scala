@@ -50,7 +50,11 @@ object Compiler{
    * @return 类定义实例
    */
   def compilef(pcode: String, cid: String): Class[_]= {
-    cp.compilef(pcode, cid)
+    compilef(pcode, cid,true)
+  }
+
+  def compilef(pcode: String, cid: String,isSave:Boolean): Class[_]= {
+    cp.compilef(pcode, cid, isSave)
   }
 
   /**
@@ -156,7 +160,7 @@ class Compiler(targetDir: Option[File], bDebug:Boolean) {
    * @param cid 合约类唯一标识,如果不指定，取代码内容的sha256结果作为标识
    * @return 编译生成的类定义
    */
-  def compilef(pcode: String, cid: String): Class[_]= {
+  def compilef(pcode: String, cid: String,isSave:Boolean): Class[_]= {
     val className = if(cid!=null) PRE_CLS_NAME+cid else classNameForCode(pcode)
     var cl: Option[Class[_]] = None
     try{
@@ -169,8 +173,9 @@ class Compiler(targetDir: Option[File], bDebug:Boolean) {
         return cl.get      
     //获取替换类名
     val ncode = Compiler.prefixCode(pcode, className)
-    if(path_source!=null)
-      saveCode(className,ncode)  
+    //todo 调试程序方便暂时不保存
+    if(path_source!=null && isSave)
+      saveCode(className,ncode)
     val cls = tb.compile(tb.parse(ncode +"\nscala.reflect.classTag["
       +className
       +"].runtimeClass"))().asInstanceOf[Class[_]]
