@@ -3,6 +3,7 @@ package rep.network.sync.request.raft
 import akka.actor.Props
 import rep.app.conf.SystemProfile
 import rep.log.RepLogger
+import rep.network.consensus.byzantium.ConsensusCondition
 import rep.network.module.{IModuleManager, ModuleActorType}
 import rep.network.sync.SyncMsg.{MaxBlockInfo, StartSync, SyncRequestOfStorager}
 import rep.network.sync.parser.ISynchAnalyzer
@@ -33,7 +34,7 @@ class SynchRequesterOfRAFT (moduleName: String) extends ISynchRequester(moduleNa
       schedulerLink = clearSched()
       var rb = true
       initSystemChainInfo
-      if (pe.getNodeMgr.getStableNodes.size >= SystemProfile.getVoteNoteMin && !pe.isSynching) {
+      if (ConsensusCondition.CheckWorkConditionOfSystem(pe.getNodeMgr.getStableNodes.size) && !pe.isSynching) {
         pe.setSynching(true)
         try {
           val ssize = pe.getNodeMgr.getStableNodes.size
@@ -54,7 +55,7 @@ class SynchRequesterOfRAFT (moduleName: String) extends ISynchRequester(moduleNa
         }
 
       } else {
-        RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"too few node,min=${SystemProfile.getVoteNoteMin} or synching  from actorAddr" + "～" + NodeHelp.getNodePath(sender())))
+        RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"too few node,min=${SystemProfile.getVoteNodeMin} or synching  from actorAddr" + "～" + NodeHelp.getNodePath(sender())))
       }
 
     case SyncRequestOfStorager(responser, maxHeight) =>

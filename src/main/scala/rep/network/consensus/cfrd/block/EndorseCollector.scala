@@ -16,13 +16,13 @@
 
 package rep.network.consensus.cfrd.block
 
-import akka.actor.{Props}
+import akka.actor.Props
 import akka.cluster.pubsub.DistributedPubSubMediator.Publish
 import akka.routing._
-import rep.app.conf.{SystemProfile}
+import rep.app.conf.SystemProfile
 import rep.network.base.ModuleBase
 import rep.network.consensus.common.MsgOfConsensus.ConfirmedBlock
-import rep.network.consensus.cfrd.MsgOfCFRD.{CollectEndorsement,ResultOfEndorseRequester,ResendEndorseInfo,RequesterOfEndorsement}
+import rep.network.consensus.cfrd.MsgOfCFRD.{CollectEndorsement, RequesterOfEndorsement, ResendEndorseInfo, ResultOfEndorseRequester}
 import rep.protos.peer._
 import rep.utils.GlobalUtils.EventType
 import rep.network.util.NodeHelp
@@ -31,6 +31,7 @@ import rep.network.consensus.util.BlockVerify
 import rep.log.RepLogger
 import rep.log.RepTimeTracer
 import rep.network.autotransaction.Topic
+import rep.network.consensus.byzantium.ConsensusCondition
 
 /**
  * Created by jiangbuyun on 2020/03/19.
@@ -85,7 +86,7 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
   private def CheckAndFinishHandler {
     sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Endorsement, Event.Action.ENDORSEMENT)
     RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("entry collectioner check  "))
-    if (NodeHelp.ConsensusConditionChecked(this.recvedEndorse.size + 1, pe.getNodeMgr.getStableNodes.size)) {
+    if (ConsensusCondition.ConsensusConditionChecked(this.recvedEndorse.size + 1)) {
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("collectioner package endorsement to block"))
       this.recvedEndorse.foreach(f => {
         this.block = BlockHelp.AddEndorsementToBlock(this.block, f._2)

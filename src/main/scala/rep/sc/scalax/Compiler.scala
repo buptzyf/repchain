@@ -129,8 +129,11 @@ class Compiler(targetDir: Option[File], bDebug:Boolean) {
    * @return 项目源文件路径
    */
   def getSourcePath()={
-    //工程根路径
-    val path_source_root = "repchain"       
+    //工程根路径,自动获取项目名称
+    val projectName = System.getProperty("user.dir");
+    val path_source_root = projectName.substring(projectName.lastIndexOf(File.separatorChar) + 1, projectName.length)
+    //val path_source_root = "repchain"
+
     //获得class路径
     val rpath = getClass.getResource("").getPath
     //获得source路径

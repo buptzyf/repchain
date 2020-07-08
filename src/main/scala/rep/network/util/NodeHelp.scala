@@ -53,23 +53,6 @@ object NodeHelp {
     if (actref == null) ""
     akka.serialization.Serialization.serializedActorPath(actref)
   }
-
-  def ConsensusConditionChecked(inputNumber: Int, nodeNumber: Int): Boolean = {
-    if (SystemProfile.getTypeOfConsensus == "PBFT") { //zhj
-      true
-    } else {
-      var scaledata = SystemProfile.getNumberOfEndorsement
-      if (SystemProfile.getNumberOfEndorsement == 1) {
-        scaledata = 2
-      }
-
-      if (scaledata == 2) {
-        (inputNumber - 1) >= Math.floor(((nodeNumber) * 1.0) / scaledata)
-      } else {
-        (inputNumber - 1) >= Math.floor((((nodeNumber) * 1.0) / scaledata) * 2)
-      }
-    }
-  }
   
   def isCandidateNow(Systemname: String, candidates: Set[String]): Boolean = {
     val list = candidates.toList

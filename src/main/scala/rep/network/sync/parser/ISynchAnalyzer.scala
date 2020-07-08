@@ -2,6 +2,7 @@ package rep.network.sync.parser
 
 import akka.actor.ActorRef
 import rep.log.RepLogger
+import rep.network.consensus.byzantium.ConsensusCondition
 import rep.network.sync.SyncMsg._
 import rep.network.tools.NodeMgr
 import rep.network.util.NodeHelp
@@ -50,7 +51,7 @@ abstract class ISynchAnalyzer(val systemName: String, val lchaininfo: Blockchain
     }
     val tmpgHash = gls.head._1
     val tmpgCount = gls.head._2
-    if (NodeHelp.ConsensusConditionChecked(tmpgCount, ns)) {
+    if (ConsensusCondition.ConsensusConditionChecked(tmpgCount)) {
       (true, tmpgHash)
     } else {
       (false, "")
