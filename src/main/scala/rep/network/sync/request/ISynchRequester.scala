@@ -50,10 +50,10 @@ abstract class ISynchRequester(moduleName: String) extends ModuleBase(moduleName
       result = Await.result(future1, timeout.duration).asInstanceOf[ResponseInfo]
     } catch {
       case e: AskTimeoutException =>
-        RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix("--------AsyncGetNodeOfChainInfo timeout"))
+        RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"--------AsyncGetNodeOfChainInfo timeout,${addr.toString}"))
         null
       case te: TimeoutException =>
-        RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix("--------AsyncGetNodeOfChainInfo java timeout"))
+        RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"--------AsyncGetNodeOfChainInfo java timeout,${addr.toString}"))
         null
     }
 
@@ -98,10 +98,10 @@ abstract class ISynchRequester(moduleName: String) extends ModuleBase(moduleName
       true
     } catch {
       case e: AskTimeoutException =>
-        RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix("--------getBlockData timeout"))
+        RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"--------getBlockData timeout,${akka.serialization.Serialization.serializedActorPath(ref).toString}"))
         false
       case te: TimeoutException =>
-        RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix("--------getBlockData java timeout"))
+        RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"--------getBlockData java timeout,${akka.serialization.Serialization.serializedActorPath(ref).toString}"))
         false
     }
   }
@@ -147,6 +147,8 @@ abstract class ISynchRequester(moduleName: String) extends ModuleBase(moduleName
     val lhash = pe.getCurrentBlockHash
     val lprehash = pe.getSystemCurrentChainStatus.previousBlockHash.toStringUtf8()
     val nodes = pe.getNodeMgr.getStableNodes
+    RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"current stableNode，node content=${nodes.mkString("|")}"))
+    RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"current stableNode，node name content=${pe.getNodeMgr.getStableNodeNames.mkString("|")}"))
     sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, BlockEvent.CHAIN_INFO_SYNC, Event.Action.BLOCK_SYNC)
     val res = AsyncGetNodeOfChainInfos(nodes, lh)
 
