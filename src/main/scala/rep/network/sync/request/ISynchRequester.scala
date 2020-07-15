@@ -77,7 +77,7 @@ abstract class ISynchRequester(moduleName: String) extends ModuleBase(moduleName
       if (result1 == null) {
         List.empty
       } else {
-        result1
+        result1.filter(_ != null)
       }
     } catch {
       case te: TimeoutException =>
