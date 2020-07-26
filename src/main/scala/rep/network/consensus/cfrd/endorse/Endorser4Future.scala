@@ -26,7 +26,6 @@ import rep.app.conf.{SystemCertList, SystemProfile, TimePolicy}
 import rep.crypto.Sha256
 import rep.utils.GlobalUtils.EventType
 import rep.network.autotransaction.Topic
-
 import scala.util.control.Breaks._
 import rep.network.module.ModuleActorType
 import rep.network.module.cfrd.CFRDActorType
@@ -66,7 +65,7 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
 
   //背书块的交易预执行,然后验证block
   //zhjtps
-  private def AskPreloadTransactionOfBlock(block: Block): Future[Boolean] = {
+  /*private def AskPreloadTransactionOfBlock(block: Block): Future[Boolean] = {
 
     var blc2: Block = null
     val isMe = isNextBlocker(block)
@@ -126,7 +125,24 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
         RepLogger.error(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry AskPreloadTransactionOfBlock error"))
         false
     })
-  }
+  }*/
+  private def AskPreloadTransactionOfBlock(block: Block): Future[Boolean] =
+  //pe.getActorRef(ActorType.preloaderoftransaction).ask(PreTransBlock(block, "endors"))(timeout).mapTo[PreTransBlockResult].flatMap(f => {
+    pe.getActorRef(ModuleActorType.ActorType.dispatchofpreload).ask(PreTransBlock(block, "endors"))(timeout).mapTo[PreTransBlockResult].flatMap(f => {
+      //println(s"${pe.getSysTag}:entry AskPreloadTransactionOfBlock")
+      val result = Promise[Boolean]
+      var tmpblock = f.blc.withHashOfBlock(block.hashOfBlock)
+      if (BlockVerify.VerifyHashOfBlock(tmpblock)) {
+        result.success(true)
+      } else {
+        result.success(false)
+      }
+      result.future
+    }).recover({
+      case e: Throwable =>
+        RepLogger.error(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry AskPreloadTransactionOfBlock error"))
+        false
+    })
 
   private def checkRepeatOfTrans(trans: Seq[Transaction]): Future[Boolean] = Future {
     //println("entry checkRepeatOfTrans")
@@ -204,7 +220,7 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
     result = r._1
     result
   }
-  
+
   private def isAllowEndorse(info: EndorsementInfo): Int = {
     if (info.blocker == pe.getSysTag) {
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"endorser is itself,do not endorse,recv endorse request,endorse height=${info.blc.height},local height=${pe.getCurrentHeight}"))
@@ -218,12 +234,13 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
           RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"vote result equal，allow entry endorse,recv endorse request,endorse height=${info.blc.height},local height=${pe.getCurrentHeight}"))
           0
         } else  {
-          //todo 需要判断区块缓存，再决定是否需要启动同步
-          if(info.blc.height > pe.getCurrentHeight+1){
+          //todo 需要判断区块缓存，再决定是否需要启动同步,并且当前没有同步才启动同步，如果已经同步，则不需要发送消息。
+          if(info.blc.height > pe.getCurrentHeight+1 && !pe.isSynching){
             pe.getActorRef(CFRDActorType.ActorType.synchrequester) ! StartSync(false)
-          }else if(info.blc.height > pe.getCurrentHeight+1){
-            pe.getActorRef(CFRDActorType.ActorType.voter) ! VoteOfForce
           }
+          /*else if(info.blc.height > pe.getCurrentHeight+1){
+            pe.getActorRef(CFRDActorType.ActorType.voter) ! VoteOfForce
+          }*/
           //当前块hash和抽签的出块人都不一致，暂时不能够进行背书，可以进行缓存
           RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"block hash is not equal or blocker is not equal,recv endorse request,endorse height=${info.blc.height},local height=${pe.getCurrentHeight}"))
           2
@@ -248,11 +265,11 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
       v4 <- transExe
     } yield (v1 && !v2 && v3 && v4)
 
-    val result1 = Await.result(result, timeout.duration).asInstanceOf[Boolean]
+    val result1 = Await.result(result, timeout.duration*2).asInstanceOf[Boolean]
     //SendVerifyEndorsementInfo(blc,result1)
     result1
   }
-  
+
   private def SendVerifyEndorsementInfo(blc: Block,result1:Boolean) = {
     if (result1) {
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry 7"))
@@ -305,30 +322,30 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
   }
 
   private def EndorseHandler(info: EndorsementInfo) = {
-      val r = isAllowEndorse(info)
-      r match {
-        case 0 =>
+    val r = isAllowEndorse(info)
+    r match {
+      case 0 =>
 
-          var result1 = true
-          if (SystemProfile.getIsVerifyOfEndorsement) {
-            result1 = VerifyInfo(info.blc)
-          }
+        var result1 = true
+        if (SystemProfile.getIsVerifyOfEndorsement) {
+          result1 = VerifyInfo(info.blc)
+        }
 
-           SendVerifyEndorsementInfo(info.blc, true)
+        SendVerifyEndorsementInfo(info.blc, true)
 
-        case 2 =>
-          //cache endorse,waiting revote
-          sender ! ResultOfEndorsed(ResultFlagOfEndorse.BlockHeightError, null, info.blc.hashOfBlock.toStringUtf8(), pe.getSystemCurrentChainStatus, pe.getBlocker)
-          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"endorsement entry cache,self height=${pe.getCurrentHeight},block height=${info.blc.height}"))
-        case 1 =>
-          //do not endorse
-          sender ! ResultOfEndorsed(ResultFlagOfEndorse.BlockerSelfError, null, info.blc.hashOfBlock.toStringUtf8(), pe.getSystemCurrentChainStatus, pe.getBlocker)
-          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"itself,recv endorse request,endorse height=${info.blc.height},local height=${pe.getCurrentHeight}"))
-        case 3 =>
-          //do not endorse
-          sender ! ResultOfEndorsed(ResultFlagOfEndorse.CandidatorError, null, info.blc.hashOfBlock.toStringUtf8(), pe.getSystemCurrentChainStatus, pe.getBlocker)
-          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"it is not candator,do not endorse,recv endorse request,endorse height=${info.blc.height},local height=${pe.getCurrentHeight}"))
-      }
+      case 2 =>
+        //cache endorse,waiting revote
+        sender ! ResultOfEndorsed(ResultFlagOfEndorse.BlockHeightError, null, info.blc.hashOfBlock.toStringUtf8(), pe.getSystemCurrentChainStatus, pe.getBlocker)
+        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"endorsement entry cache,self height=${pe.getCurrentHeight},block height=${info.blc.height}"))
+      case 1 =>
+        //do not endorse
+        sender ! ResultOfEndorsed(ResultFlagOfEndorse.BlockerSelfError, null, info.blc.hashOfBlock.toStringUtf8(), pe.getSystemCurrentChainStatus, pe.getBlocker)
+        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"itself,recv endorse request,endorse height=${info.blc.height},local height=${pe.getCurrentHeight}"))
+      case 3 =>
+        //do not endorse
+        sender ! ResultOfEndorsed(ResultFlagOfEndorse.CandidatorError, null, info.blc.hashOfBlock.toStringUtf8(), pe.getSystemCurrentChainStatus, pe.getBlocker)
+        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"it is not candator,do not endorse,recv endorse request,endorse height=${info.blc.height},local height=${pe.getCurrentHeight}"))
+    }
   }
 
   override def receive = {
