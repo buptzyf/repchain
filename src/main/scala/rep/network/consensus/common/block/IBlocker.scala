@@ -141,7 +141,7 @@ abstract class IBlocker(moduleName: String) extends ModuleBase(moduleName) {
   }
 
   //zhjtps
-  protected def PackedBlockTPS(ts : Seq[Transaction], trs : Seq[TransactionResult],start: Int = 0): Block = {
+  /*protected def PackedBlockTPS(ts : Seq[Transaction], trs : Seq[TransactionResult],start: Int = 0): Block = {
     var blc = BlockHelp.WaitingForExecutionOfBlock(pe.getBlocker.voteBlockHash, pe.getBlocker.VoteHeight + 1, ts.toSeq)
     if (blc != null) {
       blc = blc.withVersion(5).withTransactionResults(trs)
@@ -153,6 +153,6 @@ abstract class IBlocker(moduleName: String) extends ModuleBase(moduleName) {
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("create new block error,trans count error" + "~" + selfAddr))
       null
     }
-  }
+  }*/
 
 }

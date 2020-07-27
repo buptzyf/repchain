@@ -3,7 +3,7 @@ package rep.network.consensus.cfrd.block
 import akka.actor.Props
 import rep.log.{RepLogger, RepTimeTracer}
 import rep.network.autotransaction.Topic
-import rep.network.consensus.cfrd.MsgOfCFRD.{CollectEndorsement, CreateBlock, CreateBlockTPS, VoteOfBlocker}
+import rep.network.consensus.cfrd.MsgOfCFRD.{CollectEndorsement, CreateBlock,/* CreateBlockTPS,*/ VoteOfBlocker}
 import rep.network.consensus.common.block.IBlocker
 import rep.network.module.cfrd.CFRDActorType
 import rep.network.util.NodeHelp
@@ -23,9 +23,9 @@ object BlockerOfCFRD {
 class BlockerOfCFRD(moduleName: String) extends IBlocker(moduleName){
 
   //zhjtps
-  var blockTPS :Block = null
+  /*var blockTPS :Block = null
   var tsTPS : Seq[Transaction] = null
-  var trsTPS : Seq[TransactionResult] = null
+  var trsTPS : Seq[TransactionResult] = null*/
 
   var preblock: Block = null
 
@@ -38,7 +38,7 @@ class BlockerOfCFRD(moduleName: String) extends IBlocker(moduleName){
     var blc : Block = null
 
     //zhjtps
-    if ( tsTPS != null )
+    /*if ( tsTPS != null )
       if (tsTPS.size > 0 )
         if (trsTPS != null)
           if (trsTPS.size >0) {
@@ -48,7 +48,7 @@ class BlockerOfCFRD(moduleName: String) extends IBlocker(moduleName){
                 blc = PackedBlockTPS(tsTPS,trsTPS,0)
           }
     tsTPS = null
-    trsTPS = null
+    trsTPS = null*/
 
     if (blc ==null)
       blc = PackedBlock(0)
@@ -87,9 +87,9 @@ class BlockerOfCFRD(moduleName: String) extends IBlocker(moduleName){
       }
 
       //zhjtps
-    case CreateBlockTPS(ts : Seq[Transaction], trs : Seq[TransactionResult]) =>
+   /* case CreateBlockTPS(ts : Seq[Transaction], trs : Seq[TransactionResult]) =>
       tsTPS = ts
-      trsTPS = trs
+      trsTPS = trs*/
 
     case _ => //ignore
   }

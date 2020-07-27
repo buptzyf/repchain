@@ -21,7 +21,7 @@ object MsgOfCFRD {
   ///////////////////////////////Block（出块）消息，开始//////////////////////////////
   //抽签成功之后，向预出块的actor发送建立新块的消息，该消息由抽签actor发出
   case object CreateBlock
-  case class CreateBlockTPS(ts : Seq[Transaction], trs : Seq[TransactionResult]) //zhjtps
+  //case class CreateBlockTPS(ts : Seq[Transaction], trs : Seq[TransactionResult]) //zhjtps
   ///////////////////////////////Block（出块）消息，结束//////////////////////////////
 
 

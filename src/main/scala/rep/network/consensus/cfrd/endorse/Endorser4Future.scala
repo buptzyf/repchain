@@ -30,7 +30,7 @@ import scala.util.control.Breaks._
 import rep.network.module.ModuleActorType
 import rep.network.module.cfrd.CFRDActorType
 import rep.network.consensus.common.MsgOfConsensus.{PreTransBlock, PreTransBlockResult}
-import rep.network.consensus.cfrd.MsgOfCFRD.{CreateBlockTPS, EndorsementInfo, ResultFlagOfEndorse, ResultOfEndorsed, VoteOfForce}
+import rep.network.consensus.cfrd.MsgOfCFRD.{/*CreateBlockTPS, */EndorsementInfo, ResultFlagOfEndorse, ResultOfEndorsed, VoteOfForce}
 import rep.network.consensus.util.{BlockHelp, BlockVerify}
 import rep.network.sync.SyncMsg.StartSync
 import rep.log.RepLogger
@@ -57,7 +57,7 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
   implicit val timeout = Timeout(TimePolicy.getTimeoutPreload.seconds)
 
   //zhjtps
-  protected var algorithmInVoted:IAlgorithmOfVote = new IRandomAlgorithmOfVote
+  /*protected var algorithmInVoted:IAlgorithmOfVote = new IRandomAlgorithmOfVote*/
 
   override def preStart(): Unit = {
     RepLogger.info(RepLogger.Consensus_Logger, this.getLogMsgPrefix("Endorser4Future Start"))
@@ -286,7 +286,7 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
 
 
   //zhjtps
-  protected def isNextBlocker(blc:Block) : Boolean =
+  /*protected def isNextBlocker(blc:Block) : Boolean =
   {
     var candidator: Array[String] = Array.empty[String]
     candidator = algorithmInVoted.candidators(pe.getSysTag, blc.hashOfBlock.toStringUtf8,
@@ -294,10 +294,10 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
     val nextBlocker = algorithmInVoted.blocker(candidator.toArray[String], 0)
     nextBlocker.equals(pe.getSysTag)
 
-  }
+  }*/
 
   //zhjtps
-  protected def CollectedTransOfBlockTPS(start: Int, bypassTrans : Seq[Transaction], num: Int, limitsize: Int): ArrayBuffer[Transaction] = {
+  /*protected def CollectedTransOfBlockTPS(start: Int, bypassTrans : Seq[Transaction], num: Int, limitsize: Int): ArrayBuffer[Transaction] = {
     var result = ArrayBuffer.empty[Transaction]
     try {
       val tmplist = pe.getTransPoolMgr.getTransListClone(start, num + bypassTrans.size, pe.getSysTag)
@@ -319,7 +319,7 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
     } finally {
     }
     result
-  }
+  }*/
 
   private def EndorseHandler(info: EndorsementInfo) = {
     val r = isAllowEndorse(info)
