@@ -54,14 +54,14 @@ class SynchronizeResponser(moduleName: String) extends ModuleBase(moduleName) {
 
         val ti0 = System.currentTimeMillis()
         val responseInfo = dataaccess.getBlockChainInfo()
-        RepLogger.debug(RepLogger.zLogger, "getBlockChainInfo,time=" + (System.currentTimeMillis() - ti0))
+        RepLogger.debug(RepLogger.BlockSyncher_Logger, "getBlockChainInfo,time=" + (System.currentTimeMillis() - ti0))
         var ChainInfoOfSpecifiedHeight : BlockchainInfo = BlockchainInfo(0l, 0l, _root_.com.google.protobuf.ByteString.EMPTY,
                                                                         _root_.com.google.protobuf.ByteString.EMPTY,
                                                                         _root_.com.google.protobuf.ByteString.EMPTY)
         if(height >0 && height < responseInfo.height){
           val ti1 = System.currentTimeMillis()
           val b = dataaccess.getBlock4ObjectByHeight(height)
-          RepLogger.debug(RepLogger.zLogger, "getBlock4ObjectByHeight,time=" + (System.currentTimeMillis() - ti1) + "," + pe.getTransPoolMgr.getTransLength())
+          RepLogger.debug(RepLogger.BlockSyncher_Logger, "getBlock4ObjectByHeight,time=" + (System.currentTimeMillis() - ti1) + "," + pe.getTransPoolMgr.getTransLength())
           RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(  s"node number:${pe.getSysTag},recv synch chaininfo request,request height:${height},local chaininof=${responseInfo.height}"))
           ChainInfoOfSpecifiedHeight = ChainInfoOfSpecifiedHeight.withHeight(height)
           ChainInfoOfSpecifiedHeight = ChainInfoOfSpecifiedHeight.withCurrentBlockHash(b.hashOfBlock)
