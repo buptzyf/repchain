@@ -17,7 +17,7 @@
 package rep.network.consensus.cfrd.endorse
 
 import akka.util.Timeout
-import akka.pattern.ask
+import akka.pattern.{AskTimeoutException, ask}
 import akka.actor.Props
 import com.google.protobuf.ByteString
 import rep.network.base.ModuleBase
@@ -26,16 +26,21 @@ import rep.app.conf.{SystemCertList, SystemProfile, TimePolicy}
 import rep.crypto.Sha256
 import rep.utils.GlobalUtils.EventType
 import rep.network.autotransaction.Topic
+
 import scala.util.control.Breaks._
 import rep.network.module.ModuleActorType
 import rep.network.module.cfrd.CFRDActorType
 import rep.network.consensus.common.MsgOfConsensus.{PreTransBlock, PreTransBlockResult}
-import rep.network.consensus.cfrd.MsgOfCFRD.{/*CreateBlockTPS, */EndorsementInfo, ResultFlagOfEndorse, ResultOfEndorsed, VoteOfForce}
+import rep.network.consensus.cfrd.MsgOfCFRD.{EndorsementInfo, ResultFlagOfEndorse, ResultOfEndorsed, VoteOfForce}
 import rep.network.consensus.util.{BlockHelp, BlockVerify}
 import rep.network.sync.SyncMsg.StartSync
 import rep.log.RepLogger
 import rep.log.RepTimeTracer
 import rep.network.consensus.common.algorithm.{IAlgorithmOfVote, IRandomAlgorithmOfVote}
+import rep.sc.Sandbox.DoTransactionResult
+import rep.sc.SandboxDispatcher.DoTransaction
+import rep.sc.TypeOfSender
+
 import scala.collection.mutable.ArrayBuffer
 
 /**
@@ -126,8 +131,54 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
         false
     })
   }*/
-  private def AskPreloadTransactionOfBlock(block: Block): Future[Boolean] =
+
+  private def AskPreloadTransactionOfBlock(block: Block): Future[Boolean] = Future{
+    var b = false
+    RepTimeTracer.setStartTime(pe.getSysTag, s"recvendorsement-${moduleName}-AskPreloadTransactionOfBlock", System.currentTimeMillis(),block.height,block.transactions.size)
+    try {
+      val future1 = pe.getActorRef(ModuleActorType.ActorType.dispatchofpreload).ask(PreTransBlock(block, "endors"))
+      val result = Await.result(future1, timeout.duration).asInstanceOf[PreTransBlockResult]
+      var tmpblock = result.blc.withHashOfBlock(block.hashOfBlock)
+      if (BlockVerify.VerifyHashOfBlock(tmpblock)) {
+        b = true
+      }
+    } catch {
+      case e: AskTimeoutException =>
+        RepLogger.error(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry AskPreloadTransactionOfBlock error=AskTimeoutException"))
+      case te:TimeoutException =>
+        RepLogger.error(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry AskPreloadTransactionOfBlock error=TimeoutException"))
+    }
+    RepTimeTracer.setEndTime(pe.getSysTag, s"recvendorsement-${moduleName}-AskPreloadTransactionOfBlock", System.currentTimeMillis(),block.height,block.transactions.size)
+    b
+  }.recover({
+    case e: Throwable =>
+      RepLogger.error(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry AskPreloadTransactionOfBlock error=recover"))
+      false
+  })
+
+  private def AskPreloadTransactionOfBlock1(block: Block): Boolean = {
+    var b = false
+    RepTimeTracer.setStartTime(pe.getSysTag, s"recvendorsement-${moduleName}-AskPreloadTransactionOfBlock", System.currentTimeMillis(),block.height,block.transactions.size)
+    try {
+      val future1 = pe.getActorRef(ModuleActorType.ActorType.dispatchofpreload).ask(PreTransBlock(block, "endors"))
+      val result = Await.result(future1, timeout.duration).asInstanceOf[PreTransBlockResult]
+      var tmpblock = result.blc.withHashOfBlock(block.hashOfBlock)
+      if (BlockVerify.VerifyHashOfBlock(tmpblock)) {
+        b = true
+      }
+    } catch {
+      case e: AskTimeoutException =>
+        RepLogger.error(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry AskPreloadTransactionOfBlock error=AskTimeoutException"))
+      case te:TimeoutException =>
+        RepLogger.error(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry AskPreloadTransactionOfBlock error=TimeoutException"))
+    }
+    RepTimeTracer.setEndTime(pe.getSysTag, s"recvendorsement-${moduleName}-AskPreloadTransactionOfBlock", System.currentTimeMillis(),block.height,block.transactions.size)
+    b
+  }
+
+  /*private def AskPreloadTransactionOfBlock(block: Block): Future[Boolean] =
   //pe.getActorRef(ActorType.preloaderoftransaction).ask(PreTransBlock(block, "endors"))(timeout).mapTo[PreTransBlockResult].flatMap(f => {
+
     pe.getActorRef(ModuleActorType.ActorType.dispatchofpreload).ask(PreTransBlock(block, "endors"))(timeout).mapTo[PreTransBlockResult].flatMap(f => {
       //println(s"${pe.getSysTag}:entry AskPreloadTransactionOfBlock")
       val result = Promise[Boolean]
@@ -142,10 +193,11 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
       case e: Throwable =>
         RepLogger.error(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry AskPreloadTransactionOfBlock error"))
         false
-    })
+    })*/
 
-  private def checkRepeatOfTrans(trans: Seq[Transaction]): Future[Boolean] = Future {
+  private def checkRepeatOfTrans(trans: Seq[Transaction],height:Long): Future[Boolean] = Future {
     //println("entry checkRepeatOfTrans")
+    RepTimeTracer.setStartTime(pe.getSysTag, s"recvendorsement-${moduleName}-checkRepeatOfTrans", System.currentTimeMillis(),height,trans.size)
     var isRepeat: Boolean = false
     val aliaslist = trans.distinct
     if (aliaslist.size != trans.size) {
@@ -162,6 +214,30 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
         }))
     }
     //println(s"${pe.getSysTag}:entry checkRepeatOfTrans after,isrepeat=${isRepeat}")
+    RepTimeTracer.setEndTime(pe.getSysTag, s"recvendorsement-${moduleName}-checkRepeatOfTrans", System.currentTimeMillis(),height,trans.size)
+    isRepeat
+  }
+
+  private def checkRepeatOfTrans1(trans: Seq[Transaction],height:Long): Boolean =  {
+    //println("entry checkRepeatOfTrans")
+    RepTimeTracer.setStartTime(pe.getSysTag, s"recvendorsement-${moduleName}-checkRepeatOfTrans", System.currentTimeMillis(),height,trans.size)
+    var isRepeat: Boolean = false
+    val aliaslist = trans.distinct
+    if (aliaslist.size != trans.size) {
+      isRepeat = true
+    } else {
+      val sr: ImpDataAccess = ImpDataAccess.GetDataAccess(pe.getSysTag)
+      breakable(
+        trans.foreach(f => {
+          if (sr.isExistTrans4Txid(f.id)) {
+            isRepeat = true
+            break
+          }
+          //println(s"${pe.getSysTag}:entry checkRepeatOfTrans loop")
+        }))
+    }
+    //println(s"${pe.getSysTag}:entry checkRepeatOfTrans after,isrepeat=${isRepeat}")
+    RepTimeTracer.setEndTime(pe.getSysTag, s"recvendorsement-${moduleName}-checkRepeatOfTrans", System.currentTimeMillis(),height,trans.size)
     isRepeat
   }
 
@@ -182,8 +258,26 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
     result
   }
 
+  private def asyncVerifyTransaction1(t: Transaction): Boolean =  {
+    //println(s"${pe.getSysTag}:entry asyncVerifyTransaction")
+    var result = false
+
+    if (pe.getTransPoolMgr.findTrans(t.id)) {
+      result = true
+    } else {
+      val tmp = BlockVerify.VerifyOneSignOfTrans(t, pe.getSysTag)
+      if (tmp._1) {
+        result = true
+      }
+      //println(s"${pe.getSysTag}:entry asyncVerifyTransaction loop")
+    }
+    //println(s"${pe.getSysTag}:entry asyncVerifyTransaction after,asyncVerifyTransaction=${result}")
+    result
+  }
+
   private def asyncVerifyTransactions(block: Block): Future[Boolean] = Future {
     //println(s"${pe.getSysTag}:entry asyncVerifyTransactions")
+    RepTimeTracer.setStartTime(pe.getSysTag, s"recvendorsement-${moduleName}-asyncVerifyTransactions", System.currentTimeMillis(),block.height,block.transactions.size)
     var result = true
     val listOfFuture: Seq[Future[Boolean]] = block.transactions.map(x => {
       asyncVerifyTransaction(x)
@@ -201,16 +295,47 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
         //println(s"${pe.getSysTag}:entry asyncVerifyTransactions loop result")
       })
     })
+    RepTimeTracer.setEndTime(pe.getSysTag, s"recvendorsement-${moduleName}-asyncVerifyTransactions", System.currentTimeMillis(),block.height,block.transactions.size)
+    //println(s"${pe.getSysTag}:entry asyncVerifyTransactions after,asyncVerifyTransactions=${result}")
+    result
+  }
+
+  private def asyncVerifyTransactions1(block: Block): Boolean =  {
+    //println(s"${pe.getSysTag}:entry asyncVerifyTransactions")
+    RepTimeTracer.setStartTime(pe.getSysTag, s"recvendorsement-${moduleName}-asyncVerifyTransactions", System.currentTimeMillis(),block.height,block.transactions.size)
+    var result = true
+    breakable(
+      block.transactions.foreach(t => {
+        if (!asyncVerifyTransaction1(t)) {
+          result = false
+          break
+        }
+      }))
+
+    RepTimeTracer.setEndTime(pe.getSysTag, s"recvendorsement-${moduleName}-asyncVerifyTransactions", System.currentTimeMillis(),block.height,block.transactions.size)
     //println(s"${pe.getSysTag}:entry asyncVerifyTransactions after,asyncVerifyTransactions=${result}")
     result
   }
 
   private def checkEndorseSign(block: Block): Future[Boolean] = Future {
     //println(s"${pe.getSysTag}:entry checkEndorseSign")
+    RepTimeTracer.setStartTime(pe.getSysTag, s"recvendorsement-${moduleName}-checkEndorseSign", System.currentTimeMillis(),block.height,block.transactions.size)
     var result = false
     val r = BlockVerify.VerifyAllEndorseOfBlock(block, pe.getSysTag)
     result = r._1
     //println(s"${pe.getSysTag}:entry checkEndorseSign after,checkEndorseSign=${result}")
+    RepTimeTracer.setEndTime(pe.getSysTag, s"recvendorsement-${moduleName}-checkEndorseSign", System.currentTimeMillis(),block.height,block.transactions.size)
+    result
+  }
+
+  private def checkEndorseSign1(block: Block): Boolean = {
+    //println(s"${pe.getSysTag}:entry checkEndorseSign")
+    RepTimeTracer.setStartTime(pe.getSysTag, s"recvendorsement-${moduleName}-checkEndorseSign", System.currentTimeMillis(),block.height,block.transactions.size)
+    var result = false
+    val r = BlockVerify.VerifyAllEndorseOfBlock(block, pe.getSysTag)
+    result = r._1
+    //println(s"${pe.getSysTag}:entry checkEndorseSign after,checkEndorseSign=${result}")
+    RepTimeTracer.setEndTime(pe.getSysTag, s"recvendorsement-${moduleName}-checkEndorseSign", System.currentTimeMillis(),block.height,block.transactions.size)
     result
   }
 
@@ -254,8 +379,9 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
   }
 
   private def VerifyInfo(blc: Block) = {
+    RepTimeTracer.setStartTime(pe.getSysTag, s"recvendorsement-${moduleName}-VerifyInfo", System.currentTimeMillis(),blc.height,blc.transactions.size)
     val transSign = asyncVerifyTransactions(blc)
-    val transRepeat = checkRepeatOfTrans(blc.transactions)
+    val transRepeat = checkRepeatOfTrans(blc.transactions,blc.height)
     val endorseSign = checkEndorseSign(blc)
     val transExe = AskPreloadTransactionOfBlock(blc)
     val result = for {
@@ -266,9 +392,21 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
     } yield (v1 && !v2 && v3 && v4)
 
     val result1 = Await.result(result, timeout.duration*2).asInstanceOf[Boolean]
+    RepTimeTracer.setEndTime(pe.getSysTag, s"recvendorsement-${moduleName}-VerifyInfo", System.currentTimeMillis(),blc.height,blc.transactions.size)
     //SendVerifyEndorsementInfo(blc,result1)
     result1
   }
+
+  /*private def VerifyInfo(blc: Block) = {
+    var b = false
+    RepTimeTracer.setStartTime(pe.getSysTag, s"recvendorsement-${moduleName}-VerifyInfo", System.currentTimeMillis(),blc.height,blc.transactions.size)
+    if(asyncVerifyTransactions1(blc) && checkEndorseSign1(blc) && !checkRepeatOfTrans1(blc.transactions,blc.height) && AskPreloadTransactionOfBlock1(blc)){
+      b = true
+    }
+    RepTimeTracer.setEndTime(pe.getSysTag, s"recvendorsement-${moduleName}-VerifyInfo", System.currentTimeMillis(),blc.height,blc.transactions.size)
+
+    b
+  }*/
 
   private def SendVerifyEndorsementInfo(blc: Block,result1:Boolean) = {
     if (result1) {

@@ -77,7 +77,6 @@ object Repchain {
     for(i <- 0 to 4) {
       Thread.sleep(5000)
       RepChainMgr.Startup4Multi(nodelist(i),nodeports(i))
-
     }
 
 

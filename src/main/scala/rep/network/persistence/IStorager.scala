@@ -115,29 +115,31 @@ abstract class IStorager (moduleName: String) extends ModuleBase(moduleName) {
         localchaininfo = dataaccess.getBlockChainInfo()
         pe.resetSystemCurrentChainStatus(localchaininfo)
       }
-      val hs = pe.getBlockCacheMgr.getKeyArray4Sort
-      val minheight = hs(0)
-      val maxheight = hs(hs.length-1)
-      var loop :Long = minheight
+      if(!pe.getBlockCacheMgr.isEmpty){
+        val hs = pe.getBlockCacheMgr.getKeyArray4Sort
+        val minheight = hs(0)
+        val maxheight = hs(hs.length-1)
+        var loop :Long = minheight
 
-      breakable(
-        while(loop <= maxheight){
-          val _blkRestore = pe.getBlockCacheMgr.getBlockFromCache(loop)
-          if(loop > localchaininfo.height+1){
-            //发送同步消息
-            if(!pe.isSynching){
-              NoticeSyncModule(_blkRestore.blker)
+        breakable(
+          while(loop <= maxheight){
+            val _blkRestore = pe.getBlockCacheMgr.getBlockFromCache(loop)
+            if(loop > localchaininfo.height+1){
+              //发送同步消息
+              if(!pe.isSynching){
+                NoticeSyncModule(_blkRestore.blker)
+              }
+              break
+            }else{
+              val r = RestoreBlock(_blkRestore)
+              if(r == 0){
+                localchaininfo = pe.getSystemCurrentChainStatus
+              }
             }
-            break
-          }else{
-            val r = RestoreBlock(_blkRestore)
-            if(r == 0){
-              localchaininfo = pe.getSystemCurrentChainStatus
-            }
+            loop += 1l
           }
-          loop += 1l
-        }
-      )
+        )
+      }
       NoticeVoteModule
     }catch{
       case e: RuntimeException =>

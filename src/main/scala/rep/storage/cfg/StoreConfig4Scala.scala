@@ -21,8 +21,8 @@ import java.io.File
 import rep.storage.util.pathUtil
 
 object StoreConfig4Scala {
-  private val dbpath="/repchaindata/data/leveldbdata"
-  private val blockpath="/repchaindata/data/blockdata"
+  private val dbpath="/Users/jiangbuyun/repchaindata/data/leveldbdata"
+  private val blockpath="/Users/jiangbuyun/repchaindata/data/blockdata"
   private val filemax=200000000
   
   /**
@@ -30,7 +30,7 @@ object StoreConfig4Scala {
 	 * @version	1.0
 	 * @since	2019-05-11
 	 * @category	获取数据库的存储路径
-	 * @param	无
+	 * @param
 	 * @return	String 返回数据库的存储路径
 	 * */
 	def  getDbPath:String={
@@ -57,7 +57,7 @@ object StoreConfig4Scala {
 	 * @version	1.0
 	 * @since	2019-05-11
 	 * @category	获取区块的存储路径
-	 * @param	无
+	 * @param
 	 * @return	String 返回区块的存储路径
 	 * */
 	def  getBlockPath:String={

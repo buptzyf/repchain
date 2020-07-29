@@ -223,7 +223,6 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
 
     this.sysConf = ConfigFactory.load(combined)
 
-
     this.init
   }
 
