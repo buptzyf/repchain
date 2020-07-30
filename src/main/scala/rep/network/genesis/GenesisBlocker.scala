@@ -51,7 +51,7 @@ class GenesisBlocker(moduleName: String) extends ModuleBase(moduleName) {
 
   override def preStart(): Unit = {
     RepLogger.info(RepLogger.Consensus_Logger, this.getLogMsgPrefix( "Block module start"))
-    SubscribeTopic(mediator, self, selfAddr, Topic.Block, true)
+    //SubscribeTopic(mediator, self, selfAddr, Topic.Block, true)
   }
 
   

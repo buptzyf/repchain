@@ -45,7 +45,7 @@ class ImpDataPreload (SystemName:String,InstanceName:String) extends AbstractLev
 	 * @version	0.7
 	 * @since	2017-09-28
 	 * @category	获取当前系统的名称
-	 * @param	无
+	 * @param
 	 * @return	返回当前系统的名称 String
 	 * */
     override def   getSystemName:String={
@@ -57,7 +57,7 @@ class ImpDataPreload (SystemName:String,InstanceName:String) extends AbstractLev
 	 * @version	0.7
 	 * @since	2017-09-28
 	 * @category	获取当前实例的名称
-	 * @param	无
+	 * @param
 	 * @return	返回当前实例的名称 String
 	 * */
     override def getInstanceName:String={
@@ -155,7 +155,7 @@ class ImpDataPreload (SystemName:String,InstanceName:String) extends AbstractLev
 	 * @version	0.7
 	 * @since	2017-09-28
 	 * @category	内部使用，更新实例的访问时间，每次访问的时候都会调用该方法
-	 * @param	key String 指定的键
+	 * @param
 	 * @return	无
 	 * */
   	def setUseTime{
@@ -167,7 +167,7 @@ class ImpDataPreload (SystemName:String,InstanceName:String) extends AbstractLev
 	 * @version	0.7
 	 * @since	2017-09-28
 	 * @category	内部使用，获取该实例最后一次使用时间
-	 * @param	无
+	 * @param
 	 * @return	长整型，最后一次的使用时间
 	 * */
   	def getUseTime:Long={
@@ -272,7 +272,7 @@ private class  MultiDBMgr (val SystemName:String) {
 	 * @version	0.7
 	 * @since	2017-09-28
 	 * @category	清理系统中空闲超时的实例
-	 * @param	无
+	 * @param
 	 * @return	无
 	 * */
   def clear{
@@ -369,7 +369,7 @@ object ImpDataPreloadMgr{
 	 * @version	0.7
 	 * @since	2017-09-28
 	 * @category	从多实例管理器中清理系统中空闲超时的实例
-	 * @param	无
+	 * @param
 	 * @return	无
 	 * */
  private def clear{

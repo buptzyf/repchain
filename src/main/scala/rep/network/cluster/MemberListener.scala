@@ -85,7 +85,7 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
   cluster.subscribe(self,classOf[ClusterDomainEvent])
   //context.system.eventStream.subscribe(self, classOf[akka.remote.DisassociatedEvent])
 
-  SubscribeTopic(mediator, self, addr_self, Topic.Event, false)
+  //SubscribeTopic(mediator, self, addr_self, Topic.Event, false)
 
   /**
    * 节点状态是否稳定

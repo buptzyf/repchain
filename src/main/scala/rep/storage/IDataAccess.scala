@@ -257,7 +257,7 @@ abstract class IDataAccess(val SystemName: String) extends AbstractLevelDB(Syste
    */
   override def Put(key: String, bb: Array[Byte]): Boolean = {
     var b: Boolean = true
-    synchObject.synchronized {
+    //synchObject.synchronized {
       try {
         var v: Array[Byte] = bb
         
@@ -280,7 +280,7 @@ abstract class IDataAccess(val SystemName: String) extends AbstractLevelDB(Syste
           throw e
         }
       }
-    }
+    //}
     b
   }
 

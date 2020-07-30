@@ -4,6 +4,7 @@ import rep.protos.peer.Block
 import rep.storage.ImpDataAccess
 
 import scala.collection.mutable.ArrayBuffer
+import scala.util.Random
 
 object testBigKey extends App {
   val da2 = ImpDataAccess.GetDataAccess("12110107bi45jh675g.node2")
@@ -24,8 +25,8 @@ object testBigKey extends App {
     blk
   }
 
-  def getAllTxidOfBlock={
-    blockheights.foreach(h=>{
+  def getAllTxidOfBlock(h:Long)={
+
       val blk = gettxids(h)
       if(blk != null){
         blk.transactions.foreach(t=>{
@@ -38,10 +39,10 @@ object testBigKey extends App {
           })
         })
       }
-    })
+
   }
 
-  getAllTxidOfBlock
+  //getAllTxidOfBlock
 
   def getTx(txid:String)={
     val start = System.currentTimeMillis()
@@ -56,7 +57,7 @@ object testBigKey extends App {
     })
   }
 
-  getAllTrans
+  //getAllTrans
 
   def getKey(key:String)={
     val start = System.currentTimeMillis()
@@ -97,4 +98,25 @@ object testBigKey extends App {
 
 
 
+  def testRead={
+    val readblocknumber = new ArrayBuffer[Long]()
+    val start = System.currentTimeMillis()
+    var i = 0
+    val limit = 3171132
+    for( i <- 1 to 10000){
+      val h = Random.nextInt(limit)
+      if(h < 3171132 && h > 0){
+        getAllTxidOfBlock(h)
+      }
+    }
+    val end = System.currentTimeMillis()
+    println(s"read block:spent times=${(end-start)}ms")
+    var tr = new testRateOfLevelDB(da1)
+
+    tr.readAndWrite(keys.toArray)
+    tr.readAndWrite(txids.toArray)
+
+  }
+
+  testRead
 }
