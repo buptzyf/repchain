@@ -16,8 +16,10 @@
 
 package rep.api.rest
 
-import scala.concurrent.{ ExecutionContext, Future }
-import akka.actor.{ ActorRef, ActorSelection }
+import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
+
+import scala.concurrent.{ExecutionContext, Future}
+import akka.actor.{ActorRef, ActorSelection}
 import akka.util.Timeout
 import akka.http.scaladsl.model.Uri.Path.Segment
 import akka.http.scaladsl.server.Directives
@@ -34,13 +36,13 @@ import de.heikoseeberger.akkahttpjson4s.Json4sSupport
 import rep.protos.peer._
 import rep.api.rest.RestActor._
 import spray.json.DefaultJsonProtocol._
-import org.json4s.{ DefaultFormats, Formats, jackson }
+import org.json4s.{DefaultFormats, Formats, jackson}
 import akka.http.scaladsl.server.Directives
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import spray.json._
 import akka.http.scaladsl.marshallers.xml.ScalaXmlSupport
-import akka.http.scaladsl.model.{ ContentTypes, HttpCharsets, MediaTypes }
-import akka.http.scaladsl.unmarshalling.{ FromEntityUnmarshaller, Unmarshaller }
+import akka.http.scaladsl.model.{ContentTypes, HttpCharsets, MediaTypes}
+import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 
 import scala.xml.NodeSeq
 import rep.log.RepLogger
@@ -52,7 +54,7 @@ import rep.log.RepLogger
  */
 @Api(value = "/chaininfo", description = "获得当前区块链信息", produces = "application/json")
 @Path("chaininfo")
-class ChainService(ra: ActorRef)(implicit executionContext: ExecutionContext)
+class ChainService(ra: RestRouter)(implicit executionContext: ExecutionContext)
   extends Directives {
 
   import akka.pattern.ask
@@ -64,6 +66,8 @@ class ChainService(ra: ActorRef)(implicit executionContext: ExecutionContext)
   implicit val formats = DefaultFormats
   implicit val timeout = Timeout(20.seconds)
 
+
+
   val route = getBlockChainInfo ~ getNodeNumber ~ getCacheTransNumber ~ getAcceptedTransNumber ~ loadBlockInfoToCache ~ IsLoadBlockInfoToCache
 
   @ApiOperation(value = "返回块链信息", notes = "", nickname = "getChainInfo", httpMethod = "GET")
@@ -74,7 +78,7 @@ class ChainService(ra: ActorRef)(implicit executionContext: ExecutionContext)
       get {
         extractClientIP { ip =>
           RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} get chaininfo")
-          complete { (ra ? ChainInfo).mapTo[QueryResult] }
+          complete { (ra.getRestActor ? ChainInfo).mapTo[QueryResult] }
         }
       }
     }
@@ -88,7 +92,7 @@ class ChainService(ra: ActorRef)(implicit executionContext: ExecutionContext)
       get {
         extractClientIP { ip =>
           RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} get node number")
-          complete { (ra ? NodeNumber).mapTo[QueryResult] }
+          complete { (ra.getRestActor ? NodeNumber).mapTo[QueryResult] }
         }
       }
     }
@@ -103,7 +107,7 @@ class ChainService(ra: ActorRef)(implicit executionContext: ExecutionContext)
       get {
         extractClientIP { ip =>
           RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} get loadBlockInfoToCache")
-          complete { (ra ? LoadBlockInfo).mapTo[QueryResult] }
+          complete { (ra.getRestActor ? LoadBlockInfo).mapTo[QueryResult] }
         }
       }
     }
@@ -117,7 +121,7 @@ class ChainService(ra: ActorRef)(implicit executionContext: ExecutionContext)
       get {
         extractClientIP { ip =>
           RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} get IsLoadBlockInfoToCache")
-          complete { (ra ? IsLoadBlockInfo).mapTo[QueryResult] }
+          complete { (ra.getRestActor ? IsLoadBlockInfo).mapTo[QueryResult] }
         }
       }
     }
@@ -132,7 +136,7 @@ class ChainService(ra: ActorRef)(implicit executionContext: ExecutionContext)
       get {
         extractClientIP { ip =>
           RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} get number of cache")
-          complete { (ra ? TransNumber).mapTo[QueryResult] }
+          complete { (ra.getRestActor ? TransNumber).mapTo[QueryResult] }
         }
       }
     }
@@ -147,7 +151,7 @@ class ChainService(ra: ActorRef)(implicit executionContext: ExecutionContext)
         extractClientIP { ip =>
           RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} get number of accepted")
           complete {
-            (ra ? AcceptedTransNumber).mapTo[QueryResult]
+            (ra.getRestActor ? AcceptedTransNumber).mapTo[QueryResult]
           }
         }
       }
@@ -162,7 +166,7 @@ class ChainService(ra: ActorRef)(implicit executionContext: ExecutionContext)
 
 @Api(value = "/block", description = "获得区块数据", produces = "application/json")
 @Path("block")
-class BlockService(ra: ActorRef)(implicit executionContext: ExecutionContext)
+class BlockService(ra: RestRouter)(implicit executionContext: ExecutionContext)
   extends Directives {
 
   import akka.pattern.ask
@@ -188,7 +192,7 @@ class BlockService(ra: ActorRef)(implicit executionContext: ExecutionContext)
       get {
         extractClientIP { ip =>
           RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} get block for id,block id=${blockId}")
-          complete { (ra ? BlockId(blockId)).mapTo[QueryResult] }
+          complete { (ra.getRestActor ? BlockId(blockId)).mapTo[QueryResult] }
         }
       }
     }
@@ -204,7 +208,7 @@ class BlockService(ra: ActorRef)(implicit executionContext: ExecutionContext)
       get {
         extractClientIP { ip =>
           RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} get block for Height,block height=${blockHeight}")
-          complete { (ra ? BlockHeight(blockHeight.toInt)).mapTo[QueryResult] }
+          complete { (ra.getRestActor ? BlockHeight(blockHeight.toInt)).mapTo[QueryResult] }
         }
 
         //complete { (ra ? BlockHeight(blockHeight.toInt)).mapTo[QueryResult] }
@@ -222,7 +226,7 @@ class BlockService(ra: ActorRef)(implicit executionContext: ExecutionContext)
       post {
         entity(as[Map[String, Int]]) { blockQuery =>
           complete {
-            (ra ? BlockHeight(blockQuery("height"))).mapTo[QueryResult]
+            (ra.getRestActor ? BlockHeight(blockQuery("height"))).mapTo[QueryResult]
           }
         }
       }
@@ -239,7 +243,7 @@ class BlockService(ra: ActorRef)(implicit executionContext: ExecutionContext)
       post {
         entity(as[Map[String, Long]]) { blockQuery =>
           complete {
-            (ra ? TransNumberOfBlock(blockQuery("height"))).mapTo[QueryResult]
+            (ra.getRestActor ? TransNumberOfBlock(blockQuery("height"))).mapTo[QueryResult]
           }
         }
       }
@@ -256,7 +260,7 @@ class BlockService(ra: ActorRef)(implicit executionContext: ExecutionContext)
       get {
         extractClientIP { ip =>
           RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} get block time for Height,block height=${blockHeight}")
-          complete { (ra ? BlockTimeForHeight(blockHeight.toLong)).mapTo[QueryResult] }
+          complete { (ra.getRestActor ? BlockTimeForHeight(blockHeight.toLong)).mapTo[QueryResult] }
         }
 
         //complete { (ra ? BlockHeight(blockHeight.toInt)).mapTo[QueryResult] }
@@ -274,7 +278,7 @@ class BlockService(ra: ActorRef)(implicit executionContext: ExecutionContext)
       get {
         extractClientIP { ip =>
           RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} get block time for txid,txid=${transid}")
-          complete { (ra ? BlockTimeForTxid(transid)).mapTo[QueryResult] }
+          complete { (ra.getRestActor ? BlockTimeForTxid(transid)).mapTo[QueryResult] }
         }
 
         //complete { (ra ? BlockHeight(blockHeight.toInt)).mapTo[QueryResult] }
@@ -293,7 +297,7 @@ class BlockService(ra: ActorRef)(implicit executionContext: ExecutionContext)
     path("block" / "blocktimeoftran") {
       post {
         entity(as[Map[String, String]]) { trans =>
-          complete { (ra ? BlockTimeForTxid(trans("txid"))).mapTo[QueryResult] }
+          complete { (ra.getRestActor ? BlockTimeForTxid(trans("txid"))).mapTo[QueryResult] }
         }
       }
     }
@@ -309,7 +313,7 @@ class BlockService(ra: ActorRef)(implicit executionContext: ExecutionContext)
       get {
         extractClientIP { ip =>
           RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} get block stream for Height,block height=${blockHeight}")
-          complete((ra ? BlockHeightStream(blockHeight.toInt)).mapTo[HttpResponse])
+          complete((ra.getRestActor ? BlockHeightStream(blockHeight.toInt)).mapTo[HttpResponse])
         }
       }
     }
@@ -322,7 +326,7 @@ class BlockService(ra: ActorRef)(implicit executionContext: ExecutionContext)
  */
 @Api(value = "/transaction", description = "获得交易数据", consumes = "application/json,application/xml", produces = "application/json,application/xml")
 @Path("transaction")
-class TransactionService(ra: ActorRef)(implicit executionContext: ExecutionContext)
+class TransactionService(ra: RestRouter)(implicit executionContext: ExecutionContext)
   extends Directives {
 
   import akka.pattern.ask
@@ -376,7 +380,7 @@ class TransactionService(ra: ActorRef)(implicit executionContext: ExecutionConte
       get {
         extractClientIP { ip =>
           RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} get transaction for txid,txid=${transactionId}")
-          complete { (ra ? TransactionId(transactionId)).mapTo[QueryResult] }
+          complete { (ra.getRestActor ? TransactionId(transactionId)).mapTo[QueryResult] }
         }
       }
     }
@@ -392,7 +396,7 @@ class TransactionService(ra: ActorRef)(implicit executionContext: ExecutionConte
       get {
         extractClientIP { ip =>
           RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} get transaction stream for txid,txid=${transactionId}")
-          complete((ra ? TransactionStreamId(transactionId)).mapTo[HttpResponse])
+          complete((ra.getRestActor ? TransactionStreamId(transactionId)).mapTo[HttpResponse])
         }
       }
     }
@@ -409,7 +413,7 @@ class TransactionService(ra: ActorRef)(implicit executionContext: ExecutionConte
     path("transaction" / "postTranByString") {
       post {
         entity(as[String]) { trans =>
-          complete { (ra ? tranSign(trans)).mapTo[PostResult] }
+          complete { (ra.getRestActor ? tranSign(trans)).mapTo[PostResult] }
         }
       }
     }
@@ -437,7 +441,7 @@ class TransactionService(ra: ActorRef)(implicit executionContext: ExecutionConte
               onSuccess(writeResult) { result =>
                 //TODO protobuf 反序列化字节流及后续处理
                 complete(s"Successfully written ${result.count} bytes")
-                complete { (ra ? Transaction.parseFrom(new FileInputStream(fp.toFile()))).mapTo[PostResult] }
+                complete { (ra.getRestActor ? Transaction.parseFrom(new FileInputStream(fp.toFile()))).mapTo[PostResult] }
               }
           }
         }
@@ -457,7 +461,7 @@ class TransactionService(ra: ActorRef)(implicit executionContext: ExecutionConte
       post {
         import akka.http.scaladsl.marshallers.xml.ScalaXmlSupport._
         entity(as[CSpec]) { request =>
-          complete { (ra ? request).mapTo[PostResult] }
+          complete { (ra.getRestActor ? request).mapTo[PostResult] }
         }
       }
     }

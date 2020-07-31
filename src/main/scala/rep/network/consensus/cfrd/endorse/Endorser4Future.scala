@@ -31,7 +31,7 @@ import scala.util.control.Breaks._
 import rep.network.module.ModuleActorType
 import rep.network.module.cfrd.CFRDActorType
 import rep.network.consensus.common.MsgOfConsensus.{PreTransBlock, PreTransBlockResult}
-import rep.network.consensus.cfrd.MsgOfCFRD.{EndorsementInfo, ResultFlagOfEndorse, ResultOfEndorsed, VoteOfForce}
+import rep.network.consensus.cfrd.MsgOfCFRD.{EndorsementInfo, ResultFlagOfEndorse, ResultOfEndorsed, VoteOfForce, verifyTransOfEndorsement, verifyTransPreloadOfEndorsement, verifyTransRepeatOfEndorsement}
 import rep.network.consensus.util.{BlockHelp, BlockVerify}
 import rep.network.sync.SyncMsg.StartSync
 import rep.log.RepLogger
@@ -423,6 +423,8 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
   }
 
 
+
+
   //zhjtps
   /*protected def isNextBlocker(blc:Block) : Boolean =
   {
@@ -467,10 +469,12 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
         var result1 = true
         if (SystemProfile.getIsVerifyOfEndorsement) {
           result1 = VerifyInfo(info.blc)
+          SendVerifyEndorsementInfo(info.blc, result1)
+        }else{
+          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry 8"))
+          sender ! ResultOfEndorsed(ResultFlagOfEndorse.VerifyError, null, info.blc.hashOfBlock.toStringUtf8(),
+            pe.getSystemCurrentChainStatus,pe.getBlocker)
         }
-
-        SendVerifyEndorsementInfo(info.blc, true)
-
       case 2 =>
         //cache endorse,waiting revote
         sender ! ResultOfEndorsed(ResultFlagOfEndorse.BlockHeightError, null, info.blc.hashOfBlock.toStringUtf8(), pe.getSystemCurrentChainStatus, pe.getBlocker)
@@ -486,6 +490,56 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
     }
   }
 
+  private def verifyTransOfEndorsementOfOp(info: EndorsementInfo)={
+    var tmp = pe.getCurrentEndorseInfo
+    if(tmp.block.hashOfBlock.toStringUtf8.equals(info.blc.hashOfBlock.toStringUtf8) && !tmp.verifyTran.get()){
+      if(asyncVerifyTransactions1(info.blc)){
+        tmp.verifyTran.set(true)
+        EndorseIsFinish(tmp,info)
+      }else{
+        //tmp.verifyTran.set(false)
+        SendVerifyEndorsementInfo(info.blc,false)
+      }
+    }
+
+    EndorseIsFinish(tmp,info)
+  }
+
+  private def verifyTransRepeatOfEndorsementOfOp(info: EndorsementInfo)={
+    var tmp = pe.getCurrentEndorseInfo
+    if(tmp.block.hashOfBlock.toStringUtf8.equals(info.blc.hashOfBlock.toStringUtf8) && tmp.checkRepeatTrans.get() == 0){
+      if(!checkRepeatOfTrans1(info.blc.transactions,info.blc.height)){
+        tmp.checkRepeatTrans.set(1)
+        EndorseIsFinish(tmp,info)
+      }else{
+        //tmp.checkRepeatTrans.set(2)
+        SendVerifyEndorsementInfo(info.blc,false)
+      }
+    }
+
+    EndorseIsFinish(tmp,info)
+  }
+
+  private def verifyTransPreloadOfEndorsementOfOp(info: EndorsementInfo)={
+    var tmp = pe.getCurrentEndorseInfo
+    if(tmp.block.hashOfBlock.toStringUtf8.equals(info.blc.hashOfBlock.toStringUtf8) && !tmp.preload.get()){
+      if(AskPreloadTransactionOfBlock1(info.blc)){
+        tmp.preload.set(true)
+        EndorseIsFinish(tmp,info)
+      }else{
+        //tmp.preload.set(false)
+        SendVerifyEndorsementInfo(info.blc,false)
+      }
+    }
+  }
+
+  private def EndorseIsFinish(re:RecvEndorsInfo,info: EndorsementInfo)={
+    if(re.preload.get() && re.verifyBlockSign.get() && re.checkRepeatTrans.get()==1 && re.verifyTran.get()){
+      SendVerifyEndorsementInfo(info.blc, true)
+    }
+  }
+
+
   override def receive = {
     //Endorsement block
     case EndorsementInfo(block, blocker) =>
@@ -497,6 +551,35 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
         sender ! ResultOfEndorsed(ResultFlagOfEndorse.EnodrseNodeIsSynching, null, block.hashOfBlock.toStringUtf8(),pe.getSystemCurrentChainStatus,pe.getBlocker)
         RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"do not endorse,it is synching,recv endorse request,endorse height=${block.height},local height=${pe.getCurrentHeight}"))
       }
+
+      case verifyTransOfEndorsement(block, blocker) =>
+        if(!pe.isSynching){
+          RepTimeTracer.setStartTime(pe.getSysTag, s"recvendorsement-verifyTransOfEndorsementOfOp-${moduleName}", System.currentTimeMillis(),block.height,block.transactions.size)
+          verifyTransOfEndorsementOfOp(EndorsementInfo(block, blocker))
+          RepTimeTracer.setEndTime(pe.getSysTag, s"recvendorsement-verifyTransOfEndorsementOfOp-${moduleName}", System.currentTimeMillis(),block.height,block.transactions.size)
+        }else{
+          sender ! ResultOfEndorsed(ResultFlagOfEndorse.EnodrseNodeIsSynching, null, block.hashOfBlock.toStringUtf8(),pe.getSystemCurrentChainStatus,pe.getBlocker)
+          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"do not endorse,it is synching,recv endorse request,endorse height=${block.height},local height=${pe.getCurrentHeight}"))
+        }
+
+      case verifyTransRepeatOfEndorsement(block, blocker) =>
+        if(!pe.isSynching){
+          RepTimeTracer.setStartTime(pe.getSysTag, s"recvendorsement-verifyTransRepeatOfEndorsementOfOp-${moduleName}", System.currentTimeMillis(),block.height,block.transactions.size)
+          verifyTransRepeatOfEndorsementOfOp(EndorsementInfo(block, blocker))
+          RepTimeTracer.setEndTime(pe.getSysTag, s"recvendorsement-verifyTransRepeatOfEndorsementOfOp-${moduleName}", System.currentTimeMillis(),block.height,block.transactions.size)
+        }else{
+          sender ! ResultOfEndorsed(ResultFlagOfEndorse.EnodrseNodeIsSynching, null, block.hashOfBlock.toStringUtf8(),pe.getSystemCurrentChainStatus,pe.getBlocker)
+          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"do not endorse,it is synching,recv endorse request,endorse height=${block.height},local height=${pe.getCurrentHeight}"))
+        }
+      case verifyTransPreloadOfEndorsement(block, blocker) =>
+        if(!pe.isSynching){
+          RepTimeTracer.setStartTime(pe.getSysTag, s"recvendorsement-verifyTransPreloadOfEndorsementOfOp-${moduleName}", System.currentTimeMillis(),block.height,block.transactions.size)
+          verifyTransPreloadOfEndorsementOfOp(EndorsementInfo(block, blocker))
+          RepTimeTracer.setEndTime(pe.getSysTag, s"recvendorsement-verifyTransPreloadOfEndorsementOfOp-${moduleName}", System.currentTimeMillis(),block.height,block.transactions.size)
+        }else{
+          sender ! ResultOfEndorsed(ResultFlagOfEndorse.EnodrseNodeIsSynching, null, block.hashOfBlock.toStringUtf8(),pe.getSystemCurrentChainStatus,pe.getBlocker)
+          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"do not endorse,it is synching,recv endorse request,endorse height=${block.height},local height=${pe.getCurrentHeight}"))
+        }
 
     case _ => //ignore
   }

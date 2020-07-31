@@ -41,6 +41,7 @@ object SignTool {
   private var keypassword = mutable.HashMap[String, String]()
   private var keyStores = mutable.HashMap[String, KeyStore]()
   private var PublickeyCerts = mutable.HashMap[String, Certificate]()
+  //private var PublickeyCerts = mutable.HashMap[String, PublicKey]()
   private var TrustNodelist: List[String] = new ArrayList[String]
   private var isAddPublicKey = false
 

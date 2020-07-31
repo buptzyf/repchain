@@ -16,13 +16,16 @@
 
 package rep.network.tools
 
-import akka.actor.{ ActorSystem, Address, ExtendedActorSystem, ActorRef, Extension, ExtensionId, ExtensionIdProvider }
-import rep.protos.peer.{ Transaction, BlockchainInfo }
+import akka.actor.{ActorRef, ActorSystem, Address, ExtendedActorSystem, Extension, ExtensionId, ExtensionIdProvider}
+import rep.protos.peer.{BlockchainInfo, Transaction}
 import java.util.concurrent.atomic._
-import rep.utils.GlobalUtils.{ BlockerInfo, NodeStatus }
+
+import rep.utils.GlobalUtils.{BlockerInfo, NodeStatus}
 import rep.network.persistence.BlockCache
 import rep.network.tools.transpool.TransactionPoolMgr
 import java.util.concurrent.ConcurrentHashMap
+
+import rep.network.consensus.cfrd.endorse.RecvEndorsInfo
 //import scala.jdk.CollectionConverters._
 import scala.collection.JavaConverters._
 import rep.network.sync.SyncMsg.MaxBlockInfo
@@ -174,6 +177,13 @@ def getMaxHeight4SimpleRaft:Long={
   }*/
   
 /*********系统Actor注册相关操作结束************/
+
+  private var CurrentEndorseInfo = new RecvEndorsInfo()
+
+  def getCurrentEndorseInfo:RecvEndorsInfo={
+    this.CurrentEndorseInfo
+  }
+
 }
 
 object PeerExtension

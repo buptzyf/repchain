@@ -43,6 +43,11 @@ object MsgOfCFRD {
   //给背书人的背书消息
   case class EndorsementInfo(blc: Block, blocker: String)
 
+  case class verifyTransOfEndorsement(blc: Block, blocker: String)
+  case class verifyTransRepeatOfEndorsement(blc: Block, blocker: String)
+  case class verifyTransPreloadOfEndorsement(blc: Block, blocker: String)
+
+
   //背书收集者消息
   case class CollectEndorsement(blc: Block, blocker: String)
 

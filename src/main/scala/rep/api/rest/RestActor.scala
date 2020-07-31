@@ -48,6 +48,7 @@ import rep.network.consensus.byzantium.ConsensusCondition
 import rep.sc.TypeOfSender
 import rep.sc.SandboxDispatcher.DoTransaction
 import rep.sc.Sandbox.DoTransactionResult
+import rep.utils.GlobalUtils.EventType
 /**
  * RestActor伴生object，包含可接受的传入消息定义，以及处理的返回结果定义。
  * 以及用于建立Tranaction，检索Tranaction的静态方法
@@ -140,14 +141,15 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
   import RestActor._
   import spray.json._
   import akka.http.scaladsl.model.{ HttpResponse, MediaTypes, HttpEntity }
-
+  import rep.network.autotransaction.Topic
+  import akka.cluster.pubsub.DistributedPubSubMediator.Publish
   //import rep.utils.JsonFormat.AnyJsonFormat
 
   implicit val timeout = Timeout(1000.seconds)
   val sr: ImpDataAccess = ImpDataAccess.GetDataAccess(pe.getSysTag)
 
   // 先检查交易大小，然后再检查交易是否已存在，再去验证签名，如果没有问题，则广播
-  def preTransaction(t: Transaction): Unit = {
+  /*def preTransaction(t: Transaction): Unit = {
     val tranLimitSize = SystemProfile.getBlockLength / 3
     if (t.toByteArray.length > tranLimitSize) {
       sender ! PostResult(t.id, None, Option(s"交易大小超出限制： ${tranLimitSize}，请重新检查"))
@@ -188,6 +190,52 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
                 //预执行异常,废弃交易，向api调用者发送异常
                 sender ! PostResult(t.id, None, Option(err.cause.getMessage))
             }
+          } else {
+            sender ! PostResult(t.id, None, Option("验证签名出错"))
+          }
+        }
+      } else {
+        pe.getActorRef(ModuleActorType.ActorType.transactionpool) ! t // 给交易池发送消息 ！=》告知（getActorRef）
+        sender ! PostResult(t.id, None, None)
+      }
+
+    } catch {
+      case e: RuntimeException =>
+        sender ! PostResult(t.id, None, Option(e.getMessage))
+    } finally {
+      ImpDataPreloadMgr.Free(pe.getSysTag, "api_" + t.id)
+    }
+  }*/
+
+
+  // 先检查交易大小，然后再检查交易是否已存在，再去验证签名，如果没有问题，则广播
+  def preTransaction(t: Transaction): Unit = {
+    val tranLimitSize = SystemProfile.getBlockLength / 3
+    if (t.toByteArray.length > tranLimitSize) {
+      sender ! PostResult(t.id, None, Option(s"交易大小超出限制： ${tranLimitSize}，请重新检查"))
+    }
+
+    if (ConsensusCondition.CheckWorkConditionOfSystem(pe.getNodeMgr.getStableNodes.size)) {
+      sender ! PostResult(t.id, None, Option("共识节点数目太少，暂时无法处理交易"))
+    }
+
+    /*if (pe.getTransPoolMgr.findTrans(t.id) || sr.isExistTrans4Txid(t.id)) {
+          sender ! PostResult(t.id, None, Option(s"transactionId is exists, the transaction is \n ${t.id}"))
+    }*/
+
+    try {
+      if (SystemProfile.getHasPreloadTransOfApi) {
+        val sig = t.signature.get.signature.toByteArray
+        val tOutSig = t.clearSignature
+        val certId = t.signature.get.certId.get
+        if (pe.getTransPoolMgr.findTrans(t.id) || sr.isExistTrans4Txid(t.id)) {
+          sender ! PostResult(t.id, None, Option(s"transactionId is exists, the transaction is \n ${t.id}"))
+        } else {
+          if (SignTool.verify(sig, tOutSig.toByteArray, certId, pe.getSysTag)) {
+              mediator ! Publish(Topic.Transaction, t)
+              //广播发送交易事件
+              sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)
+              sender ! PostResult(t.id, None, None)
           } else {
             sender ! PostResult(t.id, None, Option("验证签名出错"))
           }

@@ -2,6 +2,7 @@ package rep.network.module.cfrd
 
 import akka.actor.Props
 import rep.log.RepLogger
+import rep.network.cache.TransactionOfCollectioner
 import rep.network.cache.cfrd.TransactionPoolOfCFRD
 import rep.network.confirmblock.common.ConfirmOfBlock
 import rep.network.consensus.cfrd.block.EndorseCollector
@@ -36,7 +37,8 @@ class ModuleManagerOfCFRD(moduleName: String, sysTag: String, enableStatistic: B
   }
 
   override def loadConsensusModule = {
-    pe.register(ModuleActorType.ActorType.transactionpool, context.actorOf(TransactionPoolOfCFRD.props("transactionpool"), "transactionpool"))
+    //pe.register(ModuleActorType.ActorType.transactionpool, context.actorOf(TransactionPoolOfCFRD.props("transactionpool"), "transactionpool"))
+    pe.register(ModuleActorType.ActorType.transactioncollectioner, context.actorOf(TransactionOfCollectioner.props("transactioncollectioner"), "transactioncollectioner"))
     pe.register(ModuleActorType.ActorType.storager,context.actorOf(StoragerOfCFRD.props("storager"), "storager"))
     pe.register(CFRDActorType.ActorType.blocker,context.actorOf(BlockerOfCFRD.props("blocker"), "blocker"))
     pe.register(CFRDActorType.ActorType.confirmerofblock,context.actorOf(ConfirmOfBlock.props("confirmerofblock"), "confirmerofblock"))

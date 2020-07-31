@@ -31,8 +31,8 @@ class testRateOfLevelDB(da:ImpDataAccess) {
     val pre = "writekey statksksks-"
     try{
       val v = (pre+Random.nextInt().toString).getBytes()
-      da.Put(key,v)
-
+      da.Put(key+"_1",v)
+      da.Put(key+"_2",v)
     }catch{
       case e:Exception => throw e
     }

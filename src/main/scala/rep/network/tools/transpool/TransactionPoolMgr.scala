@@ -69,7 +69,6 @@ class TransactionPoolMgr {
           deltrans4id.foreach(f=>{
             RepLogger.info(RepLogger.TransLifeCycle_Logger,  s"systemname=${sysName},remove trans from pool,trans timeout or exist in block,${f}")
             removeTranscation4Txid(f,sysName)
-            transNumber.addAndGet(-1)
           })
         }
         deltrans4id.clear()
@@ -94,7 +93,7 @@ class TransactionPoolMgr {
       }else{
         transactions.put(time, tran)
         transKeys.put(txid, time)
-        transNumber.addAndGet(1)
+        transNumber.incrementAndGet()
         RepLogger.info(RepLogger.TransLifeCycle_Logger,  s"systemname=${sysName},transNumber=${transNumber},trans entry pool,${tran.id},entry time = ${time}")
       }
     }finally {
@@ -120,7 +119,6 @@ class TransactionPoolMgr {
     try{
       trans.foreach(f=>{
         removeTranscation(f,sysName)
-        transNumber.addAndGet(-1)
       })
     }finally{
         transLock.unlock()
@@ -143,9 +141,9 @@ class TransactionPoolMgr {
     try{
         if(transKeys.contains(txid)){
             transactions.remove(transKeys(txid))
+            transKeys.remove(txid)
+            transNumber.decrementAndGet()
           }
-          transKeys.remove(txid)
-          //transNumber.addAndGet(-1)
           RepLogger.info(RepLogger.TransLifeCycle_Logger,  s"systemname=${sysName},remove trans from pool,${txid}")
     }finally{
         transLock.unlock()
@@ -155,19 +153,7 @@ class TransactionPoolMgr {
   }
 
   def getTransLength() : Int = {
-    /*var len = 0
-    transLock.lock()
-    val start = System.currentTimeMillis()
-    try{
-      len = transactions.size
-    }finally{
-      transLock.unlock()
-    }
-    val end = System.currentTimeMillis()
-    RepLogger.trace(RepLogger.OutputTime_Logger, s"getTransLength spent time=${end-start}")
-    len*/
-    transactions.size
-    //this.transNumber.get
+    this.transNumber.get
   }
 
   def isEmpty:Boolean={

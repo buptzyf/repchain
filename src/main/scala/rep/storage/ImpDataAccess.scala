@@ -268,10 +268,13 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
     var b = false
     val key = IdxPrefix.IdxTransaction + txid
     val value = this.Get(key)
-    val bkey = this.byteToString(value)
-    if (!bkey.equalsIgnoreCase("")) {
+    if(value != null){
       b = true
     }
+    /*val bkey = this.byteToString(value)
+    if (!bkey.equalsIgnoreCase("")) {
+      b = true
+    }*/
     b
   }
 

@@ -17,18 +17,22 @@
 package rep.crypto.cert
 
 import java.io._
+import java.security.PublicKey
+
 import org.bouncycastle.util.io.pem.PemReader
 import rep.protos.peer.Certificate
 import rep.storage._
 import rep.utils.SerializeUtils
 import rep.app.conf.SystemProfile
 import java.util.concurrent.ConcurrentHashMap
+
 import rep.log.RepLogger
 //import scala.jdk.CollectionConverters._
 import scala.collection.JavaConverters._
 
 object certCache {
   private  var caches = new ConcurrentHashMap[String, (Boolean, java.security.cert.Certificate)] asScala
+  //private  var caches = new ConcurrentHashMap[String, (Boolean, java.security.PublicKey)] asScala
 
 
   def getCertByPem(pemcert: String): java.security.cert.Certificate = {
@@ -38,9 +42,10 @@ object certCache {
     val cert = cf.generateCertificate(new ByteArrayInputStream(certByte))
     cert
   }
-
-  def getCertForUser(certKey: String, sysTag: String): java.security.cert.Certificate = {
+  //java.security.cert.Certificate = {
+  def getCertForUser(certKey: String, sysTag: String): java.security.cert.Certificate={
     var rcert: java.security.cert.Certificate = null
+    //var rcert: java.security.PublicKey = null
     try {
       if (caches.contains(certKey)) {
         val ck = caches(certKey)
