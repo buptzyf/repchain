@@ -137,12 +137,13 @@ class Storager(moduleName: String) extends ModuleBase(moduleName) {
         localchaininfo = dataaccess.getBlockChainInfo()
         pe.resetSystemCurrentChainStatus(localchaininfo)
       }
-      val hs = pe.getBlockCacheMgr.getKeyArray4Sort
-      val minheight = hs(0)
-      val maxheight = hs(hs.length-1)
-      var loop :Long = minheight
-      
-      breakable(
+      if(!pe.getBlockCacheMgr.isEmpty){
+        val hs = pe.getBlockCacheMgr.getKeyArray4Sort
+        val minheight = hs(0)
+        val maxheight = hs(hs.length-1)
+        var loop :Long = minheight
+
+        breakable(
           while(loop <= maxheight){
             val _blkRestore = pe.getBlockCacheMgr.getBlockFromCache(loop)
             if(loop > localchaininfo.height+1){
@@ -160,9 +161,11 @@ class Storager(moduleName: String) extends ModuleBase(moduleName) {
             loop += 1l
           }
       )
+    }
      NoticeVoteModule
     }catch{
       case e: RuntimeException =>
+        e.printStackTrace()
         RepLogger.trace(RepLogger.Storager_Logger, this.getLogMsgPrefix( s"Restore blocks error : ${e.getMessage}" + "~" + selfAddr))
     }
   }
