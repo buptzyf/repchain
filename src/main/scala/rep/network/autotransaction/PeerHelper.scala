@@ -17,6 +17,7 @@
 package rep.network.autotransaction
 
 import akka.actor.Props
+import akka.cluster.pubsub.DistributedPubSubMediator.Publish
 import com.google.protobuf.ByteString
 import com.google.protobuf.timestamp.Timestamp
 import rep.app.conf.SystemProfile
@@ -26,6 +27,7 @@ import rep.network.base.ModuleBase
 import rep.protos.peer._
 import rep.utils.{IdTool, TimeUtils}
 import rep.network.module.ModuleActorType
+import rep.utils.GlobalUtils.EventType
 /**
  *
  * 代理节点辅助类
@@ -171,8 +173,8 @@ class PeerHelper(name: String) extends ModuleBase(name) {
         //createTransForLoop //在做tps测试到时候，执行该函数，并且注释其他代码
         val t3 = createTransaction4Invoke(pe.getSysTag, chaincode,
           "transfer", Seq(li2))
-        
-        pe.getActorRef(ModuleActorType.ActorType.transactionpool) ! t3
+        mediator ! Publish(Topic.Transaction, t3)
+        sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)
          RepLogger.trace(RepLogger.System_Logger,this.getLogMsgPrefix(s"########################create transaction id =${t3.id}"))
       } catch {
         case e: RuntimeException => throw e

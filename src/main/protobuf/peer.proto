@@ -46,27 +46,18 @@ message Event {
 }
 
 //账户
-message Signer{
-    string 	name = 1;//注册者的名称或者昵称
-    string 	credit_code = 2;//社会信用代码（个人或机构）或者DID，推荐使用DID
-    string 	mobile = 3;  // 手机号码,用于接收通知
-    repeated 	string 	cert_names  = 4;//存放用户所有证书的名称，用户具体的证书单独存放，方便证书的操作，用户在增加证书的时候，在这个列表中增加证书的名称，did_certname。
-	repeated 	string 	authorize_ids  = 5;//存放用户所有授权的操作id。
-	repeated 	string 	operate_ids  = 6;//存放用户所有注册的操作id。
-    repeated 	string 	credential_metadata_ids  = 7;//存放用户凭据id。
-    repeated    Certificate authentication_certs = 8;//存放身份验证证书
-    string	signer_info = 9;//存放用户身份的详细信息，采用json格式。通常不用存储，由身份管理者存储
-    google.protobuf.Timestamp 	create_time = 10; //建立时间
-    google.protobuf.Timestamp 	disable_time = 11; //禁用时间
-    bool    signer_valid = 12;//是否有效，默认有效，否则为禁用，值=false
-	string	version=13 ;//默认1.0
+message Signer {
+    string name = 1; //注册者的名称或者昵称
+    string credit_code = 2; //社会信用代码（个人或机构）或者DID，推荐使用DID
+    string mobile = 3; // 手机号码,用于接收通知
+    repeated string cert_names = 4; //存放用户所有证书的名称，用户具体的证书单独存放，方便证书的操作，用户在增加证书的时候，在这个列表中增加证书的名称，did_certname。
+    //map<string, Certificate> certs = 4; //签名者证书标识，可用于下载证书
 }
 
 //账户证书标示
 message CertId {
-    string 	credit_code = 1;//社会信用代码（个人或机构）或者DID，推荐使用DID
-    string 	cert_name = 2;//当前用户注册证书的名称
-	string	version=3;//默认1.0
+    string credit_code = 1;
+    string cert_name = 2;//当前用户注册证书的名称
 }
 
 //账户证书标示
@@ -74,92 +65,9 @@ message Certificate {
     string 	certificate = 1; //内含签发机构
     string 	alg_type = 2;//直接填写具体算法，如:ECDSA下的SHA1withECDSA,SHA512withECDSA等
     bool   	cert_valid = 3;//证书是否有效，true 有效；false 无效；protobuf默认该值为false
-    google.protobuf.Timestamp 	reg_Time = 4; //注册时间
-    google.protobuf.Timestamp 	unreg_Time = 5; //注销时间
-    enum CertType {
-        CERT_UNDEFINED = 0;
-        CERT_AUTHENTICATION = 1;
-        CERT_CUSTOM = 2;
-        }
-    CertType 	cert_type = 6; //1=普通证书，2=身份验证证书，
-    CertId 	id = 7; //证书名称
-    string 	cert_hash = 8;//证书的SHA256
-	string	version=9;//默认1.0
+    google.protobuf.Timestamp reg_Time = 4; //注册时间
+    google.protobuf.Timestamp unreg_Time = 5; //注销时间
 }
-
-message	Operate{
-	string 	op_id = 1;//操作的id，通过uuid自动生成，合约需要查重
-	string	description = 2;//操作的描述，用于显示
-	string	register = 3;//操作的注册者，使用credit code或者rdid
-	bool	is_publish = 4;//操作是否属于公开，公开表示不需要授权，只要拥有rdid就可以调用；不公开，需要授权；默认false
-	enum OperateType {
-          	OPERATE_UNDEFINED = 0;
-         	OPERATE_CONTRACT = 1;
-          	OPERATE_SERVICE = 2;
-    	 }
-	OperateType operate_type = 5;//操作类型表示是否属于服务类型，服务类型只需要提供服务器和服务名就可以；如果是合约方式，需要提供合约方法的访问；
-	repeated    string	operate_service_name = 6;//服务名称
-	string	operate_endpoint = 7;//服务器地址
-    string	auth_full_name = 8;//限制内容，具体操作限制，如访问的链的合约的方法
-    google.protobuf.Timestamp 	create_time = 9; //建立时间
-    google.protobuf.Timestamp 	disable_time = 10; //禁用时间
-    bool    op_valid = 11;//是否有效，默认有效，否则为禁用，值=false
-	string	version=12;//默认1.0
-}
-
-message Authorize{
-	string 	id = 1;//权限id
-	string	grant = 2;//授权者，credit code或者rdid
-	repeated    string 	granted = 3;//操作权限的被授予者,credit code或者rdid
-    repeated    string	op_id = 4;//操作id
-    enum TransferType {
-        TRANSFER_DISABLE = 0;
-        TRANSFER_ONCE = 1;
-        TRANSFER_REPEATEDLY = 2;
-    }
-    TransferType 	is_transfer = 5;//TRANSFER_DISABLE 不能让渡；TRANSFER_ONCE 让渡一次；TRANSFER_REPEATEDLY 可以无限让渡
-    google.protobuf.Timestamp 	create_time = 6; //建立时间
-    google.protobuf.Timestamp 	disable_time = 7; //禁用时间
-    bool    authorize_valid = 8;//是否有效，默认有效，否则为禁用，值=false
-	string	version=9;//默认1.0
-}
-
-message BindCertToAuthorize{
-    string authorize_id = 1 ;//权限id
-    CertId granted = 2;//
-    string	version=3;//默认1.0
-}
-
-message Credential{
-	string	id=1;//凭据id，用于查询方便
-	string	credential_type = 2;//凭据数据的类型
-	string	credential_type_version=3 ;//凭据数据的类型的版本
-	CertId 	granter = 4;//凭据的授予人
-	google.protobuf.Timestamp	grant_time = 5;//凭据的发放授予时间
-	string		credential_holder = 6;//凭据的持有人，使用did
-	string		credential_content = 7;//凭据的内容
-	string		credential_content_hash  = 8;//凭据内容的hash，算法为SHA256
-	string		signature_alg_type  = 9;//签名算法
-	string		signature_value  = 10;//签名值
-	bool		credential_valid = 11;//凭据是否有效
-	string		version=12;//默认1.0
-}
-
-message  MetadataDefine{
-	string	key = 1;
-    bool  is_open = 2;
-    repeated    MetadataDefine  childs = 3;
-}
-
-message CredentialContentMetadata{
-	string	id=1;//ccm id 凭据内容元数据id
-	string	 	publisher = 2;//凭据元数据的发布者的did
-	repeated	MetadataDefine  metadata = 3;
-    string	meta_version = 4;
-    google.protobuf.Timestamp update_time = 5; //建立时间
-	string	version = 6;
-}
-
 
 //背书，可用于Transaction和Block
 message Signature {

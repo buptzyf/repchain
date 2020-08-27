@@ -241,7 +241,9 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
           }
         }
       } else {
-        pe.getActorRef(ModuleActorType.ActorType.transactionpool) ! t // 给交易池发送消息 ！=》告知（getActorRef）
+        mediator ! Publish(Topic.Transaction, t) // 给交易池发送消息 ！=》告知（getActorRef）
+        //广播发送交易事件
+        sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)
         sender ! PostResult(t.id, None, None)
       }
 
