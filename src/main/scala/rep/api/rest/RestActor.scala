@@ -221,17 +221,13 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
           val sig = t.signature.get.signature.toByteArray
           val tOutSig = t.clearSignature
           val certId = t.signature.get.certId.get
-          if (pe.getTransPoolMgr.findTrans(t.id) || sr.isExistTrans4Txid(t.id)) {
-            sender ! PostResult(t.id, None, Option(s"transactionId is exists, the transaction is \n ${t.id}"))
+          if (SignTool.verify(sig, tOutSig.toByteArray, certId, pe.getSysTag)) {
+            mediator ! Publish(Topic.Transaction, t)
+            //广播发送交易事件
+            sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)
+            sender ! PostResult(t.id, None, None)
           } else {
-            if (SignTool.verify(sig, tOutSig.toByteArray, certId, pe.getSysTag)) {
-              mediator ! Publish(Topic.Transaction, t)
-              //广播发送交易事件
-              sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)
-              sender ! PostResult(t.id, None, None)
-            } else {
-              sender ! PostResult(t.id, None, Option("验证签名出错"))
-            }
+            sender ! PostResult(t.id, None, Option("验证签名出错"))
           }
         } else {
           mediator ! Publish(Topic.Transaction, t) // 给交易池发送消息 ！=》告知（getActorRef）
