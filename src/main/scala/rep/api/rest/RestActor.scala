@@ -213,45 +213,38 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
     val tranLimitSize = SystemProfile.getBlockLength / 3
     if (t.toByteArray.length > tranLimitSize) {
       sender ! PostResult(t.id, None, Option(s"交易大小超出限制： ${tranLimitSize}，请重新检查"))
-    }
-
-    if (ConsensusCondition.CheckWorkConditionOfSystem(pe.getNodeMgr.getStableNodes.size)) {
+    } else if (!ConsensusCondition.CheckWorkConditionOfSystem(pe.getNodeMgr.getStableNodes.size)) {
       sender ! PostResult(t.id, None, Option("共识节点数目太少，暂时无法处理交易"))
-    }
-
-    /*if (pe.getTransPoolMgr.findTrans(t.id) || sr.isExistTrans4Txid(t.id)) {
-          sender ! PostResult(t.id, None, Option(s"transactionId is exists, the transaction is \n ${t.id}"))
-    }*/
-
-    try {
-      if (SystemProfile.getHasPreloadTransOfApi) {
-        val sig = t.signature.get.signature.toByteArray
-        val tOutSig = t.clearSignature
-        val certId = t.signature.get.certId.get
-        if (pe.getTransPoolMgr.findTrans(t.id) || sr.isExistTrans4Txid(t.id)) {
-          sender ! PostResult(t.id, None, Option(s"transactionId is exists, the transaction is \n ${t.id}"))
-        } else {
-          if (SignTool.verify(sig, tOutSig.toByteArray, certId, pe.getSysTag)) {
+    } else {
+      try {
+        if (SystemProfile.getHasPreloadTransOfApi) {
+          val sig = t.signature.get.signature.toByteArray
+          val tOutSig = t.clearSignature
+          val certId = t.signature.get.certId.get
+          if (pe.getTransPoolMgr.findTrans(t.id) || sr.isExistTrans4Txid(t.id)) {
+            sender ! PostResult(t.id, None, Option(s"transactionId is exists, the transaction is \n ${t.id}"))
+          } else {
+            if (SignTool.verify(sig, tOutSig.toByteArray, certId, pe.getSysTag)) {
               mediator ! Publish(Topic.Transaction, t)
               //广播发送交易事件
               sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)
               sender ! PostResult(t.id, None, None)
-          } else {
-            sender ! PostResult(t.id, None, Option("验证签名出错"))
+            } else {
+              sender ! PostResult(t.id, None, Option("验证签名出错"))
+            }
           }
+        } else {
+          mediator ! Publish(Topic.Transaction, t) // 给交易池发送消息 ！=》告知（getActorRef）
+          //广播发送交易事件
+          sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)
+          sender ! PostResult(t.id, None, None)
         }
-      } else {
-        mediator ! Publish(Topic.Transaction, t) // 给交易池发送消息 ！=》告知（getActorRef）
-        //广播发送交易事件
-        sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)
-        sender ! PostResult(t.id, None, None)
+      } catch {
+        case e: RuntimeException =>
+          sender ! PostResult(t.id, None, Option(e.getMessage))
+      } finally {
+        ImpDataPreloadMgr.Free(pe.getSysTag, "api_" + t.id)
       }
-
-    } catch {
-      case e: RuntimeException =>
-        sender ! PostResult(t.id, None, Option(e.getMessage))
-    } finally {
-      ImpDataPreloadMgr.Free(pe.getSysTag, "api_" + t.id)
     }
   }
 
