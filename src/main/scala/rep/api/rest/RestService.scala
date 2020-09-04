@@ -43,6 +43,7 @@ import spray.json._
 import akka.http.scaladsl.marshallers.xml.ScalaXmlSupport
 import akka.http.scaladsl.model.{ContentTypes, HttpCharsets, MediaTypes}
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
+import akka.stream.scaladsl.StreamConverters
 
 import scala.xml.NodeSeq
 import rep.log.RepLogger
@@ -435,14 +436,17 @@ class TransactionService(ra: RestRouter)(implicit executionContext: ExecutionCon
 
           fileUpload("signedTrans") {
             case (fileInfo, fileStream) =>
-              val fp = Paths.get("/tmp") resolve fileInfo.fileName
-              val sink = FileIO.toPath(fp)
-              val writeResult = fileStream.runWith(sink)
-              onSuccess(writeResult) { result =>
-                //TODO protobuf 反序列化字节流及后续处理
-                complete(s"Successfully written ${result.count} bytes")
-                complete { (ra.getRestActor ? Transaction.parseFrom(new FileInputStream(fp.toFile()))).mapTo[PostResult] }
-              }
+              val sink = StreamConverters.asInputStream()
+              val inputStream = fileStream.runWith(sink)
+              complete { (ra.getRestActor ? Transaction.parseFrom(inputStream)).mapTo[PostResult] }
+//              val fp = Paths.get("/tmp") resolve fileInfo.fileName
+//              val sink = FileIO.toPath(fp)
+//              val writeResult = fileStream.runWith(sink)
+//              onSuccess(writeResult) { result =>
+//                //TODO protobuf 反序列化字节流及后续处理
+//                complete(s"Successfully written ${result.count} bytes")
+//                complete { (ra.getRestActor ? Transaction.parseFrom(new FileInputStream(fp.toFile()))).mapTo[PostResult] }
+//              }
           }
         }
       }
