@@ -25,6 +25,7 @@ import rep.network.persistence.BlockCache
 import rep.network.tools.transpool.TransactionPoolMgr
 import java.util.concurrent.ConcurrentHashMap
 
+import rep.app.conf.SystemProfile
 import rep.network.consensus.cfrd.endorse.RecvEndorsInfo
 //import scala.jdk.CollectionConverters._
 import scala.collection.JavaConverters._
@@ -183,6 +184,7 @@ def getMaxHeight4SimpleRaft:Long={
   def getCurrentEndorseInfo:RecvEndorsInfo={
     this.CurrentEndorseInfo
   }
+
 
 }
 

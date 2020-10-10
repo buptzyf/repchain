@@ -18,7 +18,7 @@ import scala.util.control.Breaks.{break, breakable}
 
 object RepChainMgr {
   private var clusterAddr: Address = null  //集群种子节点地址
-  private var instanceOfCluster = new scala.collection.mutable.HashMap[String, (ClusterSystem,Int)]()
+  private var instanceOfCluster = new scala.collection.mutable.HashMap[String, (ClusterSystem,Int,Int)]()
   private var isSingle = false
   private var nodelist : ArrayBuffer[String] = new ArrayBuffer[String]()
   private var isStarting = new AtomicBoolean(false)
@@ -34,9 +34,9 @@ object RepChainMgr {
     defaultvalue
   }
 
-  def Startups(param:Array[(String,Int)])={
+  def Startups(param:Array[(String,Int,Int)])={
     param.foreach(f=>{
-      Startup4Multi(f._1,f._2)
+      Startup4Multi(f._1,f._2,f._3)
       Thread.sleep(2000)
     })
   }
@@ -50,26 +50,26 @@ object RepChainMgr {
     if(!this.instanceOfCluster.contains(SystemName)){
       this.nodelist += SystemName
     }
-    this.instanceOfCluster += SystemName -> (sys1,0)
+    this.instanceOfCluster += SystemName -> (sys1,0,0)
     sys1.start
   }
 
-  def Startup4Multi(SystemName:String,port:Int)={
+  def Startup4Multi(SystemName:String,port:Int,hPort:Int)={
     val sys1 = new ClusterSystem(SystemName,InitType.MULTI_INIT,true)
     if(this.isJDK8OfRunEnv){
-      sys1.init3(port)//
+      sys1.init3(port,hPort)//
     }else{
-      sys1.init2(port)//初始化（参数和配置信息）
+      sys1.init2(port,hPort)//初始化（参数和配置信息）
     }
 
 
 
     if(this.clusterAddr == null){
       this.clusterAddr = sys1.getClusterAddr//获取组网地址
-      sys1.enableWS()//开启API接口
-    }else{
-      sys1.disableWS()
-    }
+      //sys1.enableWS()//开启API接口
+    }//else{
+   //   sys1.disableWS()
+    //}
 
     //val clusterAddr = sys1.getClusterAddr
     //sys1.joinCluster(clusterAddr)
@@ -77,10 +77,12 @@ object RepChainMgr {
     /*if(this.isJDK8OfRunEnv){
       sys1.joinCluster(this.clusterAddr)//加入网络
     }*/
+    //sys1.enableWS()//开启API接口
+
     if(!this.instanceOfCluster.contains(SystemName)){
       this.nodelist += SystemName
     }
-    this.instanceOfCluster += SystemName -> (sys1,port)
+    this.instanceOfCluster += SystemName -> (sys1,port,hPort)
     sys1.start//启动系统
   }
 
@@ -161,7 +163,8 @@ object RepChainMgr {
         val  sys1 = instanceOfCluster(systemName)
         if(sys1 != null){
           val port = sys1._2
-          Startup4Multi(systemName,port)
+          val hPort = sys1._3
+          Startup4Multi(systemName,port,hPort)
         }
       }
       Thread.sleep(5000)

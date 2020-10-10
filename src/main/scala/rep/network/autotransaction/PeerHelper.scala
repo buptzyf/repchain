@@ -17,6 +17,7 @@
 package rep.network.autotransaction
 
 import akka.actor.Props
+import akka.cluster.pubsub.DistributedPubSubMediator.Publish
 import com.google.protobuf.ByteString
 import com.google.protobuf.timestamp.Timestamp
 import rep.app.conf.SystemProfile
@@ -40,6 +41,8 @@ object Topic {
   val Block = "Block"
   val Event = "Event"
   val Endorsement = "Endorsement"
+  val SyncOfTransaction = "SyncOfTransaction"
+  val SyncOfBlock = "SyncOfBlock"
 }
 
 object InnerTopic {
@@ -146,7 +149,7 @@ class PeerHelper(name: String) extends ModuleBase(name) {
 
   override def preStart(): Unit = {
     //注册接收交易的广播
-    SubscribeTopic(mediator, self, selfAddr, Topic.Transaction, true)
+    //SubscribeTopic(mediator, self, selfAddr, Topic.Transaction, true)
     RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("Transaction Creator Start"))
     scheduler.scheduleOnce(15.seconds, self, Tick)
   }
@@ -171,8 +174,8 @@ class PeerHelper(name: String) extends ModuleBase(name) {
         //createTransForLoop //在做tps测试到时候，执行该函数，并且注释其他代码
         val t3 = createTransaction4Invoke(pe.getSysTag, chaincode,
           "transfer", Seq(li2))
-        
-        pe.getActorRef(ModuleActorType.ActorType.transactionpool) ! t3
+        //pe.getActorRef(ModuleActorType.ActorType.transactionpool) ! t3
+        mediator ! Publish(Topic.Transaction, t3)
          RepLogger.trace(RepLogger.System_Logger,this.getLogMsgPrefix(s"########################create transaction id =${t3.id}"))
       } catch {
         case e: RuntimeException => throw e

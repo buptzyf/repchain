@@ -1,78 +1,44 @@
-/*
- * Copyright  2019 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BA SIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
-
 package rep.network.consensus.cfrd.endorse
 
-import akka.util.Timeout
-import akka.pattern.{AskTimeoutException, ask}
 import akka.actor.Props
-import com.google.protobuf.ByteString
-import rep.network.base.ModuleBase
-import rep.network.util.NodeHelp
+import akka.pattern.AskTimeoutException
+import akka.util.Timeout
 import rep.app.conf.{SystemCertList, SystemProfile, TimePolicy}
-import rep.crypto.Sha256
-import rep.utils.GlobalUtils.{BlockerInfo, EventType}
+import rep.log.{RepLogger, RepTimeTracer}
 import rep.network.autotransaction.Topic
-
-import scala.util.control.Breaks._
+import rep.network.base.ModuleBase
+import rep.network.consensus.cfrd.MsgOfCFRD.{EndorsementInfo, ResultFlagOfEndorse, ResultOfEndorsed}
+import rep.network.consensus.common.MsgOfConsensus.{PreTransBlock, PreTransBlockResult}
+import rep.network.consensus.util.{BlockHelp, BlockVerify}
 import rep.network.module.ModuleActorType
 import rep.network.module.cfrd.CFRDActorType
-import rep.network.consensus.common.MsgOfConsensus.{PreTransBlock, PreTransBlockResult}
-import rep.network.consensus.cfrd.MsgOfCFRD.{EndorsementInfo, ResultFlagOfEndorse, ResultOfEndorsed, VoteOfForce, VoteOfReset, verifyTransOfEndorsement, verifyTransPreloadOfEndorsement, verifyTransRepeatOfEndorsement}
-import rep.network.consensus.util.{BlockHelp, BlockVerify}
 import rep.network.sync.SyncMsg.StartSync
-import rep.log.RepLogger
-import rep.log.RepTimeTracer
-import rep.network.consensus.common.algorithm.{IAlgorithmOfVote, IRandomAlgorithmOfVote}
-import rep.sc.Sandbox.DoTransactionResult
-import rep.sc.SandboxDispatcher.DoTransaction
-import rep.sc.TypeOfSender
+import rep.network.util.NodeHelp
+import rep.utils.GlobalUtils.EventType
 
-import scala.collection.mutable.ArrayBuffer
-
-/**
- * Created by jiangbuyun on 2020/03/19.
- * 背书actor
- */
-
-object Endorser4Future {
-  def props(name: String): Props = Props(classOf[Endorser4Future], name)
+object Endorser4FutureInStream{
+  def props(name: String): Props = Props(classOf[Endorser4FutureInStream], name)
 }
 
-class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
-  import context.dispatcher
+class Endorser4FutureInStream(moduleName: String) extends ModuleBase(moduleName) {
   import scala.concurrent.duration._
   import rep.protos.peer._
-  import rep.storage.ImpDataAccess
   import scala.concurrent._
 
-  implicit val timeout = Timeout((TimePolicy.getTimeoutPreload * 3).seconds)
+
 
   //zhjtps
   /*protected var algorithmInVoted:IAlgorithmOfVote = new IRandomAlgorithmOfVote*/
 
   override def preStart(): Unit = {
-    RepLogger.info(RepLogger.Consensus_Logger, this.getLogMsgPrefix("Endorser4Future Start"))
+    RepLogger.info(RepLogger.Consensus_Logger, this.getLogMsgPrefix("Endorser4FutureInStream Start"))
   }
 
   private var blockOfEndorement : Block = null
   private var resultOfEndorement : ResultOfEndorsed = null
 
 
-  private def AskPreloadTransactionOfBlock(block: Block): Boolean = {
+  /*private def AskPreloadTransactionOfBlock(block: Block): Boolean = {
     var b = false
     RepTimeTracer.setStartTime(pe.getSysTag, s"recvendorsement-${moduleName}-AskPreloadTransactionOfBlock", System.currentTimeMillis(),block.height,block.transactions.size)
     try {
@@ -180,8 +146,8 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry 8"))
       this.resultOfEndorement = ResultOfEndorsed(ResultFlagOfEndorse.VerifyError, null, blc.hashOfBlock.toStringUtf8(),
         pe.getSystemCurrentChainStatus,pe.getBlocker)
-        this.blockOfEndorement = blc
-        sender ! this.resultOfEndorement
+      this.blockOfEndorement = blc
+      sender ! this.resultOfEndorement
     }
   }
 
@@ -249,48 +215,48 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
       SendVerifyEndorsementInfo(info.blc, true)
     }
   }
-
+*/
 
   override def receive = {
     //Endorsement block
     case EndorsementInfo(block, blocker,voteindex) =>
       if(!pe.isSynching){
         RepTimeTracer.setStartTime(pe.getSysTag, s"recvendorsement-${moduleName}", System.currentTimeMillis(),block.height,block.transactions.size)
-        EndorseHandler(EndorsementInfo(block, blocker,voteindex))
+        //EndorseHandler(EndorsementInfo(block, blocker,voteindex))
         RepTimeTracer.setEndTime(pe.getSysTag, s"recvendorsement-${moduleName}", System.currentTimeMillis(),block.height,block.transactions.size)
       }else{
         sender ! ResultOfEndorsed(ResultFlagOfEndorse.EnodrseNodeIsSynching, null, block.hashOfBlock.toStringUtf8(),pe.getSystemCurrentChainStatus,pe.getBlocker)
         RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"do not endorse,it is synching,recv endorse request,endorse height=${block.height},local height=${pe.getCurrentHeight}"))
       }
 
-     /* case verifyTransOfEndorsement(block, blocker) =>
-        if(!pe.isSynching){
-          RepTimeTracer.setStartTime(pe.getSysTag, s"recvendorsement-verifyTransOfEndorsementOfOp-${moduleName}", System.currentTimeMillis(),block.height,block.transactions.size)
-          verifyTransOfEndorsementOfOp(EndorsementInfo(block, blocker))
-          RepTimeTracer.setEndTime(pe.getSysTag, s"recvendorsement-verifyTransOfEndorsementOfOp-${moduleName}", System.currentTimeMillis(),block.height,block.transactions.size)
-        }else{
-          sender ! ResultOfEndorsed(ResultFlagOfEndorse.EnodrseNodeIsSynching, null, block.hashOfBlock.toStringUtf8(),pe.getSystemCurrentChainStatus,pe.getBlocker)
-          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"do not endorse,it is synching,recv endorse request,endorse height=${block.height},local height=${pe.getCurrentHeight}"))
-        }
+    /* case verifyTransOfEndorsement(block, blocker) =>
+       if(!pe.isSynching){
+         RepTimeTracer.setStartTime(pe.getSysTag, s"recvendorsement-verifyTransOfEndorsementOfOp-${moduleName}", System.currentTimeMillis(),block.height,block.transactions.size)
+         verifyTransOfEndorsementOfOp(EndorsementInfo(block, blocker))
+         RepTimeTracer.setEndTime(pe.getSysTag, s"recvendorsement-verifyTransOfEndorsementOfOp-${moduleName}", System.currentTimeMillis(),block.height,block.transactions.size)
+       }else{
+         sender ! ResultOfEndorsed(ResultFlagOfEndorse.EnodrseNodeIsSynching, null, block.hashOfBlock.toStringUtf8(),pe.getSystemCurrentChainStatus,pe.getBlocker)
+         RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"do not endorse,it is synching,recv endorse request,endorse height=${block.height},local height=${pe.getCurrentHeight}"))
+       }
 
-      case verifyTransRepeatOfEndorsement(block, blocker) =>
-        if(!pe.isSynching){
-          RepTimeTracer.setStartTime(pe.getSysTag, s"recvendorsement-verifyTransRepeatOfEndorsementOfOp-${moduleName}", System.currentTimeMillis(),block.height,block.transactions.size)
-          verifyTransRepeatOfEndorsementOfOp(EndorsementInfo(block, blocker))
-          RepTimeTracer.setEndTime(pe.getSysTag, s"recvendorsement-verifyTransRepeatOfEndorsementOfOp-${moduleName}", System.currentTimeMillis(),block.height,block.transactions.size)
-        }else{
-          sender ! ResultOfEndorsed(ResultFlagOfEndorse.EnodrseNodeIsSynching, null, block.hashOfBlock.toStringUtf8(),pe.getSystemCurrentChainStatus,pe.getBlocker)
-          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"do not endorse,it is synching,recv endorse request,endorse height=${block.height},local height=${pe.getCurrentHeight}"))
-        }
-      case verifyTransPreloadOfEndorsement(block, blocker) =>
-        if(!pe.isSynching){
-          RepTimeTracer.setStartTime(pe.getSysTag, s"recvendorsement-verifyTransPreloadOfEndorsementOfOp-${moduleName}", System.currentTimeMillis(),block.height,block.transactions.size)
-          verifyTransPreloadOfEndorsementOfOp(EndorsementInfo(block, blocker))
-          RepTimeTracer.setEndTime(pe.getSysTag, s"recvendorsement-verifyTransPreloadOfEndorsementOfOp-${moduleName}", System.currentTimeMillis(),block.height,block.transactions.size)
-        }else{
-          sender ! ResultOfEndorsed(ResultFlagOfEndorse.EnodrseNodeIsSynching, null, block.hashOfBlock.toStringUtf8(),pe.getSystemCurrentChainStatus,pe.getBlocker)
-          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"do not endorse,it is synching,recv endorse request,endorse height=${block.height},local height=${pe.getCurrentHeight}"))
-        }*/
+     case verifyTransRepeatOfEndorsement(block, blocker) =>
+       if(!pe.isSynching){
+         RepTimeTracer.setStartTime(pe.getSysTag, s"recvendorsement-verifyTransRepeatOfEndorsementOfOp-${moduleName}", System.currentTimeMillis(),block.height,block.transactions.size)
+         verifyTransRepeatOfEndorsementOfOp(EndorsementInfo(block, blocker))
+         RepTimeTracer.setEndTime(pe.getSysTag, s"recvendorsement-verifyTransRepeatOfEndorsementOfOp-${moduleName}", System.currentTimeMillis(),block.height,block.transactions.size)
+       }else{
+         sender ! ResultOfEndorsed(ResultFlagOfEndorse.EnodrseNodeIsSynching, null, block.hashOfBlock.toStringUtf8(),pe.getSystemCurrentChainStatus,pe.getBlocker)
+         RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"do not endorse,it is synching,recv endorse request,endorse height=${block.height},local height=${pe.getCurrentHeight}"))
+       }
+     case verifyTransPreloadOfEndorsement(block, blocker) =>
+       if(!pe.isSynching){
+         RepTimeTracer.setStartTime(pe.getSysTag, s"recvendorsement-verifyTransPreloadOfEndorsementOfOp-${moduleName}", System.currentTimeMillis(),block.height,block.transactions.size)
+         verifyTransPreloadOfEndorsementOfOp(EndorsementInfo(block, blocker))
+         RepTimeTracer.setEndTime(pe.getSysTag, s"recvendorsement-verifyTransPreloadOfEndorsementOfOp-${moduleName}", System.currentTimeMillis(),block.height,block.transactions.size)
+       }else{
+         sender ! ResultOfEndorsed(ResultFlagOfEndorse.EnodrseNodeIsSynching, null, block.hashOfBlock.toStringUtf8(),pe.getSystemCurrentChainStatus,pe.getBlocker)
+         RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"do not endorse,it is synching,recv endorse request,endorse height=${block.height},local height=${pe.getCurrentHeight}"))
+       }*/
 
     case _ => //ignore
   }

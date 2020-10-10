@@ -93,10 +93,9 @@ class IModuleManager(moduleName: String, sysTag: String, enableStatistic: Boolea
 
   private def loadTransModule:Any={
     if (this.isStartup) {
-      pe.register(ModuleActorType.ActorType.transactiondispatcher, context.actorOf(TransactionDispatcher.props("transactiondispatcher"), "transactiondispatcher"))
+      pe.register(ModuleActorType.ActorType.transactiondispatcher, context.actorOf(TransactionDispatcher.props("transactiondispatcher").withDispatcher("contract-dispatcher"), "transactiondispatcher"))
     }
-    pe.register(ModuleActorType.ActorType.dispatchofpreload, context.actorOf(DispatchOfPreload.props("dispatchofpreload"), "dispatchofpreload"))
-
+    pe.register(ModuleActorType.ActorType.dispatchofpreload, context.actorOf(DispatchOfPreload.props("dispatchofpreload").withDispatcher("contract-dispatcher"), "dispatchofpreload"))
   }
 
   private def loadClusterModule = {
@@ -182,9 +181,9 @@ class ConfigerHelper(conf: Config, tag: String, dbTag: String) {
    *
    * @param config
    */
-  private def sysInit(config: Config): Unit = {
+  /*private def sysInit(config: Config): Unit = {
     SystemProfile.initConfigSystem(config)
-  }
+  }*/
 
   /**
    * 初始化时间策略配置

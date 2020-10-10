@@ -16,8 +16,11 @@
 
 package rep.network.tools.transpool
 
+import java.util.concurrent.ConcurrentLinkedQueue
+
 import rep.protos.peer.Transaction
 import java.util.concurrent.locks._
+
 import rep.log.RepLogger
 //import scala.jdk.CollectionConverters._
 import scala.collection.JavaConverters._
@@ -32,9 +35,45 @@ class TransactionPoolMgr {
   private val  transLock : Lock = new ReentrantLock();
   
   private implicit var transactions = new ConcurrentSkipListMap[Long,Transaction]() asScala
+  private implicit var transQueue = new ConcurrentLinkedQueue[Transaction]()
   private implicit var transKeys = new ConcurrentHashMap[String,Long]() asScala
-  private implicit var transNumber = new AtomicInteger(0) 
-  
+  private implicit var transNumber = new AtomicInteger(0)
+
+  /*def getTransListClone(num: Int,sysName:String): Seq[Transaction] = {
+    var translist = scala.collection.mutable.ArrayBuffer[Transaction]()
+    val currenttime = System.currentTimeMillis()
+    try{
+      val sr: ImpDataAccess = ImpDataAccess.GetDataAccess(sysName)
+      var count = 0
+
+      breakable(
+        for(i<-0 to num-1){
+          val t = this.transQueue.poll()
+          if(t != null){
+            this.transNumber.decrementAndGet()
+            val l = this.transKeys.get(t.id)
+            if(l != null){
+              if(currenttime - l.get._1 > TimePolicy.getTranscationWaiting) { //|| sr.isExistTrans4Txid(txid) ){
+                //超时或者重复 删除
+                this.transKeys.remove(t.id)
+              }else{
+                translist += t
+              }
+            }
+          }else{
+            //队列为空，打包结束
+            break
+          }
+        })
+    }catch{
+      case e:Exception =>
+        RepLogger.error(RepLogger.OutputTime_Logger, s"systemname=${sysName},transNumber=${transNumber},getTransListClone error, info=${e.getMessage}")
+    }
+    val end = System.currentTimeMillis()
+    RepLogger.trace(RepLogger.OutputTime_Logger, s"systemname=${sysName},transNumber=${transNumber},getTransListClone spent time=${end-currenttime}")
+
+    translist.toSeq
+  }*/
   def getTransListClone(start:Int,num: Int,sysName:String): Seq[Transaction] = {
     var translist = scala.collection.mutable.ArrayBuffer[Transaction]()
     transLock.lock()
@@ -80,11 +119,11 @@ class TransactionPoolMgr {
     
     translist.toSeq
   }
-  
-  
+
+
   def putTran(tran: Transaction,sysName:String): Unit = {
     transLock.lock()
-     val start = System.currentTimeMillis()
+    val start = System.currentTimeMillis()
     try{
       val time = System.nanoTime()
       val txid = tran.id
@@ -102,16 +141,20 @@ class TransactionPoolMgr {
     val end = System.currentTimeMillis()
     RepLogger.trace(RepLogger.OutputTime_Logger, s"systemname=${sysName},putTran spent time=${end-start}")
   }
-  
+
   def findTrans(txid:String):Boolean = {
     var b :Boolean = false
     val start = System.currentTimeMillis()
     if(transKeys.contains(txid)){
-        b = true
+      b = true
     }
     val end = System.currentTimeMillis()
     RepLogger.trace(RepLogger.OutputTime_Logger, s"findTrans spent time=${end-start}")
     b
+  }
+
+  def getTransaction(txid:String):Transaction={
+    transactions.getOrElse(txid,null)
   }
 
   def removeTrans(trans: Seq[ Transaction ],sysName:String): Unit = {
@@ -121,32 +164,32 @@ class TransactionPoolMgr {
         removeTranscation(f,sysName)
       })
     }finally{
-        transLock.unlock()
+      transLock.unlock()
     }
   }
-  
+
   def removeTranscation(tran:Transaction,sysName:String):Unit={
     transLock.lock()
     try{
       RepLogger.info(RepLogger.TransLifeCycle_Logger,  s"systemname=${sysName},remove trans from pool,trans entry block,${tran.id}")
-        removeTranscation4Txid(tran.id,sysName)
+      removeTranscation4Txid(tran.id,sysName)
     }finally{
-        transLock.unlock()
+      transLock.unlock()
     }
   }
-  
+
   def removeTranscation4Txid(txid:String,sysName:String):Unit={
     transLock.lock()
     val start = System.currentTimeMillis()
     try{
-        if(transKeys.contains(txid)){
-            transactions.remove(transKeys(txid))
-            transKeys.remove(txid)
-            transNumber.decrementAndGet()
-          }
-          RepLogger.info(RepLogger.TransLifeCycle_Logger,  s"systemname=${sysName},remove trans from pool,${txid}")
+      if(transKeys.contains(txid)){
+        transactions.remove(transKeys(txid))
+        transKeys.remove(txid)
+        transNumber.decrementAndGet()
+      }
+      RepLogger.info(RepLogger.TransLifeCycle_Logger,  s"systemname=${sysName},remove trans from pool,${txid}")
     }finally{
-        transLock.unlock()
+      transLock.unlock()
     }
     val end = System.currentTimeMillis()
     RepLogger.trace(RepLogger.OutputTime_Logger, s"systemname=${sysName},removeTranscation4Txid spent time=${end-start}")

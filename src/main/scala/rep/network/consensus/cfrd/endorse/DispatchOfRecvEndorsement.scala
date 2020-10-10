@@ -151,7 +151,7 @@ class DispatchOfRecvEndorsement(moduleName: String) extends ModuleBase(moduleNam
 
 
   override def receive = {
-    case EndorsementInfo(block, blocker) =>
+    case EndorsementInfo(block, blocker,voteindex) =>
       createRouter
       /*if(!pe.isSynching){
         RepTimeTracer.setStartTime(pe.getSysTag, s"DispatchOfRecvEndorsement-recvendorsement-${moduleName}", System.currentTimeMillis(),block.height,block.transactions.size)
@@ -162,7 +162,7 @@ class DispatchOfRecvEndorsement(moduleName: String) extends ModuleBase(moduleNam
         RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"DispatchOfRecvEndorsement，do not endorse,it is synching,recv endorse request,endorse height=${block.height},local height=${pe.getCurrentHeight}"))
       }*/
 
-      router.route(EndorsementInfo(block, blocker), sender)
+      router.route(EndorsementInfo(block, blocker,voteindex), sender)
     case _ => //ignore
   }
 }

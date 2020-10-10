@@ -115,8 +115,10 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
             RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"collectioner recv endorsement,height=${block.height},local height=${pe.getCurrentHeight}"))
             resetEndorseInfo(block, blocker)
             pe.getNodeMgr.getStableNodes.foreach(f => {
-              RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"collectioner send endorsement to requester,height=${block.height},local height=${pe.getCurrentHeight}"))
-              router.route(RequesterOfEndorsement(block, blocker, f), self)
+              if(NodeHelp.isBlocker(pe.getSysTag, pe.getBlocker.blocker)){
+                RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"collectioner send endorsement to requester,height=${block.height},local height=${pe.getCurrentHeight}"))
+                router.route(RequesterOfEndorsement(block, blocker, f,pe.getBlocker.VoteIndex), self)
+              }
             })
           }else{
             RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"collectioner back out endorsement request,height=${block.height},local height=${pe.getCurrentHeight}"))
@@ -140,14 +142,16 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
       }
     case ResendEndorseInfo(endorer)=>
       if(!pe.isSynching){
-        if (this.block != null && this.block.previousBlockHash.toStringUtf8() == pe.getCurrentBlockHash ) {
-          if(this.router != null){
-            router.route(RequesterOfEndorsement(this.block, this.blocker, endorer), self)
+        if(NodeHelp.isBlocker(pe.getSysTag, pe.getBlocker.blocker)){
+          if (this.block != null && this.block.previousBlockHash.toStringUtf8() == pe.getCurrentBlockHash ) {
+            if(this.router != null){
+              router.route(RequesterOfEndorsement(this.block, this.blocker, endorer,pe.getBlocker.VoteIndex), self)
+            }else{
+              RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"collectioner's router is null,height=${block.height},local height=${pe.getCurrentHeight}"))
+            }
           }else{
-            RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"collectioner's router is null,height=${block.height},local height=${pe.getCurrentHeight}"))
+            RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"collectioner back out resend endorsement request,local height=${pe.getCurrentHeight}"))
           }
-        }else{
-          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"collectioner back out resend endorsement request,local height=${pe.getCurrentHeight}"))
         }
       }
     case _ => //ignore

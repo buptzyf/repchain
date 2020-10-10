@@ -2,6 +2,7 @@ package rep.network.module.raft
 
 import akka.actor.Props
 import rep.log.RepLogger
+import rep.network.cache.TransactionOfCollectioner
 import rep.network.cache.raft.TransactionPoolOfRAFT
 import rep.network.confirmblock.raft.ConfirmBlockOfRAFT
 import rep.network.module.{IModuleManager, ModuleActorType}
@@ -34,7 +35,8 @@ class ModuleManagerOfRAFT(moduleName: String, sysTag: String, enableStatistic: B
   }
 
   override def loadConsensusModule = {
-    pe.register(ModuleActorType.ActorType.transactionpool, context.actorOf(TransactionPoolOfRAFT.props("transactionpool"), "transactionpool"))
+    //pe.register(ModuleActorType.ActorType.transactionpool, context.actorOf(TransactionPoolOfRAFT.props("transactionpool"), "transactionpool"))
+    pe.register(ModuleActorType.ActorType.transactioncollectioner, context.actorOf(TransactionOfCollectioner.props("transactioncollectioner"), "transactioncollectioner"))
     pe.register(ModuleActorType.ActorType.storager,context.actorOf(StoragerOfRAFT.props("storager"), "storager"))
     pe.register(CFRDActorType.ActorType.blocker,context.actorOf(BlockerOfRAFT.props("blocker"), "blocker"))
     pe.register(CFRDActorType.ActorType.confirmerofblock,context.actorOf(ConfirmBlockOfRAFT.props("confirmerofblock"), "confirmerofblock"))

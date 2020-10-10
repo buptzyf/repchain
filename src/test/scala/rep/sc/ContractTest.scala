@@ -104,14 +104,14 @@ class ContractTest(_system: ActorSystem)
 
   // 执行交易
   private def ExecuteTrans(probe: TestProbe, sandbox: ActorRef, t: Transaction, snapshotName: String, sendertype: TypeOfSender.Value, serial: Int, eresult: Boolean) = {
-    val msg_send1 = DoTransaction(t, snapshotName, sendertype)
+    val msg_send1 = DoTransaction(Seq[Transaction](t), snapshotName, sendertype)
     probe.send(sandbox, msg_send1)
-    val msg_recv1 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-    if (msg_recv1.err.isEmpty) {
+    val msg_recv1 = probe.expectMsgType[Seq[Sandbox.DoTransactionResult]](1000.seconds)
+    if (msg_recv1(0).err.isEmpty) {
       println(s"serial:${serial},expect result:${eresult},exeresult:true")
-      msg_recv1.err.isEmpty should be(true)
+      msg_recv1(0).err.isEmpty should be(true)
     } else {
-      println(msg_recv1.err.get.toString())
+      println(msg_recv1(0).err.get.toString())
       println(s"serial:${serial},expect result:${eresult},exeresult:false")
     }
   }
@@ -250,7 +250,7 @@ class ContractTest(_system: ActorSystem)
     for (i <- 0 to 9) {
       val p = proofDataSingle("paeallel_key_" + i, "value_" + i)
       val t = this.createParallelTransInvoke(sysName, 1, "putProofSingle", writePretty(p))
-      doparams(i) = DoTransaction(t, "dbnumber1", TypeOfSender.FromAPI)
+      doparams(i) = DoTransaction(Seq[Transaction](t), "dbnumber1", TypeOfSender.FromAPI)
       probes(i) = TestProbe()
     }
 

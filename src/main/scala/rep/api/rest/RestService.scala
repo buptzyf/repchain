@@ -232,20 +232,22 @@ class BlockService(ra: RestRouter)(implicit executionContext: ExecutionContext)
       }
     }
 
-  @Path("/getTransNumberOfBlock")
-  @ApiOperation(value = "返回指定高度区块包含的交易数", notes = "", nickname = "getTransNumberOfBlock", httpMethod = "POST")
+  @Path("/getTransNumberOfBlock/{height}")
+  @ApiOperation(value = "返回指定高度区块包含的交易数", notes = "", nickname = "getTransNumberOfBlock", httpMethod = "GET")
   @ApiImplicitParams(Array(
-    new ApiImplicitParam(name = "height", value = "区块高度", required = true, dataType = "String", paramType = "body")))
+    new ApiImplicitParam(name = "height", value = "区块高度", required = true, dataType = "long", paramType = "path")))
   @ApiResponses(Array(
     new ApiResponse(code = 200, message = "返回指定高度区块包含的交易数", response = classOf[QueryResult])))
   def getTransNumberOfBlock =
-    path("block" / "getTransNumberOfBlock") {
-      post {
-        entity(as[Map[String, Long]]) { blockQuery =>
+    path("block" / "getTransNumberOfBlock"/ Segment) {height=>
+      get {
+        extractClientIP { ip =>
+          RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} getTransNumberOfBlock for Height,block height=${height}")
           complete {
-            (ra.getRestActor ? TransNumberOfBlock(blockQuery("height"))).mapTo[QueryResult]
+            (ra.getRestActor ? TransNumberOfBlock(height.toLong)).mapTo[QueryResult]
           }
         }
+
       }
     }
 

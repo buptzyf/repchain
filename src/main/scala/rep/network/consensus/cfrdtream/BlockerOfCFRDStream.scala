@@ -1,45 +1,47 @@
-package rep.network.consensus.cfrd.block
+package rep.network.consensus.cfrdtream
 
 import akka.actor.Props
 import rep.app.conf.SystemProfile
 import rep.log.{RepLogger, RepTimeTracer}
 import rep.network.autotransaction.Topic
-import rep.network.consensus.cfrd.MsgOfCFRD.{CollectEndorsement, CreateBlock, VoteOfBlocker}
-import rep.network.consensus.common.block.IBlocker
-import rep.network.consensus.util.BlockHelp
+import rep.network.base.ModuleBase
+import rep.network.consensus.cfrd.MsgOfCFRD.{CollectEndorsement, CreateBlock}
 import rep.network.module.cfrd.CFRDActorType
 import rep.network.util.NodeHelp
-import rep.protos.peer.{Block, Event, Transaction, TransactionResult}
+import rep.protos.peer.{Block, Event, Transaction}
 import rep.utils.GlobalUtils.EventType
-import rep.utils.SerializeUtils
 
-/**
- * Created by jiangbuyun on 2020/03/17.
- * CFRD共识协议的出块人actor
- */
+import scala.collection.mutable.ArrayBuffer
+import scala.util.control.Breaks.{break, breakable}
 
-object BlockerOfCFRD {
-  def props(name: String): Props = Props(classOf[BlockerOfCFRD], name)
+
+object BlockerOfCFRDStream{
+  def props(name: String): Props = Props(classOf[BlockerOfCFRDStream], name)
 }
 
-class BlockerOfCFRD(moduleName: String) extends IBlocker(moduleName){
-
-  //zhjtps
-  /*var blockTPS :Block = null
-  var tsTPS : Seq[Transaction] = null
-  var trsTPS : Seq[TransactionResult] = null*/
-
-  var preblock: Block = null
+class BlockerOfCFRDStream(moduleName: String) extends ModuleBase(moduleName){
+  /*var preblock: Block = null
+  var transOfPacked : Seq[Transaction] = null
 
   override def preStart(): Unit = {
     RepLogger.info(RepLogger.Consensus_Logger, this.getLogMsgPrefix("CFRDBlocker module start"))
     super.preStart()
   }
 
-
+  protected def CollectedTransOfBlock(start: Int, num: Int, limitsize: Int) = {
+    try {
+      val tmplist = pe.getTransPoolMgr.getTransListClone(start, num, pe.getSysTag)
+      if(tmplist.size > 0){
+        this.transOfPacked = tmplist
+      }
+    } finally {
+    }
+  }
 
   private def CreateBlockHandler = {
     var blc : Block = null
+
+
 
     if (blc ==null)
       blc = PackedBlock(0)
@@ -57,11 +59,11 @@ class BlockerOfCFRD(moduleName: String) extends IBlocker(moduleName){
       pe.getActorRef(CFRDActorType.ActorType.voter) ! VoteOfBlocker
     }
   }
-
+*/
   override def receive = {
     //创建块请求（给出块人）
     case CreateBlock =>
-      if (!pe.isSynching) {
+      /*if (!pe.isSynching) {
         if (NodeHelp.isBlocker(pe.getBlocker.blocker, pe.getSysTag) && pe.getBlocker.voteBlockHash == pe.getCurrentBlockHash) {
           sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Block, Event.Action.CANDIDATOR)
           //是出块节点
@@ -75,12 +77,12 @@ class BlockerOfCFRD(moduleName: String) extends IBlocker(moduleName){
       } else {
         //节点状态不对
         RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,node status error,status is synching,height=${pe.getCurrentHeight}" + "~" + selfAddr))
-      }
+      }*/
 
-      //zhjtps
-   /* case CreateBlockTPS(ts : Seq[Transaction], trs : Seq[TransactionResult]) =>
-      tsTPS = ts
-      trsTPS = trs*/
+    //zhjtps
+    /* case CreateBlockTPS(ts : Seq[Transaction], trs : Seq[TransactionResult]) =>
+       tsTPS = ts
+       trsTPS = trs*/
 
     case _ => //ignore
   }

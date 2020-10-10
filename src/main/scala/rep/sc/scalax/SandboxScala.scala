@@ -19,21 +19,21 @@ import rep.sc.Sandbox
 import rep.sc.Sandbox._
 import javax.script._
 import java.security.cert.Certificate
+
 import jdk.nashorn.api.scripting._
 import rep.protos.peer._
-import akka.actor.{ Actor, ActorRef, Props, actorRef2Scala }
+import akka.actor.{Actor, ActorRef, Props, actorRef2Scala}
 import rep.storage._
 import rep.storage.IdxPrefix.WorldStateKeyPreFix
 import org.slf4j.LoggerFactory
 import org.json4s._
-import rep.log.RepLogger
+import rep.log.{RepLogger, RepTimeTracer}
 import rep.utils.SerializeUtils.deserialise
 import rep.utils.SerializeUtils.serialise
 import _root_.com.google.protobuf.ByteString
 import rep.utils.IdTool
-import rep.sc.SandboxDispatcher.DoTransactionOfSandbox
+import rep.sc.SandboxDispatcher.{DoTransactionOfSandbox, DoTransactionOfSandboxInSingle, ERR_INVOKE_CHAINCODE_NOT_EXIST}
 import rep.protos.peer.Transaction
-import rep.sc.SandboxDispatcher.ERR_INVOKE_CHAINCODE_NOT_EXIST
 
 /**
  * @author c4w
@@ -79,7 +79,7 @@ class SandboxScala(cid: ChaincodeId) extends Sandbox(cid) {
     shim.ol.append(OperLog(key_coder, ByteString.EMPTY, ByteString.copyFrom(coder_bytes)))
   }
 
-  def doTransaction(dotrans: DoTransactionOfSandbox): DoTransactionResult = {
+  def doTransaction(dotrans: DoTransactionOfSandboxInSingle): DoTransactionResult = {
     //上下文可获得交易
     //构造和传入ctx
     val t = dotrans.t
@@ -126,6 +126,7 @@ class SandboxScala(cid: ChaincodeId) extends Sandbox(cid) {
           null
         case _ => throw SandboxException(ERR_UNKNOWN_TRANSACTION_TYPE)
       }
+
       new DoTransactionResult(t.id, r, shim.ol.toList, None)
     } catch {
       case e: Throwable =>

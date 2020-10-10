@@ -587,7 +587,7 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
    * @param	newblock Block 待判断的块,lastblock Block 已知的最后区块
    * @return	如果是最后的区块，返回true；否则，返回false
    */
-  private def isLastBlock(newblock: Block, lastblock: blockindex): Boolean = {
+  /*private def isLastBlock(newblock: Block, lastblock: blockindex): Boolean = {
     var b: Boolean = false
     if (lastblock == null) {
       if (newblock.previousBlockHash.isEmpty()) {
@@ -601,6 +601,28 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
       //val cur = lastblock.hashOfBlock.toStringUtf8()
       //if (prve.equals(cur) && (lastblock.height + 1) == newblock.height) {
       if (prve == lastblock.getBlockHash()) {
+        b = true
+      } else {
+        b = false
+      }
+    }
+    b
+  }*/
+
+  private def isLastBlock(newblock: Block, lastblockhash: String): Boolean = {
+    var b: Boolean = false
+    if (lastblockhash == null) {
+      if (newblock.previousBlockHash.isEmpty()) {
+        b = true
+      } else {
+        b = false
+      }
+    } else {
+      val prve = newblock.previousBlockHash.toStringUtf8()
+      //目前直接从上一个块中获取
+      //val cur = lastblock.hashOfBlock.toStringUtf8()
+      //if (prve.equals(cur) && (lastblock.height + 1) == newblock.height) {
+      if (prve == lastblockhash) {
         b = true
       } else {
         b = false
@@ -666,6 +688,20 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
     rel
   }
 
+  private def getCidFormBlock(block: Block, rindex: Int,txid:String): String = {
+    var rel = ""
+    if (block != null) {
+      var trans = block.transactions
+      if(rindex >0 && rindex < trans.length){
+        val t = trans(rindex)
+        if (t.id.equals(txid)) {
+          rel = t.getCid.chaincodeName
+        }
+      }
+    }
+    rel
+  }
+
   private def isChangeCertStatus(block: Block, txid: String): Boolean = {
     var rel = false
     if (block != null) {
@@ -683,10 +719,63 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
     rel
   }
 
+  private def isChangeCertStatus(block: Block, rindex:Int,txid: String): Boolean = {
+    var rel = false
+    if (block != null) {
+      var trans = block.transactions
+      if(rindex >0 && rindex < trans.length){
+        val f = trans(rindex)
+        if (f.id.equals(txid) && f.getCid.chaincodeName == SystemProfile.getAccountChaincodeName && f.`type` == rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE && f.para.ipt.get.function == SystemProfile.getCertStatusChangeFunction) {
+          rel = true
+        }
+      }
+      /*if (trans.length > 0) {
+        breakable(
+          trans.foreach(f => {
+            if (f.id.equals(txid) && f.getCid.chaincodeName == SystemProfile.getAccountChaincodeName && f.`type` == rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE && f.para.ipt.get.function == SystemProfile.getCertStatusChangeFunction) {
+              rel = true
+              break
+            }
+          }))
+      }*/
+    }
+    rel
+  }
+
   private def WriteOperLogToDBWithRestoreBlock(block: Block) = {
     try {
       //var writetodbtxidserial = "write txid result to db for serial="
       val txresults = block.transactionResults
+      if (!txresults.isEmpty) {
+        val len = txresults.length -1
+        for( i <- 0 to len){
+          val f = txresults(i)
+          val txid = f.txId
+          val cid = getCidFormBlock(block, i,txid)
+          val changeCertStatus = isChangeCertStatus(block,i, txid)
+          val logs = f.ol
+
+          if (logs != null && logs.length > 0) {
+            logs.foreach(f => {
+              var fkey = f.key
+              if (fkey.startsWith(IdxPrefix.WorldStateKeyPreFix)) {
+                this.Put(f.key, f.newValue.toByteArray())
+              } else {
+                fkey = IdxPrefix.WorldStateKeyPreFix + cid + "_" + f.key
+                this.Put(fkey, f.newValue.toByteArray())
+              }
+              //需要通知证书缓存修改证书状态
+              if (changeCertStatus) {
+                certCache.CertStatusUpdate(fkey)
+              }
+            })
+          }
+        }
+      }
+
+
+
+      /*val txresults = block.transactionResults
       if (!txresults.isEmpty) {
         txresults.foreach(f => {
           val txid = f.txId
@@ -712,7 +801,7 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
           }
         })
         //RepLogger.error(RepLogger.Business_Logger,  s" current block height=${block.height},trans write serial: ${writetodbtxidserial}")
-      }
+      }*/
     } catch {
       case e: RuntimeException => throw e
     }
@@ -724,6 +813,8 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
     //chainInfoCache.initChainInfo
     b
   }
+
+
 
   /**
    * @author jiangbuyun
@@ -740,17 +831,18 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
       val oldh = getBlockHeight()
       val oldno = this.getMaxFileNo()
       val oldtxnumber = this.getBlockAllTxNumber()
-      var prevblock: blockindex = null
+      var prevblockhash: String = null
 
       if (oldh > 0) {
         RepTimeTracer.setStartTime(this.SystemName, "storage-save-get-preblock", System.currentTimeMillis(), block.height, block.transactions.size)
         //val tbs = this.getBlockByHeight(oldh)
-        prevblock = getBlockIdxByHeight(block.height - 1)
+        //prevblock = getBlockIdxByHeight(block.height - 1)
+        prevblockhash = this.getLastBlockHash(block.height - 1)
         //prevblock = Block.parseFrom(tbs)
         RepTimeTracer.setEndTime(this.SystemName, "storage-save-get-preblock", System.currentTimeMillis(), block.height, block.transactions.size)
       }
 
-      if (isLastBlock(block, prevblock)) {
+      if (isLastBlock(block, prevblockhash)) {
         try {
           this.BeginTrans
           RepTimeTracer.setStartTime(this.SystemName, "storage-save-write-operlog", System.currentTimeMillis(), block.height, block.transactions.size)
@@ -810,6 +902,7 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
         bidx.InitBlockIndex(block)
         var newh = block.height
         setBlockHeight(newh)
+        this.setLastBlockHash(block.hashOfBlock.toStringUtf8)
 
         var newno = oldno
         var newtxnumber = oldtxnumber
@@ -829,6 +922,7 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
         //bidx.setBlockFilePos(startpos)
         bidx.setBlockFilePos(startpos + 8)
         bidx.setBlockLength(blenght)
+
 
         RepLogger.trace(
           RepLogger.Storager_Logger,
@@ -921,6 +1015,24 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
    */
   private def setBlockHeight(h: Long) = {
     this.Put(IdxPrefix.Height, String.valueOf(h).getBytes())
+  }
+
+  private def setLastBlockHash(lasthash:String):Boolean = {
+    this.Put(IdxPrefix.LastHash,lasthash.getBytes)
+  }
+
+  private def getLastBlockHash(h:Long):String = {
+    var r : String= null
+    val hash = this.Get(IdxPrefix.LastHash)
+    if(hash == null){
+      val prevblock = getBlockIdxByHeight(h)
+      if(prevblock != null){
+        r = prevblock.getBlockHash()
+      }
+    }else{
+      r = new String(hash)
+    }
+    r
   }
 
   /**

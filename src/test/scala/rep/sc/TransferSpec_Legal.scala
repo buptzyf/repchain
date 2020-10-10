@@ -23,7 +23,7 @@ import rep.app.system.ClusterSystem
 import rep.app.system.ClusterSystem.InitType
 import rep.network.autotransaction.PeerHelper
 import rep.network.module.cfrd.ModuleManagerOfCFRD
-import rep.protos.peer.{Certificate, ChaincodeId, Signer}
+import rep.protos.peer.{Certificate, ChaincodeId, Signer, Transaction}
 import rep.sc.TransferSpec.{ACTION, SetMap}
 import rep.sc.tpl._
 //.{CertStatus,CertInfo}
@@ -84,57 +84,57 @@ class TransferSpec_Legal(_system: ActorSystem) extends TestKit(_system) with Mat
 
     //生成deploy交易
     val t1 = PeerHelper.createTransaction4Deploy(sysName, cid1, l1, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
-    val msg_send1 = DoTransaction(t1, "dbnumber", TypeOfSender.FromAPI)
+    val msg_send1 = DoTransaction(Seq[Transaction](t1), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send1)
-    val msg_recv1 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-    msg_recv1.err should be(None)
+    val msg_recv1 = probe.expectMsgType[Seq[Sandbox.DoTransactionResult]](1000.seconds)
+    msg_recv1(0).err should be(None)
 
     val t2 = PeerHelper.createTransaction4Deploy(sysName, cid2, l2, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
-    val msg_send2 = DoTransaction(t2, "dbnumber", TypeOfSender.FromAPI)
+    val msg_send2 = DoTransaction(Seq[Transaction](t2), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send2)
-    val msg_recv2 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-    msg_recv2.err.isEmpty should be(true)
+    val msg_recv2 = probe.expectMsgType[Seq[Sandbox.DoTransactionResult]](1000.seconds)
+    msg_recv2(0).err.isEmpty should be(true)
 
     // 生成invoke交易
     // 注册账户
     val t3 = PeerHelper.createTransaction4Invoke(sysName, cid2, ACTION.SignUpSigner, Seq(toJson(signer)))
-    val msg_send3 = DoTransaction(t3, "dbnumber", TypeOfSender.FromAPI)
+    val msg_send3 = DoTransaction(Seq[Transaction](t3), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send3)
-    val msg_recv3 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-    msg_recv3.err.isEmpty should be(true)
+    val msg_recv3 = probe.expectMsgType[Seq[Sandbox.DoTransactionResult]](1000.seconds)
+    msg_recv3(0).err.isEmpty should be(true)
 
     // 注册证书
     val t4 = PeerHelper.createTransaction4Invoke(sysName, cid2, ACTION.SignUpCert, Seq(toJson(certinfo)))
-    val msg_send4 = DoTransaction(t4, "dbnumber", TypeOfSender.FromAPI)
+    val msg_send4 = DoTransaction(Seq[Transaction](t4), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send4)
-    val msg_recv4 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-    msg_recv4.err.isEmpty should be(true)
+    val msg_recv4 = probe.expectMsgType[Seq[Sandbox.DoTransactionResult]](1000.seconds)
+    msg_recv4(0).err.isEmpty should be(true)
 
 
     //生成invoke交易
     val t5 = PeerHelper.createTransaction4Invoke(sysName, cid1, ACTION.set, Seq(sms))
-    val msg_send5 = DoTransaction(t5, "dbnumber", TypeOfSender.FromAPI)
+    val msg_send5 = DoTransaction(Seq[Transaction](t5), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send5)
-    val msg_recv5 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-    msg_recv5.r.code should be(1)
+    val msg_recv5 = probe.expectMsgType[Seq[Sandbox.DoTransactionResult]](1000.seconds)
+    msg_recv5(0).r.code should be(1)
 
     //获得提醒文本
     var p = Transfer("121000005l35120456", "12110107bi45jh675g", 5, null)
     var t = PeerHelper.createTransaction4Invoke(sysName, cid1, ACTION.transfer, Seq(toJson(p)))
-    var msg_send = DoTransaction(t, "dbnumber", TypeOfSender.FromAPI)
+    var msg_send = DoTransaction(Seq[Transaction](t), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
-    var msg_recv = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-    msg_recv.r.code should be(2)
+    var msg_recv = probe.expectMsgType[Seq[Sandbox.DoTransactionResult]](1000.seconds)
+    msg_recv(0).r.code should be(2)
 
     //对提醒文本签名
-    val remind = msg_recv.r.reason
+    val remind = msg_recv(0).r.reason
     println(remind)
     p = Transfer("121000005l35120456", "12110107bi45jh675g", 5, remind)
     t = PeerHelper.createTransaction4Invoke(sysName, cid1, ACTION.transfer, Seq(toJson(p)))
-    msg_send = DoTransaction(t, "dbnumber", TypeOfSender.FromAPI)
+    msg_send = DoTransaction(Seq[Transaction](t), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
-    msg_recv = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-    msg_recv.r.code should be(1)
+    msg_recv = probe.expectMsgType[Seq[Sandbox.DoTransactionResult]](1000.seconds)
+    msg_recv(0).r.code should be(1)
 
   }
 }

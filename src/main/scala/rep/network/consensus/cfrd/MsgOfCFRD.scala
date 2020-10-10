@@ -15,12 +15,14 @@ object MsgOfCFRD {
   case object VoteOfBlocker
   //通知抽签模块，需要强制抽签
   case object VoteOfForce
+  case object VoteOfReset
   ////////////////////////////////Vote（抽签）消息，结束//////////////////////////////
 
 
   ///////////////////////////////Block（出块）消息，开始//////////////////////////////
   //抽签成功之后，向预出块的actor发送建立新块的消息，该消息由抽签actor发出
   case object CreateBlock
+  case class  RequestPreLoadBlock(voteinfo:BlockerInfo)
   //case class CreateBlockTPS(ts : Seq[Transaction], trs : Seq[TransactionResult]) //zhjtps
   ///////////////////////////////Block（出块）消息，结束//////////////////////////////
 
@@ -33,15 +35,22 @@ object MsgOfCFRD {
     val BlockHeightError = 3
     val VerifyError  = 4
     val EnodrseNodeIsSynching = 5
+    val EndorseNodeNotVote = 6
+    val EndorseNodeUnkonwReason = 7
+    val VoteIndexError = 8
     val success = 0
   }
 
   //背书请求者消息
-  case class RequesterOfEndorsement(blc: Block, blocker: String, endorer: Address)
+  case class BlockInfoOfConsensus(voteinfo:BlockerInfo,blocker:String,blc:Block,currentBlockSerial:Int,isFirst:Boolean,isLastBlock:Boolean)
+  case class ResultOfEndorsementInStream(voteinfo:BlockerInfo,currentBlockSerial:Int,blockHash:String,isFirst:Boolean,isLastBlock:Boolean,result: Boolean, endor: Signature,endorser: Address)
+  case class ResendEndorseInfoInStream(voteinfo:BlockerInfo,currentBlockSerial:Int,blockHash:String,isFirst:Boolean,isLastBlock:Boolean,endorer: Address)
+
+  case class RequesterOfEndorsement(blc: Block, blocker: String, endorer: Address,voteindex:Int)
   case class ResendEndorseInfo(endorer: Address)
 
   //给背书人的背书消息
-  case class EndorsementInfo(blc: Block, blocker: String)
+  case class EndorsementInfo(blc: Block, blocker: String,voteindex:Int)
 
   case class verifyTransOfEndorsement(blc: Block, blocker: String)
   case class verifyTransRepeatOfEndorsement(blc: Block, blocker: String)
@@ -56,7 +65,15 @@ object MsgOfCFRD {
 
   //背书请求者返回的结果
   case class ResultOfEndorseRequester(result: Boolean, endor: Signature, BlockHash: String, endorser: Address)
+
+
+
   //////////////////////////////endorsement（共识）消息，结束/////////////////////////
 
 
+  //CFRD Stream
+  case class PreBlockMsg(preBlockHash:String,currentHeight:Long,currentBlockTxids:Seq[String])
+  case class RequestTransaction(txid:String,recver:ActorRef)
+  case class RequestTransactions(txids:Seq[String],recver:ActorRef)
+  case class PreloadTransaction(txids:Seq[String],preBlockHash:String,height:Long,dbtag:String)
 }

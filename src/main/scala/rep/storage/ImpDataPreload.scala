@@ -36,7 +36,7 @@ import rep.utils.SerializeUtils.deserialise
  */
 class ImpDataPreload (SystemName:String,InstanceName:String) extends AbstractLevelDB(SystemName:String) {
     private var update :java.util.concurrent.ConcurrentHashMap[String,Array[Byte]] = new java.util.concurrent.ConcurrentHashMap[String,Array[Byte]]
-   
+    private var cache  :java.util.concurrent.ConcurrentHashMap[String,Array[Byte]] = new java.util.concurrent.ConcurrentHashMap[String,Array[Byte]]
     private var dbop = ImpDataAccess.GetDataAccess(SystemName) 
    
    
@@ -79,11 +79,18 @@ class ImpDataPreload (SystemName:String,InstanceName:String) extends AbstractLev
   					  //RepLogger.trace(RepLogger.Business_Logger,  
   			      //s"nodename=${getSystemName},dbname=${getInstanceName},key=${key},in cache=${deserialise(this.update.get(key))}")
   						rb = this.update.get(key)
-  					}else{
+							/*if(this.cache.containsKey(key)){
+								this.cache.remove(key)
+							}*/
+  					}else if(this.cache.containsKey(key)){
+							rb = this.cache.get(key)
+						}else {
   					 // RepLogger.trace(RepLogger.Business_Logger,  
   			      //s"nodename=${getSystemName},dbname=${getInstanceName},key=${key},in db=${deserialise(this.dbop.Get(key))}")
   						rb = this.dbop.Get(key)
-  					}
+							if(rb != null)
+								this.cache.put(key,rb)
+						}
   					setUseTime
 			}catch{
 				case e:Exception =>{
@@ -119,6 +126,9 @@ class ImpDataPreload (SystemName:String,InstanceName:String) extends AbstractLev
 				  }
 				  if(key != null ){
 				    this.update.put(key, v)
+						if(this.cache.containsKey(key)){
+							this.cache.remove(key)
+						}
 				  }
 				  setUseTime
 			}catch{

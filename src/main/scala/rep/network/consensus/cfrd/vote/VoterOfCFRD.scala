@@ -5,9 +5,10 @@ import rep.app.conf.{SystemCertList, TimePolicy}
 import rep.log.RepLogger
 import rep.network.consensus.common.vote.IVoter
 import rep.network.module.cfrd.CFRDActorType
-import rep.network.consensus.cfrd.MsgOfCFRD.{CreateBlock, VoteOfBlocker,VoteOfForce}
+import rep.network.consensus.cfrd.MsgOfCFRD.{CreateBlock, VoteOfBlocker, VoteOfForce, VoteOfReset}
 import rep.network.util.NodeHelp
 import rep.network.consensus.common.algorithm.IRandomAlgorithmOfVote
+import rep.utils.GlobalUtils.BlockerInfo
 
 /**
  * Created by jiangbuyun on 2020/03/17.
@@ -36,10 +37,13 @@ class VoterOfCFRD(moduleName: String) extends IVoter(moduleName: String) {
   }
 
   override protected def DelayVote: Unit = {
-    this.voteCount += 1
-    var time = this.voteCount * TimePolicy.getVoteRetryDelay
+    if(voteCount >= 50)
+      this.voteCount = 1
+    else
+      this.voteCount += 1
+    val time = this.voteCount * TimePolicy.getVoteRetryDelay
     schedulerLink = clearSched()
-    schedulerLink = scheduler.scheduleOnce(TimePolicy.getVoteRetryDelay.millis, self, VoteOfBlocker)
+    schedulerLink = scheduler.scheduleOnce(time.millis, self, VoteOfBlocker)
   }
 
   override protected def vote(isForce: Boolean): Unit = {
@@ -87,6 +91,9 @@ class VoterOfCFRD(moduleName: String) extends IVoter(moduleName: String) {
         voteMsgHandler(false)
       }
     case VoteOfForce=>
+      voteMsgHandler(true)
+    case VoteOfReset=>
+      cleanVoteInfo
       voteMsgHandler(true)
   }
 }

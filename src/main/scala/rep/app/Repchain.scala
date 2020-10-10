@@ -72,11 +72,16 @@ object Repchain {
     nodeports(3) = 22525
     nodeports(4) = 22526
 
-
+    var nodehports : Array[Int] = new Array[Int](5)
+    nodehports(0) = 9081
+    nodehports(1) = 9082
+    nodehports(2) = 9083
+    nodehports(3) = 9084
+    nodehports(4) = 9085
 
     for(i <- 0 to 4) {
       Thread.sleep(5000)
-      RepChainMgr.Startup4Multi(nodelist(i),nodeports(i))
+      RepChainMgr.Startup4Multi(nodelist(i),nodeports(i),nodehports(i))
     }
 
 

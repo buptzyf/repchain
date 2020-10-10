@@ -21,7 +21,7 @@ import akka.util.Timeout
 import rep.network._
 
 import scala.concurrent.duration._
-import akka.pattern.ask
+import akka.pattern.{AskTimeoutException, ask}
 
 import scala.concurrent._
 import rep.protos.peer._
@@ -45,10 +45,15 @@ import rep.log.RepLogger
 import rep.network.autotransaction.PeerHelper
 import rep.network.base.ModuleBase
 import rep.network.consensus.byzantium.ConsensusCondition
+import rep.network.consensus.common.MsgOfConsensus.{PreTransBlock, PreTransBlockResult}
+import rep.network.consensus.util.BlockHelp
 import rep.sc.TypeOfSender
 import rep.sc.SandboxDispatcher.DoTransaction
 import rep.sc.Sandbox.DoTransactionResult
 import rep.utils.GlobalUtils.EventType
+
+import scala.collection.mutable.ArrayBuffer
+import scala.util.Random
 /**
  * RestActor伴生object，包含可接受的传入消息定义，以及处理的返回结果定义。
  * 以及用于建立Tranaction，检索Tranaction的静态方法
@@ -145,7 +150,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
   import akka.cluster.pubsub.DistributedPubSubMediator.Publish
   //import rep.utils.JsonFormat.AnyJsonFormat
 
-  implicit val timeout = Timeout(1000.seconds)
+  implicit val timeout = Timeout(50.seconds)
   val sr: ImpDataAccess = ImpDataAccess.GetDataAccess(pe.getSysTag)
 
   // 先检查交易大小，然后再检查交易是否已存在，再去验证签名，如果没有问题，则广播
@@ -215,7 +220,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
       sender ! PostResult(t.id, None, Option(s"交易大小超出限制： ${tranLimitSize}，请重新检查"))
     }
 
-    if (ConsensusCondition.CheckWorkConditionOfSystem(pe.getNodeMgr.getStableNodes.size)) {
+    if (!ConsensusCondition.CheckWorkConditionOfSystem(pe.getNodeMgr.getStableNodes.size)) {
       sender ! PostResult(t.id, None, Option("共识节点数目太少，暂时无法处理交易"))
     }
 
@@ -231,14 +236,15 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
         if (pe.getTransPoolMgr.findTrans(t.id) || sr.isExistTrans4Txid(t.id)) {
           sender ! PostResult(t.id, None, Option(s"transactionId is exists, the transaction is \n ${t.id}"))
         } else {
-          if (SignTool.verify(sig, tOutSig.toByteArray, certId, pe.getSysTag)) {
+          //if (SignTool.verify(sig, tOutSig.toByteArray, certId, pe.getSysTag)) {
               mediator ! Publish(Topic.Transaction, t)
+          //pe.getTransPoolMgr.putTran(t,pe.getSysTag)
               //广播发送交易事件
               sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)
               sender ! PostResult(t.id, None, None)
-          } else {
-            sender ! PostResult(t.id, None, Option("验证签名出错"))
-          }
+          //} else {
+            //sender ! PostResult(t.id, None, Option("验证签名出错"))
+          //}
         }
       } else {
         pe.getActorRef(ModuleActorType.ActorType.transactionpool) ! t // 给交易池发送消息 ！=》告知（getActorRef）
@@ -394,12 +400,15 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
       sender ! QueryResult(Option(JsonMethods.parse(string2JsonInput(rs))))
 
     case AcceptedTransNumber =>
+
       val num = sr.getBlockChainInfo.totalTransactions + pe.getTransPoolMgr.getTransLength()
       val rs = "{\"acceptedNumber\":\"" + num + "\"}"
       sender ! QueryResult(Option(JsonMethods.parse(string2JsonInput(rs))))
 
     case TransNumberOfBlock(h) =>
-      val num = sr.getNumberOfTransInBlockByHeight(h)
+      val l = dyncCreateTrans(h)
+      //val l = checkTransRepeat(h)
+      val num = l//sr.getNumberOfTransInBlockByHeight(h)
       val rs = "{\"transnumberofblock\":\"" + num + "\"}"
       sender ! QueryResult(Option(JsonMethods.parse(string2JsonInput(rs))))
 
@@ -412,4 +421,169 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
       val rs = "{\"isfinish\":\"" + num + "\"}"
       sender ! QueryResult(Option(JsonMethods.parse(string2JsonInput(rs))))
   }
+
+  //test contract speed
+  private def  testContractSpeed(h:Long):Long={
+    val si2 = scala.io.Source.fromFile("api_req/json/transfer_" + pe.getSysTag + ".json","UTF-8")
+    val li2 = try si2.mkString finally si2.close()
+    val chaincode:ChaincodeId = new ChaincodeId("ContractAssetsTPL",1)
+    var txs = new ArrayBuffer[Transaction]()
+    var start = System.currentTimeMillis()
+    val len = h.toInt
+    for( i <- 1 to len){
+      val t3 = createTransaction4Invoke(pe.getSysTag, chaincode,"transfer", Seq(li2))
+      txs += t3
+    }
+    var end = System.currentTimeMillis()
+    println(s"create transaction,trans number=${len},spent time =${(end - start)}ms")
+
+    val dbtag = "test_db_spend"
+    var txresults = new ArrayBuffer[Option[TransactionResult]]()
+    start = System.currentTimeMillis()
+
+    val tr = ExecuteTransaction(txs,dbtag)//+"_"+h+"_"+Random.nextInt(10000))
+    if(tr._2.length > 0){
+      tr._2.foreach(trs=>{
+        var ts = TransactionResult(trs.txId, trs.ol.toSeq, Option(trs.r))
+        txresults += Some(ts)
+      })
+    }
+
+    /*txs.foreach(t=>{
+      val tr = ExecuteTransaction(t,dbtag)//+"_"+h+"_"+Random.nextInt(10000))
+
+      var ts = TransactionResult(t.id, tr._2.ol.toSeq, Option(tr._2.r))
+      txresults += Some(ts)
+    })*/
+    end = System.currentTimeMillis()
+    println(s"execute transaction,trans number=${len},spent time =${(end - start)}ms")
+    end - start
+  }
+
+  private def ExecuteTransaction(ts: Seq[Transaction], db_identifier: String): (Int, Seq[DoTransactionResult]) = {
+    try {
+      val future1 = pe.getActorRef(ModuleActorType.ActorType.transactiondispatcher) ? new DoTransaction(ts,  db_identifier,TypeOfSender.FromPreloader)
+      val result = Await.result(future1, timeout.duration).asInstanceOf[Seq[DoTransactionResult]]
+      (0, result)
+    } catch {
+      case e: AskTimeoutException => (1, null)
+      case te:TimeoutException =>
+        (1, null)
+    }
+  }
+
+
+  private var testHash=""
+  private var testheight : Long= 0
+
+  protected def ExecuteTransactionOfBlock(block: Block): Block = {
+    try {
+      val future = pe.getActorRef(ModuleActorType.ActorType.dispatchofpreload) ? PreTransBlock(block, "preload")
+      val result = Await.result(future, timeout.duration).asInstanceOf[PreTransBlockResult]
+      if (result.result) {
+        result.blc
+      } else {
+        null
+      }
+    } catch {
+      case e: AskTimeoutException => null
+    }
+  }
+
+  private def dyncCreateTrans(h:Long):Long={
+    val nodename = Array("121000005l35120456.node1", "12110107bi45jh675g.node2",
+    "122000002n00123567.node3", "921000005k36123789.node4", "921000006e0012v696.node5")
+    val txinfo = new Array[String](5)
+    SignTool.loadNodeCertList("changeme", "jks/mytruststore.jks")
+    for( i <- 1 to 5){
+      SignTool.loadPrivateKey(nodename(i-1), "123", "jks/"+nodename(i-1)+".jks")
+      val si2 = scala.io.Source.fromFile("api_req/json/transfer_" + nodename(i-1) + ".json","UTF-8")
+      txinfo(i-1) = try si2.mkString finally si2.close()
+    }
+
+    if(this.testHash == ""){
+      val sr: ImpDataAccess = ImpDataAccess.GetDataAccess(pe.getSysTag)
+      val cinfo = sr.getBlockChainInfo()
+      this.testHash = cinfo.currentBlockHash.toStringUtf8
+      this.testheight = cinfo.height
+      pe.resetSystemCurrentChainStatus(cinfo)
+    }
+
+    var chaincode:ChaincodeId = new ChaincodeId("ContractAssetsTPL",1)
+    val len = h.toInt
+    var txs = new ArrayBuffer[Transaction]()
+    var start = System.currentTimeMillis()
+    for( i <- 1 to len){
+      val j = Random.nextInt(1000) % 5
+      val t3 = createTransaction4Invoke(nodename(j), chaincode,"transfer", Seq(txinfo(j)))
+      txs += t3
+    }
+    var end = System.currentTimeMillis()
+    println(s"create transaction,trans number=${len},spent time =${(end - start)}ms")
+
+
+    val dbtag = "test_db_spend"
+    var txresults = new ArrayBuffer[Option[TransactionResult]]()
+    start = System.currentTimeMillis()
+
+    var blc = BlockHelp.WaitingForExecutionOfBlock(this.testHash, this.testheight + 1, txs.toSeq)
+    blc = ExecuteTransactionOfBlock(blc)
+    //this.testHash = blc.hashOfBlock.toStringUtf8
+
+    /*val tr = ExecuteTransaction(txs,dbtag+"_"+h+"_"+Random.nextInt(10000))
+    //val tr = ExecuteTransaction(txs,dbtag)//+"_"+h+"_"+Random.nextInt(10000))
+    if(tr._2.length > 0){
+      tr._2.foreach(trs=>{
+        var ts = TransactionResult(trs.txId, trs.ol.toSeq, Option(trs.r))
+        txresults += Some(ts)
+      })
+    }*/
+
+    /*txs.foreach(t=>{
+      val tr = ExecuteTransaction(t,dbtag)//+"_"+h+"_"+Random.nextInt(10000))
+      var ts = TransactionResult(t.id, tr._2.ol.toSeq, Option(tr._2.r))
+      txresults += Some(ts)
+    })*/
+    end = System.currentTimeMillis()
+    println(s"execute transaction,trans number=${len},spent time =${(end - start)}ms")
+    end - start
+  }
+
+  private def checkTransRepeat(h:Long):Long={
+    val nodename = Array("121000005l35120456.node1", "12110107bi45jh675g.node2",
+      "122000002n00123567.node3", "921000005k36123789.node4", "921000006e0012v696.node5")
+    val txinfo = new Array[String](5)
+    SignTool.loadNodeCertList("changeme", "jks/mytruststore.jks")
+    for( i <- 1 to 5){
+      SignTool.loadPrivateKey(nodename(i-1), "123", "jks/"+nodename(i-1)+".jks")
+      val si2 = scala.io.Source.fromFile("api_req/json/transfer_" + nodename(i-1) + ".json","UTF-8")
+      txinfo(i-1) = try si2.mkString finally si2.close()
+    }
+
+    var chaincode:ChaincodeId = new ChaincodeId("ContractAssetsTPL",1)
+    val len = h.toInt
+    var txs = new ArrayBuffer[Transaction]()
+    var start = System.currentTimeMillis()
+    for( i <- 1 to len){
+      val j = Random.nextInt(1000) % 5
+      val t3 = createTransaction4Invoke(nodename(j), chaincode,"transfer", Seq(txinfo(j)))
+      txs += t3
+    }
+    var end = System.currentTimeMillis()
+    println(s"create transaction,trans number=${len},spent time =${(end - start)}ms")
+
+    val dbtag = "test_db_spend"
+    var txresults = new ArrayBuffer[Boolean]()
+    start = System.currentTimeMillis()
+
+    val sr: ImpDataAccess = ImpDataAccess.GetDataAccess(pe.getSysTag)
+    txs.foreach(t=>{
+      val rc = sr.isExistTrans4Txid(t.id)
+      txresults += rc
+    })
+    end = System.currentTimeMillis()
+    println(s"execute transaction,trans number=${len},spent time =${(end - start)}ms")
+    end - start
+  }
+
 }

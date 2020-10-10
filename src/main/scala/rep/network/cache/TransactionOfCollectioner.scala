@@ -6,11 +6,7 @@ import rep.app.conf.SystemProfile
 import rep.log.RepLogger
 import rep.network.autotransaction.Topic
 import rep.network.base.ModuleBase
-import rep.network.consensus.cfrd.endorse.Endorser4Future
 import rep.protos.peer.{Event, Transaction}
-import rep.utils.ActorUtils
-import rep.utils.GlobalUtils.EventType
-
 import scala.collection.immutable.IndexedSeq
 
 
@@ -24,7 +20,12 @@ class TransactionOfCollectioner  (moduleName: String) extends ModuleBase(moduleN
 
   override def preStart(): Unit = {
     //注册接收交易的广播
-    SubscribeTopic(mediator, self, selfAddr, Topic.Transaction, true)
+    if(SystemProfile.getVoteNodeList.contains(pe.getSysTag)){
+      //共识节点可以订阅交易的广播事件
+      SubscribeTopic(mediator, self, selfAddr, Topic.Transaction, true)
+    }
+    RepLogger.info(RepLogger.Consensus_Logger, this.getLogMsgPrefix("TransactionOfCollectioner module start"))
+    super.preStart()
   }
 
   private def createRouter = {

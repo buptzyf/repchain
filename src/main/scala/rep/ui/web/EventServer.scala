@@ -40,12 +40,12 @@ import rep.utils.GlobalUtils
 import rep.sc.Sandbox.SandboxException
 import rep.log.RepLogger
 import rep.app.conf.SystemProfile
-
 import rep.log.RecvEventActor
 import rep.log.EventActor4Stage
 import akka.stream.Graph
 import akka.stream.SourceShape
 import akka.NotUsed
+import rep.network.tools.PeerExtension
 
 /** Event服务伴生对象
  *  @author c4w
@@ -126,9 +126,12 @@ object EventServer {
  * @author c4w
  */
 class EventServer extends Actor{
-  override def preStart(): Unit =EventServer.start(context.system, SystemProfile.getHttpServicePort)
+  override def preStart(): Unit = {
+    val pe = PeerExtension(context.system)
+  EventServer.start(context.system, SystemProfile.getHttpServicePort(pe.getSysTag))
+}
 
-  def receive = {
-    case Event =>
-  }
+def receive = {
+  case Event =>
+}
 }

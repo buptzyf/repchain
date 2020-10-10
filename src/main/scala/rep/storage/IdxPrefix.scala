@@ -24,6 +24,7 @@ package rep.storage
  * */
 object IdxPrefix {
      val  Height:String   = "rechain_height"
+		 val  LastHash:String = "repchain_last_hash"
 	   val  MaxFileNo:String  = "rechain_file_no"
 	   val  FirstHeightOfFilePrefix = "repchain_file_"
 	   val  FirstHeightOfFileSuffix = "_first_height"

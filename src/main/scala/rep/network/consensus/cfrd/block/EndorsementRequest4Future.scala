@@ -18,18 +18,20 @@ package rep.network.consensus.cfrd.block
 
 import akka.util.Timeout
 import akka.pattern.ask
+
 import scala.concurrent._
 import akka.actor.{ActorSelection, Address, Props}
-import rep.app.conf.{ TimePolicy}
+import rep.app.conf.TimePolicy
 import rep.network.base.ModuleBase
 import rep.protos.peer._
 import akka.pattern.AskTimeoutException
 import rep.network.consensus.util.BlockVerify
-import rep.network.consensus.cfrd.MsgOfCFRD.{/*CreateBlockTPS,*/ EndorsementInfo, RequesterOfEndorsement, ResendEndorseInfo, ResultFlagOfEndorse, ResultOfEndorseRequester, ResultOfEndorsed}
+import rep.network.consensus.cfrd.MsgOfCFRD.{EndorsementInfo, RequesterOfEndorsement, ResendEndorseInfo, ResultFlagOfEndorse, ResultOfEndorseRequester, ResultOfEndorsed, VoteOfReset}
 import rep.network.sync.SyncMsg.StartSync
 import rep.log.RepLogger
 import rep.log.RepTimeTracer
 import rep.network.module.cfrd.CFRDActorType
+import rep.network.util.NodeHelp
 
 /**
  * Created by jiangbuyun on 2020/03/19.
@@ -44,7 +46,7 @@ class EndorsementRequest4Future(moduleName: String) extends ModuleBase(moduleNam
   import context.dispatcher
   import scala.concurrent.duration._
 
-  implicit val timeout = Timeout(TimePolicy.getTimeoutEndorse.seconds)
+  implicit val timeout = Timeout((TimePolicy.getTimeoutEndorse* 4).seconds)
   //private val endorsementActorName = "/user/modulemanager/endorser"
   private val endorsementActorName = "/user/modulemanager/dispatchofRecvendorsement"
 
@@ -82,7 +84,7 @@ class EndorsementRequest4Future(moduleName: String) extends ModuleBase(moduleNam
     schedulerLink = clearSched()
     
       RepTimeTracer.setStartTime(pe.getSysTag, s"Endorsement-request-${moduleName}", System.currentTimeMillis(),reqinfo.blc.height,reqinfo.blc.transactions.size)
-      val result = this.ExecuteOfEndorsement(reqinfo.endorer, EndorsementInfo(reqinfo.blc, reqinfo.blocker))
+      val result = this.ExecuteOfEndorsement(reqinfo.endorer, EndorsementInfo(reqinfo.blc, reqinfo.blocker,reqinfo.voteindex))
       if (result != null) {
         if (result.result == ResultFlagOfEndorse.success) {
           if (EndorsementVerify(reqinfo.blc, result)) {
@@ -104,9 +106,11 @@ class EndorsementRequest4Future(moduleName: String) extends ModuleBase(moduleNam
                context.parent ! ResendEndorseInfo(reqinfo.endorer)
                RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"--------endorsement node's height low,must resend endorsement ,height=${reqinfo.blc.height},local height=${pe.getCurrentHeight} "))
             }
-          }else if(result.result == ResultFlagOfEndorse.EnodrseNodeIsSynching){
+          }else if(result.result == ResultFlagOfEndorse.EnodrseNodeIsSynching || result.result == ResultFlagOfEndorse.EndorseNodeNotVote){
             context.parent ! ResendEndorseInfo(reqinfo.endorer)
             RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"--------endorsement node is synching, must resend endorsement,height=${reqinfo.blc.height},local height=${pe.getCurrentHeight} "))
+          }else if(result.result == ResultFlagOfEndorse.VoteIndexError){
+            pe.getActorRef(CFRDActorType.ActorType.voter) ! VoteOfReset
           }
         }
       } else {
@@ -119,13 +123,15 @@ class EndorsementRequest4Future(moduleName: String) extends ModuleBase(moduleNam
   }
 
   override def receive = {
-    case RequesterOfEndorsement(block, blocker, addr) =>
+    case RequesterOfEndorsement(block, blocker, addr,voteindex) =>
       //待请求背书的块的上一个块的hash不等于系统最新的上一个块的hash，停止发送背书
-      if(block.previousBlockHash.toStringUtf8() == pe.getCurrentBlockHash){
-        handler(RequesterOfEndorsement(block, blocker, addr))
-      }else{
-        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"--------endorsementRequest4Future back out  endorsement,prehash not equal pe.currenthash ,height=${block.height},local height=${pe.getCurrentHeight} "))
-    }
+      if(NodeHelp.isBlocker(pe.getSysTag, pe.getBlocker.blocker)){
+        if(block.previousBlockHash.toStringUtf8() == pe.getCurrentBlockHash){
+          handler(RequesterOfEndorsement(block, blocker, addr,voteindex))
+        }else{
+          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"--------endorsementRequest4Future back out  endorsement,prehash not equal pe.currenthash ,height=${block.height},local height=${pe.getCurrentHeight} "))
+        }
+      }
     case _ => //ignore
   }
 }

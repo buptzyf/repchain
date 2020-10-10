@@ -111,23 +111,23 @@ class SupplySpec(_system: ActorSystem)
     //生成deploy交易
     val cid = new ChaincodeId("Supply", 1)
     val t1 = PeerHelper.createTransaction4Deploy(sysName, cid, l1, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
-    val msg_send1 = new DoTransaction(t1, "dbnumber", TypeOfSender.FromAPI)
+    val msg_send1 = new DoTransaction(Seq[Transaction](t1), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send1)
-    val msg_recv1 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-    val ol1 = msg_recv1.ol
+    val msg_recv1 = probe.expectMsgType[Seq[Sandbox.DoTransactionResult]](1000.seconds)
+    val ol1 = msg_recv1(0).ol
 
     //生成invoke交易
     //获取deploy生成的chainCodeId
     //初始化资产
     val t2 = PeerHelper.createTransaction4Invoke(sysName, cid, ACTION.SignFixed, Seq(l2))
-    val msg_send2 = new DoTransaction(t2, "dbnumber", TypeOfSender.FromAPI)
+    val msg_send2 = new DoTransaction(Seq[Transaction](t2), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send2)
-    val msg_recv2 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
+    val msg_recv2 = probe.expectMsgType[Seq[Sandbox.DoTransactionResult]](1000.seconds)
 
     val t3 = PeerHelper.createTransaction4Invoke(sysName, cid, ACTION.SignShare, Seq(l3))
-    val msg_send3 = new DoTransaction(t3, "dbnumber", TypeOfSender.FromAPI)
+    val msg_send3 = new DoTransaction(Seq[Transaction](t3), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send3)
-    val msg_recv3 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
+    val msg_recv3 = probe.expectMsgType[Seq[Sandbox.DoTransactionResult]](1000.seconds)
 
     //测试各种金额下的分账结果
     val sr = Array(100, 200, 500, 1000)
@@ -136,11 +136,11 @@ class SupplySpec(_system: ActorSystem)
       val ipt4 = new IPTSplit(account_sales1, product_id, el)
       val l4 = write(ipt4)
       val t4 = PeerHelper.createTransaction4Invoke(sysName, cid, ACTION.Split, Seq(l4))
-      val msg_send4 = new DoTransaction(t4, "dbnumber", TypeOfSender.FromAPI)
+      val msg_send4 = new DoTransaction(Seq[Transaction](t4), "dbnumber", TypeOfSender.FromAPI)
 
       probe.send(sandbox, msg_send4)
-      val msg_recv4 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-      val ol4 = msg_recv4.ol
+      val msg_recv4 = probe.expectMsgType[Seq[Sandbox.DoTransactionResult]](1000.seconds)
+      val ol4 = msg_recv4(0).ol
       val ol4str = toJson(ol4)
       println(s"oper log:${ol4str}")
       //分账之后总额应保持一致
@@ -159,11 +159,11 @@ class SupplySpec(_system: ActorSystem)
       val ipt4 = new IPTSplit(account_sales2, product_id, el)
       val l4 = write(ipt4)
       val t4 = PeerHelper.createTransaction4Invoke(sysName, cid, ACTION.Split, Seq(l4))
-      val msg_send4 = new DoTransaction(t4, "dbnumber", TypeOfSender.FromAPI)
+      val msg_send4 = new DoTransaction(Seq[Transaction](t4), "dbnumber", TypeOfSender.FromAPI)
 
       probe.send(sandbox, msg_send4)
-      val msg_recv4 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-      val ol4 = msg_recv4.ol
+      val msg_recv4 = probe.expectMsgType[Seq[Sandbox.DoTransactionResult]](1000.seconds)
+      val ol4 = msg_recv4(0).ol
       val ol4str = toJson(ol4)
       println(s"oper log:${ol4str}")
       //分账之后总额应保持一致

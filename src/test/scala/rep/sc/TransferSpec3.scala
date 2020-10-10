@@ -119,52 +119,52 @@ class TransferSpec3(_system: ActorSystem) extends TestKit(_system) with Matchers
 
     //生成deploy交易，deploy ContractAssetsTPL3
     val t1 = PeerHelper.createTransaction4Deploy(sysName, cid1, l1, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA_PARALLEL)
-    val msg_send1 = DoTransaction(t1, "dbnumber", TypeOfSender.FromAPI)
+    val msg_send1 = DoTransaction(Seq[Transaction](t1), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send1)
-    val msg_recv1 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-    msg_recv1.err.isEmpty should be(true)
+    val msg_recv1 = probe.expectMsgType[Seq[Sandbox.DoTransactionResult]](1000.seconds)
+    msg_recv1(0).err.isEmpty should be(true)
 
     // 生成deploy交易，deploy ContractCert
     val t2 = PeerHelper.createTransaction4Deploy(sysName, cid2, l2, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
-    val msg_send2 = DoTransaction(t2, "dbnumber", TypeOfSender.FromAPI)
+    val msg_send2 = DoTransaction(Seq[Transaction](t2), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send2)
-    val msg_recv2 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-    msg_recv2.err.isEmpty should be(true)
+    val msg_recv2 = probe.expectMsgType[Seq[Sandbox.DoTransactionResult]](1000.seconds)
+    msg_recv2(0).err.isEmpty should be(true)
 
     // 生成invoke交易
     // 注册账户
     val t3 = PeerHelper.createTransaction4Invoke(sysName, cid2, ACTION.SignUpSigner, Seq(write(signer)))
-    val msg_send3 = DoTransaction(t3, "dbnumber", TypeOfSender.FromAPI)
+    val msg_send3 = DoTransaction(Seq[Transaction](t3), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send3)
-    val msg_recv3 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-    msg_recv3.err.isEmpty should be(true)
+    val msg_recv3 = probe.expectMsgType[Seq[Sandbox.DoTransactionResult]](1000.seconds)
+    msg_recv3(0).err.isEmpty should be(true)
 
     // 注册证书
     val t4 = PeerHelper.createTransaction4Invoke(sysName, cid2, ACTION.SignUpCert, Seq(writePretty(certinfo)))
-    val msg_send4 = DoTransaction(t4, "dbnumber", TypeOfSender.FromAPI)
+    val msg_send4 = DoTransaction(Seq[Transaction](t4), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send4)
-    val msg_recv4 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-    msg_recv4.err.isEmpty should be(true)
+    val msg_recv4 = probe.expectMsgType[Seq[Sandbox.DoTransactionResult]](1000.seconds)
+    msg_recv4(0).err.isEmpty should be(true)
 
     //生成invoke交易，给账户初始化赋值
     val t5 = PeerHelper.createTransaction4Invoke(sysName, cid1, ACTION.set, Seq(sms))
-    val msg_send5 = DoTransaction(t5, "dbnumber", TypeOfSender.FromAPI)
+    val msg_send5 = DoTransaction(Seq[Transaction](t5), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send5)
-    val msg_recv5 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-    msg_recv5.err.isEmpty should be(true)
+    val msg_recv5 = probe.expectMsgType[Seq[Sandbox.DoTransactionResult]](1000.seconds)
+    msg_recv5(0).err.isEmpty should be(true)
 
     Thread.sleep(5000)
 
     for (i <- 0 until tcs.length) {
       val t6 = PeerHelper.createTransaction4Invoke(sysName, cid1, ACTION.transfer, Seq(write(tcs(i))))
-      val msg_send6 = DoTransaction(t6, "dbnumber", TypeOfSender.FromAPI)
+      val msg_send6 = DoTransaction(Seq[Transaction](t6), "dbnumber", TypeOfSender.FromAPI)
       probe.send(sandbox, msg_send6)
     }
 
     for (i <- 0 until tcs.length) {
-      val msg_recv6 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-      msg_recv6.err.isEmpty should be(true)
-      msg_recv6.r shouldBe (null)
+      val msg_recv6 = probe.expectMsgType[Seq[Sandbox.DoTransactionResult]](1000.seconds)
+      msg_recv6(0).err.isEmpty should be(true)
+      msg_recv6(0).r shouldBe (null)
     }
   }
 }

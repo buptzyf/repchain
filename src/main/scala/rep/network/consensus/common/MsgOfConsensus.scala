@@ -2,6 +2,7 @@ package rep.network.consensus.common
 
 import akka.actor.ActorRef
 import rep.protos.peer.Block
+import rep.utils.GlobalUtils.BlockerInfo
 
 
 /**
@@ -30,5 +31,7 @@ object MsgOfConsensus {
   ///////////////////////////////块确认actor的相关消息，开始//////////////////////////////
   //共识完成之后，广播正式出块的消息
   case class ConfirmedBlock(blc: Block, actRef: ActorRef)
+
+  case class ConfirmedBlockInStream(voteinfo:BlockerInfo,currentBlockSerial:Int,blockHash:String,isFirst:Boolean,isLastBlock:Boolean,blc: Block, actRef: ActorRef)
   ///////////////////////////////块确认actor的相关消息，结束//////////////////////////////
 }

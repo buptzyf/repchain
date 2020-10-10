@@ -9,7 +9,6 @@ import rep.network.base.ModuleBase
 import rep.network.module.cfrd.CFRDActorType
 import rep.protos.peer.{Event, Transaction}
 import rep.storage.ImpDataAccess
-import rep.utils.ActorUtils
 import rep.utils.GlobalUtils.EventType
 import rep.network.consensus.cfrd.MsgOfCFRD.VoteOfBlocker
 
@@ -19,6 +18,11 @@ object TransactionChecker{
 }
 
 class TransactionChecker (moduleName: String) extends ModuleBase(moduleName){
+
+  override def preStart(): Unit = {
+    RepLogger.info(RepLogger.Consensus_Logger, this.getLogMsgPrefix("TransactionChecker module start"))
+    super.preStart()
+  }
 
   val dataaccess: ImpDataAccess = ImpDataAccess.GetDataAccess(pe.getSysTag)
   /**
@@ -59,15 +63,18 @@ class TransactionChecker (moduleName: String) extends ModuleBase(moduleName){
   }
 
   private def addTransToCache(t: Transaction) = {
-    val checkedTransactionResult = checkTransaction(t, dataaccess)
-    //签名验证成功
-    val poolIsEmpty = pe.getTransPoolMgr.isEmpty
-    if((checkedTransactionResult.result) && (SystemProfile.getMaxCacheTransNum == 0 || pe.getTransPoolMgr.getTransLength() < SystemProfile.getMaxCacheTransNum) ){
-      pe.getTransPoolMgr.putTran(t, pe.getSysTag)
-      RepLogger.trace(RepLogger.System_Logger,this.getLogMsgPrefix(s"${pe.getSysTag} trans pool recv,txid=${t.id}"))
+    if(!pe.getTransPoolMgr.findTrans(t.id)){
+      //交易池中不存在的交易才检查
+      val checkedTransactionResult = checkTransaction(t, dataaccess)
+      //签名验证成功
+      val poolIsEmpty = pe.getTransPoolMgr.isEmpty
+      if((checkedTransactionResult.result) && (SystemProfile.getMaxCacheTransNum == 0 || pe.getTransPoolMgr.getTransLength() < SystemProfile.getMaxCacheTransNum) ){
+        pe.getTransPoolMgr.putTran(t, pe.getSysTag)
+        RepLogger.trace(RepLogger.System_Logger,this.getLogMsgPrefix(s"${pe.getSysTag} trans pool recv,txid=${t.id}"))
 
-      if (poolIsEmpty)//加入交易之前交易池为空，发送抽签消息
-      pe.getActorRef(CFRDActorType.ActorType.voter) ! VoteOfBlocker
+        if (poolIsEmpty)//加入交易之前交易池为空，发送抽签消息
+        pe.getActorRef(CFRDActorType.ActorType.voter) ! VoteOfBlocker
+      }
     }
   }
 

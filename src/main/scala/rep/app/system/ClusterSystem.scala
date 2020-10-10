@@ -42,6 +42,7 @@ import scala.concurrent.duration._
 import akka.actor.Terminated
 import rep.network.module.pbft.ModuleManagerOfPBFT
 import rep.network.module.raft.ModuleManagerOfRAFT
+import rep.network.tools.PeerExtension
 
 
 /**
@@ -211,7 +212,7 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
     RepLogger.trace(RepLogger.System_Logger, sysTag + "~" + "System" + " ~ " + s"System(${sysTag}) init successfully" + " ~ ")
   }
 
-  def init2(port:Int):Unit = {
+  def init2(port:Int,hPort:Int):Unit = {
     var myConfig :Config = null
     if(this.sysConf.getBoolean("akka.remote.artery.enabled")){
       myConfig  = ConfigFactory.parseString("akka.remote.artery.canonical.port = " + port )
@@ -219,18 +220,23 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
       myConfig  = ConfigFactory.parseString("akka.remote.classic.netty.tcp.port = " + port )
     }
 
-    var combined  = myConfig.withFallback(this.sysConf)
+    val myConfig1  = ConfigFactory.parseString("system.httpServicePort = " + hPort )
+    val combined  = myConfig.withFallback(myConfig1).withFallback(this.sysConf)
+
+
 
     this.sysConf = ConfigFactory.load(combined)
 
     this.init
   }
 
-  def init3(port:Int):Unit = {
+  def init3(port:Int,hPort:Int):Unit = {
     var myConfig :Config = null
 
     myConfig  = ConfigFactory.parseString("akka.remote.netty.ssl.port = " + port )
-    var combined  = myConfig.withFallback(this.sysConf)
+    var myConfig1  = ConfigFactory.parseString("system.httpServicePort = " + hPort )
+    var combined  = myConfig.withFallback(myConfig1).withFallback(this.sysConf)
+
     this.sysConf = ConfigFactory.load(combined)
 
     this.init
@@ -269,7 +275,11 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
    * 启动系统
    */
   def start = {
-    SystemProfile.initConfigSystem(sysActor.settings.config)
+    //SystemProfile.initConfigSystem(sysActor.settings.config)
+
+    SystemProfile.initConfigSystem(this.sysConf,this.sysTag )
+
+
 
     if (!hasDiskSpace) {
       Cluster(sysActor).down(clusterAddr)

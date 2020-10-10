@@ -16,15 +16,19 @@
 
 package rep.network.base
 
-import akka.actor.{Actor, Address, ActorRef}
+import akka.actor.{Actor, ActorRef, Address}
+import akka.util.Timeout
 import rep.app.system.ClusterSystem
 import rep.network.cluster.ClusterActor
 import rep.network.tools.PeerExtension
 import rep.crypto.Sha256
+
 import scala.collection.mutable
 import org.slf4j.LoggerFactory
+import rep.app.conf.TimePolicy
 import rep.log.RepTimeTracer
 import rep.log.RepLogger
+import rep.utils.GlobalUtils.BlockerInfo
 
 
 /**
@@ -47,6 +51,7 @@ object ModuleBase {
   **/
 
 abstract class  ModuleBase(name: String) extends Actor  with ClusterActor with BaseActor{
+  import scala.concurrent.duration._
   val pe = PeerExtension(context.system)
   /*val atype = ModuleNameToIntActorType
   atype match{
@@ -82,8 +87,37 @@ abstract class  ModuleBase(name: String) extends Actor  with ClusterActor with B
       case _ => 0
     }
   }*/
-  
-    
+  //预执行的超时时间
+  protected implicit val preload_timeout = Timeout((TimePolicy.getTimeoutPreload * 3).seconds)
+  //背书超时时间
+  protected implicit val endorse_timeout = Timeout((TimePolicy.getTimeoutEndorse * 3).seconds)
+  //出块超时时间
+  protected implicit val block_timeout = Timeout((TimePolicy.getTimeOutBlock * 3).seconds)
+  //同步超时时间
+  protected implicit val sync_chain_info_timeout = Timeout((TimePolicy.getTimeoutSync * 3).seconds)
+
+  protected def isChangeBlocker(voteInfo:BlockerInfo):Boolean={
+    isChangeBlocker(voteInfo,pe.getBlocker)
+  }
+
+  protected def isChangeBlocker(voteInfo1:BlockerInfo,voteInfo2:BlockerInfo):Boolean={
+    var b = true
+    if( voteInfo1.voteBlockHash == voteInfo2.voteBlockHash && voteInfo1.VoteHeight == voteInfo2.VoteHeight
+      && voteInfo1.blocker == voteInfo2.blocker && voteInfo1.VoteIndex == voteInfo2.VoteIndex) {
+      b = false
+    }
+    b
+  }
+
+
+  protected def isBlocker(voteInfo:BlockerInfo):Boolean={
+    var b = false
+    if(isChangeBlocker(voteInfo) && voteInfo.voteBlockHash == pe.getCurrentBlockHash){
+      b = true
+    }
+    b
+  }
+
   /**
     * 日志前缀
     *

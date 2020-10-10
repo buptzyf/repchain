@@ -16,6 +16,8 @@
 
 package rep.app.conf
 
+import java.util.concurrent.ConcurrentHashMap
+
 import com.typesafe.config.Config
 //import collection.JavaConversions._
 //import scala.collection.immutable._
@@ -46,7 +48,7 @@ object SystemProfile {
   private[this] var _RETRY_TIME: Int = 0//投票重试次数限制
   private[this] var _MAX_CATCH_TRANS_NUM: Int = 0//交易最多缓存数量
   private[this] var _DISKSPACE_ALARM_NUM:Long=0//磁盘剩余空间预警 单位=M
-  private[this] var _SERVERPORT:Int=8081//http服务的端口，默认为8081
+  //private[this] var _SERVERPORT:Int=8081//http服务的端口，默认为8081
   private[this] var _CHECKCERTVALIDATE:Int=0//是否检查证书的有效性，0不检查，1检查
   private[this] var _CONTRACTOPERATIONMODE = 0//设置合约的运行方式，0=debug方式，1=deploy，默认为debug方式，如果发布部署，必须使用deploy方式。
   private[this] var _VOTENODELIST : List[String] = new ArrayList[String]
@@ -60,6 +62,7 @@ object SystemProfile {
   private[this] var _IS_VERIFY_OF_ENDORSEMENT = true//is_verify_of_endorsement
   private[this] var _NUMBER_OF_ENDORSEMENT: Int = 2
   private[this] var _TYPE_OF_CONSENSUS:String = "PBFT"
+  private[this] var _BLOCKNUMBER_BLOCKER = 5 //
 
   //zhj
   private[this] var _PBFT_F: Int = 1
@@ -77,7 +80,8 @@ object SystemProfile {
   
   
   
-  private def SERVERPORT :Int = _SERVERPORT
+  //private def SERVERPORT :Int = _SERVERPORT
+  private var SERVERPORT = new ConcurrentHashMap[String,Int]()
   private def CHECKCERTVALIDATE:Int = _CHECKCERTVALIDATE
   private def DISKSPACE_ALARM_NUM :Long = _DISKSPACE_ALARM_NUM
   private def CONTRACTOPERATIONMODE:Int=_CONTRACTOPERATIONMODE
@@ -100,6 +104,8 @@ object SystemProfile {
   private def REALTIMEGRAPH_ENABLE = _REALTIMEGRAPH_ENABLE
 
   private def TYPE_OF_CONSENSUS : String = _TYPE_OF_CONSENSUS
+
+  private def BLOCKNUMBER_BLOCKER : Int = _BLOCKNUMBER_BLOCKER
 
   //zhj
   private def PBFT_F = _PBFT_F
@@ -130,6 +136,10 @@ object SystemProfile {
   
   private def GENESISNODENAME_=(value:String):Unit={
     _GENESISNODENAME = value
+  }
+
+  private def BLOCKNUMBER_BLOCKER_=(value:Int):Unit={
+    this._BLOCKNUMBER_BLOCKER = value
   }
   
   private def NUMBER_OF_TRANSPROCESSOR_=(value:Int):Unit={
@@ -168,9 +178,9 @@ object SystemProfile {
     _ACCOUNTCHAINCODEVERSION = value
   }
   
-  private def SERVERPORT_=(value: Int): Unit = {
+  /*private def SERVERPORT_=(value: Int): Unit = {
     _SERVERPORT = value
-  }
+  }*/
 
   private def CHECKCERTVALIDATE_=(value: Int): Unit = {
     _CHECKCERTVALIDATE = value
@@ -238,7 +248,7 @@ object SystemProfile {
     * 初始化配饰信息
     * @param config
     */
-  def initConfigSystem(config:Config): Unit ={
+  def initConfigSystem(config:Config,SystemName:String): Unit ={
     LIMIT_BLOCK_TRANS_NUM_=(config.getInt("system.block.trans_num_limit"))
     BLOCK_LENGTH_=(config.getInt("system.block.block_length"))
     MIN_BLOCK_TRANS_NUM_=(config.getInt("system.block.trans_num_min"))
@@ -249,12 +259,15 @@ object SystemProfile {
     MAX_CATCH_TRANS_NUM_=(config.getInt("system.transaction.max_cache_num"))
     TRANS_CREATE_TYPE_=(config.getInt("system.trans_create_type"))
     DISKSPACE_ALARM_NUM_=(config.getInt("system.diskspaceManager.diskspacealarm"))
-    SERVERPORT_=(config.getInt("system.httpServicePort"))
+    //SERVERPORT_=(config.getInt("system.httpServicePort"))
+    val tmp = config.getInt("system.httpServicePort")
+    this.SERVERPORT.put(SystemName,tmp)
     CHECKCERTVALIDATE_=(config.getInt("system.checkCertValidate"))
     CONTRACTOPERATIONMODE_=(config.getInt("system.contractOperationMode"))
     ACCOUNTCHAINCODENAEM_= (config.getString("system.account.chaincodename"))
     ACCOUNTCHAINCODEVERSION_=(config.getInt("system.account.chaincodeversion"))
     CertStatusChangeFunction_= (config.getString("system.account.CertStatusChangeFunction"))
+    BLOCKNUMBER_BLOCKER_=(config.getInt("system.block.block_number_blocker"))
     
     GENESISNODENAME_=(config.getString("system.genesis_node_name"))
     NUMBER_OF_TRANSPROCESSOR_=(config.getInt("system.number_of_transProcessor"))
@@ -311,7 +324,9 @@ object SystemProfile {
   
   def getDiskSpaceAlarm = DISKSPACE_ALARM_NUM
   
-  def getHttpServicePort = SERVERPORT
+  def getHttpServicePort(SystemName:String):Int={
+    this.SERVERPORT.get(SystemName)
+  }
   
   def getCheckCertValidate = CHECKCERTVALIDATE
   
@@ -326,4 +341,6 @@ object SystemProfile {
   def getAccountChaincodeVersion = ACCOUNTCHAINCODVERSION
   
   def getGenesisNodeName = GENESISNODENAME
+
+  def getBlockNumberOfBlocker = BLOCKNUMBER_BLOCKER
 }

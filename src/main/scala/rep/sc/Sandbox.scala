@@ -16,7 +16,7 @@
 
 package rep.sc
 
-import akka.actor.{ Actor, ActorRef, Props, actorRef2Scala }
+import akka.actor.{Actor, ActorRef, Props, actorRef2Scala}
 import rep.utils._
 import rep.api.rest._
 import rep.protos.peer._
@@ -25,8 +25,9 @@ import java.util.concurrent.Executors
 import java.lang.Exception
 import java.lang.Thread._
 import java.io.File._
+
 import org.slf4j.LoggerFactory
-import org.json4s.{ DefaultFormats, Formats, jackson }
+import org.json4s.{DefaultFormats, Formats, jackson}
 import de.heikoseeberger.akkahttpjson4s.Json4sSupport
 import org.json4s._
 import akka.util.Timeout
@@ -37,7 +38,7 @@ import rep.storage.IdxPrefix.WorldStateKeyPreFix
 import rep.storage._
 import rep.utils.SerializeUtils.deserialise
 import rep.utils.SerializeUtils.serialise
-import rep.log.RepLogger
+import rep.log.{RepLogger, RepTimeTracer}
 
 /**
  * 合约容器的抽象类伴生对象,定义了交易执行结果的case类
@@ -53,18 +54,12 @@ object Sandbox {
   //t:中含txid可以找到原始交易; r:执行结果; merkle:执行完worldstate的hash; err:执行异常
   /**
    * 交易执行结果类
-   * @param t 传入交易实例
-   * @param from 来源actor指向
-   * @param r 执行结果,任意类型
-   * @param merkle 交易执行后worldState的merkle结果，用于验证和达成输出共识
-   * @param ol 合约执行中对worldState的写入操作
-   * @param mb 合约执行涉及的key-value集合
+   *
    * @param err 执行中抛出的异常信息
    */
   case class DoTransactionResult(txId: String, r: ActionResult,
                                  ol:  List[OperLog],
                                  err: Option[akka.actor.Status.Failure])
-
   /**
    * 合约执行异常类
    *  @param message 异常信息的文本描述
@@ -111,11 +106,20 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
   def receive = {
     //交易处理请求
     case dotrans: DoTransactionOfSandbox =>
-      val tr = onTransaction(dotrans)
-      sender ! tr
+      val tr = onTransactions(dotrans)
+      sender ! tr.toSeq
   }
 
-  def onTransaction(dotrans: DoTransactionOfSandbox): DoTransactionResult = {
+  private def onTransactions(dotrans: DoTransactionOfSandbox): Array[DoTransactionResult] = {
+    var rs = scala.collection.mutable.ArrayBuffer[DoTransactionResult]()
+    dotrans.ts.foreach(t=>{
+      rs += onTransaction(DoTransactionOfSandboxInSingle(t,dotrans.da,dotrans.contractStateType))
+    })
+    RepTimeTracer.setEndTime(pe.getSysTag, "transaction-dispatcher", System.currentTimeMillis(), 0, dotrans.ts.length)
+    rs.toArray
+  }
+
+  private def onTransaction(dotrans: DoTransactionOfSandboxInSingle): DoTransactionResult = {
     try {
       shim.sr = ImpDataPreloadMgr.GetImpDataPreload(sTag, dotrans.da)
       checkTransaction(dotrans)
@@ -123,6 +127,7 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
       doTransaction(dotrans)
     } catch {
       case e: Exception =>
+        RepLogger.except4Throwable(RepLogger.Sandbox_Logger,e.getMessage,e)
         RepLogger.except(RepLogger.Sandbox_Logger, dotrans.t.id, e)
         new DoTransactionResult(dotrans.t.id, null, null,
           Option(akka.actor.Status.Failure(e)))
@@ -131,15 +136,41 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
 
   /**
    * 交易处理抽象方法，接受待处理交易，返回处理结果
-   *  @param t 待处理交易
-   *  @param from 发出交易请求的actor
-   * 	@param da 存储访问标示
+   *
    *  @return 交易执行结果
    */
-  def doTransaction(dotrans: DoTransactionOfSandbox): DoTransactionResult
+  def doTransaction(dotrans: DoTransactionOfSandboxInSingle): DoTransactionResult
+
+  private var  ContractState : Int = 0  //0 未初始化；1 init; 2 unknow; 3 = true; 4=false
 
   private def getContractEnableValueFromLevelDB(txcid: String): Option[Boolean] = {
-    val db = ImpDataAccess.GetDataAccess(this.sTag)
+    if(this.ContractState == 0){
+      val db = ImpDataAccess.GetDataAccess(this.sTag)
+      val key_tx_state = WorldStateKeyPreFix + txcid + PRE_STATE
+      val state_bytes = db.Get(key_tx_state)
+      if (state_bytes == null) {
+        this.ContractState = 2
+      } else {
+        val state = deserialise(state_bytes).asInstanceOf[Boolean]
+        if(state){
+          this.ContractState = 3
+        }else{
+          this.ContractState = 4
+        }
+      }
+    }
+
+    if(this.ContractState == 2){
+      None
+    }else{
+      var b : Boolean = false
+      if(this.ContractState == 3){
+        b = true
+      }
+      Some(b)
+    }
+
+    /*val db = ImpDataAccess.GetDataAccess(this.sTag)
     val key_tx_state = WorldStateKeyPreFix + txcid + PRE_STATE
     val state_bytes = db.Get(key_tx_state)
     if (state_bytes == null) {
@@ -147,10 +178,37 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
     } else {
       val state = deserialise(state_bytes).asInstanceOf[Boolean]
       Some(state)
-    }
+    }*/
   }
 
-  private def IsCurrentSigner(dotrans: DoTransactionOfSandbox) {
+  private var  ContractExist : Int = 0  //0 未初始化；1 存在；2 不存在
+
+  private def ContraceIsExist(txcid: String) {
+    if(this.ContractExist == 0){
+      val key_tx_state = WorldStateKeyPreFix + txcid + PRE_STATE
+      val state_bytes = shim.sr.Get(key_tx_state)
+      //合约不存在
+      if (state_bytes == null) {
+        this.ContractExist = 2
+      }else{
+        this.ContractExist = 1
+      }
+    }else{
+      if(this.ContractExist == 2){
+        throw new SandboxException(ERR_INVOKE_CHAINCODE_NOT_EXIST)
+      }
+    }
+
+    //修改为只检查一次，不需要每次都检查
+    /*val key_tx_state = WorldStateKeyPreFix + txcid + PRE_STATE
+    val state_bytes = shim.sr.Get(key_tx_state)
+    //合约不存在
+    if (state_bytes == null) {
+      throw new SandboxException(ERR_INVOKE_CHAINCODE_NOT_EXIST)
+    }*/
+  }
+
+  private def IsCurrentSigner(dotrans: DoTransactionOfSandboxInSingle) {
     val cn = dotrans.t.cid.get.chaincodeName
     val key_coder = WorldStateKeyPreFix + cn
     val coder_bytes = shim.sr.Get(key_coder)
@@ -162,16 +220,9 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
     }
   }
 
-  private def ContraceIsExist(txcid: String) {
-    val key_tx_state = WorldStateKeyPreFix + txcid + PRE_STATE
-    val state_bytes = shim.sr.Get(key_tx_state)
-    //合约不存在
-    if (state_bytes == null) {
-      throw new SandboxException(ERR_INVOKE_CHAINCODE_NOT_EXIST)
-    }
-  }
 
-  private def checkTransaction(dotrans: DoTransactionOfSandbox) = {
+
+  private def checkTransaction(dotrans: DoTransactionOfSandboxInSingle) = {
     val txcid = IdTool.getTXCId(dotrans.t)
     dotrans.t.`type` match {
       case Transaction.Type.CHAINCODE_DEPLOY =>
@@ -186,6 +237,8 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
       case Transaction.Type.CHAINCODE_SET_STATE =>
         ContraceIsExist(txcid)
         IsCurrentSigner(dotrans)
+        this.ContractState = 0
+        this.ContractExist = 0
 
       case Transaction.Type.CHAINCODE_INVOKE =>
         ContraceIsExist(txcid)
