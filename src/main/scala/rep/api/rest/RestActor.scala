@@ -45,6 +45,8 @@ import rep.log.RepLogger
 import rep.network.autotransaction.PeerHelper
 import rep.network.base.ModuleBase
 import rep.network.consensus.byzantium.ConsensusCondition
+import rep.network.consensus.common.MsgOfConsensus.{PreTransBlock, PreTransBlockResult}
+import rep.network.consensus.util.BlockHelp
 import rep.sc.TypeOfSender
 import rep.sc.SandboxDispatcher.DoTransaction
 import rep.sc.Sandbox.DoTransactionResult
@@ -79,6 +81,8 @@ object RestActor {
   case class BlockHeightStream(h: Int)
   case class TransactionId(txid: String)
   case class TransactionStreamId(txid: String)
+  case class TranInfoAndHeightId(txid: String)
+  case class TranInfoHeight(tranInfo: JValue, height: Long)
   case class TransNumberOfBlock(height: Long)
   case object LoadBlockInfo
   case object IsLoadBlockInfo
@@ -216,44 +220,22 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
     val tranLimitSize = SystemProfile.getBlockLength / 3
     if (t.toByteArray.length > tranLimitSize) {
       sender ! PostResult(t.id, None, Option(s"交易大小超出限制： ${tranLimitSize}，请重新检查"))
-    }
-
-    if (!ConsensusCondition.CheckWorkConditionOfSystem(pe.getNodeMgr.getStableNodes.size)) {
+    } else if (!ConsensusCondition.CheckWorkConditionOfSystem(pe.getNodeMgr.getStableNodes.size)) {
       sender ! PostResult(t.id, None, Option("共识节点数目太少，暂时无法处理交易"))
-    }
-
-    /*if (pe.getTransPoolMgr.findTrans(t.id) || sr.isExistTrans4Txid(t.id)) {
-          sender ! PostResult(t.id, None, Option(s"transactionId is exists, the transaction is \n ${t.id}"))
-    }*/
-
-    try {
-      if (SystemProfile.getHasPreloadTransOfApi) {
-        val sig = t.signature.get.signature.toByteArray
-        val tOutSig = t.clearSignature
-        val certId = t.signature.get.certId.get
-        if (pe.getTransPoolMgr.findTrans(t.id) || sr.isExistTrans4Txid(t.id)) {
-          sender ! PostResult(t.id, None, Option(s"transactionId is exists, the transaction is \n ${t.id}"))
+    } else {
+      try {
+        if (pe.getTransPoolMgr.getTransLength() < SystemProfile.getMaxCacheTransNum) {
+          mediator ! Publish(Topic.Transaction, t)
+          sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)
+          sender ! PostResult(t.id, None, None)
         } else {
-          //if (SignTool.verify(sig, tOutSig.toByteArray, certId, pe.getSysTag)) {
-              mediator ! Publish(Topic.Transaction, t)
-          //pe.getTransPoolMgr.putTran(t,pe.getSysTag)
-              //广播发送交易事件
-              sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)
-              sender ! PostResult(t.id, None, None)
-          //} else {
-            //sender ! PostResult(t.id, None, Option("验证签名出错"))
-          //}
+          // 交易缓存池已满，不可继续提交交易
+          sender ! PostResult(t.id, None, Option(s"交易缓存池已满，容量为${pe.getTransPoolMgr.getTransLength()}，不可继续提交交易"))
         }
-      } else {
-        pe.getActorRef(ModuleActorType.ActorType.transactionpool) ! t // 给交易池发送消息 ！=》告知（getActorRef）
-        sender ! PostResult(t.id, None, None)
+      } catch {
+        case e: Exception =>
+          sender ! PostResult(t.id, None, Option(e.getMessage))
       }
-
-    } catch {
-      case e: RuntimeException =>
-        sender ! PostResult(t.id, None, Option(e.getMessage))
-    } finally {
-      ImpDataPreloadMgr.Free(pe.getSysTag, "api_" + t.id)
     }
   }
 
@@ -381,6 +363,18 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
         sender ! httpResponse
       }
 
+    case TranInfoAndHeightId(txId) =>
+      implicit val fomats = DefaultFormats
+      var r = sr.getTransDataByTxId(txId) match {
+        case None =>
+          QueryResult(None)
+        case t: Some[Transaction] =>
+          val txr = t.get
+          val tranInfoHeight = TranInfoHeight(JsonFormat.toJson(txr), sr.getBlockIdxByTxid(txr.id).getBlockHeight())
+          QueryResult(Option(Extraction.decompose(tranInfoHeight)))
+      }
+      sender ! r
+
     // 获取链信息
     case ChainInfo =>
       val cij = JsonFormat.toJson(sr.getBlockChainInfo)
@@ -398,7 +392,6 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
       sender ! QueryResult(Option(JsonMethods.parse(string2JsonInput(rs))))
 
     case AcceptedTransNumber =>
-
       val num = sr.getBlockChainInfo.totalTransactions + pe.getTransPoolMgr.getTransLength()
       val rs = "{\"acceptedNumber\":\"" + num + "\"}"
       sender ! QueryResult(Option(JsonMethods.parse(string2JsonInput(rs))))
