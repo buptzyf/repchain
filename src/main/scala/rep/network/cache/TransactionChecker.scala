@@ -11,6 +11,7 @@ import rep.protos.peer.{Event, Transaction}
 import rep.storage.ImpDataAccess
 import rep.utils.GlobalUtils.EventType
 import rep.network.consensus.cfrd.MsgOfCFRD.VoteOfBlocker
+import rep.network.util.NodeHelp
 
 object TransactionChecker{
   def props(name: String): Props = Props(classOf[TransactionChecker], name)
@@ -68,7 +69,8 @@ class TransactionChecker (moduleName: String) extends ModuleBase(moduleName){
       val checkedTransactionResult = checkTransaction(t, dataaccess)
       //签名验证成功
       val poolIsEmpty = pe.getTransPoolMgr.isEmpty
-      if((checkedTransactionResult.result) && (SystemProfile.getMaxCacheTransNum == 0 || pe.getTransPoolMgr.getTransLength() < SystemProfile.getMaxCacheTransNum) ){
+      //if((checkedTransactionResult.result) && (SystemProfile.getMaxCacheTransNum == 0 || pe.getTransPoolMgr.getTransLength() < SystemProfile.getMaxCacheTransNum) ){
+      if( SystemProfile.getMaxCacheTransNum == 0 || pe.getTransPoolMgr.getTransLength() < SystemProfile.getMaxCacheTransNum ){
         pe.getTransPoolMgr.putTran(t, pe.getSysTag)
         RepLogger.trace(RepLogger.System_Logger,this.getLogMsgPrefix(s"${pe.getSysTag} trans pool recv,txid=${t.id}"))
 
@@ -84,7 +86,8 @@ class TransactionChecker (moduleName: String) extends ModuleBase(moduleName){
     case t: Transaction =>
       //保存交易到本地
       sendEvent(EventType.RECEIVE_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)
-      addTransToCache(t)
+      if(!NodeHelp.isSameNodeForString(this.selfAddr,NodeHelp.getNodePath(sender())))
+        addTransToCache(t)
     case _ => //ignore
   }
 

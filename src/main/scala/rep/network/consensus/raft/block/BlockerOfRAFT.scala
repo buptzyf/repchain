@@ -74,7 +74,8 @@ class BlockerOfRAFT (moduleName: String) extends IBlocker(moduleName){
       mediator ! Publish(Topic.Block, ConfirmedBlock(preblock, self))
     } else {
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("create new block error,CreateBlock is null" + "~" + selfAddr))
-      pe.getActorRef(CFRDActorType.ActorType.voter) ! VoteOfBlocker
+      if(pe.getTransPoolMgr.getTransLength() > SystemProfile.getMinBlockTransNum)
+        pe.getActorRef(CFRDActorType.ActorType.voter) ! VoteOfBlocker
     }
   }
 
