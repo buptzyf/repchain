@@ -68,7 +68,7 @@ class IModuleManager(moduleName: String, sysTag: String, enableStatistic: Boolea
     pe.setSysTag(sysTag)
     val confHeler = new ConfigerHelper(conf, sysTag, pe.getSysTag)
     confHeler.init()
-
+    pe.getTransPoolMgr.startupSchedule(sysTag)
   }
 
   private def loadCommonActor:Unit = {

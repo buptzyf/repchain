@@ -1,63 +1,80 @@
-/*
- * Copyright  2019 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BA SIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
-
 package rep.network.tools.transpool
 
-import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedQueue, ConcurrentSkipListMap, Executors, TimeUnit}
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
 
-import rep.protos.peer.Transaction
-import java.util.concurrent.locks._
-
-import rep.log.RepLogger
-//import scala.jdk.CollectionConverters._
 import scala.collection.JavaConverters._
-import java.util.concurrent.ConcurrentSkipListMap
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicInteger
-import rep.app.conf.{  TimePolicy }
+import rep.app.conf.TimePolicy
+import rep.log.RepLogger
+import rep.protos.peer.Transaction
 import rep.storage.ImpDataAccess
-import scala.util.control.Breaks._
+
+import scala.util.control.Breaks.{break, breakable}
 
 class TransactionPoolMgr {
-  private val  transLock : Lock = new ReentrantLock();
-  
-  private implicit var transactions = new ConcurrentSkipListMap[Long,Transaction]() asScala
-  private implicit var transQueue = new ConcurrentLinkedQueue[Transaction]()
-  private implicit var transKeys = new ConcurrentHashMap[String,Long]() asScala
+  case class TransactionInfo(transaction: Transaction,entryTime:Long)
+
+  private implicit var transQueueOfTxid = new ConcurrentLinkedQueue[String]()
+  private implicit var transKeys = new ConcurrentHashMap[String,TransactionInfo]() asScala
   private implicit var transNumber = new AtomicInteger(0)
 
-  /*def getTransListClone(num: Int,sysName:String): Seq[Transaction] = {
+  private var scheduledExecutorService = Executors.newSingleThreadScheduledExecutor
+  private var isStarup = new AtomicBoolean(false)
+
+  def startupSchedule(sysName:String)={
+    if(this.isStarup.get() == false){
+      this.isStarup.set((true))
+      this.scheduledExecutorService.scheduleWithFixedDelay(
+        new cleanCache(sysName),10,10, TimeUnit.SECONDS
+      )
+    }
+  }
+
+  class cleanCache(sysName:String) extends Runnable{
+    override def run(){
+      var translist = scala.collection.mutable.ArrayBuffer[String]()
+      val currenttime = System.currentTimeMillis()
+      val sr: ImpDataAccess = ImpDataAccess.GetDataAccess(sysName)
+      try{
+        System.err.println(s"entry Clean Cache,system=${sysName}")
+        transKeys.values.foreach(ti=>{
+          if((currenttime - ti.entryTime)/1000 > TimePolicy.getTranscationWaiting || sr.isExistTrans4Txid(ti.transaction.id) ){
+            translist += ti.transaction.id
+          }
+        })
+
+        System.err.println(s"waiting delete trans,,system=${sysName},list:"+translist.mkString(","))
+        translist.foreach(txid=>{
+          transKeys.remove(txid)
+          if(transQueueOfTxid.remove(txid)){
+            transNumber.decrementAndGet()
+          }
+        })
+        System.err.println(s"entry Clean Cache finish,system=${sysName}")
+      }catch{
+        case e:Exception=>e.printStackTrace()
+      }
+    }
+  }
+
+  def getTransListClone(num: Int,sysName:String): Seq[Transaction] = {
     var translist = scala.collection.mutable.ArrayBuffer[Transaction]()
     val currenttime = System.currentTimeMillis()
     try{
       val sr: ImpDataAccess = ImpDataAccess.GetDataAccess(sysName)
-      var count = 0
 
       breakable(
         for(i<-0 to num-1){
-          val t = this.transQueue.poll()
-          if(t != null){
+          val txid = this.transQueueOfTxid.poll()
+          if(txid != null){
             this.transNumber.decrementAndGet()
-            val l = this.transKeys.get(t.id)
-            if(l != null){
-              if(currenttime - l.get._1 > TimePolicy.getTranscationWaiting) { //|| sr.isExistTrans4Txid(txid) ){
+            val l = this.transKeys.get(txid)
+            if(l != None){
+              if((currenttime - l.get.entryTime)/1000 > TimePolicy.getTranscationWaiting || sr.isExistTrans4Txid(txid) ){
                 //超时或者重复 删除
-                this.transKeys.remove(t.id)
+                this.transKeys.remove(txid)
               }else{
-                translist += t
+                translist += l.get.transaction
               }
             }
           }else{
@@ -73,70 +90,23 @@ class TransactionPoolMgr {
     RepLogger.trace(RepLogger.OutputTime_Logger, s"systemname=${sysName},transNumber=${transNumber},getTransListClone spent time=${end-currenttime}")
 
     translist.toSeq
-  }*/
-  def getTransListClone(start:Int,num: Int,sysName:String): Seq[Transaction] = {
-    var translist = scala.collection.mutable.ArrayBuffer[Transaction]()
-    transLock.lock()
-    val starttime = System.currentTimeMillis()
-    try{
-        var deltrans4id = scala.collection.mutable.ArrayBuffer[String]()
-        val sr: ImpDataAccess = ImpDataAccess.GetDataAccess(sysName)
-        val currenttime = System.nanoTime() / 1000000000
-        var count = 0
-        var pos = 0
-        breakable(
-        transactions.foreach(f=>{
-          if(count <= num){
-            val txid = f._2.id
-            if ((currenttime - f._1/1000000000) > TimePolicy.getTranscationWaiting || sr.isExistTrans4Txid(txid) ){
-              deltrans4id += txid
-            }else{
-              if(pos < start){
-                pos += 1
-              }else{
-                translist += f._2
-                count += 1
-              }
-            }
-          }else{
-            break
-          }
-        })
-        )
-       
-        if(deltrans4id.length > 0){
-          deltrans4id.foreach(f=>{
-            RepLogger.info(RepLogger.TransLifeCycle_Logger,  s"systemname=${sysName},remove trans from pool,trans timeout or exist in block,${f}")
-            removeTranscation4Txid(f,sysName)
-          })
-        }
-        deltrans4id.clear()
-    }finally{
-      transLock.unlock()
-    }
-    val end = System.currentTimeMillis()
-    RepLogger.trace(RepLogger.OutputTime_Logger, s"systemname=${sysName},transNumber=${transNumber},getTransListClone spent time=${end-starttime}")
-    
-    translist.toSeq
   }
 
-
   def putTran(tran: Transaction,sysName:String): Unit = {
-    transLock.lock()
+
     val start = System.currentTimeMillis()
     try{
-      val time = System.nanoTime()
+      val time = System.currentTimeMillis()
       val txid = tran.id
       if(transKeys.contains(txid)){
         RepLogger.info(RepLogger.TransLifeCycle_Logger,  s"systemname=${sysName},trans entry pool,${tran.id} exists in cache")
       }else{
-        transactions.put(time, tran)
-        transKeys.put(txid, time)
+        transKeys.put(txid, TransactionInfo(tran,time))
+        this.transQueueOfTxid.add(txid)
         transNumber.incrementAndGet()
         RepLogger.info(RepLogger.TransLifeCycle_Logger,  s"systemname=${sysName},transNumber=${transNumber},trans entry pool,${tran.id},entry time = ${time}")
       }
     }finally {
-      transLock.unlock()
     }
     val end = System.currentTimeMillis()
     RepLogger.trace(RepLogger.OutputTime_Logger, s"systemname=${sysName},putTran spent time=${end-start}")
@@ -154,45 +124,30 @@ class TransactionPoolMgr {
   }
 
   def getTransaction(txid:String):Transaction={
-    transactions.getOrElse(txid,null)
+    var t : Transaction = null
+    val d = this.transKeys.getOrElse(txid,null)
+    if(d != None){
+      t = d.transaction
+    }
+    t
   }
 
   def removeTrans(trans: Seq[ Transaction ],sysName:String): Unit = {
-    transLock.lock()
     try{
       trans.foreach(f=>{
         removeTranscation(f,sysName)
       })
     }finally{
-      transLock.unlock()
     }
   }
 
   def removeTranscation(tran:Transaction,sysName:String):Unit={
-    transLock.lock()
     try{
       RepLogger.info(RepLogger.TransLifeCycle_Logger,  s"systemname=${sysName},remove trans from pool,trans entry block,${tran.id}")
-      removeTranscation4Txid(tran.id,sysName)
+      this.transKeys.remove(tran.id)
     }finally{
-      transLock.unlock()
-    }
-  }
 
-  def removeTranscation4Txid(txid:String,sysName:String):Unit={
-    transLock.lock()
-    val start = System.currentTimeMillis()
-    try{
-      if(transKeys.contains(txid)){
-        transactions.remove(transKeys(txid))
-        transKeys.remove(txid)
-        transNumber.decrementAndGet()
-      }
-      RepLogger.info(RepLogger.TransLifeCycle_Logger,  s"systemname=${sysName},remove trans from pool,${txid}")
-    }finally{
-      transLock.unlock()
     }
-    val end = System.currentTimeMillis()
-    RepLogger.trace(RepLogger.OutputTime_Logger, s"systemname=${sysName},removeTranscation4Txid spent time=${end-start}")
   }
 
   def getTransLength() : Int = {
@@ -200,6 +155,6 @@ class TransactionPoolMgr {
   }
 
   def isEmpty:Boolean={
-    transactions.isEmpty
+    this.transQueueOfTxid.isEmpty
   }
 }

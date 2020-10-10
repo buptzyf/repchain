@@ -66,7 +66,7 @@ class TransactionChecker (moduleName: String) extends ModuleBase(moduleName){
   private def addTransToCache(t: Transaction) = {
     if(!pe.getTransPoolMgr.findTrans(t.id)){
       //交易池中不存在的交易才检查
-      val checkedTransactionResult = checkTransaction(t, dataaccess)
+      //val checkedTransactionResult = checkTransaction(t, dataaccess)
       //签名验证成功
       val poolIsEmpty = pe.getTransPoolMgr.isEmpty
       //if((checkedTransactionResult.result) && (SystemProfile.getMaxCacheTransNum == 0 || pe.getTransPoolMgr.getTransLength() < SystemProfile.getMaxCacheTransNum) ){
@@ -86,8 +86,11 @@ class TransactionChecker (moduleName: String) extends ModuleBase(moduleName){
     case t: Transaction =>
       //保存交易到本地
       sendEvent(EventType.RECEIVE_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)
-      if(!NodeHelp.isSameNodeForString(this.selfAddr,NodeHelp.getNodePath(sender())))
+      if(!NodeHelp.isSameNodeForString(this.selfAddr,NodeHelp.getNodePath(sender()))) {
         addTransToCache(t)
+      }else{
+        System.err.println(s"recv tx from local,system=${pe.getSysTag}")
+      }
     case _ => //ignore
   }
 

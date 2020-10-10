@@ -279,8 +279,6 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
 
     SystemProfile.initConfigSystem(this.sysConf,this.sysTag )
 
-
-
     if (!hasDiskSpace) {
       Cluster(sysActor).down(clusterAddr)
       throw new Exception("not enough disk space")
@@ -296,6 +294,7 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
     }else{
       RepLogger.error(RepLogger.System_Logger, sysTag + "~" + "System" + " ~ " + s"ClusterSystem ${sysTag} not startup,unknow consensus" + " ~ ")
     }
+
 
 
     RepLogger.trace(RepLogger.System_Logger, sysTag + "~" + "System" + " ~ " + s"ClusterSystem ${sysTag} start" + " ~ ")

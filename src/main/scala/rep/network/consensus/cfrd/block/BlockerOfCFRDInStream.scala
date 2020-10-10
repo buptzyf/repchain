@@ -56,12 +56,12 @@ class BlockerOfCFRDInStream(moduleName: String) extends IBlocker(moduleName) {
       breakable(
         op = for (i <- 1 to blcCount) {
           RepTimeTracer.setStartTime(pe.getSysTag, "collectTransToBlock", System.currentTimeMillis(), pe.getBlocker.VoteHeight + 1, 0)
-          val tmpList = pe.getTransPoolMgr.getTransListClone(start, SystemProfile.getLimitBlockTransNum, pe.getSysTag).reverse
+          val tmpList = pe.getTransPoolMgr.getTransListClone(SystemProfile.getLimitBlockTransNum, pe.getSysTag).reverse
           RepTimeTracer.setEndTime(pe.getSysTag, "collectTransToBlock", System.currentTimeMillis(), pe.getBlocker.VoteHeight + 1, tmpList.size)
           var isLast = false
           if (tmpList.length >= SystemProfile.getLimitBlockTransNum && i < blcCount) {
             isLast = false
-            val tmpList1 = pe.getTransPoolMgr.getTransListClone(start, SystemProfile.getLimitBlockTransNum, pe.getSysTag)
+            val tmpList1 = pe.getTransPoolMgr.getTransListClone(SystemProfile.getLimitBlockTransNum, pe.getSysTag)
             if (tmpList1.length <= 0) {
               isLast = true
             }

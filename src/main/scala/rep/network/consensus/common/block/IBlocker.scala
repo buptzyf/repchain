@@ -41,7 +41,7 @@ abstract class IBlocker(moduleName: String) extends ModuleBase(moduleName) {
   protected def CollectedTransOfBlock(start: Int, num: Int, limitsize: Int): Seq[Transaction] = {
     //var result = ArrayBuffer.empty[Transaction]
     try {
-      val tmplist = pe.getTransPoolMgr.getTransListClone(start, num, pe.getSysTag)
+      val tmplist = pe.getTransPoolMgr.getTransListClone( num, pe.getSysTag)
       //if (tmplist.size > 0) {
         val currenttime = System.currentTimeMillis() / 1000
         /*var transsize = 0
