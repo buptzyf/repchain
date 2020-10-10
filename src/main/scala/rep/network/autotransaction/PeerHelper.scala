@@ -27,6 +27,7 @@ import rep.network.base.ModuleBase
 import rep.protos.peer._
 import rep.utils.{IdTool, TimeUtils}
 import rep.network.module.ModuleActorType
+import rep.utils.GlobalUtils.EventType
 /**
  *
  * 代理节点辅助类

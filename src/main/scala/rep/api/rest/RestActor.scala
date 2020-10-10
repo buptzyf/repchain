@@ -45,8 +45,6 @@ import rep.log.RepLogger
 import rep.network.autotransaction.PeerHelper
 import rep.network.base.ModuleBase
 import rep.network.consensus.byzantium.ConsensusCondition
-import rep.network.consensus.common.MsgOfConsensus.{PreTransBlock, PreTransBlockResult}
-import rep.network.consensus.util.BlockHelp
 import rep.sc.TypeOfSender
 import rep.sc.SandboxDispatcher.DoTransaction
 import rep.sc.Sandbox.DoTransactionResult
@@ -150,7 +148,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
   import akka.cluster.pubsub.DistributedPubSubMediator.Publish
   //import rep.utils.JsonFormat.AnyJsonFormat
 
-  implicit val timeout = Timeout(50.seconds)
+  implicit val timeout = Timeout(1000.seconds)
   val sr: ImpDataAccess = ImpDataAccess.GetDataAccess(pe.getSysTag)
 
   // 先检查交易大小，然后再检查交易是否已存在，再去验证签名，如果没有问题，则广播

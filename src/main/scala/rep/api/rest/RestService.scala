@@ -43,6 +43,7 @@ import spray.json._
 import akka.http.scaladsl.marshallers.xml.ScalaXmlSupport
 import akka.http.scaladsl.model.{ContentTypes, HttpCharsets, MediaTypes}
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
+import akka.stream.scaladsl.StreamConverters
 
 import scala.xml.NodeSeq
 import rep.log.RepLogger
@@ -369,7 +370,7 @@ class TransactionService(ra: RestRouter)(implicit executionContext: ExecutionCon
     //只能处理application/json
     unmarshaller[CSpec].forContentTypes(MediaTypes.`application/json`))
 
-  val route = getTransaction ~ getTransactionStream ~ postSignTransaction ~ postTransaction ~ postSignTransactionStream
+  val route = getTransaction ~ getTransactionStream ~ tranInfoAndHeightOfTranId ~ postSignTransaction ~ postTransaction ~ postSignTransactionStream
 
   @Path("/{transactionId}")
   @ApiOperation(value = "返回指定id的交易", notes = "", nickname = "getTransaction", httpMethod = "GET")
@@ -399,6 +400,22 @@ class TransactionService(ra: RestRouter)(implicit executionContext: ExecutionCon
         extractClientIP { ip =>
           RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} get transaction stream for txid,txid=${transactionId}")
           complete((ra.getRestActor ? TransactionStreamId(transactionId)).mapTo[HttpResponse])
+        }
+      }
+    }
+
+  @Path("/tranInfoAndHeight/{transactionId}")
+  @ApiOperation(value = "返回指定id的交易信息及所在区块高度", notes = "", nickname = "tranInfoAndHeightOfTranId", httpMethod = "GET")
+  @ApiImplicitParams(Array(
+    new ApiImplicitParam(name = "transactionId", value = "交易id", required = false, dataType = "string", paramType = "path")))
+  @ApiResponses(Array(
+    new ApiResponse(code = 200, message = "返回指定id的交易信息及所在区块高度", response = classOf[QueryResult])))
+  def tranInfoAndHeightOfTranId =
+    path("transaction"/"tranInfoAndHeight"/Segment) { transactionId =>
+      get {
+        extractClientIP { ip =>
+          RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} get transactionInfo and blockHeight for txid,txid=${transactionId}")
+          complete((ra.getRestActor ? TranInfoAndHeightId(transactionId)).mapTo[QueryResult])
         }
       }
     }
@@ -437,14 +454,17 @@ class TransactionService(ra: RestRouter)(implicit executionContext: ExecutionCon
 
           fileUpload("signedTrans") {
             case (fileInfo, fileStream) =>
-              val fp = Paths.get("/tmp") resolve fileInfo.fileName
-              val sink = FileIO.toPath(fp)
-              val writeResult = fileStream.runWith(sink)
-              onSuccess(writeResult) { result =>
-                //TODO protobuf 反序列化字节流及后续处理
-                complete(s"Successfully written ${result.count} bytes")
-                complete { (ra.getRestActor ? Transaction.parseFrom(new FileInputStream(fp.toFile()))).mapTo[PostResult] }
-              }
+              val sink = StreamConverters.asInputStream()
+              val inputStream = fileStream.runWith(sink)
+              complete { (ra.getRestActor ? Transaction.parseFrom(inputStream)).mapTo[PostResult] }
+//              val fp = Paths.get("/tmp") resolve fileInfo.fileName
+//              val sink = FileIO.toPath(fp)
+//              val writeResult = fileStream.runWith(sink)
+//              onSuccess(writeResult) { result =>
+//                //TODO protobuf 反序列化字节流及后续处理
+//                complete(s"Successfully written ${result.count} bytes")
+//                complete { (ra.getRestActor ? Transaction.parseFrom(new FileInputStream(fp.toFile()))).mapTo[PostResult] }
+//              }
           }
         }
       }
