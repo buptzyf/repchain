@@ -17,6 +17,7 @@ class TransactionPoolMgr {
   private implicit var transQueueOfTxid = new ConcurrentLinkedQueue[String]()
   private implicit var transKeys = new ConcurrentHashMap[String,TransactionInfo]() asScala
   private implicit var transNumber = new AtomicInteger(0)
+  //private implicit var preloadBlocks = new ConcurrentHashMap[String,Seq[]]() asScala
 
   private var scheduledExecutorService = Executors.newSingleThreadScheduledExecutor
   private var isStarup = new AtomicBoolean(false)
@@ -25,7 +26,7 @@ class TransactionPoolMgr {
     if(this.isStarup.get() == false){
       this.isStarup.set((true))
       this.scheduledExecutorService.scheduleWithFixedDelay(
-        new cleanCache(sysName),10,10, TimeUnit.SECONDS
+        new cleanCache(sysName),100,60, TimeUnit.SECONDS
       )
     }
   }

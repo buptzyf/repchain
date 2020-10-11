@@ -144,7 +144,7 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
   private var  ContractState : Int = 0  //0 未初始化；1 init; 2 unknow; 3 = true; 4=false
 
   private def getContractEnableValueFromLevelDB(txcid: String): Option[Boolean] = {
-    if(this.ContractState == 0){
+    if(this.ContractState == 0 || this.ContractState == 2){
       val db = ImpDataAccess.GetDataAccess(this.sTag)
       val key_tx_state = WorldStateKeyPreFix + txcid + PRE_STATE
       val state_bytes = db.Get(key_tx_state)
@@ -193,12 +193,20 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
       }else{
         this.ContractExist = 1
       }
+      /*val db = ImpDataAccess.GetDataAccess(this.sTag)
+      val db_state_bytes = shim.sr.Get(key_tx_state)
+      if (state_bytes == null) {
+        System.err.println(s"read contract state,System name=${this.sTag},cid=${key_tx_state},db do not read state")
+      }else{
+        System.err.println(s"read contract state,System name=${this.sTag},cid=${key_tx_state},db  read state")
+      }
+      System.err.println(s"read contract state,System name=${this.sTag},cid=${key_tx_state},ContractExist=${this.ContractExist}")*/
     }else{
       if(this.ContractExist == 2){
         throw new SandboxException(ERR_INVOKE_CHAINCODE_NOT_EXIST)
       }
     }
-
+    System.err.println(s"ContraceIsExist,System name=${this.sTag},cid=${txcid},ContractExist=${this.ContractExist},ContractState=${this.ContractState}")
     //修改为只检查一次，不需要每次都检查
     /*val key_tx_state = WorldStateKeyPreFix + txcid + PRE_STATE
     val state_bytes = shim.sr.Get(key_tx_state)

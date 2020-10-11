@@ -72,7 +72,7 @@ abstract class IBlocker(moduleName: String) extends ModuleBase(moduleName) {
 
   protected def ExecuteTransactionOfBlock(block: Block): Block = {
     try {
-      val future = pe.getActorRef(ModuleActorType.ActorType.dispatchofpreload) ? PreTransBlock(block, "preload")
+      val future = pe.getActorRef(ModuleActorType.ActorType.dispatchofpreload) ? PreTransBlock(block, "preload-"+pe.getBlocker.voteBlockHash)
       val result = Await.result(future, timeout.duration).asInstanceOf[PreTransBlockResult]
       if (result.result) {
         result.blc

@@ -59,7 +59,7 @@ class GenesisBlocker(moduleName: String) extends ModuleBase(moduleName) {
   private def ExecuteTransactionOfBlock(block: Block): Block = {
     try {
       //val future = pe.getActorRef(ActorType.preloaderoftransaction) ? PreTransBlock(block, "preload")
-      val future = pe.getActorRef(ModuleActorType.ActorType.dispatchofpreload) ? PreTransBlock(block, "preload")
+      val future = pe.getActorRef(ModuleActorType.ActorType.dispatchofpreload) ? PreTransBlock(block, "Genesis-preload")
       val result = Await.result(future, timeout.duration).asInstanceOf[PreTransBlockResult]
       if (result.result) {
         result.blc
@@ -82,7 +82,7 @@ class GenesisBlocker(moduleName: String) extends ModuleBase(moduleName) {
           preblock = BlockHelp.CreateGenesisBlock
           preblock = ExecuteTransactionOfBlock(preblock)
           if (preblock != null) {
-            preblock = BlockHelp.AddBlockHash(preblock)
+            //preblock = BlockHelp.AddBlockHash(preblock)
             preblock = BlockHelp.AddSignToBlock(preblock, pe.getSysTag)
             //sendEvent(EventType.RECEIVE_INFO, mediator, selfAddr, Topic.Block, Event.Action.BLOCK_NEW)
             mediator ! Publish(Topic.Block, ConfirmedBlock(preblock, self))
