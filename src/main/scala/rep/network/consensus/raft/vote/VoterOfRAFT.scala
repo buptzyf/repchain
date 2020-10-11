@@ -30,6 +30,7 @@ class VoterOfRAFT (moduleName: String) extends IVoter(moduleName: String) {
   private var zeroOfTransNumTimeout : Long = -1
   private var zeroOfTransNumFlag:Boolean = false
   private var transformInfo:TransformBlocker = null
+  private var blockTimeout : Boolean = false
   this.algorithmInVoted = new ISequencialAlgorithmOfVote
 
   override def preStart(): Unit = {
@@ -86,6 +87,8 @@ class VoterOfRAFT (moduleName: String) extends IVoter(moduleName: String) {
       currentheight = pe.getCurrentHeight
     }
     if(currentheight > 0){
+      pe.resetTimeoutOfRaft
+      this.blockTimeout = false
       this.cleanVoteInfo
       this.resetCandidator(currentblockhash)
       this.resetBlocker(getVoteIndex, currentblockhash, currentheight)
@@ -94,7 +97,9 @@ class VoterOfRAFT (moduleName: String) extends IVoter(moduleName: String) {
   }
 
   private def blockerIsNotNull={
-    if(this.transformInfo != null){
+    if(this.blockTimeout){
+      blockTimeoutOftransform
+    }else if(this.transformInfo != null){
       //检查是否存在迁移出块人消息
       transform
     }else if(this.zeroOfTransNumFlag){
@@ -103,6 +108,8 @@ class VoterOfRAFT (moduleName: String) extends IVoter(moduleName: String) {
         //发出迁移出块人消息
         this.zeroOfTransNumTimeout = -1
         this.zeroOfTransNumFlag = false
+        pe.resetTimeoutOfRaft
+        this.blockTimeout = false
         mediator ! Publish(Topic.VoteTransform,  TransformBlocker(pe.getSysTag,pe.getCurrentHeight,pe.getCurrentBlockHash,this.voteIndex))
         this.cleanVoteInfo
         this.resetCandidator(pe.getCurrentBlockHash)
@@ -112,6 +119,11 @@ class VoterOfRAFT (moduleName: String) extends IVoter(moduleName: String) {
       //设置交易池信息为零的标志，等待超时
       this.zeroOfTransNumTimeout = System.currentTimeMillis()
       this.zeroOfTransNumFlag = true
+      pe.resetTimeoutOfRaft
+      this.blockTimeout = false
+    }else if((System.currentTimeMillis() - pe.getTimeoutOfRaft) / 1000 > TimePolicy.getTimeOutBlock){
+      //检查是否出块超时，如果超时，设置超时标志
+      this.blockTimeout = true
     }else{
       if((this.Blocker.VoteHeight +SystemProfile.getBlockNumberOfRaft) <= pe.getMaxHeight4SimpleRaft){
         RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},second voter,currentHeight=${pe.getMaxHeight4SimpleRaft}" + "~" + selfAddr))
@@ -119,6 +131,8 @@ class VoterOfRAFT (moduleName: String) extends IVoter(moduleName: String) {
         if(block != null){
           val currentblockhash = block.hashOfBlock.toStringUtf8()
           val currentheight = block.height
+          pe.resetTimeoutOfRaft
+          this.blockTimeout = false
           this.cleanVoteInfo
           this.resetCandidator(currentblockhash)
           this.resetBlocker(getVoteIndex, currentblockhash, currentheight)
@@ -142,6 +156,8 @@ class VoterOfRAFT (moduleName: String) extends IVoter(moduleName: String) {
       val currentheight = block.height
       this.voteIndex = this.transformInfo.voteIndexOfBlocker
       this.transformInfo = null
+      pe.resetTimeoutOfRaft
+      this.blockTimeout = false
       this.cleanVoteInfo
       this.resetCandidator(currentblockhash)
       this.resetBlocker(getVoteIndex, currentblockhash, currentheight)
@@ -150,6 +166,18 @@ class VoterOfRAFT (moduleName: String) extends IVoter(moduleName: String) {
       RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},second voter in synch,currentHeight=${this.Blocker.VoteHeight +SystemProfile.getBlockNumberOfRaft}" + "~" + selfAddr))
       pe.getActorRef(CFRDActorType.ActorType.synchrequester) ! StartSync(false)
     }
+  }
+
+  private def blockTimeoutOftransform={
+      val currentblockhash = pe.getCurrentBlockHash
+      val currentheight = pe.getCurrentHeight
+      this.transformInfo = null
+      pe.resetTimeoutOfRaft
+      this.blockTimeout = false
+      this.cleanVoteInfo
+      this.resetCandidator(currentblockhash)
+      this.resetBlocker(getVoteIndex, currentblockhash, currentheight)
+      RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},read block voter,currentHeight=${this.Blocker.VoteHeight +SystemProfile.getBlockNumberOfRaft},currentHash=${currentblockhash}" + "~" + selfAddr))
   }
 
   override protected def vote(isForce: Boolean): Unit = {
