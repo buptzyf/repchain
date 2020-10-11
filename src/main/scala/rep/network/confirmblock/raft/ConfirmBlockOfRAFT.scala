@@ -63,6 +63,7 @@ class ConfirmBlockOfRAFT(moduleName: String) extends IConfirmOfBlock(moduleName:
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"confirm verify blockhash,height=${block.height}"))
       handler(block, actRefOfBlock)
       pe.setConfirmHeight(block.height)
+      pe.resetTimeoutOfRaft
     }
   }
 }

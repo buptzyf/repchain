@@ -16,6 +16,7 @@ object MsgOfCFRD {
   //通知抽签模块，需要强制抽签
   case object VoteOfForce
   case object VoteOfReset
+  case class TransformBlocker(preBlocker:String,heightOfBlocker:Long,lastHashOfBlocker:String,voteIndexOfBlocker:Int)
   ////////////////////////////////Vote（抽签）消息，结束//////////////////////////////
 
 

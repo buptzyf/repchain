@@ -17,7 +17,7 @@ class TransactionPoolMgr {
   private implicit var transQueueOfTxid = new ConcurrentLinkedQueue[String]()
   private implicit var transKeys = new ConcurrentHashMap[String,TransactionInfo]() asScala
   private implicit var transNumber = new AtomicInteger(0)
-  //private implicit var preloadBlocks = new ConcurrentHashMap[String,Seq[]]() asScala
+  private implicit var preloadBlocks = new ConcurrentHashMap[String,Seq[String]]() asScala
 
   private var scheduledExecutorService = Executors.newSingleThreadScheduledExecutor
   private var isStarup = new AtomicBoolean(false)
@@ -56,6 +56,40 @@ class TransactionPoolMgr {
         case e:Exception=>e.printStackTrace()
       }
     }
+  }
+
+  def packageTransaction(blockIdentifier:String,num: Int,sysName:String):Seq[Transaction]={
+    val transList = getTransListClone(num,sysName)
+    if(transList.length > 0){
+      var txIdlist = scala.collection.mutable.ArrayBuffer[String]()
+      transList.foreach(t=>{
+        txIdlist += t.id
+      })
+      this.preloadBlocks.put(blockIdentifier,txIdlist)
+    }
+    transList
+  }
+
+  def rollbackTransaction(blockIdentifier:String)={
+    if(this.preloadBlocks.contains(blockIdentifier)){
+      val txIdList = this.preloadBlocks.getOrElse(blockIdentifier,null)
+      if(txIdList != null){
+        addTxIdToQueue(txIdList)
+      }
+    }
+  }
+
+  private def addTxIdToQueue(txIdList:Seq[String])={
+    txIdList.foreach(txId=>{
+      if(this.transKeys.contains(txId)){
+        this.transQueueOfTxid.add(txId)
+        this.transNumber.incrementAndGet()
+      }
+    })
+  }
+
+  def cleanPreloadCache(blockIdentifier:String)={
+    this.preloadBlocks.remove(blockIdentifier)
   }
 
   def getTransListClone(num: Int,sysName:String): Seq[Transaction] = {

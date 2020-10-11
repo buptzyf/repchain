@@ -28,8 +28,9 @@ import rep.network.consensus.util.BlockHelp
 import rep.network.module.ModuleActorType
 import rep.network.util.NodeHelp
 import rep.protos.peer._
-import rep.storage.ImpDataAccess
-import rep.network.consensus.common.MsgOfConsensus.{ConfirmedBlock,GenesisBlock,PreTransBlockResult,PreTransBlock}
+import rep.storage.{ImpDataAccess, ImpDataPreloadMgr}
+import rep.network.consensus.common.MsgOfConsensus.{ConfirmedBlock, GenesisBlock, PreTransBlock, PreTransBlockResult}
+
 import scala.concurrent._
 
 /**
@@ -68,6 +69,8 @@ class GenesisBlocker(moduleName: String) extends ModuleBase(moduleName) {
       }
     } catch {
       case e: AskTimeoutException => null
+    }finally {
+      ImpDataPreloadMgr.Free(pe.getSysTag,"Genesis-preload")
     }
   }
 
@@ -87,7 +90,7 @@ class GenesisBlocker(moduleName: String) extends ModuleBase(moduleName) {
             //sendEvent(EventType.RECEIVE_INFO, mediator, selfAddr, Topic.Block, Event.Action.BLOCK_NEW)
             mediator ! Publish(Topic.Block, ConfirmedBlock(preblock, self))
             //getActorRef(pe.getSysTag, ActorType.PERSISTENCE_MODULE) ! BlockRestore(blc, SourceOfBlock.CONFIRMED_BLOCK, self)
-          } 
+          }
         }
         
       }

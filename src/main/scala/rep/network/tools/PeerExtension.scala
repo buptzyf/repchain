@@ -98,6 +98,16 @@ def getMaxHeight4SimpleRaft:Long={
   scala.math.max(scala.math.max(this.getConfirmHeight, this.getConfirmHeight),this.getCurrentHeight)
 }
 
+private var timeoutOfRaft:AtomicLong = new AtomicLong(0)
+
+  def  resetTimeoutOfRaft ={
+  this.timeoutOfRaft.set(System.currentTimeMillis())
+}
+
+ def getTimeoutOfRaft:Long = {
+  this.timeoutOfRaft.get()
+}
+
 /*********节点当前链信息开始************/
   private var SystemCurrentChainInfo: AtomicReference[BlockchainInfo] =
     new AtomicReference[BlockchainInfo](new BlockchainInfo(0l, 0l, _root_.com.google.protobuf.ByteString.EMPTY, _root_.com.google.protobuf.ByteString.EMPTY))

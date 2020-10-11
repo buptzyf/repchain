@@ -27,11 +27,7 @@ class ISequencialAlgorithmOfVote extends IAlgorithmOfVote {
 
   override def candidators(Systemname:String,hash:String,nodes: Set[String], seed: Array[Byte]): Array[String] = {
     var nodesSeq = nodes.toSeq.sortBy(f => (f))
-    var len = nodes.size
-    var candidate = new Array[String](len)
-    for (j <- 0 until len) {
-      candidate(j) = nodesSeq(j)
-    }
-    candidate
+    nodesSeq.toArray
   }
+
 }

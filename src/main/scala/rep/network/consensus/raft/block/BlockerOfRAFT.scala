@@ -2,17 +2,22 @@ package rep.network.consensus.raft.block
 
 import akka.actor.Props
 import akka.cluster.pubsub.DistributedPubSubMediator.Publish
+import akka.pattern.AskTimeoutException
 import rep.log.{RepLogger, RepTimeTracer}
 import rep.network.autotransaction.Topic
 import rep.network.module.cfrd.CFRDActorType
 import rep.network.util.NodeHelp
 import rep.protos.peer.{Block, Event}
 import rep.utils.GlobalUtils.EventType
-import rep.network.consensus.cfrd.MsgOfCFRD.{ CreateBlock,VoteOfBlocker}
+import rep.network.consensus.cfrd.MsgOfCFRD.{CreateBlock, VoteOfBlocker}
 import rep.network.consensus.common.block.IBlocker
-import rep.network.consensus.common.MsgOfConsensus.ConfirmedBlock
-import rep.app.conf.{SystemProfile}
+import rep.network.consensus.common.MsgOfConsensus.{ConfirmedBlock, PreTransBlock, PreTransBlockResult}
+import rep.app.conf.SystemProfile
 import rep.network.consensus.util.BlockHelp
+import rep.network.module.ModuleActorType
+import rep.storage.ImpDataPreloadMgr
+import akka.pattern.{AskTimeoutException, ask}
+import scala.concurrent.Await
 
 
 /**
@@ -25,6 +30,7 @@ object  BlockerOfRAFT {
 
 class BlockerOfRAFT (moduleName: String) extends IBlocker(moduleName){
   var preblock: Block = null
+  var dbIdentifier : String = null
 
   override def preStart(): Unit = {
     RepLogger.info(RepLogger.Consensus_Logger, this.getLogMsgPrefix("BlockerOfRAFT module start"))
@@ -32,17 +38,38 @@ class BlockerOfRAFT (moduleName: String) extends IBlocker(moduleName){
     super.preStart()
   }
 
+  override protected def ExecuteTransactionOfBlock(block: Block): Block = {
+    try {
+      if(this.dbIdentifier == null){
+        this.dbIdentifier = pe.getBlocker.voteBlockHash
+      } else if(this.dbIdentifier != pe.getBlocker.voteBlockHash){
+        ImpDataPreloadMgr.Free(pe.getSysTag,"preload-"+this.dbIdentifier)
+        this.dbIdentifier = pe.getBlocker.voteBlockHash
+     }
+      val future = pe.getActorRef(ModuleActorType.ActorType.dispatchofpreload) ? PreTransBlock(block, "preload-"+this.dbIdentifier)
+      val result = Await.result(future, timeout.duration).asInstanceOf[PreTransBlockResult]
+      if (result.result) {
+        result.blc
+      } else {
+        null
+      }
+    } catch {
+      case e: AskTimeoutException => null
+    }
+  }
+
   override protected def PackedBlock(start: Int = 0): Block = {
-    RepTimeTracer.setStartTime(pe.getSysTag, "Block", System.currentTimeMillis(), pe.getBlocker.VoteHeight + 1, 0)
-    RepTimeTracer.setStartTime(pe.getSysTag, "createBlock", System.currentTimeMillis(), pe.getBlocker.VoteHeight + 1, 0)
-    RepTimeTracer.setStartTime(pe.getSysTag, "collectTransToBlock", System.currentTimeMillis(), pe.getBlocker.VoteHeight + 1, 0)
-    val trans = CollectedTransOfBlock(start, SystemProfile.getLimitBlockTransNum, SystemProfile.getBlockLength).reverse.toSeq
+    val newHeight = pe.getCurrentHeight + 1
+    RepTimeTracer.setStartTime(pe.getSysTag, "Block", System.currentTimeMillis(), newHeight, 0)
+    RepTimeTracer.setStartTime(pe.getSysTag, "createBlock", System.currentTimeMillis(), newHeight, 0)
+    RepTimeTracer.setStartTime(pe.getSysTag, "collectTransToBlock", System.currentTimeMillis(),  newHeight, 0)
+    val trans = pe.getTransPoolMgr.packageTransaction("identifier-"+newHeight,SystemProfile.getLimitBlockTransNum,pe.getSysTag)//CollectedTransOfBlock(start, SystemProfile.getLimitBlockTransNum, SystemProfile.getBlockLength).reverse.toSeq
     //todo 交易排序
     if (trans.size >= SystemProfile.getMinBlockTransNum) {
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,CollectedTransOfBlock success,height=${pe.getBlocker.VoteHeight },local height=${pe.getBlocker.VoteHeight}" + "~" + selfAddr))
-      RepTimeTracer.setEndTime(pe.getSysTag, "collectTransToBlock", System.currentTimeMillis(), pe.getBlocker.VoteHeight + 1, trans.size)
+      RepTimeTracer.setEndTime(pe.getSysTag, "collectTransToBlock", System.currentTimeMillis(), newHeight, trans.size)
       //此处建立新块必须采用抽签模块的抽签结果来进行出块，否则出现刚抽完签，马上有新块的存储完成，就会出现错误
-      var blc = BlockHelp.WaitingForExecutionOfBlock(pe.getCurrentBlockHash, pe.getCurrentHeight + 1, trans)
+      var blc = BlockHelp.WaitingForExecutionOfBlock(pe.getCurrentBlockHash, newHeight, trans)
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,height=${blc.height},local height=${pe.getCurrentHeight}" + "~" + selfAddr))
       RepTimeTracer.setStartTime(pe.getSysTag, "PreloadTrans", System.currentTimeMillis(), blc.height, blc.transactions.size)
       blc = ExecuteTransactionOfBlock(blc)
@@ -66,13 +93,15 @@ class BlockerOfRAFT (moduleName: String) extends IBlocker(moduleName){
     var blc : Block = null
 
     blc = PackedBlock(0)
-    if (blc != null) {
+    if (blc != null && !blc.hashOfBlock.isEmpty && blc.transactions.length > 0) {
       RepTimeTracer.setEndTime(pe.getSysTag, "createBlock", System.currentTimeMillis(), blc.height, blc.transactions.size)
       this.preblock = blc
       schedulerLink = clearSched()
       pe.setCreateHeight(preblock.height)
+      pe.getTransPoolMgr.cleanPreloadCache("identifier-"+blc.height)
       mediator ! Publish(Topic.Block, ConfirmedBlock(preblock, self))
     } else {
+      pe.getTransPoolMgr.rollbackTransaction("identifier-"+(pe.getCurrentHeight+1))
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("create new block error,CreateBlock is null" + "~" + selfAddr))
       if(pe.getTransPoolMgr.getTransLength() > SystemProfile.getMinBlockTransNum)
         pe.getActorRef(CFRDActorType.ActorType.voter) ! VoteOfBlocker
