@@ -36,7 +36,9 @@ object SyncMsg {
   
   case class BlockDataOfResponse(data: Block)
   
-  case class  SyncRequestOfStorager(responser:ActorRef,maxHeight:Long)
+  case class SyncRequestOfStorager(responser:ActorRef,maxHeight:Long)
+
+  case class SyncPreblocker(blockerName:String)
   
   case class AnalysisResult(ar:Int,error:String)//0=失败、1=成功、2=数量不够
   

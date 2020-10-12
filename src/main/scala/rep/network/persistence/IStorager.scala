@@ -188,9 +188,9 @@ abstract class IStorager (moduleName: String) extends ModuleBase(moduleName) {
       RepTimeTracer.setEndTime(pe.getSysTag, "storage-handle", System.currentTimeMillis(),blkRestore.blk.height,blkRestore.blk.transactions.size)
 
     case  BatchStore =>
-      RepTimeTracer.setStartTime(pe.getSysTag, "storage-handle-noarg", System.currentTimeMillis(),pe.getCurrentHeight,120)
+      RepTimeTracer.setStartTime(pe.getSysTag, "storage-handle-noarg-batch", System.currentTimeMillis(),pe.getCurrentHeight,120)
       Handler
-      RepTimeTracer.setEndTime(pe.getSysTag, "storage-handle-noarg", System.currentTimeMillis(),pe.getCurrentHeight,120)
+      RepTimeTracer.setEndTime(pe.getSysTag, "storage-handle-noarg-batch", System.currentTimeMillis(),pe.getCurrentHeight,120)
     case _             => //ignore
   }
 }

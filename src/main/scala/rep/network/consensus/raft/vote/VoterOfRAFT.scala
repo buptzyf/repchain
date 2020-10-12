@@ -9,7 +9,7 @@ import rep.network.consensus.cfrd.MsgOfCFRD.{CreateBlock, TransformBlocker, Vote
 import rep.network.consensus.common.algorithm.{IRandomAlgorithmOfVote, ISequencialAlgorithmOfVote}
 import rep.network.consensus.common.vote.IVoter
 import rep.network.module.cfrd.CFRDActorType
-import rep.network.sync.SyncMsg.StartSync
+import rep.network.sync.SyncMsg.{StartSync, SyncPreblocker}
 import rep.network.util.NodeHelp
 import rep.utils.GlobalUtils.BlockerInfo
 
@@ -28,7 +28,7 @@ class VoterOfRAFT (moduleName: String) extends IVoter(moduleName: String) {
 
   private var voteIndex : Int = -1
   private var zeroOfTransNumTimeout : Long = -1
-  private var zeroOfTransNumFlag:Boolean = false
+  //private var zeroOfTransNumFlag:Boolean = false
   private var transformInfo:TransformBlocker = null
   private var blockTimeout : Boolean = false
   this.algorithmInVoted = new ISequencialAlgorithmOfVote
@@ -57,6 +57,10 @@ class VoterOfRAFT (moduleName: String) extends IVoter(moduleName: String) {
     RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},votelist=${candidator.toArray[String].mkString("|")},idx=${idx}"))
     this.Blocker = BlockerInfo(algorithmInVoted.blocker(candidator.toArray[String], idx), idx, System.currentTimeMillis(), currentblockhash, currentheight)
     pe.resetBlocker(this.Blocker)
+    if (this.Blocker.blocker.equals(pe.getSysTag)) {
+      //发送建立新块的消息
+      pe.setZeroOfTransNumFlag(false)
+    }
     NoticeBlockerMsg
     RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},blocker=${this.Blocker.blocker},currentHeight=${pe.getMaxHeight4SimpleRaft}" + "~" + selfAddr))
   }
@@ -97,36 +101,48 @@ class VoterOfRAFT (moduleName: String) extends IVoter(moduleName: String) {
   }
 
   private def blockerIsNotNull={
-    if(this.blockTimeout){
-      blockTimeoutOftransform
-    }else if(this.transformInfo != null){
+    if(this.transformInfo != null){
       //检查是否存在迁移出块人消息
+      RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},transform,preblocker=${this.transformInfo.preBlocker}," +
+        s"prevoteindex=${this.transformInfo.voteIndexOfBlocker},preblockheight=${this.transformInfo.heightOfBlocker},lvoteindex=${this.voteIndex},lheight=${pe.getCurrentHeight}" +
+        s",transpoolcount=${pe.getTransPoolMgr.getTransLength()}" + "~" + selfAddr))
       transform
-    }else if(this.zeroOfTransNumFlag){
-      //当出现交易池交易为零的标志时，检查是否已经超时，如果超时发出迁移出块人的消息，如果没有超时继续等待。
-      if((System.currentTimeMillis() - this.zeroOfTransNumTimeout) > TimePolicy.getVoteWaitingDelay * 10){
-        //发出迁移出块人消息
-        this.zeroOfTransNumTimeout = -1
-        this.zeroOfTransNumFlag = false
-        pe.resetTimeoutOfRaft
-        this.blockTimeout = false
-        mediator ! Publish(Topic.VoteTransform,  TransformBlocker(pe.getSysTag,pe.getCurrentHeight,pe.getCurrentBlockHash,this.voteIndex))
-        this.cleanVoteInfo
-        this.resetCandidator(pe.getCurrentBlockHash)
-        this.resetBlocker(getVoteIndex, pe.getCurrentBlockHash, pe.getCurrentHeight)
+    }else if(pe.getTransPoolMgr.getTransLength() <= 0){
+      if(NodeHelp.isBlocker(this.Blocker.blocker, pe.getSysTag)){
+        if(this.zeroOfTransNumTimeout == -1){
+          RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},set zero trans time,lblocker=${this.Blocker.blocker}," +
+            s"lvoteindex=${this.voteIndex},lblockheight=${pe.getCurrentHeight}" +
+            s",transpoolcount=${pe.getTransPoolMgr.getTransLength()}" + "~" + selfAddr))
+          this.zeroOfTransNumTimeout = System.currentTimeMillis()
+        }else{
+          if((System.currentTimeMillis() - this.zeroOfTransNumTimeout) > TimePolicy.getVoteWaitingDelay * 10){
+            //已经超时
+            //发出迁移出块人消息
+            RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},set zero trans timeout,lblocker=${this.Blocker.blocker}," +
+              s"lvoteindex=${this.voteIndex},lblockheight=${pe.getCurrentHeight}" +
+              s",transpoolcount=${pe.getTransPoolMgr.getTransLength()}" + "~" + selfAddr))
+            this.zeroOfTransNumTimeout = System.currentTimeMillis()
+            this.zeroOfTransNumTimeout = -1
+            pe.setZeroOfTransNumFlag(true)
+            pe.resetTimeoutOfRaft
+            this.blockTimeout = false
+            mediator ! Publish(Topic.VoteTransform,  TransformBlocker(pe.getSysTag,pe.getCurrentHeight,pe.getCurrentBlockHash,this.voteIndex))
+            this.cleanVoteInfo
+            this.resetCandidator(pe.getCurrentBlockHash)
+            this.resetBlocker(getVoteIndex, pe.getCurrentBlockHash, pe.getCurrentHeight)
+          }else{
+            //没有超时
+          }
+        }
+      }else{
+        //不是出块人
       }
-    }else if(pe.getTransPoolMgr.getTransLength() <= 0 && NodeHelp.isBlocker(this.Blocker.blocker, pe.getSysTag)){
-      //设置交易池信息为零的标志，等待超时
-      this.zeroOfTransNumTimeout = System.currentTimeMillis()
-      this.zeroOfTransNumFlag = true
-      pe.resetTimeoutOfRaft
-      this.blockTimeout = false
-    }else if((System.currentTimeMillis() - pe.getTimeoutOfRaft) / 1000 > TimePolicy.getTimeOutBlock){
-      //检查是否出块超时，如果超时，设置超时标志
-      this.blockTimeout = true
     }else{
+      if(NodeHelp.isBlocker(this.Blocker.blocker, pe.getSysTag)){
+        this.zeroOfTransNumTimeout = -1
+      }
       if((this.Blocker.VoteHeight +SystemProfile.getBlockNumberOfRaft) <= pe.getMaxHeight4SimpleRaft){
-        RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},second voter,currentHeight=${pe.getMaxHeight4SimpleRaft}" + "~" + selfAddr))
+        RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},second voter,voteindex=${this.voteIndex},currentHeight=${pe.getMaxHeight4SimpleRaft}" + "~" + selfAddr))
         val block = dataaccess.getBlock4ObjectByHeight(this.Blocker.VoteHeight +SystemProfile.getBlockNumberOfRaft)
         if(block != null){
           val currentblockhash = block.hashOfBlock.toStringUtf8()
@@ -164,7 +180,7 @@ class VoterOfRAFT (moduleName: String) extends IVoter(moduleName: String) {
       RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},read block voter,currentHeight=${this.Blocker.VoteHeight +SystemProfile.getBlockNumberOfRaft},currentHash=${currentblockhash}" + "~" + selfAddr))
     }else{
       RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},second voter in synch,currentHeight=${this.Blocker.VoteHeight +SystemProfile.getBlockNumberOfRaft}" + "~" + selfAddr))
-      pe.getActorRef(CFRDActorType.ActorType.synchrequester) ! StartSync(false)
+      pe.getActorRef(CFRDActorType.ActorType.synchrequester) ! SyncPreblocker(this.Blocker.blocker)
     }
   }
 

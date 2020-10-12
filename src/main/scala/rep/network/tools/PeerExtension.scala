@@ -108,6 +108,16 @@ private var timeoutOfRaft:AtomicLong = new AtomicLong(0)
   this.timeoutOfRaft.get()
 }
 
+  private var zeroOfTransNumFlag:AtomicBoolean = new AtomicBoolean(false)
+
+ def setZeroOfTransNumFlag(value:Boolean)={
+  this.zeroOfTransNumFlag.set(value)
+}
+
+   def getZeroOfTransNumFlag:Boolean={
+    this.zeroOfTransNumFlag.get()
+  }
+
 /*********节点当前链信息开始************/
   private var SystemCurrentChainInfo: AtomicReference[BlockchainInfo] =
     new AtomicReference[BlockchainInfo](new BlockchainInfo(0l, 0l, _root_.com.google.protobuf.ByteString.EMPTY, _root_.com.google.protobuf.ByteString.EMPTY))

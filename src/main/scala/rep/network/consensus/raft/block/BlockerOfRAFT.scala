@@ -66,7 +66,7 @@ class BlockerOfRAFT (moduleName: String) extends IBlocker(moduleName){
     val trans = pe.getTransPoolMgr.packageTransaction("identifier-"+newHeight,SystemProfile.getLimitBlockTransNum,pe.getSysTag)//CollectedTransOfBlock(start, SystemProfile.getLimitBlockTransNum, SystemProfile.getBlockLength).reverse.toSeq
     //todo 交易排序
     if (trans.size >= SystemProfile.getMinBlockTransNum) {
-      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,CollectedTransOfBlock success,height=${pe.getBlocker.VoteHeight },local height=${pe.getBlocker.VoteHeight}" + "~" + selfAddr))
+      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,CollectedTransOfBlock success,height=${newHeight },local height=${pe.getBlocker.VoteHeight}" + "~" + selfAddr))
       RepTimeTracer.setEndTime(pe.getSysTag, "collectTransToBlock", System.currentTimeMillis(), newHeight, trans.size)
       //此处建立新块必须采用抽签模块的抽签结果来进行出块，否则出现刚抽完签，马上有新块的存储完成，就会出现错误
       var blc = BlockHelp.WaitingForExecutionOfBlock(pe.getCurrentBlockHash, newHeight, trans)
@@ -112,7 +112,7 @@ class BlockerOfRAFT (moduleName: String) extends IBlocker(moduleName){
     //创建块请求（给出块人）
     case CreateBlock =>
       if (!pe.isSynching) {
-        if (NodeHelp.isBlocker(pe.getBlocker.blocker, pe.getSysTag)){
+        if (NodeHelp.isBlocker(pe.getBlocker.blocker, pe.getSysTag) && !pe.getZeroOfTransNumFlag){
           sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Block, Event.Action.CANDIDATOR)
           if (preblock == null || (preblock.previousBlockHash.toStringUtf8() != pe.getCurrentBlockHash)) {
             //是出块节点

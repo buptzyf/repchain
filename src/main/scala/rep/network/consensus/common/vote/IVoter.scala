@@ -12,6 +12,7 @@ import rep.network.util.NodeHelp
 import rep.storage.ImpDataAccess
 import rep.utils.GlobalUtils.BlockerInfo
 import rep.network.consensus.common.MsgOfConsensus.GenesisBlock
+import rep.network.sync.SyncMsg.StartSync
 
 /**
  * Created by jiangbuyun on 2020/03/17.
@@ -30,6 +31,7 @@ abstract class IVoter(moduleName: String) extends ModuleBase(moduleName) {
   protected var Blocker: BlockerInfo = BlockerInfo("", -1, 0l, "", -1)
   protected var voteCount = 0
   protected var algorithmInVoted:IAlgorithmOfVote = null
+  private var InitDelayTime : Long = -1
 
 
   protected def checkTranNum: Boolean = {
@@ -77,6 +79,13 @@ abstract class IVoter(moduleName: String) extends ModuleBase(moduleName) {
         if (NodeHelp.isSeedNode(pe.getSysTag)) {
           // 建立创世块消息
           pe.getActorRef(CFRDActorType.ActorType.gensisblock) ! GenesisBlock //zhj CFRD?
+        }else{
+          if(this.InitDelayTime == -1){
+            this.InitDelayTime = System.currentTimeMillis()
+          }else if((System.currentTimeMillis()- this.InitDelayTime)/1000 > 10){
+            this.InitDelayTime = -1
+            pe.getActorRef(CFRDActorType.ActorType.synchrequester) ! StartSync(false)
+          }
         }
       } else {
         if (!pe.isSynching) {

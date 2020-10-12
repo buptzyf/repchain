@@ -1,16 +1,21 @@
 package rep.network.sync.request.raft
 
-import akka.actor.Props
+import akka.actor.{ActorSelection, Address, Props}
+import akka.pattern.AskTimeoutException
 import rep.app.conf.SystemProfile
 import rep.log.RepLogger
 import rep.network.consensus.byzantium.ConsensusCondition
 import rep.network.module.{IModuleManager, ModuleActorType}
-import rep.network.sync.SyncMsg.{MaxBlockInfo, StartSync, SyncRequestOfStorager}
+import rep.network.sync.SyncMsg.{ChainInfoOfRequest, MaxBlockInfo, ResponseInfo, StartSync, SyncPreblocker, SyncRequestOfStorager}
 import rep.network.sync.parser.ISynchAnalyzer
 import rep.network.sync.parser.raft.IRAFTSynchAnalyzer
 import rep.network.sync.request.ISynchRequester
 import rep.network.util.NodeHelp
-
+import rep.protos.peer.Event
+import rep.storage.ImpDataAccess
+import rep.utils.GlobalUtils.{BlockEvent, EventType}
+import akka.pattern.{AskTimeoutException, ask}
+import scala.concurrent.{Await, Future, TimeoutException}
 import scala.concurrent.duration._
 
 /**
@@ -27,6 +32,84 @@ class SynchRequesterOfRAFT (moduleName: String) extends ISynchRequester(moduleNa
 
   override protected def getAnalyzerInSynch: ISynchAnalyzer = {
     new IRAFTSynchAnalyzer(pe.getSysTag, pe.getSystemCurrentChainStatus, pe.getNodeMgr)
+  }
+
+  protected def GetNodeOfChainInfo(addr: Address, lh: Long):ResponseInfo = {
+    var result: ResponseInfo = null
+
+    try {
+      val selection: ActorSelection = context.actorSelection(toAkkaUrl(addr.toString, responseActorName));
+      val future1 = selection ? ChainInfoOfRequest(lh)
+      result = Await.result(future1, timeout.duration).asInstanceOf[ResponseInfo]
+    } catch {
+      case e: AskTimeoutException =>
+        RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"--------GetNodeOfChainInfo timeout,${addr.toString}"))
+        null
+      case te: TimeoutException =>
+        RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"--------GetNodeOfChainInfo java timeout,${addr.toString}"))
+        null
+    }
+
+    RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"entry GetNodeOfChainInfo after,chaininfo=${result}"))
+    result
+  }
+
+  protected def preblockerOfHandler(blockerName:String): Boolean = {
+    var rb = true
+    val lh = pe.getCurrentHeight
+    val lhash = pe.getCurrentBlockHash
+    val lprehash = pe.getSystemCurrentChainStatus.previousBlockHash.toStringUtf8()
+    val addr = pe.getNodeMgr.getNodeAddr4NodeName(blockerName)
+    RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"current stableNode，node content=${addr.toString}"))
+    sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, BlockEvent.CHAIN_INFO_SYNC, Event.Action.BLOCK_SYNC)
+    val res = GetNodeOfChainInfo(addr, lh)
+
+    if(res != null){
+      if(res.response.height == lh ){
+        //高度相同
+        if(res.response.currentBlockHash.toStringUtf8 == lhash){
+          //当前hash一致
+          RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"height same，synch finish,localhost=${lh}"))
+        }else{
+          //当前hash不一致
+          if(res.response.previousBlockHash.toStringUtf8 == lprehash){
+            //前面一个块的hash一致，回滚一个块
+            val da = ImpDataAccess.GetDataAccess(pe.getSysTag)
+            if (da.rollbackToheight(lh - 1)) {
+              RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"entry rollback block,localhost=${lh}"))
+              //同步区块
+              getBlockDatas(lh-1, lh, res.responser)
+            }
+          }else{
+            //前一块也不一致，需要手工处理
+            rb = false
+            RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"prehash error,localhost=${lh}"))
+          }
+        }
+        RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"synch success,localhost=${lh},preblocker=${res.response.height}"))
+      }else if(res.response.height < lh){
+        RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"synch success,localhost=${lh},preblocker=${res.response.height}"))
+      }else{
+        if(res.ChainInfoOfSpecifiedHeight.currentBlockHash == lhash){
+          RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"entry synch block,localhost=${lh},preblocker=${res.response.height}"))
+          getBlockDatas(lh+1, res.response.height, res.responser)
+        }else{
+          if(res.ChainInfoOfSpecifiedHeight.previousBlockHash == lprehash){
+            val da = ImpDataAccess.GetDataAccess(pe.getSysTag)
+            if (da.rollbackToheight(lh - 1)) {
+              RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"entry rollback block,localhost=${lh}"))
+              getBlockDatas(lh-1, res.response.height, res.responser)
+            }
+          }else{
+            rb = false
+          }
+        }
+      }
+    }else{
+      RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"preblockerOfHandler,response is null ,blockerName=${blockerName}"))
+    }
+
+    rb
   }
 
   override def receive: Receive = {
@@ -70,6 +153,20 @@ class SynchRequesterOfRAFT (moduleName: String) extends ISynchRequester(moduleNa
             pe.setSynching(false)
         }
         RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"stop blockdata synch,maxheight=${maxHeight}"))
+        pe.setSynching(false)
+      }
+    case SyncPreblocker(blockerName)=>
+      RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"entry preblocker synch,blockerName=${blockerName}"))
+      if (!pe.isSynching) {
+        pe.setSynching(true)
+        RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"start preblocker synch,currentheight=${pe.getCurrentHeight}"))
+        try {
+          preblockerOfHandler(blockerName)
+        } catch {
+          case e: Exception =>
+            pe.setSynching(false)
+        }
+        RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"stop preblocker synch,blockerName=${blockerName}"))
         pe.setSynching(false)
       }
   }
