@@ -60,6 +60,7 @@ object Sandbox {
   case class DoTransactionResult(txId: String, r: ActionResult,
                                  ol:  List[OperLog],
                                  err: Option[akka.actor.Status.Failure])
+
   /**
    * 合约执行异常类
    *  @param message 异常信息的文本描述
@@ -121,8 +122,8 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
       }
   }
 
-  private def onTransactions(dotrans: DoTransactionOfSandbox): Array[DoTransactionResult] = {
-    var rs = scala.collection.mutable.ArrayBuffer[DoTransactionResult]()
+  private def onTransactions(dotrans: DoTransactionOfSandbox): Array[TransactionResult] = {
+    var rs = scala.collection.mutable.ArrayBuffer[TransactionResult]()
     dotrans.ts.foreach(t=>{
       rs += onTransaction(DoTransactionOfSandboxInSingle(t,dotrans.da,dotrans.contractStateType))
     })
@@ -130,8 +131,8 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
     rs.toArray
   }
 
-  private def onTransactionsOfCache(dotrans: DoTransactionOfSandboxOfCache,ts:Seq[Transaction]): Array[DoTransactionResult] = {
-    var rs = scala.collection.mutable.ArrayBuffer[DoTransactionResult]()
+  private def onTransactionsOfCache(dotrans: DoTransactionOfSandboxOfCache,ts:Seq[Transaction]): Array[TransactionResult] = {
+    var rs = scala.collection.mutable.ArrayBuffer[TransactionResult]()
     ts.foreach(t=>{
       rs += onTransaction(DoTransactionOfSandboxInSingle(t,dotrans.da,dotrans.contractStateType))
     })
@@ -139,7 +140,7 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
     rs.toArray
   }
 
-  private def onTransaction(dotrans: DoTransactionOfSandboxInSingle): DoTransactionResult = {
+  private def onTransaction(dotrans: DoTransactionOfSandboxInSingle): TransactionResult = {
     try {
       shim.sr = ImpDataPreloadMgr.GetImpDataPreload(sTag, dotrans.da)
       checkTransaction(dotrans)
@@ -149,8 +150,9 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
       case e: Exception =>
         RepLogger.except4Throwable(RepLogger.Sandbox_Logger,e.getMessage,e)
         RepLogger.except(RepLogger.Sandbox_Logger, dotrans.t.id, e)
-        new DoTransactionResult(dotrans.t.id, null, null,
-          Option(akka.actor.Status.Failure(e)))
+        new TransactionResult(dotrans.t.id, _root_.scala.Seq.empty,Option(ActionResult(101,e.getMessage)))
+        /*new DoTransactionResult(dotrans.t.id, null, null,
+          Option(akka.actor.Status.Failure(e)))*/
     }
   }
 
@@ -159,7 +161,7 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
    *
    *  @return 交易执行结果
    */
-  def doTransaction(dotrans: DoTransactionOfSandboxInSingle): DoTransactionResult
+  def doTransaction(dotrans: DoTransactionOfSandboxInSingle): TransactionResult
 
   private var  ContractState : Int = 0  //0 未初始化；1 init; 2 unknow; 3 = true; 4=false
 

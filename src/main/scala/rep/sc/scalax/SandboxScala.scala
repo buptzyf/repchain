@@ -79,7 +79,7 @@ class SandboxScala(cid: ChaincodeId) extends Sandbox(cid) {
     shim.ol.append(OperLog(key_coder, ByteString.EMPTY, ByteString.copyFrom(coder_bytes)))
   }
 
-  def doTransaction(dotrans: DoTransactionOfSandboxInSingle): DoTransactionResult = {
+  def doTransaction(dotrans: DoTransactionOfSandboxInSingle): TransactionResult = {
     //上下文可获得交易
     //构造和传入ctx
     val t = dotrans.t
@@ -127,15 +127,20 @@ class SandboxScala(cid: ChaincodeId) extends Sandbox(cid) {
         case _ => throw SandboxException(ERR_UNKNOWN_TRANSACTION_TYPE)
       }
 
-      new DoTransactionResult(t.id, r, shim.ol.toList, None)
+      if(r == null){
+        new TransactionResult(t.id, shim.ol.toList,Option(new ActionResult(0,"")))
+      }else{
+        new TransactionResult(t.id, shim.ol.toList,Option(r))
+      }
     } catch {
       case e: Throwable =>
         RepLogger.except4Throwable(RepLogger.Sandbox_Logger, t.id, e)
         //akka send 无法序列化原始异常,简化异常信息
         val e1 = new SandboxException(e.getMessage)
-        new DoTransactionResult(t.id, null,
+        new TransactionResult(t.id, _root_.scala.Seq.empty,Option(ActionResult(102,e1.getMessage)))
+        /*new DoTransactionResult(t.id, null,
           shim.ol.toList,
-          Option(akka.actor.Status.Failure(e1)))
+          Option(akka.actor.Status.Failure(e1)))*/
     }
   }
 }
