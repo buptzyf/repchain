@@ -12,7 +12,7 @@ class RestRouter(ActorNumber:Int,system: ActorSystem) {
 
   private def CreateActor={
     for (i <- 0 to ActorNumber - 1) {
-      var ra = system.actorOf(RestActor.props("api_" + i), "api_"+i)
+      var ra = system.actorOf(RestActor.props("api_" + i).withDispatcher("http-dispatcher"), "api_"+i)
       ras(i) = ra
     }
   }

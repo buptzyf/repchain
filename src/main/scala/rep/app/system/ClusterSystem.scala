@@ -37,7 +37,7 @@ import akka.util.Timeout
 import org.slf4j.LoggerFactory
 import rep.log.RepLogger
 
-import scala.concurrent.Await
+import scala.concurrent.{Await, ExecutionContext}
 import scala.concurrent.duration._
 import akka.actor.Terminated
 import rep.network.module.pbft.ModuleManagerOfPBFT

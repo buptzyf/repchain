@@ -73,9 +73,11 @@ object EventServer {
   def start(sys:ActorSystem ,port:Int) {
     implicit val system =sys
     implicit val materializer = ActorMaterializer()
-    implicit val executionContext = system.dispatcher
+    //implicit val executionContext = system.dispatcher
+
+    implicit val executionContext = system.dispatchers.lookup("http-dispatcher")
     
-    val evtactor = system.actorOf(Props[RecvEventActor],"RecvEventActor")
+    val evtactor = system.actorOf(Props[RecvEventActor].withDispatcher("http-dispatcher"),"RecvEventActor")
     
 
     
@@ -113,9 +115,9 @@ object EventServer {
     Http().bindAndHandle(
       route_evt
         ~ cors() (
-            new BlockService(ra).route ~
-            new ChainService(ra).route ~
-            new TransactionService(ra).route ~
+            new BlockService(ra,executionContext).route ~
+            new ChainService(ra,executionContext).route ~
+            new TransactionService(ra,executionContext).route ~
             SwaggerDocService.routes),
       "0.0.0.0", port)
     RepLogger.info(RepLogger.System_Logger, s"Event Server online at http://localhost:$port")

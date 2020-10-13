@@ -205,6 +205,19 @@ private var timeoutOfRaft:AtomicLong = new AtomicLong(0)
     this.CurrentEndorseInfo
   }
 
+  private implicit var preloadTransOfWaiting = new ConcurrentHashMap[String,Seq[Transaction]]() asScala
+
+  def addTrans(identifierOfTrans:String,trans:Seq[Transaction])={
+    this.preloadTransOfWaiting.put(identifierOfTrans,trans)
+  }
+
+  def getTrans(identifierOfTrans:String):Seq[Transaction]={
+    this.preloadTransOfWaiting.getOrElse(identifierOfTrans,null)
+  }
+
+  def removeTrans(identifierOfTrans: String): Unit ={
+    this.preloadTransOfWaiting.remove(identifierOfTrans)
+  }
 
 }
 

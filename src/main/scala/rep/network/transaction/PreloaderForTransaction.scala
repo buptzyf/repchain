@@ -28,11 +28,12 @@ import rep.network.consensus.common.MsgOfConsensus.{PreTransBlock, PreTransBlock
 import rep.network.consensus.util.BlockHelp
 import rep.protos.peer._
 import rep.sc.Sandbox.DoTransactionResult
-import rep.sc.SandboxDispatcher.DoTransaction
+import rep.sc.SandboxDispatcher.{DoTransaction, DoTransactionOfCache}
 import rep.sc.TypeOfSender
 import rep.storage.ImpDataPreloadMgr
 import rep.network.module.ModuleActorType
 import rep.utils._
+
 import scala.util.control.Breaks.{break, breakable}
 import scala.collection.mutable
 import scala.concurrent._
@@ -92,6 +93,31 @@ class PreloaderForTransaction(moduleName: String) extends ModuleBase(moduleName)
         /*(1, new DoTransactionResult(t.id, null,
           scala.collection.mutable.ListBuffer.empty[OperLog].toList,
           Option(akka.actor.Status.Failure(te))))*/
+    }
+  }
+
+  private def ExecuteTransactionsFromCache(ts: Seq[Transaction], db_identifier: String): (Int, Seq[DoTransactionResult]) = {
+    val cacheIdentifier = "preloadCache_"+Random.nextInt(10000)
+    try {
+      pe.addTrans(cacheIdentifier,ts)
+      val future1 = pe.getActorRef(ModuleActorType.ActorType.transactiondispatcher) ? new DoTransactionOfCache(cacheIdentifier,  db_identifier,TypeOfSender.FromPreloader)
+      val result = Await.result(future1, timeout.duration).asInstanceOf[Seq[DoTransactionResult]]
+      (0, result)
+    } catch {
+      case e: AskTimeoutException =>
+        val es = createErrorData(ts,Option(akka.actor.Status.Failure(e)))
+        (1,es.toSeq)
+      /*(1, new DoTransactionResult(t.id, null,
+        scala.collection.mutable.ListBuffer.empty[OperLog].toList,
+        Option(akka.actor.Status.Failure(e))))*/
+      case te:TimeoutException =>
+        val es = createErrorData(ts,Option(akka.actor.Status.Failure(te)))
+        (1,es.toSeq)
+      /*(1, new DoTransactionResult(t.id, null,
+        scala.collection.mutable.ListBuffer.empty[OperLog].toList,
+        Option(akka.actor.Status.Failure(te))))*/
+    }finally {
+      pe.removeTrans(cacheIdentifier)
     }
   }
 
@@ -157,6 +183,7 @@ class PreloaderForTransaction(moduleName: String) extends ModuleBase(moduleName)
     var transResult1 = Seq.empty[rep.protos.peer.TransactionResult]
     try {
       val result = ExecuteTransactions(ts, db_indentifier)
+      //val result = ExecuteTransactionsFromCache(ts, db_indentifier)
       result._1 match {
         case 0 =>
           //finish

@@ -42,7 +42,7 @@ object RepLogger {
     def zLogger = LoggerFactory.getLogger("System_Logger")
 
   def trace(logger:Logger,msg:String)={
-     logger.trace(msg)
+    if(logger.getName != "OutputTime_Logger") logger.trace(msg)
    }
    
    def debug(logger:Logger,msg:String)={
@@ -50,7 +50,7 @@ object RepLogger {
    }
    
    def info(logger:Logger,msg:String)={
-     logger.info(msg)
+    if( logger.getName != "TransLifeCycle_Logger") logger.info(msg)
    }
    
    def error(logger:Logger,msg:String)={

@@ -106,8 +106,19 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
   def receive = {
     //交易处理请求
     case dotrans: DoTransactionOfSandbox =>
+      RepTimeTracer.setStartTime(pe.getSysTag, "transaction-sandbox-do", System.currentTimeMillis(), pe.getCurrentHeight+1, dotrans.ts.length)
       val tr = onTransactions(dotrans)
+      RepTimeTracer.setEndTime(pe.getSysTag, "transaction-sandbox-do", System.currentTimeMillis(), pe.getCurrentHeight+1, dotrans.ts.length)
       sender ! tr.toSeq
+    case dotransOfCache: DoTransactionOfSandboxOfCache =>
+
+      if(pe.getTrans(dotransOfCache.cacheIdentifier) != null){
+        val ts = pe.getTrans(dotransOfCache.cacheIdentifier)
+        RepTimeTracer.setStartTime(pe.getSysTag, "transaction-sandbox-do", System.currentTimeMillis(), pe.getCurrentHeight+1, ts.length)
+        val tr = onTransactionsOfCache(dotransOfCache,ts)
+        RepTimeTracer.setEndTime(pe.getSysTag, "transaction-sandbox-do", System.currentTimeMillis(), pe.getCurrentHeight+1, ts.length)
+        sender ! tr.toSeq
+      }
   }
 
   private def onTransactions(dotrans: DoTransactionOfSandbox): Array[DoTransactionResult] = {
@@ -115,7 +126,16 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
     dotrans.ts.foreach(t=>{
       rs += onTransaction(DoTransactionOfSandboxInSingle(t,dotrans.da,dotrans.contractStateType))
     })
-    RepTimeTracer.setEndTime(pe.getSysTag, "transaction-dispatcher", System.currentTimeMillis(), 0, dotrans.ts.length)
+    RepTimeTracer.setEndTime(pe.getSysTag, "transaction-dispatcher", System.currentTimeMillis(), pe.getCurrentHeight+1, dotrans.ts.length)
+    rs.toArray
+  }
+
+  private def onTransactionsOfCache(dotrans: DoTransactionOfSandboxOfCache,ts:Seq[Transaction]): Array[DoTransactionResult] = {
+    var rs = scala.collection.mutable.ArrayBuffer[DoTransactionResult]()
+    ts.foreach(t=>{
+      rs += onTransaction(DoTransactionOfSandboxInSingle(t,dotrans.da,dotrans.contractStateType))
+    })
+    RepTimeTracer.setEndTime(pe.getSysTag, "transaction-dispatcher", System.currentTimeMillis(), pe.getCurrentHeight+1, ts.length)
     rs.toArray
   }
 
@@ -206,7 +226,7 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
         throw new SandboxException(ERR_INVOKE_CHAINCODE_NOT_EXIST)
       }
     }
-    System.err.println(s"ContraceIsExist,System name=${this.sTag},cid=${txcid},ContractExist=${this.ContractExist},ContractState=${this.ContractState}")
+    //System.err.println(s"ContraceIsExist,System name=${this.sTag},cid=${txcid},ContractExist=${this.ContractExist},ContractState=${this.ContractState}")
     //修改为只检查一次，不需要每次都检查
     /*val key_tx_state = WorldStateKeyPreFix + txcid + PRE_STATE
     val state_bytes = shim.sr.Get(key_tx_state)

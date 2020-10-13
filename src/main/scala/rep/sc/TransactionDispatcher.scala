@@ -3,7 +3,7 @@ package rep.sc
 
 import akka.actor.{ActorRef, Props}
 import rep.network.base.ModuleBase
-import rep.sc.SandboxDispatcher.DoTransaction
+import rep.sc.SandboxDispatcher.{DoTransaction, DoTransactionOfCache}
 import rep.log.{RepLogger, RepTimeTracer}
 
 object TransactionDispatcher {
@@ -38,13 +38,28 @@ class TransactionDispatcher(moduleName: String) extends ModuleBase(moduleName) {
 
   override def receive = {
     case tr: DoTransaction =>
-      RepTimeTracer.setStartTime(pe.getSysTag, "transaction-dispatcher", System.currentTimeMillis(), 0, tr.ts.length)
+      RepTimeTracer.setStartTime(pe.getSysTag, "transaction-dispatcher", System.currentTimeMillis(), pe.getCurrentHeight+1, tr.ts.length)
       if (tr.ts != null && tr.ts.length > 0) {
         val ref: ActorRef = CheckTransActor(IdTool.getTXCId(tr.ts(0)))
         ref.forward(tr)
       } else {
         RepLogger.error(RepLogger.Business_Logger, this.getLogMsgPrefix("recv DoTransaction is null"))
       }
+    case trOfCache:DoTransactionOfCache=>
+      val ts = pe.getTrans(trOfCache.cacheIdentifier)
+      if(ts != null){
+        RepTimeTracer.setStartTime(pe.getSysTag, "transaction-dispatcher", System.currentTimeMillis(), pe.getCurrentHeight+1, ts.length)
+        if ( ts.length > 0) {
+          val ref: ActorRef = CheckTransActor(IdTool.getTXCId(ts(0)))
+          ref.forward(trOfCache)
+        } else {
+          RepLogger.error(RepLogger.Business_Logger, this.getLogMsgPrefix("recv DoTransaction is null"))
+        }
+      }else{
+        RepLogger.error(RepLogger.Business_Logger, this.getLogMsgPrefix("recv trans of cache is null"))
+      }
+
+
     case _ => //ignore
   }
 }

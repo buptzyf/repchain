@@ -224,15 +224,15 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
       sender ! PostResult(t.id, None, Option("共识节点数目太少，暂时无法处理交易"))
     } else {
       try {
-        if (pe.getTransPoolMgr.getTransLength() < SystemProfile.getMaxCacheTransNum) {
+        //if (pe.getTransPoolMgr.getTransLength() < SystemProfile.getMaxCacheTransNum) {
           pe.getTransPoolMgr.putTran(t,pe.getSysTag)
-          mediator ! Publish(Topic.Transaction, t)
+          //mediator ! Publish(Topic.Transaction, t)
           sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)
           sender ! PostResult(t.id, None, None)
-        } else {
+        /*} else {
           // 交易缓存池已满，不可继续提交交易
           sender ! PostResult(t.id, None, Option(s"交易缓存池已满，容量为${pe.getTransPoolMgr.getTransLength()}，不可继续提交交易"))
-        }
+        }*/
       } catch {
         case e: Exception =>
           sender ! PostResult(t.id, None, Option(e.getMessage))

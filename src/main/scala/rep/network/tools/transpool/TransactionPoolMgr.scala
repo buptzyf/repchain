@@ -26,7 +26,7 @@ class TransactionPoolMgr {
     if(this.isStarup.get() == false){
       this.isStarup.set((true))
       this.scheduledExecutorService.scheduleWithFixedDelay(
-        new cleanCache(sysName),100,60, TimeUnit.SECONDS
+        new cleanCache(sysName),100,300, TimeUnit.SECONDS
       )
     }
   }
@@ -105,7 +105,7 @@ class TransactionPoolMgr {
             this.transNumber.decrementAndGet()
             val l = this.transKeys.get(txid)
             if(l != None){
-              if((currenttime - l.get.entryTime)/1000 > TimePolicy.getTranscationWaiting || sr.isExistTrans4Txid(txid) ){
+              if((currenttime - l.get.entryTime)/1000 > TimePolicy.getTranscationWaiting){// || sr.isExistTrans4Txid(txid) ){
                 //超时或者重复 删除
                 this.transKeys.remove(txid)
               }else{

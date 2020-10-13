@@ -16,10 +16,11 @@
 
 package rep.api.rest
 
+import java.util.concurrent.Executors
 import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
 
 import scala.concurrent.{ExecutionContext, Future}
-import akka.actor.{ActorRef, ActorSelection}
+import akka.actor.{ActorRef, ActorSelection, ActorSystem}
 import akka.util.Timeout
 import akka.http.scaladsl.model.Uri.Path.Segment
 import akka.http.scaladsl.server.Directives
@@ -55,7 +56,7 @@ import rep.log.RepLogger
  */
 @Api(value = "/chaininfo", description = "获得当前区块链信息", produces = "application/json")
 @Path("chaininfo")
-class ChainService(ra: RestRouter)(implicit executionContext: ExecutionContext)
+class ChainService(ra: RestRouter,ec: ExecutionContext)(implicit executionContext: ExecutionContext)
   extends Directives {
 
   import akka.pattern.ask
@@ -66,7 +67,7 @@ class ChainService(ra: RestRouter)(implicit executionContext: ExecutionContext)
   implicit val serialization = jackson.Serialization // or native.Serialization
   implicit val formats = DefaultFormats
   implicit val timeout = Timeout(20.seconds)
-
+  implicit val lec = ec//ExecutionContext.fromExecutor(Executors.newFixedThreadPool(1))
 
 
   val route = getBlockChainInfo ~ getNodeNumber ~ getCacheTransNumber ~ getAcceptedTransNumber ~ loadBlockInfoToCache ~ IsLoadBlockInfoToCache
@@ -167,18 +168,22 @@ class ChainService(ra: RestRouter)(implicit executionContext: ExecutionContext)
 
 @Api(value = "/block", description = "获得区块数据", produces = "application/json")
 @Path("block")
-class BlockService(ra: RestRouter)(implicit executionContext: ExecutionContext)
+class BlockService(ra: RestRouter,ec: ExecutionContext)(implicit executionContext: ExecutionContext)
   extends Directives {
-
   import akka.pattern.ask
   import scala.concurrent.duration._
 
+
   implicit val timeout = Timeout(20.seconds)
+  implicit val lec = ec//ExecutionContext.fromExecutor(Executors.newFixedThreadPool(1))
+
+
 
   import Json4sSupport._
 
   implicit val serialization = jackson.Serialization // or native.Serialization
   implicit val formats = DefaultFormats
+
 
   val route = getBlockById ~ getBlockByHeight ~ getBlockByHeightToo ~ getTransNumberOfBlock ~ getBlockStreamByHeight ~ getBlockTimeOfCreate ~ getBlockTimeOfTxrByTxid ~ getBlockTimeOfTransaction
 
@@ -329,15 +334,14 @@ class BlockService(ra: RestRouter)(implicit executionContext: ExecutionContext)
  */
 @Api(value = "/transaction", description = "获得交易数据", consumes = "application/json,application/xml", produces = "application/json,application/xml")
 @Path("transaction")
-class TransactionService(ra: RestRouter)(implicit executionContext: ExecutionContext)
+class TransactionService(ra: RestRouter,ec: ExecutionContext)(implicit executionContext: ExecutionContext)
   extends Directives {
-
   import akka.pattern.ask
   import scala.concurrent.duration._
   import java.io.FileInputStream
 
   implicit val timeout = Timeout(20.seconds)
-
+  implicit val lec = ec//ExecutionContext.fromExecutor(Executors.newFixedThreadPool(1))
   import Json4sSupport._
   import ScalaXmlSupport._
   import akka.stream.scaladsl.FileIO

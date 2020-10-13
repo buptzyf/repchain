@@ -70,13 +70,13 @@ class TransactionChecker (moduleName: String) extends ModuleBase(moduleName){
       //签名验证成功
       val poolIsEmpty = pe.getTransPoolMgr.isEmpty
       //if((checkedTransactionResult.result) && (SystemProfile.getMaxCacheTransNum == 0 || pe.getTransPoolMgr.getTransLength() < SystemProfile.getMaxCacheTransNum) ){
-      if( SystemProfile.getMaxCacheTransNum == 0 || pe.getTransPoolMgr.getTransLength() < SystemProfile.getMaxCacheTransNum ){
+      //if( SystemProfile.getMaxCacheTransNum == 0 || pe.getTransPoolMgr.getTransLength() < SystemProfile.getMaxCacheTransNum ){
         pe.getTransPoolMgr.putTran(t, pe.getSysTag)
         RepLogger.trace(RepLogger.System_Logger,this.getLogMsgPrefix(s"${pe.getSysTag} trans pool recv,txid=${t.id}"))
 
         if (poolIsEmpty)//加入交易之前交易池为空，发送抽签消息
         pe.getActorRef(CFRDActorType.ActorType.voter) ! VoteOfBlocker
-      }
+      //}
     }
   }
 
