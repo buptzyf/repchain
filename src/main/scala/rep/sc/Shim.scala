@@ -88,7 +88,8 @@ class Shim(system: ActorSystem, cName: String) {
     val nv = if(value == null) ByteString.EMPTY else ByteString.copyFrom(value)
     //记录操作日志
     //getLogger.trace(s"nodename=${sr.getSystemName},dbname=${sr.getInstanceName},txid=${txid},key=${key},old=${deserialise(oldValue)},new=${deserialise(value)}")
-    ol += new OperLog(key,ov, nv)
+    //ol += new OperLog(key,ov, nv)
+    ol += new OperLog(pkey,ov, nv)
   }
 
   private def get(key: Key): Array[Byte] = {

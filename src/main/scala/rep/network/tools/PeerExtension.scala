@@ -17,7 +17,7 @@
 package rep.network.tools
 
 import akka.actor.{ActorRef, ActorSystem, Address, ExtendedActorSystem, Extension, ExtensionId, ExtensionIdProvider}
-import rep.protos.peer.{BlockchainInfo, Transaction}
+import rep.protos.peer.{Block, BlockchainInfo, Transaction}
 import java.util.concurrent.atomic._
 
 import rep.utils.GlobalUtils.{BlockerInfo, NodeStatus}
@@ -207,7 +207,7 @@ private var timeoutOfRaft:AtomicLong = new AtomicLong(0)
 
   private implicit var preloadTransOfWaiting = new ConcurrentHashMap[String,Seq[Transaction]]() asScala
 
-  def addTrans(identifierOfTrans:String,trans:Seq[Transaction])={
+  def addTrans(identifierOfTrans:String,trans:Seq[Transaction]):Unit={
     this.preloadTransOfWaiting.put(identifierOfTrans,trans)
   }
 
@@ -219,6 +219,19 @@ private var timeoutOfRaft:AtomicLong = new AtomicLong(0)
     this.preloadTransOfWaiting.remove(identifierOfTrans)
   }
 
+  private implicit var preloadBlockOfWaiting = new ConcurrentHashMap[String,Block]() asScala
+
+  def addBlock(identifierOfBlock:String,block:Block):Unit={
+    this.preloadBlockOfWaiting.put(identifierOfBlock,block)
+  }
+
+  def getBlock(identifierOfBlock:String):Block={
+    this.preloadBlockOfWaiting.getOrElse(identifierOfBlock,null)
+  }
+
+  def removeBlock(identifierOfBlock: String): Unit ={
+    this.preloadBlockOfWaiting.remove(identifierOfBlock)
+  }
 }
 
 object PeerExtension

@@ -1,7 +1,8 @@
 package rep.network.tools.transpool
 
+import java.util.Collections
 import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedQueue, ConcurrentSkipListMap, Executors, TimeUnit}
-import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, LongAdder}
 
 import scala.collection.JavaConverters._
 import rep.app.conf.TimePolicy
@@ -14,10 +15,12 @@ import scala.util.control.Breaks.{break, breakable}
 class TransactionPoolMgr {
   case class TransactionInfo(transaction: Transaction,entryTime:Long)
 
-  private implicit var transQueueOfTxid = new ConcurrentLinkedQueue[String]()
+  private implicit var transQueueOfTx = new ConcurrentLinkedQueue[Transaction]()
   private implicit var transKeys = new ConcurrentHashMap[String,TransactionInfo]() asScala
-  private implicit var transNumber = new AtomicInteger(0)
-  private implicit var preloadBlocks = new ConcurrentHashMap[String,Seq[String]]() asScala
+  //private implicit var transNumber = new AtomicInteger(0)
+  private implicit var transNumber = new LongAdder()
+  transNumber.reset()
+  private implicit var preloadBlocks = new ConcurrentHashMap[String,Seq[Transaction]]() asScala
 
   private var scheduledExecutorService = Executors.newSingleThreadScheduledExecutor
   private var isStarup = new AtomicBoolean(false)
@@ -47,9 +50,6 @@ class TransactionPoolMgr {
         System.err.println(s"waiting delete trans,,system=${sysName},list:"+translist.mkString(","))
         translist.foreach(txid=>{
           transKeys.remove(txid)
-          if(transQueueOfTxid.remove(txid)){
-            transNumber.decrementAndGet()
-          }
         })
         System.err.println(s"entry Clean Cache finish,system=${sysName}")
       }catch{
@@ -61,11 +61,7 @@ class TransactionPoolMgr {
   def packageTransaction(blockIdentifier:String,num: Int,sysName:String):Seq[Transaction]={
     val transList = getTransListClone(num,sysName)
     if(transList.length > 0){
-      var txIdlist = scala.collection.mutable.ArrayBuffer[String]()
-      transList.foreach(t=>{
-        txIdlist += t.id
-      })
-      this.preloadBlocks.put(blockIdentifier,txIdlist)
+      this.preloadBlocks.put(blockIdentifier,transList)
     }
     transList
   }
@@ -79,12 +75,10 @@ class TransactionPoolMgr {
     }
   }
 
-  private def addTxIdToQueue(txIdList:Seq[String])={
+  private def addTxIdToQueue(txIdList:Seq[Transaction])={
     txIdList.foreach(txId=>{
-      if(this.transKeys.contains(txId)){
-        this.transQueueOfTxid.add(txId)
-        this.transNumber.incrementAndGet()
-      }
+        this.transQueueOfTx.add(txId)
+        this.transNumber.increment()
     })
   }
 
@@ -100,14 +94,14 @@ class TransactionPoolMgr {
 
       breakable(
         for(i<-0 to num-1){
-          val txid = this.transQueueOfTxid.poll()
-          if(txid != null){
-            this.transNumber.decrementAndGet()
-            val l = this.transKeys.get(txid)
+          val tx = this.transQueueOfTx.poll()
+          if(tx != null){
+            this.transNumber.decrement()
+            val l = this.transKeys.get(tx.id)
             if(l != None){
               if((currenttime - l.get.entryTime)/1000 > TimePolicy.getTranscationWaiting){// || sr.isExistTrans4Txid(txid) ){
                 //超时或者重复 删除
-                this.transKeys.remove(txid)
+                this.transKeys.remove(tx.id)
               }else{
                 translist += l.get.transaction
               }
@@ -137,8 +131,8 @@ class TransactionPoolMgr {
         RepLogger.info(RepLogger.TransLifeCycle_Logger,  s"systemname=${sysName},trans entry pool,${tran.id} exists in cache")
       }else{
         transKeys.put(txid, TransactionInfo(tran,time))
-        this.transQueueOfTxid.add(txid)
-        transNumber.incrementAndGet()
+        this.transQueueOfTx.add(tran)
+        transNumber.increment()
         RepLogger.info(RepLogger.TransLifeCycle_Logger,  s"systemname=${sysName},transNumber=${transNumber},trans entry pool,${tran.id},entry time = ${time}")
       }
     }finally {
@@ -186,10 +180,10 @@ class TransactionPoolMgr {
   }
 
   def getTransLength() : Int = {
-    this.transNumber.get
+    this.transNumber.intValue()
   }
 
   def isEmpty:Boolean={
-    this.transQueueOfTxid.isEmpty
+    this.transQueueOfTx.isEmpty
   }
 }

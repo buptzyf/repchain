@@ -111,10 +111,10 @@ object testBigKey extends App {
     }
     val end = System.currentTimeMillis()
     println(s"read block:spent times=${(end-start)}ms")
-    var tr = new testRateOfLevelDB(da1)
+    /*var tr = new testRateOfLevelDB(da1)
 
     tr.readAndWrite(keys.toArray)
-    tr.readAndWrite(txids.toArray)
+    tr.readAndWrite(txids.toArray)*/
 
   }
 

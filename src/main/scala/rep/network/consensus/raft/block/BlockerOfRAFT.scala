@@ -11,13 +11,15 @@ import rep.protos.peer.{Block, Event}
 import rep.utils.GlobalUtils.EventType
 import rep.network.consensus.cfrd.MsgOfCFRD.{CreateBlock, VoteOfBlocker}
 import rep.network.consensus.common.block.IBlocker
-import rep.network.consensus.common.MsgOfConsensus.{ConfirmedBlock, PreTransBlock, PreTransBlockResult}
+import rep.network.consensus.common.MsgOfConsensus.{ConfirmedBlock, PreTransBlock, PreTransBlockOfCache, PreTransBlockResult, preTransBlockResultOfCache}
 import rep.app.conf.SystemProfile
 import rep.network.consensus.util.BlockHelp
 import rep.network.module.ModuleActorType
 import rep.storage.ImpDataPreloadMgr
 import akka.pattern.{AskTimeoutException, ask}
+
 import scala.concurrent.Await
+import scala.util.Random
 
 
 /**
@@ -58,6 +60,31 @@ class BlockerOfRAFT (moduleName: String) extends IBlocker(moduleName){
     }
   }
 
+  protected def ExecuteTransactionOfBlockOfCache(block: Block): Block = {
+    val cacheIdentifier = "blockCache_" + Random.nextInt(10000)
+    try {
+      if(this.dbIdentifier == null){
+        this.dbIdentifier = pe.getBlocker.voteBlockHash
+      } else if(this.dbIdentifier != pe.getBlocker.voteBlockHash){
+        ImpDataPreloadMgr.Free(pe.getSysTag,"preload-"+this.dbIdentifier)
+        this.dbIdentifier = pe.getBlocker.voteBlockHash
+      }
+
+      pe.addBlock(cacheIdentifier,block)
+      val future = pe.getActorRef(ModuleActorType.ActorType.dispatchofpreload) ? PreTransBlockOfCache(cacheIdentifier,"preload-"+this.dbIdentifier)
+      val result = Await.result(future, timeout.duration).asInstanceOf[preTransBlockResultOfCache]
+      if (result.result) {
+        pe.getBlock(cacheIdentifier)
+      } else {
+        null
+      }
+    } catch {
+      case e: AskTimeoutException => null
+    }finally {
+      pe.removeBlock(cacheIdentifier)
+    }
+  }
+
   override protected def PackedBlock(start: Int = 0): Block = {
     val newHeight = pe.getCurrentHeight + 1
     RepTimeTracer.setStartTime(pe.getSysTag, "Block", System.currentTimeMillis(), newHeight, 0)
@@ -73,6 +100,7 @@ class BlockerOfRAFT (moduleName: String) extends IBlocker(moduleName){
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,height=${blc.height},local height=${pe.getCurrentHeight}" + "~" + selfAddr))
       RepTimeTracer.setStartTime(pe.getSysTag, "PreloadTrans", System.currentTimeMillis(), blc.height, blc.transactions.size)
       blc = ExecuteTransactionOfBlock(blc)
+      //blc = ExecuteTransactionOfBlockOfCache(blc)
       if (blc != null) {
         RepTimeTracer.setEndTime(pe.getSysTag, "PreloadTrans", System.currentTimeMillis(), blc.height, blc.transactions.size)
         RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,prelaod success,height=${blc.height},local height=${pe.getBlocker.VoteHeight}" + "~" + selfAddr))

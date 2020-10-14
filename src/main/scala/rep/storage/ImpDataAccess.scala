@@ -140,8 +140,9 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
     val value = this.Get(key)
     //val keylist = this.FindKeyByLike("b_", 1)
     if (value != null) {
-      var bidx = new blockindex()
-      bidx.InitBlockIndex(value)
+      //var bidx = new blockindex()
+      //bidx.InitBlockIndex(value)
+      var bidx = SerializeUtils.deserialise(value).asInstanceOf[blockindex]
       rb = filemgr.readBlock(bidx.getBlockFileNo(), bidx.getBlockFilePos(), bidx.getBlockLength())
       //rb = bhelp.readBlock(bidx.getBlockFileNo(), bidx.getBlockFilePos(), bidx.getBlockLength())
     }
@@ -154,8 +155,9 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
     val value = this.Get(key)
     //val keylist = this.FindKeyByLike("b_", 1)
     if (value != null) {
-      var bidx = new blockindex()
-      bidx.InitBlockIndex(value)
+      //var bidx = new blockindex()
+      //bidx.InitBlockIndex(value)
+      var bidx = SerializeUtils.deserialise(value).asInstanceOf[blockindex]
       rh = bidx.getBlockHeight()
     }
     rh
@@ -174,8 +176,9 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
     val key = IdxPrefix.IdxBlockPrefix + bh
     val value = this.Get(key)
     if (value != null) {
-      rb = new blockindex()
-      rb.InitBlockIndex(value)
+      //rb = new blockindex()
+      //rb.InitBlockIndex(value)
+      rb = SerializeUtils.deserialise(value).asInstanceOf[blockindex]
     }
     rb
   }
@@ -751,22 +754,24 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
         for( i <- 0 to len){
           val f = txresults(i)
           val txid = f.txId
-          val cid = getCidFormBlock(block, i,txid)
+          //val cid = getCidFormBlock(block, i,txid)
           val changeCertStatus = isChangeCertStatus(block,i, txid)
           val logs = f.ol
 
           if (logs != null && logs.length > 0) {
             logs.foreach(f => {
-              var fkey = f.key
-              if (fkey.startsWith(IdxPrefix.WorldStateKeyPreFix)) {
+              //var fkey = f.key
+              /*if (fkey.startsWith(IdxPrefix.WorldStateKeyPreFix)) {
                 this.Put(f.key, f.newValue.toByteArray())
               } else {
                 fkey = IdxPrefix.WorldStateKeyPreFix + cid + "_" + f.key
                 this.Put(fkey, f.newValue.toByteArray())
-              }
+              }*/
+              this.Put(f.key, f.newValue.toByteArray())
               //需要通知证书缓存修改证书状态
               if (changeCertStatus) {
-                certCache.CertStatusUpdate(fkey)
+                //certCache.CertStatusUpdate(fkey)
+                certCache.CertStatusUpdate(f.key)
               }
             })
           }
@@ -928,7 +933,9 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
           RepLogger.Storager_Logger,
           "system_name=" + this.SystemName + "\t new height=" + newh + "\t new file no=" + newno + "\t new tx number=" + newtxnumber)
 
-        this.Put(IdxPrefix.IdxBlockPrefix + bidx.getBlockHash(), bidx.toArrayByte())
+        //this.Put(IdxPrefix.IdxBlockPrefix + bidx.getBlockHash(), bidx.toArrayByte())
+        this.Put(IdxPrefix.IdxBlockPrefix + bidx.getBlockHash(), SerializeUtils.serialise(bidx))
+
         RepLogger.trace(
           RepLogger.Storager_Logger,
           "system_name=" + this.SystemName + "\t blockhash=" + bidx.getBlockHash())

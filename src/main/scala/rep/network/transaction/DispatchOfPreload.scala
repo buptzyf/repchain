@@ -21,7 +21,7 @@ import akka.routing._
 import rep.app.conf.SystemProfile
 import rep.log.RepLogger
 import rep.network.base.ModuleBase
-import rep.network.consensus.common.MsgOfConsensus.PreTransBlock
+import rep.network.consensus.common.MsgOfConsensus.{PreTransBlock, PreTransBlockOfCache}
 
 /**
  * Created by jiangbuyun on 2018/03/19.
@@ -65,7 +65,10 @@ class DispatchOfPreload(moduleName: String) extends ModuleBase(moduleName) {
   override def receive = {
     case PreTransBlock(block,prefixOfDbTag) =>
       createRouter
-      router.route(PreTransBlock(block,prefixOfDbTag) , sender)  
+      router.route(PreTransBlock(block,prefixOfDbTag) , sender)
+    case PreTransBlockOfCache(blockIdentifierInCache, prefixOfDbTag)=>
+      createRouter
+      router.route(PreTransBlockOfCache(blockIdentifierInCache, prefixOfDbTag) , sender)
     case _ => //ignore
   }
 }
