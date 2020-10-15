@@ -18,5 +18,8 @@ object CFRDActorType {
 
     val synchrequester = 207
     val synchresponser = 208
+
+
+    val preloadOfTransactionInStream = 209
   }
 }

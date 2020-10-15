@@ -121,13 +121,14 @@ class BlockerOfRAFT (moduleName: String) extends IBlocker(moduleName){
     var blc : Block = null
 
     blc = PackedBlock(0)
-    if (blc != null && !blc.hashOfBlock.isEmpty && blc.transactions.length > 0) {
+    if (blc != null && !blc.hashOfBlock.isEmpty && blc.transactions.length > 0 ) {
       RepTimeTracer.setEndTime(pe.getSysTag, "createBlock", System.currentTimeMillis(), blc.height, blc.transactions.size)
       this.preblock = blc
       schedulerLink = clearSched()
       pe.setCreateHeight(preblock.height)
       pe.getTransPoolMgr.cleanPreloadCache("identifier-"+blc.height)
-      mediator ! Publish(Topic.Block, ConfirmedBlock(preblock, self))
+      if(!pe.getZeroOfTransNumFlag)
+        mediator ! Publish(Topic.Block, ConfirmedBlock(preblock, self))
     } else {
       pe.getTransPoolMgr.rollbackTransaction("identifier-"+(pe.getCurrentHeight+1))
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("create new block error,CreateBlock is null" + "~" + selfAddr))
@@ -144,7 +145,9 @@ class BlockerOfRAFT (moduleName: String) extends IBlocker(moduleName){
           sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Block, Event.Action.CANDIDATOR)
           if (preblock == null || (preblock.previousBlockHash.toStringUtf8() != pe.getCurrentBlockHash)) {
             //是出块节点
-            CreateBlockHandler
+            if((pe.getMaxHeight4SimpleRaft - pe.getBlocker.VoteHeight ) <= SystemProfile.getBlockNumberOfRaft && !pe.getZeroOfTransNumFlag) {
+              CreateBlockHandler
+            }
           }
         }
       } else {

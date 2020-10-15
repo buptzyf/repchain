@@ -14,9 +14,13 @@ object MsgOfConsensus {
   //发送预出块给交易预执行分配器，预执行预出块里面的所有交易。
   case class PreTransBlock(block: Block, prefixOfDbTag: String)
   case class PreTransBlockOfCache(blockIdentifierInCache:String, prefixOfDbTag: String)
+
+  case class PreTransBlockOfStream(blockIdentifier:String,prefixOfDbTag: String)
+
   //预出块的预执行的结果消息
   case class PreTransBlockResult(blc: Block, result: Boolean)
   case class preTransBlockResultOfCache(result:Boolean)
+  case class preTransBlockResultOfStream(blockIdentifier:String,result:Boolean)
   ///////////////////////////////预出块时，预执行交易的相关消息，结束//////////////////////////////
 
   ///////////////////////////////存储时，发送给持久化actor的相关消息，开始//////////////////////////////

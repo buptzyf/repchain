@@ -63,6 +63,7 @@ object SystemProfile {
   private[this] var _NUMBER_OF_ENDORSEMENT: Int = 2
   private[this] var _TYPE_OF_CONSENSUS:String = "PBFT"
   private[this] var _BLOCKNUMBER_BLOCKER = 5 //
+  private[this] var _ISSTREAM = 1
 
   //zhj
   private[this] var _PBFT_F: Int = 1
@@ -106,6 +107,7 @@ object SystemProfile {
   private def TYPE_OF_CONSENSUS : String = _TYPE_OF_CONSENSUS
 
   private def BLOCKNUMBER_BLOCKER : Int = _BLOCKNUMBER_BLOCKER
+  private def ISSTREAM : Int = _ISSTREAM
 
   //zhj
   private def PBFT_F = _PBFT_F
@@ -144,6 +146,10 @@ object SystemProfile {
   
   private def NUMBER_OF_TRANSPROCESSOR_=(value:Int):Unit={
     _NUMBER_OF_TRANSPROCESSOR = value
+  }
+
+  private def ISSTREAM_=(value:Int):Unit={
+    _ISSTREAM = value
   }
   
   private def HAS_PRELOAD_TRANS_OF_API_=(value:Boolean):Unit={
@@ -276,6 +282,7 @@ object SystemProfile {
     NUMBER_OF_ENDORSEMENT_=(config.getInt("system.number_of_endorsement"))
     BLOCKNUMBER_OF_RAFT_=(config.getInt("system.consensus.blocknumberofraft"))
     TYPE_OF_CONSENSUS_=(config.getString("system.consensus.type"))
+    ISSTREAM_=(config.getInt("system.consensus.isstream"))
     
     DBPATH_= (config.getString("system.storage.dbpath"))
     BLOCKPATH_= (config.getString("system.storage.blockpath"))
@@ -285,6 +292,8 @@ object SystemProfile {
 
   //zhj
   def getPbftF = PBFT_F
+
+  def getIsStream : Int = ISSTREAM
 
   def getRealtimeGraph = REALTIMEGRAPH_ENABLE
   

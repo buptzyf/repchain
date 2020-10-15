@@ -121,9 +121,9 @@ class VoterOfRAFT (moduleName: String) extends IVoter(moduleName: String) {
             RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},set zero trans timeout,lblocker=${this.Blocker.blocker}," +
               s"lvoteindex=${this.voteIndex},lblockheight=${pe.getCurrentHeight}" +
               s",transpoolcount=${pe.getTransPoolMgr.getTransLength()}" + "~" + selfAddr))
+            pe.setZeroOfTransNumFlag(true)
             this.zeroOfTransNumTimeout = System.currentTimeMillis()
             this.zeroOfTransNumTimeout = -1
-            pe.setZeroOfTransNumFlag(true)
             pe.resetTimeoutOfRaft
             this.blockTimeout = false
             mediator ! Publish(Topic.VoteTransform,  TransformBlocker(pe.getSysTag,pe.getCurrentHeight,pe.getCurrentBlockHash,this.voteIndex))
@@ -177,9 +177,9 @@ class VoterOfRAFT (moduleName: String) extends IVoter(moduleName: String) {
       this.cleanVoteInfo
       this.resetCandidator(currentblockhash)
       this.resetBlocker(getVoteIndex, currentblockhash, currentheight)
-      RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},read block voter,currentHeight=${this.Blocker.VoteHeight +SystemProfile.getBlockNumberOfRaft},currentHash=${currentblockhash}" + "~" + selfAddr))
+      RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},transform read block voter,currentHeight=${this.Blocker.VoteHeight +SystemProfile.getBlockNumberOfRaft},currentHash=${currentblockhash}" + "~" + selfAddr))
     }else{
-      RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},second voter in synch,currentHeight=${this.Blocker.VoteHeight +SystemProfile.getBlockNumberOfRaft}" + "~" + selfAddr))
+      RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},transform second voter in synch,currentHeight=${this.Blocker.VoteHeight +SystemProfile.getBlockNumberOfRaft}" + "~" + selfAddr))
       pe.getActorRef(CFRDActorType.ActorType.synchrequester) ! SyncPreblocker(this.Blocker.blocker)
     }
   }

@@ -25,6 +25,8 @@ object ModuleActorType {
     val modulemanager = 107
     //交易收集actor，接收广播交易，代替transactionpool
     val transactioncollectioner = 108
+
+    val transactionPreloadInStream = 901
   }
 
 }
