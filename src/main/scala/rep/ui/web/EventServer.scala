@@ -109,7 +109,7 @@ object EventServer {
       }
 
     //val ra = sys.actorOf(RestActor.props("api"), "api")
-    val ra = new RestRouter(5,sys)
+    val ra = new RestRouter(SystemProfile.getHttpServiceActorNumber,sys)
 
     //允许跨域访问,以支持在应用中发起请求
     Http().bindAndHandle(

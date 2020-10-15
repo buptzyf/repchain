@@ -89,7 +89,7 @@ class TransactionChecker (moduleName: String) extends ModuleBase(moduleName){
       if(!NodeHelp.isSameNodeForString(this.selfAddr,NodeHelp.getNodePath(sender()))) {
         addTransToCache(t)
       }else{
-        System.err.println(s"recv tx from local,system=${pe.getSysTag}")
+        //System.err.println(s"recv tx from local,system=${pe.getSysTag}")
       }
     case _ => //ignore
   }

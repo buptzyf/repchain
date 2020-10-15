@@ -226,7 +226,8 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
       try {
         //if (pe.getTransPoolMgr.getTransLength() < SystemProfile.getMaxCacheTransNum) {
           pe.getTransPoolMgr.putTran(t,pe.getSysTag)
-          //mediator ! Publish(Topic.Transaction, t)
+          if(SystemProfile.getIsBroadcastTransaction== 1)
+              mediator ! Publish(Topic.Transaction, t)
           sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)
           sender ! PostResult(t.id, None, None)
         /*} else {

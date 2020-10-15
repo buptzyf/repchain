@@ -64,6 +64,8 @@ object SystemProfile {
   private[this] var _TYPE_OF_CONSENSUS:String = "PBFT"
   private[this] var _BLOCKNUMBER_BLOCKER = 5 //
   private[this] var _ISSTREAM = 1
+  private[this] var _HTTPSERVICEACTORNUMBER= 5//httpServiceActorNumber
+  private[this] var _ISBROADCASTTRANSACTION = 1 //isbroadcasttransaction
 
   //zhj
   private[this] var _PBFT_F: Int = 1
@@ -108,6 +110,8 @@ object SystemProfile {
 
   private def BLOCKNUMBER_BLOCKER : Int = _BLOCKNUMBER_BLOCKER
   private def ISSTREAM : Int = _ISSTREAM
+  private def HTTPSERVICEACTORNUMBER : Int = _HTTPSERVICEACTORNUMBER
+  private def ISBROADCASTTRANSACTION : Int = _ISBROADCASTTRANSACTION
 
   //zhj
   private def PBFT_F = _PBFT_F
@@ -151,7 +155,14 @@ object SystemProfile {
   private def ISSTREAM_=(value:Int):Unit={
     _ISSTREAM = value
   }
-  
+
+  private def HTTPSERVICEACTORNUMBER_=(value:Int):Unit={
+    _HTTPSERVICEACTORNUMBER = value
+  }
+
+  private def ISBROADCASTTRANSACTION_=(value:Int):Unit={
+    _ISBROADCASTTRANSACTION = value
+  }
   private def HAS_PRELOAD_TRANS_OF_API_=(value:Boolean):Unit={
     _HAS_PRELOAD_TRANS_OF_API = value
   }
@@ -268,6 +279,8 @@ object SystemProfile {
     //SERVERPORT_=(config.getInt("system.httpServicePort"))
     val tmp = config.getInt("system.httpServicePort")
     this.SERVERPORT.put(SystemName,tmp)
+    HTTPSERVICEACTORNUMBER_=(config.getInt("system.httpServiceActorNumber"))
+    ISBROADCASTTRANSACTION_=(config.getInt("system.isbroadcasttransaction"))
     CHECKCERTVALIDATE_=(config.getInt("system.checkCertValidate"))
     CONTRACTOPERATIONMODE_=(config.getInt("system.contractOperationMode"))
     ACCOUNTCHAINCODENAEM_= (config.getString("system.account.chaincodename"))
@@ -294,6 +307,10 @@ object SystemProfile {
   def getPbftF = PBFT_F
 
   def getIsStream : Int = ISSTREAM
+
+  def getHttpServiceActorNumber : Int = HTTPSERVICEACTORNUMBER
+
+  def getIsBroadcastTransaction : Int = ISBROADCASTTRANSACTION
 
   def getRealtimeGraph = REALTIMEGRAPH_ENABLE
   
