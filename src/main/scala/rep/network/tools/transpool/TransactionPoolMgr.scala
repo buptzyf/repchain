@@ -7,12 +7,13 @@ import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, LongAdder}
 import scala.collection.JavaConverters._
 import rep.app.conf.TimePolicy
 import rep.log.RepLogger
+import rep.network.cache.ITransactionPool
 import rep.protos.peer.Transaction
 import rep.storage.ImpDataAccess
 
 import scala.util.control.Breaks.{break, breakable}
 
-class TransactionPoolMgr {
+class TransactionPoolMgr extends ITransctionPoolMgr {
   case class TransactionInfo(transaction: Transaction,entryTime:Long)
 
   private implicit var transQueueOfTx = new ConcurrentLinkedQueue[Transaction]()
@@ -186,4 +187,6 @@ class TransactionPoolMgr {
   def isEmpty:Boolean={
     this.transQueueOfTx.isEmpty
   }
+
+  override def getTransListClone(start: Int, num: Int, sysName: String): Seq[Transaction] = {Seq.empty}
 }

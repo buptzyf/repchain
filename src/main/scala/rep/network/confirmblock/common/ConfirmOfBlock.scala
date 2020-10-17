@@ -59,6 +59,7 @@ class ConfirmOfBlock(moduleName: String) extends IConfirmOfBlock(moduleName) {
           //背书信息排序正确
           RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"confirm verify endorsement sort,height=${block.height}"))
           pe.getBlockCacheMgr.addToCache(BlockRestore(block, SourceOfBlock.CONFIRMED_BLOCK, actRefOfBlock))
+          //pe.getTransPoolMgr.cleanPreloadCache("identifier-"+block.height)
           pe.getActorRef(ModuleActorType.ActorType.storager) ! BatchStore
           sendEvent(EventType.RECEIVE_INFO, mediator, pe.getSysTag, Topic.Block, Event.Action.BLOCK_NEW)
         } else {

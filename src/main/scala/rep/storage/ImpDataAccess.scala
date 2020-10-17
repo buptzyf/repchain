@@ -473,6 +473,10 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
     SerializeUtils.toJson(this.getBlockTime4Block(txid))
   }
 
+  override def getBlockTimeOfTxid1(txid: String): String = {
+    SerializeUtils.toJson(this.getBlockTime4Block1(txid))
+  }
+
   /**
    * @author jiangbuyun
    * @version	0.7
@@ -518,6 +522,15 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
       }
     } catch {
       case e: Exception =>
+    }
+    rs
+  }
+
+  private def getBlockTime4Block1(txid: String): BlockTime = {
+    var rs = BlockTime("", "")
+    val idx = this.getBlockIdxByTxid(txid)
+    if (idx != null) {
+      rs = BlockTime(idx.getCreateTime, idx.getCreateTimeUtc)
     }
     rs
   }

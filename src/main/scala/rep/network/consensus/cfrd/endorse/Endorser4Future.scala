@@ -40,6 +40,7 @@ import rep.network.consensus.common.algorithm.{IAlgorithmOfVote, IRandomAlgorith
 import rep.sc.Sandbox.DoTransactionResult
 import rep.sc.SandboxDispatcher.DoTransaction
 import rep.sc.TypeOfSender
+import rep.storage.ImpDataPreloadMgr
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -76,7 +77,7 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
     var b = false
     RepTimeTracer.setStartTime(pe.getSysTag, s"recvendorsement-${moduleName}-AskPreloadTransactionOfBlock", System.currentTimeMillis(),block.height,block.transactions.size)
     try {
-      val future1 = pe.getActorRef(ModuleActorType.ActorType.dispatchofpreload).ask(PreTransBlock(block, "endors"))
+      val future1 = pe.getActorRef(ModuleActorType.ActorType.dispatchofpreload).ask(PreTransBlock(block, "endors_"+block.transactions(0).id))
       val result = Await.result(future1, timeout.duration).asInstanceOf[PreTransBlockResult]
       var tmpblock = result.blc.withHashOfBlock(block.hashOfBlock)
       if (BlockVerify.VerifyHashOfBlock(tmpblock)) {
@@ -87,6 +88,8 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
         RepLogger.error(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry AskPreloadTransactionOfBlock error=AskTimeoutException"))
       case te:TimeoutException =>
         RepLogger.error(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry AskPreloadTransactionOfBlock error=TimeoutException"))
+    }finally {
+      ImpDataPreloadMgr.Free(pe.getSysTag,"endors_"+block.transactions(0).id)
     }
     RepTimeTracer.setEndTime(pe.getSysTag, s"recvendorsement-${moduleName}-AskPreloadTransactionOfBlock", System.currentTimeMillis(),block.height,block.transactions.size)
     b

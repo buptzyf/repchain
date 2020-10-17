@@ -39,6 +39,22 @@ class ModuleManagerOfRAFT(moduleName: String, sysTag: String, enableStatistic: B
   override def loadConsensusModule = {
     //pe.register(ModuleActorType.ActorType.transactionpool, context.actorOf(TransactionPoolOfRAFT.props("transactionpool"), "transactionpool"))
 
+    /*pe.register(ModuleActorType.ActorType.transactioncollectioner, context.actorOf(TransactionOfCollectioner.props("transactioncollectioner"), "transactioncollectioner"))
+    pe.register(ModuleActorType.ActorType.storager,context.actorOf(StoragerOfRAFT.props("storager").withDispatcher("consensus-dispatcher"), "storager"))
+    if(SystemProfile.getIsStream == 1){
+      pe.register(CFRDActorType.ActorType.blocker,context.actorOf(BlockOfRaftInStram.props("blocker").withDispatcher("consensus-dispatcher"), "blocker"))
+      pe.register(ModuleActorType.ActorType.transactionPreloadInStream,context.actorOf(PreloadTransactionOfStream.props("transactionPreloadInStream").withDispatcher("consensus-dispatcher"), "transactionPreloadInStream"))
+    }else{
+      pe.register(CFRDActorType.ActorType.blocker,context.actorOf(BlockerOfRAFT.props("blocker").withDispatcher("consensus-dispatcher"), "blocker"))
+    }
+
+    pe.register(CFRDActorType.ActorType.confirmerofblock,context.actorOf(ConfirmBlockOfRAFT.props("confirmerofblock").withDispatcher("consensus-dispatcher"), "confirmerofblock"))
+    pe.register(CFRDActorType.ActorType.voter,context.actorOf(VoterOfRAFT.props("voter").withDispatcher("consensus-dispatcher"), "voter"))
+
+    pe.register(CFRDActorType.ActorType.synchrequester,context.actorOf(SynchRequesterOfRAFT.props("synchrequester").withDispatcher("consensus-dispatcher"), "synchrequester"))
+    pe.register(CFRDActorType.ActorType.synchresponser,context.actorOf(SynchronizeResponser.props("synchresponser").withDispatcher("consensus-dispatcher"), "synchresponser"))
+  }*/
+
     pe.register(ModuleActorType.ActorType.transactioncollectioner, context.actorOf(TransactionOfCollectioner.props("transactioncollectioner"), "transactioncollectioner"))
     pe.register(ModuleActorType.ActorType.storager,context.actorOf(StoragerOfRAFT.props("storager"), "storager"))
     if(SystemProfile.getIsStream == 1){

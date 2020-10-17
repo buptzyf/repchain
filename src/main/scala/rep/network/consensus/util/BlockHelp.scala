@@ -20,20 +20,24 @@ import com.google.protobuf.ByteString
 import com.google.protobuf.timestamp.Timestamp
 import scalapb.json4s.JsonFormat
 import rep.app.conf.SystemProfile
-import rep.crypto.Sha256
-import rep.protos.peer.{Block, CertId, ChaincodeId, Signature, Transaction}
+import rep.crypto.{BytesHex, Sha256}
+import rep.protos.peer.{Block, CertId, ChaincodeId, Event, Signature, Transaction}
 import rep.utils.TimeUtils
 import rep.storage.IdxPrefix
 import rep.sc.Shim._
 import rep.storage._
 import java.security.cert.Certificate
 
+import akka.cluster.pubsub.DistributedPubSubMediator.Publish
 import rep.utils.SerializeUtils
 
 import scala.util.control.Breaks
 import org.slf4j.LoggerFactory
+import rep.api.rest.RestActor.PostResult
 import rep.crypto.cert.SignTool
-import rep.network.autotransaction.PeerHelper
+import rep.network.autotransaction.{PeerHelper, Topic}
+import rep.network.consensus.byzantium.ConsensusCondition
+import rep.utils.GlobalUtils.EventType
 import rep.utils.IdTool
 
 object BlockHelp {
@@ -129,5 +133,20 @@ object BlockHelp {
     val gen_blk = JsonFormat.fromJsonString[Block](blkStr)
     gen_blk
   }
+
+  def preTransaction(tr: String): PostResult = {
+    var txid = "None"
+      try {
+        val tr1 = BytesHex.hex2bytes(tr) // 解析交易编码后的16进制字符串,进行解码16进制反解码decode
+        var txr = Transaction.defaultInstance
+        txr = Transaction.parseFrom(tr1)
+        txid = txr.id
+        PostResult(txr.id, None, None)
+      } catch {
+        case e: Exception =>
+          PostResult(txid, None, Option(e.getMessage))
+      }
+  }
+
 
 }

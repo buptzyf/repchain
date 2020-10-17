@@ -225,8 +225,10 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
     } else {
       try {
         //if (pe.getTransPoolMgr.getTransLength() < SystemProfile.getMaxCacheTransNum) {
-          pe.getTransPoolMgr.putTran(t,pe.getSysTag)
-          if(SystemProfile.getIsBroadcastTransaction== 1)
+
+        pe.getTransPoolMgr.putTran(t,pe.getSysTag)
+
+        if(SystemProfile.getIsBroadcastTransaction== 1)
               mediator ! Publish(Topic.Transaction, t)
           sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)
           sender ! PostResult(t.id, None, None)
@@ -311,7 +313,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
       sender ! r
 
     case BlockTimeForTxid(txid) =>
-      val bb = sr.getBlockTimeOfTxid(txid)
+      val bb = sr.getBlockTimeOfTxid1(txid)
       val r = bb match {
         case null => QueryResult(None)
         case _ =>

@@ -45,9 +45,11 @@ import akka.http.scaladsl.marshallers.xml.ScalaXmlSupport
 import akka.http.scaladsl.model.{ContentTypes, HttpCharsets, MediaTypes}
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import akka.stream.scaladsl.StreamConverters
+import rep.crypto.BytesHex
 
 import scala.xml.NodeSeq
 import rep.log.RepLogger
+import rep.network.consensus.util.BlockHelp
 
 /**
  * 获得区块链的概要信息
@@ -436,6 +438,9 @@ class TransactionService(ra: RestRouter,ec: ExecutionContext)(implicit execution
     path("transaction" / "postTranByString") {
       post {
         entity(as[String]) { trans =>
+          /*val p = BlockHelp.preTransaction(trans)
+          ra.getRestActor ! tranSign(trans)
+          complete { p}*/
           complete { (ra.getRestActor ? tranSign(trans)).mapTo[PostResult] }
         }
       }

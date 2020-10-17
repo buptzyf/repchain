@@ -36,8 +36,6 @@ class BlockerOfCFRD(moduleName: String) extends IBlocker(moduleName){
     super.preStart()
   }
 
-
-
   private def CreateBlockHandler = {
     var blc : Block = null
 

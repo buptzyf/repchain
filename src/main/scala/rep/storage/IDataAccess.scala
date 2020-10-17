@@ -545,6 +545,7 @@ abstract class IDataAccess(val SystemName: String) extends AbstractLevelDB(Syste
    * @return	返回出块时间
    */
   def getBlockTimeOfTxid(txid : String): String
+  def getBlockTimeOfTxid1(txid : String): String
   
    /**
    * @author jiangbuyun

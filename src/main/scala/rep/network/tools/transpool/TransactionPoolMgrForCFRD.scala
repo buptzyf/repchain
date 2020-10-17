@@ -31,7 +31,7 @@ import rep.app.conf.{  TimePolicy }
 import rep.storage.ImpDataAccess
 import scala.util.control.Breaks._
 
-class TransactionPoolMgr_1 {
+class TransactionPoolMgrForCFRD extends ITransctionPoolMgr {
   private val  transLock : Lock = new ReentrantLock();
   
   private implicit var transactions = new ConcurrentSkipListMap[Long,Transaction]() asScala
@@ -39,42 +39,7 @@ class TransactionPoolMgr_1 {
   private implicit var transKeys = new ConcurrentHashMap[String,Long]() asScala
   private implicit var transNumber = new AtomicInteger(0)
 
-  /*def getTransListClone(num: Int,sysName:String): Seq[Transaction] = {
-    var translist = scala.collection.mutable.ArrayBuffer[Transaction]()
-    val currenttime = System.currentTimeMillis()
-    try{
-      val sr: ImpDataAccess = ImpDataAccess.GetDataAccess(sysName)
-      var count = 0
-
-      breakable(
-        for(i<-0 to num-1){
-          val t = this.transQueue.poll()
-          if(t != null){
-            this.transNumber.decrementAndGet()
-            val l = this.transKeys.get(t.id)
-            if(l != null){
-              if(currenttime - l.get._1 > TimePolicy.getTranscationWaiting) { //|| sr.isExistTrans4Txid(txid) ){
-                //超时或者重复 删除
-                this.transKeys.remove(t.id)
-              }else{
-                translist += t
-              }
-            }
-          }else{
-            //队列为空，打包结束
-            break
-          }
-        })
-    }catch{
-      case e:Exception =>
-        RepLogger.error(RepLogger.OutputTime_Logger, s"systemname=${sysName},transNumber=${transNumber},getTransListClone error, info=${e.getMessage}")
-    }
-    val end = System.currentTimeMillis()
-    RepLogger.trace(RepLogger.OutputTime_Logger, s"systemname=${sysName},transNumber=${transNumber},getTransListClone spent time=${end-currenttime}")
-
-    translist.toSeq
-  }*/
-  def getTransListClone(start:Int,num: Int,sysName:String): Seq[Transaction] = {
+   def getTransListClone(start:Int,num: Int,sysName:String): Seq[Transaction] = {
     var translist = scala.collection.mutable.ArrayBuffer[Transaction]()
     transLock.lock()
     val starttime = System.currentTimeMillis()
@@ -202,4 +167,14 @@ class TransactionPoolMgr_1 {
   def isEmpty:Boolean={
     transactions.isEmpty
   }
+
+  override def packageTransaction(blockIdentifier: String, num: Int, sysName: String): Seq[Transaction] = {Seq.empty}
+
+  override def rollbackTransaction(blockIdentifier: String): Unit = {}
+
+  override def cleanPreloadCache(blockIdentifier: String): Unit = {}
+
+  override def getTransListClone(num: Int, sysName: String): Seq[Transaction] = {Seq.empty}
+
+  override def startupSchedule(sysName: String): Unit = {}
 }

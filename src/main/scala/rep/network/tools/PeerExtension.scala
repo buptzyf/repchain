@@ -22,7 +22,7 @@ import java.util.concurrent.atomic._
 
 import rep.utils.GlobalUtils.{BlockerInfo, NodeStatus}
 import rep.network.persistence.BlockCache
-import rep.network.tools.transpool.TransactionPoolMgr
+import rep.network.tools.transpool.{ITransctionPoolMgr, TransactionPoolMgr, TransactionPoolMgrForCFRD}
 import java.util.concurrent.ConcurrentHashMap
 
 import rep.app.conf.SystemProfile
@@ -42,10 +42,23 @@ import rep.network.sync.SyncMsg.MaxBlockInfo
 class PeerExtensionImpl extends Extension {
 
 /*********交易池缓存管理开始************/
-  private val transactionmgr = new TransactionPoolMgr
+  private val transactionmgr : ITransctionPoolMgr =  setPoolMgr
 
-  def getTransPoolMgr: TransactionPoolMgr = {
+  private def setPoolMgr:ITransctionPoolMgr={
+    if(SystemProfile.getTypeOfConsensus == "RAFT"){
+      new TransactionPoolMgr
+    }else{
+      new TransactionPoolMgrForCFRD
+    }
+  }
+
+  private val transactionmgrforcfrd = new TransactionPoolMgrForCFRD
+  def getTransPoolMgr: ITransctionPoolMgr = {
     this.transactionmgr
+  }
+
+  def getTransPoolMgrForCfrd : TransactionPoolMgrForCFRD = {
+    this.transactionmgrforcfrd
   }
 /*********交易池缓存管理结束************/
 

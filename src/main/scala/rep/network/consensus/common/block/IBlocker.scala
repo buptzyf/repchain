@@ -12,10 +12,11 @@ import rep.network.consensus.common.MsgOfConsensus.{PreTransBlock, PreTransBlock
 import rep.network.consensus.util.BlockHelp
 import rep.network.module.ModuleActorType
 import rep.protos.peer.{Block, TransactionResult}
-import rep.storage.ImpDataAccess
+import rep.storage.{ImpDataAccess, ImpDataPreloadMgr}
 import rep.utils.SerializeUtils
 
 import scala.concurrent.Await
+import scala.util.Random
 import scala.util.control.Breaks.{break, breakable}
 
 
@@ -41,8 +42,8 @@ abstract class IBlocker(moduleName: String) extends ModuleBase(moduleName) {
   protected def CollectedTransOfBlock(start: Int, num: Int, limitsize: Int): Seq[Transaction] = {
     //var result = ArrayBuffer.empty[Transaction]
     try {
-      val tmplist = pe.getTransPoolMgr.getTransListClone( num, pe.getSysTag)
-      //if (tmplist.size > 0) {
+      val tmplist = pe.getTransPoolMgr.getTransListClone(start, num, pe.getSysTag)
+      if (tmplist.size > 0) {
         val currenttime = System.currentTimeMillis() / 1000
         /*var transsize = 0
         breakable(
@@ -60,10 +61,13 @@ abstract class IBlocker(moduleName: String) extends ModuleBase(moduleName) {
           result = CollectedTransOfBlock(start + num, num, limitsize)
         }*/
         tmplist
-      //}
-      //else{
-        //CollectedTransOfBlock(start + num, num, limitsize)
-      //}
+      }
+      else{
+        if(pe.getTransPoolMgr.getTransLength()>0)
+          CollectedTransOfBlock(start + num, num, limitsize)
+        else
+          Seq.empty
+      }
     } finally {
     }
   }
@@ -72,7 +76,7 @@ abstract class IBlocker(moduleName: String) extends ModuleBase(moduleName) {
 
   protected def ExecuteTransactionOfBlock(block: Block): Block = {
     try {
-      val future = pe.getActorRef(ModuleActorType.ActorType.dispatchofpreload) ? PreTransBlock(block, "preload-"+pe.getBlocker.voteBlockHash)
+      val future = pe.getActorRef(ModuleActorType.ActorType.dispatchofpreload) ? PreTransBlock(block, "preload-"+block.transactions(0).id)
       val result = Await.result(future, timeout.duration).asInstanceOf[PreTransBlockResult]
       if (result.result) {
         result.blc
@@ -81,6 +85,8 @@ abstract class IBlocker(moduleName: String) extends ModuleBase(moduleName) {
       }
     } catch {
       case e: AskTimeoutException => null
+    }finally {
+      ImpDataPreloadMgr.Free(pe.getSysTag,"preload-"+block.transactions(0).id)
     }
   }
 

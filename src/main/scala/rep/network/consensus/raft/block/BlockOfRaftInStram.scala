@@ -110,8 +110,12 @@ class BlockOfRaftInStram(moduleName: String) extends IBlocker(moduleName) {
     pe.getTransPoolMgr.cleanPreloadCache("identifier-" + this.preblock.height)
     RepTimeTracer.setEndTime(pe.getSysTag, "createBlock", System.currentTimeMillis(), this.preblock.height, this.preblock.transactions.size)
     this.isPublish = true
-    mediator ! Publish(Topic.Block, ConfirmedBlock(this.preblock, self))
-    //this.resetStatus
+    if(!pe.getZeroOfTransNumFlag) {
+      mediator ! Publish(Topic.Block, ConfirmedBlock(this.preblock, self))
+    }else{
+      this.resetStatus
+      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("blocker transform error" + "~" + selfAddr))
+    }
   }
 
   override def receive = {
@@ -123,7 +127,11 @@ class BlockOfRaftInStram(moduleName: String) extends IBlocker(moduleName) {
           if(this.checkedStatus){
             if((pe.getMaxHeight4SimpleRaft - pe.getBlocker.VoteHeight ) <= SystemProfile.getBlockNumberOfRaft  && !pe.getZeroOfTransNumFlag) {
               this.NewBlock
+            }else{
+              RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"do not create new block,height=${pe.getCurrentHeight},voteheight-${pe.getBlocker.VoteHeight}" + "~" + selfAddr))
             }
+          }else{
+            RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"do not create new block,status error,height=${pe.getCurrentHeight},voteheight-${pe.getBlocker.VoteHeight}" + "~" + selfAddr))
           }
         }
       } else {
@@ -134,12 +142,7 @@ class BlockOfRaftInStram(moduleName: String) extends IBlocker(moduleName) {
       if(this.blockIdentifier == blockIdentifier ){
         if(result){
           //预执行成功
-          if(!pe.getZeroOfTransNumFlag){
             preloadedHandler
-          }else{
-            this.resetStatus
-            RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("blocker transform error" + "~" + selfAddr))
-          }
         } else{
           //执行失败，开始清理
           pe.getTransPoolMgr.rollbackTransaction("identifier-" + this.preblock.height)
