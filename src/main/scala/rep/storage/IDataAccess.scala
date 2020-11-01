@@ -61,7 +61,8 @@ abstract class IDataAccess(val SystemName: String) extends AbstractLevelDB(Syste
   }
 
   opts = new Options().createIfMissing(true)
-  opts.cacheSize(50 * 1048576); //初始化leveldb系统的缓存，默认为50M
+  opts.cacheSize(128 * 1048576); //初始化leveldb系统的缓存，默认为50M,修改默认为128
+  //opts.blockSize(32 * 1048576)
   db = leveldbfactory.open(new File(this.DBDataPath), opts)
 
 
@@ -70,7 +71,7 @@ abstract class IDataAccess(val SystemName: String) extends AbstractLevelDB(Syste
    * @version	0.7
    * @since	2017-09-28
    * @category	获取当前系统的名称
-   * @param	无
+   * @param
    * @return	返回当前系统的名称 String
    */
   override def getSystemName: String = {
@@ -82,7 +83,7 @@ abstract class IDataAccess(val SystemName: String) extends AbstractLevelDB(Syste
    * @version	0.7
    * @since	2017-09-28
    * @category	获取当前实例的名称
-   * @param	无
+   * @param
    * @return	返回当前实例的名称 String
    */
   override def getInstanceName: String = {
@@ -94,7 +95,7 @@ abstract class IDataAccess(val SystemName: String) extends AbstractLevelDB(Syste
    * @version	0.7
    * @since	2017-09-28
    * @category	判断是否开启事务
-   * @param	无
+   * @param
    * @return	返回开启事务或者关闭事务 Boolean true=开启事务，false=关闭事务
    */
   def IsBeginTrans: Boolean = {
@@ -106,7 +107,7 @@ abstract class IDataAccess(val SystemName: String) extends AbstractLevelDB(Syste
    * @version	0.7
    * @since	2017-09-28
    * @category	开启事务
-   * @param	无
+   * @param
    * @return	无
    */
   def BeginTrans = {
@@ -146,7 +147,7 @@ abstract class IDataAccess(val SystemName: String) extends AbstractLevelDB(Syste
    * @version	0.7
    * @since	2017-09-28
    * @category	提交事务
-   * @param	无
+   * @param
    * @return	无
    */
   def CommitTrans = {
@@ -184,7 +185,7 @@ abstract class IDataAccess(val SystemName: String) extends AbstractLevelDB(Syste
    * @version	0.7
    * @since	2017-09-28
    * @category	事务回滚
-   * @param	无
+   * @param
    * @return	无
    */
   def RollbackTrans = {
@@ -256,7 +257,7 @@ abstract class IDataAccess(val SystemName: String) extends AbstractLevelDB(Syste
    */
   override def Put(key: String, bb: Array[Byte]): Boolean = {
     var b: Boolean = true
-    synchObject.synchronized {
+    //synchObject.synchronized {
       try {
         var v: Array[Byte] = bb
         
@@ -279,7 +280,7 @@ abstract class IDataAccess(val SystemName: String) extends AbstractLevelDB(Syste
           throw e
         }
       }
-    }
+    //}
     b
   }
 
@@ -534,7 +535,27 @@ abstract class IDataAccess(val SystemName: String) extends AbstractLevelDB(Syste
    * @return	返回指定长度的Block数组，如果没有找到，返回长度=0的数组
    */
   def getBlocks4ObjectFromHeight(h: Int, limits: Int): Array[Block]
-
+  
+  /**
+   * @author jiangbuyun
+   * @version	0.7
+   * @since	2019-09-11
+   * @category	根据交易ID获取交易入块时间
+   * @param	txid 交易id
+   * @return	返回出块时间
+   */
+  def getBlockTimeOfTxid(txid : String): String
+  
+   /**
+   * @author jiangbuyun
+   * @version	0.7
+   * @since	2019-09-11
+   * @category	根据块的高度获取交易入块时间
+   * @param	h 块高度
+   * @return	返回出块时间
+   */
+  def getBlockTimeOfHeight(h : Long): String
+  
   /**
    * @author jiangbuyun
    * @version	0.7
@@ -562,7 +583,7 @@ abstract class IDataAccess(val SystemName: String) extends AbstractLevelDB(Syste
    * @version	0.7
    * @since	2017-09-28
    * @category	返回当前区块链的chaininfo
-   * @param	无
+   * @param
    * @return	返回链码信息 BlockchainInfo
    */
   def getBlockChainInfo(): BlockchainInfo
@@ -592,7 +613,7 @@ abstract class IDataAccess(val SystemName: String) extends AbstractLevelDB(Syste
    * @version	0.7
    * @since	2019-05-09
    * @category	回滚块到某个高度
-   * @param	to 将要回滚到到高度
+   * @param
    * @return	如果成功返回true，否则返回false
    */
   def rollbackToheight(toHeight: Long):  Boolean
@@ -602,7 +623,7 @@ abstract class IDataAccess(val SystemName: String) extends AbstractLevelDB(Syste
    * @version	0.7
    * @since	2017-09-28
    * @category	获取链码的高度
-   * @param	无
+   * @param
    * @return	成功返回当前区块链的高度 Long
    */
   def getBlockHeight(): Long
@@ -612,7 +633,7 @@ abstract class IDataAccess(val SystemName: String) extends AbstractLevelDB(Syste
    * @version	0.7
    * @since	2017-09-28
    * @category	获取系统交易的数量
-   * @param	无
+   * @param
    * @return	返回系统当前的交易数量
    */
   def getBlockAllTxNumber(): Long
@@ -622,7 +643,7 @@ abstract class IDataAccess(val SystemName: String) extends AbstractLevelDB(Syste
    * @version	0.7
    * @since	2017-09-28
    * @category	获取当前存储区块字节的文件编号
-   * @param	无
+   * @param
    * @return	返回文件编号
    */
   def getMaxFileNo(): Int

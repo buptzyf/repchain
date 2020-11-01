@@ -25,7 +25,6 @@ import scala.collection.mutable
 import org.slf4j.LoggerFactory
 import rep.log.RepTimeTracer
 import rep.log.RepLogger
-import rep.utils.GlobalUtils.{ActorType}
 
 
 /**
@@ -49,15 +48,15 @@ object ModuleBase {
 
 abstract class  ModuleBase(name: String) extends Actor  with ClusterActor with BaseActor{
   val pe = PeerExtension(context.system)
-  val atype = ModuleNameToIntActorType
+  /*val atype = ModuleNameToIntActorType
   atype match{
     case 0 => 
     case _ => 
       RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"--------Actor create,actor name=${name}"))
       pe.register(atype, self)
-  }
+  }*/
   
-  private def ModuleNameToIntActorType:Int={
+  /*private def ModuleNameToIntActorType:Int={
     name match{
       case "memberlistener" => 1
       case "modulemanager" => 2
@@ -82,7 +81,7 @@ abstract class  ModuleBase(name: String) extends Actor  with ClusterActor with B
       case "dispatchofpreload" => 21
       case _ => 0
     }
-  }
+  }*/
   
     
   /**

@@ -1,19 +1,19 @@
 package rep.sc
 
-import akka.actor.{ActorSystem, ActorRef}
+import akka.actor.{ActorRef, ActorSystem}
 import akka.testkit.{TestKit, TestProbe}
 import org.json4s.{DefaultFormats, jackson}
 import org.json4s.native.Serialization.{write, writePretty}
 import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, Matchers}
 import rep.app.system.ClusterSystem
 import rep.app.system.ClusterSystem.InitType
-import rep.network.PeerHelper
-import rep.network.module.ModuleManager
+import rep.network.module.cfrd.ModuleManagerOfCFRD
 import rep.protos.peer.{Certificate, ChaincodeId, Signer}
 import rep.sc.TransferSpec.{ACTION, SetMap}
 import rep.storage.ImpDataAccess
 import rep.utils.SerializeUtils.toJson
 import rep.app.conf.SystemProfile
+import rep.network.autotransaction.PeerHelper
 
 import scala.concurrent.duration._
 import scala.collection.mutable.Map
@@ -122,7 +122,7 @@ class ContractTest(_system: ActorSystem)
     val sysName = "121000005l35120456.node1"
     val dbTag = "121000005l35120456.node1"
     //建立PeerManager实例是为了调用transactionCreator(需要用到密钥签名)，无他
-    val pm = system.actorOf(ModuleManager.props("modulemanager", sysName, false, false, false), "modulemanager")
+    val pm = system.actorOf(ModuleManagerOfCFRD.props("modulemanager", sysName, false, false, false), "modulemanager")
 
     val sm: SetMap = Map("121000005l35120456" -> 50, "12110107bi45jh675g" -> 50, "122000002n00123567" -> 50)
     val sms = write(sm)

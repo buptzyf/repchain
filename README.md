@@ -14,11 +14,11 @@
 - [java security](http://docs.oracle.com/javase/8/docs/technotes/guides/security/index.html)——hash、签名、密钥对及证书管理均采用jdk内置方法
 
 ## 安装
-- install [jdk8+](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)
+- install [zuluJdk11+](https://www.azul.com/downloads/zulu-community/?&architecture=x86-64-bit&package=jdk)
 - install [Python](http://www.python.org/downloads/)
 - install [Scala](https://www.scala-lang.org/download/)
 - install [SBT](http://www.scala-sbt.org/release/docs/Setup.html)
-- install [Scala IDE](http://scala-ide.org/)
+- install [Idea IDE](https://www.jetbrains.com/idea/download/#section=windows)
 - install [keystore-explorer](http://keystore-explorer.org/) ——用于生成密钥对的工具,非必须
 - install [protobuf editor](https://github.com/Enide/polyglot-maven-editors)——编辑protobuf定义工具，非必须
 
@@ -32,16 +32,12 @@
 - 监控层：在区块链网络中收集事件/日志,并将其以Protocol Buffers的格式推送至Web端,以H5图形技术进行实时状态的可视化展示和日志回放
 
 ## 运行
-- `git clone https://gitee.com/BTAJL/repchain.git`
-下载项目到本地
-- `sbt` 
-在项目的根目录下下载项目依赖项，可以配置仓库或者使用阿里镜像
-- `compile` 
-编译成Protocol Buffer Scala类
-- `eclipse` 
-生成eclipse工程文件
-- 打开 Scala IDE, File->Import->Existing Projects,导入项目
-- 右键单击 rep.app.Repchain.scala,Run As->Scala Application(单机组网4个节点)
+- ` 下载项目到本地`
+  - git clone https://gitee.com/BTAJL/repchain.git
+- `导入` 
+  - 打开Idea IDE，File->New->Project or Project from VersionControl
+  - 使用Idea的sbt插件导入
+- 右键单击 rep.app.Repchain.scala，Run 'RepChain'(单机组网4个节点)
 - 运行配置VM参数 -Dlogback.configurationFile=conf/logback.xml (使logback配置生效)
 - 查看实时图 http://localhost:8081/web/g1.html
 ![实时状态图](https://images.gitee.com/uploads/images/2020/0114/174424_b02748a4_1598833.gif) 
@@ -55,7 +51,7 @@
 
 ## 打包
 - assembly 
-打包成jar包，进行分布式部署 
+  - 打包成jar包，进行分布式部署
 
 ## 示范应用
 - [BAR](https://gitee.com/linkel/bar)(Base App of RepChain)：提供了通用的基础功能实现，区块链应用实施者既可以直接复用其提供的功能， 也可以在其源代码的基础上进行开发，快速开发自己的DAppp

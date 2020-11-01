@@ -16,20 +16,19 @@
 
 package rep.network.tools
 
-import akka.actor.{ ActorSystem, Address, ExtendedActorSystem, ActorRef, Extension, ExtensionId, ExtensionIdProvider }
-import rep.protos.peer.{ Transaction, BlockchainInfo }
-import scala.collection.immutable
-import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
+import akka.actor.{ActorRef, ActorSystem, Address, ExtendedActorSystem, Extension, ExtensionId, ExtensionIdProvider}
+import rep.protos.peer.{BlockchainInfo, Transaction}
 import java.util.concurrent.atomic._
-import org.bouncycastle.asn1.cmp.ProtectedPart
-import java.util.concurrent.locks._
-import com.google.protobuf.UInt32Value
-import rep.protos.peer._
-import java.util.concurrent.ConcurrentLinkedQueue
-import rep.utils.GlobalUtils.{ BlockerInfo, NodeStatus }
+
+import rep.utils.GlobalUtils.{BlockerInfo, NodeStatus}
 import rep.network.persistence.BlockCache
 import rep.network.tools.transpool.TransactionPoolMgr
+import java.util.concurrent.ConcurrentHashMap
+
+import rep.network.consensus.cfrd.endorse.RecvEndorsInfo
+//import scala.jdk.CollectionConverters._
+import scala.collection.JavaConverters._
+import rep.network.sync.SyncMsg.MaxBlockInfo
 
 /**
  * Peer business logic node stared space（based on system）
@@ -64,6 +63,39 @@ class PeerExtensionImpl extends Extension {
     this.nodemgr
   }
 /*********组网节点信息管理，包括抽签候选人信息结束************/
+private var startVoteInfo:AtomicReference[MaxBlockInfo] = new AtomicReference[MaxBlockInfo](new MaxBlockInfo(0,""))
+
+def setStartVoteInfo(value:MaxBlockInfo)={
+  this.startVoteInfo.set(value)
+}
+
+def getStartVoteInfo:MaxBlockInfo={
+  this.startVoteInfo.get
+}
+
+private var createBlockHeight : AtomicLong = new AtomicLong(0)
+
+def setCreateHeight(value:Long)={
+  this.createBlockHeight.set(value)
+}
+
+def getCreateHeight:Long={
+  this.createBlockHeight.get
+}
+  
+private var confirmBlockHeight : AtomicLong = new AtomicLong(0)
+
+def setConfirmHeight(value:Long)={
+  this.confirmBlockHeight.set(value)
+}
+
+def getConfirmHeight:Long={
+  this.confirmBlockHeight.get
+}
+
+def getMaxHeight4SimpleRaft:Long={
+  scala.math.max(scala.math.max(this.getConfirmHeight, this.getConfirmHeight),this.getCurrentHeight)
+}
 
 /*********节点当前链信息开始************/
   private var SystemCurrentChainInfo: AtomicReference[BlockchainInfo] =
@@ -125,26 +157,33 @@ class PeerExtensionImpl extends Extension {
 /*********节点信息相关操作结束************/
 
 /*********系统Actor注册相关操作开始************/
-  private var actorList = mutable.HashMap[Int, ActorRef]().empty
+  private implicit var actorList = new ConcurrentHashMap[Int, ActorRef] asScala
 
   def register(actorName: Int, actorRef: ActorRef) = {
-    actorList += actorName -> actorRef
+    actorList.put(actorName, actorRef)
   }
 
   def getActorRef(actorName: Int): ActorRef = {
     var r: ActorRef = null
-    try {
+    if(actorList.contains(actorName)){
       r = actorList(actorName)
-    } catch {
-      case e: Exception => r = null
     }
+    
     r
   }
 
-  def unregister(actorName: Int) = {
+  /*def unregister(actorName: Int) = {
     actorList -= actorName
-  }
+  }*/
+  
 /*********系统Actor注册相关操作结束************/
+
+  private var CurrentEndorseInfo = new RecvEndorsInfo()
+
+  def getCurrentEndorseInfo:RecvEndorsInfo={
+    this.CurrentEndorseInfo
+  }
+
 }
 
 object PeerExtension

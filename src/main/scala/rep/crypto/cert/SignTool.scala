@@ -27,7 +27,7 @@ import java.util.{ArrayList, List}
 import rep.app.conf.SystemProfile
 
 import scala.util.control.Breaks._
-import fastparse.utils.Base64
+//import fastparse.internal..utils.Base64
 import org.bouncycastle.util.io.pem.PemReader
 
 /**
@@ -41,6 +41,7 @@ object SignTool {
   private var keypassword = mutable.HashMap[String, String]()
   private var keyStores = mutable.HashMap[String, KeyStore]()
   private var PublickeyCerts = mutable.HashMap[String, Certificate]()
+  //private var PublickeyCerts = mutable.HashMap[String, PublicKey]()
   private var TrustNodelist: List[String] = new ArrayList[String]
   private var isAddPublicKey = false
 

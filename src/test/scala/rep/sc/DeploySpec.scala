@@ -26,17 +26,13 @@ import rep.protos.peer._
 import rep.sc.Sandbox._
 import rep.app.system.ClusterSystem
 import rep.app.system.ClusterSystem.InitType
-
-import rep.network.PeerHelper
 import org.json4s.{DefaultFormats, jackson}
 import de.heikoseeberger.akkahttpjson4s.Json4sSupport
 import org.json4s._
-import rep.network.module.ModuleManager
+import rep.network.module.cfrd.ModuleManagerOfCFRD
 import rep.storage.ImpDataAccess
 import rep.utils.SerializeUtils.deserialise
-
 import java.nio.ByteBuffer
-
 import java.io.IOException
 import java.io.PrintWriter
 import java.io.FileWriter
@@ -47,8 +43,8 @@ import org.json4s.{DefaultFormats, Formats, jackson}
 import org.json4s.native.Serialization.writePretty
 import org.json4s.native.Serialization
 import org.json4s.native.Serialization.{read, write}
-
 import rep.crypto.cert.SignTool
+import rep.network.autotransaction.PeerHelper
 
 /** 合约容器实现的单元测试
   *
@@ -83,7 +79,7 @@ class DeploySpec(_system: ActorSystem)
 
     val sysName = "121000005l35120456.node1"
     //建立PeerManager实例是为了调用transactionCreator(需要用到密钥签名)，无他
-    val pm = system.actorOf(ModuleManager.props("modulemanager", sysName, false, false, false), "modulemanager")
+    val pm = system.actorOf(ModuleManagerOfCFRD.props("modulemanager", sysName, false, false, false), "modulemanager")
 
     //加载合约脚本
     val s1 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/ContractAssetsTPL.scala")

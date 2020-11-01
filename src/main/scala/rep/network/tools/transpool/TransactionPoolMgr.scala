@@ -16,13 +16,14 @@
 
 package rep.network.tools.transpool
 
-import scala.collection.mutable.{ArrayBuffer,LinkedHashMap}
 import rep.protos.peer.Transaction
 import java.util.concurrent.locks._
 import rep.log.RepLogger
+//import scala.jdk.CollectionConverters._
 import scala.collection.JavaConverters._
 import java.util.concurrent.ConcurrentSkipListMap
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicInteger
 import rep.app.conf.{  TimePolicy }
 import rep.storage.ImpDataAccess
 import scala.util.control.Breaks._
@@ -32,10 +33,12 @@ class TransactionPoolMgr {
   
   private implicit var transactions = new ConcurrentSkipListMap[Long,Transaction]() asScala
   private implicit var transKeys = new ConcurrentHashMap[String,Long]() asScala
+  private implicit var transNumber = new AtomicInteger(0) 
   
   def getTransListClone(start:Int,num: Int,sysName:String): Seq[Transaction] = {
     var translist = scala.collection.mutable.ArrayBuffer[Transaction]()
     transLock.lock()
+    val starttime = System.currentTimeMillis()
     try{
         var deltrans4id = scala.collection.mutable.ArrayBuffer[String]()
         val sr: ImpDataAccess = ImpDataAccess.GetDataAccess(sysName)
@@ -44,7 +47,7 @@ class TransactionPoolMgr {
         var pos = 0
         breakable(
         transactions.foreach(f=>{
-          if(count < num){
+          if(count <= num){
             val txid = f._2.id
             if ((currenttime - f._1/1000000000) > TimePolicy.getTranscationWaiting || sr.isExistTrans4Txid(txid) ){
               deltrans4id += txid
@@ -72,6 +75,8 @@ class TransactionPoolMgr {
     }finally{
       transLock.unlock()
     }
+    val end = System.currentTimeMillis()
+    RepLogger.trace(RepLogger.OutputTime_Logger, s"systemname=${sysName},transNumber=${transNumber},getTransListClone spent time=${end-starttime}")
     
     translist.toSeq
   }
@@ -79,6 +84,7 @@ class TransactionPoolMgr {
   
   def putTran(tran: Transaction,sysName:String): Unit = {
     transLock.lock()
+     val start = System.currentTimeMillis()
     try{
       val time = System.nanoTime()
       val txid = tran.id
@@ -87,18 +93,24 @@ class TransactionPoolMgr {
       }else{
         transactions.put(time, tran)
         transKeys.put(txid, time)
-        RepLogger.info(RepLogger.TransLifeCycle_Logger,  s"systemname=${sysName},trans entry pool,${tran.id},entry time = ${time}")
+        transNumber.incrementAndGet()
+        RepLogger.info(RepLogger.TransLifeCycle_Logger,  s"systemname=${sysName},transNumber=${transNumber},trans entry pool,${tran.id},entry time = ${time}")
       }
     }finally {
       transLock.unlock()
     }
+    val end = System.currentTimeMillis()
+    RepLogger.trace(RepLogger.OutputTime_Logger, s"systemname=${sysName},putTran spent time=${end-start}")
   }
   
   def findTrans(txid:String):Boolean = {
     var b :Boolean = false
+    val start = System.currentTimeMillis()
     if(transKeys.contains(txid)){
         b = true
     }
+    val end = System.currentTimeMillis()
+    RepLogger.trace(RepLogger.OutputTime_Logger, s"findTrans spent time=${end-start}")
     b
   }
 
@@ -125,25 +137,26 @@ class TransactionPoolMgr {
   
   def removeTranscation4Txid(txid:String,sysName:String):Unit={
     transLock.lock()
+    val start = System.currentTimeMillis()
     try{
         if(transKeys.contains(txid)){
             transactions.remove(transKeys(txid))
+            transKeys.remove(txid)
+            transNumber.decrementAndGet()
           }
-          transKeys.remove(txid)
           RepLogger.info(RepLogger.TransLifeCycle_Logger,  s"systemname=${sysName},remove trans from pool,${txid}")
     }finally{
         transLock.unlock()
     }
+    val end = System.currentTimeMillis()
+    RepLogger.trace(RepLogger.OutputTime_Logger, s"systemname=${sysName},removeTranscation4Txid spent time=${end-start}")
   }
 
   def getTransLength() : Int = {
-    var len = 0
-    transLock.lock()
-    try{
-      len = transactions.size
-    }finally{
-      transLock.unlock()
-    }
-    len
+    this.transNumber.get
+  }
+
+  def isEmpty:Boolean={
+    transactions.isEmpty
   }
 }

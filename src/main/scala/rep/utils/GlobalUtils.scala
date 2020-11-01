@@ -61,7 +61,7 @@ object GlobalUtils {
     val BLOCK_CHAIN = "BLOCK_CHAIN"
   }
 
-  case object ActorType{
+  /*case object ActorType{
     val memberlistener = 1
     val modulemanager = 2
     val webapi = 3
@@ -83,7 +83,7 @@ object GlobalUtils {
     val transactiondispatcher = 19
     val dispatchofRecvendorsement = 20
     val dispatchofpreload = 21
-  }
+  }*/
   
   
 

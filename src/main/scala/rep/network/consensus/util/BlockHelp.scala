@@ -20,21 +20,25 @@ import com.google.protobuf.ByteString
 import com.google.protobuf.timestamp.Timestamp
 import scalapb.json4s.JsonFormat
 import rep.app.conf.SystemProfile
-import rep.crypto.{ Sha256 }
-import rep.protos.peer.{ Block, Signature, Transaction, ChaincodeId, CertId }
+import rep.crypto.Sha256
+import rep.protos.peer.{Block, CertId, ChaincodeId, Signature, Transaction}
 import rep.utils.TimeUtils
 import rep.storage.IdxPrefix
 import rep.sc.Shim._
 import rep.storage._
-import java.security.cert.{ Certificate }
-import rep.network.PeerHelper
+import java.security.cert.Certificate
+
 import rep.utils.SerializeUtils
+
 import scala.util.control.Breaks
 import org.slf4j.LoggerFactory
 import rep.crypto.cert.SignTool
+import rep.network.autotransaction.PeerHelper
 import rep.utils.IdTool
 
 object BlockHelp {
+
+  private val  versionOfBlock = 1
 /****************************背书相关的操作开始**********************************************************/
   def SignDataOfBlock(NonEndorseDataOfBlock: Array[Byte], alise: String): Signature = {
     try {
@@ -106,7 +110,7 @@ object BlockHelp {
     try {
       val millis = TimeUtils.getCurrentTime()
       new Block(
-        1,
+        versionOfBlock,
         h,
         trans,
         null,
@@ -120,7 +124,7 @@ object BlockHelp {
   }
 
   def CreateGenesisBlock:Block={
-    val blkJson = scala.io.Source.fromFile("json/gensis.json")
+    val blkJson = scala.io.Source.fromFile("json/gensis.json","UTF-8")
     val blkStr = try blkJson.mkString finally blkJson.close()
     val gen_blk = JsonFormat.fromJsonString[Block](blkStr)
     gen_blk

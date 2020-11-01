@@ -15,4 +15,4 @@ config_log="logback.xml"
 #::=== execute
 #-Dconfig.resourse=$config_base/$config_app
 
-java -D$logger_name.configurationFile=$config_base/$config_log -jar $app_name
+java -Dlogback.configurationFile=conf/logback.xml -jar $app_name

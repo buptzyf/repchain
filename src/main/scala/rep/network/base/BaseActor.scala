@@ -31,6 +31,7 @@ trait BaseActor extends Actor {
 
   var schedulerLink: akka.actor.Cancellable = null
 
+  //implicit
   def scheduler = context.system.scheduler
 
   /**

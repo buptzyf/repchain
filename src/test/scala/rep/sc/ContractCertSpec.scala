@@ -25,10 +25,9 @@ import org.scalatest._
 import rep.app.conf.SystemProfile
 import rep.app.system.ClusterSystem
 import rep.app.system.ClusterSystem.InitType
-import rep.network.PeerHelper
-import rep.network.module.ModuleManager
+import rep.network.autotransaction.PeerHelper
+import rep.network.module.cfrd.ModuleManagerOfCFRD
 import rep.protos.peer.{Certificate, ChaincodeId, Signer}
-
 import rep.sc.TransferSpec.ACTION
 import rep.sc.tpl._
 import rep.sc.tpl.ContractCert
@@ -60,7 +59,7 @@ class ContractCertSpec(_system: ActorSystem) extends TestKit(_system) with Match
   val dbTag = "121000005l35120456.node1"
   val cid = ChaincodeId(SystemProfile.getAccountChaincodeName, 1)
   //建立PeerManager实例是为了调用transactionCreator(需要用到密钥签名)，无他
-  val pm: ActorRef = system.actorOf(ModuleManager.props("modulemanager", sysName, false, false, false), "modulemanager")
+  val pm: ActorRef = system.actorOf(ModuleManagerOfCFRD.props("modulemanager", sysName, false, false, false), "modulemanager")
 
   val signers: Array[Signer] = Array(
     Signer("node1", "121000005l35120456", "18912345678", List("node1")),

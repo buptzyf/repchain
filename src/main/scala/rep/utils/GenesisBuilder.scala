@@ -16,19 +16,21 @@
 
 package rep.utils
 
-import java.io.File
-import rep.network.PeerHelper
+import java.io.{File, PrintWriter}
+
 import com.typesafe.config.ConfigFactory
 import com.google.protobuf.ByteString
 import com.google.protobuf.timestamp.Timestamp
 import rep.protos.peer._
 import scalapb.json4s.JsonFormat
-import rep.crypto.{ Sha256}
+import rep.crypto.Sha256
 import org.json4s.{DefaultFormats, Formats, jackson}
 import org.json4s.jackson.JsonMethods._
 import org.json4s.DefaultFormats._
 import rep.network.consensus.util.BlockHelp
 import rep.crypto.cert.SignTool
+import rep.network.autotransaction.PeerHelper
+
 import scala.collection.mutable
 import rep.sc.tpl._
 import rep.sc.tpl.ContractCert
@@ -51,7 +53,7 @@ object GenesisBuilder {
     //交易发起人是超级管理员
     //增加scala的资产管理合约   
     // read deploy funcs
-    val s1 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/ContractCert.scala")
+    val s1 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/ContractCert.scala","UTF-8")
     val l1 = try s1.mkString finally s1.close()
     
     val cid = new ChaincodeId("ContractCert",1)
@@ -87,7 +89,7 @@ object GenesisBuilder {
     
     
     for(i<-0 to 5){
-      val certfile = scala.io.Source.fromFile("jks/"+signers(i).creditCode+"."+signers(i).name+".cer")
+      val certfile = scala.io.Source.fromFile("jks/"+signers(i).creditCode+"."+signers(i).name+".cer","UTF-8")
       val certstr = try certfile.mkString finally certfile.close()
      // val cert = SignTool.getCertByFile("jks/"+signers(i).creditCode+"."+signers(i).name+".cer")
       val millis = System.currentTimeMillis()
@@ -100,7 +102,7 @@ object GenesisBuilder {
     }
     
     
-     val s2 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/ContractAssetsTPL.scala")
+     val s2 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/ContractAssetsTPL.scala","UTF-8")
     val c2 = try s2.mkString finally s2.close()
     val cid2 = new ChaincodeId("ContractAssetsTPL",1)
     val dep_asserts_trans = PeerHelper.createTransaction4Deploy(sysName, cid2,
@@ -108,7 +110,7 @@ object GenesisBuilder {
     translist(13) = dep_asserts_trans
     
     // read invoke scala contract
-    val s3 = scala.io.Source.fromFile("api_req/json/set.json")
+    val s3 = scala.io.Source.fromFile("api_req/json/set.json","UTF-8")
     val ct1 = try s3.mkString finally s3.close()
     
     translist(14) = PeerHelper.createTransaction4Invoke("951002007l78123233.super_admin", cid2,
@@ -138,6 +140,10 @@ object GenesisBuilder {
     val r = JsonFormat.toJson(blk)   
     val rstr = pretty(render(r))
     println(rstr)
-   
+
+    val pw = new PrintWriter("json/gensis.json","UTF-8")
+    pw.write(rstr)
+    pw.flush()
+    pw.close()
   }
 }

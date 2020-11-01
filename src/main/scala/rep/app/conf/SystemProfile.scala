@@ -40,7 +40,7 @@ object SystemProfile {
 
   private[this] var _LIMIT_BLOCK_TRANS_NUM: Int = 0//块内最多交易数
   private[this] var _MIN_BLOCK_TRANS_NUM: Int = 0//块内最少交易数
-  private[this] var _VOTE_NOTE_MIN: Int = 0//投票最少参与人数
+  private[this] var _VOTE_NODE_MIN: Int = 0//投票最少参与人数
   private[this] var _TRAN_CREATE_DUR: Int = 0//交易创建时间间隔-针对自动创建
   private[this] var _TRANS_CREATE_TYPE: Int = 0//交易创建类型
   private[this] var _RETRY_TIME: Int = 0//投票重试次数限制
@@ -56,7 +56,15 @@ object SystemProfile {
   private[this] var _GENESISNODENAME:String = ""
   private[this] var _BLOCK_LENGTH: Int = 120000//区块的最大长度
   private[this] var _NUMBER_OF_TRANSPROCESSOR = 100 //
-  
+  private[this] var _HAS_PRELOAD_TRANS_OF_API = true
+  private[this] var _IS_VERIFY_OF_ENDORSEMENT = true//is_verify_of_endorsement
+  private[this] var _NUMBER_OF_ENDORSEMENT: Int = 2
+  private[this] var _TYPE_OF_CONSENSUS:String = "PBFT"
+
+  //zhj
+  private[this] var _PBFT_F: Int = 1
+
+  private[this] var _BLOCKNUMBER_OF_RAFT: Int = 100
   
   private[this] var _DBPATH:String = "" //leveldb数据库文件路径
   private[this] var _BLOCKPATH:String = ""//区块文件的路径
@@ -82,12 +90,28 @@ object SystemProfile {
   
   private def NUMBER_OF_TRANSPROCESSOR = _NUMBER_OF_TRANSPROCESSOR
   
-  private def REALTIMEGRAPH_ENABLE = _REALTIMEGRAPH_ENABLE
+  private def HAS_PRELOAD_TRANS_OF_API = _HAS_PRELOAD_TRANS_OF_API
   
+  private def IS_VERIFY_OF_ENDORSEMENT = _IS_VERIFY_OF_ENDORSEMENT
+  
+  private def NUMBER_OF_ENDORSEMENT = _NUMBER_OF_ENDORSEMENT
+  private def BLOCKNUMBER_OF_RAFT = _BLOCKNUMBER_OF_RAFT
+  
+  private def REALTIMEGRAPH_ENABLE = _REALTIMEGRAPH_ENABLE
+
+  private def TYPE_OF_CONSENSUS : String = _TYPE_OF_CONSENSUS
+
+  //zhj
+  private def PBFT_F = _PBFT_F
+
   private def DBPATH:String = _DBPATH
   private def BLOCKPATH:String = _BLOCKPATH
   private def FILEMAX: Int = _FILEMAX
-  
+
+  private def TYPE_OF_CONSENSUS_=(value:String):Unit={
+    _TYPE_OF_CONSENSUS = value
+  }
+
   private def DBPATH_=(value:String):Unit={
     _DBPATH = value
   }
@@ -110,6 +134,22 @@ object SystemProfile {
   
   private def NUMBER_OF_TRANSPROCESSOR_=(value:Int):Unit={
     _NUMBER_OF_TRANSPROCESSOR = value
+  }
+  
+  private def HAS_PRELOAD_TRANS_OF_API_=(value:Boolean):Unit={
+    _HAS_PRELOAD_TRANS_OF_API = value
+  }
+  
+  private def IS_VERIFY_OF_ENDORSEMENT_=(value:Boolean):Unit={
+    _IS_VERIFY_OF_ENDORSEMENT = value
+  }
+  
+  private def NUMBER_OF_ENDORSEMENT_=(value:Int):Unit={
+    _NUMBER_OF_ENDORSEMENT = value
+  }
+  
+  private def BLOCKNUMBER_OF_RAFT_=(value:Int):Unit={
+    _BLOCKNUMBER_OF_RAFT = value
   }
   
   private def VOTENODELIST_=(value: List[String]): Unit = {
@@ -170,10 +210,10 @@ object SystemProfile {
     _TRAN_CREATE_DUR = value
   }
 
-  private def VOTE_NOTE_MIN: Int = _VOTE_NOTE_MIN
+  private def VOTE_NODE_MIN: Int = _VOTE_NODE_MIN
 
-  private def VOTE_NOTE_MIN_=(value: Int): Unit = {
-    _VOTE_NOTE_MIN = value
+  private def VOTE_NODE_MIN_=(value: Int): Unit = {
+    _VOTE_NODE_MIN = value
   }
 
   private def MIN_BLOCK_TRANS_NUM: Int = _MIN_BLOCK_TRANS_NUM
@@ -203,7 +243,7 @@ object SystemProfile {
     BLOCK_LENGTH_=(config.getInt("system.block.block_length"))
     MIN_BLOCK_TRANS_NUM_=(config.getInt("system.block.trans_num_min"))
     RETRY_TIME_=(config.getInt("system.block.retry_time"))
-    VOTE_NOTE_MIN_=(config.getInt("system.vote.vote_note_min"))
+    VOTE_NODE_MIN_=(config.getInt("system.vote.vote_node_min"))
     VOTENODELIST_=(config.getStringList("system.vote.vote_node_list"))
     TRAN_CREATE_DUR_=(config.getInt("system.transaction.tran_create_dur"))
     MAX_CATCH_TRANS_NUM_=(config.getInt("system.transaction.max_cache_num"))
@@ -218,13 +258,21 @@ object SystemProfile {
     
     GENESISNODENAME_=(config.getString("system.genesis_node_name"))
     NUMBER_OF_TRANSPROCESSOR_=(config.getInt("system.number_of_transProcessor"))
+    HAS_PRELOAD_TRANS_OF_API_=(config.getBoolean("system.has_preload_trans_of_api"))
+    IS_VERIFY_OF_ENDORSEMENT_=(config.getBoolean("system.is_verify_of_endorsement"))
+    NUMBER_OF_ENDORSEMENT_=(config.getInt("system.number_of_endorsement"))
+    BLOCKNUMBER_OF_RAFT_=(config.getInt("system.consensus.blocknumberofraft"))
+    TYPE_OF_CONSENSUS_=(config.getString("system.consensus.type"))
     
     DBPATH_= (config.getString("system.storage.dbpath"))
     BLOCKPATH_= (config.getString("system.storage.blockpath"))
     FILEMAX_=(config.getInt("system.storage.filemax"))
     REALTIMEGRAPH_ENABLE_=(config.getInt("system.realtimegraph_enable"))
   }
-  
+
+  //zhj
+  def getPbftF = PBFT_F
+
   def getRealtimeGraph = REALTIMEGRAPH_ENABLE
   
   def getDBPath = DBPATH
@@ -237,11 +285,21 @@ object SystemProfile {
   
   def getNumberOfTransProcessor = NUMBER_OF_TRANSPROCESSOR
   
+  def getBlockNumberOfRaft = BLOCKNUMBER_OF_RAFT
+
+  def getTypeOfConsensus : String = TYPE_OF_CONSENSUS
+  
+  def getHasPreloadTransOfApi = HAS_PRELOAD_TRANS_OF_API
+  
+  def getIsVerifyOfEndorsement = IS_VERIFY_OF_ENDORSEMENT
+  
+  def getNumberOfEndorsement = NUMBER_OF_ENDORSEMENT
+  
   def getBlockLength = BLOCK_LENGTH
 
   def getMinBlockTransNum = MIN_BLOCK_TRANS_NUM
 
-  def getVoteNoteMin = VOTE_NOTE_MIN
+  def getVoteNodeMin = VOTE_NODE_MIN
 
   def getTranCreateDur = TRAN_CREATE_DUR
 

@@ -37,69 +37,67 @@ object NodeHelp {
     }
     b
   }
-  
+
+  def isSameNode(srcStr: String, destStr: String): Boolean = {
+    destStr.equalsIgnoreCase(srcStr)
+  }
+
   //获取Actor的地址，akka.ssl.tcp://Repchain@192.168.10.155:54310
-  def getNodeAddress(actref: ActorRef):String={
+  def getNodeAddress(actref: ActorRef): String = {
     val path = getNodePath(actref)
     if (path.indexOf("/user") > 0) path.substring(0, path.indexOf("/user")) else ""
   }
-  
+
   //获取Actor的路径，akka.ssl.tcp://Repchain@192.168.10.155:54310/user/modulemanager/synchresponser#-1500748370
-  def getNodePath(actref: ActorRef):String={
-    if(actref == null) ""
+  def getNodePath(actref: ActorRef): String = {
+    if (actref == null) ""
     akka.serialization.Serialization.serializedActorPath(actref)
   }
   
-  def ConsensusConditionChecked(inputNumber: Int, nodeNumber: Int): Boolean = {
-    (inputNumber - 1) >= Math.floor(((nodeNumber)*1.0) / 2)
-  }
-  
-  def isCandidateNow(Systemname: String, candidates: Set[ String ]): Boolean = {
+  def isCandidateNow(Systemname: String, candidates: Set[String]): Boolean = {
     val list = candidates.toList
     list.contains(Systemname)
   }
-  
+
   def isBlocker(blockerOfInput: String, blockername: String): Boolean = {
     blockerOfInput == blockername
   }
-  
-  def checkBlocker(myaddress:String,sendaddress:String):Boolean = {
-    var b :Boolean = false
-    if(myaddress.indexOf("/user")>0){
+
+  def checkBlocker(myaddress: String, sendaddress: String): Boolean = {
+    var b: Boolean = false
+    if (myaddress.indexOf("/user") > 0) {
       val addr = myaddress.substring(0, myaddress.indexOf("/user"))
       b = sendaddress.indexOf(addr) != -1
     }
     b
   }
 
-  def isSeedNode(nodeName:String):Boolean={
+  def isSeedNode(nodeName: String): Boolean = {
     SystemProfile.getGenesisNodeName.equals(nodeName)
   }
-  
-  def isCandidatorNode(roles: Set[String]):Boolean = {
+
+  def isCandidatorNode(roles: Set[String]): Boolean = {
     var r = false
     breakable(
-    roles.foreach(f=>{
-      if(f.startsWith("CRFD-Node")){
-        r = true
-        break
-      }
-    })
-    )
+      roles.foreach(f => {
+        if (f.startsWith("CRFD-Node")) {
+          r = true
+          break
+        }
+      }))
     r
   }
-  
-  def getNodeName(roles: Set[String]):String = {
+
+  def getNodeName(roles: Set[String]): String = {
     var r = ""
     breakable(
-    roles.foreach(f=>{
-      if(f.startsWith("CRFD-Node")){
-        r = f.substring(f.indexOf("CRFD-Node")+10)
-        break
-      }
-    })
-    )
+      roles.foreach(f => {
+        if (f.startsWith("CRFD-Node")) {
+          r = f.substring(f.indexOf("CRFD-Node") + 10)
+          break
+        }
+      }))
     r
   }
-  
+
 }

@@ -36,8 +36,12 @@ object RepLogger {
    def Vote_Logger = LoggerFactory.getLogger("Vote_Logger")
    def OutputTime_Logger = LoggerFactory.getLogger("OutputTime_Logger")
    def TransLifeCycle_Logger = LoggerFactory.getLogger("TransLifeCycle_Logger")
-   
-   def trace(logger:Logger,msg:String)={
+   def APIAccess_Logger = LoggerFactory.getLogger("APIAccess_Logger")
+
+    //zhj
+    def zLogger = LoggerFactory.getLogger("System_Logger")
+
+  def trace(logger:Logger,msg:String)={
      logger.trace(msg)
    }
    

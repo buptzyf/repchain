@@ -26,19 +26,14 @@ import akka.actor._
 import akka.http.scaladsl.model.HttpEntity.Strict
 import akka.http.javadsl.model.ws._
 import akka.stream.scaladsl.Sink
-
-import scala.concurrent.forkjoin.ThreadLocalRandom
 import akka.http.scaladsl.model.ws.{BinaryMessage, Message, TextMessage}
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server._
 import StatusCodes._
 import Directives._
 import ch.megard.akka.http.cors.scaladsl.CorsDirectives._
-
-import akka.stream.actor._
 import rep.protos.peer._
 import akka.util.ByteString
-import rep.log.EventActor
 import rep.api.SwaggerDocService
 import rep.api.rest._
 import rep.utils.GlobalUtils
@@ -111,7 +106,9 @@ object EventServer {
         }
       }
 
-    val ra = sys.actorOf(RestActor.props("api"), "api")
+    //val ra = sys.actorOf(RestActor.props("api"), "api")
+    val ra = new RestRouter(5,sys)
+
     //允许跨域访问,以支持在应用中发起请求
     Http().bindAndHandle(
       route_evt

@@ -20,6 +20,7 @@ import rep.storage.block._
 import rep.storage.leveldb._
 import rep.storage.cfg._
 import rep.protos.peer._
+
 import scala.collection.JavaConverters._
 import com.google.protobuf.ByteString
 import com.fasterxml.jackson.core.Base64Variants
@@ -29,7 +30,10 @@ import org.json4s.jackson.JsonMethods
 import rep.sc.Shim._
 import rep.utils._
 import java.io._
+
+import rep.api.rest.RestActor.BlockTime
 import rep.protos.peer.OperLog
+
 import scala.collection.mutable._
 import rep.network.consensus.util.BlockHelp
 import rep.log.RepLogger
@@ -38,8 +42,8 @@ import rep.storage.util.pathUtil
 import rep.log.RepTimeTracer
 import rep.app.conf.SystemProfile
 import rep.crypto.cert.certCache
-import scala.util.control.Breaks._
 
+import scala.util.control.Breaks._
 
 /**
  * @author jiangbuyun
@@ -52,8 +56,47 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
 
   //初始化文件操作实例
   //var bi: BlockInstances = BlockInstances.getDBInstance()
-  
+
   filemgr = new BlockFileMgr(this.SystemName)
+
+  //private var chainInfoCache: ChainInfoInCache = new ChainInfoInCache(this)
+
+  private var bheight4bidx = new HashMap[Long, blockindex]()
+  private var txid4bheight = new HashMap[String, Long]()
+
+  def loadBlockInfoToCache: Boolean = {
+    var b: Boolean = false
+    val chaininfo = this.getBlockChainInfo()
+    val mh = chaininfo.height
+    var h: Long = 2
+    var start : Long = System.currentTimeMillis()
+    while (h <= mh) {
+      val hidx = this.getBlockIdxByHeight(h)
+      bheight4bidx += h -> hidx
+      val ts = hidx.getTxIds()
+      ts.foreach(f => {
+        txid4bheight += f -> h
+      })
+      h += 1 
+      if(h % 1000 == 0){
+        var end1 = System.currentTimeMillis()
+        println(h+" load time ="+(end1 - start)/1000+"s")
+      }
+    }
+    var end = System.currentTimeMillis()
+    println(s"load finish,h=${h},mh=${mh} time ="+(end - start)/1000+"s")
+    b
+  }
+
+  def isFinish: String = {
+    var b = "0"
+    val chaininfo = this.getBlockChainInfo()
+    var idx = this.bheight4bidx(chaininfo.height)
+    if (idx != null) {
+      b = "1"
+    }
+    b
+  }
 
   /**
    * @author jiangbuyun
@@ -168,6 +211,21 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
     rs
   }
 
+  def getNumberOfTransInBlockByHeight(h: Long): Int = {
+    /*var rs = 0
+    val bidx = getBlockIdxByHeight(h)
+    if (bidx != null) {
+      rs = bidx.getNumberOfTrans
+    }
+    rs*/
+    var rs = 0
+    val bidx = this.bheight4bidx(h)
+    if (bidx != null) {
+      rs = bidx.getNumberOfTrans
+    }
+    rs
+  }
+
   /**
    * @author jiangbuyun
    * @version	0.7
@@ -187,6 +245,17 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
     rb
   }
 
+  def getBlockIdxByTxid(bh: String): blockindex = {
+    var bidx: blockindex = null
+    val key = IdxPrefix.IdxTransaction + bh
+    val value = this.Get(key)
+    val bkey = this.byteToString(value)
+    if (!bkey.equalsIgnoreCase("")) {
+      bidx = this.getBlockIdxByHash(bkey)
+    }
+    bidx
+  }
+
   /**
    * @author jiangbuyun
    * @version	1.0
@@ -195,17 +264,20 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
    * @param	txid String 交易的id
    * @return	返回true表示存在；如果没有找到，返回false
    */
-  def isExistTrans4Txid(txid: String):Boolean={
+  def isExistTrans4Txid(txid: String): Boolean = {
     var b = false
     val key = IdxPrefix.IdxTransaction + txid
     val value = this.Get(key)
-    val bkey = this.byteToString(value)
-    if (!bkey.equalsIgnoreCase("")) {
+    if(value != null){
       b = true
     }
+    /*val bkey = this.byteToString(value)
+    if (!bkey.equalsIgnoreCase("")) {
+      b = true
+    }*/
     b
   }
-  
+
   /**
    * @author jiangbuyun
    * @version	1.0
@@ -344,7 +416,7 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
     if (rb != null && rb.length > 0) {
       rbo = new Array[Block](rb.length)
       var i = 0
-      for (i <- 0 until (rb.length )) {
+      for (i <- 0 until (rb.length)) {
         val tmpb = Block.parseFrom(rb(i))
         rbo(i) = tmpb
       }
@@ -388,6 +460,84 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
   /**
    * @author jiangbuyun
    * @version	0.7
+   * @since	2019-09-11
+   * @category	根据交易ID获取交易入块时间
+   * @param	txid 交易id
+   * @return	返回出块时间
+   */
+  override def getBlockTimeOfTxid(txid: String): String = {
+    //SerializeUtils.toJson(this.getBlockTime4Block(this.getBlock4ObjectByTxId(txid)))
+    SerializeUtils.toJson(this.getBlockTime4Block(txid))
+  }
+
+  /**
+   * @author jiangbuyun
+   * @version	0.7
+   * @since	2019-09-11
+   * @category	根据块的高度获取交易入块时间
+   * @param	h 块高度
+   * @return	返回出块时间
+   */
+  def getBlockTimeOfHeight(h: Long): String = {
+    SerializeUtils.toJson(this.getBlockTime4BlockByHeight(h))
+  }
+
+  /*private def getBlockTime4Block(b: Block): BlockTime = {
+    var rs = BlockTime("", "")
+    if (b != null && b.endorsements != null && b.endorsements.length >= 1) {
+      val signer = b.endorsements(0)
+      val date = new java.util.Date(signer.tmLocal.get.seconds * 1000);
+      val formatstr = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+      formatstr.setTimeZone(java.util.TimeZone.getTimeZone("ETC/GMT-8"))
+      val tmpstr = formatstr.format(date)
+      val millis = signer.tmLocal.get.nanos / 1000000
+      val createTime = tmpstr + "." + millis
+      // 13位,毫秒精度级(utc时间)
+      val createTimeUtc = String.valueOf((signer.tmLocal.get.seconds * 1000 + millis) - 8 * 3600 * 1000)
+      rs = BlockTime(createTime, createTimeUtc)
+    }
+    rs
+  }*/
+
+  private def getBlockTime4Block(txid: String): BlockTime = {
+    /*var rs = BlockTime("", "")
+    val idx = this.getBlockIdxByTxid(txid)
+    if (idx != null) {
+      rs = BlockTime(idx.getCreateTime, idx.getCreateTimeUtc)
+    }
+    rs*/
+    var rs = BlockTime("", "")
+    try {
+      val th = this.txid4bheight(txid)
+      val idx = this.bheight4bidx(th)
+      if (idx != null) {
+        rs = BlockTime(idx.getCreateTime, idx.getCreateTimeUtc)
+      }
+    } catch {
+      case e: Exception =>
+    }
+    rs
+  }
+
+  private def getBlockTime4BlockByHeight(height: Long): BlockTime = {
+    /*var rs = BlockTime("", "")
+    val idx = this.getBlockIdxByHeight(height)
+    if (idx != null) {
+      rs = BlockTime(idx.getCreateTime, idx.getCreateTimeUtc)
+    }
+    rs*/
+    var rs = BlockTime("", "")
+    val idx = this.bheight4bidx(height)
+    if (idx != null) {
+      rs = BlockTime(idx.getCreateTime, idx.getCreateTimeUtc)
+    }
+
+    rs
+  }
+
+  /**
+   * @author jiangbuyun
+   * @version	0.7
    * @since	2017-09-28
    * @category	返回当前区块链的chaininfo
    * @param	无
@@ -426,6 +576,7 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
     rbc = rbc.withTotalTransactions(currenttxnumber)
 
     rbc
+    //chainInfoCache.getBlockChainInfo()
   }
 
   /**
@@ -449,7 +600,7 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
       //目前直接从上一个块中获取
       //val cur = lastblock.hashOfBlock.toStringUtf8()
       //if (prve.equals(cur) && (lastblock.height + 1) == newblock.height) {
-      if(prve == lastblock.getBlockHash()){
+      if (prve == lastblock.getBlockHash()) {
         b = true
       } else {
         b = false
@@ -501,35 +652,32 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
       var trans = block.transactions
       if (trans.length > 0) {
         breakable(
-        trans.foreach(f => {
-          if (f.id.equals(txid)) {
-            //rel = f.getPayload.getChaincodeID.name
-            //根据合约编写的时候不添加版本好的规则生成
-            //rel = IdTool.getCid(f.cid.get)
-            rel = f.getCid.chaincodeName
-            break
-          }
-        })
-        )
+          trans.foreach(f => {
+            if (f.id.equals(txid)) {
+              //rel = f.getPayload.getChaincodeID.name
+              //根据合约编写的时候不添加版本好的规则生成
+              //rel = IdTool.getCid(f.cid.get)
+              rel = f.getCid.chaincodeName
+              break
+            }
+          }))
       }
     }
     rel
   }
-  
-  
-  private def isChangeCertStatus(block:Block, txid: String):Boolean = {
+
+  private def isChangeCertStatus(block: Block, txid: String): Boolean = {
     var rel = false
     if (block != null) {
       var trans = block.transactions
       if (trans.length > 0) {
         breakable(
-        trans.foreach(f => {
-          if (f.id.equals(txid) && f.getCid.chaincodeName == SystemProfile.getAccountChaincodeName && f.`type` == rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE && f.para.ipt.get.function == SystemProfile.getCertStatusChangeFunction) {
+          trans.foreach(f => {
+            if (f.id.equals(txid) && f.getCid.chaincodeName == SystemProfile.getAccountChaincodeName && f.`type` == rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE && f.para.ipt.get.function == SystemProfile.getCertStatusChangeFunction) {
               rel = true
               break
-          }
-        })
-        )
+            }
+          }))
       }
     }
     rel
@@ -557,7 +705,7 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
                 this.Put(fkey, f.newValue.toByteArray())
               }
               //需要通知证书缓存修改证书状态
-              if(changeCertStatus){
+              if (changeCertStatus) {
                 certCache.CertStatusUpdate(fkey)
               }
             })
@@ -569,10 +717,12 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
       case e: RuntimeException => throw e
     }
   }
-  
+
   override def rollbackToheight(toHeight: Long): Boolean = {
-    val rs = new Rollback4Storager(this,filemgr)
-    rs.rollbackToheight(toHeight)
+    val rs = new Rollback4Storager(this, filemgr)
+    val b = rs.rollbackToheight(toHeight)
+    //chainInfoCache.initChainInfo
+    b
   }
 
   /**
@@ -593,23 +743,28 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
       var prevblock: blockindex = null
 
       if (oldh > 0) {
-        RepTimeTracer.setStartTime(this.SystemName, "storage-save-get-preblock", System.currentTimeMillis(),block.height,block.transactions.size)
+        RepTimeTracer.setStartTime(this.SystemName, "storage-save-get-preblock", System.currentTimeMillis(), block.height, block.transactions.size)
         //val tbs = this.getBlockByHeight(oldh)
-        prevblock = getBlockIdxByHeight(block.height-1)
+        prevblock = getBlockIdxByHeight(block.height - 1)
         //prevblock = Block.parseFrom(tbs)
-        RepTimeTracer.setEndTime(this.SystemName, "storage-save-get-preblock", System.currentTimeMillis(),block.height,block.transactions.size)
+        RepTimeTracer.setEndTime(this.SystemName, "storage-save-get-preblock", System.currentTimeMillis(), block.height, block.transactions.size)
       }
 
       if (isLastBlock(block, prevblock)) {
         try {
           this.BeginTrans
-          RepTimeTracer.setStartTime(this.SystemName, "storage-save-write-operlog", System.currentTimeMillis(),block.height,block.transactions.size)
+          RepTimeTracer.setStartTime(this.SystemName, "storage-save-write-operlog", System.currentTimeMillis(), block.height, block.transactions.size)
           WriteOperLogToDBWithRestoreBlock(block)
-          RepTimeTracer.setEndTime(this.SystemName, "storage-save-write-operlog", System.currentTimeMillis(),block.height,block.transactions.size)
-          RepTimeTracer.setStartTime(this.SystemName, "storage-save-commit", System.currentTimeMillis(),block.height,block.transactions.size)
+          RepTimeTracer.setEndTime(this.SystemName, "storage-save-write-operlog", System.currentTimeMillis(), block.height, block.transactions.size)
+          RepTimeTracer.setStartTime(this.SystemName, "storage-save-commit", System.currentTimeMillis(), block.height, block.transactions.size)
           if (this.commitAndAddBlock(block, oldh, oldno, oldtxnumber)) {
-            RepTimeTracer.setEndTime(this.SystemName, "storage-save-commit", System.currentTimeMillis(),block.height,block.transactions.size)
+            RepTimeTracer.setEndTime(this.SystemName, "storage-save-commit", System.currentTimeMillis(), block.height, block.transactions.size)
             this.CommitTrans
+            /*chainInfoCache.setHeight(block.height)
+            chainInfoCache.setTXNumber(oldtxnumber + block.transactions.length)
+            chainInfoCache.setBlockHash(block.hashOfBlock.toStringUtf8())
+            chainInfoCache.setPrevBlockHash(block.previousBlockHash.toStringUtf8())
+            chainInfoCache.setBlockStateHash(block.stateHash.toStringUtf8())*/
             (true, block.height, oldtxnumber + block.transactions.length, block.hashOfBlock.toStringUtf8(), block.previousBlockHash.toStringUtf8(), block.stateHash.toStringUtf8())
           } else {
             this.RollbackTrans
@@ -695,10 +850,11 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
         this.setBlockAllTxNumber(newtxnumber)
         //jiangbuyun modify 20180430,块写入文件系统时，增加块长度写入文件中，方便以后没有leveldb时，可以完全依靠块文件快速恢复系统,该位置实现字节数组的合并
         //bhelp.writeBlock(bidx.getBlockFileNo(), bidx.getBlockFilePos(), rbb)
-        RepTimeTracer.setStartTime(this.SystemName, "storage-save-write-file", System.currentTimeMillis(),block.height,block.transactions.size)
+        RepTimeTracer.setStartTime(this.SystemName, "storage-save-write-file", System.currentTimeMillis(), block.height, block.transactions.size)
         filemgr.writeBlock(bidx.getBlockFileNo(), bidx.getBlockFilePos() - 8, pathUtil.longToByte(blenght) ++ rbb)
-        RepTimeTracer.setEndTime(this.SystemName, "storage-save-write-file", System.currentTimeMillis(),block.height,block.transactions.size)
+        RepTimeTracer.setEndTime(this.SystemName, "storage-save-write-file", System.currentTimeMillis(), block.height, block.transactions.size)
         b = true
+
         RepLogger.trace(
           RepLogger.Storager_Logger,
           "system_name=" + this.SystemName + "\t blockhash=" + bidx.getBlockHash() + "\tcommited success")
@@ -826,8 +982,8 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
   def getFileFirstHeight(no: Int): Long = {
     this.toLong(this.Get(IdxPrefix.FirstHeightOfFilePrefix + no + IdxPrefix.FirstHeightOfFileSuffix))
   }
-  
-  def rmFileFirstHeight(no:Int){
+
+  def rmFileFirstHeight(no: Int) {
     this.Delete(IdxPrefix.FirstHeightOfFilePrefix + no + IdxPrefix.FirstHeightOfFileSuffix)
   }
 

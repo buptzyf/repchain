@@ -26,12 +26,11 @@ import io.swagger.models.{ExternalDocs, Scheme, Swagger, Tag}
 import io.swagger.models.auth.BasicAuthDefinition
 
 /**集成Swagger到AKKA HTTP
-  * @author c4w
-  * @constructor 创建提供Swagger文档服务的实例
-  * @param system 传入的AKKA系统实例
-  * @author zyf
-  * @since 1.0
-  *
+ * @author c4w
+ * @constructor 创建提供Swagger文档服务的实例
+ * @author zyf
+ * @since 1.0
+ *
  */
 object SwaggerDocService extends SwaggerHttpService {
   override val apiClasses: Set[Class[_]] = Set(
@@ -45,9 +44,9 @@ object SwaggerDocService extends SwaggerHttpService {
     title = "RepChain",
     license = Some(License("Apache 2.0","http://www.apache.org/licenses/LICENSE-2.0.html")))
   /**
-    * 重写swaggerConfig，加上tag描述信息
-    * @author zyf
-    */
+   * 重写swaggerConfig，加上tag描述信息
+   * @author zyf
+   */
   val tagList = new ArrayList[Tag]()
   tagList.add(new Tag().name("logmgr").description("日志信息管理"))
   tagList.add(new Tag().name("chaininfo").description("获得当前区块链信息"))
@@ -56,7 +55,7 @@ object SwaggerDocService extends SwaggerHttpService {
   override val externalDocs = Some(new ExternalDocs("Developers Guide", "https://repchaindoc.readthedocs.io/zh/latest/index.html"))
   override val securitySchemeDefinitions = Map("basicAuth" -> new BasicAuthDefinition())
   override val swaggerConfig = super.swaggerConfig.tags(tagList)
-//    new Swagger().basePath(prependSlashIfNecessary(basePath)).info(info)
-//      .scheme(Scheme.HTTP).tags(tagList).securityDefinition("basicAuth", new BasicAuthDefinition())
-//      .externalDocs(new ExternalDocs("Developers Guide", "https://repchaindoc.readthedocs.io/zh/latest/index.html"))
+  //    new Swagger().basePath(prependSlashIfNecessary(basePath)).info(info)
+  //      .scheme(Scheme.HTTP).tags(tagList).securityDefinition("basicAuth", new BasicAuthDefinition())
+  //      .externalDocs(new ExternalDocs("Developers Guide", "https://repchaindoc.readthedocs.io/zh/latest/index.html"))
 }

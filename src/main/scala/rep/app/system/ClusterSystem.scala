@@ -18,23 +18,31 @@ package rep.app.system
 
 import java.io.File
 
-import akka.actor.{ ActorRef, ActorSystem, Address, Props }
+import akka.actor.{ActorRef, ActorSystem, Address, Props}
 import akka.cluster.Cluster
-import com.typesafe.config.{ Config, ConfigFactory }
-import rep.app.conf.SystemConf
+import com.typesafe.config.{Config, ConfigFactory}
+import rep.app.conf.{SystemConf, SystemProfile, TimePolicy}
 import rep.app.system.ClusterSystem.InitType
 import rep.network.base.ModuleBase
-import rep.network.module.ModuleManager
-import rep.utils.GlobalUtils.ActorType
+import rep.network.module.cfrd.ModuleManagerOfCFRD
 import rep.storage.cfg._
 import java.io.File
+
 import scala.collection.mutable
-import rep.app.conf.SystemProfile
 import com.typesafe.config.ConfigValueFactory
 import java.util.List
 import java.util.ArrayList
+
+import akka.util.Timeout
 import org.slf4j.LoggerFactory
 import rep.log.RepLogger
+
+import scala.concurrent.Await
+import scala.concurrent.duration._
+import akka.actor.Terminated
+import rep.network.module.pbft.ModuleManagerOfPBFT
+import rep.network.module.raft.ModuleManagerOfRAFT
+
 
 /**
  * System创建伴生对象
@@ -88,6 +96,11 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
 
   private var clusterAddr: Address = null
 
+  private var clusterOfInner : Cluster = null
+
+  //System.setProperty("scala.concurrent.context.minThreads", "32")
+  //System.setProperty("scala.concurrent.context.maxThreads", "32")
+
   /**
    * 是否开启Web Socket（API）
    */
@@ -120,8 +133,11 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
    * @return
    */
   def getConfigBySys(sysName: String): Config = {
-    val myConfig =
+    /*val myConfig =
       ConfigFactory.parseString("akka.remote.netty.ssl.security.key-store = \"jks/" + sysName +
+        ".jks\"")*/
+    val myConfig =
+      ConfigFactory.parseString("akka.remote.artery.ssl.config-ssl-engine.key-store = \"jks/" + sysName +
         ".jks\"")
     val regularConfig = getUserCombinedConf(USER_CONFIG_PATH)
     val combined =
@@ -164,6 +180,8 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
 
   def getClusterAddr = clusterAddr
 
+  def getClusterInstance : Cluster = clusterOfInner
+
   /**
    * 组网
    * @param address
@@ -172,9 +190,10 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
   def joinCluster(address: Address): Boolean = {
     initType match {
       case InitType.SINGLE_INIT =>
-        Cluster(sysActor)
+        clusterOfInner = Cluster(sysActor)
       case InitType.MULTI_INIT =>
-        Cluster(sysActor).join(address)
+        clusterOfInner = Cluster(sysActor)
+        clusterOfInner.join(address)
     }
     true
   }
@@ -191,9 +210,50 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
 
     RepLogger.trace(RepLogger.System_Logger, sysTag + "~" + "System" + " ~ " + s"System(${sysTag}) init successfully" + " ~ ")
   }
-  
+
+  def init2(port:Int):Unit = {
+    var myConfig :Config = null
+    if(this.sysConf.getBoolean("akka.remote.artery.enabled")){
+      myConfig  = ConfigFactory.parseString("akka.remote.artery.canonical.port = " + port )
+    }else{
+      myConfig  = ConfigFactory.parseString("akka.remote.classic.netty.tcp.port = " + port )
+    }
+
+    var combined  = myConfig.withFallback(this.sysConf)
+
+    this.sysConf = ConfigFactory.load(combined)
+
+    this.init
+  }
+
+  def init3(port:Int):Unit = {
+    var myConfig :Config = null
+
+    myConfig  = ConfigFactory.parseString("akka.remote.netty.ssl.port = " + port )
+    var combined  = myConfig.withFallback(this.sysConf)
+    this.sysConf = ConfigFactory.load(combined)
+
+    this.init
+  }
+
   def shutdown = {
     Cluster(sysActor).down(clusterAddr)
+    System.err.println(s"shutdown ~~ address=${clusterAddr.toString},systemname=${this.sysTag}")
+  }
+
+  def terminateOfSystem={
+    var r = true
+    implicit val timeout = Timeout(120.seconds)
+    try{
+      val result = sysActor.terminate
+      val result1 = Await.result(result, timeout.duration).asInstanceOf[Terminated]
+      r = result1.getAddressTerminated
+    }catch{
+      case e:Exception =>
+        r = false
+    }
+
+    r
   }
 
   private def initConsensusNodeOfConfig = {
@@ -216,7 +276,17 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
       throw new Exception("not enough disk space")
     }
 
-    moduleManager = sysActor.actorOf(ModuleManager.props("modulemanager", sysTag, enableStatistic, enableWebSocket, true), "modulemanager")
+    val typeConsensus = SystemProfile.getTypeOfConsensus
+    if (typeConsensus == "CFRD") {
+      moduleManager = sysActor.actorOf(ModuleManagerOfCFRD.props("modulemanager", sysTag, enableStatistic, enableWebSocket, true), "modulemanager")
+    }else if(typeConsensus == "RAFT"){
+      moduleManager = sysActor.actorOf(ModuleManagerOfRAFT.props("modulemanager", sysTag, enableStatistic, enableWebSocket, true), "modulemanager")
+    }else if(typeConsensus == "PBFT"){
+      moduleManager = sysActor.actorOf(ModuleManagerOfPBFT.props("modulemanager", sysTag, enableStatistic, enableWebSocket, true), "modulemanager")
+    }else{
+      RepLogger.error(RepLogger.System_Logger, sysTag + "~" + "System" + " ~ " + s"ClusterSystem ${sysTag} not startup,unknow consensus" + " ~ ")
+    }
+
 
     RepLogger.trace(RepLogger.System_Logger, sysTag + "~" + "System" + " ~ " + s"ClusterSystem ${sysTag} start" + " ~ ")
   }

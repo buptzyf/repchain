@@ -1,31 +1,34 @@
 package rep.sc
 
 import akka.util.Timeout
+
 import scala.concurrent.duration._
 import akka.pattern.ask
 import akka.pattern.AskTimeoutException
+import rep.network.module.ModuleActorType
 import scala.concurrent._
-
 import akka.actor.{Actor, ActorRef, Props}
 import com.google.protobuf.ByteString
 import com.google.protobuf.timestamp.Timestamp
 import rep.app.conf.{SystemProfile, TimePolicy}
 import rep.network.base.ModuleBase
-import rep.network.consensus.block.Blocker.{PreTransBlock, PreTransBlockResult}
+import rep.network.consensus.common.MsgOfConsensus.{PreTransBlock, PreTransBlockResult}
 import rep.network.tools.PeerExtension
-import rep.network.Topic
 import rep.protos.peer._
+import rep.network.consensus.common.MsgOfConsensus.BlockRestore
 import rep.sc.SandboxDispatcher.DoTransaction
 import rep.sc.Sandbox.DoTransactionResult
-import rep.storage.{ImpDataPreloadMgr}
-import rep.utils.GlobalUtils.ActorType
+import rep.storage.ImpDataPreloadMgr
+
 import rep.utils._
+
 import scala.collection.mutable
 import akka.pattern.AskTimeoutException
 import rep.crypto.Sha256
 import rep.log.RepLogger
-import akka.routing._;
-import rep.network.consensus.transaction.PreloaderForTransaction
+import akka.routing._
+import rep.network.autotransaction.Topic
+import rep.network.transaction.PreloaderForTransaction;
 
 
 object BlockStubActor {
@@ -39,22 +42,21 @@ object BlockStubActor {
 class BlockStubActor(moduleName: String) extends ModuleBase(moduleName) {
 
   import context.dispatcher
-  import scala.collection.breakOut
   import scala.concurrent.duration._
   import rep.utils.IdTool
   import rep.sc.BlockStubActor._
-  import rep.network.consensus.block.Blocker
+  import rep.network.consensus.cfrd.block.BlockerOfCFRD
   import rep.network.consensus.util.BlockHelp
-  import rep.network.persistence.Storager.{SourceOfBlock, BlockRestore}
+  import rep.network.persistence.IStorager.{SourceOfBlock}
 
-  implicit val timeout = Timeout(6 seconds)
+  implicit val timeout = Timeout(6.seconds)
 
   private def ExecuteTransactionOfBlock(block: Block): Block = {
     try {
       //val ref = pe.getActorRef(ActorType.preloaderoftransaction)
-      val ref = pe.getActorRef(ActorType.dispatchofpreload)
+      val ref = pe.getActorRef(ModuleActorType.ActorType.dispatchofpreload)
       //val ref1 = this.transpreload
-      val future = ref ? Blocker.PreTransBlock(block, "preload")
+      val future = ref ? PreTransBlock(block, "preload")
       val result = Await.result(future, timeout.duration).asInstanceOf[PreTransBlockResult]
       if (result.result) {
         result.blc
@@ -93,7 +95,7 @@ class BlockStubActor(moduleName: String) extends ModuleBase(moduleName) {
     case wb: WriteBlockStub =>
       val newblock = CreateBlock(wb.trans)
       if (newblock != null) {
-        pe.getActorRef(ActorType.storager).forward(BlockRestore(newblock, SourceOfBlock.TEST_PROBE, self))
+        pe.getActorRef(ModuleActorType.ActorType.storager).forward(BlockRestore(newblock, SourceOfBlock.TEST_PROBE, self))
       }
     case _ => //ignore
   }

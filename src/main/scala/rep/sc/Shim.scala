@@ -27,7 +27,6 @@ import rep.utils.SerializeUtils.serialise
 import java.security.cert.CertificateFactory
 import java.io.FileInputStream
 import java.io.ByteArrayInputStream
-import fastparse.utils.Base64
 import java.io.StringReader
 import java.security.cert.X509Certificate
 import rep.storage.ImpDataAccess
@@ -57,7 +56,7 @@ object Shim {
  *  @author c4w
  * @constructor 根据actor System和合约的链码id建立shim实例
  * @param system 所属的actorSystem
- * @param cid 合约的链码id
+ * @param cName 合约的链码id
  */
 class Shim(system: ActorSystem, cName: String) {
 

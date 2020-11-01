@@ -17,41 +17,35 @@
 package rep.crypto.cert
 
 import java.io._
-import fastparse.utils.Base64
-import java.util.concurrent.locks._
+import java.security.PublicKey
+
 import org.bouncycastle.util.io.pem.PemReader
 import rep.protos.peer.Certificate
 import rep.storage._
 import rep.utils.SerializeUtils
 import rep.app.conf.SystemProfile
-import rep.storage.IdxPrefix.WorldStateKeyPreFix
 import java.util.concurrent.ConcurrentHashMap
-import scala.collection.JavaConverters._
+
 import rep.log.RepLogger
+//import scala.jdk.CollectionConverters._
+import scala.collection.JavaConverters._
 
 object certCache {
-  private implicit var caches = new ConcurrentHashMap[String, (Boolean, java.security.cert.Certificate)] asScala
+  private  var caches = new ConcurrentHashMap[String, (Boolean, java.security.cert.Certificate)] asScala
+  //private  var caches = new ConcurrentHashMap[String, (Boolean, java.security.PublicKey)] asScala
 
 
   def getCertByPem(pemcert: String): java.security.cert.Certificate = {
     val cf = java.security.cert.CertificateFactory.getInstance("X.509")
-//    val cert = cf.generateCertificate(
-//      new ByteArrayInputStream(
-//        Base64.Decoder(
-//          pemcert.replaceAll("\r\n", "")
-//            .replaceAll("\n","")
-//            .stripPrefix("-----BEGIN CERTIFICATE-----")
-//            .stripSuffix("-----END CERTIFICATE-----")).toByteArray
-//      )
-//    )
     val pemReader = new PemReader(new StringReader(pemcert))
     val certByte = pemReader.readPemObject().getContent
     val cert = cf.generateCertificate(new ByteArrayInputStream(certByte))
     cert
   }
-
-  def getCertForUser(certKey: String, sysTag: String): java.security.cert.Certificate = {
+  //java.security.cert.Certificate = {
+  def getCertForUser(certKey: String, sysTag: String): java.security.cert.Certificate={
     var rcert: java.security.cert.Certificate = null
+    //var rcert: java.security.PublicKey = null
     try {
       if (caches.contains(certKey)) {
         val ck = caches(certKey)
