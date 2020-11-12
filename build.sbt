@@ -97,4 +97,8 @@ assemblyMergeStrategy in assembly := {
     oldStrategy(x)
 }
 
-mainClass in (Compile, packageBin) := Some("rep.app.Repchain_Single")
+fork in run := true
+javaOptions in run ++= Seq("-Dlogback.configurationFile=conf/logback.xml")
+
+mainClass in (Compile, run) := Some("rep.app.Repchain")
+mainClass in packageBin := Some("rep.app.Repchain_Single")
