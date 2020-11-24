@@ -37,6 +37,7 @@
 - `导入` 
   - 打开Idea IDE，File->New->Project or Project from VersionControl
   - 使用Idea的sbt插件导入
+  - 使用sbt shell 进行compile
 - 右键单击 rep.app.Repchain.scala，Run 'RepChain'(单机组网4个节点)
 - 运行配置VM参数 -Dlogback.configurationFile=conf/logback.xml (使logback配置生效)
 - 查看实时图 http://localhost:8081/web/g1.html
