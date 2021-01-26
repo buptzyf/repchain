@@ -61,8 +61,12 @@ libraryDependencies += "org.bouncycastle" % "bcprov-jdk15on" % "1.61"
 libraryDependencies += "javax.xml.bind" % "jaxb-api" % "2.3.1"
 
 libraryDependencies ++= Seq(
-  "io.swagger" % "swagger-jaxrs" % "1.6.0",
-  "com.github.swagger-akka-http" %% "swagger-akka-http" % "1.1.1",
+//  "io.swagger" % "swagger-jaxrs" % "1.6.0",
+//  "com.github.swagger-akka-http" %% "swagger-akka-http" % "1.1.1",
+//  "io.swagger.core.v3" % "swagger-jaxrs2" % "2.1.5",
+  "javax.ws.rs" % "javax.ws.rs-api" % "2.0.1",
+  "com.github.swagger-akka-http" %% "swagger-akka-http" % "2.0.4",
+//  "io.swagger" % "swagger-jersey2-jaxrs" % "1.6.0",
   "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
   "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpVersion,
   "org.json4s" %% "json4s-native" % "3.6.7",

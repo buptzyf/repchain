@@ -16,6 +16,7 @@
 
 package rep.api.rest
 
+import java.io.File
 import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -23,8 +24,21 @@ import akka.actor.{ActorRef, ActorSelection}
 import akka.util.Timeout
 import akka.http.scaladsl.model.Uri.Path.Segment
 import akka.http.scaladsl.server.Directives
-import io.swagger.annotations._
+import io.swagger.v3.core.util.PrimitiveType
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.enums.{ParameterIn, ParameterStyle}
+import io.swagger.v3.oas.annotations.{Parameter, Parameters}
+import io.swagger.v3.oas.annotations.media.{Content, Schema}
+import io.swagger.v3.oas.annotations.parameters.RequestBody
+import io.swagger.v3.oas.annotations.responses.{ApiResponse, ApiResponses}
+import io.swagger.v3.oas.annotations.tags.Tag
+import io.swagger.v3.oas.models.Components
+import io.swagger.v3.oas.models.media.BinarySchema
+import javax.ws.rs._
+import javax.ws.rs.core.MediaType
 import javax.ws.rs.Path
+//import org.glassfish.jersey.media.multipart.FormDataParam
+//import io.swagger.annotations._
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server._
 import StatusCodes._
@@ -41,7 +55,7 @@ import akka.http.scaladsl.server.Directives
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import spray.json._
 import akka.http.scaladsl.marshallers.xml.ScalaXmlSupport
-import akka.http.scaladsl.model.{ContentTypes, HttpCharsets, MediaTypes}
+import akka.http.scaladsl.model.{ContentTypes, HttpCharsets}
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import akka.stream.scaladsl.StreamConverters
 
@@ -49,12 +63,12 @@ import scala.xml.NodeSeq
 import rep.log.RepLogger
 
 /**
- * 获得区块链的概要信息
- *
- * @author c4w
- */
-@Api(value = "/chaininfo", description = "获得当前区块链信息", produces = "application/json")
-@Path("chaininfo")
+  * 获得区块链的概要信息
+  *
+  * @author c4w
+  */
+@Tag(name = "chaininfo", description = "获得当前区块链信息")
+@Path("/chaininfo")
 class ChainService(ra: RestRouter)(implicit executionContext: ExecutionContext)
   extends Directives {
 
@@ -71,9 +85,9 @@ class ChainService(ra: RestRouter)(implicit executionContext: ExecutionContext)
 
   val route = getBlockChainInfo ~ getNodeNumber ~ getCacheTransNumber ~ getAcceptedTransNumber ~ loadBlockInfoToCache ~ IsLoadBlockInfoToCache
 
-  @ApiOperation(value = "返回块链信息", notes = "", nickname = "getChainInfo", httpMethod = "GET")
-  @ApiResponses(Array(
-    new ApiResponse(code = 200, message = "返回块链信息", response = classOf[QueryResult])))
+  @GET
+  @Operation(tags = Array("chaininfo"), summary = "返回块链信息", description = "getChainInfo", method = "GET")
+  @ApiResponse(responseCode = "200", description = "返回块链信息", content = Array(new Content(mediaType = "application/json",schema = new Schema(implementation = classOf[QueryResult]))))
   def getBlockChainInfo =
     path("chaininfo") {
       get {
@@ -84,10 +98,12 @@ class ChainService(ra: RestRouter)(implicit executionContext: ExecutionContext)
       }
     }
 
+  @GET
   @Path("/node")
-  @ApiOperation(value = "返回组网节点数量", notes = "", nickname = "getNodeNumber", httpMethod = "GET")
+  @Operation(tags = Array("chaininfo"),  summary = "返回组网节点数量", description = "getNodeNumber", method = "GET")
   @ApiResponses(Array(
-    new ApiResponse(code = 200, message = "返回组网节点数量", response = classOf[QueryResult])))
+    new ApiResponse(responseCode = "200", description = "返回组网节点数量", content =  Array(new Content(mediaType = "application/json",schema = new Schema(implementation = classOf[QueryResult])))))
+  )
   def getNodeNumber =
     path("chaininfo" / "node") {
       get {
@@ -98,11 +114,12 @@ class ChainService(ra: RestRouter)(implicit executionContext: ExecutionContext)
       }
     }
 
-
+  @GET
   @Path("/loadBlockInfoToCache")
-  @ApiOperation(value = "初始化装载区块索引到缓存", notes = "", nickname = "loadBlockInfoToCache", httpMethod = "GET")
+  @Operation(tags = Array("chaininfo"), summary = "初始化装载区块索引到缓存",  description= "loadBlockInfoToCache", method = "GET")
   @ApiResponses(Array(
-    new ApiResponse(code = 200, message = "初始化装载区块索引到缓存量", response = classOf[QueryResult])))
+    new ApiResponse(responseCode = "200", description = "初始化装载区块索引到缓存量", content =  Array(new Content(mediaType = "application/json",schema = new Schema(implementation = classOf[QueryResult])))))
+  )
   def loadBlockInfoToCache =
     path("chaininfo" / "loadBlockInfoToCache") {
       get {
@@ -113,10 +130,12 @@ class ChainService(ra: RestRouter)(implicit executionContext: ExecutionContext)
       }
     }
 
+  @GET
   @Path("/IsLoadBlockInfoToCache")
-  @ApiOperation(value = "是否完成始化装载区块索引到缓存", notes = "", nickname = "IsLoadBlockInfoToCache", httpMethod = "GET")
+  @Operation(tags = Array("chaininfo"), summary  = "是否完成始化装载区块索引到缓存", description  = "IsLoadBlockInfoToCache", method = "GET")
   @ApiResponses(Array(
-    new ApiResponse(code = 200, message = "是否完成初始化装载区块索引到缓存量", response = classOf[QueryResult])))
+    new ApiResponse(responseCode = "200", description = "是否完成初始化装载区块索引到缓存量", content =  Array(new Content(mediaType = "application/json",schema = new Schema(implementation = classOf[QueryResult])))))
+  )
   def IsLoadBlockInfoToCache =
     path("chaininfo" / "IsLoadBlockInfoToCache") {
       get {
@@ -127,11 +146,12 @@ class ChainService(ra: RestRouter)(implicit executionContext: ExecutionContext)
       }
     }
 
-
+  @GET
   @Path("/getcachetransnumber")
-  @ApiOperation(value = "返回系统缓存交易数量", notes = "", nickname = "getCacheTransNumber", httpMethod = "GET")
+  @Operation(tags = Array("chaininfo"), summary  = "返回系统缓存交易数量", description = "getCacheTransNumber", method = "GET")
   @ApiResponses(Array(
-    new ApiResponse(code = 200, message = "返回系统缓存交易数量", response = classOf[QueryResult])))
+    new ApiResponse(responseCode = "200", description = "返回系统缓存交易数量", content =  Array(new Content(mediaType = "application/json",schema = new Schema(implementation = classOf[QueryResult])))))
+  )
   def getCacheTransNumber =
     path("chaininfo" / "getcachetransnumber") {
       get {
@@ -142,10 +162,12 @@ class ChainService(ra: RestRouter)(implicit executionContext: ExecutionContext)
       }
     }
 
+  @GET
   @Path("/getAcceptedTransNumber")
-  @ApiOperation(value = "返回系统接收到的交易数量", notes = "", nickname = "getAcceptedTransNumber", httpMethod = "GET")
+  @Operation(tags = Array("chaininfo"), summary  = "返回系统接收到的交易数量", description = "getAcceptedTransNumber", method = "GET")
   @ApiResponses(Array(
-    new ApiResponse(code = 200, message = "返回系统接收到的交易数量", response = classOf[QueryResult])))
+    new ApiResponse(responseCode = "200", description = "返回系统接收到的交易数量", content =  Array(new Content(mediaType = "application/json",schema = new Schema(implementation = classOf[QueryResult])))))
+  )
   def getAcceptedTransNumber =
     path("chaininfo" / "getAcceptedTransNumber") {
       get {
@@ -160,13 +182,13 @@ class ChainService(ra: RestRouter)(implicit executionContext: ExecutionContext)
 }
 
 /**
- * 获得指定区块的详细信息
- *
- * @author c4w
- */
+  * 获得指定区块的详细信息
+  *
+  * @author c4w
+  */
 
-@Api(value = "/block", description = "获得区块数据", produces = "application/json")
-@Path("block")
+@Tag(name = "block", description = "获得区块数据")
+@Path("/block")
 class BlockService(ra: RestRouter)(implicit executionContext: ExecutionContext)
   extends Directives {
 
@@ -182,12 +204,16 @@ class BlockService(ra: RestRouter)(implicit executionContext: ExecutionContext)
 
   val route = getBlockById ~ getBlockByHeight ~ getBlockByHeightToo ~ getTransNumberOfBlock ~ getBlockStreamByHeight ~ getBlockTimeOfCreate ~ getBlockTimeOfTxrByTxid ~ getBlockTimeOfTransaction
 
+  @GET
   @Path("/hash/{blockId}")
-  @ApiOperation(value = "返回指定id的区块", notes = "", nickname = "getBlockById", httpMethod = "GET")
-  @ApiImplicitParams(Array(
-    new ApiImplicitParam(name = "blockId", value = "区块id", required = true, dataType = "string", paramType = "path")))
-  @ApiResponses(Array(
-    new ApiResponse(code = 200, message = "返回区块json内容", response = classOf[QueryResult])))
+  @Produces(Array(MediaType.APPLICATION_JSON))
+  @Operation(tags = Array("block"),summary = "返回指定id的区块",  description = "getBlockById", method = "GET",
+    parameters = Array(new Parameter(name = "blockId", description = "区块id", required = true, in = ParameterIn.PATH)),
+    responses = Array(new ApiResponse(responseCode = "200", description = "返回区块json内容", content =  Array(new Content(mediaType = "application/json",schema = new Schema(implementation = classOf[QueryResult])))))
+  )
+  //  @ApiResponses(Array(
+  //    new ApiResponse(responseCode = "200", description = "返回区块json内容", content =  Array(new Content(mediaType = "application/json",schema = new Schema(implementation = classOf[QueryResult])))))
+  //  )
   def getBlockById =
     path("block" / "hash" / Segment) { blockId =>
       get {
@@ -198,12 +224,14 @@ class BlockService(ra: RestRouter)(implicit executionContext: ExecutionContext)
       }
     }
 
+  @GET
   @Path("/{blockHeight}")
-  @ApiOperation(value = "返回指定高度的区块", notes = "", nickname = "getBlockByHeight", httpMethod = "GET")
-  @ApiImplicitParams(Array(
-    new ApiImplicitParam(name = "blockHeight", value = "区块高度", required = true, dataType = "int", paramType = "path")))
+  @Operation(tags = Array("block"), summary  = "返回指定高度的区块", description = "getBlockByHeight", method = "GET")
+  @Parameters(Array(
+    new Parameter(name = "blockHeight", description = "区块高度", required = true, schema = new Schema(implementation = classOf[Int]), in = ParameterIn.PATH, example = "1")))
   @ApiResponses(Array(
-    new ApiResponse(code = 200, message = "返回区块json内容", response = classOf[QueryResult])))
+    new ApiResponse(responseCode = "200", description = "返回区块json内容", content =  Array(new Content(mediaType = "application/json",schema = new Schema(implementation = classOf[QueryResult])))))
+  )
   def getBlockByHeightToo =
     path("block" / Segment) { blockHeight =>
       get {
@@ -216,12 +244,16 @@ class BlockService(ra: RestRouter)(implicit executionContext: ExecutionContext)
       }
     }
 
+  @POST
   @Path("/blockHeight")
-  @ApiOperation(value = "返回指定高度的区块", notes = "", nickname = "getBlockByHeight", httpMethod = "POST")
-  @ApiImplicitParams(Array(
-    new ApiImplicitParam(name = "height", value = "区块高度", required = true, dataType = "String", paramType = "body")))
+  @Operation(tags = Array("block"), summary  = "返回指定高度的区块", description = "getBlockByHeight", method = "POST",
+    requestBody = new RequestBody(description = "区块高度", required = true,
+      content = Array(new Content(mediaType = MediaType.APPLICATION_JSON, schema = new Schema(name = "height", description = "height", `type` = "string", example = "{\"height\":1}")))))
+  //  @Parameters(Array(
+  //    new Parameter(name = "height", description = "区块高度", required = true, schema = new Schema(implementation = classOf[String], `type` = "string"), in = ParameterIn.DEFAULT)))
   @ApiResponses(Array(
-    new ApiResponse(code = 200, message = "返回区块json内容", response = classOf[QueryResult])))
+    new ApiResponse(responseCode = "200", description = "返回区块json内容", content =  Array(new Content(mediaType = "application/json",schema = new Schema(implementation = classOf[QueryResult])))))
+  )
   def getBlockByHeight =
     path("block" / "blockHeight") {
       post {
@@ -233,12 +265,16 @@ class BlockService(ra: RestRouter)(implicit executionContext: ExecutionContext)
       }
     }
 
+  @POST
   @Path("/getTransNumberOfBlock")
-  @ApiOperation(value = "返回指定高度区块包含的交易数", notes = "", nickname = "getTransNumberOfBlock", httpMethod = "POST")
-  @ApiImplicitParams(Array(
-    new ApiImplicitParam(name = "height", value = "区块高度", required = true, dataType = "String", paramType = "body")))
+  @Operation(tags = Array("block"),summary  = "返回指定高度区块包含的交易数", description   = "getTransNumberOfBlock", method = "POST",
+    requestBody = new RequestBody(description = "区块高度，最小为2", required = true,
+      content = Array(new Content(mediaType = MediaType.APPLICATION_JSON, schema = new Schema(name = "height", description = "height, 最小为2", `type` = "string", example = "{\"height\":2}")))))
+  //    @Parameters(Array(
+  //      new Parameter(name = "height", description = "区块高度", required = true, schema = new Schema(`type` = String))))
   @ApiResponses(Array(
-    new ApiResponse(code = 200, message = "返回指定高度区块包含的交易数", response = classOf[QueryResult])))
+    new ApiResponse(responseCode = "200", description = "返回指定高度区块包含的交易数", content =  Array(new Content(mediaType = "application/json",schema = new Schema(implementation = classOf[QueryResult])))))
+  )
   def getTransNumberOfBlock =
     path("block" / "getTransNumberOfBlock") {
       post {
@@ -250,12 +286,14 @@ class BlockService(ra: RestRouter)(implicit executionContext: ExecutionContext)
       }
     }
 
+  @GET
   @Path("/blocktime/{blockHeight}")
-  @ApiOperation(value = "返回指定高度的区块的出块时间", notes = "", nickname = "getBlockTimeOfCreate", httpMethod = "GET")
-  @ApiImplicitParams(Array(
-    new ApiImplicitParam(name = "blockHeight", value = "区块高度", required = true, dataType = "long", paramType = "path")))
+  @Operation(tags = Array("block"), summary  = "返回指定高度的区块的出块时间",description  = "getBlockTimeOfCreate", method = "GET")
+  @Parameters(Array(
+    new Parameter(name = "blockHeight", description = "区块高度, 最小为2", required = true, schema = new Schema(description = "height, 最小为2", `type` = "string"), in = ParameterIn.PATH, example = "2")))
   @ApiResponses(Array(
-    new ApiResponse(code = 200, message = "返回指定高度的区块的出块时间", response = classOf[QueryResult])))
+    new ApiResponse(responseCode = "200", description = "返回指定高度的区块的出块时间", content =  Array(new Content(mediaType = "application/json",schema = new Schema(implementation = classOf[QueryResult])))))
+  )
   def getBlockTimeOfCreate =
     path("block" / "blocktime" / Segment) { blockHeight =>
       get {
@@ -268,12 +306,14 @@ class BlockService(ra: RestRouter)(implicit executionContext: ExecutionContext)
       }
     }
 
+  @GET
   @Path("/blocktimeoftran/{transid}")
-  @ApiOperation(value = "返回指定交易的入块时间", notes = "", nickname = "getBlockTimeOfTransaction", httpMethod = "GET")
-  @ApiImplicitParams(Array(
-    new ApiImplicitParam(name = "transid", value = "交易id", required = true, dataType = "String", paramType = "path")))
+  @Operation(tags = Array("block"), summary  = "返回指定交易的入块时间", description  =  "getBlockTimeOfTransaction", method = "GET")
+  @Parameters(Array(
+    new Parameter(name = "transid", description = "交易id", required = true, schema = new Schema(`type` = "string"), in = ParameterIn.PATH)))
   @ApiResponses(Array(
-    new ApiResponse(code = 200, message = "返回指定交易的入块时间", response = classOf[QueryResult])))
+    new ApiResponse(responseCode = "200", description = "返回指定交易的入块时间", content =  Array(new Content(mediaType = "application/json",schema = new Schema(implementation = classOf[QueryResult])))))
+  )
   def getBlockTimeOfTransaction =
     path("block" / "blocktimeoftran" / Segment) { transid =>
       get {
@@ -287,13 +327,16 @@ class BlockService(ra: RestRouter)(implicit executionContext: ExecutionContext)
     }
 
 
-
+  @POST
   @Path("/blocktimeoftran")
-  @ApiOperation(value = "返回指定交易的入块时间", notes = "", nickname = "getBlockTimeOfTransaction", httpMethod = "POST")
-  @ApiImplicitParams(Array(
-    new ApiImplicitParam(name = "txid", value = "交易id", required = true, dataType = "String", paramType = "body")))
+  @Operation(tags = Array("block"), summary  = "返回指定交易的入块时间", description = "getBlockTimeOfTransaction", method = "POST",
+    requestBody = new RequestBody(description = "交易id", required = true,
+      content = Array(new Content(mediaType = MediaType.APPLICATION_JSON, schema = new Schema(name = "交易ID", description = "交易id", `type` = "string", example = "{\"txid\":\"8128801f-bb5e-4934-8fdb-0b89747bd2e6\"}")))))
+  //  @Parameters(Array(
+  //    new Parameter(name = "txid", value = "交易id", required = true, dataType = "String", paramType = "body")))
   @ApiResponses(Array(
-    new ApiResponse(code = 200, message = "返回指定交易的入块时间", response = classOf[QueryResult])))
+    new ApiResponse(responseCode = "200", description = "返回指定交易的入块时间", content =  Array(new Content(mediaType = "application/json",schema = new Schema(implementation = classOf[QueryResult])))))
+  )
   def getBlockTimeOfTxrByTxid =
     path("block" / "blocktimeoftran") {
       post {
@@ -303,12 +346,13 @@ class BlockService(ra: RestRouter)(implicit executionContext: ExecutionContext)
       }
     }
 
+  @GET
   @Path("/stream/{blockHeight}")
-  @ApiOperation(value = "返回指定高度的区块字节流", notes = "", nickname = "getBlockStreamByHeight", httpMethod = "GET")
-  @ApiImplicitParams(Array(
-    new ApiImplicitParam(name = "blockHeight", value = "区块高度", required = true, dataType = "int", paramType = "path")))
+  @Operation(tags = Array("block"), summary  = "返回指定高度的区块字节流", description = "getBlockStreamByHeight", method = "GET")
+  @Parameters(Array(
+    new Parameter(name = "blockHeight", description = "区块高度", required = true, schema = new Schema(`type` = "integer", format = "int64"), in = ParameterIn.PATH, example = "1")))
   @ApiResponses(Array(
-    new ApiResponse(code = 200, message = "blockbytes")))
+    new ApiResponse(responseCode = "200", description = "blockbytes", content =  Array(new Content(mediaType = "application/octet-stream",schema = new Schema(implementation = classOf[Block]))))))
   def getBlockStreamByHeight =
     path("block" / "stream" / Segment) { blockHeight =>
       get {
@@ -321,12 +365,14 @@ class BlockService(ra: RestRouter)(implicit executionContext: ExecutionContext)
 }
 
 /**
- * 获得指定交易的详细信息，提交签名交易
- *
- * @author c4w
- */
-@Api(value = "/transaction", description = "获得交易数据", consumes = "application/json,application/xml", produces = "application/json,application/xml")
-@Path("transaction")
+  * 获得指定交易的详细信息，提交签名交易
+  *
+  * @author c4w
+  */
+@Tag(name = "transaction", description = "获得交易数据")
+@Consumes(Array(MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.MULTIPART_FORM_DATA))
+@Produces(Array(MediaType.APPLICATION_JSON))
+@Path("/transaction")
 class TransactionService(ra: RestRouter)(implicit executionContext: ExecutionContext)
   extends Directives {
 
@@ -370,12 +416,14 @@ class TransactionService(ra: RestRouter)(implicit executionContext: ExecutionCon
 
   val route = getTransaction ~ getTransactionStream ~ tranInfoAndHeightOfTranId ~ postSignTransaction ~ postTransaction ~ postSignTransactionStream
 
+  @GET
   @Path("/{transactionId}")
-  @ApiOperation(value = "返回指定id的交易", notes = "", nickname = "getTransaction", httpMethod = "GET")
-  @ApiImplicitParams(Array(
-    new ApiImplicitParam(name = "transactionId", value = "交易id", required = false, dataType = "string", paramType = "path")))
+  @Operation(tags = Array("transaction"), summary  = "返回指定id的交易", description= "getTransaction", method = "GET")
+  @Parameters(Array(
+    new Parameter(name = "transactionId", description = "交易id", required = false, schema = new Schema(`type` = "string"), in = ParameterIn.PATH)))
   @ApiResponses(Array(
-    new ApiResponse(code = 200, message = "返回交易json内容", response = classOf[QueryResult])))
+    new ApiResponse(responseCode = "200", description = "返回交易json内容", content =  Array(new Content(mediaType = "application/json",schema = new Schema(implementation = classOf[QueryResult])))))
+  )
   def getTransaction =
     path("transaction" / Segment) { transactionId =>
       get {
@@ -386,12 +434,15 @@ class TransactionService(ra: RestRouter)(implicit executionContext: ExecutionCon
       }
     }
 
+  @GET
   @Path("/stream/{transactionId}")
-  @ApiOperation(value = "返回指定id的交易字节流", notes = "", nickname = "getTransactionStream", httpMethod = "GET", produces = "application/octet-stream")
-  @ApiImplicitParams(Array(
-    new ApiImplicitParam(name = "transactionId", value = "交易id", required = false, dataType = "string", paramType = "path")))
+  @Produces(Array(MediaType.APPLICATION_OCTET_STREAM))
+  @Operation(tags = Array("transaction"), description = "返回指定id的交易字节流", summary = "getTransactionStream", method = "GET")
+  @Parameters(Array(
+    new Parameter(name = "transactionId", description = "交易id", required = false, schema = new Schema(`type` = "string"), in = ParameterIn.PATH)))
   @ApiResponses(Array(
-    new ApiResponse(code = 200, message = "返回交易字节流", response = classOf[QueryResult])))
+    new ApiResponse(responseCode = "200", description = "返回交易字节流", content =  Array(new Content(mediaType = "application/octet-stream",schema = new Schema(implementation = classOf[Transaction], `type` = "string", format = "binary")))))
+  )
   def getTransactionStream =
     path("transaction" / "stream" / Segment) { transactionId =>
       get {
@@ -402,12 +453,14 @@ class TransactionService(ra: RestRouter)(implicit executionContext: ExecutionCon
       }
     }
 
+  @GET
   @Path("/tranInfoAndHeight/{transactionId}")
-  @ApiOperation(value = "返回指定id的交易信息及所在区块高度", notes = "", nickname = "tranInfoAndHeightOfTranId", httpMethod = "GET")
-  @ApiImplicitParams(Array(
-    new ApiImplicitParam(name = "transactionId", value = "交易id", required = false, dataType = "string", paramType = "path")))
+  @Operation(tags = Array("transaction"), summary = "返回指定id的交易信息及所在区块高度", description = "tranInfoAndHeightOfTranId", method = "GET")
+  @Parameters(Array(
+    new Parameter(name = "transactionId", description = "交易id", required = false, schema = new Schema(`type` = "string"), in = ParameterIn.PATH)))
   @ApiResponses(Array(
-    new ApiResponse(code = 200, message = "返回指定id的交易信息及所在区块高度", response = classOf[QueryResult])))
+    new ApiResponse(responseCode = "200", description = "返回指定id的交易信息及所在区块高度", content =  Array(new Content(mediaType = "application/json",schema = new Schema(implementation = classOf[QueryResult])))))
+  )
   def tranInfoAndHeightOfTranId =
     path("transaction"/"tranInfoAndHeight"/Segment) { transactionId =>
       get {
@@ -419,31 +472,45 @@ class TransactionService(ra: RestRouter)(implicit executionContext: ExecutionCon
     }
 
   //以十六进制字符串提交签名交易
+  @POST
   @Path("/postTranByString")
-  @ApiOperation(value = "提交带签名的交易", notes = "", nickname = "postSignTransaction", httpMethod = "POST")
-  @ApiImplicitParams(Array(
-    new ApiImplicitParam(name = "body", value = "交易内容", required = true, dataType = "string", paramType = "body")))
+  @Operation(tags = Array("transaction"), summary = "提交带签名的交易", description = "postSignTransaction", method = "POST",
+    requestBody = new RequestBody(description = "签名交易的16进制字符串", required = true,
+      content = Array(new Content(mediaType = MediaType.APPLICATION_JSON, schema = new Schema(name = "签名交易Hex字符串", description = "签名交易", `type` = "string")))))
+  //  @Parameters(Array(
+  //    new Parameter(name = "body", value = "交易内容", required = true, dataType = "string", paramType = "body")))
   @ApiResponses(Array(
-    new ApiResponse(code = 200, message = "返回交易id以及执行结果", response = classOf[PostResult]),
-    new ApiResponse(code = 202, message = "处理存在异常", response = classOf[PostResult])))
+    new ApiResponse(responseCode = "200", description = "返回交易id以及执行结果", content =  Array(new Content(mediaType = "application/json",schema = new Schema(implementation = classOf[PostResult])))),
+    new ApiResponse(responseCode = "202", description = "处理存在异常", content =  Array(new Content(mediaType = "application/json",schema = new Schema(implementation = classOf[PostResult])))))
+  )
   def postSignTransaction =
     path("transaction" / "postTranByString") {
       post {
         entity(as[String]) { trans =>
           complete { (ra.getRestActor ? tranSign(trans)).mapTo[PostResult] }
+          //          complete { (StatusCodes.Accepted, PostResult("hahhaha",None, Some("处理存在异常"))) }
         }
       }
     }
 
+  case class SignedTransData(var signedTrans: File)
   //以字节流提交签名交易
+  @POST
   @Path("/postTranStream")
-  @ApiOperation(value = "提交带签名的交易字节流", notes = "", consumes = "multipart/form-data", nickname = "postSignTransactionStream", httpMethod = "POST")
-  @ApiImplicitParams(Array(
-    // new ApiImplicitParam(name = "signer", value = "签名者", required = true, dataType = "string", paramType = "formData"),
-    new ApiImplicitParam(name = "signedTrans", value = "交易内容", required = true, dataType = "file", paramType = "formData")))
+  @Operation(tags = Array("transaction"), summary = "提交带签名的交易字节流", description  = "postSignTransactionStream", method = "POST",
+    //    parameters = Array(new Parameter(name = "signedTrans", schema = new Schema(`type` = "string", format = "binary"), style = ParameterStyle.FORM, explode = Explode.TRUE))
+    requestBody = new RequestBody(description = "签名交易的二进制文件", required = true,
+      content = Array(new Content(mediaType = MediaType.MULTIPART_FORM_DATA, schema = new Schema(name = "signedTrans", implementation = classOf[SignedTransData])))
+    )
+  )
+  //  @Parameter(name = "signedTrans", schema = new Schema(`type` = "string", format = "binary"), style = ParameterStyle.FORM, explode = Explode.TRUE)
+  //  @ApiImplicitParams(Array(
+  //    // new ApiImplicitParam(name = "signer", value = "签名者", required = true, dataType = "string", paramType = "formData"),
+  //    new ApiImplicitParam(name = "signedTrans", value = "交易内容", required = true, dataType = "file", paramType = "formData")))
   @ApiResponses(Array(
-    new ApiResponse(code = 200, message = "返回交易id以及执行结果", response = classOf[PostResult]),
-    new ApiResponse(code = 202, message = "处理存在异常", response = classOf[PostResult])))
+    new ApiResponse(responseCode = "200", description = "返回交易id以及执行结果", content =  Array(new Content(mediaType = "application/json",schema = new Schema(implementation = classOf[PostResult])))),
+    new ApiResponse(responseCode = "202", description = "处理存在异常", content =  Array(new Content(mediaType = "application/json",schema = new Schema(implementation = classOf[PostResult])))))
+  )
   def postSignTransactionStream =
     path("transaction" / "postTranStream") {
       post {
@@ -468,14 +535,18 @@ class TransactionService(ra: RestRouter)(implicit executionContext: ExecutionCon
       }
     }
 
+  @POST
   @Path("/postTran")
-  @ApiOperation(value = "提交交易", notes = "", nickname = "postTransaction", httpMethod = "POST")
-  @ApiImplicitParams(Array(
-    new ApiImplicitParam(name = "body", value = "交易内容", required = true,
-      dataTypeClass = classOf[CSpec], paramType = "body")))
+  @Operation(tags = Array("transaction"), summary = "提交交易", description = "postTransaction", method = "POST",
+    requestBody = new RequestBody(description = "描述交易的xml", required = true,
+      content = Array(new Content(mediaType = MediaType.APPLICATION_XML, schema = new Schema(implementation = classOf[CSpec], description = "描述交易的xml")))))
+  //  @Parameters(Array(
+  //    new Parameter(name = "body", value = "交易内容", required = true,
+  //      dataTypeClass = classOf[CSpec], paramType = "body")))
   @ApiResponses(Array(
-    new ApiResponse(code = 200, message = "返回交易id以及执行结果", response = classOf[PostResult]),
-    new ApiResponse(code = 202, message = "处理存在异常", response = classOf[PostResult])))
+    new ApiResponse(responseCode = "200", description = "返回交易id以及执行结果", content =  Array(new Content(mediaType = "application/json",schema = new Schema(implementation = classOf[PostResult])))),
+    new ApiResponse(responseCode = "202", description = "处理存在异常", content =  Array(new Content(mediaType = "application/json",schema = new Schema(implementation = classOf[PostResult])))))
+  )
   def postTransaction =
     path("transaction" / "postTran") {
       post {
