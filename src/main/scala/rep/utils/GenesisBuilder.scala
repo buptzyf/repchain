@@ -141,7 +141,7 @@ object GenesisBuilder {
     val rstr = pretty(render(r))
     println(rstr)
 
-    val pw = new PrintWriter("json/gensis.json","UTF-8")
+    val pw = new PrintWriter("json/genesis.json","UTF-8")
     pw.write(rstr)
     pw.flush()
     pw.close()

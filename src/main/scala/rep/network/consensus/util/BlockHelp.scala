@@ -124,7 +124,7 @@ object BlockHelp {
   }
 
   def CreateGenesisBlock:Block={
-    val blkJson = scala.io.Source.fromFile("json/gensis.json","UTF-8")
+    val blkJson = scala.io.Source.fromFile("json/genesis.json","UTF-8")
     val blkStr = try blkJson.mkString finally blkJson.close()
     val gen_blk = JsonFormat.fromJsonString[Block](blkStr)
     gen_blk

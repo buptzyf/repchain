@@ -19,18 +19,20 @@ package rep.utils
 import java.io.{File, FileFilter, FileWriter, PrintWriter}
 import java.util
 
+import com.google.protobuf.timestamp.Timestamp
 import org.json4s.jackson.JsonMethods.{pretty, render}
 import org.json4s.{DefaultFormats, jackson}
 import rep.crypto.cert.SignTool
 import rep.network.autotransaction.PeerHelper
 import rep.protos.peer.{Block, ChaincodeId, Signer, Transaction}
+import rep.sc.tpl.CertInfo
 import scalapb.json4s.JsonFormat
 
 import scala.collection.mutable
 
 
 /**
-  * 将整个jks下所有node的账户都注册上去（遍历node的jks），并为账户赋初值，证书暂时没有注册
+  * 将整个jks下所有node的账户都注册上去（遍历node的jks），并为账户赋初值，以及注册相应的证书
   *
   * @author zyf
   */
@@ -64,6 +66,11 @@ object GenesisBuilderMulti {
       transList.add(PeerHelper.createTransaction4Invoke("951002007l78123233.super_admin", cid1, "SignUpSigner", Seq(SerializeUtils.compactJson(signers(i)))))
     }
 
+    val certs = fillCerts(signers)
+    for (i <- certs.indices) {
+      transList.add(PeerHelper.createTransaction4Invoke("951002007l78123233.super_admin", cid1, "SignUpCert", Seq(SerializeUtils.compactJson(certs(i)))))
+    }
+
     val sysName = "121000005l35120456.node1"
     val s2 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/ContractAssetsTPL.scala","UTF-8")
     val l2 = try s2.mkString finally s2.close()
@@ -80,6 +87,14 @@ object GenesisBuilderMulti {
 
     transList.add(dep_set_trans)
 
+    // 可选的业务合约，如果没有，这里需要注释
+//    val s4 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/CustomTPL.scala","UTF-8")
+//    val l4 = try s4.mkString finally s4.close()
+//    val cid4 = new ChaincodeId("CustomTPL", 1)
+//    val dep_process_proof = PeerHelper.createTransaction4Deploy(sysName, cid4, l4, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
+//    // 如果没有上述的业务合约，这里需要注释
+//    transList.add(dep_process_proof)
+
     var blk = new Block(1, 1, transList.toArray(new Array[Transaction](transList.size())), Seq(), _root_.com.google.protobuf.ByteString.EMPTY,
       _root_.com.google.protobuf.ByteString.EMPTY)
 
@@ -89,7 +104,7 @@ object GenesisBuilderMulti {
     val rStr = pretty(render(r))
     println(rStr)
 
-    val pw = new PrintWriter("json/gensis.json","UTF-8")
+    val pw = new PrintWriter("json/genesis.json","UTF-8")
     pw.write(rStr)
     pw.flush()
     pw.close()
@@ -115,9 +130,21 @@ object GenesisBuilderMulti {
     for (i <- 1 until signers.length) {
       val fileNameSplit = files(i - 1).getName.split('.')
       signers(i) = Signer(fileNameSplit(1), fileNameSplit(0), "18912345678", List(fileNameSplit(1)))
-      setMap.put(fileNameSplit(0), 10000000)
+      setMap.put(fileNameSplit(0), 100000000)
     }
     signers
+  }
+
+  def fillCerts(signers: Array[Signer]): Array[CertInfo] = {
+    val certInfos: Array[CertInfo] = new Array[CertInfo](signers.length)
+    for (i <- 0 until certInfos.length) {
+      val certfile = scala.io.Source.fromFile("jks/" + signers(i).creditCode + "." + signers(i).name + ".cer", "UTF-8")
+      val certstr = try certfile.mkString finally certfile.close()
+      val millis = System.currentTimeMillis()
+      val cert = rep.protos.peer.Certificate(certstr, "SHA1withECDSA", true, Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)))
+      certInfos(i) = CertInfo(signers(i).creditCode, signers(i).name, cert)
+    }
+    certInfos
   }
 
 }

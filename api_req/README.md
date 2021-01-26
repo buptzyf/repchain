@@ -35,5 +35,5 @@
    * 该jmeter测试脚本，执行一次过后，清除一下区块，再进行下一次测试演示
    * 将jmx/7a0fa308-9bba-415f-ae10-39832ef2b52f放到jmeter的目录下，该文件用来测试`/transaction/postTranStream`
    * /transaction/postTran只能在debug模式下使用，在jar部署模式下，该接口不能使用
-   * 本脚本中根据transactionId获取交易数据使用的创世块中内置的交易，根据blockId获取块数据以及根据高度获取块数据都是获取的创世块示例。（即、对应于目前项目仓库中的/json/gensis.json）
+   * 本脚本中根据transactionId获取交易数据使用的创世块中内置的交易，根据blockId获取块数据以及根据高度获取块数据都是获取的创世块示例。（即、对应于目前项目仓库中的/json/genesis.json）
 4. **TODO**  未完待续
