@@ -538,8 +538,9 @@ class TransactionService(ra: RestRouter)(implicit executionContext: ExecutionCon
   @POST
   @Path("/postTran")
   @Operation(tags = Array("transaction"), summary = "提交交易", description = "postTransaction", method = "POST",
-    requestBody = new RequestBody(description = "描述交易的xml", required = true,
-      content = Array(new Content(mediaType = MediaType.APPLICATION_XML, schema = new Schema(implementation = classOf[CSpec], description = "描述交易的xml")))))
+    requestBody = new RequestBody(description = "描述交易的xml/json", required = true,
+      content = Array(new Content(mediaType = MediaType.APPLICATION_XML, schema = new Schema(implementation = classOf[CSpec], description = "描述交易的xml")),
+        new Content(mediaType = MediaType.APPLICATION_JSON, schema = new Schema(implementation = classOf[CSpec], description = "描述交易的json")))))
   //  @Parameters(Array(
   //    new Parameter(name = "body", value = "交易内容", required = true,
   //      dataTypeClass = classOf[CSpec], paramType = "body")))
