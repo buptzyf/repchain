@@ -47,6 +47,7 @@ object GenesisBuilderTool {
   private var certsFile = new File("jks/certs")
   private var contractFile = new File("src/main/scala/rep/sc/tpl/ContractCert.scala")
   private var adminJksName = ""
+  private var node1JksName = ""
 
   def main(args: Array[String]): Unit = {
 
@@ -72,6 +73,8 @@ object GenesisBuilderTool {
 
     // 导入管理员的私钥，进行签名操作
     SignTool.loadPrivateKey(adminJksName.substring(0, adminJksName.length - 4), "super_admin", Path.of(jksFile.getPath, adminJksName).toString)
+    // 导入node1的私钥
+    SignTool.loadPrivateKey(node1JksName.substring(0, node1JksName.length - 4), "123", Path.of(jksFile.getPath, node1JksName).toString)
 
     val transList = new util.ArrayList[Transaction]
 
@@ -99,7 +102,7 @@ object GenesisBuilderTool {
       val l2 = try s2.mkString finally s2.close()
       val tplFileName = tplFile.getName.split("\\.")(0)
       val cid4 = new ChaincodeId(tplFileName, 1)
-      val dep_custom_proof = PeerHelper.createTransaction4Deploy(adminJksName.substring(0, adminJksName.length - 4), cid4, l2, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
+      val dep_custom_proof = PeerHelper.createTransaction4Deploy(node1JksName.substring(0, node1JksName.length - 4), cid4, l2, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
       transList.add(dep_custom_proof)
     }
 
@@ -151,6 +154,8 @@ object GenesisBuilderTool {
       val fileName = files(i).getName
       if (fileName.contains("super_admin")) {
         adminJksName = fileName
+      } else if (fileName.contains("node1")) {
+        node1JksName = fileName
       }
       val fileNameSplit = fileName.split('.')
       signers(i) = Signer(fileNameSplit(1), fileNameSplit(0), "", List(fileNameSplit(1)))
