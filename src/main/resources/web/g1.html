@@ -311,6 +311,10 @@
             $("#btn_demo").hide();
             graph.svg.select('#node_RepChain').transition().duration(2000).style({ "fill": "lawngreen" });
             //清除所有入网节点
+
+            // 保持心跳，以维持Websocket连接
+            // Tanks Black Eyed Peas :)
+            setInterval(() => { socket.send("Boom boom boom (Gotta get get)") }, 30*1000);
         };
 
         socket.onclose = function() {
