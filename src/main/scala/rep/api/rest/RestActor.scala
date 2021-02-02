@@ -49,6 +49,7 @@ import rep.sc.TypeOfSender
 import rep.sc.SandboxDispatcher.DoTransaction
 import rep.sc.Sandbox.DoTransactionResult
 import rep.utils.GlobalUtils.EventType
+import rep.utils.MessageToJson
 /**
  * RestActor伴生object，包含可接受的传入消息定义，以及处理的返回结果定义。
  * 以及用于建立Tranaction，检索Tranaction的静态方法
@@ -302,7 +303,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
         case null => QueryResult(None)
         case _ =>
           val bl = Block.parseFrom(bb)
-          QueryResult(Option(JsonFormat.toJson(bl)))
+          QueryResult(Option(MessageToJson.toJson(bl)))
       }
       sender ! r
 
@@ -343,7 +344,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
         case null => QueryResult(None)
         case _ =>
           val bl = Block.parseFrom(bb)
-          QueryResult(Option(JsonFormat.toJson(bl)))
+          QueryResult(Option(MessageToJson.toJson(bl)))
       }
       sender ! r
 
@@ -353,7 +354,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
         case None =>
           QueryResult(None)
         case t: Some[Transaction] =>
-          QueryResult(Option(JsonFormat.toJson(t.get)))
+          QueryResult(Option(MessageToJson.toJson(t.get)))
       }
       sender ! r
 
@@ -377,14 +378,14 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
           QueryResult(None)
         case t: Some[Transaction] =>
           val txr = t.get
-          val tranInfoHeight = TranInfoHeight(JsonFormat.toJson(txr), sr.getBlockIdxByTxid(txr.id).getBlockHeight())
+          val tranInfoHeight = TranInfoHeight(MessageToJson.toJson(txr), sr.getBlockIdxByTxid(txr.id).getBlockHeight())
           QueryResult(Option(Extraction.decompose(tranInfoHeight)))
       }
       sender ! r
 
     // 获取链信息
     case ChainInfo =>
-      val cij = JsonFormat.toJson(sr.getBlockChainInfo)
+      val cij = MessageToJson.toJson(sr.getBlockChainInfo)
       sender ! QueryResult(Option(cij))
 
     case NodeNumber =>

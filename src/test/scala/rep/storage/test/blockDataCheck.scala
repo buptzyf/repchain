@@ -17,21 +17,24 @@
 package rep.storage.test
 
 import rep.storage.ImpDataAccess
-import org.json4s.{ DefaultFormats, jackson }
-import org.json4s.native.Serialization.{ write, writePretty }
+import org.json4s.{DefaultFormats, jackson}
+import org.json4s.native.Serialization.{write, writePretty}
 import rep.protos.peer.CertId
 import rep.protos.peer.Signature
 import java.util.Date
 
 import rep.crypto.Sha256
+
 import scala.collection.mutable
 import rep.storage.util.pathUtil
-import scala.math._
 
-import java.io.File;
-import java.io.RandomAccessFile;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
+import scala.math._
+import java.io.File
+import java.io.RandomAccessFile
+import java.nio.ByteBuffer
+import java.nio.channels.FileChannel
+
+import rep.utils.MessageToJson;
 
 //import scala.collection.immutable._
 
@@ -297,7 +300,7 @@ object blockDataCheck extends App {
 
   def readBlockToString(da: ImpDataAccess, h: Long): String = {
     val b = da.getBlock4ObjectByHeight(h)
-     val r = JsonFormat.toJson(b)   
+     val r = MessageToJson.toJson(b)
     pretty(render(r))
     //writePretty(b.endorsements)
   }

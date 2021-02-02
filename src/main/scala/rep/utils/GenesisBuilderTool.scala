@@ -112,7 +112,7 @@ object GenesisBuilderTool {
 
     blk = blk.clearEndorsements
     blk = blk.clearTransactionResults
-    val r = JsonFormat.toJson(blk)
+    val r = MessageToJson.toJson(blk)
     val rStr = pretty(render(r))
     println(rStr)
 
