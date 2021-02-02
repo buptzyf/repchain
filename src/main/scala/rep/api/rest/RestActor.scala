@@ -309,7 +309,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
         case null => QueryResult(None)
         case _ =>
           val bl = Block.parseFrom(bb)
-          QueryResult(Option(JsonFormat.toJson(bl)))
+          QueryResult(Option(MessageToJson.toJson(bl)))
       }
       sender ! r
 
@@ -350,7 +350,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
         case null => QueryResult(None)
         case _ =>
           val bl = Block.parseFrom(bb)
-          QueryResult(Option(JsonFormat.toJson(bl)))
+          QueryResult(Option(MessageToJson.toJson(bl)))
       }
       sender ! r
 
@@ -360,7 +360,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
         case None =>
           QueryResult(None)
         case t: Some[Transaction] =>
-          QueryResult(Option(JsonFormat.toJson(t.get)))
+          QueryResult(Option(MessageToJson.toJson(t.get)))
       }
       sender ! r
 
@@ -384,14 +384,14 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
           QueryResult(None)
         case t: Some[Transaction] =>
           val txr = t.get
-          val tranInfoHeight = TranInfoHeight(JsonFormat.toJson(txr), sr.getBlockIdxByTxid(txr.id).getBlockHeight())
+          val tranInfoHeight = TranInfoHeight(MessageToJson.toJson(txr), sr.getBlockIdxByTxid(txr.id).getBlockHeight())
           QueryResult(Option(Extraction.decompose(tranInfoHeight)))
       }
       sender ! r
 
     // 获取链信息
     case ChainInfo =>
-      val cij = JsonFormat.toJson(sr.getBlockChainInfo)
+      val cij = MessageToJson.toJson(sr.getBlockChainInfo)
       sender ! QueryResult(Option(cij))
 
     case NodeNumber =>
