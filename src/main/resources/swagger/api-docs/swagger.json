@@ -1,0 +1,1178 @@
+{
+  "openapi" : "3.0.1",
+  "info" : {
+    "title" : "RepChain",
+    "description" : "RepChian API Doc",
+    "termsOfService" : "",
+    "license" : {
+      "name" : "Apache 2.0",
+      "url" : "http://www.apache.org/licenses/LICENSE-2.0.html"
+    },
+    "version" : "1.1.0"
+  },
+  "externalDocs" : {
+    "description" : "Developers Guide",
+    "url" : "https://repchaindoc.readthedocs.io/zh/latest/index.html"
+  },
+  "servers" : [ {
+    "url" : "http://localhost:8081"
+  } ],
+  "security" : [ ],
+  "tags" : [ {
+    "name" : "block",
+    "description" : "获得区块数据"
+  }, {
+    "name" : "chaininfo",
+    "description" : "获得当前区块链信息"
+  }, {
+    "name" : "transaction",
+    "description" : "获得交易数据"
+  } ],
+  "paths" : {
+    "/block/hash/{blockId}" : {
+      "get" : {
+        "tags" : [ "block" ],
+        "summary" : "返回指定id的区块",
+        "description" : "getBlockById",
+        "operationId" : "getBlockById",
+        "parameters" : [ {
+          "name" : "blockId",
+          "in" : "path",
+          "description" : "区块id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "返回区块json内容",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/QueryResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/block/blocktimeoftran" : {
+      "post" : {
+        "tags" : [ "block" ],
+        "summary" : "返回指定交易的入块时间",
+        "description" : "getBlockTimeOfTransaction",
+        "operationId" : "getBlockTimeOfTxrByTxid",
+        "requestBody" : {
+          "description" : "交易id",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "string",
+                "description" : "交易id",
+                "example" : {
+                  "txid" : "8128801f-bb5e-4934-8fdb-0b89747bd2e6"
+                }
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "返回指定交易的入块时间",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/QueryResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/block/stream/{blockHeight}" : {
+      "get" : {
+        "tags" : [ "block" ],
+        "summary" : "返回指定高度的区块字节流",
+        "description" : "getBlockStreamByHeight",
+        "operationId" : "getBlockStreamByHeight",
+        "parameters" : [ {
+          "name" : "blockHeight",
+          "in" : "path",
+          "description" : "区块高度",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "example" : 1
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "blockbytes",
+            "content" : {
+              "application/octet-stream" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/HttpResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/block/{blockHeight}" : {
+      "get" : {
+        "tags" : [ "block" ],
+        "summary" : "返回指定高度的区块",
+        "description" : "getBlockByHeight",
+        "operationId" : "getBlockByHeightToo",
+        "parameters" : [ {
+          "name" : "blockHeight",
+          "in" : "path",
+          "description" : "区块高度",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "example" : 1
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "返回区块json内容",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/QueryResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/block/getTransNumberOfBlock" : {
+      "post" : {
+        "tags" : [ "block" ],
+        "summary" : "返回指定高度区块包含的交易数",
+        "description" : "getTransNumberOfBlock",
+        "operationId" : "getTransNumberOfBlock",
+        "requestBody" : {
+          "description" : "区块高度，最小为2",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "string",
+                "description" : "height, 最小为2",
+                "example" : {
+                  "height" : 2
+                }
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "返回指定高度区块包含的交易数",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/QueryResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/block/blocktime/{blockHeight}" : {
+      "get" : {
+        "tags" : [ "block" ],
+        "summary" : "返回指定高度的区块的出块时间",
+        "description" : "getBlockTimeOfCreate",
+        "operationId" : "getBlockTimeOfCreate",
+        "parameters" : [ {
+          "name" : "blockHeight",
+          "in" : "path",
+          "description" : "区块高度, 最小为2",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "description" : "height, 最小为2"
+          },
+          "example" : 2
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "返回指定高度的区块的出块时间",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/QueryResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/block/blocktimeoftran/{transid}" : {
+      "get" : {
+        "tags" : [ "block" ],
+        "summary" : "返回指定交易的入块时间",
+        "description" : "getBlockTimeOfTransaction",
+        "operationId" : "getBlockTimeOfTransaction",
+        "parameters" : [ {
+          "name" : "transid",
+          "in" : "path",
+          "description" : "交易id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "返回指定交易的入块时间",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/QueryResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/block/blockHeight" : {
+      "post" : {
+        "tags" : [ "block" ],
+        "summary" : "返回指定高度的区块",
+        "description" : "getBlockByHeight",
+        "operationId" : "getBlockByHeight",
+        "requestBody" : {
+          "description" : "区块高度",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "string",
+                "description" : "height",
+                "example" : {
+                  "height" : 1
+                }
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "返回区块json内容",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/QueryResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/chaininfo/IsLoadBlockInfoToCache" : {
+      "get" : {
+        "tags" : [ "chaininfo" ],
+        "summary" : "是否完成始化装载区块索引到缓存",
+        "description" : "IsLoadBlockInfoToCache",
+        "operationId" : "IsLoadBlockInfoToCache",
+        "responses" : {
+          "200" : {
+            "description" : "是否完成初始化装载区块索引到缓存量",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/QueryResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/chaininfo/getcachetransnumber" : {
+      "get" : {
+        "tags" : [ "chaininfo" ],
+        "summary" : "返回系统缓存交易数量",
+        "description" : "getCacheTransNumber",
+        "operationId" : "getCacheTransNumber",
+        "responses" : {
+          "200" : {
+            "description" : "返回系统缓存交易数量",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/QueryResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/chaininfo/getAcceptedTransNumber" : {
+      "get" : {
+        "tags" : [ "chaininfo" ],
+        "summary" : "返回系统接收到的交易数量",
+        "description" : "getAcceptedTransNumber",
+        "operationId" : "getAcceptedTransNumber",
+        "responses" : {
+          "200" : {
+            "description" : "返回系统接收到的交易数量",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/QueryResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/chaininfo/node" : {
+      "get" : {
+        "tags" : [ "chaininfo" ],
+        "summary" : "返回组网节点数量",
+        "description" : "getNodeNumber",
+        "operationId" : "getNodeNumber",
+        "responses" : {
+          "200" : {
+            "description" : "返回组网节点数量",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/QueryResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/chaininfo/loadBlockInfoToCache" : {
+      "get" : {
+        "tags" : [ "chaininfo" ],
+        "summary" : "初始化装载区块索引到缓存",
+        "description" : "loadBlockInfoToCache",
+        "operationId" : "loadBlockInfoToCache",
+        "responses" : {
+          "200" : {
+            "description" : "初始化装载区块索引到缓存量",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/QueryResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/chaininfo" : {
+      "get" : {
+        "tags" : [ "chaininfo" ],
+        "summary" : "返回块链信息",
+        "description" : "getChainInfo",
+        "operationId" : "getBlockChainInfo",
+        "responses" : {
+          "200" : {
+            "description" : "返回块链信息",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/QueryResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/transaction/{transactionId}" : {
+      "get" : {
+        "tags" : [ "transaction" ],
+        "summary" : "返回指定id的交易",
+        "description" : "getTransaction",
+        "operationId" : "getTransaction",
+        "parameters" : [ {
+          "name" : "transactionId",
+          "in" : "path",
+          "description" : "交易id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "返回交易json内容",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/QueryResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/transaction/postTran" : {
+      "post" : {
+        "tags" : [ "transaction" ],
+        "summary" : "提交交易",
+        "description" : "postTransaction",
+        "operationId" : "postTransaction",
+        "requestBody" : {
+          "description" : "描述交易的xml",
+          "content" : {
+            "application/xml" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CSpec"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "返回交易id以及执行结果",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PostResult"
+                }
+              }
+            }
+          },
+          "202" : {
+            "description" : "处理存在异常",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PostResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/transaction/stream/{transactionId}" : {
+      "get" : {
+        "tags" : [ "transaction" ],
+        "summary" : "getTransactionStream",
+        "description" : "返回指定id的交易字节流",
+        "operationId" : "getTransactionStream",
+        "parameters" : [ {
+          "name" : "transactionId",
+          "in" : "path",
+          "description" : "交易id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "返回交易字节流",
+            "content" : {
+              "application/octet-stream" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/HttpResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/transaction/tranInfoAndHeight/{transactionId}" : {
+      "get" : {
+        "tags" : [ "transaction" ],
+        "summary" : "返回指定id的交易信息及所在区块高度",
+        "description" : "tranInfoAndHeightOfTranId",
+        "operationId" : "tranInfoAndHeightOfTranId",
+        "parameters" : [ {
+          "name" : "transactionId",
+          "in" : "path",
+          "description" : "交易id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "返回指定id的交易信息及所在区块高度",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/QueryResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/transaction/postTranByString" : {
+      "post" : {
+        "tags" : [ "transaction" ],
+        "summary" : "提交带签名的交易",
+        "description" : "postSignTransaction",
+        "operationId" : "postSignTransaction",
+        "requestBody" : {
+          "description" : "签名交易的16进制字符串",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "string",
+                "description" : "签名交易"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "返回交易id以及执行结果",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PostResult"
+                }
+              }
+            }
+          },
+          "202" : {
+            "description" : "处理存在异常",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PostResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/transaction/postTranStream" : {
+      "post" : {
+        "tags" : [ "transaction" ],
+        "summary" : "提交带签名的交易字节流",
+        "description" : "postSignTransactionStream",
+        "operationId" : "postSignTransactionStream",
+        "requestBody" : {
+          "description" : "签名交易的二进制文件",
+          "content" : {
+            "multipart/form-data" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SignedTransData"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "返回交易id以及执行结果",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PostResult"
+                }
+              }
+            }
+          },
+          "202" : {
+            "description" : "处理存在异常",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PostResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components" : {
+    "schemas" : {
+      "JValue" : {
+        "type" : "object"
+      },
+      "QueryResult" : {
+        "type" : "object",
+        "properties" : {
+          "result" : {
+            "$ref" : "#/components/schemas/JValue"
+          }
+        }
+      },
+      "Function1RequestContextFutureRouteResult" : {
+        "type" : "object"
+      },
+      "Attribute" : {
+        "type" : "object"
+      },
+      "Attributes" : {
+        "required" : [ "attributeList" ],
+        "type" : "object",
+        "properties" : {
+          "attributeList" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Attribute"
+            }
+          },
+          "async" : {
+            "type" : "boolean"
+          }
+        }
+      },
+      "ContentType" : {
+        "required" : [ "charsetOption" ],
+        "type" : "object",
+        "properties" : {
+          "charsetOption" : {
+            "$ref" : "#/components/schemas/HttpCharset"
+          }
+        }
+      },
+      "HttpCharset" : {
+        "required" : [ "aliases" ],
+        "type" : "object",
+        "properties" : {
+          "aliases" : {
+            "type" : "object"
+          }
+        }
+      },
+      "HttpProtocol" : {
+        "type" : "object",
+        "properties" : {
+          "value" : {
+            "type" : "string"
+          }
+        }
+      },
+      "HttpResponse" : {
+        "required" : [ "entity", "headers", "protocol", "status" ],
+        "type" : "object",
+        "properties" : {
+          "status" : {
+            "$ref" : "#/components/schemas/StatusCode"
+          },
+          "headers" : {
+            "type" : "object"
+          },
+          "entity" : {
+            "$ref" : "#/components/schemas/ResponseEntity"
+          },
+          "protocol" : {
+            "$ref" : "#/components/schemas/HttpProtocol"
+          },
+          "request" : {
+            "type" : "boolean"
+          },
+          "response" : {
+            "type" : "boolean"
+          }
+        }
+      },
+      "InPort" : {
+        "type" : "object"
+      },
+      "InletObject" : {
+        "type" : "object",
+        "properties" : {
+          "s" : {
+            "type" : "string"
+          }
+        }
+      },
+      "IslandTag" : {
+        "type" : "object"
+      },
+      "LinearTraversalBuilder" : {
+        "required" : [ "attributes", "inOffset", "inPort", "islandTag", "outPort", "pendingBuilder", "traversalSoFar" ],
+        "type" : "object",
+        "properties" : {
+          "inPort" : {
+            "$ref" : "#/components/schemas/InPort"
+          },
+          "outPort" : {
+            "$ref" : "#/components/schemas/OutPort"
+          },
+          "inOffset" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "inSlots" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "traversalSoFar" : {
+            "$ref" : "#/components/schemas/Traversal"
+          },
+          "pendingBuilder" : {
+            "$ref" : "#/components/schemas/TraversalBuilder"
+          },
+          "attributes" : {
+            "$ref" : "#/components/schemas/Attributes"
+          },
+          "beforeBuilder" : {
+            "$ref" : "#/components/schemas/Traversal"
+          },
+          "islandTag" : {
+            "$ref" : "#/components/schemas/IslandTag"
+          },
+          "traversalComplete" : {
+            "type" : "boolean"
+          },
+          "empty" : {
+            "type" : "boolean"
+          }
+        }
+      },
+      "OutPort" : {
+        "type" : "object"
+      },
+      "OutletByteString" : {
+        "required" : [ "s" ],
+        "type" : "object",
+        "properties" : {
+          "s" : {
+            "type" : "string"
+          }
+        }
+      },
+      "OutletObject" : {
+        "type" : "object",
+        "properties" : {
+          "s" : {
+            "type" : "string"
+          }
+        }
+      },
+      "ResponseEntity" : {
+        "required" : [ "contentLengthOption", "contentType", "dataBytes" ],
+        "type" : "object",
+        "properties" : {
+          "dataBytes" : {
+            "$ref" : "#/components/schemas/SourceByteStringObject"
+          },
+          "contentLengthOption" : {
+            "required" : [ "asLong" ],
+            "type" : "object",
+            "properties" : {
+              "isPresent" : {
+                "type" : "boolean"
+              },
+              "asLong" : {
+                "type" : "integer",
+                "format" : "int64"
+              },
+              "empty" : {
+                "type" : "boolean"
+              }
+            }
+          },
+          "contentType" : {
+            "$ref" : "#/components/schemas/ContentType"
+          },
+          "knownEmpty" : {
+            "type" : "boolean"
+          },
+          "chunked" : {
+            "type" : "boolean"
+          },
+          "closeDelimited" : {
+            "type" : "boolean"
+          },
+          "indefiniteLength" : {
+            "type" : "boolean"
+          },
+          "default" : {
+            "type" : "boolean"
+          },
+          "strict" : {
+            "type" : "boolean"
+          }
+        }
+      },
+      "SeqInletObject" : {
+        "type" : "array",
+        "properties" : {
+          "traversableAgain" : {
+            "type" : "boolean"
+          },
+          "empty" : {
+            "type" : "boolean"
+          }
+        },
+        "items" : {
+          "$ref" : "#/components/schemas/InletObject"
+        }
+      },
+      "SeqOutletObject" : {
+        "type" : "array",
+        "properties" : {
+          "traversableAgain" : {
+            "type" : "boolean"
+          },
+          "empty" : {
+            "type" : "boolean"
+          }
+        },
+        "items" : {
+          "$ref" : "#/components/schemas/OutletObject"
+        }
+      },
+      "SourceByteStringObject" : {
+        "required" : [ "delegate" ],
+        "type" : "object",
+        "properties" : {
+          "delegate" : {
+            "$ref" : "#/components/schemas/SourceByteStringObject"
+          }
+        }
+      },
+      "SourceShapeByteString" : {
+        "required" : [ "inlets", "out", "outlets" ],
+        "type" : "object",
+        "properties" : {
+          "out" : {
+            "$ref" : "#/components/schemas/OutletByteString"
+          },
+          "inlets" : {
+            "type" : "array",
+            "properties" : {
+              "traversableAgain" : {
+                "type" : "boolean"
+              },
+              "empty" : {
+                "type" : "boolean"
+              }
+            },
+            "items" : {
+              "$ref" : "#/components/schemas/InletObject"
+            }
+          },
+          "outlets" : {
+            "type" : "array",
+            "properties" : {
+              "traversableAgain" : {
+                "type" : "boolean"
+              },
+              "empty" : {
+                "type" : "boolean"
+              }
+            },
+            "items" : {
+              "$ref" : "#/components/schemas/OutletObject"
+            }
+          }
+        }
+      },
+      "StatusCode" : {
+        "required" : [ "redirection" ],
+        "type" : "object",
+        "properties" : {
+          "redirection" : {
+            "type" : "boolean"
+          },
+          "failure" : {
+            "type" : "boolean"
+          },
+          "success" : {
+            "type" : "boolean"
+          }
+        }
+      },
+      "Traversal" : {
+        "type" : "object"
+      },
+      "TraversalBuilder" : {
+        "type" : "object",
+        "properties" : {
+          "attributes" : {
+            "$ref" : "#/components/schemas/TraversalBuilder"
+          },
+          "traversalComplete" : {
+            "type" : "boolean"
+          }
+        },
+        "writeOnly" : true
+      },
+      "CSpec" : {
+        "required" : [ "chaincodename", "iptArgs", "stype" ],
+        "type" : "object",
+        "properties" : {
+          "stype" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "chaincodename" : {
+            "type" : "string"
+          },
+          "chaincodeversion" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "iptFunc" : {
+            "type" : "string"
+          },
+          "iptArgs" : {
+            "required" : [ "traversableAgain" ],
+            "type" : "array",
+            "properties" : {
+              "traversableAgain" : {
+                "type" : "boolean"
+              },
+              "empty" : {
+                "type" : "boolean"
+              }
+            },
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "timeout" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "legal_prose" : {
+            "type" : "string"
+          },
+          "code" : {
+            "type" : "string"
+          },
+          "ctype" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "state" : {
+            "type" : "boolean"
+          }
+        }
+      },
+      "SeqString" : {
+        "required" : [ "traversableAgain" ],
+        "type" : "array",
+        "properties" : {
+          "traversableAgain" : {
+            "type" : "boolean"
+          },
+          "empty" : {
+            "type" : "boolean"
+          }
+        },
+        "items" : {
+          "type" : "string"
+        }
+      },
+      "ActionResult" : {
+        "required" : [ "code", "unknownFields" ],
+        "type" : "object",
+        "properties" : {
+          "code" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "reason" : {
+            "type" : "string"
+          },
+          "unknownFields" : {
+            "$ref" : "#/components/schemas/UnknownFieldSet"
+          }
+        }
+      },
+      "ByteString" : {
+        "type" : "object",
+        "properties" : {
+          "validUtf8" : {
+            "type" : "boolean"
+          },
+          "empty" : {
+            "type" : "boolean"
+          }
+        }
+      },
+      "Field" : {
+        "required" : [ "lengthDelimited", "varint" ],
+        "type" : "object",
+        "properties" : {
+          "varint" : {
+            "required" : [ "traversableAgain" ],
+            "type" : "array",
+            "properties" : {
+              "traversableAgain" : {
+                "type" : "boolean"
+              },
+              "empty" : {
+                "type" : "boolean"
+              }
+            },
+            "items" : {
+              "type" : "object"
+            }
+          },
+          "fixed64" : {
+            "required" : [ "traversableAgain" ],
+            "type" : "array",
+            "properties" : {
+              "traversableAgain" : {
+                "type" : "boolean"
+              },
+              "empty" : {
+                "type" : "boolean"
+              }
+            },
+            "items" : {
+              "type" : "object"
+            }
+          },
+          "fixed32" : {
+            "required" : [ "traversableAgain" ],
+            "type" : "array",
+            "properties" : {
+              "traversableAgain" : {
+                "type" : "boolean"
+              },
+              "empty" : {
+                "type" : "boolean"
+              }
+            },
+            "items" : {
+              "type" : "object"
+            }
+          },
+          "lengthDelimited" : {
+            "type" : "array",
+            "properties" : {
+              "traversableAgain" : {
+                "type" : "boolean"
+              },
+              "empty" : {
+                "type" : "boolean"
+              }
+            },
+            "items" : {
+              "$ref" : "#/components/schemas/ByteString"
+            }
+          }
+        }
+      },
+      "MapObjectField" : {
+        "type" : "object",
+        "properties" : {
+          "traversableAgain" : {
+            "type" : "boolean"
+          },
+          "empty" : {
+            "type" : "boolean"
+          }
+        },
+        "additionalProperties" : {
+          "$ref" : "#/components/schemas/Field"
+        }
+      },
+      "PostResult" : {
+        "required" : [ "txid" ],
+        "type" : "object",
+        "properties" : {
+          "txid" : {
+            "type" : "string"
+          },
+          "result" : {
+            "$ref" : "#/components/schemas/ActionResult"
+          },
+          "err" : {
+            "type" : "string"
+          }
+        }
+      },
+      "SeqByteString" : {
+        "type" : "array",
+        "properties" : {
+          "traversableAgain" : {
+            "type" : "boolean"
+          },
+          "empty" : {
+            "type" : "boolean"
+          }
+        },
+        "items" : {
+          "$ref" : "#/components/schemas/ByteString"
+        }
+      },
+      "SeqObject" : {
+        "required" : [ "traversableAgain" ],
+        "type" : "array",
+        "properties" : {
+          "traversableAgain" : {
+            "type" : "boolean"
+          },
+          "empty" : {
+            "type" : "boolean"
+          }
+        },
+        "items" : {
+          "type" : "object"
+        }
+      },
+      "UnknownFieldSet" : {
+        "required" : [ "fields" ],
+        "type" : "object",
+        "properties" : {
+          "fields" : {
+            "type" : "object",
+            "properties" : {
+              "traversableAgain" : {
+                "type" : "boolean"
+              },
+              "empty" : {
+                "type" : "boolean"
+              }
+            },
+            "additionalProperties" : {
+              "$ref" : "#/components/schemas/Field"
+            }
+          }
+        }
+      },
+      "SignedTransData" : {
+        "required" : [ "signedTrans" ],
+        "type" : "object",
+        "properties" : {
+          "signedTrans" : {
+            "type" : "string",
+            "format" : "binary"
+          }
+        }
+      }
+    }
+  }
+}

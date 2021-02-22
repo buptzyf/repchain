@@ -32,7 +32,7 @@ import scala.collection.mutable
 
 
 /**
-  * 将整个jks下所有node的账户都注册上去（遍历node的jks），并为账户赋初值，证书暂时没有注册
+  * 将整个jks下所有node的账户都注册上去（遍历node的jks），并为账户赋初值，以及注册相应的证书
   *
   * @author zyf
   */
@@ -87,23 +87,24 @@ object GenesisBuilderMulti {
 
     transList.add(dep_set_trans)
 
-//    val s4 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/XXXTPL.scala","UTF-8")
+    // 可选的业务合约，如果没有，这里需要注释
+//    val s4 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/CustomTPL.scala","UTF-8")
 //    val l4 = try s4.mkString finally s4.close()
-//    val cid4 = new ChaincodeId("XXXTPL", 1)
-//    val dep_xxx = PeerHelper.createTransaction4Deploy(sysName, cid4, l4, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
-//
-//    transList.add(dep_xxx)
+//    val cid4 = new ChaincodeId("CustomTPL", 1)
+//    val dep_process_proof = PeerHelper.createTransaction4Deploy(sysName, cid4, l4, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
+//    // 如果没有上述的业务合约，这里需要注释
+//    transList.add(dep_process_proof)
 
     var blk = new Block(1, 1, transList.toArray(new Array[Transaction](transList.size())), Seq(), _root_.com.google.protobuf.ByteString.EMPTY,
       _root_.com.google.protobuf.ByteString.EMPTY)
 
     blk = blk.clearEndorsements
     blk = blk.clearTransactionResults
-    val r = JsonFormat.toJson(blk)
+    val r = MessageToJson.toJson(blk)
     val rStr = pretty(render(r))
     println(rStr)
 
-    val pw = new PrintWriter("json/gensis.json","UTF-8")
+    val pw = new PrintWriter("json/genesis.json","UTF-8")
     pw.write(rStr)
     pw.flush()
     pw.close()

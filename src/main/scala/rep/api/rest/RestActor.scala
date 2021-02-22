@@ -54,6 +54,7 @@ import rep.utils.GlobalUtils.EventType
 
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
+import rep.utils.MessageToJson
 /**
  * RestActor伴生object，包含可接受的传入消息定义，以及处理的返回结果定义。
  * 以及用于建立Tranaction，检索Tranaction的静态方法
@@ -224,21 +225,29 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
       sender ! PostResult(t.id, None, Option("共识节点数目太少，暂时无法处理交易"))
     } else {
       try {
-        //if (pe.getTransPoolMgr.getTransLength() < SystemProfile.getMaxCacheTransNum) {
-
-        pe.getTransPoolMgr.putTran(t,pe.getSysTag)
-
-        if(SystemProfile.getIsBroadcastTransaction== 1)
-              mediator ! Publish(Topic.Transaction, t)
+        if (SystemProfile.getHasPreloadTransOfApi) {
+          val sig = t.signature.get.signature.toByteArray
+          val tOutSig = t.clearSignature
+          val certId = t.signature.get.certId.get
+          if (SignTool.verify(sig, tOutSig.toByteArray, certId, pe.getSysTag)) {
+            mediator ! Publish(Topic.Transaction, t)
+            //广播发送交易事件
+            sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)
+            sender ! PostResult(t.id, None, None)
+          } else {
+            sender ! PostResult(t.id, None, Option("验证签名出错"))
+          }
+        } else {
+          mediator ! Publish(Topic.Transaction, t) // 给交易池发送消息 ！=》告知（getActorRef）
+          //广播发送交易事件
           sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)
           sender ! PostResult(t.id, None, None)
-        /*} else {
-          // 交易缓存池已满，不可继续提交交易
-          sender ! PostResult(t.id, None, Option(s"交易缓存池已满，容量为${pe.getTransPoolMgr.getTransLength()}，不可继续提交交易"))
-        }*/
+        }
       } catch {
-        case e: Exception =>
+        case e: RuntimeException =>
           sender ! PostResult(t.id, None, Option(e.getMessage))
+      } finally {
+        ImpDataPreloadMgr.Free(pe.getSysTag, "api_" + t.id)
       }
     }
   }
@@ -299,7 +308,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
         case null => QueryResult(None)
         case _ =>
           val bl = Block.parseFrom(bb)
-          QueryResult(Option(JsonFormat.toJson(bl)))
+          QueryResult(Option(MessageToJson.toJson(bl)))
       }
       sender ! r
 
@@ -340,7 +349,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
         case null => QueryResult(None)
         case _ =>
           val bl = Block.parseFrom(bb)
-          QueryResult(Option(JsonFormat.toJson(bl)))
+          QueryResult(Option(MessageToJson.toJson(bl)))
       }
       sender ! r
 
@@ -350,7 +359,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
         case None =>
           QueryResult(None)
         case t: Some[Transaction] =>
-          QueryResult(Option(JsonFormat.toJson(t.get)))
+          QueryResult(Option(MessageToJson.toJson(t.get)))
       }
       sender ! r
 
@@ -374,14 +383,14 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
           QueryResult(None)
         case t: Some[Transaction] =>
           val txr = t.get
-          val tranInfoHeight = TranInfoHeight(JsonFormat.toJson(txr), sr.getBlockIdxByTxid(txr.id).getBlockHeight())
+          val tranInfoHeight = TranInfoHeight(MessageToJson.toJson(txr), sr.getBlockIdxByTxid(txr.id).getBlockHeight())
           QueryResult(Option(Extraction.decompose(tranInfoHeight)))
       }
       sender ! r
 
     // 获取链信息
     case ChainInfo =>
-      val cij = JsonFormat.toJson(sr.getBlockChainInfo)
+      val cij = MessageToJson.toJson(sr.getBlockChainInfo)
       sender ! QueryResult(Option(cij))
 
     case NodeNumber =>
@@ -401,9 +410,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
       sender ! QueryResult(Option(JsonMethods.parse(string2JsonInput(rs))))
 
     case TransNumberOfBlock(h) =>
-      val l = dyncCreateTrans(h)
-      //val l = checkTransRepeat(h)
-      val num = l//sr.getNumberOfTransInBlockByHeight(h)
+      val num = sr.getNumberOfTransInBlockByHeight(h)
       val rs = "{\"transnumberofblock\":\"" + num + "\"}"
       sender ! QueryResult(Option(JsonMethods.parse(string2JsonInput(rs))))
 
