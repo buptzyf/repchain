@@ -45,13 +45,17 @@ object MsgOfCFRD {
   //背书请求者消息
   case class BlockInfoOfConsensus(voteinfo:BlockerInfo,blocker:String,blc:Block,currentBlockSerial:Int,isFirst:Boolean,isLastBlock:Boolean)
   case class ResultOfEndorsementInStream(voteinfo:BlockerInfo,currentBlockSerial:Int,blockHash:String,isFirst:Boolean,isLastBlock:Boolean,result: Boolean, endor: Signature,endorser: Address)
-  case class ResendEndorseInfoInStream(voteinfo:BlockerInfo,currentBlockSerial:Int,blockHash:String,isFirst:Boolean,isLastBlock:Boolean,endorer: Address)
+  //case class ResendEndorseInfoInStream(voteinfo:BlockerInfo,currentBlockSerial:Int,blockHash:String,isFirst:Boolean,isLastBlock:Boolean,endorer: Address)
 
   case class RequesterOfEndorsement(blc: Block, blocker: String, endorer: Address,voteindex:Int)
+  case class RequesterOfEndorsementInStream(blc: Block, blocker: String, endorer: Address,voteindex:Int,voteHeight:Long)
   case class ResendEndorseInfo(endorer: Address)
+  case class ResendEndorseInfoInStream(endorer: Address,blockhash:String)
+  case class EndorsementFinishMsgInStream(block:Block,result:Boolean)
 
   //给背书人的背书消息
   case class EndorsementInfo(blc: Block, blocker: String,voteindex:Int)
+  case class EndorsementInfoInStream(blc: Block, blocker: String,voteIndex:Int,voteHeight:Long)
 
   case class verifyTransOfEndorsement(blc: Block, blocker: String)
   case class verifyTransRepeatOfEndorsement(blc: Block, blocker: String)

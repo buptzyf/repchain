@@ -45,7 +45,7 @@ class PeerExtensionImpl extends Extension {
   private val transactionmgr : ITransctionPoolMgr =  setPoolMgr
 
   private def setPoolMgr:ITransctionPoolMgr={
-    if(SystemProfile.getTypeOfConsensus == "RAFT"){
+    if(SystemProfile.getTypeOfConsensus == "RAFT"  || SystemProfile.getTypeOfConsensus == "CFRDINSTREAM"){
       new TransactionPoolMgr
     }else{
       new TransactionPoolMgrForCFRD

@@ -45,6 +45,7 @@ object Topic {
   val SyncOfTransaction = "SyncOfTransaction"
   val SyncOfBlock = "SyncOfBlock"
   val VoteTransform = "VoteTransform"
+  val VoteSynchronized = "VoteSynchronized"
 }
 
 object InnerTopic {

@@ -28,7 +28,7 @@ abstract class IVoter(moduleName: String) extends ModuleBase(moduleName) {
   val dataaccess: ImpDataAccess = ImpDataAccess.GetDataAccess(pe.getSysTag)
 
   protected var candidator: Array[String] = Array.empty[String]
-  protected var Blocker: BlockerInfo = BlockerInfo("", -1, 0l, "", -1)
+  protected var Blocker: BlockerInfo = BlockerInfo("", -1, Long.MaxValue, "", -1)
   protected var voteCount = 0
   protected var algorithmInVoted:IAlgorithmOfVote = null
   private var InitDelayTime : Long = -1
@@ -41,7 +41,7 @@ abstract class IVoter(moduleName: String) extends ModuleBase(moduleName) {
   protected def cleanVoteInfo = {
     this.voteCount = 0
     candidator = Array.empty[String]
-    this.Blocker = BlockerInfo("", -1, 0l, "", -1)
+    this.Blocker = BlockerInfo("", -1, Long.MaxValue, "", -1)
     pe.resetBlocker(this.Blocker)
   }
 

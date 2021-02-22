@@ -438,9 +438,15 @@ class TransactionService(ra: RestRouter,ec: ExecutionContext)(implicit execution
     path("transaction" / "postTranByString") {
       post {
         entity(as[String]) { trans =>
-          /*val p = BlockHelp.preTransaction(trans)
-          ra.getRestActor ! tranSign(trans)
-          complete { p}*/
+          /*var pr :  PostResult = null
+          val t = BlockHelp.preTransaction(trans)
+          if(t == None){
+            pr = PostResult("", None, Option("交易ID不存在"))
+          }else{
+            pr = PostResult(t.get.id, None, None)
+            ra.getRestActor4Transaction ! t.get
+          }
+          complete { pr }*/
           complete { (ra.getRestActor ? tranSign(trans)).mapTo[PostResult] }
         }
       }

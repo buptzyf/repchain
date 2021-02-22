@@ -19,7 +19,7 @@ package rep.sc
 import com.fasterxml.jackson.core.Base64Variants
 import akka.actor.ActorSystem
 import rep.network.tools.PeerExtension
-import rep.protos.peer.{Transaction,OperLog}
+import rep.protos.peer.{OperLog, Transaction}
 import rep.storage.ImpDataPreload
 import rep.utils.SerializeUtils
 import rep.utils.SerializeUtils.deserialise
@@ -29,11 +29,15 @@ import java.io.FileInputStream
 import java.io.ByteArrayInputStream
 import java.io.StringReader
 import java.security.cert.X509Certificate
+
 import rep.storage.ImpDataAccess
 import rep.crypto.cert.SignTool
-import  _root_.com.google.protobuf.ByteString 
+import _root_.com.google.protobuf.ByteString
 import rep.log.RepLogger
-import org.slf4j.Logger;
+import org.slf4j.Logger
+
+import scala.collection.concurrent.TrieMap
+import scala.collection.immutable.HashMap
 
 /** Shim伴生对象
  *  @author c4w

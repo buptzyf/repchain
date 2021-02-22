@@ -1,4 +1,4 @@
-package rep.network.consensus.raft.vote
+package rep.network.consensus.cfrdinstream.vote
 
 import akka.actor.Props
 import akka.cluster.pubsub.DistributedPubSubMediator.Publish
@@ -6,35 +6,30 @@ import rep.app.conf.{SystemCertList, SystemProfile, TimePolicy}
 import rep.log.RepLogger
 import rep.network.autotransaction.Topic
 import rep.network.consensus.cfrd.MsgOfCFRD.{CreateBlock, TransformBlocker, VoteOfBlocker, VoteOfForce}
-import rep.network.consensus.common.algorithm.{IRandomAlgorithmOfVote, ISequencialAlgorithmOfVote}
+import rep.network.consensus.common.algorithm.ISequencialAlgorithmOfVote
 import rep.network.consensus.common.vote.IVoter
 import rep.network.module.cfrd.CFRDActorType
-import rep.network.sync.SyncMsg.{StartSync, SyncPreblocker}
+import rep.network.sync.SyncMsg.StartSync
 import rep.network.util.NodeHelp
 import rep.utils.GlobalUtils.BlockerInfo
 
-/**
- * Created by jiangbuyun on 2020/03/19.
- * RAFT共识实现的抽签actor
- */
-
-object  VoterOfRAFT{
-    def props(name: String): Props = Props(classOf[VoterOfRAFT],name)
+object VoteOfCFRDInStream{
+  def props(name: String): Props = Props(classOf[VoteOfCFRDInStream],name)
 }
 
-class VoterOfRAFT (moduleName: String) extends IVoter(moduleName: String) {
-  import scala.concurrent.duration._
+class VoteOfCFRDInStream (moduleName: String) extends IVoter(moduleName: String) {
   import context.dispatcher
+
+  import scala.concurrent.duration._
 
   private var voteIndex : Int = -1
   private var zeroOfTransNumTimeout : Long = -1
-  //private var zeroOfTransNumFlag:Boolean = false
   private var transformInfo:TransformBlocker = null
   private var blockTimeout : Boolean = false
   this.algorithmInVoted = new ISequencialAlgorithmOfVote
 
   override def preStart(): Unit = {
-    RepLogger.info(RepLogger.Vote_Logger, this.getLogMsgPrefix("VoterOfRAFT  module start"))
+    RepLogger.info(RepLogger.Vote_Logger, this.getLogMsgPrefix("VoteOfCFRDInStream  module start"))
     if(SystemProfile.getVoteNodeList.contains(pe.getSysTag)){
       //共识节点可以订阅交易的广播事件
       SubscribeTopic(mediator, self, selfAddr, Topic.VoteTransform, true)
@@ -44,9 +39,11 @@ class VoterOfRAFT (moduleName: String) extends IVoter(moduleName: String) {
   override protected def NoticeBlockerMsg: Unit = {
     RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},notice"))
     if (this.Blocker.blocker.equals(pe.getSysTag)) {
-      //发送建立新块的消息
-      RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},send create block"))
-      pe.getActorRef(CFRDActorType.ActorType.blocker) ! CreateBlock
+      if(pe.getCreateHeight <= this.Blocker.VoteHeight+SystemProfile.getBlockNumberOfRaft){
+        //发送建立新块的消息
+        RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},send create block"))
+        pe.getActorRef(CFRDActorType.ActorType.blocker) ! CreateBlock
+      }
     }
   }
 
@@ -71,7 +68,7 @@ class VoterOfRAFT (moduleName: String) extends IVoter(moduleName: String) {
     var time = this.voteCount * TimePolicy.getVoteRetryDelay
     schedulerLink = clearSched()
     schedulerLink = scheduler.scheduleOnce(TimePolicy.getVoteRetryDelay.millis, self, VoteOfBlocker)
-    }
+  }
 
   private def getVoteIndex:Int={
     if(this.voteIndex == Int.MaxValue) this.voteIndex = -1
@@ -107,6 +104,7 @@ class VoterOfRAFT (moduleName: String) extends IVoter(moduleName: String) {
       RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},transform,preblocker=${this.transformInfo.preBlocker}," +
         s"prevoteindex=${this.transformInfo.voteIndexOfBlocker},preblockheight=${this.transformInfo.heightOfBlocker},lvoteindex=${this.voteIndex},lheight=${pe.getCurrentHeight}" +
         s",transpoolcount=${pe.getTransPoolMgr.getTransLength()}" + "~" + selfAddr))
+      this.zeroOfTransNumTimeout = -1
       transform
     }else if(pe.getTransPoolMgr.getTransLength() <= 0){
       if(NodeHelp.isBlocker(this.Blocker.blocker, pe.getSysTag)){
@@ -139,9 +137,9 @@ class VoterOfRAFT (moduleName: String) extends IVoter(moduleName: String) {
         //不是出块人
       }
     }else{
-      if(NodeHelp.isBlocker(this.Blocker.blocker, pe.getSysTag)){
+      //if(NodeHelp.isBlocker(this.Blocker.blocker, pe.getSysTag)){
         this.zeroOfTransNumTimeout = -1
-      }
+      //}
       if((this.Blocker.VoteHeight +SystemProfile.getBlockNumberOfRaft) <= pe.getMaxHeight4SimpleRaft){
         RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},second voter,prevheight=${this.Blocker.VoteHeight},prevvoteindex=${this.voteIndex},lh=${pe.getCurrentHeight},currentHeight=${pe.getMaxHeight4SimpleRaft}" + "~" + selfAddr))
         val block = dataaccess.getBlock4ObjectByHeight(this.Blocker.VoteHeight +SystemProfile.getBlockNumberOfRaft)
@@ -187,15 +185,15 @@ class VoterOfRAFT (moduleName: String) extends IVoter(moduleName: String) {
   }
 
   private def blockTimeoutOftransform={
-      val currentblockhash = pe.getCurrentBlockHash
-      val currentheight = pe.getCurrentHeight
-      this.transformInfo = null
-      pe.resetTimeoutOfRaft
-      this.blockTimeout = false
-      this.cleanVoteInfo
-      this.resetCandidator(currentblockhash)
-      this.resetBlocker(getVoteIndex, currentblockhash, currentheight)
-      RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},read block voter,currentHeight=${this.Blocker.VoteHeight +SystemProfile.getBlockNumberOfRaft},currentHash=${currentblockhash}" + "~" + selfAddr))
+    val currentblockhash = pe.getCurrentBlockHash
+    val currentheight = pe.getCurrentHeight
+    this.transformInfo = null
+    pe.resetTimeoutOfRaft
+    this.blockTimeout = false
+    this.cleanVoteInfo
+    this.resetCandidator(currentblockhash)
+    this.resetBlocker(getVoteIndex, currentblockhash, currentheight)
+    RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},read block voter,currentHeight=${this.Blocker.VoteHeight +SystemProfile.getBlockNumberOfRaft},currentHash=${currentblockhash}" + "~" + selfAddr))
   }
 
   override protected def vote(isForce: Boolean): Unit = {

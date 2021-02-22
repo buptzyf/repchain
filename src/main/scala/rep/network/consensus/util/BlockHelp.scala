@@ -134,17 +134,15 @@ object BlockHelp {
     gen_blk
   }
 
-  def preTransaction(tr: String): PostResult = {
-    var txid = "None"
+  def preTransaction(tr: String): Option[Transaction] = {
       try {
         val tr1 = BytesHex.hex2bytes(tr) // 解析交易编码后的16进制字符串,进行解码16进制反解码decode
         var txr = Transaction.defaultInstance
         txr = Transaction.parseFrom(tr1)
-        txid = txr.id
-        PostResult(txr.id, None, None)
+        Some(txr)
       } catch {
         case e: Exception =>
-          PostResult(txid, None, Option(e.getMessage))
+          None
       }
   }
 

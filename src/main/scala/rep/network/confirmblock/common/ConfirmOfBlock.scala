@@ -57,6 +57,7 @@ class ConfirmOfBlock(moduleName: String) extends IConfirmOfBlock(moduleName) {
         //背书人的签名一致
         if (BlockVerify.verifySort(block.endorsements.toArray[Signature]) == 1 || (block.height == 1 && pe.getCurrentBlockHash == "" && block.previousBlockHash.isEmpty())) {
           //背书信息排序正确
+          pe.setConfirmHeight(block.height)
           RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"confirm verify endorsement sort,height=${block.height}"))
           pe.getBlockCacheMgr.addToCache(BlockRestore(block, SourceOfBlock.CONFIRMED_BLOCK, actRefOfBlock))
           //pe.getTransPoolMgr.cleanPreloadCache("identifier-"+block.height)
@@ -69,6 +70,7 @@ class ConfirmOfBlock(moduleName: String) extends IConfirmOfBlock(moduleName) {
         //背书验证有错误
       }
     } else {
+      pe.setConfirmHeight(block.height)
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"confirm verify endorsement sort,height=${block.height}"))
       pe.getBlockCacheMgr.addToCache(BlockRestore(block, SourceOfBlock.CONFIRMED_BLOCK, actRefOfBlock))
       pe.getActorRef(ModuleActorType.ActorType.storager) ! BatchStore

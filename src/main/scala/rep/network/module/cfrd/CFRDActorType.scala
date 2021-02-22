@@ -11,6 +11,7 @@ object CFRDActorType {
     val blocker = 201
     val voter = 202
     val endorsementcollectioner = 203
+    val endorsementcollectionerinstream = 210
 
     val confirmerofblock = 204
     val dispatchofRecvendorsement = 205

@@ -16,8 +16,10 @@
 
 package rep.network.util
 
-import akka.actor.{ ActorRef, Props }
-import rep.app.conf.{ SystemProfile }
+import akka.actor.{ActorRef, Props}
+import rep.app.conf.SystemProfile
+import rep.utils.GlobalUtils.BlockerInfo
+
 import scala.util.control.Breaks._
 
 object NodeHelp {
@@ -98,6 +100,10 @@ object NodeHelp {
         }
       }))
     r
+  }
+
+  def IsSameVote(src:BlockerInfo,dest:BlockerInfo):Boolean={
+    src.VoteHeight==dest.VoteHeight && src.voteBlockHash==dest.voteBlockHash && src.VoteIndex==dest.VoteIndex
   }
 
 }

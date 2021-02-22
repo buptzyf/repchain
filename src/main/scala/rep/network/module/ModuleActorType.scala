@@ -15,6 +15,7 @@ object ModuleActorType {
     val peerhelper = 102
     //分派交易预执行actor
     val dispatchofpreload = 103
+    val dispatchofpreloadinstream = 7002
     //出块时分派交易预执行actor
     val transactiondispatcher = 104
     //交易缓存池actor，接收广播交易
