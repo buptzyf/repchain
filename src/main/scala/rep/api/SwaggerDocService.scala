@@ -48,7 +48,7 @@ object SwaggerDocService extends SwaggerHttpService {
     title = "RepChain",
     license = Some(License("Apache 2.0","http://www.apache.org/licenses/LICENSE-2.0.html"))
   )
-  override val host = s"localhost:${SystemProfile.getHttpServicePort}"
+  //override val host = s"localhost:${SystemProfile.getHttpServicePort()}"
   /**
    * 重写swaggerConfig，加上tag描述信息
    * @author zyf

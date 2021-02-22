@@ -115,9 +115,9 @@ object EventServer {
     Http().bindAndHandle(
       route_evt
         ~ cors() (
-            new BlockService(ra,executionContext).route ~
-            new ChainService(ra,executionContext).route ~
-            new TransactionService(ra,executionContext).route ~
+            new BlockService(ra).route ~
+            new ChainService(ra).route ~
+            new TransactionService(ra).route ~
             SwaggerDocService.routes),
       "0.0.0.0", port)
     RepLogger.info(RepLogger.System_Logger, s"Event Server online at http://localhost:$port")

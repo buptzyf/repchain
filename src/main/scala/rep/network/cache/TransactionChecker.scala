@@ -66,31 +66,30 @@ class TransactionChecker (moduleName: String) extends ModuleBase(moduleName){
   private def addTransToCache(t: Transaction) = {
     if(!pe.getTransPoolMgr.findTrans(t.id)){
       //交易池中不存在的交易才检查
-      //val checkedTransactionResult = checkTransaction(t, dataaccess)
+      val checkedTransactionResult = checkTransaction(t, dataaccess)
       //签名验证成功
       val poolIsEmpty = pe.getTransPoolMgr.isEmpty
-      //if((checkedTransactionResult.result) && (SystemProfile.getMaxCacheTransNum == 0 || pe.getTransPoolMgr.getTransLength() < SystemProfile.getMaxCacheTransNum) ){
+      if((checkedTransactionResult.result) && (SystemProfile.getMaxCacheTransNum == 0 || pe.getTransPoolMgr.getTransLength() < SystemProfile.getMaxCacheTransNum) ){
       //if( SystemProfile.getMaxCacheTransNum == 0 || pe.getTransPoolMgr.getTransLength() < SystemProfile.getMaxCacheTransNum ){
         pe.getTransPoolMgr.putTran(t, pe.getSysTag)
         RepLogger.trace(RepLogger.System_Logger,this.getLogMsgPrefix(s"${pe.getSysTag} trans pool recv,txid=${t.id}"))
 
         if (poolIsEmpty)//加入交易之前交易池为空，发送抽签消息
         pe.getActorRef(CFRDActorType.ActorType.voter) ! VoteOfBlocker
-      //}
+      }
     }
   }
-
 
   override def receive = {
     //处理接收的交易
     case t: Transaction =>
       //保存交易到本地
       sendEvent(EventType.RECEIVE_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)
-      if(!NodeHelp.isSameNodeForString(this.selfAddr,NodeHelp.getNodePath(sender()))) {
+      //if(!NodeHelp.isSameNodeForString(this.selfAddr,NodeHelp.getNodePath(sender()))) {
         addTransToCache(t)
-      }else{
-        //System.err.println(s"recv tx from local,system=${pe.getSysTag}")
-      }
+      //}else{
+      //  System.err.println(s"recv tx from local,system=${pe.getSysTag}")
+      //}
     case _ => //ignore
   }
 

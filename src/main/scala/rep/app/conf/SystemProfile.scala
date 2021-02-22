@@ -369,4 +369,6 @@ object SystemProfile {
   def getGenesisNodeName = GENESISNODENAME
 
   def getBlockNumberOfBlocker = BLOCKNUMBER_BLOCKER
+
+
 }

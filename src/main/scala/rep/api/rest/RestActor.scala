@@ -217,7 +217,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
 
 
   // 先检查交易大小，然后再检查交易是否已存在，再去验证签名，如果没有问题，则广播
-  def preTransaction(t: Transaction): Unit = {
+  /*def preTransaction(t: Transaction): Unit = {
     val tranLimitSize = SystemProfile.getBlockLength / 3
     if (t.toByteArray.length > tranLimitSize) {
       sender ! PostResult(t.id, None, Option(s"交易大小超出限制： ${tranLimitSize}，请重新检查"))
@@ -251,6 +251,39 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
       }
     }
   }
+*/
+  // 先检查交易大小，然后再检查交易是否已存在，再去验证签名，如果没有问题，则广播
+  def preTransaction(t: Transaction): Unit = {
+    val tranLimitSize = SystemProfile.getBlockLength / 3
+    if (t.toByteArray.length > tranLimitSize) {
+      sender ! PostResult(t.id, None, Option(s"交易大小超出限制： ${tranLimitSize}，请重新检查"))
+    } else if (!ConsensusCondition.CheckWorkConditionOfSystem(pe.getNodeMgr.getStableNodes.size)) {
+      sender ! PostResult(t.id, None, Option("共识节点数目太少，暂时无法处理交易"))
+    } else {
+      try {
+        //if (pe.getTransPoolMgr.getTransLength() < SystemProfile.getMaxCacheTransNum) {
+
+        //pe.getTransPoolMgr.putTran(t,pe.getSysTag)
+
+        if(SystemProfile.getIsBroadcastTransaction== 1) {
+          mediator ! Publish(Topic.Transaction, t)
+        }
+        sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)
+
+
+        sender ! PostResult(t.id, None, None)
+        /*} else {
+          // 交易缓存池已满，不可继续提交交易
+          sender ! PostResult(t.id, None, Option(s"交易缓存池已满，容量为${pe.getTransPoolMgr.getTransLength()}，不可继续提交交易"))
+        }*/
+      } catch {
+        case e: Exception =>
+          sender ! PostResult(t.id, None, Option(e.getMessage))
+      }
+    }
+  }
+
+
 
   def receive: Receive = {
 
