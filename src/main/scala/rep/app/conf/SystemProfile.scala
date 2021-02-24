@@ -19,6 +19,7 @@ package rep.app.conf
 import java.util.concurrent.ConcurrentHashMap
 
 import com.typesafe.config.Config
+import rep.app.conf.SystemProfile.CHAIN_CERT_NAME
 //import collection.JavaConversions._
 //import scala.collection.immutable._
 import java.util.List
@@ -66,6 +67,7 @@ object SystemProfile {
   private[this] var _ISSTREAM = 1
   private[this] var _HTTPSERVICEACTORNUMBER= 5//httpServiceActorNumber
   private[this] var _ISBROADCASTTRANSACTION = 1 //isbroadcasttransaction
+  private[this] var _CHAIN_CERT_NAME = ""
 
   //zhj
   private[this] var _PBFT_F: Int = 1
@@ -112,6 +114,7 @@ object SystemProfile {
   private def ISSTREAM : Int = _ISSTREAM
   private def HTTPSERVICEACTORNUMBER : Int = _HTTPSERVICEACTORNUMBER
   private def ISBROADCASTTRANSACTION : Int = _ISBROADCASTTRANSACTION
+  private def CHAIN_CERT_NAME : String =  _CHAIN_CERT_NAME
 
   //zhj
   private def PBFT_F = _PBFT_F
@@ -119,6 +122,10 @@ object SystemProfile {
   private def DBPATH:String = _DBPATH
   private def BLOCKPATH:String = _BLOCKPATH
   private def FILEMAX: Int = _FILEMAX
+
+  private def CHAIN_CERT_NAME_=(value:String):Unit={
+    _CHAIN_CERT_NAME = value
+  }
 
   private def TYPE_OF_CONSENSUS_=(value:String):Unit={
     _TYPE_OF_CONSENSUS = value
@@ -289,6 +296,7 @@ object SystemProfile {
     BLOCKNUMBER_BLOCKER_=(config.getInt("system.block.block_number_blocker"))
     
     GENESISNODENAME_=(config.getString("system.genesis_node_name"))
+    CHAIN_CERT_NAME_=(config.getString("system.chain_cert_name"))
     NUMBER_OF_TRANSPROCESSOR_=(config.getInt("system.number_of_transProcessor"))
     HAS_PRELOAD_TRANS_OF_API_=(config.getBoolean("system.has_preload_trans_of_api"))
     IS_VERIFY_OF_ENDORSEMENT_=(config.getBoolean("system.is_verify_of_endorsement"))
@@ -369,6 +377,8 @@ object SystemProfile {
   def getGenesisNodeName = GENESISNODENAME
 
   def getBlockNumberOfBlocker = BLOCKNUMBER_BLOCKER
+
+  def getChainCertName = CHAIN_CERT_NAME
 
 
 }

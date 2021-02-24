@@ -44,6 +44,21 @@ object SandboxDispatcher {
   val ERR_CODER = "合约只能由部署者升级更新"
   val ERR_DISABLE_CID = "合约处于禁用状态"
 
+  //权限检查异常消息预定义
+  val ERR_NO_PERMISSION_OF_DEPLOY = "没有合约部署的权限"
+  val ERR_NO_PERMISSION_OF_SETSTATE = "没有改变合约状态的权限"
+  val ERR_NO_PERMISSION_OF_INVOKE = "没有执行合约方法的权限"
+  val ERR_NO_FOUND_Signer = "没有找到合约部署的签名者信息"
+  val ERR_Signer_INVAILD = "合约部署的签名者信息无效"
+  val ERR_NO_OPERATE = "操作不存在"
+  val ERR_INVALID_OPERATE = "操作已经失效"
+  val ERR_NO_SIGNER = "实体账户不存在"
+  val ERR_INVALID_SIGNER = "实体账户已经失效"
+  val ERR_NO_OP_IN_AUTHORIZE = "没有找到授权的操作"
+  val ERR_NO_AUTHORIZE = "授权已经不存在"
+  val ERR_INVALID_AUTHORIZE = "授权已经失效"
+
+
   //下属actor的命名前缀
   val PRE_SUB_ACTOR = "sb_"
   val PRE_STATE = "_STATE"

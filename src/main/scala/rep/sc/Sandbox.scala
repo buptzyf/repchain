@@ -37,8 +37,8 @@ import rep.network.tools.PeerExtension
 import rep.storage.IdxPrefix.WorldStateKeyPreFix
 import rep.storage._
 import rep.utils.SerializeUtils.deserialise
-import rep.utils.SerializeUtils.serialise
 import rep.log.{RepLogger, RepTimeTracer}
+import rep.authority.check.PermissionVerify
 
 /**
  * 合约容器的抽象类伴生对象,定义了交易执行结果的case类
@@ -54,7 +54,9 @@ object Sandbox {
   //t:中含txid可以找到原始交易; r:执行结果; merkle:执行完worldstate的hash; err:执行异常
   /**
    * 交易执行结果类
-   *
+   * @param txId 传入交易实例
+   * @param r 执行结果,任意类型
+   * @param ol 合约执行中对worldState的写入操作
    * @param err 执行中抛出的异常信息
    */
   case class DoTransactionResult(txId: String, r: ActionResult,
@@ -67,8 +69,8 @@ object Sandbox {
    *  @param cause 导致异常的原因
    */
   case class SandboxException(
-    private val message: String    = "",
-    private val cause:   Throwable = None.orNull)
+                               private val message: String    = "",
+                               private val cause:   Throwable = None.orNull)
     extends Exception(message, cause)
 }
 
@@ -92,6 +94,7 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
   //与底层交互的api实例,不同版本的合约KV空间重叠
   val shim = new Shim(context.system, cid.chaincodeName)
   val addr_self = akka.serialization.Serialization.serializedActorPath(self)
+  val permissioncheck = PermissionVerify.GetPermissionVerify(pe.getSysTag)
 
   def errAction(errCode: Int): ActionResult = {
     errCode match {
@@ -151,8 +154,8 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
         RepLogger.except4Throwable(RepLogger.Sandbox_Logger,e.getMessage,e)
         RepLogger.except(RepLogger.Sandbox_Logger, dotrans.t.id, e)
         new TransactionResult(dotrans.t.id, _root_.scala.Seq.empty,Option(ActionResult(101,e.getMessage)))
-        /*new DoTransactionResult(dotrans.t.id, null, null,
-          Option(akka.actor.Status.Failure(e)))*/
+      /*new DoTransactionResult(dotrans.t.id, null, null,
+        Option(akka.actor.Status.Failure(e)))*/
     }
   }
 
@@ -250,8 +253,6 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
     }
   }
 
-
-
   private def checkTransaction(dotrans: DoTransactionOfSandboxInSingle) = {
     val txcid = IdTool.getTXCId(dotrans.t)
     dotrans.t.`type` match {
@@ -261,14 +262,16 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
             throw new SandboxException(ERR_REPEATED_CID)
           case _ =>
             //检查合约部署者
-            IsCurrentSigner(dotrans)
+            //IsCurrentSigner(dotrans)
+            permissioncheck.CheckPermissionOfDeployContract(dotrans,shim)
+
         }
 
       case Transaction.Type.CHAINCODE_SET_STATE =>
         ContraceIsExist(txcid)
-        IsCurrentSigner(dotrans)
-        this.ContractState = 0
-        this.ContractExist = 0
+        //IsCurrentSigner(dotrans)
+        //new Account4RDidByContract(shim).hasPermissionOfSetStateContract(dotrans)
+        permissioncheck.CheckPermissionOfSetStateContract(dotrans,shim)
 
       case Transaction.Type.CHAINCODE_INVOKE =>
         ContraceIsExist(txcid)
@@ -288,8 +291,9 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
             } else {
               //ignore
             }
-
         }
+        //new Account4RDidByContract(shim).hasPermissionOfInvokeContract(dotrans)
+        permissioncheck.CheckPermissionOfInvokeContract(dotrans,shim)
       case _ => throw SandboxException(ERR_UNKNOWN_TRANSACTION_TYPE)
     }
   }

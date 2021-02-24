@@ -41,9 +41,16 @@ import rep.utils.SerializeUtils.deserialise
 import rep.storage.util.pathUtil
 import rep.log.RepTimeTracer
 import rep.app.conf.SystemProfile
-import rep.crypto.cert.certCache
+//import rep.crypto.cert.certCache
 
 import scala.util.control.Breaks._
+
+import rep.authority.cache.authcache.ImpAuthorizeCache
+import rep.authority.cache.opcache.ImpOperateCache
+import rep.authority.cache.signercache.ImpSignerCache
+import rep.authority.cache.certcache.ImpCertCache
+import rep.authority.cache.authbind.ImpAuthBindToCert
+import rep.sc.tpl.did.DidTplPrefix
 
 /**
  * @author jiangbuyun
@@ -556,7 +563,6 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
    * @version	0.7
    * @since	2017-09-28
    * @category	返回当前区块链的chaininfo
-   * @param	无
    * @return	返回链码信息 BlockchainInfo
    */
   override def getBlockChainInfo(): BlockchainInfo = {
@@ -718,6 +724,30 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
     rel
   }
 
+  private def updateCache4Account(k:String,value:Array[Byte])={
+    if(k.indexOf("_"+DidTplPrefix.operPrefix)>0){
+      val opcache = ImpOperateCache.GetOperateCache(this.getSystemName)
+      if(opcache != null)
+        opcache.ChangeValue(k)
+    }else if(k.indexOf("_"+DidTplPrefix.authPrefix)>0){
+      val authcache = ImpAuthorizeCache.GetAuthorizeCache(this.getSystemName)
+      if(authcache != null)
+        authcache.ChangeValue(k)
+    }else if(k.indexOf("_"+DidTplPrefix.signerPrefix)>0){
+      val signercache = ImpSignerCache.GetSignerCache(this.getSystemName)
+      if(signercache != null)
+        signercache.ChangeValue(k)
+    }else if(k.indexOf("_"+DidTplPrefix.certPrefix)>0) {
+      val certcache = ImpCertCache.GetCertCache(this.getSystemName)
+      if(certcache != null)
+        certcache.ChangeValue(k)
+    }else if(k.indexOf("_"+DidTplPrefix.bindPrefix)>0) {
+      val authbindcert = ImpAuthBindToCert.GetAuthBindToCertCache(this.getSystemName)
+      if(authbindcert != null)
+        authbindcert.ChangeValue(k)
+    }
+  }
+
   private def isChangeCertStatus(block: Block, txid: String): Boolean = {
     var rel = false
     if (block != null) {
@@ -725,11 +755,14 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
       if (trans.length > 0) {
         breakable(
           trans.foreach(f => {
-            if (f.id.equals(txid) && f.getCid.chaincodeName == SystemProfile.getAccountChaincodeName && f.`type` == rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE && f.para.ipt.get.function == SystemProfile.getCertStatusChangeFunction) {
+            //if (f.id.equals(txid) && f.getCid.chaincodeName == SystemProfile.getAccountChaincodeName && f.`type` == rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE && f.para.ipt.get.function == SystemProfile.getCertStatusChangeFunction) {
+            if (f.id.equals(txid) && f.getCid.chaincodeName == SystemProfile.getAccountChaincodeName
+              && f.`type` == rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE) {
               rel = true
-              break
             }
-          }))
+            break
+            }
+          ))
       }
     }
     rel
@@ -741,7 +774,10 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
       var trans = block.transactions
       if(rindex >0 && rindex < trans.length){
         val f = trans(rindex)
-        if (f.id.equals(txid) && f.getCid.chaincodeName == SystemProfile.getAccountChaincodeName && f.`type` == rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE && f.para.ipt.get.function == SystemProfile.getCertStatusChangeFunction) {
+
+        //if (f.id.equals(txid) && f.getCid.chaincodeName == SystemProfile.getAccountChaincodeName && f.`type` == rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE && f.para.ipt.get.function == SystemProfile.getCertStatusChangeFunction) {
+          if (f.id.equals(txid) && f.getCid.chaincodeName == SystemProfile.getAccountChaincodeName
+            && f.`type` == rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE) {
           rel = true
         }
       }
@@ -773,18 +809,12 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
 
           if (logs != null && logs.length > 0) {
             logs.foreach(f => {
-              //var fkey = f.key
-              /*if (fkey.startsWith(IdxPrefix.WorldStateKeyPreFix)) {
-                this.Put(f.key, f.newValue.toByteArray())
-              } else {
-                fkey = IdxPrefix.WorldStateKeyPreFix + cid + "_" + f.key
-                this.Put(fkey, f.newValue.toByteArray())
-              }*/
               this.Put(f.key, f.newValue.toByteArray())
               //需要通知证书缓存修改证书状态
               if (changeCertStatus) {
                 //certCache.CertStatusUpdate(fkey)
-                certCache.CertStatusUpdate(f.key)
+                //certCache.CertStatusUpdate(f.key)
+                updateCache4Account(f.key,f.newValue.toByteArray())
               }
             })
           }
@@ -902,7 +932,6 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
    * @version	0.7
    * @since	2017-09-28
    * @category	内部函数，完成区块写入的所有的工作，包含索引的生成，区块字节写入到文件，以及Merkle的生成
-   * @param	_block Array[Block] 待写入系统的区块
    * @return	成功返回true，否则false
    */
   private def commitAndAddBlock(block: Block, oldh: Long, oldno: Int, oldtxnumber: Long): Boolean = {
@@ -993,7 +1022,6 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
    * @version	0.7
    * @since	2017-09-28
    * @category	内部函数，待写入区块的hash值验证
-   * @param	block Block 待写入的区块,blockhsah Array[Byte] 区块的hash值
    * @return	成功返回true，否则false
    */
   /*private def commitAndAddBlock(block: Block, blockhsah: Array[Byte]): Boolean = {
@@ -1016,7 +1044,6 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
    * @version	0.7
    * @since	2017-09-28
    * @category	获取链码的高度
-   * @param	无
    * @return	成功返回当前区块链的高度 Long
    */
   override def getBlockHeight(): Long = {
@@ -1060,7 +1087,6 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
    * @version	0.7
    * @since	2017-09-28
    * @category	获取系统交易的数量
-   * @param	无
    * @return	返回系统当前的交易数量
    */
   override def getBlockAllTxNumber(): Long = {
@@ -1086,7 +1112,6 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
    * @version	0.7
    * @since	2017-09-28
    * @category	获取当前存储区块字节的文件编号
-   * @param	无
    * @return	返回文件编号
    */
   override def getMaxFileNo(): Int = {

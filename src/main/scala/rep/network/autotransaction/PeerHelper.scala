@@ -113,6 +113,35 @@ object PeerHelper {
 
     t
   }
+
+  def createTransaction4Deploy(nodeName: String, chaincodeId: ChaincodeId,
+                               spcPackage: String, legal_prose: String, timeout: Int,
+                               ctype: rep.protos.peer.ChaincodeDeploy.CodeType,
+                               cclassfiction:rep.protos.peer.ChaincodeDeploy.ContractClassification): Transaction = {
+    var t: Transaction = new Transaction()
+    val millis = TimeUtils.getCurrentTime()
+    if (chaincodeId == null) t
+
+    val txid = IdTool.getRandomUUID
+    var cip = new ChaincodeDeploy(timeout)
+    cip = cip.withCodePackage(spcPackage)
+    cip = cip.withLegalProse(legal_prose)
+    cip = cip.withCtype(ctype)
+    cip = cip.withCclassification(cclassfiction)
+    t = t.withId(txid)
+    t = t.withCid(chaincodeId)
+    t = t.withSpec(cip)
+    t = t.withType(rep.protos.peer.Transaction.Type.CHAINCODE_DEPLOY)
+    t = t.clearSignature
+
+    val certid = IdTool.getCertIdFromName(nodeName)
+    var sobj = Signature(Option(certid), Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)))
+    sobj = sobj.withSignature(ByteString.copyFrom(SignTool.sign(nodeName, t.toByteArray)))
+
+    t = t.withSignature(sobj)
+
+    t
+  }
   
   def createTransaction4State(nodeName: String, chaincodeId: ChaincodeId,
                                state:Boolean): Transaction = {

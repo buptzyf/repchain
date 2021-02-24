@@ -24,6 +24,12 @@ import rep.protos.peer._;
 import scala.util.control.Breaks
 import rep.log.RepLogger
 import rep.utils.SerializeUtils.deserialise
+import rep.authority.cache.authbind.{ImpAuthBindToCert, ImpAuthBindToCertOfPreload}
+import rep.authority.cache.authcache.ImpAuthorizeCacheOfPreload
+import rep.authority.cache.certcache.ImpCertCacheOfPreload
+import rep.authority.cache.opcache.ImpOperateCacheOfPreload
+import rep.authority.cache.signercache.ImpSignerCacheOfPreload
+import rep.sc.tpl.did.DidTplPrefix
 
 /**内存数据库的访问类，属于多实例。
  * @constructor	根据SystemName和InstanceName建立实例
@@ -37,10 +43,17 @@ import rep.utils.SerializeUtils.deserialise
 class ImpDataPreload (SystemName:String,InstanceName:String) extends AbstractLevelDB(SystemName:String) {
     private var update :java.util.concurrent.ConcurrentHashMap[String,Array[Byte]] = new java.util.concurrent.ConcurrentHashMap[String,Array[Byte]]
     private var cache  :java.util.concurrent.ConcurrentHashMap[String,Array[Byte]] = new java.util.concurrent.ConcurrentHashMap[String,Array[Byte]]
-    private var dbop = ImpDataAccess.GetDataAccess(SystemName) 
-   
-   
-    /**
+    private var dbop = ImpDataAccess.GetDataAccess(SystemName)
+
+
+		private var op_cache : ImpOperateCacheOfPreload = new ImpOperateCacheOfPreload(SystemName,this)
+		private var auth_cache : ImpAuthorizeCacheOfPreload = new ImpAuthorizeCacheOfPreload(SystemName,this)
+		private var signer_cache : ImpSignerCacheOfPreload = new ImpSignerCacheOfPreload(SystemName,this)
+		private var cert_cache : ImpCertCacheOfPreload = new ImpCertCacheOfPreload(SystemName,this)
+		private var auth_bind_cert_cache:ImpAuthBindToCertOfPreload = new ImpAuthBindToCertOfPreload(SystemName,this)
+
+
+	/**
 	 * @author jiangbuyun
 	 * @version	0.7
 	 * @since	2017-09-28
@@ -63,7 +76,100 @@ class ImpDataPreload (SystemName:String,InstanceName:String) extends AbstractLev
     override def getInstanceName:String={
       InstanceName
     }
-   
+
+	/**
+	 * @author jiangbuyun
+	 * @version	0.7
+	 * @since	2020-06-09
+	 * @category	从缓存中获取获取指定的键值
+	 * @param	key String 指定的键
+	 * @return	返回对应键的值 Array[Byte]
+	 * */
+	def GetFormCache(key : String):Array[Byte]={
+		var rb : Array[Byte] = null
+		try{
+			if(this.update.containsKey(key)){
+				//RepLogger.trace(RepLogger.Business_Logger,
+				//s"nodename=${getSystemName},dbname=${getInstanceName},key=${key},in cache=${deserialise(this.update.get(key))}")
+				rb = this.update.get(key)
+			}
+			setUseTime
+		}catch{
+			case e:Exception =>{
+				rb = null
+				RepLogger.error(RepLogger.Storager_Logger,
+					"ImpDataPreload_" + SystemName + "_" + "ImpDataPreload GetFormCache failed, error info= "+e.getMessage)
+				throw e
+			}
+		}
+		rb
+	}
+
+	/**
+	 * @author jiangbuyun
+	 * @version	1.0
+	 * @since	2020-06-21
+	 * @category	从缓存中获取获取指定的键值
+	 * @param	key String 指定的键
+	 * @return	返回对应键的值是否存在，存在=true，否则false
+	 * */
+	def IsExistCache(key : String):Boolean={
+		var rb  = false
+		try{
+			if(this.update.containsKey(key)){
+				//RepLogger.trace(RepLogger.Business_Logger,
+				//s"nodename=${getSystemName},dbname=${getInstanceName},key=${key},in cache=${deserialise(this.update.get(key))}")
+				rb = true
+			}
+			setUseTime
+		}catch{
+			case e:Exception =>{
+				RepLogger.error(RepLogger.Storager_Logger,
+					"ImpDataPreload_" + SystemName + "_" + "ImpDataPreload IsExistCache failed, error info= "+e.getMessage)
+				throw e
+			}
+		}
+		rb
+	}
+
+	/**
+	 * @author jiangbuyun
+	 * @version	1.0
+	 * @since	2020-06-24
+	 * @category	从缓存中获取指定标识中改变的key
+	 *
+	 * @return	key的数组
+	 * */
+	def getKeysOfChange(keyFlag:String):Array[String]={
+		var rs : ArrayBuffer[String] = new ArrayBuffer[String]()
+		this.update.keySet.forEach(k=>{
+			if(k.indexOf(keyFlag) > 0){
+				rs += k
+			}
+		})
+		rs.toArray
+	}
+
+	def getOpCache:ImpOperateCacheOfPreload={
+		this.op_cache
+	}
+
+	def getAuthCache:ImpAuthorizeCacheOfPreload={
+		this.auth_cache
+	}
+
+	def getSignerCache:ImpSignerCacheOfPreload={
+		this.signer_cache
+	}
+
+	def getCertCache:ImpCertCacheOfPreload={
+		this.cert_cache
+	}
+
+	def getAuthBindCertCache:ImpAuthBindToCertOfPreload={
+		this.auth_bind_cert_cache
+	}
+
     /**
 	 * @author jiangbuyun
 	 * @version	0.7
@@ -126,9 +232,10 @@ class ImpDataPreload (SystemName:String,InstanceName:String) extends AbstractLev
 				  }
 				  if(key != null ){
 				    this.update.put(key, v)
-						if(this.cache.containsKey(key)){
+						UpdatePermission(key,v)
+						/*if(this.cache.containsKey(key)){
 							this.cache.remove(key)
-						}
+						}*/
 				  }
 				  setUseTime
 			}catch{
@@ -141,7 +248,21 @@ class ImpDataPreload (SystemName:String,InstanceName:String) extends AbstractLev
 			}
   		b
   	}
-  	
+
+	private def UpdatePermission(key:String,bb:Array[Byte])={
+		if(key.indexOf("_"+DidTplPrefix.operPrefix)>0){
+			this.op_cache.ChangeValue(key)
+		}else if(key.indexOf("_"+DidTplPrefix.authPrefix)>0){
+			this.auth_cache.ChangeValue(key)
+		}else if(key.indexOf("_"+DidTplPrefix.signerPrefix)>0){
+			this.signer_cache.ChangeValue(key)
+		}else if(key.indexOf("_"+DidTplPrefix.certPrefix)>0){
+			this.cert_cache.ChangeValue(key)
+		}else if(key.indexOf("_"+DidTplPrefix.bindPrefix)>0){
+			this.auth_bind_cert_cache.ChangeValue(key)
+		}
+	}
+
   	/**
 	 * @author jiangbuyun
 	 * @version	0.7

@@ -26,12 +26,13 @@ import rep.utils.SerializeUtils
 import rep.app.conf.SystemProfile
 import java.util.concurrent.ConcurrentHashMap
 
+import rep.authority.cache.certcache.ImpCertCache
 import rep.log.RepLogger
 //import scala.jdk.CollectionConverters._
 import scala.collection.JavaConverters._
 
 object certCache {
-  private  var caches = new ConcurrentHashMap[String, (Boolean, java.security.cert.Certificate)] asScala
+ /* private  var caches = new ConcurrentHashMap[String, (Boolean, java.security.cert.Certificate)] asScala
   //private  var caches = new ConcurrentHashMap[String, (Boolean, java.security.PublicKey)] asScala
 
 
@@ -86,5 +87,32 @@ object certCache {
       }
     }
   }
+*/
 
+  def getCertForUser(certid: String, sysTag: String, pd:ImpDataPreload): java.security.cert.Certificate = {
+    var rcert: java.security.cert.Certificate = null
+    val certcache = ImpCertCache.GetCertCache(sysTag)
+    val certdata = certcache.getCertificateData(certid,pd)
+    if(certdata != null && certdata.cert_valid){
+      rcert = certdata.certificate
+    }
+    rcert
+  }
+
+  def getCertForUser(certid: String, sysTag: String): java.security.cert.Certificate = {
+    getCertForUser(certid, sysTag, null)
+  }
+
+  def getCertIdForHash(certHash:String,sysTag: String, pd:ImpDataPreload):String={
+    var certid : String = null
+
+    val certcache = ImpCertCache.GetCertCache(sysTag)
+    certid = certcache.getCertId4CertHash(certHash,pd)
+
+    certid
+  }
+
+  def getCertIdForHash(certHash:String,sysTag: String):String={
+    getCertIdForHash(certHash,sysTag,null)
+  }
 }
