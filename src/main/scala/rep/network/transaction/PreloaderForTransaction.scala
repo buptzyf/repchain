@@ -197,7 +197,7 @@ class PreloaderForTransaction(moduleName: String) extends ModuleBase(moduleName)
         RepLogger.error(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s" AssembleTransResult error, error: ${e.getMessage}"))
         None
     } finally {
-      //ImpDataPreloadMgr.Free(pe.getSysTag,db_indentifier)
+      ImpDataPreloadMgr.Free(pe.getSysTag,db_indentifier)
     }
   }
 

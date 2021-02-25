@@ -324,14 +324,22 @@ class SandboxDispatcher(moduleName: String, cid: String) extends ModuleBase(modu
         sender ! rs.toSeq
     }
   }
-  private def createErrorData(ts:scala.collection.Seq[Transaction],err: Option[akka.actor.Status.Failure]):Array[DoTransactionResult]={
+  /*private def createErrorData(ts:scala.collection.Seq[Transaction],err: Option[akka.actor.Status.Failure]):Array[DoTransactionResult]={
     var rs = scala.collection.mutable.ArrayBuffer[DoTransactionResult]()
     ts.foreach(t=>{
       rs += new DoTransactionResult(t.id, null, null, err)
     })
     rs.toArray
-  }
+  }*/
 
+
+  private def createErrorData(ts: scala.collection.Seq[Transaction], err: Option[akka.actor.Status.Failure]): Array[TransactionResult] = {
+    var rs = scala.collection.mutable.ArrayBuffer[TransactionResult]()
+    ts.foreach(t => {
+      rs += new TransactionResult(t.id, _root_.scala.Seq.empty, Option(ActionResult(105, err.get.cause.getMessage))) //new TransactionResult(t.id, null, null, err)
+    })
+    rs.toArray
+  }
   /**
    * 请求消息的调度处理
    *
