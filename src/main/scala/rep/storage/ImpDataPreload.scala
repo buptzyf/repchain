@@ -16,14 +16,13 @@
 
 package rep.storage
 
+import rep.app.conf.SystemProfile
 import rep.utils._
-import scala.collection.mutable
 import rep.storage.leveldb._
 import scala.collection.mutable.ArrayBuffer
-import rep.protos.peer._;
+import rep.protos.peer._
 import scala.util.control.Breaks
 import rep.log.RepLogger
-import rep.utils.SerializeUtils.deserialise
 import rep.authority.cache.authbind.{ImpAuthBindToCert, ImpAuthBindToCertOfPreload}
 import rep.authority.cache.authcache.ImpAuthorizeCacheOfPreload
 import rep.authority.cache.certcache.ImpCertCacheOfPreload
@@ -232,7 +231,9 @@ class ImpDataPreload (SystemName:String,InstanceName:String) extends AbstractLev
 				  }
 				  if(key != null ){
 				    this.update.put(key, v)
-						UpdatePermission(key,v)
+						if(IdTool.isDidContract){
+							UpdatePermission(key,v)
+						}
 						/*if(this.cache.containsKey(key)){
 							this.cache.remove(key)
 						}*/

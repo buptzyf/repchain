@@ -19,6 +19,8 @@ package rep.utils
 import rep.protos.peer.ChaincodeId
 import rep.protos.peer.CertId
 import java.util.UUID
+
+import rep.app.conf.SystemProfile
 //import com.gilt.timeuuid.TimeUuid
 import rep.protos.peer.Transaction
 
@@ -34,7 +36,11 @@ object IdTool {
     UUID.randomUUID().toString
   }
   
-  
+
+  def isDidContract:Boolean = {
+    SystemProfile.getAccountChaincodeName == "RdidOperateAuthorizeTPL"
+  }
+
   /** 从部署合约的交易，获得其部署的合约的链码id
    *  @param t 交易对象
    *  @return 链码id

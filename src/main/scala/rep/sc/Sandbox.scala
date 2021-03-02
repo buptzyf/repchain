@@ -32,6 +32,7 @@ import de.heikoseeberger.akkahttpjson4s.Json4sSupport
 import org.json4s._
 import akka.util.Timeout
 import Shim._
+import rep.app.conf.SystemProfile
 import rep.crypto.BytesHex
 import rep.network.tools.PeerExtension
 import rep.storage.IdxPrefix.WorldStateKeyPreFix
@@ -261,17 +262,22 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
           case ContractStateType.ContractInLevelDB =>
             throw new SandboxException(ERR_REPEATED_CID)
           case _ =>
-            //检查合约部署者
-            //IsCurrentSigner(dotrans)
-            permissioncheck.CheckPermissionOfDeployContract(dotrans,shim)
-
+            //检查合约部署者以及权限
+            if(IdTool.isDidContract){
+              permissioncheck.CheckPermissionOfDeployContract(dotrans,shim)
+            }else{
+              IsCurrentSigner(dotrans)
+            }
         }
 
       case Transaction.Type.CHAINCODE_SET_STATE =>
         ContraceIsExist(txcid)
-        //IsCurrentSigner(dotrans)
-        //new Account4RDidByContract(shim).hasPermissionOfSetStateContract(dotrans)
-        permissioncheck.CheckPermissionOfSetStateContract(dotrans,shim)
+        //检查合约部署者以及权限
+        if(IdTool.isDidContract){
+          permissioncheck.CheckPermissionOfDeployContract(dotrans,shim)
+        }else{
+          IsCurrentSigner(dotrans)
+        }
 
       case Transaction.Type.CHAINCODE_INVOKE =>
         ContraceIsExist(txcid)
@@ -292,8 +298,9 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
               //ignore
             }
         }
-        //new Account4RDidByContract(shim).hasPermissionOfInvokeContract(dotrans)
-        permissioncheck.CheckPermissionOfInvokeContract(dotrans,shim)
+        if(IdTool.isDidContract) {
+          permissioncheck.CheckPermissionOfInvokeContract(dotrans, shim)
+        }
       case _ => throw SandboxException(ERR_UNKNOWN_TRANSACTION_TYPE)
     }
   }
