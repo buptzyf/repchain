@@ -105,7 +105,7 @@ class RdidOperOperationSpec(_system: ActorSystem) extends TestKit(_system) with 
 
   test("signer不存在，无法注册Operate") {
     val t = PeerHelper.createTransaction4Invoke(sysName, cid, chaincodeInputFunc = "signUpOperate", params = Seq(JsonFormat.toJsonString(operate2)))
-    val msg_send = DoTransaction(t, "dbnumber", TypeOfSender.FromAPI)
+    val msg_send = DoTransaction(Seq(t), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
     JsonFormat.parser.fromJsonString(msg_recv.err.get.cause.getMessage)(ActionResult) should be(SignerOperation.signerNotExists)
