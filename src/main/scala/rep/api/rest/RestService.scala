@@ -558,3 +558,136 @@ class TransactionService(ra: RestRouter)(implicit executionContext: ExecutionCon
       }
     }
 }
+
+/**
+ * DID resolver API
+ *
+ * @author jayTsang created
+ */
+
+@Tag(name = "did", description = "去中心化身份标识解析")
+class DidService(ra: RestRouter)(implicit executionContext: ExecutionContext)
+  extends Directives {
+
+  import akka.pattern.ask
+  import scala.concurrent.duration._
+
+  implicit val timeout = Timeout(20.seconds)
+
+  import Json4sSupport._
+
+  implicit val serialization = jackson.Serialization // or native.Serialization
+  implicit val formats = DefaultFormats
+
+  val route = getDidDocument ~ getDidPubKey
+
+  @GET
+  @Path("/didDocuments/{did}")
+  @Produces(Array(MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN))
+  @Operation(
+    tags = Array("did"),
+    summary = "根据did标识获取对应的did document信息",
+    description = "resolve did", method = "GET",
+    parameters = Array(new Parameter(
+      name = "did",
+      description = "did标识",
+      required = true,
+      in = ParameterIn.PATH)
+    ),
+    responses = Array(
+      new ApiResponse(
+        responseCode = "200",
+        description = "返回对应did document信息",
+        content = Array(new Content(
+          mediaType = "application/json",
+          schema = new Schema(implementation = classOf[DidDocument])
+        ))
+      ),
+      new ApiResponse(
+        responseCode = "400",
+        description = "返回错误信息：请求中did格式错误",
+        content = Array(new Content(
+          mediaType = "application/text"
+        ))
+      ),
+      new ApiResponse(
+        responseCode = "404",
+        description = "返回错误信息：did不存在",
+        content = Array(new Content(
+          mediaType = "application/text"
+        ))
+      )
+    )
+  )
+  def getDidDocument =
+    path("didDocuments" / Segment) { did =>
+      get {
+        extractClientIP { ip =>
+          RepLogger.debug(
+            RepLogger.APIAccess_Logger,
+            s"remoteAddr=${ip} get did document for did: ${did}"
+          )
+          // 原始的did字符串下，DidDocumentReq(did)被JSON序列化会出现错误
+          val didAlteredStr = s""""${did}""""
+          complete {
+            (ra.getRestActor ? DidDocumentReq(didAlteredStr)).mapTo[HttpResponse]
+          }
+        }
+      }
+    }
+
+  @GET
+  @Path("/didPubKeys/{pubKeyId}")
+  @Produces(Array(MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN))
+  @Operation(
+    tags = Array("did"),
+    summary = "根据did公钥标识返回公钥信息",
+    description = "resolve did PubKey", method = "GET",
+    parameters = Array(new Parameter(
+      name = "pubKeyId",
+      description = "did公钥标识",
+      required = true,
+      in = ParameterIn.PATH)
+    ),
+    responses = Array(
+      new ApiResponse(
+        responseCode = "200",
+        description = "返回对应did PubKey信息",
+        content = Array(new Content(
+          mediaType = "application/json",
+          schema = new Schema(implementation = classOf[DidPubKey])
+        ))
+      ),
+      new ApiResponse(
+        responseCode = "400",
+        description = "返回错误信息：请求格式错误",
+        content = Array(new Content(
+          mediaType = "application/text"
+        ))
+      ),
+      new ApiResponse(
+        responseCode = "404",
+        description = "返回错误信息：did PubKey不存在",
+        content = Array(new Content(
+          mediaType = "application/text"
+        ))
+      )
+    )
+  )
+  def getDidPubKey =
+    path("didPubKeys" / Segment) { pubKeyId =>
+      get {
+        extractClientIP { ip =>
+          RepLogger.debug(
+            RepLogger.APIAccess_Logger,
+            s"remoteAddr=${ip} get did PubKey for pubKeyId: ${pubKeyId}"
+          )
+          // 原始的pubKeyId字符串下，DidPubKeyReq(did)被JSON序列化会出现错误
+          val pubKeyIdAlteredStr = s""""${pubKeyId}""""
+          complete {
+            (ra.getRestActor ? DidPubKeyReq(pubKeyIdAlteredStr)).mapTo[HttpResponse]
+          }
+        }
+      }
+    }
+}

@@ -40,7 +40,8 @@ object SwaggerDocService extends SwaggerHttpService {
   override val apiClasses: Set[Class[_]] = Set(
     classOf[ChainService],
     classOf[BlockService],
-    classOf[TransactionService]
+    classOf[TransactionService],
+    classOf[DidService]
   )
   override val info = Info(
     description = "RepChian API Doc",
