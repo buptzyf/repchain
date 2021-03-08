@@ -41,7 +41,7 @@ import rep.utils.SerializeUtils.deserialise
 import rep.storage.util.pathUtil
 import rep.log.RepTimeTracer
 import rep.app.conf.SystemProfile
-//import rep.crypto.cert.certCache
+import rep.crypto.cert.certCache
 
 import scala.util.control.Breaks._
 
@@ -738,34 +738,14 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
       if(signercache != null)
         signercache.ChangeValue(k)
     }else if(k.indexOf("_"+DidTplPrefix.certPrefix)>0) {
-      val certcache = ImpCertCache.GetCertCache(this.getSystemName)
-      if(certcache != null)
-        certcache.ChangeValue(k)
+      val certcache1 = ImpCertCache.GetCertCache(this.getSystemName)
+      if(certcache1 != null)
+        certcache1.ChangeValue(k)
     }else if(k.indexOf("_"+DidTplPrefix.bindPrefix)>0) {
       val authbindcert = ImpAuthBindToCert.GetAuthBindToCertCache(this.getSystemName)
       if(authbindcert != null)
         authbindcert.ChangeValue(k)
     }
-  }
-
-  private def isChangeCertStatus(block: Block, txid: String): Boolean = {
-    var rel = false
-    if (block != null) {
-      var trans = block.transactions
-      if (trans.length > 0) {
-        breakable(
-          trans.foreach(f => {
-            //if (f.id.equals(txid) && f.getCid.chaincodeName == SystemProfile.getAccountChaincodeName && f.`type` == rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE && f.para.ipt.get.function == SystemProfile.getCertStatusChangeFunction) {
-            if (f.id.equals(txid) && f.getCid.chaincodeName == SystemProfile.getAccountChaincodeName
-              && f.`type` == rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE) {
-              rel = true
-            }
-            break
-            }
-          ))
-      }
-    }
-    rel
   }
 
   private def isChangeCertStatus(block: Block, rindex:Int,txid: String): Boolean = {
@@ -775,22 +755,21 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
       if(rindex >0 && rindex < trans.length){
         val f = trans(rindex)
 
-        //if (f.id.equals(txid) && f.getCid.chaincodeName == SystemProfile.getAccountChaincodeName && f.`type` == rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE && f.para.ipt.get.function == SystemProfile.getCertStatusChangeFunction) {
+        if(IdTool.isDidContract){
           if (f.id.equals(txid) && f.getCid.chaincodeName == SystemProfile.getAccountChaincodeName
             && f.`type` == rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE) {
-          rel = true
+            rel = true
+          }
+        }else {
+          if (f.id.equals(txid) && f.getCid.chaincodeName == SystemProfile.getAccountChaincodeName
+                          && f.`type` == rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE
+                          && f.para.ipt.get.function == SystemProfile.getCertStatusChangeFunction) {
+            rel = true
+          }
+        }
+
         }
       }
-      /*if (trans.length > 0) {
-        breakable(
-          trans.foreach(f => {
-            if (f.id.equals(txid) && f.getCid.chaincodeName == SystemProfile.getAccountChaincodeName && f.`type` == rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE && f.para.ipt.get.function == SystemProfile.getCertStatusChangeFunction) {
-              rel = true
-              break
-            }
-          }))
-      }*/
-    }
     rel
   }
 
@@ -812,44 +791,16 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
               this.Put(f.key, f.newValue.toByteArray())
               //需要通知证书缓存修改证书状态
               if (changeCertStatus) {
-                //certCache.CertStatusUpdate(fkey)
-                //certCache.CertStatusUpdate(f.key)
-                updateCache4Account(f.key,f.newValue.toByteArray())
+                if(IdTool.isDidContract) {
+                  updateCache4Account(f.key, f.newValue.toByteArray())
+                }else{
+                  certCache.CertStatusUpdate(f.key)
+                }
               }
             })
           }
         }
       }
-
-
-
-      /*val txresults = block.transactionResults
-      if (!txresults.isEmpty) {
-        txresults.foreach(f => {
-          val txid = f.txId
-          //writetodbtxidserial = writetodbtxidserial + txid + ","
-          val cid = getTxidFormBlock(block, txid)
-          val changeCertStatus = isChangeCertStatus(block, txid)
-          val logs = f.ol
-
-          if (logs != null && logs.length > 0) {
-            logs.foreach(f => {
-              var fkey = f.key
-              if (fkey.startsWith(IdxPrefix.WorldStateKeyPreFix)) {
-                this.Put(f.key, f.newValue.toByteArray())
-              } else {
-                fkey = IdxPrefix.WorldStateKeyPreFix + cid + "_" + f.key
-                this.Put(fkey, f.newValue.toByteArray())
-              }
-              //需要通知证书缓存修改证书状态
-              if (changeCertStatus) {
-                certCache.CertStatusUpdate(fkey)
-              }
-            })
-          }
-        })
-        //RepLogger.error(RepLogger.Business_Logger,  s" current block height=${block.height},trans write serial: ${writetodbtxidserial}")
-      }*/
     } catch {
       case e: RuntimeException => throw e
     }

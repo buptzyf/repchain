@@ -44,6 +44,7 @@ class ContractTest(_system: ActorSystem)
 
   def this() = this(ActorSystem("TransferSpec", new ClusterSystem("121000005l35120456.node1", InitType.MULTI_INIT, false).getConf))
 
+
   override def afterAll: Unit = {
     shutdown(system)
   }

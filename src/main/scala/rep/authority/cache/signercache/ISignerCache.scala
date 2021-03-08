@@ -21,7 +21,7 @@ import scala.concurrent.{Await, Future}
  */
 
 object ISignerCache{
-  case class signerData(did:String,signer_valid:Boolean,opids:ConcurrentHashMap[String,ArrayBuffer[String]],certNames:Seq[String])
+  case class signerData(did:String,signer_valid:Boolean,opids:ConcurrentHashMap[String,ArrayBuffer[String]],certNames:Seq[String],createtime:_root_.scala.Option[com.google.protobuf.timestamp.Timestamp])
 }
 
 abstract class ISignerCache(sysTag:String) {
@@ -135,7 +135,7 @@ abstract class ISignerCache(sysTag:String) {
         })
 
       }
-      sd = Some(new signerData(signer.creditCode,signer.signerValid,opids,signer.certNames))
+      sd = Some(new signerData(signer.creditCode,signer.signerValid,opids,signer.certNames,signer.createTime))
     }
 
     sd

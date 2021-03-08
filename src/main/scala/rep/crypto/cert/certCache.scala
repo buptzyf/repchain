@@ -17,22 +17,18 @@
 package rep.crypto.cert
 
 import java.io._
-import java.security.PublicKey
-
 import org.bouncycastle.util.io.pem.PemReader
 import rep.protos.peer.Certificate
 import rep.storage._
-import rep.utils.SerializeUtils
+import rep.utils.{IdTool, SerializeUtils}
 import rep.app.conf.SystemProfile
 import java.util.concurrent.ConcurrentHashMap
-
 import rep.authority.cache.certcache.ImpCertCache
 import rep.log.RepLogger
-//import scala.jdk.CollectionConverters._
 import scala.collection.JavaConverters._
 
 object certCache {
- /* private  var caches = new ConcurrentHashMap[String, (Boolean, java.security.cert.Certificate)] asScala
+  private  var caches = new ConcurrentHashMap[String, (Boolean, java.security.cert.Certificate)] asScala
   //private  var caches = new ConcurrentHashMap[String, (Boolean, java.security.PublicKey)] asScala
 
 
@@ -43,8 +39,8 @@ object certCache {
     val cert = cf.generateCertificate(new ByteArrayInputStream(certByte))
     cert
   }
-  //java.security.cert.Certificate = {
-  def getCertForUser(certKey: String, sysTag: String): java.security.cert.Certificate={
+
+  private def getCertForUser4Normal(certKey: String, sysTag: String): java.security.cert.Certificate={
     var rcert: java.security.cert.Certificate = null
     //var rcert: java.security.PublicKey = null
     try {
@@ -87,7 +83,7 @@ object certCache {
       }
     }
   }
-*/
+
 
   def getCertForUser(certid: String, sysTag: String, pd:ImpDataPreload): java.security.cert.Certificate = {
     var rcert: java.security.cert.Certificate = null
@@ -99,8 +95,16 @@ object certCache {
     rcert
   }
 
-  def getCertForUser(certid: String, sysTag: String): java.security.cert.Certificate = {
+  private def getCertForUser4Did(certid: String, sysTag: String): java.security.cert.Certificate = {
     getCertForUser(certid, sysTag, null)
+  }
+
+  def getCertForUser(certid: String, sysTag: String): java.security.cert.Certificate = {
+    if(IdTool.isDidContract){
+      getCertForUser4Did(certid, sysTag)
+    }else{
+      getCertForUser4Normal(certid, sysTag)
+    }
   }
 
   def getCertIdForHash(certHash:String,sysTag: String, pd:ImpDataPreload):String={
