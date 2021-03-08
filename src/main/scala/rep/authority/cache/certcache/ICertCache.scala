@@ -20,7 +20,7 @@ import scala.concurrent.{Await, Future}
  */
 
 object ICertCache{
-  case class certData(certId:String,certHash:String,certificate:java.security.cert.Certificate,cert_valid:Boolean)
+  case class certData(certId:String,certHash:String,certificate:java.security.cert.Certificate,cert_valid:Boolean, certType: Certificate.CertType)
 }
 
 abstract class ICertCache(sysTag:String){
@@ -154,7 +154,7 @@ abstract class ICertCache(sysTag:String){
   protected def certToCertData(cert:Certificate):Option[certData] = {
     var cd : Option[certData] = None
     if(cert != null) {
-      cd = Some(new certData(IdTool.getSigner4String(cert.id.get),cert.certHash,getCertByPem(cert.certificate),cert.certValid))
+      cd = Some(new certData(IdTool.getSigner4String(cert.id.get),cert.certHash,getCertByPem(cert.certificate),cert.certValid, cert.certType))
     }
     cd
   }

@@ -23,6 +23,7 @@ import rep.protos.peer.{Transaction}
   * Created by shidianyue on 2017/5/22.
   * 
   * @update 2018-05 jiangbuyun
+  * @author jayTsang modified
   */
 object GlobalUtils {
   //case class TranscationPoolPackage(t:Transaction,createTime:Long)
@@ -97,5 +98,6 @@ object GlobalUtils {
   val AppConfigPath = "application.conf"
   val SysConfigPath = "conf/system.conf"
 
-
+  // for did
+  val DID_INITIAL_CHARS = "did:rep:"
 }
