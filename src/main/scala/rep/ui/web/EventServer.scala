@@ -206,6 +206,7 @@ object EventServer {
                   new ChainService(ra).route ~
                   new TransactionService(ra,repContext,repContext.getConfig.isNeedClientAuth).route ~
                   new DbService(ra,repContext,repContext.getConfig.isNeedClientAuth).route ~
+                  new DidService(ra).route ~
                   SwaggerDocService.routes))
             System.out.println(s"^^^^^^^^https GM Service:${repContext.getSystemName}^^^^^^^^")
           case false=>
