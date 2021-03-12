@@ -17,7 +17,8 @@
 package rep.utils
 
 
-import rep.protos.peer.{Transaction}
+import rep.app.conf.SystemProfile
+import rep.protos.peer.Transaction
 /**
   * 全局变量
   * Created by shidianyue on 2017/5/22.
@@ -99,5 +100,5 @@ object GlobalUtils {
   val SysConfigPath = "conf/system.conf"
 
   // for did
-  val DID_INITIAL_CHARS = "did:rep:"
+  val DID_INITIAL_CHARS = s"did:rep:${SystemProfile.getNetName}:"
 }

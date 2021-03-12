@@ -68,6 +68,7 @@ object SystemProfile {
   private[this] var _HTTPSERVICEACTORNUMBER= 5//httpServiceActorNumber
   private[this] var _ISBROADCASTTRANSACTION = 1 //isbroadcasttransaction
   private[this] var _CHAIN_CERT_NAME = ""
+  private[this] var _NET_NAME = ""
 
   //zhj
   private[this] var _PBFT_F: Int = 1
@@ -115,6 +116,7 @@ object SystemProfile {
   private def HTTPSERVICEACTORNUMBER : Int = _HTTPSERVICEACTORNUMBER
   private def ISBROADCASTTRANSACTION : Int = _ISBROADCASTTRANSACTION
   private def CHAIN_CERT_NAME : String =  _CHAIN_CERT_NAME
+  private def NET_NAME = _NET_NAME
 
   //zhj
   private def PBFT_F = _PBFT_F
@@ -126,6 +128,8 @@ object SystemProfile {
   private def CHAIN_CERT_NAME_=(value:String):Unit={
     _CHAIN_CERT_NAME = value
   }
+
+  private def NET_NAME_=(value: String): Unit  = { _NET_NAME = value }
 
   private def TYPE_OF_CONSENSUS_=(value:String):Unit={
     _TYPE_OF_CONSENSUS = value
@@ -304,6 +308,7 @@ object SystemProfile {
     BLOCKNUMBER_OF_RAFT_=(config.getInt("system.consensus.blocknumberofraft"))
     TYPE_OF_CONSENSUS_=(config.getString("system.consensus.type"))
     ISSTREAM_=(config.getInt("system.consensus.isstream"))
+    NET_NAME_=(config.getString("system.net_name"))
     
     DBPATH_= (config.getString("system.storage.dbpath"))
     BLOCKPATH_= (config.getString("system.storage.blockpath"))
@@ -380,5 +385,6 @@ object SystemProfile {
 
   def getChainCertName = CHAIN_CERT_NAME
 
+  def getNetName = NET_NAME
 
 }
