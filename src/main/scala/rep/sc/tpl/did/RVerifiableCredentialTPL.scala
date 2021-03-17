@@ -212,13 +212,13 @@ object RVerifiableCredentialTPL {
 
   object Action {
     // actions for verifiable credential claim struct
-    val SignupCCS = "SignupCCS"
-    val UpdateCCSStatus = "UpdateCCSStatus"
+    val SignupCCS = "signupCCS"
+    val UpdateCCSStatus = "updateCCSStatus"
 
     // actions for verifiable credential/claims status
-    val SignupVCStatus = "SignupVCStatus"
-    val UpdateVCStatus = "UpdateVCStatus"
-    val RevokeVCClaims = "RevokeVCClaims"
+    val SignupVCStatus = "signupVCStatus"
+    val UpdateVCStatus = "updateVCStatus"
+    val RevokeVCClaims = "revokeVCClaims"
   }
 
   final case class SignupCCSAttrParam(
