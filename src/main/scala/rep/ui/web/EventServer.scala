@@ -119,7 +119,8 @@ object EventServer {
             new ChainService(ra).route ~
             new TransactionService(ra).route ~
             new DidService(ra).route ~
-            SwaggerDocService.routes),
+            new LevelDbService(ra).route ~
+          SwaggerDocService.routes),
       "0.0.0.0", port)
     RepLogger.info(RepLogger.System_Logger, s"Event Server online at http://localhost:$port")
   }
