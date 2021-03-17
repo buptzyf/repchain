@@ -48,14 +48,19 @@ import rep.network.consensus.byzantium.ConsensusCondition
 import rep.sc.TypeOfSender
 import rep.sc.SandboxDispatcher.DoTransaction
 import rep.sc.Sandbox.DoTransactionResult
+import rep.storage.IdxPrefix.WorldStateKeyPreFix
 import rep.utils.GlobalUtils.EventType
+
+import scala.collection.mutable.ArrayBuffer
+import scala.util.Random
+import rep.utils.{MessageToJson, SerializeUtils}
+
 /**
  * RestActor伴生object，包含可接受的传入消息定义，以及处理的返回结果定义。
  * 以及用于建立Tranaction，检索Tranaction的静态方法
  * @author c4w created
  *
  */
-
 object RestActor {
   def props(name: String): Props = Props(classOf[RestActor], name)
 
@@ -79,6 +84,7 @@ object RestActor {
   case class TranInfoAndHeightId(txid: String)
   case class TranInfoHeight(tranInfo: JValue, height: Long)
   case class TransNumberOfBlock(height: Long)
+  case class QueryLevelDB(chainCodeName: String, key: String)
   case object LoadBlockInfo
   case object IsLoadBlockInfo
 
@@ -416,5 +422,12 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
       val num = sr.isFinish
       val rs = "{\"isfinish\":\"" + num + "\"}"
       sender ! QueryResult(Option(JsonMethods.parse(string2JsonInput(rs))))
+
+    case QueryLevelDB(cName, key) =>
+      val dataAccess = ImpDataAccess.GetDataAccess(pe.getSysTag)
+      val pkey = WorldStateKeyPreFix + cName + "_" + key
+      val pvalue = dataAccess.Get(pkey)
+      val jsonString = SerializeUtils.compactJson(SerializeUtils.deserialise(pvalue))
+      sender ! QueryResult(Option(JsonMethods.parse(string2JsonInput(jsonString))))
   }
 }
