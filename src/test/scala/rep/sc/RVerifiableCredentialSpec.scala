@@ -3,6 +3,8 @@ package rep.sc
 import akka.actor.{ActorRef, ActorSystem}
 import akka.testkit.{TestKit, TestProbe}
 import com.google.protobuf.timestamp.Timestamp
+import org.joda.time.DateTime
+import org.joda.time.format.ISODateTimeFormat
 import org.json4s.jackson.Serialization.write
 import org.json4s.{DefaultFormats, jackson}
 import org.scalatest._
@@ -60,6 +62,7 @@ class RVerifiableCredentialSpec(_system: ActorSystem) extends TestKit(_system)
     id = "CCS-001",
     name = "UniversityDegreeCredential",
     version = "1.0",
+    created = ISODateTimeFormat.dateTime().withZoneUTC().print(DateTime.now()),
     description = "大学学位证书",
     attributes = Seq(
       SignupCCSAttrParam(

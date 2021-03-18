@@ -72,7 +72,6 @@ class RVerifiableCredentialTPL extends IContract{
     )
 
     val creator = DID_INITIAL_CHARS + ctx.t.signature.get.certId.get.creditCode
-    val created = ISODateTimeFormat.dateTime().withZoneUTC().print(DateTime.now())
     val valid = true
     val version = "1.0"
     val ccs = CreClaStruct(
@@ -81,7 +80,7 @@ class RVerifiableCredentialTPL extends IContract{
       ccsVersion = param.version,
       description = param.description,
       creator = creator,
-      created = created,
+      created = param.created,
       valid = valid,
       attributes = param.attributes.map(
         attr => CreAttr(attr.name, attr.`type`, attr.required, attr.description)
@@ -231,6 +230,7 @@ object RVerifiableCredentialTPL {
                                    id: String,
                                    name: String,
                                    version: String, // ccsVersion
+                                   created: String,
                                    description: String,
                                    attributes: Seq[SignupCCSAttrParam]
                                  )
@@ -254,6 +254,7 @@ object RVerifiableCredentialTPL {
     assertRequiredParamStrField("name", param.name)
     assertRequiredParamStrField("version", param.version)
     assertRequiredParamStrField("description", param.description)
+    assertRequiredParamStrField("created", param.created)
     assertRequiredParamSeqSignupCCSAttrField("attributes", param.attributes)
   }
   def assertUpdateCCSStatusParam(param: UpdateCCSStatusParam) = {
