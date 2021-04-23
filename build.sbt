@@ -60,6 +60,12 @@ libraryDependencies += "org.codehaus.janino" % "janino" % "3.0.12"
 libraryDependencies += "org.bouncycastle" % "bcprov-jdk15on" % "1.61"
 libraryDependencies += "javax.xml.bind" % "jaxb-api" % "2.3.1"
 
+libraryDependencies += "com.gitee.BTAJL" %% "RCJava-core" % "0.4.2-SNAPSHOT" excludeAll(
+  ExclusionRule(organization = "org.slf4j"),
+  ExclusionRule(organization = "org.bouncycastle")
+)
+resolvers += "jitpack.io" at "https://jitpack.io"
+
 libraryDependencies ++= Seq(
   "io.swagger" % "swagger-jaxrs" % "1.6.0",
   "com.github.swagger-akka-http" %% "swagger-akka-http" % "1.1.1",
@@ -77,7 +83,7 @@ libraryDependencies ++= Seq(
 
 
 
-javacOptions ++= Seq("-encoding", "UTF-8")
+javacOptions ++= Seq("-encoding", "UTF-8", "--add-exports", "java.base/sun.security.validator=ALL-UNNAMED")
 
 PB.targets in Compile := Seq(
   scalapb.gen() -> (sourceManaged in Compile).value

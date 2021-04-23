@@ -58,7 +58,7 @@ object GenesisBuilder {
     
     val cid = new ChaincodeId("ContractCert",1)
     
-    var translist : Array[Transaction] = new Array[Transaction] (15)
+    var translist : Array[Transaction] = new Array[Transaction] (16)
     
     
     //val dep_trans = PeerHelper.createTransaction4Deploy(sysName, cid,
@@ -115,6 +115,12 @@ object GenesisBuilder {
     
     translist(14) = PeerHelper.createTransaction4Invoke("951002007l78123233.super_admin", cid2,
                     "set", Seq(ct1))
+
+    val s4 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/ManageNodeCert.scala","UTF-8")
+    val c4 = try s4.mkString finally s4.close()
+    val cid4 = new ChaincodeId("ManageNodeCert",1)
+    val manageNode = PeerHelper.createTransaction4Deploy(sysName, cid4, c4, "",5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
+    translist(15) = manageNode
     
     
     
