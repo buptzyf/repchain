@@ -175,6 +175,16 @@
         };
     }
 
+    function switchTheme(){
+        var url = new URL(window.location.href);
+        var theme = url.searchParams.get("theme");
+        if(theme == 'dark'){
+            $("body").css('background-color', '#303030').append('<link rel="stylesheet" type="text/css" href="./css/g1.css">');
+        }else{
+            $("body").css('background-color', 'white');
+        }
+    }
+
     function drawDemo() {
         var newAccordion = "<h3>Section Block</h3><div><ul><li><a href='#'>块hash</a>:xkjkxjk</li><li>块hash:xkjkxjk</li><li>块hash:xkjkxjk</li><li>块hash:xkjkxjk</li><li>块hash:xkjkxjk</li><li>块hash:xkjkxjk</li><li>块hash:xkjkxjk</li><li>块hash:xkjkxjk</li><li>块hash:xkjkxjk</li><li>块hash:xkjkxjk</li></ul></div>";
         for (var i = 0; i < 20; i++) {
@@ -488,6 +498,7 @@
     }
     
     $(document).ready(function() {
+        switchTheme();
         drawGraph();
         $("#accordion").accordion({
             collapsible: true,
