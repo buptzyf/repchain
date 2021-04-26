@@ -71,9 +71,9 @@ akka中使用`ConfigSSLEngineProvider`来加载`keyStore`与`trustStore`等，�
   * `checkClientTrusted(X509Certificate[] chain, String authType, SSLEngine engine)`  双向验证时服务端用来检查client证书，<u>server hello done</u>之后
   * `checkServerTrusted(X509Certificate[] chain, String authType, SSLEngine engine)` 客户端用来检查server证书，客户端接收到<u>server hello后</u>验证
 
-  > 上述三个方法都是在**建立TLS连接时**会调用的，因此在任何一个方法中加载trustStore都可以，因为在网节点首先会作为server端，想要加入网络的节点首先会作为client，稍后才会互换角色。因此在网节点作为server端时，在先调用的getAcceptedIssuers()中加载trsutStore
+  > 上述三个方法都是在**建立TLS连接时**会调用的，因此在任何一个方法中加载`trustStore`都可以，因为在网节点首先会作为server端，想要加入网络的节点首先会作为client，稍后才会互换角色。因此在网节点作为server端时，在先调用的g`etAcceptedIssuers()`中加载`trsutStore`
 
-* 在getAcceptedIssuers()中动态加载trustKeystore，涉及到两点，从jksFile中或者leveldb加载，<font color=#ff00>**<u>首先选择动态加载jksFile</u>**</font>
+* 在`getAcceptedIssuers()`中动态加载`truststore`，涉及到两点，从jksFile中或者leveldb加载，<font color=#ff00>**<u>首先选择动态加载jksFile</u>**</font>
 
 <font color=#FF00>**思路**</font>：
 
@@ -108,6 +108,18 @@ akka中使用`ConfigSSLEngineProvider`来加载`keyStore`与`trustStore`等，�
   * 新增自定义配置项node-cert-prefix = "951002007l78123233"
 
     > 将节点证书存储到leveldb中给一个前缀，当然也可以不给，合约中做相应处理即可
+  
+* <u>需要注意的点</u>：
+
+  * 如果是要从leveldb中查询证书列表，则需要有个和数据库交互的示例，因为只能与RepChain用同一个实例，因此需要注意**实例名**和**时序**。实例名是节点名，即node-name
+
+    ```scala
+    // 异步涉及到时序，如果没有等待，ImpDataAccess.GetDataAccess使用的leveldb路径是
+    // 默认路径/users/jiangbuyun...，是错误的,导致RepChain存储模块也会出现错误，因为用的是同一个存储实例
+    TimeUnit.SECONDS.sleep(5)
+    // 检索leveldb用，这样可以直接获取到该节点的leveldb路径，并进行检索
+    val dataAccess = ImpDataAccess.GetDataAccess(config.getString("node-name"))
+    ```
 
 具体代码：[CustomSSLEngine](#CustomSSLEngine)
 
@@ -138,6 +150,7 @@ akka中使用`ConfigSSLEngineProvider`来加载`keyStore`与`trustStore`等，�
   * https://tools.ietf.org/html/rfc6961
 * TLS的一个流程剖析：https://segmentfault.com/a/1190000038316857
 * SSL验证的一个基础知识：https://www.rabbitmq.com/ssl.html
+* keytool：https://docs.oracle.com/javase/8/docs/technotes/tools/windows/keytool.html
 
 ### 附录
 
@@ -149,6 +162,17 @@ akka中使用`ConfigSSLEngineProvider`来加载`keyStore`与`trustStore`等，�
 3. 再启动一个节点（加上调试配置项），假设为node5
 4. 二者之间建立连接时，会分别在各自终端打印出日志
 5. 根据日志可分析SSL会话的建立流程
+
+#### 导入或删除证书
+
+1. 使用java自带的keytool工具
+
+   ```shell
+   $ keytool -importcert -keystore mytruststore-net.jks -storepass changeme -file 921000006e0012v696.node5.cer -alias 921000006e0012v696.node5
+   $ keytool -delete -keystore mytruststore-net.jks -storepass changeme -alias 921000006e0012v696.node5
+   ```
+
+2. 使用[keyStoreExplorer](https://keystore-explorer.org/)
 
 #### ReloadTrustManager
 
