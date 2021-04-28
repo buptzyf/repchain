@@ -19,7 +19,7 @@ package rep.network.cluster
 import akka.actor.{Actor, Address, Props}
 import akka.cluster.ClusterEvent._
 import akka.cluster.pubsub.DistributedPubSub
-import akka.cluster.{Cluster, MemberStatus}
+import akka.cluster.{Cluster, ClusterEvent, Member, MemberStatus}
 import rep.app.conf.TimePolicy
 import rep.app.conf.SystemProfile
 import rep.network.cluster.MemberListener.Recollection
@@ -52,7 +52,7 @@ object MemberListener {
   def props(name: String): Props = Props(classOf[MemberListener], name)
   //稳定节点回收请求
   case object Recollection
-
+  case object CollectionMemeberStatus
 }
 /**
  * Cluster节点状态监听类
@@ -85,7 +85,23 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
   cluster.subscribe(self,classOf[ClusterDomainEvent])
   //context.system.eventStream.subscribe(self, classOf[akka.remote.DisassociatedEvent])
 
+
   //SubscribeTopic(mediator, self, addr_self, Topic.Event, false)
+
+  def memberRemovedHandler(member:Member):Unit={
+    RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("Member is Removed: {}. {} nodes cluster" + "~" + member.address))
+    System.err.println(s"MemberRemoved:printer=${pe.getSysTag} ~~ removed=${pe.getNodeMgr.getNodeName4AddrString(member.address.toString)}")
+
+    val tmp = pe.getNodeMgr.getNodeName4AddrString(member.address.toString)
+    if(tmp.equals(pe.getSysTag)){
+      RepChainMgr.ReStart(pe.getSysTag)
+    }
+
+    preloadNodesMap.remove(member.address)
+    pe.getNodeMgr.removeNode(member.address)
+    pe.getNodeMgr.removeStableNode(member.address)
+    sendEvent(EventType.PUBLISH_INFO, mediator, NodeHelp.getNodeName(member.roles), Topic.Event, Event.Action.MEMBER_DOWN)
+  }
 
   /**
    * 节点状态是否稳定
@@ -101,6 +117,7 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
     cluster unsubscribe self
 
   def receive = {
+
 
     //系统初始化时状态
     case state: CurrentClusterState =>
@@ -118,7 +135,11 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
             RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"CurrentClusterState: nodes is candidator,node name =${m.address.toString}"))
           }
         }
+        System.err.println(m.address.toString +"\t" +m.status.toString())
       })
+
+
+
       pe.getNodeMgr.resetNodes(nodes)
       pe.getNodeMgr.resetStableNodes(snodes.toSet)
 
@@ -178,7 +199,7 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
 
     //成员离网
     case MemberRemoved(member, _) =>
-      RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("Member is Removed: {}. {} nodes cluster" + "~" + member.address))
+      /*RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("Member is Removed: {}. {} nodes cluster" + "~" + member.address))
 
       System.err.println(s"MemberRemoved:printer=${pe.getSysTag} ~~ removed=${pe.getNodeMgr.getNodeName4AddrString(member.address.toString)}")
 
@@ -190,9 +211,9 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
       preloadNodesMap.remove(member.address)
       pe.getNodeMgr.removeNode(member.address)
       pe.getNodeMgr.removeStableNode(member.address)
-      sendEvent(EventType.PUBLISH_INFO, mediator, NodeHelp.getNodeName(member.roles), Topic.Event, Event.Action.MEMBER_DOWN)
+      sendEvent(EventType.PUBLISH_INFO, mediator, NodeHelp.getNodeName(member.roles), Topic.Event, Event.Action.MEMBER_DOWN)*/
 
-
+      memberRemovedHandler(member)
 
     /*case event: akka.remote.DisassociatedEvent => //ignore
       RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("DisassociatedEvent: {}. {} nodes cluster" + "~" + event.remoteAddress.toString))
@@ -200,17 +221,23 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
       pe.getNodeMgr.removeNode(event.remoteAddress)
       pe.getNodeMgr.removeStableNode(event.remoteAddress)*/
     case MemberLeft(member) => //ignore
+      System.err.println("MemberLeft:"+member.address.toString +"\t" +member.status.toString())
       RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("MemberLeft: {}. {} nodes cluster" + "~" + member.address.toString))
       /*preloadNodesMap.remove(member.address)
       pe.getNodeMgr.removeNode(member.address)
       pe.getNodeMgr.removeStableNode(member.address)*/
+      //memberRemovedHandler(member)
 
     case MemberExited(member) => //ignore
+      System.err.println("MemberExited:"+member.address.toString +"\t" +member.status.toString())
       RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("MemberExited: {}. {} nodes cluster" + "~" + member.address.toString))
       /*preloadNodesMap.remove(member.address)
       pe.getNodeMgr.removeNode(member.address)
       pe.getNodeMgr.removeStableNode(member.address)*/
-
+      //memberRemovedHandler(member)
+    case MemberDowned(member)=>
+      System.err.println("MemberDowned:"+member.address.toString +"\t" +member.status.toString())
+      //memberRemovedHandler(member)
     case _: MemberEvent => // ignore
   }
 }

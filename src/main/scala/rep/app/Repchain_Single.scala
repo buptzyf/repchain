@@ -19,15 +19,27 @@ package rep.app
 import akka.remote.transport.Transport.InvalidAssociationException
 import rep.app.system.ClusterSystem
 import rep.app.system.ClusterSystem.InitType
+import sun.misc.Signal
 
 /**
  * Repchain app start
  * Created by User on 2017/9/24.
  */
 object Repchain_Single {
+
+  def getOSSignalType:String={
+    if (System.getProperties().getProperty("os.name").toLowerCase().startsWith("win")){
+      "INT"
+    } else{
+      "USR2"
+    }
+  }
+
   def main(args: Array[ String ]): Unit = {
     var systemTag = "1"
     if(args!=null && args.length>0) systemTag = args(0)
+    val sig = new Signal(getOSSignalType)
+    Signal.handle(sig, new shutdownHandler(systemTag))
     RepChainMgr.Startup4Single(systemTag)
     /*val sys1 = new ClusterSystem(systemTag, InitType.SINGLE_INIT,true)
     sys1.init
@@ -36,3 +48,4 @@ object Repchain_Single {
     sys1.start*/
   }
 }
+
