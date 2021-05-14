@@ -40,12 +40,12 @@ import rep.utils.GlobalUtils
 import rep.sc.Sandbox.SandboxException
 import rep.log.RepLogger
 import rep.app.conf.SystemProfile
-
 import rep.log.RecvEventActor
 import rep.log.EventActor4Stage
 import akka.stream.Graph
 import akka.stream.SourceShape
 import akka.NotUsed
+import akka.http.scaladsl.model.MediaType.{Binary, NotCompressible}
 
 /** Event服务伴生对象
  *  @author c4w
@@ -76,7 +76,15 @@ object EventServer {
     implicit val executionContext = system.dispatcher
     
     val evtactor = system.actorOf(Props[RecvEventActor],"RecvEventActor")
-    
+
+    import akka.http.scaladsl.settings.ParserSettings
+    import akka.http.scaladsl.settings.ServerSettings
+
+    val `application/ocsp-request`: Binary = MediaType.applicationBinary("ocsp-request", NotCompressible)
+    val `application/ocsp-response`: Binary = MediaType.applicationBinary("ocsp-response", NotCompressible)
+    // add custom media type to parser settings:
+    val parserSettings = ParserSettings(system).withCustomMediaTypes(`application/ocsp-request`).withCustomMediaTypes(`application/ocsp-response`)
+    val serverSettings = ServerSettings(system).withParserSettings(parserSettings)
 
     
     //提供静态文件的web访问服务
@@ -113,11 +121,13 @@ object EventServer {
     Http().bindAndHandle(
       route_evt
         ~ cors() (
-            new BlockService(ra).route ~
+          new BlockService(ra).route ~
             new ChainService(ra).route ~
             new TransactionService(ra).route ~
+            new CrlService(ra).route ~
+            new OcspService(ra, sys).route ~
             SwaggerDocService.routes),
-      "0.0.0.0", port)
+      "0.0.0.0", port, settings = serverSettings)
     RepLogger.info(RepLogger.System_Logger, s"Event Server online at http://localhost:$port")
   }
 }

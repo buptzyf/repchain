@@ -16,15 +16,16 @@
 
 package rep.api.rest
 
+import java.nio.charset.StandardCharsets
 import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
 
-import scala.concurrent.{ExecutionContext, Future}
-import akka.actor.{ActorRef, ActorSelection}
-import akka.util.Timeout
+import scala.concurrent.{Await, ExecutionContext, Future}
+import akka.actor.{ActorRef, ActorSelection, ActorSystem}
+import akka.util.{ByteString, Timeout}
 import akka.http.scaladsl.model.Uri.Path.Segment
 import akka.http.scaladsl.server.Directives
 import io.swagger.annotations._
-import javax.ws.rs.Path
+import javax.ws.rs.{Consumes, Path, Produces}
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server._
 import StatusCodes._
@@ -41,9 +42,12 @@ import akka.http.scaladsl.server.Directives
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import spray.json._
 import akka.http.scaladsl.marshallers.xml.ScalaXmlSupport
+import akka.http.scaladsl.marshalling.{Marshaller, Marshalling, ToEntityMarshaller, ToResponseMarshaller}
+import akka.http.scaladsl.model.MediaType.NotCompressible
 import akka.http.scaladsl.model.{ContentTypes, HttpCharsets, MediaTypes}
-import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
-import akka.stream.scaladsl.StreamConverters
+import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, FromRequestUnmarshaller, Unmarshaller}
+import akka.stream.scaladsl.{Sink, StreamConverters}
+import org.bouncycastle.cert.ocsp.{OCSPReq, OCSPResp}
 
 import scala.xml.NodeSeq
 import rep.log.RepLogger
@@ -484,5 +488,95 @@ class TransactionService(ra: RestRouter)(implicit executionContext: ExecutionCon
           complete { (ra.getRestActor ? request).mapTo[PostResult] }
         }
       }
+    }
+}
+
+/**
+  * 操作crl-certStore-levelDB
+  *
+  * @author c4w
+  */
+@Api(value = "操作crl", description = "获取crl")
+@Path("/")
+class CrlService(ra: RestRouter)(implicit executionContext: ExecutionContext) extends Directives {
+
+  import akka.pattern.ask
+  import scala.concurrent.duration._
+  implicit val timeout = Timeout(20.seconds)
+
+  val route = getCrl
+
+  @Path("/repchain.crl")
+  @ApiOperation(value = "返回crl列表", notes = "", nickname = "getCrl", httpMethod = "GET", consumes = "application/json",produces = "application/octet-stream")
+  @ApiResponses(Array(new ApiResponse(code = 200, message = "返回crl列表")))
+  def getCrl =
+    path("repchain.crl") {
+      get {
+          complete((ra.getRestActor ? GetCrl).mapTo[HttpResponse])
+      }
+    }
+
+}
+
+/**
+  * 使用ocsp查询证书状态
+  *
+  * @author c4w
+  */
+@Path("/")
+@Consumes(Array("application/ocsp-request"))
+@Produces(Array("application/ocsp-reponse"))
+class OcspService(ra: RestRouter, implicit val system: ActorSystem)(implicit executionContext: ExecutionContext) extends Directives {
+
+  import akka.pattern.ask
+  import scala.concurrent.duration._
+  implicit val timeout = Timeout(5.seconds)
+  val `application/ocsp-request` = MediaType.applicationBinary("ocsp-request", NotCompressible)
+  val `application/ocsp-response` = MediaType.applicationBinary("ocsp-response", NotCompressible)
+
+//    implicit val unmarshaller: FromRequestUnmarshaller[OCSPReq] = Unmarshaller.strict[HttpRequest, OCSPReq](request => {
+////    var ocspReq: OCSPReq = null
+////    request.entity.dataBytes.runFold(ByteString.empty)(_ ++ _).onComplete({ case scala.util.Success(byteString) => ocspReq = new OCSPReq(byteString.toArray) })
+//    new OCSPReq(Await.result(request.entity.dataBytes.runFold(ByteString.empty)(_ ++ _), timeout.duration).toArray)
+//  })
+  implicit val unmarshaller: FromEntityUnmarshaller[OCSPReq] = Unmarshaller.byteStringUnmarshaller.forContentTypes(`application/ocsp-request`).map(byteString => new OCSPReq(byteString.toArray))
+
+  implicit val marshaller: ToEntityMarshaller[OCSPResp] = Marshaller.withFixedContentType(`application/ocsp-response`) {
+    // ocspResp =>  HttpEntity.Strict(`application/ocsp-response`, akka.util.ByteString(ocspResp.getEncoded))
+    ocspResp => HttpEntity(`application/ocsp-response`, akka.util.ByteString(ocspResp.getEncoded))
+  }
+//  implicit val marshaller: ToResponseMarshaller[OCSPResp] = Marshaller.withFixedContentType(`application/ocsp-response`) {
+//    ocspResp =>  HttpResponse(entity = HttpEntity.Strict(`application/ocsp-response`, akka.util.ByteString(ocspResp.getEncoded)))
+//  }
+
+
+  val route = queryCertStatus
+
+  @Path("/ocsp")
+  @ApiOperation(value = "通过ocsp查询证书状态", notes = "", nickname = "queryCertStatus", httpMethod = "POST", consumes = "application/ocsp-request", produces = "application/ocsp-response")
+  @ApiResponses(Array(new ApiResponse(code = 200, message = "返回OCSP相应")))
+  def queryCertStatus =
+    path("ocsp") {
+      post {
+        entity(as[OCSPReq]) { ocspReq =>
+          complete { (ra.getRestActor ? OcspQuery(ocspReq)).mapTo[OCSPResp] }
+        }
+      }
+//      post {
+//        extractRequest { req =>
+////          val ocspReqFuture: Future[Seq[ByteString]] = req.entity.dataBytes.runWith(Sink.seq[ByteString])
+////          val ocspByte = Await.result(ocspReqFuture, Timeout(3.seconds).duration).foldLeft(ByteString.empty)(_++_).toArray
+//          val ocspReqFuture: Future[ByteString] = req.entity.dataBytes.runFold(ByteString.empty)(_ ++ _)
+//          val ocspByte = Await.result(ocspReqFuture, timeout.duration).toArray
+//          // get request info
+//          val ocspRequest = new OCSPReq(ocspByte)
+////          val requestCerts = ocspRequest.getCerts.map(new JcaX509CertificateConverter().getCertificate(_))
+//          val requestList = ocspRequest.getRequestList
+////          println("************" + requestCerts(0))
+//          println(requestList)
+//          complete(req.entity.contentType.toString + " = " + req.entity.contentType.getClass)
+////          complete((ra.getRestActor ? OcspQuery(ocspRequest)).mapTo[HttpResponse])
+//        }
+//      }
     }
 }

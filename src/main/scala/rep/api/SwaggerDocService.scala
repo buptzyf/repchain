@@ -36,7 +36,8 @@ object SwaggerDocService extends SwaggerHttpService {
   override val apiClasses: Set[Class[_]] = Set(
     classOf[ChainService],
     classOf[BlockService],
-    classOf[TransactionService]
+    classOf[TransactionService],
+    classOf[CrlService]
   )
   override val info = Info(
     description = "RepChian API Doc",
@@ -52,6 +53,7 @@ object SwaggerDocService extends SwaggerHttpService {
   tagList.add(new Tag().name("chaininfo").description("获得当前区块链信息"))
   tagList.add(new Tag().name("block").description("获得区块数据"))
   tagList.add(new Tag().name("transaction").description("获得交易数据或提交交易"))
+  tagList.add(new Tag().name("crl").description("操作CRL"))
   override val externalDocs = Some(new ExternalDocs("Developers Guide", "https://repchaindoc.readthedocs.io/zh/latest/index.html"))
   override val securitySchemeDefinitions = Map("basicAuth" -> new BasicAuthDefinition())
   override val swaggerConfig = super.swaggerConfig.tags(tagList)

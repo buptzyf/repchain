@@ -16,6 +16,12 @@
 
 package rep.api.rest
 
+import java.io.FileInputStream
+import java.security.{KeyStore, PrivateKey}
+import java.security.cert.{X509CRL, X509Certificate}
+import java.util
+import java.util.Date
+
 import akka.actor.Actor
 import akka.util.Timeout
 import rep.network._
@@ -38,6 +44,16 @@ import rep.network.tools.PeerExtension
 import rep.network.base.ModuleBase
 import rep.network.module.ModuleActorType
 import akka.actor.Props
+import akka.http.scaladsl.model.MediaType
+import akka.http.scaladsl.model.MediaType.NotCompressible
+import org.bouncycastle.asn1.cmc.GetCRL
+import org.bouncycastle.asn1.ocsp.OCSPObjectIdentifiers
+import org.bouncycastle.asn1.x509.{Extension, Extensions}
+import org.bouncycastle.cert.X509CertificateHolder
+import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder
+import org.bouncycastle.cert.ocsp.jcajce.JcaRespID
+import org.bouncycastle.cert.ocsp.{Req, _}
+import org.bouncycastle.operator.jcajce.{JcaContentVerifierProviderBuilder, JcaDigestCalculatorProviderBuilder}
 import rep.crypto.cert.SignTool
 import rep.protos.peer.ActionResult
 import rep.app.conf.SystemProfile
@@ -48,7 +64,10 @@ import rep.network.consensus.byzantium.ConsensusCondition
 import rep.sc.TypeOfSender
 import rep.sc.SandboxDispatcher.DoTransaction
 import rep.sc.Sandbox.DoTransactionResult
+import rep.ssl.CustomSSLEngine
+import rep.storage.IdxPrefix.WorldStateKeyPreFix
 import rep.utils.GlobalUtils.EventType
+import rep.utils.SerializeUtils
 /**
  * RestActor伴生object，包含可接受的传入消息定义，以及处理的返回结果定义。
  * 以及用于建立Tranaction，检索Tranaction的静态方法
@@ -81,6 +100,8 @@ object RestActor {
   case class TransNumberOfBlock(height: Long)
   case object LoadBlockInfo
   case object IsLoadBlockInfo
+  case object GetCrl
+  case class OcspQuery(ocspReq: OCSPReq)
 
   case class PostResult(txid: String, result: Option[ActionResult], err: Option[String])
   case class QueryResult(result: Option[JValue])
@@ -416,5 +437,78 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
       val num = sr.isFinish
       val rs = "{\"isfinish\":\"" + num + "\"}"
       sender ! QueryResult(Option(JsonMethods.parse(string2JsonInput(rs))))
+
+    case GetCrl =>
+      val pkey = WorldStateKeyPreFix + "ManageNodeCert" + "_" + "crl_" + "951002007l78123233"
+      val pvalue = sr.Get(pkey)
+      if (pvalue == null) {
+        sender ! HttpResponse(entity = HttpEntity(akka.util.ByteString.empty))
+      } else {
+        val crl = SerializeUtils.deserialise(pvalue).asInstanceOf[X509CRL]
+        sender ! HttpResponse(entity = HttpEntity(akka.util.ByteString(crl.getEncoded)))
+      }
+
+    case OcspQuery(ocspReq) =>
+
+      //      var ocspResult = OCSPRespBuilder.SUCCESSFUL
+//      if (ocspReq.isSigned && !ocspReq.isSignatureValid(new JcaContentVerifierProviderBuilder().setProvider("BC").build(ocspReq.getCerts()(0)))) {
+//        ocspResult = OCSPRespBuilder.UNAUTHORIZED
+//      }
+//
+//      val caKs = KeyStore.getInstance(KeyStore.getDefaultType)
+//      caKs.load(new FileInputStream("jks/trust.jks"), "changeit".toCharArray)
+//      // 准备好创建 CRL 所需的私钥和证书
+//      val caCertificate: X509Certificate = caKs.getCertificate("trust").asInstanceOf[X509Certificate]
+//      val caPrivateKey = caKs.getKey("trust", "changeit".toCharArray).asInstanceOf[PrivateKey]
+//
+//      val responseBuilder = new BasicOCSPRespBuilder(new JcaRespID(caCertificate.getSubjectX500Principal))
+//
+//      val responseExtensions: java.util.ArrayList[Extension] = new java.util.ArrayList
+//      val nonceExtension = ocspReq.getExtension(OCSPObjectIdentifiers.id_pkix_ocsp_nonce)
+//      if (nonceExtension != null) responseExtensions.add(nonceExtension)
+//      responseExtensions.add(new Extension(OCSPObjectIdentifiers.id_pkix_ocsp_extended_revoke, false, Array.emptyByteArray))
+//      val extensions = responseExtensions.toArray(new Array[Extension](responseExtensions.size))
+//      responseBuilder.setResponseExtensions(new Extensions(extensions))
+//
+//      ocspReq.getRequestList.foreach(request => {
+//        val certificateID = request.getCertID
+//        import org.bouncycastle.asn1.ocsp.OCSPObjectIdentifiers
+//        // Build Extensions
+//        var extensions = new Extensions(Array[Extension]())
+//        val requestExtensions = request.getSingleRequestExtensions
+//        if (requestExtensions != null) {
+//          val nonceExtension = requestExtensions.getExtension(OCSPObjectIdentifiers.id_pkix_ocsp_nonce)
+//          if (nonceExtension != null) extensions = new Extensions(nonceExtension)
+//        }
+//
+//        // Check issuer
+//        val matchesIssuer = certificateID.matchesIssuer(new JcaX509CertificateHolder(caCertificate), new JcaDigestCalculatorProviderBuilder().setProvider("BC").build())
+//        import org.apache.commons.lang3.time.DateUtils.MILLIS_PER_DAY
+//        if (!matchesIssuer) {
+//          responseBuilder.addResponse(certificateID, new UnknownStatus(), new Date(), new Date(System.currentTimeMillis() + 10 * 365 * MILLIS_PER_DAY), extensions)
+//        } else {
+//          responseBuilder.addResponse(request.getCertID, CertificateStatus.GOOD, new Date(), new Date(System.currentTimeMillis() + 10 * 365 * MILLIS_PER_DAY), extensions)
+//        }
+//      })
+
+      //      responseBuilder.build()
+
+      val ocspRespBuilder = new OCSPRespBuilder
+      // 如果写入TryLater，就不会failover
+      var ocspResp = ocspRespBuilder.build(OCSPRespBuilder.UNAUTHORIZED, null)
+      if (! ocspReq.getRequestList.isEmpty) {
+        val req: Req = ocspReq.getRequestList.repr(0)
+        val pkey = WorldStateKeyPreFix + "ManageNodeCert" + "_" + "ocsp_" +req.getCertID.getSerialNumber.toString
+        val pvalue = sr.Get(pkey)
+        if (pvalue != null) {
+          ocspResp = SerializeUtils.deserialise(pvalue).asInstanceOf[OCSPResp]
+          val test = SerializeUtils.deserialise(pvalue)
+          println(ocspResp)
+        }
+      }
+//      val body = akka.util.ByteString(testOcspResp.getEncoded)
+//      val entity = HttpEntity.Strict(MediaType.applicationBinary("ocsp-response", NotCompressible), body)
+//      val httpResponse = HttpResponse(entity = entity)
+      sender ! ocspResp
   }
 }

@@ -19,7 +19,7 @@ package rep.sc
 import com.fasterxml.jackson.core.Base64Variants
 import akka.actor.ActorSystem
 import rep.network.tools.PeerExtension
-import rep.protos.peer.{Transaction,OperLog}
+import rep.protos.peer.{OperLog, Transaction}
 import rep.storage.ImpDataPreload
 import rep.utils.SerializeUtils
 import rep.utils.SerializeUtils.deserialise
@@ -29,11 +29,13 @@ import java.io.FileInputStream
 import java.io.ByteArrayInputStream
 import java.io.StringReader
 import java.security.cert.X509Certificate
+
 import rep.storage.ImpDataAccess
 import rep.crypto.cert.SignTool
-import  _root_.com.google.protobuf.ByteString 
+import _root_.com.google.protobuf.ByteString
 import rep.log.RepLogger
-import org.slf4j.Logger;
+import org.slf4j.Logger
+import rep.sc.scalax.ContractContext;
 
 /** Shim伴生对象
  *  @author c4w
@@ -106,6 +108,22 @@ class Shim(system: ActorSystem, cName: String) {
   //判断账号是否节点账号 TODO
   def bNodeCreditCode(credit_code: String) : Boolean ={
     SignTool.isNode4Credit(credit_code)
+  }
+
+  /**
+    * 判断是否是super_admin
+    *
+    * @param ctx
+    * @return
+    */
+  def bSuperAdmin(ctx: ContractContext): Boolean = {
+    var res = false
+    val creditCode = ctx.t.getSignature.getCertId.creditCode
+    val certName = ctx.t.getSignature.getCertId.certName
+    if (ctx.api.bNodeCreditCode(creditCode) && certName.equals("super_admin")) {
+      res = true
+    }
+    res
   }
   
   //通过该接口获取日志器，合约使用此日志器输出业务日志。

@@ -16,6 +16,8 @@
 
 package rep.app
 
+import java.security.Security
+
 import akka.actor.ActorRef
 import akka.remote.transport.Transport.InvalidAssociationException
 import rep.app.system.ClusterSystem
@@ -57,6 +59,10 @@ object Repchain {
   }
 
   def main(args: Array[String]): Unit = {
+
+    System.setProperty("com.sun.net.ssl.checkRevocation", "true")
+    System.setProperty("com.sun.security.enableCRLDP", "true")
+    Security.setProperty("ocsp.enable", "true")
 
     //创建系统实例
     var nodelist : Array[String] = new Array[String] (5)

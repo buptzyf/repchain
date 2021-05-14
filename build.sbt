@@ -57,7 +57,14 @@ libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.3"
 
 libraryDependencies += "org.codehaus.janino" % "janino" % "3.0.12"
 
-libraryDependencies += "org.bouncycastle" % "bcprov-jdk15on" % "1.61"
+libraryDependencies += "org.bouncycastle" % "bcprov-jdk15on" % "1.68"
+libraryDependencies += "org.bouncycastle" % "bcpkix-jdk15on" % "1.68"
+libraryDependencies += "com.gitee.BTAJL" %% "RCJava-core" % "0.4.1" excludeAll(
+  ExclusionRule(organization = "org.slf4j"),
+  ExclusionRule(organization = "org.bouncycastle")
+)
+resolvers += "jitpack.io" at "https://jitpack.io"
+
 libraryDependencies += "javax.xml.bind" % "jaxb-api" % "2.3.1"
 
 libraryDependencies ++= Seq(
