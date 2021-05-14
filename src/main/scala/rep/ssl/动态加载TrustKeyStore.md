@@ -138,7 +138,9 @@ akka中使用`ConfigSSLEngineProvider`来加载`keyStore`与`trustStore`等，�
 * Java Secure Socket Extension (JSSE) Reference Guide：https://docs.oracle.com/javase/8/docs/technotes/guides/security/jsse/JSSERefGuide.html
   * X509ExtendedTrustManager and Creating own X509ExtendedTrustManager：https://docs.oracle.com/javase/8/docs/technotes/guides/security/jsse/JSSERefGuide.html#X509ExtendedTrustManager
 * JavaSE文档：https://docs.oracle.com/en/java/javase/index.html
+* Java Security Standard Algorithm Names：https://docs.oracle.com/en/java/javase/11/docs/specs/security/standard-names.html#trustmanagerfactory-algorithms
 * Tomcat热加载证书：https://my.oschina.net/u/157514/blog/395238
+* OkHttpClient中重载TrustManager：https://stackoverflow.com/questions/25509296/trusting-all-certificates-with-okhttp
 * [Dynamic certificate import to Trust Store with Java](https://darshanar.wordpress.com/2015/08/04/dynamic-certificate-import-to-trust-store-with-java-keytool/)
 * Stackoverflow上的问题，implementing x509TrustManager
   * https://stackoverflow.com/questions/52487286/implementing-x509trustmanager
