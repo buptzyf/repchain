@@ -62,7 +62,8 @@ libraryDependencies += "javax.xml.bind" % "jaxb-api" % "2.3.1"
 
 //add erasurecode for java
 libraryDependencies += "org.apache.hadoop" % "hadoop-common" % "3.2.0"
-libraryDependencies += "org.python" % "jython" % "2.7.2"
+//libraryDependencies += "org.python" % "jython" % "2.7.2"
+libraryDependencies += "org.javatuples" % "javatuples" % "1.2"
 
 libraryDependencies ++= Seq(
 //  "io.swagger" % "swagger-jaxrs" % "1.6.0",
