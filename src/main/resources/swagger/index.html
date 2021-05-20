@@ -56,5 +56,12 @@
       window.ui = ui
     }
   </script>
+    <script>
+      var url = new URL(window.location.href);
+      var theme = url.searchParams.get("theme");
+      if (theme == 'dark') {
+        document.write('<link rel="stylesheet" type="text/css" href="./swagger-ui-dark.css">');
+      }
+    </script>
   </body>
 </html>
