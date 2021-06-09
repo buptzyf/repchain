@@ -132,16 +132,17 @@ message BindCertToAuthorize{
 
 // 可验证凭据属性结构(CCS, Credential Claim Struct)
 message CreClaStruct {
-  string id = 1; // CCS唯一标识
-  string name = 2; // CCS名称
-  string ccs_version = 3; // CCS版本
-  string description = 4; // CCS描述信息
-  string creator = 5; // CCS创建者did标识
-  string created = 6; // CCS创建时间
-  bool valid = 7; // CCS有效性状态
-  repeated CreAttr attributes = 8; // CCS属性
-  string version = 9; // 本数据结构的版本
+  string version = 1; // 本数据结构的版本
+  string id = 2; // CCS唯一标识
+  string name = 3; // CCS名称
+  string ccs_version = 4; // CCS版本
+  string description = 5; // CCS描述信息
+  string creator = 6; // CCS创建者did标识
+  string created = 7; // CCS创建时间
+  bool valid = 8; // CCS有效性状态
+  repeated CreAttr attributes = 9; // CCS属性
 }
+
 message CreAttr {
   string name = 1; // 凭据属性名称
   string type = 2; // 凭据属性值类型
@@ -151,11 +152,11 @@ message CreAttr {
 
 // 可验证凭据状态(Verifiable Credential, VC)
 message VerCreStatus  {
-  string id = 1; // VC唯一标识
-  string status = 2; // VC所处状态，使用者自行定义
-  repeated string revokedClaimIndex = 3; // VC中已被撤销的凭据属性编号
-  string creator = 4; // VC签发者的did标识，用于更新操作的权限控制
-  string version = 5; // 本数据结构的版本
+  string version = 1; // 本数据结构的版本
+  string id = 2; // VC唯一标识
+  string status = 3; // VC所处状态，使用者自行定义
+  repeated string revokedClaimIndex = 4; // VC中已被撤销的凭据属性编号
+  string creator = 5; // VC签发者的did标识，用于更新操作的权限控制
 }
 
 //背书，可用于Transaction和Block
