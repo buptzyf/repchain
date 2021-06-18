@@ -452,9 +452,18 @@ class TransactionService(ra: RestRouter)(implicit executionContext: ExecutionCon
 
           fileUpload("signedTrans") {
             case (fileInfo, fileStream) =>
-              val sink = StreamConverters.asInputStream()
-              val inputStream = fileStream.runWith(sink)
-              complete { (ra.getRestActor ? Transaction.parseFrom(inputStream)).mapTo[PostResult] }
+              RepLogger.debug(RepLogger.APIAccess_Logger, s"流式提交交易，fileInfo=$fileInfo")
+              val tranFuture: Future[ByteString] = fileStream.runFold(ByteString.empty)(_ ++ _)
+              onComplete(tranFuture)(tranByteString =>
+                complete {
+                  (ra.getRestActor ? Transaction.parseFrom(tranByteString.get.toArray)).mapTo[PostResult]
+                }
+              )
+//              val tranBytes = Await.result(tranFuture, Timeout(3.seconds).duration).toArray
+//              complete { (ra.getRestActor ? Transaction.parseFrom(tranBytes)).mapTo[PostResult] }
+//              val sink = StreamConverters.asInputStream()
+//              val inputStream = fileStream.runWith(sink)
+//              complete { (ra.getRestActor ? Transaction.parseFrom(inputStream)).mapTo[PostResult] }
 //              val fp = Paths.get("/tmp") resolve fileInfo.fileName
 //              val sink = FileIO.toPath(fp)
 //              val writeResult = fileStream.runWith(sink)
