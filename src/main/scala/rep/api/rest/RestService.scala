@@ -44,6 +44,7 @@ import akka.http.scaladsl.marshallers.xml.ScalaXmlSupport
 import akka.http.scaladsl.model.{ContentTypes, HttpCharsets, MediaTypes}
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import akka.stream.scaladsl.StreamConverters
+import scala.util.{Success, Failure}
 
 import scala.xml.NodeSeq
 import rep.log.RepLogger
@@ -454,11 +455,14 @@ class TransactionService(ra: RestRouter)(implicit executionContext: ExecutionCon
             case (fileInfo, fileStream) =>
               RepLogger.debug(RepLogger.APIAccess_Logger, s"流式提交交易，fileInfo=$fileInfo")
               val tranFuture: Future[ByteString] = fileStream.runFold(ByteString.empty)(_ ++ _)
-              onComplete(tranFuture)(tranByteString =>
-                complete {
-                  (ra.getRestActor ? Transaction.parseFrom(tranByteString.get.toArray)).mapTo[PostResult]
-                }
-              )
+              onComplete(tranFuture) {
+                case Success(tranByteString) =>
+                  complete {
+                    (ra.getRestActor ? Transaction.parseFrom(tranByteString.toArray)).mapTo[PostResult]
+                  }
+                case Failure(ex) =>
+                  complete (StatusCodes.InternalServerError, ex.getMessage)
+              }
 //              val tranBytes = Await.result(tranFuture, Timeout(3.seconds).duration).toArray
 //              complete { (ra.getRestActor ? Transaction.parseFrom(tranBytes)).mapTo[PostResult] }
 //              val sink = StreamConverters.asInputStream()
