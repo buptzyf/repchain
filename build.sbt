@@ -62,7 +62,8 @@ libraryDependencies += "javax.xml.bind" % "jaxb-api" % "2.3.1"
 
 //add erasurecode for java
 libraryDependencies += "org.apache.hadoop" % "hadoop-common" % "3.2.0"
-libraryDependencies += "org.python" % "jython" % "2.7.2"
+//libraryDependencies += "org.python" % "jython" % "2.7.2"
+libraryDependencies += "org.javatuples" % "javatuples" % "1.2"
 
 libraryDependencies ++= Seq(
 //  "io.swagger" % "swagger-jaxrs" % "1.6.0",
@@ -100,8 +101,15 @@ libraryDependencies += "com.thesamet.scalapb" %% "scalapb-runtime" % scalapb.com
 
 assemblyMergeStrategy in assembly := {
   case PathList("org", "iq80", "leveldb", xs @ _*) => MergeStrategy.first
+  case PathList("javax", "ws", "rs", xs @ _*) => MergeStrategy.first
   case PathList("module-info.class") => MergeStrategy.discard
   case PathList("google", "protobuf", "field_mask.proto") => MergeStrategy.discard
+
+  case PathList("org", "slf4j", xs @ _*)         => MergeStrategy.first
+  case PathList(ps @ _*) if ps.last endsWith "StaticLoggerBinder.class" => MergeStrategy.first
+  case PathList(ps @ _*) if ps.last endsWith "StaticMDCBinder.class" => MergeStrategy.first
+  case PathList(ps @ _*) if ps.last endsWith "StaticMarkerBinder.class" => MergeStrategy.first
+
   case x =>
     val oldStrategy = (assemblyMergeStrategy in assembly).value
     oldStrategy(x)
