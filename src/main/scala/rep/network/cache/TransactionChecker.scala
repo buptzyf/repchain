@@ -74,8 +74,12 @@ class TransactionChecker (moduleName: String) extends ModuleBase(moduleName){
         pe.getTransPoolMgr.putTran(t, pe.getSysTag)
         RepLogger.trace(RepLogger.System_Logger,this.getLogMsgPrefix(s"${pe.getSysTag} trans pool recv,txid=${t.id}"))
 
-        if (poolIsEmpty)//加入交易之前交易池为空，发送抽签消息
-        pe.getActorRef(CFRDActorType.ActorType.voter) ! VoteOfBlocker
+        if (poolIsEmpty){
+          if(SystemProfile.getTypeOfConsensus == "CFRD")
+            pe.getActorRef(CFRDActorType.ActorType.voter) ! VoteOfBlocker
+        }//加入交易之前交易池为空，发送抽签消息
+
+
       }
     }
   }

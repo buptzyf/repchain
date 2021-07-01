@@ -81,20 +81,24 @@ class ConfirmOfBlock(moduleName: String) extends IConfirmOfBlock(moduleName) {
   override protected def checkedOfConfirmBlock(block: Block, actRefOfBlock: ActorRef) = {
     if (pe.getCurrentBlockHash == "" && block.previousBlockHash.isEmpty()) {
       //if (NodeHelp.isSeedNode(pe.getNodeMgr.getStableNodeName4Addr(actRefOfBlock.path.address))) {
-        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"confirm verify blockhash,height=${block.height}"))
-        handler(block, actRefOfBlock)
+      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"confirm verify blockhash,height=${block.height}"))
+      handler(block, actRefOfBlock)
       //}else{
       //  RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"not confirm genesis block,blocker is not seed node,height=${block.height}"))
       //}
     } else {
       //与上一个块一致
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"confirm verify blockhash,height=${block.height}"))
+      if (SystemProfile.getTypeOfConsensus == "DUMBO") {
+        handler(block, actRefOfBlock)
+      } else {
         if (ConsensusCondition.ConsensusConditionChecked(block.endorsements.size)) {
           //符合大多数人背书要求
           handler(block, actRefOfBlock)
         } else {
           //错误，没有符合大多人背书要求。
         }
+      }
     }
   }
 

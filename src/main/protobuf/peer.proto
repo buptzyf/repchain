@@ -290,3 +290,78 @@ message MPbftReply {
     repeated MPbftCommit commits = 1;
     Signature signature = 2;
 }
+
+
+
+///////分布式公共掷币协议消息体  start//////////////
+//启动公共掷币消息
+message StartCommonCoin{
+    string source = 1;
+    bool singleBit = 2;
+    string round = 3;
+}
+
+//发送共享签名消息
+message ShareSignOfCommonCoin{
+    string source = 1;
+    string sign = 2;
+    string nodeName = 3;
+    string round = 4;
+}
+
+//公共掷币结束，返回掷币结果消息
+message ResultOfCommonCoin{
+    string source = 1;
+    string result = 2;
+    string round = 3;
+}
+///////分布式公共掷币协议消息体   end//////////////
+
+
+///////可验证可靠广播协议消息体   start//////////////
+//启动可靠广播消息，包含要广播的数据的数组
+message DataOfStripe{
+    uint32 version = 1;
+    uint32 Serial = 2;
+    bytes stripe = 3;
+    bytes rootHash = 4;
+    repeated bytes branch = 5;
+}
+
+//有效数据和回应有效数据的消息
+message DataOfPRBC{
+    string sendName = 1;
+    string moduleName = 2;
+    enum provableReliableType {
+            UNDEFINED = 0;
+            VAL = 1;
+            ECHO = 2;
+        }
+    provableReliableType typeOfMsg = 3;
+    DataOfStripe stripe = 4;
+    string round = 5;
+}
+
+message ReadyOfPRBC{
+    string sendName = 1;
+    string moduleName = 2;
+    bytes rootHash = 3;
+    bytes shareSign = 4;
+    string round = 5;
+}
+
+message StartOfPRBC{
+    string sendName = 1;
+    string round = 2;
+    bytes transationsCipher = 3;
+}
+
+message ResultOfPRBC{
+    string sendName = 1;
+    string moduleName = 2;
+    bytes rootHash = 3;
+    bytes transationsCipher = 4;
+    bytes combineSign = 5;
+    string round = 6;
+}
+///////可验证可靠广播协议消息体  end//////////////

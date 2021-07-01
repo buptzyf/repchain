@@ -87,7 +87,7 @@ class TransactionPoolMgr extends ITransctionPoolMgr {
     this.preloadBlocks.remove(blockIdentifier)
   }
 
-  def getTransListClone(num: Int,sysName:String): Seq[Transaction] = {
+  override def getTransListClone(num: Int,sysName:String): Seq[Transaction] = {
     var translist = scala.collection.mutable.ArrayBuffer[Transaction]()
     val currenttime = System.currentTimeMillis()
     try{

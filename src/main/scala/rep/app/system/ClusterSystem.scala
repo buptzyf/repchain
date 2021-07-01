@@ -41,6 +41,7 @@ import scala.concurrent.{Await, ExecutionContext}
 import scala.concurrent.duration._
 import akka.actor.Terminated
 import rep.network.module.cfrdinstream.ModuleManagerOfCFRDInStream
+import rep.network.module.dumbo.ModuleManagerOfDUMBO
 import rep.network.module.pbft.ModuleManagerOfPBFT
 import rep.network.module.raft.ModuleManagerOfRAFT
 import rep.network.tools.PeerExtension
@@ -177,6 +178,7 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
       case 0 => false
       case 1 => true
     }
+    //SystemProfile.initConfigSystem(conf,this.sysTag )
     conf
   }
 
@@ -209,6 +211,8 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
       sysActor = ActorSystem(SystemConf.SYSTEM_NAME, sysConf)
       clusterAddr = Cluster(sysActor).selfAddress
     }
+
+
 
     RepLogger.trace(RepLogger.System_Logger, sysTag + "~" + "System" + " ~ " + s"System(${sysTag}) init successfully" + " ~ ")
   }
@@ -294,11 +298,11 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
       moduleManager = sysActor.actorOf(ModuleManagerOfPBFT.props("modulemanager", sysTag, enableStatistic, enableWebSocket, true), "modulemanager")
     }else if(typeConsensus == "CFRDINSTREAM"){
       moduleManager = sysActor.actorOf(ModuleManagerOfCFRDInStream.props("modulemanager", sysTag, enableStatistic, enableWebSocket, true), "modulemanager")
+    }else if(typeConsensus == "DUMBO"){
+      moduleManager = sysActor.actorOf(ModuleManagerOfDUMBO.props("modulemanager", sysTag, enableStatistic, enableWebSocket, true), "modulemanager")
     } else{
       RepLogger.error(RepLogger.System_Logger, sysTag + "~" + "System" + " ~ " + s"ClusterSystem ${sysTag} not startup,unknow consensus" + " ~ ")
     }
-
-
 
     RepLogger.trace(RepLogger.System_Logger, sysTag + "~" + "System" + " ~ " + s"ClusterSystem ${sysTag} start" + " ~ ")
   }

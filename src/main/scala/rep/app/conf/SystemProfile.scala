@@ -20,6 +20,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 import com.typesafe.config.Config
 import rep.app.conf.SystemProfile.CHAIN_CERT_NAME
+import rep.network.consensus.asyncconsensus.config.ConfigOfManager
 //import collection.JavaConversions._
 //import scala.collection.immutable._
 import java.util.List
@@ -53,6 +54,7 @@ object SystemProfile {
   private[this] var _CHECKCERTVALIDATE:Int=0//是否检查证书的有效性，0不检查，1检查
   private[this] var _CONTRACTOPERATIONMODE = 0//设置合约的运行方式，0=debug方式，1=deploy，默认为debug方式，如果发布部署，必须使用deploy方式。
   private[this] var _VOTENODELIST : List[String] = new ArrayList[String]
+  private[this] var _VOTENODEADDRLIST : List[String] = new ArrayList[String]
   private[this] var _ACCOUNTCHAINCODENAEM : String = "ACCOUNTCHAINCODENAME"
   private[this] var _ACCOUNTCHAINCODEVERSION: Int = 1
   private[this] var _CertStatusChangeFunction : String = "UpdateCertStatus"
@@ -68,6 +70,7 @@ object SystemProfile {
   private[this] var _HTTPSERVICEACTORNUMBER= 5//httpServiceActorNumber
   private[this] var _ISBROADCASTTRANSACTION = 1 //isbroadcasttransaction
   private[this] var _CHAIN_CERT_NAME = ""
+  private[this] var _FAULT_COUNT= 1
 
   //zhj
   private[this] var _PBFT_F: Int = 1
@@ -93,6 +96,7 @@ object SystemProfile {
   private def GENESISNODENAME:String = _GENESISNODENAME
   
   private def VOTENODELIST : List[String] = _VOTENODELIST
+  private def VOTENODEADDRLIST : List[String] = _VOTENODEADDRLIST
   private def ACCOUNTCHAINCODENAEM = _ACCOUNTCHAINCODENAEM
   private def ACCOUNTCHAINCODVERSION = _ACCOUNTCHAINCODEVERSION
   private def CertStatusChangeFunction = _CertStatusChangeFunction
@@ -115,6 +119,7 @@ object SystemProfile {
   private def HTTPSERVICEACTORNUMBER : Int = _HTTPSERVICEACTORNUMBER
   private def ISBROADCASTTRANSACTION : Int = _ISBROADCASTTRANSACTION
   private def CHAIN_CERT_NAME : String =  _CHAIN_CERT_NAME
+  private def FAULT_COUNT : Int = _FAULT_COUNT
 
   //zhj
   private def PBFT_F = _PBFT_F
@@ -122,6 +127,10 @@ object SystemProfile {
   private def DBPATH:String = _DBPATH
   private def BLOCKPATH:String = _BLOCKPATH
   private def FILEMAX: Int = _FILEMAX
+
+  private def FAULT_COUNT_=(value:Int):Unit={
+    _FAULT_COUNT = value
+  }
 
   private def CHAIN_CERT_NAME_=(value:String):Unit={
     _CHAIN_CERT_NAME = value
@@ -189,7 +198,11 @@ object SystemProfile {
   private def VOTENODELIST_=(value: List[String]): Unit = {
       _VOTENODELIST = value
   }
-  
+
+  private def VOTENODEADDRLIST_=(value:List[String]):Unit={
+    _VOTENODEADDRLIST = value
+  }
+
   private def ACCOUNTCHAINCODENAEM_=(value:String):Unit={
     _ACCOUNTCHAINCODENAEM = value
   }
@@ -279,6 +292,16 @@ object SystemProfile {
     RETRY_TIME_=(config.getInt("system.block.retry_time"))
     VOTE_NODE_MIN_=(config.getInt("system.vote.vote_node_min"))
     VOTENODELIST_=(config.getStringList("system.vote.vote_node_list"))
+    VOTENODEADDRLIST_=(config.getStringList("system.vote.vote_node_addr_list"))
+    FAULT_COUNT_=(config.getInt("system.vote.fault_count"))
+
+    val nameList = new Array[String](this.getVoteNodeList.size())
+    this.getVoteNodeList.toArray(nameList)
+
+    val addrList = new Array[String](this.getVoteNodeAddrList.size())
+    this.getVoteNodeAddrList.toArray(addrList)
+    ConfigOfManager.loadManager(nameList,addrList)
+
     TRAN_CREATE_DUR_=(config.getInt("system.transaction.tran_create_dur"))
     MAX_CATCH_TRANS_NUM_=(config.getInt("system.transaction.max_cache_num"))
     TRANS_CREATE_TYPE_=(config.getInt("system.trans_create_type"))
@@ -348,6 +371,8 @@ object SystemProfile {
 
   def getVoteNodeMin = VOTE_NODE_MIN
 
+  def getFaultCount:Int=FAULT_COUNT
+
   def getTranCreateDur = TRAN_CREATE_DUR
 
   def getMaxCacheTransNum = MAX_CATCH_TRANS_NUM
@@ -367,6 +392,8 @@ object SystemProfile {
   def getContractOperationMode = CONTRACTOPERATIONMODE
   
   def getVoteNodeList = VOTENODELIST
+
+  def getVoteNodeAddrList = VOTENODEADDRLIST
   
   def getAccountChaincodeName = ACCOUNTCHAINCODENAEM
   

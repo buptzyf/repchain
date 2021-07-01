@@ -16,18 +16,12 @@
 
 package rep.network.base
 
-import akka.actor.{Actor, ActorRef, Address}
+import akka.actor.{Actor}
 import akka.util.Timeout
-import rep.app.system.ClusterSystem
 import rep.network.cluster.ClusterActor
 import rep.network.tools.PeerExtension
-import rep.crypto.Sha256
-
-import scala.collection.mutable
-import org.slf4j.LoggerFactory
 import rep.app.conf.TimePolicy
 import rep.log.RepTimeTracer
-import rep.log.RepLogger
 import rep.utils.GlobalUtils.BlockerInfo
 
 
@@ -128,9 +122,7 @@ abstract class  ModuleBase(name: String) extends Actor  with ClusterActor with B
   
   /**
     * 事件时间戳封装
-    * @param msg
-    * @param step
-    * @param actorRef
+
     */
   def logTime(timetag:String,time:Long,isstart:Boolean,bheight:Long,trannum:Int): Unit = {
     if(isstart){
@@ -139,5 +131,87 @@ abstract class  ModuleBase(name: String) extends Actor  with ClusterActor with B
       RepTimeTracer.setEndTime(pe.getSysTag, timetag, time,bheight,trannum)
     }
   }
+
+
+///dumbo
+ /* def broadcast(path:String,moduleName:String,msg:Any): Unit ={
+    val nodes = ConfigOfManager.getManager.getNodeNameAndAddr
+    nodes.foreach(node=>{
+      this.sendMsg(Broadcaster.buildDestPath(node._2,path,node._1,moduleName),msg)
+    })
+  }
+
+  def broadcastExceptSlef(path:String,nodeName:String,moduleName:String,msg:Any): Unit ={
+    val nodes = ConfigOfManager.getManager.getNodeNameAndAddr
+    nodes.foreach(node=>{
+      if(node._1 != nodeName){
+        this.sendMsg(Broadcaster.buildDestPath(node._2,path,node._1,moduleName),msg)
+      }
+    })
+  }
+
+  def broadcastResultToSpecialNode(recver:Any,msg:Any):Unit={
+    this.sendMsgToObject(recver,msg)
+  }
+
+
+  def sendMsg(addr:String,MsgBody: Any): Unit = {
+    try{
+      println(s"broadcast, dest path=${this.selfAddr}")
+      val selection: ActorSelection = context.actorSelection(addr);
+      //val tmp = MsgBody.asInstanceOf[ShareSignOfCommonCoin]
+      selection ! MsgBody
+    }catch {
+      case e:Exception =>
+        e.printStackTrace()
+    }
+  }
+
+  def sendMsgToObject(recver: Any, MsgBody: Any): Unit = {
+    if(recver.isInstanceOf[ActorRef]){
+      recver.asInstanceOf[ActorRef] ! MsgBody
+    }
+  }*/
+
+  /*def sendMsg(CallerAddr:String,MsgBody:Any): Unit ={
+    try{
+      val selection: ActorSelection = context.actorSelection(CallerAddr);
+      selection ! MsgBody
+    }catch {
+      case e:Exception =>
+        e.printStackTrace()
+    }
+
+  }
+
+
+  def broadcastToAll(actorName:String,MsgBody:Any): Unit ={
+    try{
+      pe.getNodeMgr.getStableNodes.foreach(f => {
+        val selection: ActorSelection = context.actorSelection(f+actorName);
+        selection ! MsgBody
+      }
+      )
+    }catch {
+      case e:Exception =>
+        e.printStackTrace()
+    }
+  }
+
+  def broadcastExceptSlef(nodeName:String,actorName:String,MsgBody:Any): Unit ={
+    try{
+      val nodemgr = pe.getNodeMgr
+      nodemgr.getStableNodeNames.foreach(name=>{
+        if(name != nodeName){
+          val addr = nodemgr.getNodeAddr4NodeName(name)
+          val selection: ActorSelection = context.actorSelection(name+actorName);
+          selection ! MsgBody
+        }
+      })
+    }catch {
+      case e:Exception =>
+        e.printStackTrace()
+    }
+  }*/
 }
 

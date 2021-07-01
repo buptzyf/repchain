@@ -41,7 +41,7 @@ object Repchain {
     if (s.contains("12110107bi45jh675g.node2")) r = "node2"
     if (s.contains("122000002n00123567.node3")) r = "node3"
     if (s.contains("921000005k36123789.node4")) r = "node4"
-    if (s.contains("921000006e0012v696.node5")) r = "node5"
+    //if (s.contains("921000006e0012v696.node5")) r = "node5"
     r
   }
 
@@ -52,34 +52,35 @@ object Repchain {
     if (s.contains("22523")) r = "node2"
     if (s.contains("22524")) r = "node3"
     if (s.contains("22525")) r = "node4"
-    if (s.contains("22526")) r = "node5"
+    //if (s.contains("22526")) r = "node5"
     r
   }
 
   def main(args: Array[String]): Unit = {
 
     //创建系统实例
-    var nodelist : Array[String] = new Array[String] (5)
+    var nodelist : Array[String] = new Array[String] (4)
     nodelist(0) = "121000005l35120456.node1"
     nodelist(1) = "12110107bi45jh675g.node2"
     nodelist(2) = "122000002n00123567.node3"
     nodelist(3) = "921000005k36123789.node4"
-    nodelist(4) = "921000006e0012v696.node5"
-    var nodeports : Array[Int] = new Array[Int](5)
+    //nodelist(4) = "921000006e0012v696.node5"
+    var nodeports : Array[Int] = new Array[Int](4)
     nodeports(0) = 22522
     nodeports(1) = 22523
     nodeports(2) = 22524
     nodeports(3) = 22525
-    nodeports(4) = 22526
+    //nodeports(4) = 22526
 
-    var nodehports : Array[Int] = new Array[Int](5)
+    var nodehports : Array[Int] = new Array[Int](4)
     nodehports(0) = 9081
     nodehports(1) = 9082
     nodehports(2) = 9083
     nodehports(3) = 9084
-    nodehports(4) = 9085
+    //nodehports(4) = 9085
 
-    for(i <- 0 to 4) {
+    for(i <- 0 to 3) {
+    //for(i <- 0 to 4) {
       Thread.sleep(5000)
       RepChainMgr.Startup4Multi(nodelist(i),nodeports(i),nodehports(i))
     }
