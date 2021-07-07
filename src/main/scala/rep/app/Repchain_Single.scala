@@ -19,6 +19,7 @@ package rep.app
 import akka.remote.transport.Transport.InvalidAssociationException
 import rep.app.system.ClusterSystem
 import rep.app.system.ClusterSystem.InitType
+import rep.utils.NetworkTool
 
 /**
  * Repchain app start
@@ -27,8 +28,27 @@ import rep.app.system.ClusterSystem.InitType
 object Repchain_Single {
   def main(args: Array[ String ]): Unit = {
     var systemTag = "1"
-    if(args!=null && args.length>0) systemTag = args(0)
-    RepChainMgr.Startup4Single(systemTag)
+    var isDynamicIp = "false"
+    var port : Option[Int] = None
+    if(args!=null && args.length>2){
+      systemTag = args(0)
+      port = Some(Integer.parseInt(args(1)))
+      isDynamicIp = args(2)
+    } if(args!=null && args.length>1){
+      systemTag = args(0)
+      isDynamicIp = args(1)
+    } else if(args!=null && args.length>0){
+      systemTag = args(0)
+    }else{
+      println("parameter error,parameter info:1 cluster name;2 option parameter ,cluster port;3 option parameter, data type is boolean,true or false")
+    }
+
+    if(isDynamicIp == "false"){
+      RepChainMgr.Startup4Single(new StartParameter(systemTag,port,None))
+    }else{
+      RepChainMgr.Startup4Single(new StartParameter(systemTag,port,Some(NetworkTool.getIpAddress)))
+    }
+    //RepChainMgr.Startup4Single(systemTag)
     /*val sys1 = new ClusterSystem(systemTag, InitType.SINGLE_INIT,true)
     sys1.init
     val joinAddress = sys1.getClusterAddr

@@ -77,6 +77,7 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
   var preloadNodesMap = HashMap[Address, (Long, String)]()
 
   private var isStartSynch = false
+  private var isRestart = false
 
   override def preStart(): Unit =
     super.preStart()
@@ -184,7 +185,13 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
 
       val tmp = pe.getNodeMgr.getNodeName4AddrString(member.address.toString)
       if(tmp.equals(pe.getSysTag)){
-        RepChainMgr.ReStart(pe.getSysTag)
+        //RepChainMgr.ReStart(pe.getSysTag)
+        System.err.println(s"MemberRemoved,self remove:printer=${pe.getSysTag} ~~ removed=${pe.getNodeMgr.getNodeName4AddrString(member.address.toString)}")
+        if(!this.isRestart){
+          System.err.println(s"MemberRemoved,remove restart:printer=${pe.getSysTag} ~~ removed=${pe.getNodeMgr.getNodeName4AddrString(member.address.toString)}")
+          this.isRestart = true
+          RepChainMgr.ReStart(pe.getSysTag)
+        }
       }
 
       preloadNodesMap.remove(member.address)
@@ -192,7 +199,22 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
       pe.getNodeMgr.removeStableNode(member.address)
       sendEvent(EventType.PUBLISH_INFO, mediator, NodeHelp.getNodeName(member.roles), Topic.Event, Event.Action.MEMBER_DOWN)
 
+    case UnreachableMember(member)=>
+      RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("UnreachableMember is : {}. {} nodes cluster" + "~" + member.address))
+      System.err.println(s"UnreachableMember:printer=${pe.getSysTag} ~~ removed=${pe.getNodeMgr.getNodeName4AddrString(member.address.toString)}")
+      if( SystemProfile.getGenesisNodeName != pe.getSysTag && RepChainMgr.isChangeIpAddress(pe.getSysTag)){
+          System.err.println(s"UnreachableMember,ipChange:printer=${pe.getSysTag} ")
+          if(!this.isRestart){
+            System.err.println(s"UnreachableMember,unreachable restart:printer=${pe.getSysTag}")
+            this.isRestart = true
+            RepChainMgr.ReStart(pe.getSysTag)
+          }
+      }
 
+      preloadNodesMap.remove(member.address)
+      pe.getNodeMgr.removeNode(member.address)
+      pe.getNodeMgr.removeStableNode(member.address)
+      sendEvent(EventType.PUBLISH_INFO, mediator, NodeHelp.getNodeName(member.roles), Topic.Event, Event.Action.MEMBER_DOWN)
 
     /*case event: akka.remote.DisassociatedEvent => //ignore
       RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("DisassociatedEvent: {}. {} nodes cluster" + "~" + event.remoteAddress.toString))

@@ -223,7 +223,7 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
 
     this.sysConf = ConfigFactory.load(combined)
 
-    this.init
+
   }
 
   def init3(port:Int):Unit = {
@@ -233,7 +233,17 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
     var combined  = myConfig.withFallback(this.sysConf)
     this.sysConf = ConfigFactory.load(combined)
 
-    this.init
+
+  }
+
+  def init4(ip:String):Unit={
+    var myConfig :Config = null
+
+    myConfig  = ConfigFactory.parseString("akka.remote.artery.canonical.hostname = " + ip )
+    var combined  = myConfig.withFallback(this.sysConf)
+    this.sysConf = ConfigFactory.load(combined)
+
+
   }
 
   def shutdown = {

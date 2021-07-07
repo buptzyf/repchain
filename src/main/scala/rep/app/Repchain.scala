@@ -76,9 +76,8 @@ object Repchain {
 
     for(i <- 0 to 4) {
       Thread.sleep(5000)
-      RepChainMgr.Startup4Multi(nodelist(i),nodeports(i))
+      RepChainMgr.Startup4Multi(new StartParameter(nodelist(i),Some(nodeports(i)),None))
     }
-
 
     //以下代码只能在测试系统稳定性，即测试系统离网之后再入网时可以用，发布时一定要删除
     //Thread.sleep(10000)

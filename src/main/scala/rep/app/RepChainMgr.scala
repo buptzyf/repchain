@@ -9,6 +9,7 @@ import rep.app.system.ClusterSystem.InitType
 import rep.network.consensus.util.BlockVerify
 import akka.cluster.{Cluster, MemberStatus}
 import akka.util.Timeout
+import rep.utils.NetworkTool
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
@@ -16,9 +17,13 @@ import scala.concurrent.duration._
 import scala.util.control.Breaks.{break, breakable}
 
 
+case class StartParameter(clusterName:String,port:Option[Int],ipInfo:Option[String])
+
+
 object RepChainMgr {
   private var clusterAddr: Address = null  //集群种子节点地址
-  private var instanceOfCluster = new scala.collection.mutable.HashMap[String, (ClusterSystem,Int)]()
+  //private var instanceOfCluster = new scala.collection.mutable.HashMap[String, (ClusterSystem,Int)]()
+  private var instanceOfCluster = new scala.collection.mutable.HashMap[String,(Option[ClusterSystem],StartParameter)]()
   private var isSingle = false
   private var nodelist : ArrayBuffer[String] = new ArrayBuffer[String]()
   private var isStarting = new AtomicBoolean(false)
@@ -34,35 +39,46 @@ object RepChainMgr {
     defaultvalue
   }
 
-  def Startups(param:Array[(String,Int)])={
+  def Startups(param:Array[StartParameter])={
     param.foreach(f=>{
-      Startup4Multi(f._1,f._2)
+      Startup4Multi(f)
       Thread.sleep(2000)
     })
   }
 
-  def Startup4Single(SystemName:String)={
+  def Startup4Single(param:StartParameter)={
     this.isSingle = true
-    val sys1 = new ClusterSystem(SystemName, InitType.SINGLE_INIT,true)
+    val sys1 = new ClusterSystem(param.clusterName, InitType.SINGLE_INIT,true)
+
+    if(param.port != None){
+      if(this.isJDK8OfRunEnv){
+        sys1.init3(param.port.get)//
+      }else{
+        sys1.init2(param.port.get)//初始化（参数和配置信息）
+      }
+    }
+
+    if(param.ipInfo != None){
+      sys1.init4(param.ipInfo.get)
+    }
     sys1.init
     //val joinAddress = sys1.getClusterAddr
     //sys1.joinCluster(joinAddress)
-    if(!this.instanceOfCluster.contains(SystemName)){
-      this.nodelist += SystemName
+    if(!this.instanceOfCluster.contains(param.clusterName)){
+      this.nodelist += param.clusterName
     }
-    this.instanceOfCluster += SystemName -> (sys1,0)
+    this.instanceOfCluster += param.clusterName -> (Some(sys1),param)
     sys1.start
   }
 
-  def Startup4Multi(SystemName:String,port:Int)={
-    val sys1 = new ClusterSystem(SystemName,InitType.MULTI_INIT,true)
+  def Startup4Multi(param:StartParameter)={
+    val sys1 = new ClusterSystem(param.clusterName,InitType.MULTI_INIT,true)
     if(this.isJDK8OfRunEnv){
-      sys1.init3(port)//
+      sys1.init3(param.port.get)//
     }else{
-      sys1.init2(port)//初始化（参数和配置信息）
+      sys1.init2(param.port.get)//初始化（参数和配置信息）
     }
-
-
+    sys1.init
 
     if(this.clusterAddr == null){
       this.clusterAddr = sys1.getClusterAddr//获取组网地址
@@ -77,10 +93,10 @@ object RepChainMgr {
     /*if(this.isJDK8OfRunEnv){
       sys1.joinCluster(this.clusterAddr)//加入网络
     }*/
-    if(!this.instanceOfCluster.contains(SystemName)){
-      this.nodelist += SystemName
+    if(!this.instanceOfCluster.contains(param.clusterName)){
+      this.nodelist += param.clusterName
     }
-    this.instanceOfCluster += SystemName -> (sys1,port)
+    this.instanceOfCluster += param.clusterName -> (Some(sys1),param)
     sys1.start//启动系统
   }
 
@@ -90,8 +106,8 @@ object RepChainMgr {
     val  sys1 = this.instanceOfCluster(SystemName)
     if(sys1 != null){
       val sys = sys1._1
-      if(sys != null){
-        sys.shutdown
+      if(sys != None){
+        sys.get.shutdown
         Thread.sleep(10000)
       }
     }
@@ -101,12 +117,12 @@ object RepChainMgr {
     val  sys1 = this.instanceOfCluster(SystemName)
     if(sys1 != null){
       val sys = sys1._1
-      if(sys != null){
-        var r = killActorSystem(sys)
+      if(sys != None){
+        var r = killActorSystem(sys.get)
         if(!r){
           Thread.sleep(10000)
           System.err.println(s"shutdown happen error,again shutdown,systemname=${SystemName}")
-          killActorSystem(sys)
+          killActorSystem(sys.get)
         }
       }
     }
@@ -147,6 +163,19 @@ object RepChainMgr {
     r
   }
 
+  def isChangeIpAddress(systemName:String):Boolean={
+    var b = false
+    val  sys1 = instanceOfCluster(systemName)
+    var param = sys1._2
+    if(param.ipInfo != None){
+      val old = param.ipInfo.get
+      if(old != NetworkTool.getIpAddress){
+        b = true
+      }
+    }
+    b
+  }
+
   private def  processOfRestart(systemName:String):Boolean={
     var r = false
     try{
@@ -156,16 +185,21 @@ object RepChainMgr {
       Thread.sleep(5000)
       System.err.println(s"terminateOfSystem finished,systemName=${systemName}")
       if(isSingle){
-        Startup4Single(systemName)
+        val  sys1 = instanceOfCluster(systemName)
+        var param = sys1._2
+        if(param.ipInfo != None){
+          param = new StartParameter(param.clusterName,param.port,Some(NetworkTool.getIpAddress))
+        }
+        Startup4Single(param)
       }else{
         val  sys1 = instanceOfCluster(systemName)
         if(sys1 != null){
           val port = sys1._2
-          Startup4Multi(systemName,port)
+          Startup4Multi(sys1._2)
         }
       }
       Thread.sleep(5000)
-      r = isFinishOfStartupForChecked(instanceOfCluster(systemName)._1)
+      r = isFinishOfStartupForChecked(instanceOfCluster(systemName)._1.get)
     }catch{
       case e:Exception=>e.printStackTrace()
     }

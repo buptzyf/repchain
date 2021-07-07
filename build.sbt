@@ -60,6 +60,10 @@ libraryDependencies += "org.codehaus.janino" % "janino" % "3.0.12"
 libraryDependencies += "org.bouncycastle" % "bcprov-jdk15on" % "1.61"
 libraryDependencies += "javax.xml.bind" % "jaxb-api" % "2.3.1"
 
+// https://mvnrepository.com/artifact/org.apache.httpcomponents/httpclient
+libraryDependencies += "org.apache.httpcomponents" % "httpclient" % "4.5.13"
+
+
 libraryDependencies ++= Seq(
   "io.swagger" % "swagger-jaxrs" % "1.6.0",
   "com.github.swagger-akka-http" %% "swagger-akka-http" % "1.1.1",
