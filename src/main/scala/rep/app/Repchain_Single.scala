@@ -34,7 +34,7 @@ object Repchain_Single {
       systemTag = args(0)
       port = Some(Integer.parseInt(args(1)))
       isDynamicIp = args(2)
-    } if(args!=null && args.length>1){
+    } else if(args!=null && args.length>1){
       systemTag = args(0)
       isDynamicIp = args(1)
     } else if(args!=null && args.length>0){
