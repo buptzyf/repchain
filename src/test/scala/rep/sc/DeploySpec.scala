@@ -47,11 +47,11 @@ import rep.crypto.cert.SignTool
 import rep.network.autotransaction.PeerHelper
 
 /** 合约容器实现的单元测试
-  *
-  * @author c4w
-  * @param _system 测试用例所在的actor System.
-  *
-  */
+ *
+ * @author c4w
+ * @param _system 测试用例所在的actor System.
+ *
+ */
 class DeploySpec(_system: ActorSystem)
   extends TestKit(_system)
     with Matchers
@@ -82,7 +82,7 @@ class DeploySpec(_system: ActorSystem)
     val pm = system.actorOf(ModuleManagerOfCFRD.props("modulemanager", sysName, false, false, false), "modulemanager")
 
     //加载合约脚本
-    val s1 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/ElectricityTPL.scala")
+    val s1 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/ContractAssetsTPL.scala")
     val l1 = try s1.mkString finally s1.close()
 
     val fm: Map[String, Int] = Map("A" -> 100, "B" -> 100)
@@ -92,39 +92,39 @@ class DeploySpec(_system: ActorSystem)
     val db = ImpDataAccess.GetDataAccess(sysName)
     var sandbox = system.actorOf(TransactionDispatcher.props("transactiondispatcher"), "transactiondispatcher")
     //生成deploy交易
-    val cid = new ChaincodeId("ElectricityTPL", 1)
+    val cid = new ChaincodeId("Assets", 1)
     val t1 = PeerHelper.createTransaction4Deploy(sysName, cid, l1, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
 
-    val msg_send1 = new DoTransaction(t1, "dbnumber", TypeOfSender.FromAPI)
+    val msg_send1 = new DoTransaction(Seq[Transaction](t1), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send1)
-    val msg_recv1 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-    msg_recv1.err should be(None)
+    val msg_recv1 = probe.expectMsgType[Seq[Sandbox.DoTransactionResult]](1000.seconds)
+    msg_recv1(0).err should be(None)
 
     //同样合约id不允许重复部署
-    val msg_send2 = new DoTransaction(t1, "dbnumber", TypeOfSender.FromAPI)
+    val msg_send2 = new DoTransaction(Seq[Transaction](t1), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send1)
-    val msg_recv2 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-    msg_recv2.err.get.cause.getMessage should be(SandboxDispatcher.ERR_REPEATED_CID)
+    val msg_recv2 = probe.expectMsgType[Seq[Sandbox.DoTransactionResult]](1000.seconds)
+    msg_recv2(0).err.get.cause.getMessage should be(SandboxDispatcher.ERR_REPEATED_CID)
 
-    val cid3 = new ChaincodeId("ElectricityTPL", 2)
+    val cid3 = new ChaincodeId("Assets", 2)
     //同一合约部署者允许部署同样名称不同版本合约
     val t3 = PeerHelper.createTransaction4Deploy(sysName, cid3, l1, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
-    val msg_send3 = new DoTransaction(t3, "dbnumber", TypeOfSender.FromAPI)
+    val msg_send3 = new DoTransaction(Seq[Transaction](t3), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send3)
-    val msg_recv3 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-    msg_recv3.err should be(None)
+    val msg_recv3 = probe.expectMsgType[Seq[Sandbox.DoTransactionResult]](1000.seconds)
+    msg_recv3(0).err should be(None)
 
-    val cid4 = new ChaincodeId("ElectricityTPL", 3)
+    val cid4 = new ChaincodeId("Assets", 3)
     val sysName2 = "12110107bi45jh675g.node2"
     //不同合约部署者不允许部署同样名称不同版本合约
     //在这里添加一个私钥的装载，因为系统默认只装载自己的节点私钥
     SignTool.loadPrivateKey("12110107bi45jh675g.node2", "123", "jks/12110107bi45jh675g.node2.jks")
 
     val t4 = PeerHelper.createTransaction4Deploy(sysName2, cid4, l1, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
-    val msg_send4 = new DoTransaction(t4, "dbnumber", TypeOfSender.FromAPI)
+    val msg_send4 = new DoTransaction(Seq[Transaction](t4), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send4)
-    val msg_recv4 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-    msg_recv4.err.get.cause.getMessage should be(SandboxDispatcher.ERR_CODER)
+    val msg_recv4 = probe.expectMsgType[Seq[Sandbox.DoTransactionResult]](1000.seconds)
+    msg_recv4(0).err.get.cause.getMessage should be(SandboxDispatcher.ERR_CODER)
 
   }
 }
