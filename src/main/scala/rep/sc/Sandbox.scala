@@ -51,16 +51,7 @@ object Sandbox {
   val SplitChainCodeId = "_"
   //日志前缀
   //t:中含txid可以找到原始交易; r:执行结果; merkle:执行完worldstate的hash; err:执行异常
-  /**
-   * 交易执行结果类
-   * @param t 传入交易实例
-   * @param from 来源actor指向
-   * @param r 执行结果,任意类型
-   * @param merkle 交易执行后worldState的merkle结果，用于验证和达成输出共识
-   * @param ol 合约执行中对worldState的写入操作
-   * @param mb 合约执行涉及的key-value集合
-   * @param err 执行中抛出的异常信息
-   */
+
   case class DoTransactionResult(txId: String, r: ActionResult,
                                  ol:  List[OperLog],
                                  err: Option[akka.actor.Status.Failure])
@@ -117,7 +108,8 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
 
   def onTransaction(dotrans: DoTransactionOfSandbox): DoTransactionResult = {
     try {
-      shim.sr = ImpDataPreloadMgr.GetImpDataPreload(sTag, dotrans.da)
+      //shim.sr = ImpDataPreloadMgr.GetImpDataPreload(sTag, dotrans.da)
+      shim.srOfTransaction = new TransactionOfDataPreload(dotrans.t.id,ImpDataPreloadMgr.GetImpDataPreload(sTag, dotrans.da))
       checkTransaction(dotrans)
       shim.ol = new scala.collection.mutable.ListBuffer[OperLog]
       doTransaction(dotrans)
@@ -129,13 +121,7 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
     }
   }
 
-  /**
-   * 交易处理抽象方法，接受待处理交易，返回处理结果
-   *  @param t 待处理交易
-   *  @param from 发出交易请求的actor
-   * 	@param da 存储访问标示
-   *  @return 交易执行结果
-   */
+
   def doTransaction(dotrans: DoTransactionOfSandbox): DoTransactionResult
 
   private def getContractEnableValueFromLevelDB(txcid: String): Option[Boolean] = {
@@ -153,7 +139,8 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
   private def IsCurrentSigner(dotrans: DoTransactionOfSandbox) {
     val cn = dotrans.t.cid.get.chaincodeName
     val key_coder = WorldStateKeyPreFix + cn
-    val coder_bytes = shim.sr.Get(key_coder)
+    //val coder_bytes = shim.sr.Get(key_coder)
+    val coder_bytes = shim.srOfTransaction.Get(key_coder)
     if (coder_bytes != null) {
       val coder = Some(deserialise(coder_bytes).asInstanceOf[String])
       //合约已存在且部署,需要重新部署，但是当前提交者不是以前提交者
@@ -164,7 +151,8 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
 
   private def ContraceIsExist(txcid: String) {
     val key_tx_state = WorldStateKeyPreFix + txcid + PRE_STATE
-    val state_bytes = shim.sr.Get(key_tx_state)
+    //val state_bytes = shim.sr.Get(key_tx_state)
+    val state_bytes = shim.srOfTransaction.Get(key_tx_state)
     //合约不存在
     if (state_bytes == null) {
       throw new SandboxException(ERR_INVOKE_CHAINCODE_NOT_EXIST)

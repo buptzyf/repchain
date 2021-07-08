@@ -95,24 +95,24 @@ class DeploySpec(_system: ActorSystem)
     val cid = new ChaincodeId("Assets", 1)
     val t1 = PeerHelper.createTransaction4Deploy(sysName, cid, l1, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
 
-    val msg_send1 = new DoTransaction(Seq[Transaction](t1), "dbnumber", TypeOfSender.FromAPI)
+    val msg_send1 = new DoTransaction((t1), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send1)
-    val msg_recv1 = probe.expectMsgType[Seq[Sandbox.DoTransactionResult]](1000.seconds)
-    msg_recv1(0).err should be(None)
+    val msg_recv1 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
+    msg_recv1.err should be(None)
 
     //同样合约id不允许重复部署
-    val msg_send2 = new DoTransaction(Seq[Transaction](t1), "dbnumber", TypeOfSender.FromAPI)
+    val msg_send2 = new DoTransaction((t1), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send1)
-    val msg_recv2 = probe.expectMsgType[Seq[Sandbox.DoTransactionResult]](1000.seconds)
-    msg_recv2(0).err.get.cause.getMessage should be(SandboxDispatcher.ERR_REPEATED_CID)
+    val msg_recv2 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
+    msg_recv2.err.get.cause.getMessage should be(SandboxDispatcher.ERR_REPEATED_CID)
 
     val cid3 = new ChaincodeId("Assets", 2)
     //同一合约部署者允许部署同样名称不同版本合约
     val t3 = PeerHelper.createTransaction4Deploy(sysName, cid3, l1, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
-    val msg_send3 = new DoTransaction(Seq[Transaction](t3), "dbnumber", TypeOfSender.FromAPI)
+    val msg_send3 = new DoTransaction((t3), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send3)
-    val msg_recv3 = probe.expectMsgType[Seq[Sandbox.DoTransactionResult]](1000.seconds)
-    msg_recv3(0).err should be(None)
+    val msg_recv3 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
+    msg_recv3.err should be(None)
 
     val cid4 = new ChaincodeId("Assets", 3)
     val sysName2 = "12110107bi45jh675g.node2"
@@ -121,10 +121,10 @@ class DeploySpec(_system: ActorSystem)
     SignTool.loadPrivateKey("12110107bi45jh675g.node2", "123", "jks/12110107bi45jh675g.node2.jks")
 
     val t4 = PeerHelper.createTransaction4Deploy(sysName2, cid4, l1, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
-    val msg_send4 = new DoTransaction(Seq[Transaction](t4), "dbnumber", TypeOfSender.FromAPI)
+    val msg_send4 = new DoTransaction((t4), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send4)
-    val msg_recv4 = probe.expectMsgType[Seq[Sandbox.DoTransactionResult]](1000.seconds)
-    msg_recv4(0).err.get.cause.getMessage should be(SandboxDispatcher.ERR_CODER)
+    val msg_recv4 = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
+    msg_recv4.err.get.cause.getMessage should be(SandboxDispatcher.ERR_CODER)
 
   }
 }
