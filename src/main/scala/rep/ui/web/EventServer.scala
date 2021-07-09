@@ -84,10 +84,17 @@ object EventServer {
       //提供swagger UI服务
      (get & pathPrefix("swagger")) {
         getFromResourceDirectory("swagger")
-      }~ //提供静态文件的web访问服务
-     (get & pathPrefix("web")) { 
+      }~
+       //提供静态文件的web访问服务
+     (get & pathPrefix("web")) {
         getFromResourceDirectory("web")
-      }~ //提供Event的WebSocket订阅服务
+      }~
+       (get & pathPrefix("")) {
+         pathEndOrSingleSlash {
+           getFromResource("web/index.html")
+         }
+       }~
+       //提供Event的WebSocket订阅服务
       path("event") {
         get {
           //must ref to the same actor
