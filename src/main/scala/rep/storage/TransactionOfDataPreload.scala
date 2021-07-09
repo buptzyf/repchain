@@ -6,7 +6,7 @@ import rep.log.RepLogger
 /**
  * @author jiangbuyun
  * @version	1.1
- * @since	2021-07-20
+ * @since	2021-07-08
  * @category	按照交易操作worldState，可以方便进行基于交易的事务操作
  * */
 class TransactionOfDataPreload(txid:String,dbop:ImpDataPreload) {
@@ -45,7 +45,7 @@ class TransactionOfDataPreload(txid:String,dbop:ImpDataPreload) {
   /**
    * @author jiangbuyun
    * @version	1.1
-   * @since	2021-07-20
+   * @since	2021-07-08
    * @category	存储指定的键和值到数据库
    * @param	key String 指定的键，bb Array[Byte] 要存储的值
    * @return	返回成功或者失败 Boolean
@@ -82,7 +82,7 @@ class TransactionOfDataPreload(txid:String,dbop:ImpDataPreload) {
   /**
    * @author jiangbuyun
    * @version	1.1
-   * @since	2021-07-20
+   * @since	2021-07-08
    * @category	将写入的数据提交到块数据缓存
    * */
   def commit:Unit={
@@ -101,7 +101,7 @@ class TransactionOfDataPreload(txid:String,dbop:ImpDataPreload) {
   /**
    * @author jiangbuyun
    * @version	1.1
-   * @since	2021-07-20
+   * @since	2021-07-08
    * @category	将写入到数据清除，不再提交到块缓存
    * */
   def roolback:Unit={

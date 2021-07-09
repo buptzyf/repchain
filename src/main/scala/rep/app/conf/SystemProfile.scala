@@ -69,6 +69,14 @@ object SystemProfile {
   private[this] var _DBPATH:String = "" //leveldb数据库文件路径
   private[this] var _BLOCKPATH:String = ""//区块文件的路径
   private[this] var _FILEMAX: Int = 200000000//区块文件的最大长度
+
+  private[this] var _IS_OUTPUT_ALERT: Boolean = false
+  private[this] var _CORE_THREADS: Int = 2
+  private[this] var _MAX_THREADS: Int = 10
+  private[this] var _ALIVE_TIME: Int = 10
+  private[this] var _PRISMA_URL: String = ""
+
+
   
   
   //实时图的事件是否发送，如果不发送，前端实时图将收不到任何消息。
@@ -107,6 +115,34 @@ object SystemProfile {
   private def DBPATH:String = _DBPATH
   private def BLOCKPATH:String = _BLOCKPATH
   private def FILEMAX: Int = _FILEMAX
+
+  private def IS_OUTPUT_ALERT: Boolean = _IS_OUTPUT_ALERT
+  private def CORE_THREADS: Int = _CORE_THREADS
+  private def MAX_THREADS: Int = _MAX_THREADS
+  private def ALIVE_TIME: Int = _ALIVE_TIME
+  private def PRISMA_URL: String = _PRISMA_URL
+
+
+  private def IS_OUTPUT_ALERT_=(value:Boolean):Unit={
+    _IS_OUTPUT_ALERT = value
+  }
+
+  private def CORE_THREADS_=(value:Int):Unit={
+    _CORE_THREADS = value
+  }
+
+  private def MAX_THREADS_=(value:Int):Unit={
+    _MAX_THREADS = value
+  }
+
+  private def ALIVE_TIME_=(value:Int):Unit={
+    _ALIVE_TIME = value
+  }
+
+  private def PRISMA_URL_=(value:String):Unit={
+    _PRISMA_URL = value
+  }
+
 
   private def TYPE_OF_CONSENSUS_=(value:String):Unit={
     _TYPE_OF_CONSENSUS = value
@@ -268,6 +304,12 @@ object SystemProfile {
     BLOCKPATH_= (config.getString("system.storage.blockpath"))
     FILEMAX_=(config.getInt("system.storage.filemax"))
     REALTIMEGRAPH_ENABLE_=(config.getInt("system.realtimegraph_enable"))
+
+    IS_OUTPUT_ALERT_=(config.getBoolean("system.output_alert.is_output_alert"))
+    CORE_THREADS_=(config.getInt("system.output_alert.core_threads"))
+    MAX_THREADS_=(config.getInt("system.output_alert.max_threads"))
+    ALIVE_TIME_=(config.getInt("system.output_alert.alive_time"))
+    PRISMA_URL_=(config.getString("system.output_alert.prisma_url"))
   }
 
   //zhj
@@ -326,4 +368,10 @@ object SystemProfile {
   def getAccountChaincodeVersion = ACCOUNTCHAINCODVERSION
   
   def getGenesisNodeName = GENESISNODENAME
+
+  def getIsOutputAlert = IS_OUTPUT_ALERT
+  def getCoreThreads = CORE_THREADS
+  def getMaxThreads = MAX_THREADS
+  def getAliveTime = ALIVE_TIME
+  def getPrismaUrl = PRISMA_URL
 }

@@ -16,7 +16,9 @@
 package rep.log
 
 import org.slf4j.LoggerFactory
-import org.slf4j.Logger;
+import org.slf4j.Logger
+import rep.app.conf.SystemProfile
+import rep.log.httplog.HttpLogger;
 
 
 /**
@@ -38,6 +40,12 @@ object RepLogger {
    def TransLifeCycle_Logger = LoggerFactory.getLogger("TransLifeCycle_Logger")
    def APIAccess_Logger = LoggerFactory.getLogger("APIAccess_Logger")
 
+
+
+  def getHttpLogger:HttpLogger={
+    HttpLogger.getHttpLogger(SystemProfile.getCoreThreads,SystemProfile.getMaxThreads,SystemProfile.getAliveTime,
+      SystemProfile.getIsOutputAlert,SystemProfile.getPrismaUrl)
+  }
     //zhj
     def zLogger = LoggerFactory.getLogger("System_Logger")
 
