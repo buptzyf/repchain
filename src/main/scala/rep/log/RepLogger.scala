@@ -18,58 +18,78 @@ package rep.log
 import org.slf4j.LoggerFactory
 import org.slf4j.Logger
 import rep.app.conf.SystemProfile
-import rep.log.httplog.HttpLogger;
+import rep.log.httplog.{AlertInfo, HttpLogger};
 
 
 /**
  * RepChain统一日志输出工具，外部输出日志统一调用对象
+ *
  * @author jiangbuyun
- * @version	1.0
+ * @version 1.0
  */
 
 object RepLogger {
-   def Business_Logger = LoggerFactory.getLogger("Business_Logger")
-   def System_Logger = LoggerFactory.getLogger("System_Logger")
-   def Consensus_Logger = LoggerFactory.getLogger("Consensus_Logger")
-   def BlockSyncher_Logger = LoggerFactory.getLogger("BlockSyncher_Logger")
-   def Storager_Logger = LoggerFactory.getLogger("Storager_Logger")
-   def StatisTime_Logger = LoggerFactory.getLogger("StatisTime_Logger")
-   def Sandbox_Logger = LoggerFactory.getLogger("Sandbox_Logger")
-   def Vote_Logger = LoggerFactory.getLogger("Vote_Logger")
-   def OutputTime_Logger = LoggerFactory.getLogger("OutputTime_Logger")
-   def TransLifeCycle_Logger = LoggerFactory.getLogger("TransLifeCycle_Logger")
-   def APIAccess_Logger = LoggerFactory.getLogger("APIAccess_Logger")
+  def Business_Logger = LoggerFactory.getLogger("Business_Logger")
+
+  def System_Logger = LoggerFactory.getLogger("System_Logger")
+
+  def Consensus_Logger = LoggerFactory.getLogger("Consensus_Logger")
+
+  def BlockSyncher_Logger = LoggerFactory.getLogger("BlockSyncher_Logger")
+
+  def Storager_Logger = LoggerFactory.getLogger("Storager_Logger")
+
+  def StatisTime_Logger = LoggerFactory.getLogger("StatisTime_Logger")
+
+  def Sandbox_Logger = LoggerFactory.getLogger("Sandbox_Logger")
+
+  def Vote_Logger = LoggerFactory.getLogger("Vote_Logger")
+
+  def OutputTime_Logger = LoggerFactory.getLogger("OutputTime_Logger")
+
+  def TransLifeCycle_Logger = LoggerFactory.getLogger("TransLifeCycle_Logger")
+
+  def APIAccess_Logger = LoggerFactory.getLogger("APIAccess_Logger")
 
 
-
-  def getHttpLogger:HttpLogger={
-    HttpLogger.getHttpLogger(SystemProfile.getCoreThreads,SystemProfile.getMaxThreads,SystemProfile.getAliveTime,
-      SystemProfile.getIsOutputAlert,SystemProfile.getPrismaUrl)
+  private def getHttpLogger: HttpLogger = {
+    HttpLogger.getHttpLogger(SystemProfile.getCoreThreads, SystemProfile.getMaxThreads, SystemProfile.getAliveTime,
+      SystemProfile.getIsOutputAlert, SystemProfile.getPrismaUrl)
   }
-    //zhj
-    def zLogger = LoggerFactory.getLogger("System_Logger")
 
-  def trace(logger:Logger,msg:String)={
-     logger.trace(msg)
-   }
-   
-   def debug(logger:Logger,msg:String)={
-     logger.debug(msg)
-   }
-   
-   def info(logger:Logger,msg:String)={
-     logger.info(msg)
-   }
-   
-   def error(logger:Logger,msg:String)={
-     logger.error(msg)
-   }
-   
-   def except(logger:Logger,msg:String,e:Exception)={
-     logger.error(msg,e)
-   }
-   
-   def except4Throwable(logger:Logger,msg:String,e:Throwable)={
-     logger.error(msg,e)
-   }
+  def sendAlertToDB(info: AlertInfo): Unit = {
+    if (SystemProfile.getIsOutputAlert) {
+      val tmplog = getHttpLogger
+      if (tmplog != null) {
+        tmplog.SendAlert(info)
+      }
+    }
+  }
+
+  //zhj
+  def zLogger = LoggerFactory.getLogger("System_Logger")
+
+  def trace(logger: Logger, msg: String) = {
+    logger.trace(msg)
+  }
+
+  def debug(logger: Logger, msg: String) = {
+    logger.debug(msg)
+  }
+
+  def info(logger: Logger, msg: String) = {
+    logger.info(msg)
+  }
+
+  def error(logger: Logger, msg: String) = {
+    logger.error(msg)
+  }
+
+  def except(logger: Logger, msg: String, e: Exception) = {
+    logger.error(msg, e)
+  }
+
+  def except4Throwable(logger: Logger, msg: String, e: Throwable) = {
+    logger.error(msg, e)
+  }
 }

@@ -17,15 +17,54 @@ import rep.log.RepLogger
 
 /**
  * @author jiangbuyun
- * @version	1.1
- * @since	2021-07-09
- * @category	http请求线程，负责提交日志信息到prisma，由prisma写日志数据到数据库
- *          建立该任务类需要输入url和json日志信息
- * */
+ * @version 1.1
+ * @since 2021-07-09
+ * @category http请求线程，负责提交日志信息到prisma，由prisma写日志数据到数据库
+ *           建立该任务类需要输入url和json日志信息
+ **/
 
-case class AlertInfo(category:String,level:Int,desc:String)
 
-class HttpThread(url:String,info:AlertInfo) extends Runnable{
+//STORAGE
+//NETWORK
+//CONSENSUS
+//CONTRACT
+//API
+//SYSTEM
+
+/*
+1
+
+Critical 紧急
+2
+
+Major 重要
+
+
+3
+
+Minor 次要
+
+
+
+4
+
+Warning 提示
+
+
+
+5
+
+Indeterminate 不确定
+
+
+
+6
+
+Cleared 清除
+*/
+case class AlertInfo(category: String, level: Int, desc: String)
+
+class HttpThread(url: String, info: AlertInfo) extends Runnable {
   private val paramOfJSon = this.ConvertAlertInfoToJSon(info)
 
   override def run(): Unit = {
@@ -34,13 +73,13 @@ class HttpThread(url:String,info:AlertInfo) extends Runnable{
 
   /**
    * @author jiangbuyun
-   * @version	1.1
-   * @since	2021-07-09
-   * @category	执行post提交
-   * */
-  private def work:Unit={
+   * @version 1.1
+   * @since 2021-07-09
+   * @category 执行post提交
+   **/
+  private def work: Unit = {
     val httpClient = HttpClientBuilder.create.build
-    var response : CloseableHttpResponse = null
+    var response: CloseableHttpResponse = null
     try {
       val httpPost = new HttpPost(this.url)
       val requestConfig = RequestConfig.custom.setSocketTimeout(10000).setConnectTimeout(10000).build
@@ -62,41 +101,37 @@ class HttpThread(url:String,info:AlertInfo) extends Runnable{
         RepLogger.System_Logger.error(s"Post Log Except,info:url=${this.url},param=${this.paramOfJSon},msg=${e.getMessage}")
     } finally { // 释放资源
       if (httpClient != null) {
-        try{
+        try {
           httpClient.close()
-        }catch {
-          case e : Exception =>
+        } catch {
+          case e: Exception =>
             RepLogger.System_Logger.error(s"close httpClient Except,info:url=${this.url},param=${this.paramOfJSon},msg=${e.getMessage}")
         }
       }
 
       if (response != null) {
-        try{
+        try {
           response.close()
-        }catch{
-          case e : Exception =>
+        } catch {
+          case e: Exception =>
             RepLogger.System_Logger.error(s"close response Except,info:url=${this.url},param=${this.paramOfJSon},msg=${e.getMessage}")
         }
       }
     }
   }
 
-  private def ConvertAlertInfoToJSon(info:AlertInfo):String={
+  private def ConvertAlertInfoToJSon(info: AlertInfo): String = {
 
     var Str = new StringBuffer()
-    Str.append("{")
-        .append("\\\"operationName\\\":null,\\\"variables\\\":{},")
-        .append("\\\"query\\\":")
-        .append("\\\"mutation {")
-        .append("\\\\n  createAlert(")
-        .append("data: {")
-        .append("category:").append("\\\"").append(info.category).append("\\\"")
-        .append("level:").append(info.level)
-        .append("alertDesc:").append("\\\"").append(info.desc).append("\\\"")
-        .append("alertTime:").append("\\\"").append(new SimpleDateFormat("yyyy-MM-ddTHH:mm:ssZ").format(new Date())).append("\\\"")
-        .append("}")
-        .append(")")
-        .append(" {\\\\n    id\\\\n  }\\\\n}\\\\n\\\"}\"")
+
+    Str.append("{\"query\":\"mutation {\\n  createAlert(data: {")
+      .append("category: ").append(info.category).append(",")
+      .append("level: ").append(info.level).append(",")
+      .append("alertDesc: \\\"").append(info.desc).append("\\\",")
+      .append("alertTime: \\\"").append(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'+08:00'").format(new Date())).append("\\\"")
+      .append("})")
+      .append("{\\n    id\\n  }\\n}\\n\"}")
+
     Str.toString
   }
 

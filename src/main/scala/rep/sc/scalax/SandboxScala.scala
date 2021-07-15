@@ -19,9 +19,10 @@ import rep.sc.Sandbox
 import rep.sc.Sandbox._
 import javax.script._
 import java.security.cert.Certificate
+
 import jdk.nashorn.api.scripting._
 import rep.protos.peer._
-import akka.actor.{ Actor, ActorRef, Props, actorRef2Scala }
+import akka.actor.{Actor, ActorRef, Props, actorRef2Scala}
 import rep.storage._
 import rep.storage.IdxPrefix.WorldStateKeyPreFix
 import org.slf4j.LoggerFactory
@@ -30,6 +31,7 @@ import rep.log.RepLogger
 import rep.utils.SerializeUtils.deserialise
 import rep.utils.SerializeUtils.serialise
 import _root_.com.google.protobuf.ByteString
+import rep.log.httplog.AlertInfo
 import rep.utils.IdTool
 import rep.sc.SandboxDispatcher.DoTransactionOfSandbox
 import rep.protos.peer.Transaction
@@ -137,6 +139,7 @@ class SandboxScala(cid: ChaincodeId) extends Sandbox(cid) {
       case e: Throwable =>
         RepLogger.except4Throwable(RepLogger.Sandbox_Logger, t.id, e)
         //akka send 无法序列化原始异常,简化异常信息
+        RepLogger.sendAlertToDB(new AlertInfo("CONTRACT",4,s"Node Name=${pe.getSysTag},txid=${t.id},erroInfo=${e.getMessage},Transaction Exception."))
         val e1 = new SandboxException(e.getMessage)
         shim.srOfTransaction.roolback
         new DoTransactionResult(t.id, null,

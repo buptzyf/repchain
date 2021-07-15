@@ -40,6 +40,7 @@ import rep.log.RepLogger
 import scala.concurrent.Await
 import scala.concurrent.duration._
 import akka.actor.Terminated
+import rep.log.httplog.AlertInfo
 import rep.network.module.pbft.ModuleManagerOfPBFT
 import rep.network.module.raft.ModuleManagerOfRAFT
 
@@ -282,6 +283,7 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
     SystemProfile.initConfigSystem(sysActor.settings.config)
 
     if (!hasDiskSpace) {
+      RepLogger.sendAlertToDB(new AlertInfo("STORAGE",1,s"Node Name=${this.sysTag},Insufficient disk space."))
       Cluster(sysActor).down(clusterAddr)
       throw new Exception("not enough disk space")
     }
