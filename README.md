@@ -23,7 +23,7 @@
 - install [protobuf editor](https://github.com/Enide/polyglot-maven-editors)——编辑protobuf定义工具，非必须
 
 ## 分层架构
-![RepChain分层架构图](https://images.gitee.com/uploads/images/2021/0721/093047_b0c3342f_1598833.png "分层架构图.png")
+![分层架构图](https://images.gitee.com/uploads/images/2021/0721/093241_fe590ce5_1598833.png "分层架构图.png")
 - 数据层：负责数据格式定义，数据结构采用Protocol Buffers定义文件，并以此为基础实现数据的交换、验证、存储、读取及检索
 - 网络层：采用JDK内置的TLS实现，支持入网许可验证，在此基础上进行去中心化的gossip组网，网络传播支持P2P和Pub/Sub两种方式
 - 共识层：完成区块的输入共识和输出共识。采用兼顾实时性和安全性的CFRD算法，既照顾到交易的实时性要求，又能在一定程度防止节点串通作弊；输入共识对入块的交易顺序达成一致，输出共识对交易顺序执行的结果达成一致
