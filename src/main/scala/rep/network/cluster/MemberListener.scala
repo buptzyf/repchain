@@ -210,16 +210,21 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
         RepLogger.sendAlertToDB(new AlertInfo("NETWORK",2,s"Node Name=${pe.getSysTag},IP has Changed."))
           System.err.println(s"UnreachableMember,ipChange:printer=${pe.getSysTag} ")
           if(!this.isRestart){
+
+            preloadNodesMap.remove(member.address)
+            pe.getNodeMgr.removeNode(member.address)
+            pe.getNodeMgr.removeStableNode(member.address)
+            sendEvent(EventType.PUBLISH_INFO, mediator, NodeHelp.getNodeName(member.roles), Topic.Event, Event.Action.MEMBER_DOWN)
+
             System.err.println(s"UnreachableMember,unreachable restart:printer=${pe.getSysTag}")
             this.isRestart = true
             RepChainMgr.ReStart(pe.getSysTag)
           }
       }
 
-      preloadNodesMap.remove(member.address)
-      pe.getNodeMgr.removeNode(member.address)
-      pe.getNodeMgr.removeStableNode(member.address)
-      sendEvent(EventType.PUBLISH_INFO, mediator, NodeHelp.getNodeName(member.roles), Topic.Event, Event.Action.MEMBER_DOWN)
+
+
+
 
     /*case event: akka.remote.DisassociatedEvent => //ignore
       RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("DisassociatedEvent: {}. {} nodes cluster" + "~" + event.remoteAddress.toString))
