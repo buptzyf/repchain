@@ -77,6 +77,8 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
 
   var preloadNodesMap = HashMap[Address, (Long, String)]()
 
+  var unreachableMembers = HashMap[String,Long]()
+
   private var isStartSynch = false
   private var isRestart = false
 
@@ -128,6 +130,8 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
     case MemberUp(member) =>
       RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("Member is Up: {}. {} nodes in cluster" + "~" + member.address + "~" + pe.getNodeMgr.getNodes.mkString("|")))
       pe.getNodeMgr.putNode(member.address)
+      this.unreachableMembers -= member.address.toString
+
       if (member.roles != null && !member.roles.isEmpty && NodeHelp.isCandidatorNode(member.roles)) {
         RepLogger.sendAlertToDB(new AlertInfo("NETWORK",4,s"Node Name=${NodeHelp.getNodeName(member.roles)},Node Address=${member.address.toString},is up."))
         preloadNodesMap.put(member.address, (TimeUtils.getCurrentTime(), NodeHelp.getNodeName(member.roles)))
@@ -136,6 +140,7 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
       } else {
         RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"Member is Up:  nodes is not condidator,node address=${member.address.toString}"))
       }
+
       schedulerLink = scheduler.scheduleOnce((
         //TimePolicy.getSysNodeStableDelay +
           TimePolicy.getStableTimeDur).millis, self, Recollection)
@@ -143,6 +148,7 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
     case Recollection =>
       schedulerLink = clearSched()
       RepLogger.trace(RepLogger.System_Logger, this.getLogMsgPrefix(" MemberListening recollection"))
+
       preloadNodesMap.foreach(node => {
         if (isStableNode(node._2._1, TimePolicy.getSysNodeStableDelay)) {
           pe.getNodeMgr.putStableNode(node._1, node._2._2)
@@ -187,6 +193,8 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
       System.err.println(s"MemberRemoved:printer=${pe.getSysTag} ~~ removed=${pe.getNodeMgr.getNodeName4AddrString(member.address.toString)}")
 
       val tmp = pe.getNodeMgr.getNodeName4AddrString(member.address.toString)
+      this.unreachableMembers -= member.address.toString
+
       if(tmp.equals(pe.getSysTag)){
         //RepChainMgr.ReStart(pe.getSysTag)
         RepLogger.sendAlertToDB(new AlertInfo("NETWORK",2,s"Node Name=${pe.getSysTag},Node Address=${member.address.toString},is remove."))
@@ -206,25 +214,40 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
     case UnreachableMember(member)=>
       RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("UnreachableMember is : {}. {} nodes cluster" + "~" + member.address))
       System.err.println(s"UnreachableMember:printer=${pe.getSysTag} ~~ removed=${pe.getNodeMgr.getNodeName4AddrString(member.address.toString)}")
-      if( SystemProfile.getGenesisNodeName != pe.getSysTag && RepChainMgr.isChangeIpAddress(pe.getSysTag)){
-        RepLogger.sendAlertToDB(new AlertInfo("NETWORK",2,s"Node Name=${pe.getSysTag},IP has Changed."))
+
+      val tmp = pe.getNodeMgr.getNodeName4AddrString(member.address.toString)
+
+      if(tmp != ""){
+        if(!this.unreachableMembers.contains(member.address.toString)){
+          this.unreachableMembers += member.address.toString->System.currentTimeMillis()
+        }
+
+        preloadNodesMap.remove(member.address)
+        pe.getNodeMgr.removeNode(member.address)
+        pe.getNodeMgr.removeStableNode(member.address)
+        sendEvent(EventType.PUBLISH_INFO, mediator, NodeHelp.getNodeName(member.roles), Topic.Event, Event.Action.MEMBER_DOWN)
+      }
+
+      if(pe.getNodeMgr.getStableNodeNames.size == 1 && this.unreachableMembers.size >= 3 && //this.isUnreachableTimeout &&
+                                            this.unreachableMembers.size >= (SystemProfile.getVoteNodeList.size()/2 + 1) &&
+                                                                                            SystemProfile.getGenesisNodeName != pe.getSysTag){
+        //所有其他节点都是不可达节点，不是创世节点，可以重启
+        if(!this.isRestart){
+          System.err.println(s"UnreachableMember,unreachable restart:printer=${pe.getSysTag}")
+          this.isRestart = true
+          RepChainMgr.ReStart(pe.getSysTag)
+        }
+      }else{
+        if( SystemProfile.getGenesisNodeName != pe.getSysTag && RepChainMgr.isChangeIpAddress(pe.getSysTag)){
+          RepLogger.sendAlertToDB(new AlertInfo("NETWORK",2,s"Node Name=${pe.getSysTag},IP has Changed."))
           System.err.println(s"UnreachableMember,ipChange:printer=${pe.getSysTag} ")
           if(!this.isRestart){
-
-            preloadNodesMap.remove(member.address)
-            pe.getNodeMgr.removeNode(member.address)
-            pe.getNodeMgr.removeStableNode(member.address)
-            sendEvent(EventType.PUBLISH_INFO, mediator, NodeHelp.getNodeName(member.roles), Topic.Event, Event.Action.MEMBER_DOWN)
-
             System.err.println(s"UnreachableMember,unreachable restart:printer=${pe.getSysTag}")
             this.isRestart = true
             RepChainMgr.ReStart(pe.getSysTag)
           }
+        }
       }
-
-
-
-
 
     /*case event: akka.remote.DisassociatedEvent => //ignore
       RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("DisassociatedEvent: {}. {} nodes cluster" + "~" + event.remoteAddress.toString))
@@ -244,5 +267,20 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
       pe.getNodeMgr.removeStableNode(member.address)*/
 
     case _: MemberEvent => // ignore
+  }
+
+  def isUnreachableTimeout:Boolean={
+    var b = true
+    val timeout = 10000
+    val start = System.currentTimeMillis()
+    breakable(
+    this.unreachableMembers.keySet.foreach(key =>{
+      if((start - this.unreachableMembers(key)) < timeout ){
+        b = false
+        break
+      }
+    })
+    )
+    b
   }
 }
