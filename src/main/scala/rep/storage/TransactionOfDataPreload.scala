@@ -25,7 +25,7 @@ class TransactionOfDataPreload(txid:String,dbop:ImpDataPreload) {
     var rb : Array[Byte] = null
     try{
       //if(this.isStartWrite) throw new Exception("Can't read after starting to write ")
-      if(this.update.contains(key)){
+      if(this.update.containsKey(key)){
         rb = this.update.get(key)
       }else{
         rb = this.dbop.Get(key)
