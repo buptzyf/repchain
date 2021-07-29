@@ -139,7 +139,7 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
         }
       }
     case ResendEndorseInfo(endorer)=>
-      if(!pe.isSynching){
+      if(!pe.isSynching && ConsensusCondition.CheckWorkConditionOfSystem(pe.getNodeMgr.getStableNodes.size)){
         if (this.block != null && this.block.previousBlockHash.toStringUtf8() == pe.getCurrentBlockHash ) {
           if(this.router != null){
             router.route(RequesterOfEndorsement(this.block, this.blocker, endorer), self)
