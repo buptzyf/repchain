@@ -255,10 +255,13 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
   def terminateOfSystem={
     var r = true
     implicit val timeout = Timeout(120.seconds)
+    val start = System.currentTimeMillis()
+    System.err.println(s"cluster start terminate ~~ address=${clusterAddr.toString},systemname=${this.sysTag}")
     try{
       val result = sysActor.terminate
       val result1 = Await.result(result, timeout.duration).asInstanceOf[Terminated]
       r = result1.getAddressTerminated
+      System.err.println(s"cluster terminated ~~ address=${clusterAddr.toString},systemname=${this.sysTag},finish time(s)=${(System.currentTimeMillis()-start)/1000}")
     }catch{
       case e:Exception =>
         r = false

@@ -77,7 +77,7 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
 
   var preloadNodesMap = HashMap[Address, (Long, String)]()
 
-  var unreachableMembers = HashMap[String,Long]()
+  //var unreachableMembers = HashMap[String,Long]()
 
   private var isStartSynch = false
   private var isRestart = false
@@ -130,7 +130,7 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
     case MemberUp(member) =>
       RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("Member is Up: {}. {} nodes in cluster" + "~" + member.address + "~" + pe.getNodeMgr.getNodes.mkString("|")))
       pe.getNodeMgr.putNode(member.address)
-      this.unreachableMembers -= member.address.toString
+      //this.unreachableMembers -= member.address.toString
 
       if (member.roles != null && !member.roles.isEmpty && NodeHelp.isCandidatorNode(member.roles)) {
         RepLogger.sendAlertToDB(new AlertInfo("NETWORK",4,s"Node Name=${NodeHelp.getNodeName(member.roles)},Node Address=${member.address.toString},is up."))
@@ -193,7 +193,7 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
       System.err.println(s"MemberRemoved:printer=${pe.getSysTag} ~~ removed=${pe.getNodeMgr.getNodeName4AddrString(member.address.toString)}")
 
       val tmp = pe.getNodeMgr.getNodeName4AddrString(member.address.toString)
-      this.unreachableMembers -= member.address.toString
+      //this.unreachableMembers -= member.address.toString
 
       if(tmp.equals(pe.getSysTag)){
         //RepChainMgr.ReStart(pe.getSysTag)
@@ -213,6 +213,12 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
 
     case UnreachableMember(member)=>
       RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("UnreachableMember is : {}. {} nodes cluster" + "~" + member.address))
+      System.err.println(s"UnreachableMember:printer=${pe.getSysTag} ~~ removed=${pe.getNodeMgr.getNodeName4AddrString(member.address.toString)}")
+      preloadNodesMap.remove(member.address)
+      pe.getNodeMgr.removeNode(member.address)
+      pe.getNodeMgr.removeStableNode(member.address)
+      sendEvent(EventType.PUBLISH_INFO, mediator, NodeHelp.getNodeName(member.roles), Topic.Event, Event.Action.MEMBER_DOWN)
+      /*RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("UnreachableMember is : {}. {} nodes cluster" + "~" + member.address))
       System.err.println(s"UnreachableMember:printer=${pe.getSysTag} ~~ removed=${pe.getNodeMgr.getNodeName4AddrString(member.address.toString)}")
 
       val tmp = pe.getNodeMgr.getNodeName4AddrString(member.address.toString)
@@ -247,13 +253,39 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
             RepChainMgr.ReStart(pe.getSysTag)
           }
         }
+      }*/
+
+    case ReachableMember(member) =>
+
+      RepLogger.trace(RepLogger.System_Logger, this.getLogMsgPrefix(" ReachableMember recollection"))
+      val addr = member.address
+      if(member.status == MemberStatus.up){
+        if(member.roles != null && !member.roles.isEmpty && NodeHelp.isCandidatorNode(member.roles)){
+          val name = NodeHelp.getNodeName(member.roles)
+          pe.getNodeMgr.putNode(addr)
+          pe.getNodeMgr.putStableNode(addr, name)
+          sendEvent(EventType.PUBLISH_INFO, mediator, name, Topic.Event, Event.Action.MEMBER_UP)
+        }else{
+          RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"ReachableMember is Up:  nodes is not condidator,node address=${member.address.toString}"))
+        }
+      }else{
+        RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"ReachableMember is not Up:  node address=${member.address.toString}"))
       }
 
-    /*case event: akka.remote.DisassociatedEvent => //ignore
-      RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("DisassociatedEvent: {}. {} nodes cluster" + "~" + event.remoteAddress.toString))
-      preloadNodesMap.remove(event.remoteAddress)
-      pe.getNodeMgr.removeNode(event.remoteAddress)
-      pe.getNodeMgr.removeStableNode(event.remoteAddress)*/
+
+      if (!this.isStartSynch) {
+        if (ConsensusCondition.CheckWorkConditionOfSystem(pe.getNodeMgr.getStableNodes.size)) {
+          //组网成功之后开始系统同步
+          RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"ReachableMember Recollection:  system startup ,start sync,node name=${pe.getSysTag}"))
+          pe.getActorRef(CFRDActorType.ActorType.synchrequester) ! StartSync(true)
+          this.isStartSynch = true
+        } else {
+          RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"ReachableMember Recollection:  nodes less ${SystemProfile.getVoteNodeMin},node name=${pe.getSysTag}"))
+        }
+      } else {
+        RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"ReachableMember Recollection:  local consensus start finish,node name=${pe.getSysTag}"))
+      }
+
     case MemberLeft(member) => //ignore
       RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("MemberLeft: {}. {} nodes cluster" + "~" + member.address.toString))
       /*preloadNodesMap.remove(member.address)
@@ -269,7 +301,7 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
     case _: MemberEvent => // ignore
   }
 
-  def isUnreachableTimeout:Boolean={
+  /*def isUnreachableTimeout:Boolean={
     var b = true
     val timeout = 10000
     val start = System.currentTimeMillis()
@@ -282,5 +314,5 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
     })
     )
     b
-  }
+  }*/
 }
