@@ -49,6 +49,7 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
 
   private var router: Router = null
   private var block: Block = null
+  private var resendTimes:Int = 0
   private var blocker: String = null
   private var recvedEndorse = new HashMap[String, Signature]()
 
@@ -72,11 +73,13 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
   private def resetEndorseInfo(block: Block, blocker: String) = {
     this.block = block
     this.blocker = blocker
+    this.resendTimes = 0
     this.recvedEndorse = this.recvedEndorse.empty
   }
 
   private def clearEndorseInfo = {
     this.block = null
+    this.resendTimes = 0
     this.blocker = null
     this.recvedEndorse = this.recvedEndorse.empty
   }
@@ -142,7 +145,13 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
       if(!pe.isSynching && ConsensusCondition.CheckWorkConditionOfSystem(pe.getNodeMgr.getStableNodes.size)){
         if (this.block != null && this.block.previousBlockHash.toStringUtf8() == pe.getCurrentBlockHash ) {
           if(this.router != null){
-            router.route(RequesterOfEndorsement(this.block, this.blocker, endorer), self)
+            if(this.resendTimes <= SystemProfile.getEndorseResendTimes){
+              this.resendTimes += 1
+              router.route(RequesterOfEndorsement(this.block, this.blocker, endorer), self)
+            }else{
+              RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"resend endorse info,resend times eq ${this.resendTimes} ,height=${block.height},local height=${pe.getCurrentHeight}"))
+            }
+
           }else{
             RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"collectioner's router is null,height=${block.height},local height=${pe.getCurrentHeight}"))
           }

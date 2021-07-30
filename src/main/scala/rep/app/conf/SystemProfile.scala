@@ -61,6 +61,9 @@ object SystemProfile {
   private[this] var _NUMBER_OF_ENDORSEMENT: Int = 2
   private[this] var _TYPE_OF_CONSENSUS:String = "PBFT"
 
+  private[this] var _ENDORSE_RESEND_TIMES:Int = 3
+  private[this] var _SYNCH_TYPE:String = "CFRD"
+
   //zhj
   private[this] var _PBFT_F: Int = 1
 
@@ -122,6 +125,17 @@ object SystemProfile {
   private def ALIVE_TIME: Int = _ALIVE_TIME
   private def PRISMA_URL: String = _PRISMA_URL
 
+  private def ENDORSE_RESEND_TIMES:Int = _ENDORSE_RESEND_TIMES
+  private def SYNCH_TYPE:String = _SYNCH_TYPE
+
+
+  private def ENDORSE_RESEND_TIMES_=(value:Int):Unit={
+    _ENDORSE_RESEND_TIMES = value
+  }
+
+  private def SYNCH_TYPE_=(value:String):Unit={
+    _SYNCH_TYPE = value
+  }
 
   private def IS_OUTPUT_ALERT_=(value:Boolean):Unit={
     _IS_OUTPUT_ALERT = value
@@ -299,6 +313,9 @@ object SystemProfile {
     NUMBER_OF_ENDORSEMENT_=(config.getInt("system.number_of_endorsement"))
     BLOCKNUMBER_OF_RAFT_=(config.getInt("system.consensus.blocknumberofraft"))
     TYPE_OF_CONSENSUS_=(config.getString("system.consensus.type"))
+
+    SYNCH_TYPE_=(config.getString("system.consensus.synch_type"))
+
     
     DBPATH_= (config.getString("system.storage.dbpath"))
     BLOCKPATH_= (config.getString("system.storage.blockpath"))
@@ -310,6 +327,8 @@ object SystemProfile {
     MAX_THREADS_=(config.getInt("system.output_alert.max_threads"))
     ALIVE_TIME_=(config.getInt("system.output_alert.alive_time"))
     PRISMA_URL_=(config.getString("system.output_alert.prisma_url"))
+
+    ENDORSE_RESEND_TIMES_=(config.getInt("system.time.timeout.endorse_resend_times"))
   }
 
   //zhj
@@ -374,4 +393,7 @@ object SystemProfile {
   def getMaxThreads = MAX_THREADS
   def getAliveTime = ALIVE_TIME
   def getPrismaUrl = PRISMA_URL
+
+  def getSynchType:String=SYNCH_TYPE
+  def getEndorseResendTimes:Int=ENDORSE_RESEND_TIMES
 }

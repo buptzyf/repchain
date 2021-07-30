@@ -1,6 +1,7 @@
 package rep.network.module.cfrd
 
 import akka.actor.Props
+import rep.app.conf.SystemProfile
 import rep.log.RepLogger
 import rep.network.cache.TransactionOfCollectioner
 import rep.network.cache.cfrd.TransactionPoolOfCFRD
@@ -14,6 +15,7 @@ import rep.network.sync.request.cfrd.SynchRequesterOfCFRD
 import rep.network.consensus.cfrd.block.BlockerOfCFRD
 import rep.network.consensus.cfrd.vote.VoterOfCFRD
 import rep.network.persistence.cfrd.StoragerOfCFRD
+import rep.network.sync.request.raft.SynchRequesterOfRAFT
 
 
 /**
@@ -46,8 +48,12 @@ class ModuleManagerOfCFRD(moduleName: String, sysTag: String, enableStatistic: B
     pe.register(CFRDActorType.ActorType.dispatchofRecvendorsement,context.actorOf(DispatchOfRecvEndorsement.props("dispatchofRecvendorsement"), "dispatchofRecvendorsement"))
     pe.register(CFRDActorType.ActorType.voter,context.actorOf(VoterOfCFRD.props("voter"), "voter"))
 
+    if(SystemProfile.getSynchType == "CFRD"){
+      pe.register(CFRDActorType.ActorType.synchrequester,context.actorOf(SynchRequesterOfCFRD.props("synchrequester"), "synchrequester"))
+    }else if(SystemProfile.getSynchType == "RAFT"){
+      pe.register(CFRDActorType.ActorType.synchrequester,context.actorOf(SynchRequesterOfRAFT.props("synchrequester"), "synchrequester"))
+    }
 
-    pe.register(CFRDActorType.ActorType.synchrequester,context.actorOf(SynchRequesterOfCFRD.props("synchrequester"), "synchrequester"))
     pe.register(CFRDActorType.ActorType.synchresponser,context.actorOf(SynchronizeResponser.props("synchresponser"), "synchresponser"))
   }
 
