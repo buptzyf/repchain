@@ -3,12 +3,12 @@ package rep.network.consensus.cfrd.block
 import akka.actor.Props
 import rep.log.{RepLogger, RepTimeTracer}
 import rep.network.autotransaction.Topic
-import rep.network.consensus.cfrd.MsgOfCFRD.{CollectEndorsement, CreateBlock,/* CreateBlockTPS,*/ VoteOfBlocker}
+import rep.network.consensus.cfrd.MsgOfCFRD.{CollectEndorsement, CreateBlock, VoteOfBlocker}
 import rep.network.consensus.common.block.IBlocker
 import rep.network.module.cfrd.CFRDActorType
 import rep.network.util.NodeHelp
 import rep.protos.peer.{Block, Event, Transaction, TransactionResult}
-import rep.utils.GlobalUtils.EventType
+import rep.utils.GlobalUtils.{BlockerInfo, EventType}
 import rep.utils.SerializeUtils
 
 /**
@@ -28,6 +28,7 @@ class BlockerOfCFRD(moduleName: String) extends IBlocker(moduleName){
   var trsTPS : Seq[TransactionResult] = null*/
 
   var preblock: Block = null
+  var blockerInfo : BlockerInfo = null
 
   override def preStart(): Unit = {
     RepLogger.info(RepLogger.Consensus_Logger, this.getLogMsgPrefix("CFRDBlocker module start"))
@@ -55,6 +56,7 @@ class BlockerOfCFRD(moduleName: String) extends IBlocker(moduleName){
     if (blc != null) {
       RepTimeTracer.setEndTime(pe.getSysTag, "createBlock", System.currentTimeMillis(), blc.height, blc.transactions.size)
       this.preblock = blc
+      this.blockerInfo = pe.getBlocker
       schedulerLink = clearSched()
       //在发出背书时，告诉对方我是当前出块人，取出系统的名称
       RepTimeTracer.setStartTime(pe.getSysTag, "Endorsement", System.currentTimeMillis(), blc.height, blc.transactions.size)
@@ -76,6 +78,18 @@ class BlockerOfCFRD(moduleName: String) extends IBlocker(moduleName){
           //是出块节点
           if (preblock == null || (preblock.previousBlockHash.toStringUtf8() != pe.getBlocker.voteBlockHash)) {
             CreateBlockHandler
+          }else{
+            if(preblock != null && preblock.previousBlockHash.toStringUtf8() == pe.getBlocker.voteBlockHash && this.blockerInfo != null
+                        && this.blockerInfo.VoteIndex < pe.getBlocker.VoteIndex ){
+                  //这种情况说明系统在出块超时重新抽签是又抽到了自己，由于之前已经在同一高度上建立了新块，但是在背书上已经失败，背书失败的原因是可能是抽签不同步导致背书失败。
+              // 由于在窄带上考虑带宽的问题，限制了背书信息的发送，背书发送模块停止，在此发送消息，启动再次背书。
+              //此处就是发送再次背书的消息，以启动出块
+              //更新抽签索引
+              this.blockerInfo = pe.getBlocker
+              //发送背书启动消息给背书收集器
+              RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"created new block,restart endorsement,new height=${this.preblock.height},local height=${pe.getCurrentHeight}" + "~" + selfAddr))
+              pe.getActorRef(CFRDActorType.ActorType.endorsementcollectioner) ! CollectEndorsement(this.preblock, pe.getSysTag)
+            }
           }
         } else {
           //出块标识错误,暂时不用做任何处理

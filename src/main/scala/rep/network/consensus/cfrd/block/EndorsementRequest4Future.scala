@@ -18,18 +18,20 @@ package rep.network.consensus.cfrd.block
 
 import akka.util.Timeout
 import akka.pattern.ask
+
 import scala.concurrent._
 import akka.actor.{ActorSelection, Address, Props}
-import rep.app.conf.{ TimePolicy}
+import rep.app.conf.TimePolicy
 import rep.network.base.ModuleBase
 import rep.protos.peer._
 import akka.pattern.AskTimeoutException
 import rep.network.consensus.util.BlockVerify
-import rep.network.consensus.cfrd.MsgOfCFRD.{/*CreateBlockTPS,*/ EndorsementInfo, RequesterOfEndorsement, ResendEndorseInfo, ResultFlagOfEndorse, ResultOfEndorseRequester, ResultOfEndorsed}
+import rep.network.consensus.cfrd.MsgOfCFRD.{EndorsementInfo, RequesterOfEndorsement, ResendEndorseInfo, ResultFlagOfEndorse, ResultOfEndorseRequester, ResultOfEndorsed}
 import rep.network.sync.SyncMsg.StartSync
 import rep.log.RepLogger
 import rep.log.RepTimeTracer
 import rep.network.module.cfrd.CFRDActorType
+import rep.utils.GlobalUtils.BlockerInfo
 
 /**
  * Created by jiangbuyun on 2020/03/19.
@@ -101,8 +103,13 @@ class EndorsementRequest4Future(moduleName: String) extends ModuleBase(moduleNam
               context.parent ! ResultOfEndorseRequester(false, null, reqinfo.blc.hashOfBlock.toStringUtf8(), reqinfo.endorer)
               RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"--------endorsementRequest4Future recv endorsement result must synch,height=${reqinfo.blc.height},local height=${pe.getCurrentHeight} "))
             } else {
-               context.parent ! ResendEndorseInfo(reqinfo.endorer)
-               RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"--------endorsement node's height low,must resend endorsement ,height=${reqinfo.blc.height},local height=${pe.getCurrentHeight} "))
+              /*if(isSameVoteInfo(result.endorserOfVote) && result.endorserOfVote.VoteIndex > pe.getBlocker.VoteIndex) {
+                //背书时候发现背书节点的抽签的索引大于自己，更新抽签索引，发出强制抽签消息给抽签模块
+
+              }else{*/
+                context.parent ! ResendEndorseInfo(reqinfo.endorer)
+                RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"--------endorsement node's height low,must resend endorsement ,height=${reqinfo.blc.height},local height=${pe.getCurrentHeight} "))
+             /* }*/
             }
           }else if(result.result == ResultFlagOfEndorse.EnodrseNodeIsSynching){
             context.parent ! ResendEndorseInfo(reqinfo.endorer)
@@ -116,6 +123,10 @@ class EndorsementRequest4Future(moduleName: String) extends ModuleBase(moduleNam
       }
     
     RepTimeTracer.setEndTime(pe.getSysTag, s"Endorsement-request-${moduleName}", System.currentTimeMillis(),reqinfo.blc.height,reqinfo.blc.transactions.size)
+  }
+
+  private def isSameVoteInfo(voteInfoOfEndorser:BlockerInfo):Boolean={
+    if(voteInfoOfEndorser.voteBlockHash == pe.getBlocker.voteBlockHash && voteInfoOfEndorser.VoteHeight == pe.getBlocker.VoteHeight) true else false
   }
 
   override def receive = {

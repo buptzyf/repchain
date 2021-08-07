@@ -15,6 +15,9 @@ object MsgOfCFRD {
   case object VoteOfBlocker
   //通知抽签模块，需要强制抽签
   case object VoteOfForce
+
+  case class ForceVoteInfo(blockHash:String,blockHeight:String,voteIndex:Int)
+  case class SpecifyVoteHeight(info:ForceVoteInfo)
   ////////////////////////////////Vote（抽签）消息，结束//////////////////////////////
 
 
@@ -39,6 +42,8 @@ object MsgOfCFRD {
   //背书请求者消息
   case class RequesterOfEndorsement(blc: Block, blocker: String, endorer: Address)
   case class ResendEndorseInfo(endorer: Address)
+  case class DelayResendEndorseInfo(blockHash:String)
+  case class VoteIndexChange(VoteHash:String,VoteIndex:Int)
 
   //给背书人的背书消息
   case class EndorsementInfo(blc: Block, blocker: String)
@@ -50,6 +55,7 @@ object MsgOfCFRD {
 
   //背书收集者消息
   case class CollectEndorsement(blc: Block, blocker: String)
+
 
   //背书人返回的背书结果
   case class ResultOfEndorsed(result: Int, endor: Signature, BlockHash: String,endorserOfChainInfo:BlockchainInfo,endorserOfVote:BlockerInfo)

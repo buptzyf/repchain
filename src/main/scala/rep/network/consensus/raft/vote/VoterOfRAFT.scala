@@ -3,7 +3,7 @@ package rep.network.consensus.raft.vote
 import akka.actor.Props
 import rep.app.conf.{SystemCertList, SystemProfile, TimePolicy}
 import rep.log.RepLogger
-import rep.network.consensus.cfrd.MsgOfCFRD.{CreateBlock, VoteOfBlocker, VoteOfForce}
+import rep.network.consensus.cfrd.MsgOfCFRD.{CreateBlock, ForceVoteInfo, VoteOfBlocker, VoteOfForce}
 import rep.network.consensus.common.algorithm.IRandomAlgorithmOfVote
 import rep.network.consensus.common.vote.IVoter
 import rep.network.module.cfrd.CFRDActorType
@@ -56,7 +56,7 @@ class VoterOfRAFT (moduleName: String) extends IVoter(moduleName: String) {
     schedulerLink = scheduler.scheduleOnce(TimePolicy.getVoteRetryDelay.millis, self, VoteOfBlocker)
     }
 
-  override protected def vote(isForce: Boolean): Unit = {
+  override protected def vote(isForce: Boolean,forceInfo:ForceVoteInfo): Unit = {
     if(this.Blocker.blocker == ""){
       RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},first voter,currentHeight=${pe.getCurrentHeight},currentHash=${pe.getCurrentBlockHash}" + "~" + selfAddr))
       val maxinfo = pe.getStartVoteInfo
@@ -97,10 +97,10 @@ class VoterOfRAFT (moduleName: String) extends IVoter(moduleName: String) {
   override def receive: Receive = {
     case VoteOfBlocker =>
       if (NodeHelp.isCandidateNow(pe.getSysTag, SystemCertList.getSystemCertList)) {
-        voteMsgHandler(false)
+        voteMsgHandler(false,null)
       }
     case VoteOfForce=>
-      voteMsgHandler(true)
+      voteMsgHandler(true,null)
   }
 
 }
