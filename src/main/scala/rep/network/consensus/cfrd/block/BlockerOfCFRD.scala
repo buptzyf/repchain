@@ -62,7 +62,7 @@ class BlockerOfCFRD(moduleName: String) extends IBlocker(moduleName){
       RepTimeTracer.setStartTime(pe.getSysTag, "Endorsement", System.currentTimeMillis(), blc.height, blc.transactions.size)
       //RepLogger.print(RepLogger.zLogger,"send CollectEndorsement, " + pe.getSysTag
       //  + ", " + pe.getCurrentBlockHash+ ", " + blc.previousBlockHash.toStringUtf8)
-      pe.getActorRef(CFRDActorType.ActorType.endorsementcollectioner) ! CollectEndorsement(this.preblock, pe.getSysTag)
+      pe.getActorRef(CFRDActorType.ActorType.endorsementcollectioner) ! CollectEndorsement(this.preblock, pe.getSysTag,pe.getBlocker.VoteIndex)
     } else {
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("create new block error,CreateBlock is null" + "~" + selfAddr))
       pe.getActorRef(CFRDActorType.ActorType.voter) ! VoteOfBlocker
@@ -88,7 +88,7 @@ class BlockerOfCFRD(moduleName: String) extends IBlocker(moduleName){
               this.blockerInfo = pe.getBlocker
               //发送背书启动消息给背书收集器
               RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"created new block,restart endorsement,new height=${this.preblock.height},local height=${pe.getCurrentHeight}" + "~" + selfAddr))
-              pe.getActorRef(CFRDActorType.ActorType.endorsementcollectioner) ! CollectEndorsement(this.preblock, pe.getSysTag)
+              pe.getActorRef(CFRDActorType.ActorType.endorsementcollectioner) ! CollectEndorsement(this.preblock, pe.getSysTag,pe.getBlocker.VoteIndex)
             }
           }
         } else {
