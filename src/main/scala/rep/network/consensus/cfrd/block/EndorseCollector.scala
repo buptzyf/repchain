@@ -22,7 +22,7 @@ import akka.routing._
 import rep.app.conf.{SystemProfile, TimePolicy}
 import rep.network.base.ModuleBase
 import rep.network.consensus.common.MsgOfConsensus.ConfirmedBlock
-import rep.network.consensus.cfrd.MsgOfCFRD.{CollectEndorsement, DelayResendEndorseInfo, RequesterOfEndorsement, ResendEndorseInfo, ResultOfEndorseRequester, VoteOfBlocker}
+import rep.network.consensus.cfrd.MsgOfCFRD.{CollectEndorsement, DelayResendEndorseInfo, ForceVoteInfo, RequesterOfEndorsement, ResendEndorseInfo, ResultOfEndorseRequester, VoteOfBlocker}
 import rep.protos.peer._
 import rep.utils.GlobalUtils.EventType
 import rep.network.consensus.util.BlockHelp
@@ -51,8 +51,7 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
   private var router: Router = null
   private var block: Block = null
   private var resendTimes:Int = 0
-  private var blocker: String = null
-  private var blockerIndex : Int = 0
+  private var blocker: ForceVoteInfo = null
   private var recvedEndorse = new HashMap[String, Signature]()
 
   private var resendEndorsements = new ArrayBuffer[Address]
@@ -74,11 +73,10 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
     }
   }
 
-  private def resetEndorseInfo(block: Block, blocker: String,blockerIndex: Int) = {
+  private def resetEndorseInfo(block: Block, blocker: ForceVoteInfo) = {
     schedulerLink = clearSched()
     this.block = block
     this.blocker = blocker
-    this.blockerIndex = blockerIndex
     this.resendTimes = 0
     this.recvedEndorse = this.recvedEndorse.empty
     this.resendEndorsements.clear()
@@ -117,15 +115,15 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
   }
 
   override def receive = {
-    case CollectEndorsement(block, blocker,index) =>
+    case CollectEndorsement(block, blocker) =>
       if(!pe.isSynching){
         createRouter
         if (this.block != null && this.block.hashOfBlock.toStringUtf8() == block.hashOfBlock.toStringUtf8()) {
           //需要重启背书
-          if(this.blockerIndex < index && blocker == this.blocker){
+          if(this.blocker.voteIndex < blocker.voteIndex && blocker.blocker == this.blocker.blocker){
             if( block.previousBlockHash.toStringUtf8() == pe.getCurrentBlockHash){
               RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"collectioner recv endorsement,height=${block.height},local height=${pe.getCurrentHeight}"))
-              resetEndorseInfo(block, blocker,index)
+              resetEndorseInfo(block, blocker)
               pe.getNodeMgr.getStableNodes.foreach(f => {
                 RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"collectioner send endorsement to requester,height=${block.height},local height=${pe.getCurrentHeight}"))
                 router.route(RequesterOfEndorsement(block, blocker, f), self)
@@ -138,7 +136,7 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
         } else {
           if( block.previousBlockHash.toStringUtf8() == pe.getCurrentBlockHash){
             RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"collectioner recv endorsement,height=${block.height},local height=${pe.getCurrentHeight}"))
-            resetEndorseInfo(block, blocker,index)
+            resetEndorseInfo(block, blocker)
             pe.getNodeMgr.getStableNodes.foreach(f => {
               RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"collectioner send endorsement to requester,height=${block.height},local height=${pe.getCurrentHeight}"))
               router.route(RequesterOfEndorsement(block, blocker, f), self)

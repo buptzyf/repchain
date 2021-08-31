@@ -20,7 +20,7 @@ import java.io.File
 
 import akka.actor.{ActorRef, ActorSystem, Address, Props}
 import akka.cluster.Cluster
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.{Config, ConfigFactory, ConfigValue, ConfigValueFactory}
 import rep.app.conf.{SystemConf, SystemProfile, TimePolicy}
 import rep.app.system.ClusterSystem.InitType
 import rep.network.base.ModuleBase
@@ -29,7 +29,6 @@ import rep.storage.cfg._
 import java.io.File
 
 import scala.collection.mutable
-import com.typesafe.config.ConfigValueFactory
 import java.util.List
 import java.util.ArrayList
 
@@ -40,9 +39,11 @@ import rep.log.RepLogger
 import scala.concurrent.Await
 import scala.concurrent.duration._
 import akka.actor.Terminated
+import rep.app.TxPools
 import rep.log.httplog.AlertInfo
 import rep.network.module.pbft.ModuleManagerOfPBFT
 import rep.network.module.raft.ModuleManagerOfRAFT
+import rep.network.tools.transpool.TransactionPoolMgr
 
 
 /**
@@ -258,6 +259,8 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
     val start = System.currentTimeMillis()
     System.err.println(s"cluster start terminate ~~ address=${clusterAddr.toString},systemname=${this.sysTag}")
     try{
+      val mgr = TxPools.getPoolMgr(this.sysTag)
+      mgr.saveTransaction(this.sysTag)
       val result = sysActor.terminate
       val result1 = Await.result(result, timeout.duration).asInstanceOf[Terminated]
       r = result1.getAddressTerminated
@@ -284,6 +287,8 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
    */
   def start = {
     SystemProfile.initConfigSystem(sysActor.settings.config)
+
+    //println(this.getConf.root().toString)
 
     if (!hasDiskSpace) {
       RepLogger.sendAlertToDB(new AlertInfo("STORAGE",1,s"Node Name=${this.sysTag},Insufficient disk space."))

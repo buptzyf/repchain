@@ -20,12 +20,23 @@ import akka.remote.transport.Transport.InvalidAssociationException
 import rep.app.system.ClusterSystem
 import rep.app.system.ClusterSystem.InitType
 import rep.utils.NetworkTool
+import sun.misc.Signal
 
 /**
  * Repchain app start
  * Created by User on 2017/9/24.
  */
 object Repchain_Single {
+
+  def getOSSignalType:String={
+    if (System.getProperties().getProperty("os.name").toLowerCase().startsWith("win")){
+      "INT"
+    } else{
+      "USR2"
+    }
+  }
+
+
   def main(args: Array[ String ]): Unit = {
     var systemTag = "1"
     var isDynamicIp = "false"
@@ -42,6 +53,9 @@ object Repchain_Single {
     }else{
       println("parameter error,parameter info:1 cluster name;2 option parameter ,cluster port;3 option parameter, data type is boolean,true or false")
     }
+
+    val sig = new Signal(getOSSignalType)
+    Signal.handle(sig, new shutdownHandler(systemTag))
 
     if(isDynamicIp == "false"){
       RepChainMgr.Startup4Single(new StartParameter(systemTag,port,None))

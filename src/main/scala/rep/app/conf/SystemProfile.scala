@@ -78,6 +78,7 @@ object SystemProfile {
   private[this] var _MAX_THREADS: Int = 10
   private[this] var _ALIVE_TIME: Int = 10
   private[this] var _PRISMA_URL: String = ""
+  private[this] var _IS_PERSISTENCE_TX_TO_DB = 0
 
 
   
@@ -128,6 +129,12 @@ object SystemProfile {
   private def ENDORSE_RESEND_TIMES:Int = _ENDORSE_RESEND_TIMES
   private def SYNCH_TYPE:String = _SYNCH_TYPE
 
+  private def IS_PERSISTENCE_TX_TO_DB:Int = _IS_PERSISTENCE_TX_TO_DB
+
+
+  private def IS_PERSISTENCE_TX_TO_DB_=(value:Int):Unit={
+    _IS_PERSISTENCE_TX_TO_DB = value
+  }
 
   private def ENDORSE_RESEND_TIMES_=(value:Int):Unit={
     _ENDORSE_RESEND_TIMES = value
@@ -301,6 +308,7 @@ object SystemProfile {
     DISKSPACE_ALARM_NUM_=(config.getInt("system.diskspaceManager.diskspacealarm"))
     SERVERPORT_=(config.getInt("system.httpServicePort"))
     CHECKCERTVALIDATE_=(config.getInt("system.checkCertValidate"))
+    IS_PERSISTENCE_TX_TO_DB_=(config.getInt("system.is_persistence_tx_to_db"))
     CONTRACTOPERATIONMODE_=(config.getInt("system.contractOperationMode"))
     ACCOUNTCHAINCODENAEM_= (config.getString("system.account.chaincodename"))
     ACCOUNTCHAINCODEVERSION_=(config.getInt("system.account.chaincodeversion"))
@@ -353,6 +361,8 @@ object SystemProfile {
   def getHasPreloadTransOfApi = HAS_PRELOAD_TRANS_OF_API
   
   def getIsVerifyOfEndorsement = IS_VERIFY_OF_ENDORSEMENT
+
+  def getIsPersistenceTxToDB:Int=IS_PERSISTENCE_TX_TO_DB
   
   def getNumberOfEndorsement = NUMBER_OF_ENDORSEMENT
   

@@ -16,7 +16,7 @@ object MsgOfCFRD {
   //通知抽签模块，需要强制抽签
   case object VoteOfForce
 
-  case class ForceVoteInfo(blockHash:String,blockHeight:String,voteIndex:Int)
+  case class ForceVoteInfo(blockHash:String,blockHeight:Long,voteIndex:Int,blocker:String)
   case class SpecifyVoteHeight(info:ForceVoteInfo)
   ////////////////////////////////Vote（抽签）消息，结束//////////////////////////////
 
@@ -40,21 +40,21 @@ object MsgOfCFRD {
   }
 
   //背书请求者消息
-  case class RequesterOfEndorsement(blc: Block, blocker: String, endorer: Address)
+  case class RequesterOfEndorsement(blc: Block, blocker: ForceVoteInfo, endorer: Address)
   case class ResendEndorseInfo(endorer: Address)
   case class DelayResendEndorseInfo(blockHash:String)
   case class VoteIndexChange(VoteHash:String,VoteIndex:Int)
 
   //给背书人的背书消息
-  case class EndorsementInfo(blc: Block, blocker: String)
+  case class EndorsementInfo(blc: Block, blocker: ForceVoteInfo)
 
-  case class verifyTransOfEndorsement(blc: Block, blocker: String)
-  case class verifyTransRepeatOfEndorsement(blc: Block, blocker: String)
-  case class verifyTransPreloadOfEndorsement(blc: Block, blocker: String)
+  case class verifyTransOfEndorsement(blc: Block, blocker: ForceVoteInfo)
+  case class verifyTransRepeatOfEndorsement(blc: Block, blocker: ForceVoteInfo)
+  case class verifyTransPreloadOfEndorsement(blc: Block, blocker: ForceVoteInfo)
 
 
   //背书收集者消息
-  case class CollectEndorsement(blc: Block, blocker: String,blockerIndex:Int)
+  case class CollectEndorsement(blc: Block, blocker: ForceVoteInfo)
 
 
   //背书人返回的背书结果

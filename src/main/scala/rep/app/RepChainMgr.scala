@@ -9,6 +9,7 @@ import rep.app.system.ClusterSystem.InitType
 import rep.network.consensus.util.BlockVerify
 import akka.cluster.{Cluster, MemberStatus}
 import akka.util.Timeout
+import rep.network.tools.transpool.TransactionPoolMgr
 import rep.utils.NetworkTool
 
 import scala.collection.mutable.ArrayBuffer
@@ -118,6 +119,8 @@ object RepChainMgr {
     if(sys1 != null){
       val sys = sys1._1
       if(sys != None){
+        //val mgr = TxPools.getPoolMgr(SystemName)
+        //mgr.saveTransaction(SystemName)
         var r = killActorSystem(sys.get)
         if(!r){
           Thread.sleep(10000)

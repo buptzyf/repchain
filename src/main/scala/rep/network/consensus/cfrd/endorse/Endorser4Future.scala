@@ -31,7 +31,7 @@ import scala.util.control.Breaks._
 import rep.network.module.ModuleActorType
 import rep.network.module.cfrd.CFRDActorType
 import rep.network.consensus.common.MsgOfConsensus.{PreTransBlock, PreTransBlockResult}
-import rep.network.consensus.cfrd.MsgOfCFRD.{EndorsementInfo, ResultFlagOfEndorse, ResultOfEndorsed, VoteOfForce, verifyTransOfEndorsement, verifyTransPreloadOfEndorsement, verifyTransRepeatOfEndorsement}
+import rep.network.consensus.cfrd.MsgOfCFRD.{EndorsementInfo, ResultFlagOfEndorse, ResultOfEndorsed, SpecifyVoteHeight, VoteOfForce, verifyTransOfEndorsement, verifyTransPreloadOfEndorsement, verifyTransRepeatOfEndorsement}
 import rep.network.consensus.util.{BlockHelp, BlockVerify}
 import rep.network.sync.SyncMsg.StartSync
 import rep.log.RepLogger
@@ -347,14 +347,14 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
   }
 
   private def isAllowEndorse(info: EndorsementInfo): Int = {
-    if (info.blocker == pe.getSysTag) {
+    if (info.blocker.blocker == pe.getSysTag) {
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"endorser is itself,do not endorse,recv endorse request,endorse height=${info.blc.height},local height=${pe.getCurrentHeight}"))
       1
     } else {
       if (NodeHelp.isCandidateNow(pe.getSysTag, SystemCertList.getSystemCertList)) {
         //是候选节点，可以背书
         //if (info.blc.previousBlockHash.toStringUtf8 == pe.getCurrentBlockHash && NodeHelp.isBlocker(info.blocker, pe.getBlocker.blocker)) {
-        if (info.blc.previousBlockHash.toStringUtf8 == pe.getBlocker.voteBlockHash && NodeHelp.isBlocker(info.blocker, pe.getBlocker.blocker)) {
+        if (info.blc.previousBlockHash.toStringUtf8 == pe.getBlocker.voteBlockHash && NodeHelp.isBlocker(info.blocker.blocker, pe.getBlocker.blocker)) {
           //可以进入背书
           RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"vote result equal，allow entry endorse,recv endorse request,endorse height=${info.blc.height},local height=${pe.getCurrentHeight}"))
           0
@@ -362,6 +362,8 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
           //todo 需要判断区块缓存，再决定是否需要启动同步,并且当前没有同步才启动同步，如果已经同步，则不需要发送消息。
           if(info.blc.height > pe.getCurrentHeight+1 && !pe.isSynching){
             pe.getActorRef(CFRDActorType.ActorType.synchrequester) ! StartSync(false)
+          }else if(info.blocker.blockHeight == pe.getBlocker.VoteHeight && info.blocker.blockHash == pe.getBlocker.voteBlockHash && info.blocker.voteIndex > pe.getBlocker.VoteIndex){
+            pe.getActorRef(CFRDActorType.ActorType.voter) ! SpecifyVoteHeight(info.blocker)
           }
           /*else if(info.blc.height > pe.getCurrentHeight+1){
             pe.getActorRef(CFRDActorType.ActorType.voter) ! VoteOfForce

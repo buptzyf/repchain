@@ -14,11 +14,12 @@ import rep.network.consensus.common.algorithm.IRandomAlgorithmOfVote
  * 实现CFRD抽签actor
  */
 
-object VoterOfCFRD{
-  def props(name: String): Props = Props(classOf[VoterOfCFRD],name)
+object VoterOfCFRD {
+  def props(name: String): Props = Props(classOf[VoterOfCFRD], name)
 }
 
 class VoterOfCFRD(moduleName: String) extends IVoter(moduleName: String) {
+
   import scala.concurrent.duration._
   import context.dispatcher
 
@@ -42,7 +43,7 @@ class VoterOfCFRD(moduleName: String) extends IVoter(moduleName: String) {
     schedulerLink = scheduler.scheduleOnce(TimePolicy.getVoteRetryDelay.millis, self, VoteOfBlocker)
   }
 
-  override protected def vote(isForce: Boolean,forceInfo:ForceVoteInfo): Unit = {
+  override protected def vote(isForce: Boolean, forceInfo: ForceVoteInfo): Unit = {
     if (checkTranNum || isForce) {
       val currentblockhash = pe.getCurrentBlockHash
       val currentheight = pe.getCurrentHeight
@@ -65,17 +66,17 @@ class VoterOfCFRD(moduleName: String) extends IVoter(moduleName: String) {
             this.resetBlocker(0, currentblockhash, currentheight)
             RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},blocker=null,reset voter,height=${currentheight},blocker=${this.Blocker.blocker},voteidx=${this.Blocker.VoteIndex}" + "~" + selfAddr))
           } else {
-            if(isForce && forceInfo != null){
-              if(this.Blocker.voteBlockHash.equals(forceInfo.blockHash)  && this.Blocker.VoteIndex < forceInfo.voteIndex){
+            if (isForce && forceInfo != null) {
+              if (this.Blocker.voteBlockHash.equals(forceInfo.blockHash) && this.Blocker.VoteIndex < forceInfo.voteIndex) {
                 this.voteCount = 0
                 this.resetBlocker(forceInfo.voteIndex, currentblockhash, currentheight)
                 RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},SpecifyVoteHeight,reset voter,height=${currentheight},blocker=${this.Blocker.blocker}," +
                   s"voteidx=${this.Blocker.VoteIndex}" + "~" + selfAddr))
-              }else{
+              } else {
                 RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},SpecifyVoteHeight failed,reset voter,height=${currentheight},blocker=${this.Blocker.blocker}," +
                   s"SpecifyVoteHeight=${forceInfo.voteIndex}" + "~" + selfAddr))
               }
-            }else{
+            } else {
               if ((System.currentTimeMillis() - this.Blocker.voteTime) / 1000 > TimePolicy.getTimeOutBlock) {
                 //说明出块超时
                 this.voteCount = 0
@@ -88,6 +89,7 @@ class VoterOfCFRD(moduleName: String) extends IVoter(moduleName: String) {
           }
         }
       }
+
     } else {
       RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},transaction is not enough,waiting transaction,height=${pe.getCurrentHeight}" + "~" + selfAddr))
     }
@@ -96,11 +98,11 @@ class VoterOfCFRD(moduleName: String) extends IVoter(moduleName: String) {
   override def receive: Receive = {
     case VoteOfBlocker =>
       if (NodeHelp.isCandidateNow(pe.getSysTag, SystemCertList.getSystemCertList)) {
-        voteMsgHandler(false,null)
+        voteMsgHandler(false, null)
       }
-    case VoteOfForce=>
-      voteMsgHandler(true,null)
-    case SpecifyVoteHeight(voteinfo)=>
-      voteMsgHandler(true,voteinfo)
+    case VoteOfForce =>
+      voteMsgHandler(true, null)
+    case SpecifyVoteHeight(voteinfo) =>
+      voteMsgHandler(true, voteinfo)
   }
 }

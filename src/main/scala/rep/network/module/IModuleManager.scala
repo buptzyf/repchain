@@ -2,6 +2,7 @@ package rep.network.module
 
 import akka.actor.Props
 import com.typesafe.config.Config
+import rep.app.TxPools
 import rep.app.conf.SystemProfile.Trans_Create_Type_Enum
 import rep.app.conf.{SystemProfile, TimePolicy}
 import rep.crypto.cert.SignTool
@@ -70,7 +71,8 @@ class IModuleManager(moduleName: String, sysTag: String, enableStatistic: Boolea
     pe.setSysTag(sysTag)
     val confHeler = new ConfigerHelper(conf, sysTag, pe.getSysTag)
     confHeler.init()
-
+    pe.getTransPoolMgr.readTransaction(sysTag)
+    TxPools.registPoolMgr(sysTag,pe.getTransPoolMgr)
   }
 
   private def loadCommonActor:Unit = {
