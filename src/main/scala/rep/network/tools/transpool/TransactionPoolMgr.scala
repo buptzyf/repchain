@@ -174,6 +174,7 @@ class TransactionPoolMgr {
       var da = ImpDataAccess.GetDataAccess(sysName)
       da.Put(sysName + "-" + txPrefix, SerializeUtils.serialise(r))
     }
+    RepLogger.info(RepLogger.TransLifeCycle_Logger, s"systemname=${sysName},save trans to leveldb")
   }
 
   def readTransaction(sysName: String): Unit = {
@@ -189,6 +190,7 @@ class TransactionPoolMgr {
               val tx = Transaction.parseFrom(bs)
               this.putTran(tx, sysName)
             })
+            RepLogger.info(RepLogger.TransLifeCycle_Logger, s"systemname=${sysName},load trans from leveldb")
           }
         }
       } catch {
