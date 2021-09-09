@@ -156,6 +156,7 @@ object RepChainMgr {
       breakable {
         //持续6min，检查自己是否UP，每次检查的超时时间为120s，检查3次
         for(i <-1 to 3){
+          Thread.sleep(10000)
           if(isUpOfClusterForChecked(cluster)){
             r = true
             break
@@ -183,7 +184,7 @@ object RepChainMgr {
     var r = false
     try{
       System.err.println(s"shutdown start time=${System.currentTimeMillis()}")
-      var r = shutdown(systemName)
+      shutdown(systemName)
       System.err.println(s"shutdown end time=${System.currentTimeMillis()}")
       Thread.sleep(5000)
       System.err.println(s"terminateOfSystem finished,systemName=${systemName}")

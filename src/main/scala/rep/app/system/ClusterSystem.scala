@@ -296,6 +296,8 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
       throw new Exception("not enough disk space")
     }
 
+    clusterOfInner = Cluster(sysActor)
+
     val typeConsensus = SystemProfile.getTypeOfConsensus
     if (typeConsensus == "CFRD") {
       moduleManager = sysActor.actorOf(ModuleManagerOfCFRD.props("modulemanager", sysTag, enableStatistic, enableWebSocket, true), "modulemanager")
