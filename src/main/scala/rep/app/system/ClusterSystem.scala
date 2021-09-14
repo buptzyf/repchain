@@ -207,7 +207,8 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
     initConsensusNodeOfConfig
     if (sysStart) {
       sysActor = ActorSystem(SystemConf.SYSTEM_NAME, sysConf)
-      clusterAddr = Cluster(sysActor).selfAddress
+      clusterOfInner = Cluster(sysActor)
+      clusterAddr = clusterOfInner.selfAddress
     }
 
     RepLogger.trace(RepLogger.System_Logger, sysTag + "~" + "System" + " ~ " + s"System(${sysTag}) init successfully" + " ~ ")
@@ -296,7 +297,7 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
       throw new Exception("not enough disk space")
     }
 
-    clusterOfInner = Cluster(sysActor)
+
 
     val typeConsensus = SystemProfile.getTypeOfConsensus
     if (typeConsensus == "CFRD") {
