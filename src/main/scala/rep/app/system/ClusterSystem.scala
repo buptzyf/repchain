@@ -250,7 +250,7 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
   }
 
   def shutdown = {
-    Cluster(sysActor).down(clusterAddr)
+    this.clusterOfInner.down(clusterAddr)
     System.err.println(s"shutdown ~~ address=${clusterAddr.toString},systemname=${this.sysTag}")
   }
 
@@ -293,7 +293,7 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
 
     if (!hasDiskSpace) {
       RepLogger.sendAlertToDB(new AlertInfo("STORAGE",1,s"Node Name=${this.sysTag},Insufficient disk space."))
-      Cluster(sysActor).down(clusterAddr)
+      this.clusterOfInner.down(clusterAddr)
       throw new Exception("not enough disk space")
     }
 
