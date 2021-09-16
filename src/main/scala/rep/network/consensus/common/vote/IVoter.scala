@@ -13,6 +13,7 @@ import rep.network.util.NodeHelp
 import rep.storage.ImpDataAccess
 import rep.utils.GlobalUtils.BlockerInfo
 import rep.network.consensus.common.MsgOfConsensus.GenesisBlock
+import rep.network.sync.SyncMsg.StartSync
 
 /**
  * Created by jiangbuyun on 2020/03/17.
@@ -79,6 +80,16 @@ abstract class IVoter(moduleName: String) extends ModuleBase(moduleName) {
         if (NodeHelp.isSeedNode(pe.getSysTag)) {
           // 建立创世块消息
           pe.getActorRef(CFRDActorType.ActorType.gensisblock) ! GenesisBlock //zhj CFRD?
+        }else{
+          //如果没有创世块，启动同步
+          if (!pe.isSynching) {
+            try{
+              Thread.sleep(5000)
+            }catch {
+              case e:Exception=>
+            }
+            pe.getActorRef(CFRDActorType.ActorType.synchrequester) ! StartSync(false)
+          }
         }
       } else {
         if (!pe.isSynching) {
