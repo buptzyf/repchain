@@ -16,6 +16,8 @@
 
 package rep.network.cluster
 
+import java.util
+
 import akka.actor.{Actor, Address, Props}
 import akka.cluster.ClusterEvent._
 import akka.cluster.pubsub.DistributedPubSub
@@ -203,28 +205,37 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
         val mcount = cluster.state.members.size
         RepLogger.info(RepLogger.System_Logger,s"cluster node count ~~ size=${mcount}")
         if(mcount >= 4){
-          if(this.unreachableMembers.size >= (mcount/2 + 1) && (System.currentTimeMillis() - getLastUnreachableTime)/1000 >= 300){
-            //本节点看到了绝大多数节点不可达，那么问题出在自身节点的问题比较多，因此自动重启自身节点
+          if(this.unreachableMembers.size >= (mcount - 1) && (System.currentTimeMillis() - getLastUnreachableTime)/1000 >= TimePolicy.getNodeRestartForUnreachableTime){
+            //本节点看到了所有其他节点不可达，那么问题出在自身节点的问题比较多，因此自动重启自身节点
             //重启方式沿用之前的启动方式
-            RepLogger.info(RepLogger.System_Logger,s"unreachable node is self,restart node ~~ sysName=${pe.getSysTag}")
-            if(!this.isRestart){
-              this.isRestart = true
-              RepChainMgr.ReStart(pe.getSysTag)
-              RepLogger.info(RepLogger.System_Logger,s"unreachable node is self,restart command finish ~~ sysName=${pe.getSysTag}")
+            if(!pe.getSysTag.equalsIgnoreCase(SystemProfile.getGenesisNodeName)){
+              //如果节点不是创世节点（唯一种子节点）可以重启
+              RepLogger.info(RepLogger.System_Logger,s"unreachable node is self,restart node ~~ sysName=${pe.getSysTag}")
+              if(!this.isRestart){
+                this.isRestart = true
+                RepChainMgr.ReStart(pe.getSysTag)
+                RepLogger.info(RepLogger.System_Logger,s"unreachable node is self,restart command finish ~~ sysName=${pe.getSysTag}")
+              }
             }
           }else{
             //本节点跟大多数节点都保持联系，只有小数节点出现网络故障，那么对于超时链接不上的节点，发出down的消息
             //发出down的消息可以是种子节点，也可以是领导节点
             RepLogger.info(RepLogger.System_Logger,s"unreachable node is not self ")
+            var rls = new util.ArrayList[Address]()
             if(pe.getSysTag.equalsIgnoreCase(SystemProfile.getGenesisNodeName) || cluster.selfAddress.toString.equals(cluster.state.leader.get.toString) ){
               this.unreachableMembers.foreach(node=>{
-                if((System.currentTimeMillis() - node._2.start)/1000 >= 300){
+                if((System.currentTimeMillis() - node._2.start)/1000 >= TimePolicy.getNodeRestartForUnreachableTime){
                   RepLogger.info(RepLogger.System_Logger,s"unreachable node is not self,down node=${node._1} ~~ sysName=${pe.getSysTag}")
                   cluster.down(node._1)
+                  rls.add(node._1)
                   RepLogger.info(RepLogger.System_Logger,s"unreachable node is not self,down node finish=${node._1}  ~~ sysName=${pe.getSysTag}")
                 }
               })
             }
+            //已经down的节点，启动删除，不再做维护工作
+            rls.forEach(f=>{
+              this.unreachableMembers.remove(f)
+            })
           }
         }else{
           //节点数量小于4，说明系统组网没有完成就出现问题，不要自动处理，需要人工干预

@@ -36,12 +36,19 @@ object TimePolicy {
   private[this] var _STABLE_TIME_DUR: Int = 0
   private[this] var _VOTE_WAITING_DELAY: Long = 0//投票长时等待
   private[this] var _TRANSCATION_WAITING:Int = 900//transcation_waiting
+  private[this] var _NODE_RESTART_FOR_UNREACHABLE_TIME = 600
 
   def getVoteWaitingDelay = VOTE_WAITING_DELAY
 
   def VOTE_WAITING_DELAY: Long = _VOTE_WAITING_DELAY
   
   def TRANSCATION_WAITING : Int = _TRANSCATION_WAITING
+
+  def NODE_RESTART_FOR_UNREACHABLE_TIME : Int = _NODE_RESTART_FOR_UNREACHABLE_TIME
+
+  def NODE_RESTART_FOR_UNREACHABLE_TIME_=(value:Int):Unit ={
+    _NODE_RESTART_FOR_UNREACHABLE_TIME = value
+  }
 
   def VOTE_WAITING_DELAY_=(value: Long): Unit = {
     _VOTE_WAITING_DELAY = value
@@ -101,6 +108,8 @@ object TimePolicy {
 
   def getSysNodeStableDelay = SYS_NODE_STABLE_DELAY
 
+  def getNodeRestartForUnreachableTime:Int = NODE_RESTART_FOR_UNREACHABLE_TIME
+
   private def STABLE_TIME_DUR: Int = _STABLE_TIME_DUR
 
   private def STABLE_TIME_DUR_=(value: Int): Unit = {
@@ -120,7 +129,7 @@ object TimePolicy {
     STABLE_TIME_DUR = config.getInt("system.time.stable_time_dur")
     //val policyType = config.getInt("system.time.timeout_policy_type")
     TRANSCATION_WAITING = config.getInt("system.time.timeout.transcation_waiting")
-    
+    NODE_RESTART_FOR_UNREACHABLE_TIME = config.getInt("system.time.timeout.node_restart_for_unreachable_time")
     
     //policyType match {
     //  case PolicyType.MANUAL =>
