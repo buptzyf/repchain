@@ -90,6 +90,11 @@ object EventServer {
      (get & pathPrefix("web")) { 
         getFromResourceDirectory("web")
       }~ //提供Event的WebSocket订阅服务
+       (get & pathPrefix("")) {
+         pathEndOrSingleSlash {
+           getFromResource("web/index.html")
+         }
+       }~
       path("event") {
         get {
           //must ref to the same actor

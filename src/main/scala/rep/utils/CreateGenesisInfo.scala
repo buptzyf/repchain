@@ -198,7 +198,12 @@ object CreateGenesisInfo {
     translist(43) = PeerHelper.createTransaction4Invoke("951002007l78123233.super_admin", cid2,
       "set", Seq(ct1))
 
-
+    val tl = translist.toBuffer
+    val sc_file = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/ContractDump.scala","UTF-8")
+    val scdump =  try sc_file.mkString finally sc_file.close()
+    tl +=  PeerHelper.createTransaction4Deploy(sysName, new ChaincodeId("ContractDump",1),
+      scdump, "",5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA, rep.protos.peer.ChaincodeDeploy.ContractClassification.CONTRACT_CUSTOM)
+    translist = tl.toArray
 
     //create gensis block
     val millis = ConfigFactory.load().getLong("akka.genesisblock.creationBlockTime")

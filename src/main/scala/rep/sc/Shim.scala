@@ -83,7 +83,11 @@ class Shim(system: ActorSystem, cName: String) {
    def getVal(key: Key):Any ={
     deserialise(getState(key))
   }
- 
+  def HashOfValuesOfPrefix(scName: String): Array[Byte] ={
+    val prefix = WorldStateKeyPreFix + scName + PRE_SPLIT
+    this.sr.HashOfValuesOfPrefix(prefix)
+  }
+
   def setState(key: Key, value: Array[Byte]): Unit = {
     val pkey = pre_key + key
     val oldValue = get(pkey)
@@ -107,7 +111,7 @@ class Shim(system: ActorSystem, cName: String) {
   def getStateEx(cName:String, key: Key): Array[Byte] = {
     get(WorldStateKeyPreFix + cName + PRE_SPLIT + key)
   }
-  
+
   //判断账号是否节点账号 TODO
   def bNodeCreditCode(credit_code: String) : Boolean ={
     SignTool.isNode4Credit(credit_code)

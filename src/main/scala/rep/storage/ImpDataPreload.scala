@@ -207,7 +207,9 @@ class ImpDataPreload (SystemName:String,InstanceName:String) extends AbstractLev
 			}
   		rb
   	}
-  	
+	def HashOfValuesOfPrefix(prefix: String): Array[Byte]={
+		this.dbop.HashOfValuesOfPrefix(prefix: String)
+	}
   	/**
 	 * @author jiangbuyun
 	 * @version	0.7

@@ -17,8 +17,10 @@
 package rep.storage
 
 import rep.storage.leveldb.AbstractLevelDB
+
 import scala.collection.mutable
 import rep.protos.peer._
+
 import java.io.File
 import org.fusesource.leveldbjni.JniDBFactory
 import org.iq80.leveldb.DB
@@ -27,11 +29,14 @@ import org.iq80.leveldb.Options
 import org.iq80.leveldb.WriteBatch
 import rep.storage.cfg.StoreConfig4Scala
 import rep.storage.util.pathUtil
+
 import scala.collection.mutable
 import rep.storage.util.StoreUtil
 import com.google.protobuf.ByteString
 import rep.crypto._
 import rep.log.RepLogger
+
+import scala.collection.mutable.ArrayBuffer
 
 /**
  * @author jiangbuyun
@@ -247,6 +252,34 @@ abstract class IDataAccess(val SystemName: String) extends AbstractLevelDB(Syste
     rb
   }
 
+  def HashOfValuesOfPrefix(prefix: String): Array[Byte] = {
+    var rb: Array[Byte] = null
+    var looong = new ArrayBuffer[Byte]()
+    val iterator = this.db.iterator
+    try {
+      iterator.seek(prefix.getBytes)
+      while (
+        iterator.hasNext && iterator.peekNext().getKey.startsWith(prefix)
+      ) {
+        val key = (iterator.peekNext.getKey)
+        println(new String(key))
+        val value = (iterator.peekNext.getValue)
+        looong ++= key
+        looong ++= value
+        iterator.next
+      }
+
+      rb = Sha256.hash(looong.toArray)
+    } catch {
+      case e: Exception => {
+        rb = null
+        RepLogger.error(RepLogger.Storager_Logger,
+          "IDataAccess_" + SystemName + "_" + "HashOfValuesOfPrefix failed, error info= " + e.getMessage)
+        throw e
+      }
+    }
+    rb
+  }
   /**
    * @author jiangbuyun
    * @version	0.7
