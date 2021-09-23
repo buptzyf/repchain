@@ -51,7 +51,7 @@ class SynchRequesterOfRAFT (moduleName: String) extends ISynchRequester(moduleNa
           if (isNoticeModuleMgr)
             pe.getActorRef(ModuleActorType.ActorType.modulemanager) ! IModuleManager.startup_Consensus
         } else {
-          schedulerLink = scheduler.scheduleOnce(1.second, self, StartSync(isNoticeModuleMgr))
+          schedulerLink = scheduler.scheduleOnce(5.second, self, StartSync(isNoticeModuleMgr))
         }
 
       } else {

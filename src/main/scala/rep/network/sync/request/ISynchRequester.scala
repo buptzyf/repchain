@@ -142,7 +142,7 @@ abstract class ISynchRequester(moduleName: String) extends ModuleBase(moduleName
   protected def setStartVoteInfo(maxblockinfo:MaxBlockInfo):Unit
 
   protected def Handler(isStartupSynch: Boolean): Boolean = {
-    var rb = true
+    var rb = false
     val lh = pe.getCurrentHeight
     val lhash = pe.getCurrentBlockHash
     val lprehash = pe.getSystemCurrentChainStatus.previousBlockHash.toStringUtf8()
@@ -179,9 +179,11 @@ abstract class ISynchRequester(moduleName: String) extends ModuleBase(moduleName
           getBlockDatas(sresult.start, sresult.end, sresult.server)
         }
       }
+      rb = true
     } else if (result.ar == 2) {
       rb = false
     } else {
+      rb = true
       RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(result.error))
     }
     rb
