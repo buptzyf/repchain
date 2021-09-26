@@ -81,10 +81,11 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
   var preloadNodesMap = HashMap[Address, (Long, String)]()
 
   //处理Unreachable情况，特别实在窄带，并且网络不稳定的情况下，使用一下代码
-  var unreachableMembers = HashMap[Address,unreachableNodeInfo]()
+  /*var unreachableMembers = HashMap[Address,unreachableNodeInfo]()
   var schedulerOfUnReachable: akka.actor.Cancellable = null
   //建立unreachable事情的检查机制
   schedulerOfUnReachable  = context.system.scheduler.scheduleOnce(60.seconds,self,CheckUnreachableInfo)
+  */
 
   private var isStartSynch = false
   private var isRestart = false
@@ -150,7 +151,8 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
         RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"Member is Up:  nodes is not condidator,node address=${member.address.toString}"))
       }
 
-      this.unreachableMembers -= member.address
+      //this.unreachableMembers -= member.address
+
       schedulerLink = scheduler.scheduleOnce((
         //TimePolicy.getSysNodeStableDelay +
           TimePolicy.getStableTimeDur).millis, self, Recollection)
@@ -196,6 +198,7 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
           TimePolicy.getStableTimeDur/5).millis, self, Recollection)
       }
 
+      /*
     case CheckUnreachableInfo=>
       if(this.schedulerOfUnReachable != null){this.schedulerOfUnReachable.cancel()}
       //todo 编写unreachable处理过程
@@ -242,6 +245,8 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
         }
       }
       schedulerOfUnReachable  = context.system.scheduler.scheduleOnce(60.seconds,self,CheckUnreachableInfo)
+      */
+
     //成员离网
     case MemberRemoved(member, _) =>
       RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("Member is Removed: {}. {} nodes cluster" + "~" + member.address))
@@ -262,7 +267,7 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
         }
       }
 
-      this.unreachableMembers -= member.address
+      //this.unreachableMembers -= member.address
 
       preloadNodesMap.remove(member.address)
       pe.getNodeMgr.removeNode(member.address)
@@ -275,7 +280,7 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
       preloadNodesMap.remove(member.address)
       pe.getNodeMgr.removeNode(member.address)
       pe.getNodeMgr.removeStableNode(member.address)
-      this.unreachableMembers += member.address -> unreachableNodeInfo(member.address,member.status,NodeHelp.getNodeName(member.roles),System.currentTimeMillis())
+      //this.unreachableMembers += member.address -> unreachableNodeInfo(member.address,member.status,NodeHelp.getNodeName(member.roles),System.currentTimeMillis())
       sendEvent(EventType.PUBLISH_INFO, mediator, NodeHelp.getNodeName(member.roles), Topic.Event, Event.Action.MEMBER_DOWN)
 
     /*RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("UnreachableMember is : {}. {} nodes cluster" + "~" + member.address))
@@ -318,7 +323,9 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
     case ReachableMember(member) =>
       System.err.println(" ReachableMember recollection")
       val addr = member.address
-      this.unreachableMembers -= member.address
+
+      //this.unreachableMembers -= member.address
+
       if(member.status == MemberStatus.up){
         if(member.roles != null && !member.roles.isEmpty && NodeHelp.isCandidatorNode(member.roles)){
           val name = NodeHelp.getNodeName(member.roles)
@@ -349,14 +356,18 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
 
     case MemberLeft(member) => //ignore
       RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("MemberLeft: {}. {} nodes cluster" + "~" + member.address.toString))
-      this.unreachableMembers -= member.address
+
+      //this.unreachableMembers -= member.address
+
     /*preloadNodesMap.remove(member.address)
       pe.getNodeMgr.removeNode(member.address)
       pe.getNodeMgr.removeStableNode(member.address)*/
 
     case MemberExited(member) => //ignore
       RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("MemberExited: {}. {} nodes cluster" + "~" + member.address.toString))
-      this.unreachableMembers -= member.address
+
+      //this.unreachableMembers -= member.address
+
     /*preloadNodesMap.remove(member.address)
       pe.getNodeMgr.removeNode(member.address)
       pe.getNodeMgr.removeStableNode(member.address)*/
@@ -364,7 +375,7 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
     case _: MemberEvent => // ignore
   }
 
-  def  getLastUnreachableTime:Long={
+  /*def  getLastUnreachableTime:Long={
     var ct = System.currentTimeMillis()
     this.unreachableMembers.foreach(v=>{
       if(v._2.start < ct){
@@ -372,7 +383,7 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
       }
     })
     ct
-  }
+  }*/
 
   /*def isUnreachableTimeout:Boolean={
     var b = true
