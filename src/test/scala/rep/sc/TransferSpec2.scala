@@ -90,7 +90,7 @@ class TransferSpec2(_system: ActorSystem) extends TestKit(_system) with Matchers
     val signer = Signer("node2", "12110107bi45jh675g", "13856789234", Seq("node2"))
     val cert = scala.io.Source.fromFile("jks/certs/12110107bi45jh675g.node2.cer")
     val certStr = try cert.mkString finally cert.close()
-    val certinfo = CertInfo("12110107bi45jh675g", "node2", Certificate(certStr, "SHA1withECDSA", true, None, None))
+    val certinfo = CertInfo("12110107bi45jh675g", "node2", Certificate(certStr, "SHA256withECDSA", true, None, None))
 
     //准备探针以验证调用返回结果
     val probe = TestProbe()

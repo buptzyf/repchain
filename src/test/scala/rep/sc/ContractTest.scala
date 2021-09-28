@@ -142,9 +142,9 @@ class ContractTest(_system: ActorSystem)
     /*var aa  = new CaseClassToString()
     aa.AddElement("credit_code", "12110107bi45jh675g")
     aa.AddElement("name", "node2")
-    aa.AddElement("cert", Certificate(certStr, "SHA1withECDSA", true, None, None))*/
+    aa.AddElement("cert", Certificate(certStr, "SHA256withECDSA", true, None, None))*/
 
-    val certinfo = CertInfo("12110107bi45jh675g", "node2", Certificate(certStr, "SHA1withECDSA", true, None, None))
+    val certinfo = CertInfo("12110107bi45jh675g", "node2", Certificate(certStr, "SHA256withECDSA", true, None, None))
     
     val certstatus = CertStatus("12110107bi45jh675g", "node2", false)
     //val certinfo = aa.toJsonString
@@ -212,9 +212,9 @@ class ContractTest(_system: ActorSystem)
     /*var aa1  = new CaseClassToString()
    aa1.AddElement("credit_code", "122000002n00123567")
    aa1.AddElement("name", "node3")
-   aa1.AddElement("cert", Certificate(certStr3, "SHA1withECDSA", true, None, None))*/
+   aa1.AddElement("cert", Certificate(certStr3, "SHA256withECDSA", true, None, None))*/
 
-    val certinfo3 = CertInfo("122000002n00123567", "node3", Certificate(certStr3, "SHA1withECDSA", true, None, None))
+    val certinfo3 = CertInfo("122000002n00123567", "node3", Certificate(certStr3, "SHA256withECDSA", true, None, None))
     //val certinfo3 = aa1.toJsonString
 
     //合约状态为disable，会失败
