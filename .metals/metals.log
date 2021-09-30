@@ -3079,3 +3079,10 @@ WARNING: Unmatched cancel notification for request id 6487
 [0m2021.09.30 13:09:15 INFO  time: compiled repchain in 6.08s[0m
 Sep 30, 2021 1:09:33 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
 WARNING: Unmatched cancel notification for request id 6663
+[0m2021.09.30 13:16:16 INFO  compiling repchain (7 scala sources)[0m
+[0m2021.09.30 13:16:19 INFO  compiling repchain-test (26 scala sources)[0m
+[0m2021.09.30 13:16:19 INFO  time: compiled repchain in 2.3s[0m
+[0m2021.09.30 13:16:23 WARN  there were 8 deprecation warnings; re-run with -deprecation for details[0m
+[0m2021.09.30 13:16:23 INFO  time: compiled repchain-test in 4.23s[0m
+Sep 30, 2021 1:21:24 PM org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint notify
+INFO: Unsupported notification method: $/setTrace
