@@ -30,28 +30,25 @@ class RdidOperateAuthorizeTPL extends IContract {
     object Signer {
       val signUpSigner = "signUpSigner"
       val updateSigner = "updateSigner"
-      val disableSigner = "disableSigner"
-      val enableSigner = "enableSigner"
+      val updateSignerStatus = "updateSignerStatus"
     }
 
     object Certificate {
-      val signUpCertificate = "signUpCertificate"
-      val disableCertificate = "disableCertificate"
-      val enableCertificate = "enableCertificate"
-
+      val signUpCertificate = "signUpCertificate" // 无需授权
+      val updateCertificateStatus = "updateCertificateStatus" // 无需授权
+      val signUpAllTypeCertificate = "signUpAllTypeCertificate" // 需授权
+      val updateAllTypeCertificateStatus = "updateAllTypeCertificateStatus" // 需授权
     }
 
     object Authorize {
       val grantOperate = "grantOperate"
-      val disableGrantOperate = "disableGrantOperate"
-      val enableGrantOperate = "enableGrantOperate"
+      val updateGrantOperateStatus = "updateGrantOperateStatus"
       val bindCertToAuthorize = "bindCertToAuthorize"
     }
 
     object Operate {
       val signUpOperate = "signUpOperate"
-      val disableOperate = "disableOperate"
-      val enableOperate = "enableOperate"
+      val updateOperateStatus = "updateOperateStatus"
     }
 
   }
@@ -74,20 +71,26 @@ class RdidOperateAuthorizeTPL extends IContract {
       case ACTION.Signer.signUpSigner =>
         SignerOperation.signUpSigner(ctx, parser.fromJsonString(sdata)(Signer))
 
-      case ACTION.Signer.disableSigner =>
-        SignerOperation.disableSigner(ctx, param.extract[SignerStatus])
+      case ACTION.Signer.updateSignerStatus =>
+        SignerOperation.updateSignerStatus(ctx, param.extract[SignerStatus])
 
       case ACTION.Certificate.signUpCertificate =>
         CertOperation.signUpCertificate(ctx, parser.fromJsonString(sdata)(Certificate))
 
-      case ACTION.Certificate.disableCertificate =>
-        CertOperation.disableCertificate(ctx, param.extract[CertStatus])
+      case ACTION.Certificate.updateCertificateStatus =>
+        CertOperation.updateCertificateStatus(ctx, param.extract[CertStatus])
+
+      case ACTION.Certificate.signUpAllTypeCertificate =>
+        CertOperation.signUpAllTypeCertificate(ctx, parser.fromJsonString(sdata)(Certificate))
+
+      case ACTION.Certificate.updateAllTypeCertificateStatus =>
+        CertOperation.updateAllTypeCertificateStatus(ctx, param.extract[CertStatus])
 
       case ACTION.Operate.signUpOperate =>
         OperOperation.signUpOperate(ctx, parser.fromJsonString(sdata)(Operate))
 
-      case ACTION.Operate.disableOperate =>
-        OperOperation.disableOperate(ctx, param.extract[OperateStatus])
+      case ACTION.Operate.updateOperateStatus =>
+        OperOperation.updateOperateStatus(ctx, param.extract[OperateStatus])
 
       case ACTION.Authorize.grantOperate =>
         AuthOperation.grantOperate(ctx, param.extract[List[AuthorizeJString]])
@@ -95,8 +98,8 @@ class RdidOperateAuthorizeTPL extends IContract {
       case ACTION.Authorize.bindCertToAuthorize =>
         AuthOperation.bindCertToAuthorize(ctx, parser.fromJsonString(sdata)(BindCertToAuthorize))
 
-      case ACTION.Authorize.disableGrantOperate =>
-        AuthOperation.disableGrantOperate(ctx, param.extract[AuthorizeStatus])
+      case ACTION.Authorize.updateGrantOperateStatus =>
+        AuthOperation.updateGrantOperateStatus(ctx, param.extract[AuthorizeStatus])
 
       case _ =>
         throw ContractException(JsonFormat.toJsonString(ActionResult(100000, "没有对应的方法")))

@@ -39,40 +39,6 @@ protected trait DidOperation {
   }
 
   /**
-    * 判断是否为链证书
-    *
-    * @param ctx
-    * @return
-    */
-  def checkChainCert(ctx: ContractContext): Boolean = {
-    // TODO
-    val result = true
-    if (!result) {
-      false
-    } else {
-      result
-    }
-  }
-
-  /**
-    * 检查是否具有相应的操作权限
-    *
-    * @param ctx
-    * @return
-    */
-  def checkAuthorize(ctx: ContractContext): Boolean = {
-    // TODO
-    val checkResult = true
-    //    checkResult = ctx.api.verifyOfContract(ctx.t.signature.get.getCertId)
-    if (!checkResult) {
-      //      throw ContractException("没有相应操作权限")
-      false
-    } else {
-      checkResult
-    }
-  }
-
-  /**
     * 检查账户是否有效
     *
     * @param ctx

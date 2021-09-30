@@ -21,7 +21,7 @@ import akka.actor.ActorSystem
 import rep.network.tools.PeerExtension
 import rep.protos.peer.{OperLog, Transaction}
 import rep.storage.ImpDataPreload
-import rep.utils.SerializeUtils
+import rep.utils.{IdTool, SerializeUtils}
 import rep.utils.SerializeUtils.deserialise
 import rep.utils.SerializeUtils.serialise
 import java.security.cert.CertificateFactory
@@ -35,6 +35,7 @@ import rep.crypto.cert.SignTool
 import _root_.com.google.protobuf.ByteString
 import rep.log.RepLogger
 import org.slf4j.Logger
+import rep.app.conf.SystemProfile
 
 import scala.collection.concurrent.TrieMap
 import scala.collection.immutable.HashMap
@@ -111,6 +112,21 @@ class Shim(system: ActorSystem, cName: String) {
   //判断账号是否节点账号 TODO
   def bNodeCreditCode(credit_code: String) : Boolean ={
     SignTool.isNode4Credit(credit_code)
+  }
+
+  /**
+    * 判断是否为超级管理员
+    *
+    * @param credit_code
+    * @return
+    */
+  def isAdminCert(credit_code: String): Boolean = {
+    var r = true
+    val certId = IdTool.getCertIdFromName(SystemProfile.getChainCertName)
+    if (!certId.creditCode.equals(credit_code)) {
+      r = false
+    }
+    r
   }
   
   //通过该接口获取日志器，合约使用此日志器输出业务日志。

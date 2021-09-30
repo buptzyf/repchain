@@ -3,9 +3,11 @@ package rep.sc.tpl.did.operation
 import rep.crypto.Sha256
 import rep.protos.peer.{ActionResult, Signer}
 import rep.sc.scalax.{ContractContext, ContractException}
-import rep.sc.tpl.did.DidTplPrefix.{signerPrefix, certPrefix, hashPrefix}
+import rep.sc.tpl.did.DidTplPrefix.{certPrefix, hashPrefix, signerPrefix}
 
 /**
+  * 注册signer，禁用启用signer
+  *
   * @author zyf
   */
 object SignerOperation extends DidOperation {
@@ -21,24 +23,10 @@ object SignerOperation extends DidOperation {
   val customCertExists = ActionResult(12008, "存在普通用户证书或undefinedType证书")
   val SignerCertificateNotMatch = ActionResult(12009, "Signer的creditCode与Certificate中的creditCode不一致")
   val hashNotMatch = ActionResult(12010, "Certificate中hash字段与certificate字段计算得到的Hash不相等")
+  val notAdmin = ActionResult(12011, "非super_admin不能修改super_admin的signer的状态")
 
   case class SignerStatus(creditCode: String, state: Boolean)
 
-  /**
-    * 判断是否为链证书
-    *
-    * @param ctx
-    * @return
-    */
-  override def checkChainCert(ctx: ContractContext): Boolean = {
-    // TODO
-    val result = true
-    if (!result) {
-      throw ContractException(toJsonErrMsg(notChainCert))
-    } else {
-      result
-    }
-  }
 
   /**
     * 注册Signer
@@ -48,8 +36,6 @@ object SignerOperation extends DidOperation {
     * @return
     */
   def signUpSigner(ctx: ContractContext, signer: Signer): ActionResult = {
-    // 检查是否为链证书，非链证书，异常抛出
-    checkChainCert(ctx)
     // 判断signer是否已经存在
     if (ctx.api.getVal(signerPrefix + signer.creditCode) != null) {
       throw ContractException(toJsonErrMsg(signerExists))
@@ -83,7 +69,7 @@ object SignerOperation extends DidOperation {
           throw ContractException(toJsonErrMsg(SignerCertificateNotMatch))
         } else if (!Sha256.hashstr(cert.certificate).equals(cert.certHash)) {
           throw ContractException(toJsonErrMsg(hashNotMatch))
-        }else {
+        } else {
           // 身份校验用
           ctx.api.setVal(hashPrefix + cert.certHash, certId.creditCode + "." + certId.certName)
           // 验签用（身份密钥对也可以签名的）
@@ -112,41 +98,28 @@ object SignerOperation extends DidOperation {
   }
 
   /**
-    * 禁用Signer
+    * 禁用或启用Signer
     *
     * @param ctx
     * @param status
     * @return
     */
-  def disableSigner(ctx: ContractContext, status: SignerStatus): ActionResult = {
-    if (status.state) {
-      throw ContractException(toJsonErrMsg(stateNotMatchFunction))
+  def updateSignerStatus(ctx: ContractContext, status: SignerStatus): ActionResult = {
+    // 非管理员不能修改管理员的账户，即普通用户不能禁用super_admin
+    if (ctx.api.isAdminCert(status.creditCode) && ctx.t.getSignature.getCertId.creditCode != status.creditCode) {
+      throw ContractException(toJsonErrMsg(notAdmin))
+    }
+    val oldSigner = ctx.api.getVal(signerPrefix + status.creditCode)
+    // 判断是否有值
+    if (oldSigner != null) {
+      val signer = oldSigner.asInstanceOf[Signer]
+      val disableTime = ctx.t.getSignature.getTmLocal
+      val newSigner = signer.withSignerValid(status.state).withDisableTime(disableTime)
+      ctx.api.setVal(signerPrefix + status.creditCode, newSigner)
     } else {
-      // 检查是否为链证书，非链证书，异常抛出
-      checkChainCert(ctx)
-      val oldSigner = ctx.api.getVal(signerPrefix + status.creditCode)
-      // 判断是否有值
-      if (oldSigner != null) {
-        val signer = oldSigner.asInstanceOf[Signer]
-        val disableTime = ctx.t.getSignature.getTmLocal
-        val newSigner = signer.withSignerValid(status.state).withDisableTime(disableTime)
-        ctx.api.setVal(signerPrefix + status.creditCode, newSigner)
-      } else {
-        throw ContractException(toJsonErrMsg(signerNotExists))
-      }
+      throw ContractException(toJsonErrMsg(signerNotExists))
     }
     null
   }
 
-  /**
-    * 启用Signer
-    *
-    * @param ctx
-    * @param status
-    * @return
-    */
-  def enableSigner(ctx: ContractContext, status: SignerStatus): ActionResult = {
-    // TODO
-    null
-  }
 }

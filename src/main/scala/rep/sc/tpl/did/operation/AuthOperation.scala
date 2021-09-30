@@ -78,45 +78,29 @@ object AuthOperation extends DidOperation {
   }
 
   /**
-    * 禁用授权操作
+    * 禁用或启用授权操作
     *
     * @param ctx
     * @param status
     * @return
     */
-  def disableGrantOperate(ctx: ContractContext, status: AuthorizeStatus): ActionResult = {
+  def updateGrantOperateStatus(ctx: ContractContext, status: AuthorizeStatus): ActionResult = {
     val oldAuthorize = ctx.api.getVal(authPrefix + status.authId)
-    if (status.state) {
-      throw ContractException(toJsonErrMsg(stateNotMatchFunction))
-    } else {
-      if (oldAuthorize != null) {
-        val authorize = oldAuthorize.asInstanceOf[Authorize]
-        // 检查签名者是否为授权者
-        if (ctx.t.getSignature.getCertId.creditCode.equals(authorize.grant)) {
-          // 检查账户的有效性
-          checkSignerValid(ctx, authorize.grant)
-          val disableTime = ctx.t.getSignature.getTmLocal
-          val newAuthorize = authorize.withAuthorizeValid(status.state).withDisableTime(disableTime)
-          ctx.api.setVal(authPrefix + authorize.id, newAuthorize)
-        } else {
-          throw ContractException(toJsonErrMsg(signerNotGranter))
-        }
+    if (oldAuthorize != null) {
+      val authorize = oldAuthorize.asInstanceOf[Authorize]
+      // 检查签名者是否为授权者
+      if (ctx.t.getSignature.getCertId.creditCode.equals(authorize.grant)) {
+        // 检查账户的有效性
+        checkSignerValid(ctx, authorize.grant)
+        val disableTime = ctx.t.getSignature.getTmLocal
+        val newAuthorize = authorize.withAuthorizeValid(status.state).withDisableTime(disableTime)
+        ctx.api.setVal(authPrefix + authorize.id, newAuthorize)
       } else {
-        throw ContractException(toJsonErrMsg(authorizeNotExistsCode, authorizeNotExists.format(status.authId)))
+        throw ContractException(toJsonErrMsg(signerNotGranter))
       }
+    } else {
+      throw ContractException(toJsonErrMsg(authorizeNotExistsCode, authorizeNotExists.format(status.authId)))
     }
-    null
-  }
-
-  /**
-    * 启用授权操作
-    *
-    * @param ctx
-    * @param status
-    * @return
-    */
-  def enableGrantOperate(ctx: ContractContext, status: AuthorizeStatus): ActionResult = {
-    // TODO
     null
   }
 
@@ -128,9 +112,9 @@ object AuthOperation extends DidOperation {
     * @return
     */
   def bindCertToAuthorize(ctx: ContractContext, bindCertToAuthorize: BindCertToAuthorize): ActionResult = {
-    val signer = checkSignerValid(ctx, ctx.t.getSignature.getCertId.creditCode)
-    val authId = bindCertToAuthorize.authorizeId
     if (bindCertToAuthorize.getGranted.creditCode.equals(ctx.t.getSignature.getCertId.creditCode)) {
+      val signer = checkSignerValid(ctx, bindCertToAuthorize.getGranted.creditCode)
+      val authId = bindCertToAuthorize.authorizeId
       if (signer.authorizeIds.contains(authId)) {
         val authorize = ctx.api.getVal(authPrefix + authId).asInstanceOf[Authorize]
         // 如果未被禁用，这可以绑定，此处不判断证书有效性，因为有效无效，验签时候会判断
