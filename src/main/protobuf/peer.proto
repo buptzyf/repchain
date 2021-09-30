@@ -127,6 +127,11 @@ message Transaction {
         bool state = 6;
     }
     Signature signature = 7;
+    Transaction commit = 8;
+    Transaction unlock = 9;
+    uint64 expired = 10;
+    string targetChain = 11;
+    string receiver = 12;
 }
 
 message Block {
