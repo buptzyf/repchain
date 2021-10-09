@@ -3,3 +3,9 @@
 /null/
 /logs/
 /.idea/
+/project/**/target/
+.vscode/
+.metals
+.bloop
+.bsp
+project/build.properties
