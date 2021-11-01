@@ -149,15 +149,18 @@ class PermissionVerify(sysTag:String) {
 
   def CheckPermissionOfDeployContract(dotrans: DoTransactionOfSandboxInSingle,shim:Shim):Boolean={
     var r = true
+    val cid = dotrans.t.cid.get
 
     if(dotrans.t.`type` == Type.CHAINCODE_DEPLOY && dotrans.t.cid.get.chaincodeName == "ContractAssetsTPL"){
       System.out.println("")
     }
-    if(!CheckPermissionOfCertId(dotrans.t.signature.get.certId.get,
-                        "*.deploy",shim.sr)){
-      val cid = dotrans.t.cid.get
-      r = CheckPermissionOfCertId(dotrans.t.signature.get.certId.get,cid.chaincodeName+".deploy",
-                                shim.sr)
+    try {
+      if (!CheckPermissionOfCertId(dotrans.t.signature.get.certId.get, opname = "*.deploy", shim.sr)) {
+        r = CheckPermissionOfCertId(dotrans.t.signature.get.certId.get, cid.chaincodeName + ".deploy", shim.sr)
+      }
+    } catch {
+      case e: SandboxException =>
+        r = CheckPermissionOfCertId(dotrans.t.signature.get.certId.get, cid.chaincodeName + ".deploy", shim.sr)
     }
 
     r
@@ -165,12 +168,14 @@ class PermissionVerify(sysTag:String) {
 
   def CheckPermissionOfSetStateContract(dotrans: DoTransactionOfSandboxInSingle,shim:Shim)={
     var r = true
-
-    if(!CheckPermissionOfCertId(dotrans.t.signature.get.certId.get,
-                                "*.setState",shim.sr)){
-      val cid = dotrans.t.cid.get
-      r = CheckPermissionOfCertId(dotrans.t.signature.get.certId.get,cid.chaincodeName+".setState",
-                                  shim.sr)
+    val cid = dotrans.t.cid.get
+    try {
+      if (!CheckPermissionOfCertId(dotrans.t.signature.get.certId.get, opname = "*.setState", shim.sr)) {
+        r = CheckPermissionOfCertId(dotrans.t.signature.get.certId.get, cid.chaincodeName + ".setState", shim.sr)
+      }
+    } catch {
+      case e: SandboxException =>
+        r = CheckPermissionOfCertId(dotrans.t.signature.get.certId.get, cid.chaincodeName + ".setState", shim.sr)
     }
 
     r
