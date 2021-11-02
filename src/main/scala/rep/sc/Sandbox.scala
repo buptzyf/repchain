@@ -274,7 +274,7 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
         ContraceIsExist(txcid)
         //检查合约部署者以及权限
         if(IdTool.isDidContract){
-          permissioncheck.CheckPermissionOfDeployContract(dotrans,shim)
+          permissioncheck.CheckPermissionOfSetStateContract(dotrans,shim)
         }else{
           IsCurrentSigner(dotrans)
         }
