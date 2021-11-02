@@ -2,25 +2,28 @@ package rep.sc
 
 import akka.actor.{ActorRef, ActorSystem}
 import akka.testkit.{TestKit, TestProbe}
+import com.typesafe.config.ConfigFactory
 import org.json4s.{DefaultFormats, jackson}
 import org.json4s.native.Serialization.{write, writePretty}
 import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, Matchers}
 import rep.app.system.ClusterSystem
 import rep.app.system.ClusterSystem.InitType
 import rep.network.module.cfrd.ModuleManagerOfCFRD
-import rep.protos.peer.{Certificate, ChaincodeId, Signer}
-import rep.sc.TransferSpec.{ACTION, SetMap}
+import rep.protos.peer._
+import rep.sc.TransferSpec.SetMap
 import rep.storage.ImpDataAccess
 import rep.utils.SerializeUtils.toJson
 import rep.app.conf.SystemProfile
 import rep.network.autotransaction.PeerHelper
+import rep.network.tools.PeerExtension
 
 import scala.concurrent.duration._
 import scala.collection.mutable.Map
 import rep.sc.SandboxDispatcher.DoTransaction
-import rep.protos.peer.Transaction
 import rep.sc.BlockStubActor.WriteBlockStub
+import rep.sc.ContractTest.ACTION
 import rep.sc.tpl._
+import scalapb.json4s.JsonFormat
 //.{CertStatus,CertInfo}
 //import rep.utils.CaseClassToString
 
@@ -39,8 +42,7 @@ object ContractTest {
 
 }
 
-class ContractTest(_system: ActorSystem)
-  extends TestKit(_system) with Matchers with FlatSpecLike with BeforeAndAfterAll {
+class ContractTest(_system: ActorSystem) extends TestKit(_system) with Matchers with FlatSpecLike with BeforeAndAfterAll {
 
   def this() = this(ActorSystem("TransferSpec", new ClusterSystem("121000005l35120456.node1", InitType.MULTI_INIT, false).getConf))
 
@@ -88,10 +90,10 @@ class ContractTest(_system: ActorSystem)
   }
 
   // 构建Deploy交易，用来部署合约parallelPutProofTPL
-  private def get_parallelPutProofTPL_Deploy_Trans(sysName: String, version: Int): Transaction = {
-    val s3 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/parallelPutProofTPL.scala")
+  private def get_ParallelPutProofTPL_Deploy_Trans(sysName: String, version: Int): Transaction = {
+    val s3 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/ParallelPutProofTPL.scala")
     val l3 = try s3.mkString finally s3.close()
-    val cid3 = ChaincodeId("parallelPutProofTPL", version)
+    val cid3 = ChaincodeId("ParallelPutProofTPL", version)
     val t3 = PeerHelper.createTransaction4Deploy(sysName, cid3,
       l3, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA_PARALLEL)
     t3
@@ -99,7 +101,7 @@ class ContractTest(_system: ActorSystem)
 
   // 构建Invoke交易，用来调用合约parallelPutProofTPL
   private def createParallelTransInvoke(sysName: String, version: Int, action: String, param: String): Transaction = {
-    val cid2 = ChaincodeId("parallelPutProofTPL", version)
+    val cid2 = ChaincodeId("ParallelPutProofTPL", version)
     PeerHelper.createTransaction4Invoke(sysName, cid2, action, Seq(param))
   }
 
@@ -107,12 +109,12 @@ class ContractTest(_system: ActorSystem)
   private def ExecuteTrans(probe: TestProbe, sandbox: ActorRef, t: Transaction, snapshotName: String, sendertype: TypeOfSender.Value, serial: Int, eresult: Boolean) = {
     val msg_send1 = DoTransaction(Seq[Transaction](t), snapshotName, sendertype)
     probe.send(sandbox, msg_send1)
-    val msg_recv1 = probe.expectMsgType[Seq[Sandbox.DoTransactionResult]](1000.seconds)
-    if (msg_recv1(0).err.isEmpty) {
+    val msg_recv1 = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
+    if (msg_recv1(0).getResult.reason.isEmpty) {
       println(s"serial:${serial},expect result:${eresult},exeresult:true")
-      msg_recv1(0).err.isEmpty should be(true)
+      msg_recv1(0).getResult.reason.isEmpty should be(true)
     } else {
-      println(msg_recv1(0).err.get.toString())
+      println(msg_recv1(0).getResult.reason)
       println(s"serial:${serial},expect result:${eresult},exeresult:false")
     }
   }
@@ -121,9 +123,11 @@ class ContractTest(_system: ActorSystem)
   "ContractAssetsTPL" should "can set assets and transfer from a to b" in {
 
     val sysName = "121000005l35120456.node1"
-    val dbTag = "121000005l35120456.node1"
+    // 初始化配置项，主要是为了初始化存储路径
+    SystemProfile.initConfigSystem(ConfigFactory.parseString("system.account.chaincodename = ContractCert").withFallback(system.settings.config), sysName)
+    PeerExtension(system).setSysTag(sysName)
     //建立PeerManager实例是为了调用transactionCreator(需要用到密钥签名)，无他
-    val pm = system.actorOf(ModuleManagerOfCFRD.props("modulemanager", sysName, false, false, false), "modulemanager")
+    val pm = system.actorOf(ModuleManagerOfCFRD.props("modulemanager", sysName, false, false, true), "modulemanager")
 
     val sm: SetMap = Map("121000005l35120456" -> 50, "12110107bi45jh675g" -> 50, "122000002n00123567" -> 50)
     val sms = write(sm)
@@ -145,7 +149,7 @@ class ContractTest(_system: ActorSystem)
     aa.AddElement("name", "node2")
     aa.AddElement("cert", Certificate(certStr, "SHA1withECDSA", true, None, None))*/
 
-    val certinfo = CertInfo("12110107bi45jh675g", "node2", Certificate(certStr, "SHA1withECDSA", true, None, None))
+    val certinfo = Certificate(certStr, "SHA1withECDSA", true, None, None, id = Option(CertId("12110107bi45jh675g", "node2")))
     
     val certstatus = CertStatus("12110107bi45jh675g", "node2", false)
     //val certinfo = aa.toJsonString
@@ -157,42 +161,42 @@ class ContractTest(_system: ActorSystem)
 
     //内存中没有合约，建立合约，此时合约在快照中
     val t1 = this.get_ContractCert_Deploy_Trans(sysName, 1)
-    ExecuteTrans(probe, sandbox, t1, "dbnumber1", TypeOfSender.FromAPI, 1, true)
+    ExecuteTrans(probe, sandbox, t1, "dbnumber1", TypeOfSender.FromPreloader, 1, true)
 
     //内存中有合约，可以调用
-    val t2 = this.createCertTransInvoke(sysName, 1, ACTION.SignUpSigner, write(signer))
-    ExecuteTrans(probe, sandbox, t2, "dbnumber1", TypeOfSender.FromAPI, 2, true)
+    val t2 = this.createCertTransInvoke(sysName, 1, ACTION.SignUpSigner, JsonFormat.toJsonString(signer))
+    ExecuteTrans(probe, sandbox, t2, "dbnumber1", TypeOfSender.FromPreloader, 2, true)
 
     //这个应该错误，应该是找不到合约
-    val t3 = this.createCertTransInvoke(sysName, 1, ACTION.SignUpSigner, write(signer))
-    ExecuteTrans(probe, sandbox, t3, "dbnumber2", TypeOfSender.FromAPI, 3, false)
+    val t3 = this.createCertTransInvoke(sysName, 1, ACTION.SignUpSigner, JsonFormat.toJsonString(signer))
+    ExecuteTrans(probe, sandbox, t3, "dbnumber2", TypeOfSender.FromPreloader, 3, false)
 
     //修改合约状态
     val t4 = PeerHelper.createTransaction4State(sysName, ChaincodeId(SystemProfile.getAccountChaincodeName, 1), false)
-    ExecuteTrans(probe, sandbox, t4, "dbnumber1", TypeOfSender.FromAPI, 4, true)
+    ExecuteTrans(probe, sandbox, t4, "dbnumber1", TypeOfSender.FromPreloader, 4, true)
 
     //val t5 =  this.createCertTransInvoke(sysName,1, ACTION.SignUpCert, writePretty(certinfo))
     // t4未持久化，可以继续invoke该合约
-    val t5 = this.createCertTransInvoke(sysName, 1, ACTION.SignUpCert, writePretty(certinfo))
-    ExecuteTrans(probe, sandbox, t5, "dbnumber1", TypeOfSender.FromAPI, 5, true)
+    val t5 = this.createCertTransInvoke(sysName, 1, ACTION.SignUpCert, JsonFormat.toJsonString(certinfo))
+    ExecuteTrans(probe, sandbox, t5, "dbnumber1", TypeOfSender.FromPreloader, 5, true)
     
     val t51 = this.createCertTransInvoke(sysName, 1, ACTION.UpdateCertStatus, writePretty(certstatus))
-    ExecuteTrans(probe, sandbox, t51, "dbnumber1", TypeOfSender.FromAPI, 51, true)
+    ExecuteTrans(probe, sandbox, t51, "dbnumber1", TypeOfSender.FromPreloader, 51, true)
 
     //同一快照中，再次部署同一版本合约（ContractCert），会失败，对比 t1
     val t6 = this.get_ContractCert_Deploy_Trans(sysName, 1)
-    ExecuteTrans(probe, sandbox, t6, "dbnumber1", TypeOfSender.FromAPI, 6, false)
+    ExecuteTrans(probe, sandbox, t6, "dbnumber1", TypeOfSender.FromPreloader, 6, false)
 
     //不同快照中，再次部署同一版本合约（ContractCert），会成功
     val t7 = this.get_ContractCert_Deploy_Trans(sysName, 1)
-    ExecuteTrans(probe, sandbox, t7, "dbnumber2", TypeOfSender.FromAPI, 7, true)
+    ExecuteTrans(probe, sandbox, t7, "dbnumber2", TypeOfSender.FromPreloader, 7, true)
 
     // 通一快照中，部署升级版本的合约（ContractCertV2），会成功
     val t8 = this.get_ContractCert_Deploy_Trans(sysName, 2)
-    ExecuteTrans(probe, sandbox, t8, "dbnumber1", TypeOfSender.FromAPI, 8, true)
+    ExecuteTrans(probe, sandbox, t8, "dbnumber1", TypeOfSender.FromPreloader, 8, true)
 
-    val t81 = this.get_parallelPutProofTPL_Deploy_Trans(sysName, 1)
-    ExecuteTrans(probe, sandbox, t81, "dbnumber1", TypeOfSender.FromAPI, 81, true)
+    val t81 = this.get_ParallelPutProofTPL_Deploy_Trans(sysName, 1)
+    ExecuteTrans(probe, sandbox, t81, "dbnumber1", TypeOfSender.FromPreloader, 81, true)
 
     //持久化这些交易
     val tsls = Array(t1, t2, t3, t4, t5,t51, t81)
@@ -204,7 +208,7 @@ class ContractTest(_system: ActorSystem)
 
     //已经持久化合约，应该要失败
     val t9 = this.get_ContractCert_Deploy_Trans(sysName, 1)
-    ExecuteTrans(probe, sandbox: ActorRef, t9, "dbnumber1", TypeOfSender.FromAPI, 9, false)
+    ExecuteTrans(probe, sandbox: ActorRef, t9, "dbnumber1", TypeOfSender.FromPreloader, 9, false)
 
     val signer3 = Signer("node3", "122000002n00123567", "13856789274", Seq("node3"))
     val cert3 = scala.io.Source.fromFile("jks/certs/122000002n00123567.node3.cer")
@@ -215,20 +219,20 @@ class ContractTest(_system: ActorSystem)
    aa1.AddElement("name", "node3")
    aa1.AddElement("cert", Certificate(certStr3, "SHA1withECDSA", true, None, None))*/
 
-    val certinfo3 = CertInfo("122000002n00123567", "node3", Certificate(certStr3, "SHA1withECDSA", true, None, None))
+    val certinfo3 = Certificate(certStr3, "SHA1withECDSA", true, None, None, id = Option(CertId("122000002n00123567", "node3")))
     //val certinfo3 = aa1.toJsonString
 
     //合约状态为disable，会失败
-    val t10 = this.createCertTransInvoke(sysName, 1, ACTION.SignUpSigner, write(signer3))
-    ExecuteTrans(probe, sandbox: ActorRef, t10, "dbnumber1", TypeOfSender.FromAPI, 10, false)
+    val t10 = this.createCertTransInvoke(sysName, 1, ACTION.SignUpSigner, JsonFormat.toJsonString(signer3))
+    ExecuteTrans(probe, sandbox: ActorRef, t10, "dbnumber1", TypeOfSender.FromPreloader, 10, false)
 
     //合约状态为disable，会失败
-    val t11 = this.createCertTransInvoke(sysName, 1, ACTION.SignUpCert, writePretty(certinfo))
-    ExecuteTrans(probe, sandbox: ActorRef, t11, "dbnumber1", TypeOfSender.FromAPI, 11, false)
+    val t11 = this.createCertTransInvoke(sysName, 1, ACTION.SignUpCert, JsonFormat.toJsonString(certinfo))
+    ExecuteTrans(probe, sandbox: ActorRef, t11, "dbnumber1", TypeOfSender.FromPreloader, 11, false)
 
     //重新设置合约状态为enable
-    var t12 = PeerHelper.createTransaction4State(sysName, ChaincodeId(SystemProfile.getAccountChaincodeName, 1), true)
-    ExecuteTrans(probe, sandbox: ActorRef, t12, "dbnumber1", TypeOfSender.FromAPI, 12, true)
+    val t12 = PeerHelper.createTransaction4State(sysName, ChaincodeId(SystemProfile.getAccountChaincodeName, 1), true)
+    ExecuteTrans(probe, sandbox: ActorRef, t12, "dbnumber1", TypeOfSender.FromPreloader, 12, true)
 
     //持久化这些交易
     probe.send(blocker, WriteBlockStub(Array(t10, t11, t12).toSeq))
@@ -237,21 +241,21 @@ class ContractTest(_system: ActorSystem)
     println("store finish 2= " + msg_recv2.toString())
 
     //合约状态持久化为enable，会成功
-    val t13 = this.createCertTransInvoke(sysName, 1, ACTION.SignUpSigner, write(signer3))
-    ExecuteTrans(probe, sandbox: ActorRef, t13, "dbnumber1", TypeOfSender.FromAPI, 13, true)
+    val t13 = this.createCertTransInvoke(sysName, 1, ACTION.SignUpSigner, JsonFormat.toJsonString(signer3))
+    ExecuteTrans(probe, sandbox: ActorRef, t13, "dbnumber1", TypeOfSender.FromPreloader, 13, true)
 
     //证书已经存在，会失败
-    val t14 = this.createCertTransInvoke(sysName, 1, ACTION.SignUpCert, writePretty(certinfo))
-    ExecuteTrans(probe, sandbox: ActorRef, t14, "dbnumber1", TypeOfSender.FromAPI, 14, false)
+    val t14 = this.createCertTransInvoke(sysName, 1, ACTION.SignUpCert, JsonFormat.toJsonString(certinfo))
+    ExecuteTrans(probe, sandbox: ActorRef, t14, "dbnumber1", TypeOfSender.FromPreloader, 14, false)
 
     var probes = new Array[TestProbe](10)
     var doparams = new Array[DoTransaction](10)
 
     // 并行执行parallelPutProofTPL
     for (i <- 0 to 9) {
-      val p = proofDataSingle("paeallel_key_" + i, "value_" + i)
+      val p = ProofDataSingle("parallel_key_" + i, "value_" + i)
       val t = this.createParallelTransInvoke(sysName, 1, "putProofSingle", writePretty(p))
-      doparams(i) = DoTransaction(Seq[Transaction](t), "dbnumber1", TypeOfSender.FromAPI)
+      doparams(i) = DoTransaction(Seq[Transaction](t), "dbnumber1", TypeOfSender.FromPreloader)
       probes(i) = TestProbe()
     }
 
@@ -260,19 +264,19 @@ class ContractTest(_system: ActorSystem)
     }
 
     for (i <- 0 to 9) {
-      val msg_recv1 = probes(i).expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-      if (msg_recv1.err.isEmpty) {
+      val msg_recv1 = probes(i).expectMsgType[Seq[TransactionResult]](1000.seconds)
+      if (msg_recv1.head.getResult.reason.isEmpty) {
         println(s"serial:${15 + i},expect result:${true},exeresult:true")
-        msg_recv1.err.isEmpty should be(true)
+        msg_recv1.head.getResult.reason.isEmpty should be(true)
       } else {
-        println(msg_recv1.err.get.toString())
+        println(msg_recv1.head.getResult.reason)
         println(s"serial:${15 + i},expect result:${true},exeresult:false")
       }
     }
 
     /*val p = proofDataSingle("paeallel_key_1","value_1")
     val t15 =  this.createParallelTransInvoke(sysName,1, "createParallelTransInvoke", writePretty(p))
-    ExecuteTrans(probe,sandbox:ActorRef,t15,"dbnumber1",TypeOfSender.FromAPI,15,true)*/
+    ExecuteTrans(probe,sandbox:ActorRef,t15,"dbnumber1",TypeOfSender.FromPreloader,15,true)*/
 
   }
 }

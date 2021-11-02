@@ -22,15 +22,15 @@ import org.json4s.jackson.JsonMethods._
 import scala.collection.mutable.Map
 import org.json4s.DefaultFormats
 import rep.app.conf.SystemProfile
-import rep.utils.{ IdTool, SerializeUtils }
-import rep.sc.scalax.{ ContractContext, ContractException, IContract }
+import rep.utils.{IdTool, SerializeUtils}
+import rep.sc.scalax.{ContractContext, ContractException, IContract}
 import rep.protos.peer.ActionResult
+import scalapb.json4s.JsonFormat
 
 /**
  * @author zyf
  */
 final case class CertStatus(credit_code: String, name: String, status: Boolean)
-final case class CertInfo(credit_code: String, name: String, cert: Certificate)
 class ContractCert extends IContract {
   //case class CertStatus(credit_code: String, name: String, status: Boolean)
   //case class CertInfo(credit_code: String, name: String, cert: Certificate)
@@ -43,8 +43,6 @@ class ContractCert extends IContract {
   val certExists = "证书已存在"
   val certNotExists = "证书不存在"
   val unknownError = "未知错误"
-  val chaincodeName = SystemProfile.getAccountChaincodeName
-  val chaincodeVersion = SystemProfile.getAccountChaincodeVersion
   //val prefix = IdTool.getCid(ChaincodeId(chaincodeName, chaincodeVersion))
   val underline = "_"
   val dot = "."
@@ -84,27 +82,27 @@ class ContractCert extends IContract {
   /**
    * 注册用户证书：1、将name加到账户中；2、将Certificate保存
    * @param ctx
-   * @param data
+   * @param cert
    * @return
    */
-  def signUpCert(ctx: ContractContext, data: CertInfo): ActionResult = {
+  def signUpCert(ctx: ContractContext, cert: Certificate): ActionResult = {
     val isNodeCert = ctx.api.bNodeCreditCode(ctx.t.getSignature.getCertId.creditCode)
     if (!isNodeCert) {
       throw ContractException(notNodeCert)
     }
-    val certKey = data.credit_code + dot + data.name
+    val certKey = cert.getId.creditCode + dot + cert.getId.certName
     val certInfo = ctx.api.getState(certKey)
-    val signerKey = data.credit_code
+    val signerKey = cert.getId.creditCode
     val signerContent = ctx.api.getState(signerKey)
     // 先判断证书，若证书不存在，则向账户添加name
     if (certInfo == null) {
       if (signerContent == null) {
         throw ContractException(signerNotExists)
       } else {
-        ctx.api.setVal(certKey, data.cert)
+        ctx.api.setVal(certKey, cert)
         val signer = SerializeUtils.deserialise(signerContent).asInstanceOf[Signer]
-        if (!signer.certNames.contains(data.name)) {
-          val signerNew = signer.addCertNames(data.name)
+        if (!signer.certNames.contains(cert.getId.certName)) {
+          val signerNew = signer.addCertNames(cert.getId.certName)
           ctx.api.setVal(signerKey, signerNew)
         }
       }
@@ -172,10 +170,10 @@ class ContractCert extends IContract {
     action match {
       case ACTION.SignUpSigner =>
         println("SignUpSigner")
-        signUpSigner(ctx, json.extract[Signer])
+        signUpSigner(ctx, JsonFormat.fromJson[Signer](json))
       case ACTION.SignUpCert =>
         println("SignUpCert")
-        signUpCert(ctx, json.extract[CertInfo])
+        signUpCert(ctx, JsonFormat.fromJson[Certificate](json))
       case ACTION.UpdateCertStatus =>
         println("UpdateCertStatus")
         updateCertStatus(ctx, json.extract[CertStatus])

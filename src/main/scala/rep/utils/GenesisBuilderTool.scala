@@ -26,8 +26,7 @@ import org.json4s.jackson.JsonMethods.{pretty, render}
 import org.json4s.{DefaultFormats, jackson}
 import rep.crypto.cert.SignTool
 import rep.network.autotransaction.PeerHelper
-import rep.protos.peer.{Block, ChaincodeId, Signer, Transaction}
-import rep.sc.tpl.CertInfo
+import rep.protos.peer._
 import scalapb.json4s.JsonFormat
 
 import scala.collection.mutable
@@ -92,7 +91,7 @@ object GenesisBuilderTool {
     }
     // 注册节点与管理员的证书
     for (i <- certs.indices) {
-      transList.add(PeerHelper.createTransaction4Invoke(adminJksName.substring(0, adminJksName.length - 4), cid1, "SignUpCert", Seq(SerializeUtils.compactJson(certs(i)))))
+      transList.add(PeerHelper.createTransaction4Invoke(adminJksName.substring(0, adminJksName.length - 4), cid1, "SignUpCert", Seq(JsonFormat.toJsonString(certs(i)))))
     }
 
     // 可选的部署业务合约
@@ -163,8 +162,8 @@ object GenesisBuilderTool {
     signers
   }
 
-  def fillCerts(signers: Array[Signer]): Array[CertInfo] = {
-    val certInfos: Array[CertInfo] = new Array[CertInfo](signers.length)
+  def fillCerts(signers: Array[Signer]): Array[Certificate] = {
+    val certInfos: Array[Certificate] = new Array[Certificate](signers.length)
     // 过滤掉非节点node的cer
     val files = certsFile.listFiles((pathname: File) => {
       def foo(pathname: File) = {
@@ -178,8 +177,8 @@ object GenesisBuilderTool {
       val certfile = scala.io.Source.fromFile(Path.of(certsFile.getPath, signers(i).creditCode + "." + signers(i).name + ".cer").toFile, "UTF-8")
       val certstr = try certfile.mkString finally certfile.close()
       val millis = System.currentTimeMillis()
-      val cert = rep.protos.peer.Certificate(certstr, "SHA1withECDSA", true, Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)))
-      certInfos(i) = CertInfo(signers(i).creditCode, signers(i).name, cert)
+      val cert = Certificate(certstr, "SHA1withECDSA", true, Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), id = Option(CertId(signers(i).creditCode, signers(i).name)))
+      certInfos(i) = cert
     }
     certInfos
   }
