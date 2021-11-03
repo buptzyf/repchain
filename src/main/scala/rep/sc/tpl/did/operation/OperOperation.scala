@@ -1,5 +1,7 @@
 package rep.sc.tpl.did.operation
 
+import rep.crypto.Sha256
+import rep.protos.peer.Operate.OperateType
 import rep.protos.peer.{ActionResult, Operate}
 import rep.sc.scalax.{ContractContext, ContractException}
 import rep.sc.tpl.did.DidTplPrefix.{operPrefix, signerPrefix}
@@ -15,10 +17,13 @@ object OperOperation extends DidOperation {
 
   val operateExists = ActionResult(14001, "operate已存在")
   val operateNotExists = ActionResult(14002, "operate不存在")
-  val notContractDeployer = ActionResult(14003, "非合约部署者，不能注册或禁用相应操作，非管理员不能注册管理员相关的操作")
+  val notContractDeployer = ActionResult(14003, "非合约部署者，不能注册或禁用相应操作")
   val registerNotTranPoster = ActionResult(14004, "register(操作注册者)非交易提交者")
-  val onlyAdminCanManageServiceOperate = ActionResult(14005, "非管理员不具有管理Service的权限")
+  val onlyAdminCanManageServiceOperate = ActionResult(14005, "非管理员，不具有管理Service的权限")
+  val onlyAdminCanRegisterOperate = ActionResult(14005, "非管理员，不能注册管理员相关的操作，如：setState与deploy")
   val contractOwnerNotExists = ActionResult(14006, "注册的合约不存在")
+  val operateTypeUndefined = ActionResult(14007, "操作类型未定义")
+  val hashNotMatch = ActionResult(14008, "Operate中opId字段与计算得到的Hash不相等")
 
   case class OperateStatus(opId: String, state: Boolean)
 
@@ -68,29 +73,44 @@ object OperOperation extends DidOperation {
     */
   def signUpOperate(ctx: ContractContext, operate: Operate): ActionResult = {
     val isAdmin = ctx.api.isAdminCert(ctx.t.getSignature.getCertId.creditCode)
-    if (operate.operateType.isOperateService && !isAdmin) {
-      throw ContractException(toJsonErrMsg(onlyAdminCanManageServiceOperate))
-    }
     // 检查是否为链密钥对，检查是否为合约部署者
-    if (operate.operateType.isOperateService || ((operate.authFullName.endsWith(".deploy") || operate.authFullName.endsWith(".setState")) && isAdmin) || isContractDeployer(ctx, operate)) {
-      val certId = ctx.t.getSignature.getCertId
-      // 只允许自己给自己注册
-      if (!operate.register.equals(certId.creditCode)) {
-        throw ContractException(toJsonErrMsg(registerNotTranPoster))
-      }
-      if (ctx.api.getVal(operPrefix + operate.opId) == null) {
-        // 检查账户的有效性
-        val signer = checkSignerValid(ctx, operate.register)
-        val newSigner = signer.withOperateIds(signer.operateIds.:+(operate.opId))
-        // 将operateId注册到Signer里
-        ctx.api.setVal(signerPrefix + operate.register, newSigner)
-        // 保存operate
-        ctx.api.setVal(operPrefix + operate.opId, operate)
-      } else {
-        throw ContractException(toJsonErrMsg(operateExists))
-      }
+    operate.operateType match {
+      case OperateType.OPERATE_SERVICE =>
+        if (!isAdmin) {
+          throw ContractException(toJsonErrMsg(onlyAdminCanManageServiceOperate))
+        }
+      case OperateType.OPERATE_CONTRACT =>
+        if (operate.authFullName.endsWith(".deploy") || operate.authFullName.endsWith(".setState")) {
+          if (!isAdmin) {
+            throw ContractException(toJsonErrMsg(onlyAdminCanRegisterOperate))
+          }
+        } else {
+          // 非deploy与setState的，则必须是合约部署者
+          if (!isContractDeployer(ctx, operate)) {
+            throw ContractException(toJsonErrMsg(notContractDeployer))
+          }
+        }
+        if (Sha256.hashstr(operate.authFullName) != operate.opId) {
+          throw ContractException(toJsonErrMsg(hashNotMatch))
+        }
+      case OperateType.OPERATE_UNDEFINED =>
+        throw ContractException(toJsonErrMsg(operateTypeUndefined))
+    }
+    val certId = ctx.t.getSignature.getCertId
+    // 只允许自己给自己注册
+    if (!operate.register.equals(certId.creditCode)) {
+      throw ContractException(toJsonErrMsg(registerNotTranPoster))
+    }
+    if (ctx.api.getVal(operPrefix + operate.opId) == null) {
+      // 检查账户的有效性
+      val signer = checkSignerValid(ctx, operate.register)
+      val newSigner = signer.withOperateIds(signer.operateIds.:+(operate.opId))
+      // 将operateId注册到Signer里
+      ctx.api.setVal(signerPrefix + operate.register, newSigner)
+      // 保存operate
+      ctx.api.setVal(operPrefix + operate.opId, operate)
     } else {
-      throw ContractException(toJsonErrMsg(notContractDeployer))
+      throw ContractException(toJsonErrMsg(operateExists))
     }
     null
   }
@@ -113,8 +133,13 @@ object OperOperation extends DidOperation {
       }
       // 检查账户的有效性
       checkSignerValid(ctx, operate.register)
-      val disableTime = ctx.t.getSignature.getTmLocal
-      val newOperate = operate.withOpValid(status.state).withDisableTime(disableTime)
+      var newOperate = Operate.defaultInstance
+      if (status.state) {
+        newOperate = operate.withOpValid(status.state).clearDisableTime
+      } else {
+        val disableTime = ctx.t.getSignature.getTmLocal
+        newOperate = operate.withOpValid(status.state).withDisableTime(disableTime)
+      }
       ctx.api.setVal(operPrefix + status.opId, newOperate)
     } else {
       throw ContractException(toJsonErrMsg(operateNotExists))

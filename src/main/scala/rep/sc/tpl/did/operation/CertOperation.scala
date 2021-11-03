@@ -1,5 +1,6 @@
 package rep.sc.tpl.did.operation
 
+import rep.crypto.Sha256
 import rep.protos.peer.{ActionResult, Certificate, Signer}
 import rep.sc.scalax.{ContractContext, ContractException}
 import rep.sc.tpl.did.DidTplPrefix.{certPrefix, hashPrefix, signerPrefix}
@@ -20,6 +21,7 @@ object CertOperation extends DidOperation {
   val certNotExists = ActionResult(13005, "证书不存在")
   val notAdmin = ActionResult(13006, "非super_admin不能修改super_admin的certificate的状态")
   val certExists = ActionResult(13007, "用户的身份证书或者普通证书已存在")
+  val hashNotMatch = ActionResult(13008, "Certificate中hash字段与certificate字段计算得到的Hash不相等")
 
   case class CertStatus(creditCode: String, certName: String, state: Boolean)
 
@@ -63,6 +65,8 @@ object CertOperation extends DidOperation {
     } else if (customCert.certType.isCertAuthentication || customCert.certType.isCertUndefined) {
       // 身份校验证书通过signer注册指定，或通过 signUpAllTypeCertificate
       throw ContractException(toJsonErrMsg(isAuthCert))
+    } else if (!Sha256.hashstr(customCert.certificate).equals(customCert.certHash)) {
+      throw ContractException(toJsonErrMsg(hashNotMatch))
     } else {
       ctx.api.setVal(certKey, customCert)
       //设置证书的hash与证书的key对应关系
@@ -90,8 +94,13 @@ object CertOperation extends DidOperation {
       val cert = oldCert.asInstanceOf[Certificate]
       // 身份证书，可以来禁用该账户的所有证书，包括身份证书与普通证书
       checkAuthCertAndRule(ctx, cert)
-      val disableTime = ctx.t.getSignature.getTmLocal
-      val newCert = cert.withCertValid(status.state).withUnregTime(disableTime)
+      var newCert = Certificate.defaultInstance
+      if (status.state) {
+        newCert = cert.withCertValid(status.state).clearUnregTime
+      } else {
+        val disableTime = ctx.t.getSignature.getTmLocal
+        newCert = cert.withCertValid(status.state).withUnregTime(disableTime)
+      }
       ctx.api.setVal(certKey, newCert)
       // 如果是身份证书，则将Signer中的身份证书列表更新，身份证书可以禁用身份证书
       if (newCert.certType.isCertAuthentication) {
@@ -124,6 +133,8 @@ object CertOperation extends DidOperation {
     val certHashKey = hashPrefix + customCert.certHash
     if (ctx.api.getVal(certKey) != null || ctx.api.getVal(certHashKey) != null) {
       throw ContractException(toJsonErrMsg(certExists))
+    } else if (!Sha256.hashstr(customCert.certificate).equals(customCert.certHash)) {
+      throw ContractException(toJsonErrMsg(hashNotMatch))
     } else {
       ctx.api.setVal(certKey, customCert)
       //设置证书的hash与证书的key对应关系
@@ -158,8 +169,13 @@ object CertOperation extends DidOperation {
     val oldCert = ctx.api.getVal(certKey)
     if (oldCert != null) {
       val cert = oldCert.asInstanceOf[Certificate]
-      val disableTime = ctx.t.getSignature.getTmLocal
-      val newCert = cert.withCertValid(status.state).withUnregTime(disableTime)
+      var newCert = Certificate.defaultInstance
+      if (status.state) {
+        newCert = cert.withCertValid(status.state).clearUnregTime
+      } else {
+        val disableTime = ctx.t.getSignature.getTmLocal
+        newCert = cert.withCertValid(status.state).withUnregTime(disableTime)
+      }
       ctx.api.setVal(certKey, newCert)
       // 如果是身份证书，则将Signer中的身份证书列表更新，身份证书可以禁用身份证书
       if (newCert.certType.isCertAuthentication) {

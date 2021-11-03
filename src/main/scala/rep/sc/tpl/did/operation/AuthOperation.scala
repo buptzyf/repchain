@@ -92,8 +92,13 @@ object AuthOperation extends DidOperation {
       if (ctx.t.getSignature.getCertId.creditCode.equals(authorize.grant)) {
         // 检查账户的有效性
         checkSignerValid(ctx, authorize.grant)
-        val disableTime = ctx.t.getSignature.getTmLocal
-        val newAuthorize = authorize.withAuthorizeValid(status.state).withDisableTime(disableTime)
+        var newAuthorize = Authorize.defaultInstance
+        if (status.state) {
+          newAuthorize = authorize.withAuthorizeValid(status.state).clearDisableTime
+        } else {
+          val disableTime = ctx.t.getSignature.getTmLocal
+          newAuthorize = authorize.withAuthorizeValid(status.state).withDisableTime(disableTime)
+        }
         ctx.api.setVal(authPrefix + authorize.id, newAuthorize)
       } else {
         throw ContractException(toJsonErrMsg(signerNotGranter))

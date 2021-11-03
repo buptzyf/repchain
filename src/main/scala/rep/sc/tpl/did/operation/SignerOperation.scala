@@ -113,8 +113,13 @@ object SignerOperation extends DidOperation {
     // 判断是否有值
     if (oldSigner != null) {
       val signer = oldSigner.asInstanceOf[Signer]
-      val disableTime = ctx.t.getSignature.getTmLocal
-      val newSigner = signer.withSignerValid(status.state).withDisableTime(disableTime)
+      var newSigner = Signer.defaultInstance
+      if (status.state) {
+        newSigner = signer.withSignerValid(status.state).clearDisableTime
+      } else {
+        val disableTime = ctx.t.getSignature.getTmLocal
+        newSigner = signer.withSignerValid(status.state).withDisableTime(disableTime)
+      }
       ctx.api.setVal(signerPrefix + status.creditCode, newSigner)
     } else {
       throw ContractException(toJsonErrMsg(signerNotExists))
