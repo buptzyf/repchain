@@ -20,12 +20,14 @@ import akka.actor.ActorSystem
 import akka.testkit.{TestKit, TestProbe}
 import org.json4s.{DefaultFormats, jackson}
 import org.json4s.native.Serialization.{write, writePretty}
-import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, Matchers}
+import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, FunSuiteLike, Matchers}
 import rep.app.system.ClusterSystem
 import rep.app.system.ClusterSystem.InitType
+import rep.crypto.cert.SignTool
 import rep.network.autotransaction.PeerHelper
 import rep.network.module.cfrd.ModuleManagerOfCFRD
-import rep.protos.peer.{Certificate, ChaincodeId, Signer, Transaction}
+import rep.protos.peer.ChaincodeDeploy.ContractClassification
+import rep.protos.peer._
 import rep.sc.SandboxSpec.{ACTION, SetMap}
 import rep.sc.tpl._
 //.{CertStatus,CertInfo}
@@ -58,8 +60,7 @@ object SandboxSpec {
   *
   * @param _system
   */
-class SandboxSpec(_system: ActorSystem)
-  extends TestKit(_system) with Matchers with FlatSpecLike with BeforeAndAfterAll {
+class SandboxSpec(_system: ActorSystem) extends TestKit(_system) with Matchers with FunSuiteLike with BeforeAndAfterAll {
 
   def this() = this(ActorSystem("TransferSpec", new ClusterSystem("121000005l35120456.node1", InitType.MULTI_INIT, false).getConf))
 
@@ -67,95 +68,32 @@ class SandboxSpec(_system: ActorSystem)
     shutdown(system)
   }
 
-  implicit val serialization = jackson.Serialization
   // or native.Serialization
+  implicit val serialization = jackson.Serialization
   implicit val formats = DefaultFormats
 
-  "ContractAssetsTPL" should "can set assets and transfer from a to b" in {
+  test("判断合约容器返回交易执行结果的类型") {
     val sysName = "121000005l35120456.node1"
-    val dbTag = "121000005l35120456.node1"
-    //建立PeerManager实例是为了调用transactionCreator(需要用到密钥签名)，无他
-    val pm = system.actorOf(ModuleManagerOfCFRD.props("modulemanager", sysName, false, false, false), "modulemanager")
-    // 部署资产管理
-    val s1 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/ContractAssetsTPL.scala")
-    val l1 = try s1.mkString finally s1.close()
-    // 部署账户管理合约
-    val s2 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/ContractCert.scala")
-    val l2 = try s2.mkString finally s2.close()
-    val sm: SetMap = Map("121000005l35120456" -> 50, "12110107bi45jh675g" -> 50, "122000002n00123567" -> 50)
-    val sms = write(sm)
-    //val aa = new ContractCert
-    val tcs = Array(
-      Transfer("121000005l35120456", "12110107bi45jh675g", 5),
-      Transfer("121000005l35120456", "12110107bi45jh675g0", 5),
-      Transfer("121000005l35120456", "12110107bi45jh675g", 500))
-    val rcs = Array(None, "目标账户不存在", "余额不足")
+    val superAdmin = "951002007l78123233.super_admin"
+    // 初始化配置项，主要是为了初始化存储路径
+    SystemProfile.initConfigSystem(system.settings.config, sysName)
+    // 加载node1的私钥
+    SignTool.loadPrivateKey(sysName, "123", "jks/" + sysName + ".jks")
+    // 加载super_admin的私钥
+    SignTool.loadPrivateKey(superAdmin, "super_admin", "jks/" + superAdmin + ".jks")
 
-    val signer = Signer("node2", "12110107bi45jh675g", "13856789234", Seq("node2"))
-    val cert = scala.io.Source.fromFile("jks/certs/12110107bi45jh675g.node2.cer")
-    val certStr = try cert.mkString finally cert.close()
-    val certinfo = CertInfo("12110107bi45jh675g", "node2", Certificate(certStr, "SHA1withECDSA", true, None, None))
     //准备探针以验证调用返回结果
     val probe = TestProbe()
-    val db = ImpDataAccess.GetDataAccess(sysName)
     val sandbox = system.actorOf(TransactionDispatcher.props("transactiondispatcher"), "transactiondispatcher")
-
-    // 该处由于ContractAssetsTPL中判断用的ChainCodeIdName是用的系统设置，因此现在暂定为系统设置的
-    val cid1 = ChaincodeId(SystemProfile.getAccountChaincodeName, 1)
-    val cid2 = ChaincodeId("ContractCert", 1)
-
-    //生成deploy交易
-    // 资产管理合约
-    val t1 = PeerHelper.createTransaction4Deploy(sysName, cid1, l1,
-      "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
-
+    // 部署账户管理合约
+    val cid = ChaincodeId(SystemProfile.getAccountChaincodeName, 1)
+    val s1 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/did/RdidOperateAuthorizeTPL.scala")
+    val l1 = try s1.mkString finally s1.close()
+    val t1 = PeerHelper.createTransaction4Deploy(superAdmin, cid, l1, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA, ContractClassification.CONTRACT_SYSTEM)
     val msg_send1 = DoTransaction(Seq[Transaction](t1), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send1)
-    val msg_recv1 = probe.expectMsgType[Seq[Sandbox.DoTransactionResult]](1000.seconds)
-    msg_recv1(0).err.isEmpty should be(true)
-
-    // 账户管理合约
-    val t2 = PeerHelper.createTransaction4Deploy(sysName, cid2, l2,
-      "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
-    val msg_send2 = DoTransaction(Seq[Transaction](t2), "dbnumber", TypeOfSender.FromAPI)
-    probe.send(sandbox, msg_send2)
-
-    // 生成invoke交易
-    // 注册账户
-    val t3 = PeerHelper.createTransaction4Invoke(sysName, cid2, ACTION.SignUpSigner, Seq(write(signer)))
-    val msg_send3 = DoTransaction(Seq[Transaction](t3), "dbnumber", TypeOfSender.FromAPI)
-    probe.send(sandbox, msg_send3)
-
-    //deploy紧接invoke测试
-    val msg_recv2 = probe.expectMsgType[Seq[Sandbox.DoTransactionResult]](1000.seconds)
-    msg_recv2(0).err.isEmpty should be(true)
-    val msg_recv3 = probe.expectMsgType[Seq[Sandbox.DoTransactionResult]](1000.seconds)
-    msg_recv3(0).err should be(None)
-
-    // 注册证书
-    val t4 = PeerHelper.createTransaction4Invoke(sysName, cid2, ACTION.SignUpCert, Seq(writePretty(certinfo)))
-    val msg_send4 = DoTransaction(Seq[Transaction](t4), "dbnumber", TypeOfSender.FromAPI)
-    probe.send(sandbox, msg_send4)
-    val msg_recv4 = probe.expectMsgType[Seq[Sandbox.DoTransactionResult]](1000.seconds)
-    msg_recv4(0).err should be(None)
-
-
-    //生成invoke交易
-    val t5 = PeerHelper.createTransaction4Invoke(sysName, cid1, ACTION.set, Seq(sms))
-    val msg_send5 = DoTransaction(Seq[Transaction](t5), "dbnumber", TypeOfSender.FromAPI)
-    probe.send(sandbox, msg_send5)
-    val msg_recv5 = probe.expectMsgType[Seq[Sandbox.DoTransactionResult]](1000.seconds)
-    msg_recv5(0).err should be(None)
-
-    for (i <- 0 until tcs.length) {
-      val t6 = PeerHelper.createTransaction4Invoke(sysName, cid1, ACTION.transfer, Seq(write(tcs(i))))
-      val msg_send6 = DoTransaction(Seq[Transaction](t6), "dbnumber", TypeOfSender.FromAPI)
-      probe.send(sandbox, msg_send6)
-      val msg_recv6 = probe.expectMsgType[Seq[Sandbox.DoTransactionResult]](1000.seconds)
-      if (msg_recv6(0).err.isEmpty && i == 0)
-        msg_recv6(0).err should be(rcs(0))
-      else
-        msg_recv6(0).err.get.cause.getMessage should be(rcs(i))
-    }
+    val msg_recv1 = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
+    // 判断合约容器的返回类型
+    msg_recv1 shouldBe a[Seq[TransactionResult]]
   }
 }

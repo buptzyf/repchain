@@ -21,8 +21,8 @@ import org.json4s.jackson.JsonMethods.parse
 import rep.protos.peer.ActionResult
 import rep.sc.scalax.{ContractContext, IContract}
 
-final case class proofDataSingle(key: String, value: String)
-class parallelPutProofTPL extends IContract{
+final case class ProofDataSingle(key: String, value: String)
+class ParallelPutProofTPL extends IContract{
 
   type proofDataMap = Map[String, Any]
   val split = "_"
@@ -53,7 +53,7 @@ class parallelPutProofTPL extends IContract{
     * @param data
     * @return
     */
-  def putProof(ctx: ContractContext, data: proofDataSingle): ActionResult = {
+  def putProof(ctx: ContractContext, data: ProofDataSingle): ActionResult = {
     ctx.api.setVal(ctx.t.id + split + data.key, data.value)
     print("putProof:"+ data.key + ":" + data.value)
     null
@@ -69,7 +69,7 @@ class parallelPutProofTPL extends IContract{
     action match {
       case "putProofSingle" =>
         println("-----------"+sdata)
-        putProof(ctx, json.extract[proofDataSingle])
+        putProof(ctx, json.extract[ProofDataSingle])
       case "putProofMap" =>
         putProof(ctx, json.extract[proofDataMap])
     }

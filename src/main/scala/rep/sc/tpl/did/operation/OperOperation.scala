@@ -59,7 +59,8 @@ object OperOperation extends DidOperation {
 
   /**
     * 注册Operate
-    * 链密钥对为普通合约拥有者注册，普通合约拥有者（操作拥有者）给自己注册
+    * 链密钥对为自己注册service，为自己注册deploy与setState，其他用户通过授权
+    * 普通合约拥有者（操作拥有者）给自己注册合约相关的操作
     *
     * @param ctx
     * @param operate
@@ -77,7 +78,6 @@ object OperOperation extends DidOperation {
       if (!operate.register.equals(certId.creditCode)) {
         throw ContractException(toJsonErrMsg(registerNotTranPoster))
       }
-      // 链密钥对为普通合约拥有者注册，普通合约拥有者（操作拥有者）给自己注册
       if (ctx.api.getVal(operPrefix + operate.opId) == null) {
         // 检查账户的有效性
         val signer = checkSignerValid(ctx, operate.register)

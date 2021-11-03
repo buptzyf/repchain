@@ -16,34 +16,26 @@
 
 package rep.sc
 
-import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, Matchers}
 import akka.actor.ActorSystem
-import akka.testkit.TestKit
-
-import scala.concurrent.Await
-import scala.concurrent.duration._
-import rep.protos.peer._
-import rep.sc.Sandbox._
+import akka.testkit.{TestKit, TestProbe}
+import org.json4s.native.Serialization.{write, writePretty}
+import org.json4s.{DefaultFormats, jackson}
+import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, Matchers}
+import rep.app.conf.SystemProfile
 import rep.app.system.ClusterSystem
 import rep.app.system.ClusterSystem.InitType
-import org.json4s.{DefaultFormats, jackson}
-import de.heikoseeberger.akkahttpjson4s.Json4sSupport
-import org.json4s._
-import rep.network.module.cfrd.ModuleManagerOfCFRD
-import rep.storage.ImpDataAccess
-import rep.utils.SerializeUtils.deserialise
-import java.nio.ByteBuffer
-import java.io.IOException
-import java.io.PrintWriter
-import java.io.FileWriter
-import java.io.File
+import rep.crypto.cert.SignTool
+import rep.network.autotransaction.PeerHelper
+import rep.protos.peer.ChaincodeDeploy.ContractClassification
+import rep.protos.peer._
+import rep.sc.SandboxDispatcher.DoTransaction
+import rep.sc.tpl.SupplyType._
+import rep.utils.SerializeUtils.{deserialise, toJson}
+import scalapb.json4s.JsonFormat
 
 import scala.collection.mutable.Map
-import org.json4s.{DefaultFormats, Formats, jackson}
-import org.json4s.native.Serialization.writePretty
-import org.json4s.native.Serialization
-import org.json4s.native.Serialization.{read, write}
-import rep.network.autotransaction.PeerHelper
+import scala.concurrent.Await
+import scala.concurrent.duration._
 
 /** 合约容器实现的单元测试
   *
@@ -51,122 +43,120 @@ import rep.network.autotransaction.PeerHelper
   * @param _system 测试用例所在的actor System.
   *
   */
-class SupplySpec2(_system: ActorSystem)
-  extends TestKit(_system)
-    with Matchers
-    with FlatSpecLike
-    with BeforeAndAfterAll {
+class SupplySpec2(_system: ActorSystem) extends TestKit(_system) with Matchers with FlatSpecLike with BeforeAndAfterAll {
 
-  import rep.sc.Sandbox.DoTransactionResult
-  import rep.sc.SandboxDispatcher.DoTransaction
-  import akka.testkit.TestProbe
-  import akka.testkit.TestActorRef
-  import Json4sSupport._
-  import rep.sc.tpl.SupplyType._
-  import rep.utils.SerializeUtils.toJson
-
-  implicit val serialization = jackson.Serialization
   // or native.Serialization
+  implicit val serialization = jackson.Serialization
   implicit val formats = DefaultFormats
 
-  def this() = this(ActorSystem("SandBoxSpec", new ClusterSystem("121000005l35120456.node1", InitType.MULTI_INIT, false).getConf))
+  def this() = this(ActorSystem("SupplySpec2", new ClusterSystem("121000005l35120456.node1", InitType.MULTI_INIT, false).getConf))
 
   override def afterAll: Unit = Await.ready(system.terminate(), Duration.Inf)
 
   //Scala实现的资产管理合约测试，包括合约的部署、调用、结果返回验证
-  "container" should "update contract & share kv" in {
+  "container" can "update contract & share kv" in {
 
     val sysName = "121000005l35120456.node1"
-    val dbTag = "121000005l35120456.node1"
-    //建立PeerManager实例是为了调用transactionCreator(需要用到密钥签名)，无他
-    val pm = system.actorOf(ModuleManagerOfCFRD.props("modulemanager", sysName, false, false, false), "modulemanager")
-
-    //加载合约脚本
-    val s1 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/SupplyTPL2.scala")
-    val l1 = try s1.mkString finally s1.close()
-
-    val s7 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/SupplyTPL3.scala")
-    val l7 = try s7.mkString finally s7.close()
+    val superAdmin = "951002007l78123233.super_admin"
+    // 初始化配置项，主要是为了初始化存储路径
+    SystemProfile.initConfigSystem(system.settings.config, sysName)
+    // 加载node1的私钥
+    SignTool.loadPrivateKey(sysName, "123", "jks/" + sysName + ".jks")
+    // 加载super_admin的私钥
+    SignTool.loadPrivateKey(superAdmin, "super_admin", "jks/" + superAdmin + ".jks")
 
     val fm: FixedMap = Map("A" -> 0.2, "B" -> 0.2, "C" -> 0.1, "D" -> 0.1)
-    val sm: ShareMap = Map("A" -> Array(new ShareRatio(0, 100, 0.1, 0), new ShareRatio(100, 10000, 0.15, 0)),
-      "B" -> Array(new ShareRatio(0, 10000, 0, 10)),
-      "C" -> Array(new ShareRatio(0, 10000, 0.1, 0)),
-      "D" -> Array(new ShareRatio(0, 100, 0, 10), new ShareRatio(100, 10000, 0.15, 0)))
+    val sm: ShareMap = Map(
+      "A" -> Array(ShareRatio(0, 100, 0.1, 0), ShareRatio(100, 10000, 0.15, 0)),
+      "B" -> Array(ShareRatio(0, 10000, 0, 10)),
+      "C" -> Array(ShareRatio(0, 10000, 0.1, 0)),
+      "D" -> Array(ShareRatio(0, 100, 0, 10), ShareRatio(100, 10000, 0.15, 0))
+    )
     val account_remain = "R"
     val account_sales1 = "S1"
     val account_sales2 = "S2"
     val product_id = "P201806270001"
 
     //构造签约交易合约模版1输入json字符串，销售1选择了合约模版1
-    val ipt2 = new IPTSignFixed(account_sales1, product_id, account_remain, fm)
+    val ipt2 = IPTSignFixed(account_sales1, product_id, account_remain, fm)
     val l2 = write(ipt2)
 
-    //构造签约交易合约模版2输入json字符串，，销售2选择了合约模版2
-    val ipt3 = new IPTSignShare(account_sales2, product_id, account_remain, sm)
+    //构造签约交易合约模版2输入json字符串，销售2选择了合约模版2
+    val ipt3 = IPTSignShare(account_sales2, product_id, account_remain, sm)
     val l3 = writePretty(ipt3)
 
     //准备探针以验证调用返回结果
     val probe = TestProbe()
-    val db = ImpDataAccess.GetDataAccess(sysName)
-    var sandbox = system.actorOf(TransactionDispatcher.props("transactiondispatcher"), "transactiondispatcher")
+    //    val db = ImpDataAccess.GetDataAccess(sysName)
+    val sandbox = system.actorOf(TransactionDispatcher.props("transactiondispatcher"), "transactiondispatcher")
 
     //生成deploy交易
-    val cid = new ChaincodeId("Supply", 1)
-    val t1 = PeerHelper.createTransaction4Deploy(sysName, cid, l1, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
-    val msg_send1 = new DoTransaction(Seq[Transaction](t1), "dbnumber", TypeOfSender.FromAPI)
+    //加载合约脚本
+    val s1 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/SupplyTPL2.scala")
+    val l1 = try s1.mkString finally s1.close()
+    val cid = ChaincodeId("Supply", 2)
+    val t1 = PeerHelper.createTransaction4Deploy(superAdmin, cid, l1, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA, ContractClassification.CONTRACT_CUSTOM)
+    val msg_send1 = DoTransaction(Seq[Transaction](t1), "test-db", TypeOfSender.FromPreloader)
     probe.send(sandbox, msg_send1)
-    val msg_recv1 = probe.expectMsgType[Seq[Sandbox.DoTransactionResult]](1000.seconds)
+    val msg_recv1 = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
     val ol1 = msg_recv1(0).ol
 
     //生成invoke交易
-    //获取deploy生成的chainCodeId
-    //初始化资产
-    val t2 = PeerHelper.createTransaction4Invoke(sysName, cid, ACTION.SignFixed, Seq(l2))
-    val msg_send2 = new DoTransaction(Seq[Transaction](t2), "dbnumber", TypeOfSender.FromAPI)
+    val t2 = PeerHelper.createTransaction4Invoke(superAdmin, cid, ACTION.SignFixed, Seq(l2))
+    val msg_send2 = DoTransaction(Seq[Transaction](t2), "test-db", TypeOfSender.FromPreloader)
     probe.send(sandbox, msg_send2)
-    val msg_recv2 = probe.expectMsgType[Seq[Sandbox.DoTransactionResult]](1000.seconds)
-    //由于版本1支持SignFixed 分账方法,因此能够正确处理
-    msg_recv2(0).err should be(None)
+    val msg_recv2 = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
+    //由于版本2支持SignFixed 分账方法,因此能够正确处理
+    msg_recv2(0).getResult.code should be(0)
 
-    var t = PeerHelper.createTransaction4Invoke(sysName, cid, ACTION.SignShare, Seq(l3))
-    var msg_send = new DoTransaction(Seq[Transaction](t), "dbnumber", TypeOfSender.FromAPI)
+    var t = PeerHelper.createTransaction4Invoke(superAdmin, cid, ACTION.SignShare, Seq(l3))
+    var msg_send = DoTransaction(Seq[Transaction](t), "test-db", TypeOfSender.FromPreloader)
     probe.send(sandbox, msg_send)
-    var msg_recv = probe.expectMsgType[Seq[Sandbox.DoTransactionResult]](1000.seconds)
-    //由于版本1不支持SignShare 分账方法,因此无法正确处理
-    msg_recv(0).err should not be None
+    var msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
+    //由于版本2不支持SignShare 分账方法,因此无法正确处理
+    msg_recv(0).getResult.code should be(102)
 
 
-    //部署版本2
-    val cid2 = new ChaincodeId("Supply", 2)
-    t = PeerHelper.createTransaction4Deploy(sysName, cid2, l7, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
-    msg_send = new DoTransaction(Seq[Transaction](t), "dbnumber", TypeOfSender.FromAPI)
+    //部署版本3
+    val s7 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/SupplyTPL3.scala")
+    val l7 = try s7.mkString finally s7.close()
+    val cid2 = new ChaincodeId("Supply", 3)
+    t = PeerHelper.createTransaction4Deploy(superAdmin, cid2, l7, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA, ContractClassification.CONTRACT_CUSTOM)
+    msg_send = DoTransaction(Seq[Transaction](t), "test-db", TypeOfSender.FromPreloader)
     probe.send(sandbox, msg_send)
-    msg_recv = probe.expectMsgType[Seq[Sandbox.DoTransactionResult]](1000.seconds)
-    msg_recv(0).err should be(None)
+    msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
+    msg_recv(0).getResult.reason.isEmpty should be(true)
 
-    t = PeerHelper.createTransaction4Invoke(sysName, cid2, ACTION.SignShare, Seq(l3))
-    msg_send = new DoTransaction(Seq[Transaction](t), "dbnumber", TypeOfSender.FromAPI)
+    t = PeerHelper.createTransaction4Invoke(superAdmin, cid2, ACTION.SignShare, Seq(l3))
+    msg_send = DoTransaction(Seq[Transaction](t), "test-db", TypeOfSender.FromPreloader)
     probe.send(sandbox, msg_send)
-    msg_recv = probe.expectMsgType[Seq[Sandbox.DoTransactionResult]](1000.seconds)
-    //由于版本2支持SignShare 分账方法,因此正确处理
-    msg_recv(0).err.isEmpty should be(true)
+    msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
+    //由于版本3支持SignShare 分账方法,因此正确处理
+    msg_recv(0).getResult.reason.isEmpty should be(true)
+
+    t = PeerHelper.createTransaction4Invoke(superAdmin, cid2, ACTION.SignFixed, Seq(l3))
+    msg_send = DoTransaction(Seq[Transaction](t), "test-db", TypeOfSender.FromPreloader)
+    probe.send(sandbox, msg_send)
+    msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
+    //由于版本3不支持SignFiexed 分账方法,因此无法正确处理
+    msg_recv(0).getResult.code should be(102)
 
 
     //测试各种金额下的分账结果
     val sr = Array(100, 200, 500, 1000)
     for (el <- sr) {
       //构造分账交易
-      val ipt4 = new IPTSplit(account_sales1, product_id, el)
+      val ipt4 = IPTSplit(account_sales1, product_id, el)
       val l4 = write(ipt4)
-      val t4 = PeerHelper.createTransaction4Invoke(sysName, cid, ACTION.Split, Seq(l4))
-      val msg_send4 = new DoTransaction(Seq[Transaction](t4), "dbnumber", TypeOfSender.FromAPI)
-
+      val t4 = PeerHelper.createTransaction4Invoke(superAdmin, cid, ACTION.Split, Seq(l4))
+      val msg_send4 = DoTransaction(Seq[Transaction](t4), "test-db", TypeOfSender.FromPreloader)
       probe.send(sandbox, msg_send4)
-      val msg_recv4 = probe.expectMsgType[Seq[Sandbox.DoTransactionResult]](1000.seconds)
+      val msg_recv4 = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
       val ol4 = msg_recv4(0).ol
-      val ol4str = toJson(ol4)
-      println(s"oper log:${ol4str}")
+      for (elem <- ol4) {
+        val elemStr = JsonFormat.toJsonString(elem)
+        println(s"oper log:$elemStr")
+      }
       //分账之后总额应保持一致
       var total = 0
       ol4.foreach {
@@ -182,14 +172,15 @@ class SupplySpec2(_system: ActorSystem)
       //构造分账交易
       val ipt4 = new IPTSplit(account_sales2, product_id, el)
       val l4 = write(ipt4)
-      val t4 = PeerHelper.createTransaction4Invoke(sysName, cid2, ACTION.Split, Seq(l4))
-      val msg_send4 = new DoTransaction(Seq[Transaction](t4), "dbnumber", TypeOfSender.FromAPI)
-
+      val t4 = PeerHelper.createTransaction4Invoke(superAdmin, cid2, ACTION.Split, Seq(l4))
+      val msg_send4 = DoTransaction(Seq[Transaction](t4), "test-db", TypeOfSender.FromPreloader)
       probe.send(sandbox, msg_send4)
-      val msg_recv4 = probe.expectMsgType[Seq[Sandbox.DoTransactionResult]](1000.seconds)
+      val msg_recv4 = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
       val ol4 = msg_recv4(0).ol
-      val ol4str = toJson(ol4)
-      println(s"oper log:${ol4str}")
+      for (elem <- ol4) {
+        val elemStr = JsonFormat.toJsonString(elem)
+        println(s"oper log:$elemStr")
+      }
       //分账之后总额应保持一致
       var total = 0
       ol4.foreach {
