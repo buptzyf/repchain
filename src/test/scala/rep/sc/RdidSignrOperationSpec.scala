@@ -22,8 +22,11 @@ import org.json4s.jackson.Serialization
 import org.json4s.native.Serialization.write
 import org.json4s.{DefaultFormats, jackson}
 import org.scalatest._
+import rep.app.conf.SystemProfile
 import rep.app.system.ClusterSystem
 import rep.app.system.ClusterSystem.InitType
+import rep.crypto.Sha256
+import rep.crypto.cert.SignTool
 import rep.network.autotransaction.PeerHelper
 import rep.network.module.cfrd.ModuleManagerOfCFRD
 import rep.protos.peer._
@@ -51,15 +54,20 @@ class RdidSignrOperationSpec(_system: ActorSystem) extends TestKit(_system) with
     shutdown(system)
   }
 
-  implicit val serialization: Serialization.type = jackson.Serialization
   // or native.Serialization
+  implicit val serialization: Serialization.type = jackson.Serialization
   implicit val formats: DefaultFormats.type = DefaultFormats
 
   val sysName = "121000005l35120456.node1"
-  val dbTag = "121000005l35120456.node1"
+  val superAdmin = "951002007l78123233.super_admin"
+  // 初始化配置项，主要是为了初始化存储路径
+  SystemProfile.initConfigSystem(system.settings.config, sysName)
+  // 加载node1的私钥
+  SignTool.loadPrivateKey(sysName, "123", "jks/" + sysName + ".jks")
+  // 加载super_admin的私钥
+  SignTool.loadPrivateKey(superAdmin, "super_admin", "jks/" + superAdmin + ".jks")
+
   val cid = ChaincodeId("RdidOperateAuthorizeTPL", 1)
-  //建立PeerManager实例是为了调用transactionCreator(需要用到密钥签名)，无他
-  val pm: ActorRef = system.actorOf(ModuleManagerOfCFRD.props("moduleManager", sysName, enableStatistic = false, enableWebSocket = false, isStartup = false), "moduleManager")
 
   val certNode1: BufferedSource = scala.io.Source.fromFile("jks/certs/121000005l35120456.node1.cer")
   val certStr1: String = try certNode1.mkString finally certNode1.close()
@@ -73,11 +81,11 @@ class RdidSignrOperationSpec(_system: ActorSystem) extends TestKit(_system) with
   val certStr5: String = try certNode5.mkString finally certNode5.close()
   val certs: mutable.Map[String, String] = mutable.Map("node1" -> certStr1, "node2" -> certStr2, "node3" -> certStr3, "node4" -> certStr4, "node5" -> certStr5)
 
-  val node1Cert1 = Certificate(certStr1, "SHA256withECDSA", certValid = true, None, None, certType = Certificate.CertType.CERT_AUTHENTICATION, Some(CertId("121000005l35120456", "node1Cert1", "1")), "hash12345", "1")
-  val node1Cert2 = Certificate(certStr2, "SHA256withECDSA", certValid = true, None, None, Certificate.CertType.CERT_CUSTOM, Some(CertId("121000005l35120456", "node1Cert1", "1")), "hash54321", "1")
-  val node1Cert3 = Certificate(certStr2, "SHA256withECDSA", certValid = true, None, None, certType = Certificate.CertType.CERT_AUTHENTICATION, Some(CertId("121000005l35120456", "node1Cert1", "1")), "hash12345", "1")
-  val node1Cert4 = Certificate(certStr2, "SHA256withECDSA", certValid = true, None, None, certType = Certificate.CertType.CERT_AUTHENTICATION, Some(CertId("121000005l3512v587", "node1Cert1", "1")), "hash54321", "1")
-  val node1Cert5 = Certificate(certStr2, "SHA256withECDSA", certValid = true, None, None, certType = Certificate.CertType.CERT_AUTHENTICATION, Some(CertId("121000005l3512v123", "node1Cert1", "1")), "hash54322", "1")
+  val node1Cert1 = Certificate(certStr1, "SHA256withECDSA", certValid = true, None, None, certType = Certificate.CertType.CERT_AUTHENTICATION, Some(CertId("121000005l35120456", "node1Cert1", "1")), Sha256.hashstr(certStr1), "1")
+  val node1Cert2 = Certificate(certStr2, "SHA256withECDSA", certValid = true, None, None, Certificate.CertType.CERT_CUSTOM, Some(CertId("121000005l35120456", "node1Cert1", "1")), Sha256.hashstr(certStr1), "1")
+  val node1Cert3 = Certificate(certStr2, "SHA256withECDSA", certValid = true, None, None, certType = Certificate.CertType.CERT_AUTHENTICATION, Some(CertId("121000005l35120456", "node1Cert1", "1")), Sha256.hashstr(certStr1), "1")
+  val node1Cert4 = Certificate(certStr2, "SHA256withECDSA", certValid = true, None, None, certType = Certificate.CertType.CERT_AUTHENTICATION, Some(CertId("121000005l3512v587", "node1Cert1", "1")), Sha256.hashstr(certStr2), "1")
+  val node1Cert5 = Certificate(certStr2, "SHA256withECDSA", certValid = true, None, None, certType = Certificate.CertType.CERT_AUTHENTICATION, Some(CertId("121000005l3512v123", "node1Cert1", "1")), Sha256.hashstr(certStr2), "1")
 
   // 只有AuthCert
   val node1AuthCerts1 = List(node1Cert1)
@@ -86,7 +94,7 @@ class RdidSignrOperationSpec(_system: ActorSystem) extends TestKit(_system) with
   // 两个同样的AuthCert证书
   val node1AuthCerts3 = Seq(node1Cert1, node1Cert1)
   // signer 与 cert 的 creditCode 不一致
-  val node1AuthCerts4 = Seq(node1Cert4, node1Cert5)
+  val node1AuthCerts4 = Seq(node1Cert5)
 
   val signers: Array[Signer] = Array(
     Signer("node1", "121000005l35120456", "18912345678", Seq.empty, Seq.empty, Seq.empty, Seq.empty, node1AuthCerts1, "", None, None, signerValid = true, "1"),
@@ -96,7 +104,7 @@ class RdidSignrOperationSpec(_system: ActorSystem) extends TestKit(_system) with
     Signer("node4", "921000005k36123789", "18912345678", Seq.empty, Seq.empty, Seq.empty, Seq.empty, node1AuthCerts2, "", None, None, signerValid = true, "1"),
     Signer("node5", "921000006e0012v696", "18912345678", Seq.empty, Seq.empty, Seq.empty, Seq.empty, node1AuthCerts3, "", None, None, signerValid = true, "1"),
     Signer("node1", "121000005l3512v587", "18912345678", Seq.empty, Seq.empty, Seq.empty, Seq.empty, node1AuthCerts4, "", None, None, signerValid = true, "1"),
-    //    Signer("super_admin", "951002007l78123233", "18912345678", List("super_admin"))
+//    Signer("super_admin", "951002007l78123233", "18912345678", List("super_admin"))
   )
 
   //准备探针以验证调用返回结果
@@ -108,82 +116,82 @@ class RdidSignrOperationSpec(_system: ActorSystem) extends TestKit(_system) with
     // 部署账户管理合约
     val contractCert = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/did/RdidOperateAuthorizeTPL.scala")
     val contractCertStr = try contractCert.mkString finally contractCert.close()
-    val t = PeerHelper.createTransaction4Deploy(sysName, cid, contractCertStr, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA,ChaincodeDeploy.ContractClassification.CONTRACT_CUSTOM)
+    val t = PeerHelper.createTransaction4Deploy(superAdmin, cid, contractCertStr, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA, ChaincodeDeploy.ContractClassification.CONTRACT_SYSTEM)
     val msg_send = DoTransaction(Seq(t), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
-    val msg_recv = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-    assert(msg_recv.err.isEmpty)
+    val msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
+    assert(msg_recv.head.getResult.reason.isEmpty)
   }
 
   test("注册账户-node1") {
     val signerNode1 = signers(0)
-    val t = PeerHelper.createTransaction4Invoke(sysName, cid, chaincodeInputFunc = "signUpSigner", params = Seq(JsonFormat.toJsonString(signerNode1)))
+    val t = PeerHelper.createTransaction4Invoke(superAdmin, cid, chaincodeInputFunc = "signUpSigner", params = Seq(JsonFormat.toJsonString(signerNode1)))
     val msg_send = DoTransaction(Seq(t), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
-    val msg_recv = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-    msg_recv.err.isEmpty should be(true)
+    val msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
+    msg_recv.head.getResult.reason.isEmpty should be(true)
   }
 
   test("注册账户-node1，账户已存在") {
     val signerNode1 = signers(1)
-    val t = PeerHelper.createTransaction4Invoke(sysName, cid, chaincodeInputFunc = "signUpSigner", params = Seq(JsonFormat.toJsonString(signerNode1)))
+    val t = PeerHelper.createTransaction4Invoke(superAdmin, cid, chaincodeInputFunc = "signUpSigner", params = Seq(JsonFormat.toJsonString(signerNode1)))
     val msg_send = DoTransaction(Seq(t), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
-    val msg_recv = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-    JsonFormat.parser.fromJsonString(msg_recv.err.get.cause.getMessage)(ActionResult) should be(SignerOperation.signerExists)
+    val msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
+    JsonFormat.parser.fromJsonString(msg_recv.head.getResult.reason)(ActionResult) should be(SignerOperation.signerExists)
   }
 
   test("注册账户-node2，certNames不为空") {
     val signerNode2 = signers(2)
-    val t = PeerHelper.createTransaction4Invoke(sysName, cid, chaincodeInputFunc = "signUpSigner", params = Seq(JsonFormat.toJsonString(signerNode2)))
+    val t = PeerHelper.createTransaction4Invoke(superAdmin, cid, chaincodeInputFunc = "signUpSigner", params = Seq(JsonFormat.toJsonString(signerNode2)))
     val msg_send = DoTransaction(Seq(t), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
-    val msg_recv = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-    JsonFormat.parser.fromJsonString(msg_recv.err.get.cause.getMessage)(ActionResult) should be(SignerOperation.someFieldsNonEmpty)
+    val msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
+    JsonFormat.parser.fromJsonString(msg_recv.head.getResult.reason)(ActionResult) should be(SignerOperation.someFieldsNonEmpty)
   }
 
   test("注册账户-node3，operatesId不为空") {
     val signerNode3 = signers(3)
-    val t = PeerHelper.createTransaction4Invoke(sysName, cid, chaincodeInputFunc = "signUpSigner", params = Seq(JsonFormat.toJsonString(signerNode3)))
+    val t = PeerHelper.createTransaction4Invoke(superAdmin, cid, chaincodeInputFunc = "signUpSigner", params = Seq(JsonFormat.toJsonString(signerNode3)))
     val msg_send = DoTransaction(Seq(t), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
-    val msg_recv = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-    JsonFormat.parser.fromJsonString(msg_recv.err.get.cause.getMessage)(ActionResult) should be(SignerOperation.someFieldsNonEmpty)
+    val msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
+    JsonFormat.parser.fromJsonString(msg_recv.head.getResult.reason)(ActionResult) should be(SignerOperation.someFieldsNonEmpty)
   }
 
   test("注册账户-node4，存在普通证书，注册账户时不能有普通证书") {
     val signerNode4 = signers(4)
-    val t = PeerHelper.createTransaction4Invoke(sysName, cid, chaincodeInputFunc = "signUpSigner", params = Seq(JsonFormat.toJsonString(signerNode4)))
+    val t = PeerHelper.createTransaction4Invoke(superAdmin, cid, chaincodeInputFunc = "signUpSigner", params = Seq(JsonFormat.toJsonString(signerNode4)))
     val msg_send = DoTransaction(Seq(t), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
-    val msg_recv = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-    JsonFormat.parser.fromJsonString(msg_recv.err.get.cause.getMessage)(ActionResult) should be(SignerOperation.customCertExists)
+    val msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
+    JsonFormat.parser.fromJsonString(msg_recv.head.getResult.reason)(ActionResult) should be(SignerOperation.customCertExists)
   }
 
   test("注册账户-node5，两个一模一样的证书") {
     val signerNode5 = signers(5)
-    val t = PeerHelper.createTransaction4Invoke(sysName, cid, chaincodeInputFunc = "signUpSigner", params = Seq(JsonFormat.toJsonString(signerNode5)))
+    val t = PeerHelper.createTransaction4Invoke(superAdmin, cid, chaincodeInputFunc = "signUpSigner", params = Seq(JsonFormat.toJsonString(signerNode5)))
     val msg_send = DoTransaction(Seq(t), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
-    val msg_recv = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-    JsonFormat.parser.fromJsonString(msg_recv.err.get.cause.getMessage)(ActionResult).code should be(SignerOperation.authCertExistsCode)
+    val msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
+    JsonFormat.parser.fromJsonString(msg_recv.head.getResult.reason)(ActionResult).code should be(SignerOperation.authCertExistsCode)
   }
 
   test("注册账户-node1，signer 与 cert 的 creditCode 不一致") {
     val signerNode6 = signers(6)
-    val t = PeerHelper.createTransaction4Invoke(sysName, cid, chaincodeInputFunc = "signUpSigner", params = Seq(JsonFormat.toJsonString(signerNode6)))
+    val t = PeerHelper.createTransaction4Invoke(superAdmin, cid, chaincodeInputFunc = "signUpSigner", params = Seq(JsonFormat.toJsonString(signerNode6)))
     val msg_send = DoTransaction(Seq(t), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
-    val msg_recv = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-    JsonFormat.parser.fromJsonString(msg_recv.err.get.cause.getMessage)(ActionResult) should be(SignerOperation.SignerCertificateNotMatch)
+    val msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
+    JsonFormat.parser.fromJsonString(msg_recv.head.getResult.reason)(ActionResult) should be(SignerOperation.SignerCertificateNotMatch)
   }
 
   test("禁用账户") {
-    val t = PeerHelper.createTransaction4Invoke(sysName, cid, chaincodeInputFunc = "disableSigner", params = Seq(write(SignerStatus("121000005l35120456", false))))
+    val t = PeerHelper.createTransaction4Invoke(superAdmin, cid, chaincodeInputFunc = "updateSignerStatus", params = Seq(write(SignerStatus("121000005l35120456", false))))
     val msg_send = DoTransaction(Seq(t), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
-    val msg_recv = probe.expectMsgType[Sandbox.DoTransactionResult](1000.seconds)
-    msg_recv.err.isEmpty should be(true)
+    val msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
+    msg_recv.head.getResult.reason.isEmpty should be(true)
   }
 
 }
