@@ -146,7 +146,8 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
 
   private def onTransaction(dotrans: DoTransactionOfSandboxInSingle): TransactionResult = {
     try {
-      shim.sr = ImpDataPreloadMgr.GetImpDataPreload(sTag, dotrans.da)
+      //shim.sr = ImpDataPreloadMgr.GetImpDataPreload(sTag, dotrans.da)
+      shim.srOfTransaction = new TransactionOfDataPreload(dotrans.t.id,ImpDataPreloadMgr.GetImpDataPreload(sTag, dotrans.da))
       checkTransaction(dotrans)
       shim.ol = new scala.collection.mutable.ListBuffer[OperLog]
       doTransaction(dotrans)
@@ -212,7 +213,8 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
   private def ContraceIsExist(txcid: String) {
     if(this.ContractExist == 0){
       val key_tx_state = WorldStateKeyPreFix + txcid + PRE_STATE
-      val state_bytes = shim.sr.Get(key_tx_state)
+      //val state_bytes = shim.sr.Get(key_tx_state)
+      val state_bytes = shim.srOfTransaction.Get(key_tx_state)
       //合约不存在
       if (state_bytes == null) {
         this.ContractExist = 2
@@ -245,7 +247,8 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
   private def IsCurrentSigner(dotrans: DoTransactionOfSandboxInSingle) {
     val cn = dotrans.t.cid.get.chaincodeName
     val key_coder = WorldStateKeyPreFix + cn
-    val coder_bytes = shim.sr.Get(key_coder)
+    //val coder_bytes = shim.sr.Get(key_coder)
+    val coder_bytes = shim.srOfTransaction.Get(key_coder)
     if (coder_bytes != null) {
       val coder = Some(deserialise(coder_bytes).asInstanceOf[String])
       //合约已存在且部署,需要重新部署，但是当前提交者不是以前提交者

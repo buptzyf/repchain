@@ -40,7 +40,7 @@ object OperOperation extends DidOperation {
     var res = false
     // 查看合约开发者
     val key_coder = WorldStateKeyPreFix + operate.authFullName.split("\\.")(0)
-    val creditCode = deserialise(ctx.api.sr.Get(key_coder)).asInstanceOf[String]
+    val creditCode = deserialise(ctx.api.srOfTransaction.Get(key_coder)).asInstanceOf[String]
     if (creditCode == null) {
       throw ContractException(toJsonErrMsg(contractOwnerNotExists))
     } else {

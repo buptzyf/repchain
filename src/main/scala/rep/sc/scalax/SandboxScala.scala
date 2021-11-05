@@ -55,18 +55,21 @@ class SandboxScala(cid: ChaincodeId) extends Sandbox(cid) {
     val key_coder = WorldStateKeyPreFix + cn
     val coder = t.signature.get.certId.get.creditCode
     val txid = serialise(t.id)
-    shim.sr.Put(key_tx, txid)
+    //shim.sr.Put(key_tx, txid)
+    shim.srOfTransaction.Put(key_tx, txid)
     shim.ol.append(OperLog(key_tx, ByteString.EMPTY, ByteString.copyFrom(txid)))
 
     //写入初始状态
     val key_tx_state = WorldStateKeyPreFix + tx_cid + PRE_STATE
     val state_enable = serialise(true)
-    shim.sr.Put(key_tx_state, state_enable)
+    //shim.sr.Put(key_tx_state, state_enable)
+    shim.srOfTransaction.Put(key_tx_state, state_enable)
     shim.ol.append(OperLog(key_tx_state, ByteString.EMPTY, ByteString.copyFrom(state_enable)))
 
     //利用kv记住合约的开发者
     val coder_bytes = serialise(coder)
-    shim.sr.Put(key_coder, coder_bytes)
+    //shim.sr.Put(key_coder, coder_bytes)
+    shim.srOfTransaction.Put(key_coder, coder_bytes)
     shim.ol.append(OperLog(key_coder, ByteString.EMPTY, ByteString.copyFrom(coder_bytes)))
   }
 
@@ -105,14 +108,16 @@ class SandboxScala(cid: ChaincodeId) extends Sandbox(cid) {
           val key_tx_state = WorldStateKeyPreFix + tx_cid + PRE_STATE
           val state = t.para.state.get
           val state_bytes = serialise(state)
-          
-          val oldstate = shim.sr.Get(key_tx_state)
+
+          //val oldstate = shim.sr.Get(key_tx_state)
+          val oldstate = shim.srOfTransaction.Get(key_tx_state)
           var oldbytestring = ByteString.EMPTY
           if(oldstate != null){
             oldbytestring = ByteString.copyFrom(state_bytes)
           }
-          
-          shim.sr.Put(key_tx_state, state_bytes)
+
+          //shim.sr.Put(key_tx_state, state_bytes)
+          shim.srOfTransaction.Put(key_tx_state, state_bytes)
           shim.ol.append(OperLog(key_tx_state, oldbytestring, ByteString.copyFrom(state_bytes)))
           null
         case _ => throw SandboxException(ERR_UNKNOWN_TRANSACTION_TYPE)
@@ -128,6 +133,7 @@ class SandboxScala(cid: ChaincodeId) extends Sandbox(cid) {
         RepLogger.except4Throwable(RepLogger.Sandbox_Logger, t.id, e)
         //akka send 无法序列化原始异常,简化异常信息
         val e1 = new SandboxException(e.getMessage)
+        shim.srOfTransaction.roolback
         new TransactionResult(t.id, _root_.scala.Seq.empty,Option(ActionResult(102,e1.getMessage)))
         /*new DoTransactionResult(t.id, null,
           shim.ol.toList,

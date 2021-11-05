@@ -16,29 +16,19 @@
 
 package rep.sc
 
-import com.fasterxml.jackson.core.Base64Variants
+
 import akka.actor.ActorSystem
 import rep.network.tools.PeerExtension
-import rep.protos.peer.{OperLog, Transaction}
-import rep.storage.ImpDataPreload
-import rep.utils.{IdTool, SerializeUtils}
+import rep.protos.peer.{OperLog}
+import rep.storage.{  TransactionOfDataPreload}
+import rep.utils.{IdTool}
 import rep.utils.SerializeUtils.deserialise
 import rep.utils.SerializeUtils.serialise
-import java.security.cert.CertificateFactory
-import java.io.FileInputStream
-import java.io.ByteArrayInputStream
-import java.io.StringReader
-import java.security.cert.X509Certificate
-
-import rep.storage.ImpDataAccess
 import rep.crypto.cert.SignTool
 import _root_.com.google.protobuf.ByteString
 import rep.log.RepLogger
 import org.slf4j.Logger
 import rep.app.conf.SystemProfile
-
-import scala.collection.concurrent.TrieMap
-import scala.collection.immutable.HashMap
 
 /** Shim伴生对象
  *  @author c4w
@@ -74,7 +64,10 @@ class Shim(system: ActorSystem, cName: String) {
   //存储模块提供的system单例
   val pe = PeerExtension(system)
   //从交易传入, 内存中的worldState快照
-  var sr:ImpDataPreload = null
+  //不再直接使用区块预执行对象，后面采用交易预执行对象，可以更细粒度到控制交易事务
+  //var sr:ImpDataPreload = null
+  var srOfTransaction : TransactionOfDataPreload = null
+
   //记录状态修改日志
   var ol = scala.collection.mutable.ListBuffer.empty[OperLog]
     
@@ -88,7 +81,8 @@ class Shim(system: ActorSystem, cName: String) {
   def setState(key: Key, value: Array[Byte]): Unit = {
     val pkey = pre_key + key
     val oldValue = get(pkey)
-    sr.Put(pkey, value)
+    //sr.Put(pkey, value)
+    this.srOfTransaction.Put(pkey,value)
     val ov = if(oldValue == null) ByteString.EMPTY else ByteString.copyFrom(oldValue)
     val nv = if(value == null) ByteString.EMPTY else ByteString.copyFrom(value)
     //记录操作日志
@@ -98,7 +92,8 @@ class Shim(system: ActorSystem, cName: String) {
   }
 
   private def get(key: Key): Array[Byte] = {
-    sr.Get(key)
+    //sr.Get(key)
+    this.srOfTransaction.Get(key)
   }
 
   def getState(key: Key): Array[Byte] = {

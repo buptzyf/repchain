@@ -1,7 +1,6 @@
 package rep.authority.check
 
 import java.util.concurrent.ConcurrentHashMap
-
 import rep.app.conf.SystemProfile
 import rep.authority.cache.authbind.ImpAuthBindToCert
 import rep.authority.cache.authcache.ImpAuthorizeCache
@@ -15,7 +14,7 @@ import rep.protos.peer.Transaction.Type
 import rep.sc.Sandbox.SandboxException
 import rep.sc.SandboxDispatcher._
 import rep.sc.Shim
-import rep.storage.ImpDataPreload
+import rep.storage.{ImpDataPreload, TransactionOfDataPreload}
 import rep.utils.IdTool
 
 import scala.util.control.Breaks.{break, breakable}
@@ -34,15 +33,15 @@ class PermissionVerify(sysTag:String) {
   //合约权限校验
   //dbinstance没有的情况，参数的值为null
   //did，opname必填
-  def CheckPermission(did:String,certName:String,opname:String,dbinstance:ImpDataPreload): Boolean ={
+  def CheckPermission(did:String,certName:String,opname:String,dbinstance:TransactionOfDataPreload): Boolean ={
     var r = false
     RepLogger.Permission_Logger.trace(s"System=${this.sysTag},PermissionVerify.CheckPermission entry check,did=${did},opname=${opname}")
     if(!IsChainCert(did)) {
       RepLogger.Permission_Logger.trace(s"System=${this.sysTag},PermissionVerify.CheckPermission is not chain cert,did=${did},opname=${opname}")
       //不是链证书，检查是否有合约部署权限
       //获取Signer信息
-      val od = opcache.getOperateData(opname, dbinstance)
-      val sd = sigcache.getSignerData(did,dbinstance)
+      val od = opcache.getOperateData(opname, dbinstance.getDbInstance)
+      val sd = sigcache.getSignerData(did,dbinstance.getDbInstance)
       if(sd == null){
         //实体账户不存在
         RepLogger.Permission_Logger.trace(s"System=${this.sysTag},PermissionVerify.CheckPermission signer is not exist,did=${did},opname=${opname}")
@@ -74,7 +73,7 @@ class PermissionVerify(sysTag:String) {
                 if(opid != null){
                   if(opid.length > 0){
                     breakable(opid.foreach(f=>{
-                      val ad = authcache.getAuthorizeData(f,dbinstance)
+                      val ad = authcache.getAuthorizeData(f,dbinstance.getDbInstance)
                       if(ad != null){
                         if(ad.authorizeValid){
                           val b = IsBindCert(ad.authid,sd,dbinstance)
@@ -133,18 +132,18 @@ class PermissionVerify(sysTag:String) {
   }
 
   //通过证书的Id对象来校验权限
-  def CheckPermissionOfCertId(certid:CertId, opname:String, dbinstance:ImpDataPreload): Boolean ={
+  def CheckPermissionOfCertId(certid:CertId, opname:String, dbinstance:TransactionOfDataPreload): Boolean ={
     CheckPermission(certid.creditCode,certid.certName,opname,dbinstance)
   }
 
   //通过证书Id的字符串来校验权限
-  def CheckPermissionOfCertIdStr(certid:String, opname:String, dbinstance:ImpDataPreload): Boolean ={
+  def CheckPermissionOfCertIdStr(certid:String, opname:String, dbinstance:TransactionOfDataPreload): Boolean ={
     CheckPermissionOfCertId(IdTool.getCertIdFromName(certid), opname, dbinstance)
   }
 
   //通过证书的hash来校验权限
-  def CheckPermissionOfCertHash(certhash:String, opname:String, dbinstance:ImpDataPreload): Boolean ={
-    CheckPermissionOfCertIdStr(certCache.getCertIdForHash(certhash,sysTag,dbinstance), opname, dbinstance)
+  def CheckPermissionOfCertHash(certhash:String, opname:String, dbinstance:TransactionOfDataPreload): Boolean ={
+    CheckPermissionOfCertIdStr(certCache.getCertIdForHash(certhash,sysTag,dbinstance.getDbInstance), opname, dbinstance)
   }
 
   def CheckPermissionOfDeployContract(dotrans: DoTransactionOfSandboxInSingle,shim:Shim):Boolean={
@@ -155,12 +154,12 @@ class PermissionVerify(sysTag:String) {
       System.out.println("")
     }
     try {
-      if (!CheckPermissionOfCertId(dotrans.t.signature.get.certId.get, opname = "*.deploy", shim.sr)) {
-        r = CheckPermissionOfCertId(dotrans.t.signature.get.certId.get, cid.chaincodeName + ".deploy", shim.sr)
+      if (!CheckPermissionOfCertId(dotrans.t.signature.get.certId.get, opname = "*.deploy", shim.srOfTransaction)) {
+        r = CheckPermissionOfCertId(dotrans.t.signature.get.certId.get, cid.chaincodeName + ".deploy", shim.srOfTransaction)
       }
     } catch {
       case e: SandboxException =>
-        r = CheckPermissionOfCertId(dotrans.t.signature.get.certId.get, cid.chaincodeName + ".deploy", shim.sr)
+        r = CheckPermissionOfCertId(dotrans.t.signature.get.certId.get, cid.chaincodeName + ".deploy", shim.srOfTransaction)
     }
 
     r
@@ -170,12 +169,12 @@ class PermissionVerify(sysTag:String) {
     var r = true
     val cid = dotrans.t.cid.get
     try {
-      if (!CheckPermissionOfCertId(dotrans.t.signature.get.certId.get, opname = "*.setState", shim.sr)) {
-        r = CheckPermissionOfCertId(dotrans.t.signature.get.certId.get, cid.chaincodeName + ".setState", shim.sr)
+      if (!CheckPermissionOfCertId(dotrans.t.signature.get.certId.get, opname = "*.setState", shim.srOfTransaction)) {
+        r = CheckPermissionOfCertId(dotrans.t.signature.get.certId.get, cid.chaincodeName + ".setState", shim.srOfTransaction)
       }
     } catch {
       case e: SandboxException =>
-        r = CheckPermissionOfCertId(dotrans.t.signature.get.certId.get, cid.chaincodeName + ".setState", shim.sr)
+        r = CheckPermissionOfCertId(dotrans.t.signature.get.certId.get, cid.chaincodeName + ".setState", shim.srOfTransaction)
     }
 
     r
@@ -188,7 +187,7 @@ class PermissionVerify(sysTag:String) {
     }
     CheckPermissionOfCertId(dotrans.t.signature.get.certId.get,
                                 cid.chaincodeName+"."+dotrans.t.getIpt.function,
-                                shim.sr)
+                                shim.srOfTransaction)
   }
 
   private def IsChainCert(did:String):Boolean={
@@ -200,11 +199,11 @@ class PermissionVerify(sysTag:String) {
     r
   }
 
-  private def IsBindCert(authid:String,sd:signerData,dbinstance:ImpDataPreload):(Boolean,String)={
+  private def IsBindCert(authid:String,sd:signerData,dbinstance:TransactionOfDataPreload):(Boolean,String)={
     var r = (false,"")
     if(sd != null && !sd.certNames.isEmpty){
       breakable(sd.certNames.foreach(f=>{
-        val b = bind.hasAuthBindToCert(authid,f,dbinstance)
+        val b = bind.hasAuthBindToCert(authid,f,dbinstance.getDbInstance)
         if(b){
           r = (true,f)
           break
