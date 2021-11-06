@@ -223,6 +223,43 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
       preloadNodesMap.remove(event.remoteAddress)
       pe.getNodeMgr.removeNode(event.remoteAddress)
       pe.getNodeMgr.removeStableNode(event.remoteAddress)*/
+    case UnreachableMember(member)=>
+      RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("UnreachableMember is : {}. {} nodes cluster" + "~" + member.address))
+        System.err.println(s"UnreachableMember:printer=${pe.getSysTag} ~~ removed=${pe.getNodeMgr.getNodeName4AddrString(member.address.toString)}")
+        preloadNodesMap.remove(member.address)
+        pe.getNodeMgr.removeNode(member.address)
+        pe.getNodeMgr.removeStableNode(member.address)
+        sendEvent(EventType.PUBLISH_INFO, mediator, NodeHelp.getNodeName(member.roles), Topic.Event, Event.Action.MEMBER_DOWN)
+    case ReachableMember(member) =>
+      RepLogger.trace(RepLogger.System_Logger, this.getLogMsgPrefix(" ReachableMember recollection"))
+      val addr = member.address
+      if(member.status == MemberStatus.up){
+        if(member.roles != null && !member.roles.isEmpty && NodeHelp.isCandidatorNode(member.roles)){
+          val name = NodeHelp.getNodeName(member.roles)
+          pe.getNodeMgr.putNode(addr)
+          pe.getNodeMgr.putStableNode(addr, name)
+          sendEvent(EventType.PUBLISH_INFO, mediator, name, Topic.Event, Event.Action.MEMBER_UP)
+        }else{
+          RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"ReachableMember is Up:  nodes is not condidator,node address=${member.address.toString}"))
+        }
+      }else{
+        RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"ReachableMember is not Up:  node address=${member.address.toString}"))
+      }
+
+
+      if (!this.isStartSynch) {
+        if (ConsensusCondition.CheckWorkConditionOfSystem(pe.getNodeMgr.getStableNodes.size)) {
+          //组网成功之后开始系统同步
+          RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"ReachableMember Recollection:  system startup ,start sync,node name=${pe.getSysTag}"))
+          pe.getActorRef(CFRDActorType.ActorType.synchrequester) ! StartSync(true)
+          this.isStartSynch = true
+        } else {
+          RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"ReachableMember Recollection:  nodes less ${SystemProfile.getVoteNodeMin},node name=${pe.getSysTag}"))
+        }
+      } else {
+        RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"ReachableMember Recollection:  local consensus start finish,node name=${pe.getSysTag}"))
+      }
+
     case MemberLeft(member) => //ignore
       System.err.println("MemberLeft:"+member.address.toString +"\t" +member.status.toString())
       RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("MemberLeft: {}. {} nodes cluster" + "~" + member.address.toString))
