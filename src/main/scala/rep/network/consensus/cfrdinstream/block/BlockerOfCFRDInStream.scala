@@ -136,7 +136,7 @@ class BlockerOfCFRDInStream(moduleName: String) extends IBlocker(moduleName){
         this.lastPreloadBlock = blk
         this.lastPreloadBlock = BlockHelp.AddSignToBlock(this.lastPreloadBlock, pe.getSysTag)
         RepTimeTracer.setStartTime(pe.getSysTag, "Endorsement", System.currentTimeMillis(), newHeight, this.lastPreloadBlock.transactions.size)
-        pe.getActorRef(CFRDActorType.ActorType.endorsementcollectionerinstream) ! CollectEndorsement(this.lastPreloadBlock, pe.getSysTag)
+        pe.getActorRef(CFRDActorType.ActorType.endorsementcollectionerinstream) ! CollectEndorsement(this.lastPreloadBlock, pe.getSysTag,pe.getBlocker.VoteIndex)
       }else{
         pe.getTransPoolMgr.rollbackTransaction("blockidentifier_"+blk.height)
       }

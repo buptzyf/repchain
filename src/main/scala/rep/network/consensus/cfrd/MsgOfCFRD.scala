@@ -70,7 +70,8 @@ object MsgOfCFRD {
 
 
   //背书收集者消息
-  case class CollectEndorsement(blc: Block, blocker: String)
+  //case class CollectEndorsement(blc: Block, blocker: String)
+  case class CollectEndorsement(blc: Block, blocker: String,blockerIndex:Int)
 
   //背书人返回的背书结果
   case class ResultOfEndorsed(result: Int, endor: Signature, BlockHash: String,endorserOfChainInfo:BlockchainInfo,endorserOfVote:BlockerInfo)
