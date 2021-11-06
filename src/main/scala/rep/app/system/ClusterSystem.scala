@@ -40,6 +40,7 @@ import rep.log.RepLogger
 import scala.concurrent.{Await, ExecutionContext}
 import scala.concurrent.duration._
 import akka.actor.Terminated
+import rep.app.TxPools
 import rep.log.httplog.AlertInfo
 import rep.network.module.cfrdinstream.ModuleManagerOfCFRDInStream
 import rep.network.module.pbft.ModuleManagerOfPBFT
@@ -253,6 +254,8 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
     var r = true
     implicit val timeout = Timeout(120.seconds)
     try{
+      val mgr = TxPools.getPoolMgr(this.sysTag)
+      mgr.saveTransaction(this.sysTag)
       val result = sysActor.terminate
       val result1 = Await.result(result, timeout.duration).asInstanceOf[Terminated]
       r = result1.getAddressTerminated

@@ -75,7 +75,7 @@ class DispatchOfRecvEndorsement(moduleName: String) extends ModuleBase(moduleNam
     }
   }
 
-  private def isAllowEndorse(info: EndorsementInfo): Int = {
+  /*private def isAllowEndorse(info: EndorsementInfo): Int = {
     if (info.blocker == pe.getSysTag) {
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"DispatchOfRecvEndorsement is itself,do not endorse,recv endorse request,endorse height=${info.blc.height},local height=${pe.getCurrentHeight}"))
       1
@@ -105,9 +105,9 @@ class DispatchOfRecvEndorsement(moduleName: String) extends ModuleBase(moduleNam
         3
       }
     }
-  }
+  }*/
 
-  private def checkEndorseSign(block: Block): Boolean = {
+  /*private def checkEndorseSign(block: Block): Boolean = {
     //println(s"${pe.getSysTag}:entry checkEndorseSign")
     RepTimeTracer.setStartTime(pe.getSysTag, s"recvendorsement-${moduleName}-checkEndorseSign", System.currentTimeMillis(),block.height,block.transactions.size)
     var result = false
@@ -147,11 +147,12 @@ class DispatchOfRecvEndorsement(moduleName: String) extends ModuleBase(moduleNam
         sender ! ResultOfEndorsed(ResultFlagOfEndorse.CandidatorError, null, info.blc.hashOfBlock.toStringUtf8(), pe.getSystemCurrentChainStatus, pe.getBlocker)
         RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"DispatchOfRecvEndorsement，it is not candator,do not endorse,recv endorse request,endorse height=${info.blc.height},local height=${pe.getCurrentHeight}"))
     }
-  }
+  }*/
 
 
   override def receive = {
-    case EndorsementInfo(block, blocker,voteindex) =>
+    //case EndorsementInfo(block, blocker,voteindex) =>
+    case EndorsementInfo(block, blocker) =>
       createRouter
       /*if(!pe.isSynching){
         RepTimeTracer.setStartTime(pe.getSysTag, s"DispatchOfRecvEndorsement-recvendorsement-${moduleName}", System.currentTimeMillis(),block.height,block.transactions.size)
@@ -162,7 +163,8 @@ class DispatchOfRecvEndorsement(moduleName: String) extends ModuleBase(moduleNam
         RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"DispatchOfRecvEndorsement，do not endorse,it is synching,recv endorse request,endorse height=${block.height},local height=${pe.getCurrentHeight}"))
       }*/
 
-      router.route(EndorsementInfo(block, blocker,voteindex), sender)
+      //router.route(EndorsementInfo(block, blocker,voteindex), sender)
+      router.route(EndorsementInfo(block, blocker), sender)
     case _ => //ignore
   }
 }

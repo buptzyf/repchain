@@ -10,7 +10,7 @@ import rep.log.{RepLogger, RepTimeTracer}
 import rep.network.autotransaction.Topic
 import rep.network.base.ModuleBase
 import rep.network.consensus.byzantium.ConsensusCondition
-import rep.network.consensus.cfrd.MsgOfCFRD.{BlockInfoOfConsensus, CollectEndorsement, EndorsementFinishMsgInStream, RequesterOfEndorsement, RequesterOfEndorsementInStream, ResendEndorseInfo, ResultOfEndorseRequester}
+import rep.network.consensus.cfrd.MsgOfCFRD.{BlockInfoOfConsensus, CollectEndorsement, EndorsementFinishMsgInStream, ForceVoteInfo, RequesterOfEndorsement, RequesterOfEndorsementInStream, ResendEndorseInfo, ResultOfEndorseRequester}
 import rep.network.consensus.util.{BlockHelp, BlockVerify}
 import rep.network.module.cfrd.CFRDActorType
 import rep.network.util.NodeHelp
@@ -60,9 +60,9 @@ class EndorseCollectorInStream(moduleName: String) extends ModuleBase(moduleName
     }
   }
 
-  private def resetEndorseInfo(block: Block, blocker: String) = {
+  private def resetEndorseInfo(block: Block, blocker: ForceVoteInfo) = {
     this.block = block
-    this.blocker = blocker
+    this.blocker = blocker.blocker
     this.recvedEndorse = this.recvedEndorse.empty
   }
 
@@ -138,7 +138,7 @@ class EndorseCollectorInStream(moduleName: String) extends ModuleBase(moduleName
             pe.getNodeMgr.getStableNodes.foreach(f => {
               if (NodeHelp.isBlocker(pe.getSysTag, pe.getBlocker.blocker)) {
                 RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"collectioner send endorsement to requester,height=${block.height},local height=${pe.getCurrentHeight}"))
-                router.route(RequesterOfEndorsementInStream(block, blocker, f, pe.getBlocker.VoteIndex,pe.getBlocker.VoteHeight), self)
+                router.route(RequesterOfEndorsementInStream(block, blocker.blocker, f, pe.getBlocker.VoteIndex,pe.getBlocker.VoteHeight), self)
               }
             })
           } else {

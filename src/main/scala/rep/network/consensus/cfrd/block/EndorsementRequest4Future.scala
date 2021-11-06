@@ -85,7 +85,8 @@ class EndorsementRequest4Future(moduleName: String) extends ModuleBase(moduleNam
     schedulerLink = clearSched()
     
       RepTimeTracer.setStartTime(pe.getSysTag, s"Endorsement-request-${moduleName}", System.currentTimeMillis(),reqinfo.blc.height,reqinfo.blc.transactions.size)
-      val result = this.ExecuteOfEndorsement(reqinfo.endorer, EndorsementInfo(reqinfo.blc, reqinfo.blocker,reqinfo.voteindex))
+      //val result = this.ExecuteOfEndorsement(reqinfo.endorer, EndorsementInfo(reqinfo.blc, reqinfo.blocker,reqinfo.voteindex))
+      val result = this.ExecuteOfEndorsement(reqinfo.endorer, EndorsementInfo(reqinfo.blc, reqinfo.blocker))
       if (result != null) {
         if (result.result == ResultFlagOfEndorse.success) {
           if (EndorsementVerify(reqinfo.blc, result)) {
@@ -125,11 +126,13 @@ class EndorsementRequest4Future(moduleName: String) extends ModuleBase(moduleNam
 
 
   override def receive = {
-    case RequesterOfEndorsement(block, blocker, addr,voteindex) =>
+    //case RequesterOfEndorsement(block, blocker, addr,voteindex) =>
+    case RequesterOfEndorsement(block, blocker, addr) =>
       //待请求背书的块的上一个块的hash不等于系统最新的上一个块的hash，停止发送背书
       if(NodeHelp.isBlocker(pe.getSysTag, pe.getBlocker.blocker)){
         if(block.previousBlockHash.toStringUtf8() == pe.getCurrentBlockHash){
-          handler(RequesterOfEndorsement(block, blocker, addr,voteindex))
+          //handler(RequesterOfEndorsement(block, blocker, addr,voteindex))
+          handler(RequesterOfEndorsement(block, blocker, addr))
         }else{
           RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"--------endorsementRequest4Future back out  endorsement,prehash not equal pe.currenthash ,height=${block.height},local height=${pe.getCurrentHeight} "))
         }

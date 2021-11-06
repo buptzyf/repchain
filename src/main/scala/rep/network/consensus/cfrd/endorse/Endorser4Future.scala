@@ -31,7 +31,7 @@ import scala.util.control.Breaks._
 import rep.network.module.ModuleActorType
 import rep.network.module.cfrd.CFRDActorType
 import rep.network.consensus.common.MsgOfConsensus.{PreTransBlock, PreTransBlockResult}
-import rep.network.consensus.cfrd.MsgOfCFRD.{EndorsementInfo, ResultFlagOfEndorse, ResultOfEndorsed, VoteOfForce, VoteOfReset, verifyTransOfEndorsement, verifyTransPreloadOfEndorsement, verifyTransRepeatOfEndorsement}
+import rep.network.consensus.cfrd.MsgOfCFRD.{EndorsementInfo, ResultFlagOfEndorse, ResultOfEndorsed, SpecifyVoteHeight, VoteOfForce, VoteOfReset, verifyTransOfEndorsement, verifyTransPreloadOfEndorsement, verifyTransRepeatOfEndorsement}
 import rep.network.consensus.util.{BlockHelp, BlockVerify}
 import rep.network.sync.SyncMsg.StartSync
 import rep.log.RepLogger
@@ -107,53 +107,57 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
   }
 
   private def isAllowEndorse(info: EndorsementInfo): Int = {
-    if (info.blocker == pe.getSysTag) {
-      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"endorser is itself,do not endorse,recv endorse request,endorse height=${info.blc.height},local height=${pe.getCurrentHeight}"))
-      1
-    } else {
-      if (NodeHelp.isCandidateNow(pe.getSysTag, SystemCertList.getSystemCertList)) {
-        //是候选节点，可以背书
-        //if (info.blc.previousBlockHash.toStringUtf8 == pe.getCurrentBlockHash && NodeHelp.isBlocker(info.blocker, pe.getBlocker.blocker)) {
-        if (info.blc.previousBlockHash.toStringUtf8 == pe.getBlocker.voteBlockHash && NodeHelp.isBlocker(info.blocker, pe.getBlocker.blocker)) {
-          //可以进入背书
-          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"vote result equal，allow entry endorse,recv endorse request,endorse height=${info.blc.height},local height=${pe.getCurrentHeight}"))
-          0
-        } else  {
-          //todo 需要判断区块缓存，再决定是否需要启动同步,并且当前没有同步才启动同步，如果已经同步，则不需要发送消息。
-          if(info.blc.height > pe.getCurrentHeight+1){
-            if(!pe.isSynching){
-              pe.getActorRef(CFRDActorType.ActorType.synchrequester) ! StartSync(false)
-            }else{
-              RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"node is synchoronizing,recv endorse request,endorse height=${info.blc.height},local height=${pe.getCurrentHeight}"))
-            }
-            //本地正在同步
-            2
-          }else if(info.blc.hashOfBlock.toStringUtf8 == pe.getCurrentBlockHash){
-            if(pe.getBlocker.blocker == ""){
-              RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"local not vote,start vote,recv endorse request,endorse height=${info.blc.height},local height=${pe.getCurrentHeight}"))
-              pe.getActorRef(CFRDActorType.ActorType.voter) ! VoteOfForce
-              //本地开始抽签
-              4
-            }else if(info.voteindex != pe.getBlocker.VoteIndex){
-              pe.getActorRef(CFRDActorType.ActorType.voter) ! VoteOfReset
-              RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"do not endorsed,vote index not equal,reset vote,recv endorse request,endorse height=${info.blc.height},local height=${pe.getCurrentHeight}"))
-              //重置抽签
-              5
+    //if (info.blocker == pe.getSysTag) {
+    if (info.blocker.blocker == pe.getSysTag) {
+        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"endorser is itself,do not endorse,recv endorse request,endorse height=${info.blc.height},local height=${pe.getCurrentHeight}"))
+        1
+      } else {
+        if (NodeHelp.isCandidateNow(pe.getSysTag, SystemCertList.getSystemCertList)) {
+          //是候选节点，可以背书
+          //if (info.blc.previousBlockHash.toStringUtf8 == pe.getCurrentBlockHash && NodeHelp.isBlocker(info.blocker, pe.getBlocker.blocker)) {
+          //if (info.blc.previousBlockHash.toStringUtf8 == pe.getBlocker.voteBlockHash && NodeHelp.isBlocker(info.blocker, pe.getBlocker.blocker)) {
+          if (info.blc.previousBlockHash.toStringUtf8 == pe.getBlocker.voteBlockHash && NodeHelp.isBlocker(info.blocker.blocker, pe.getBlocker.blocker)) {
+            //可以进入背书
+            RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"vote result equal，allow entry endorse,recv endorse request,endorse height=${info.blc.height},local height=${pe.getCurrentHeight}"))
+            0
+          } else  {
+            //todo 需要判断区块缓存，再决定是否需要启动同步,并且当前没有同步才启动同步，如果已经同步，则不需要发送消息。
+            if(info.blc.height > pe.getCurrentHeight+1){
+              if(!pe.isSynching){
+                pe.getActorRef(CFRDActorType.ActorType.synchrequester) ! StartSync(false)
+              }else if(info.blocker.blockHeight == pe.getBlocker.VoteHeight && info.blocker.blockHash == pe.getBlocker.voteBlockHash && info.blocker.voteIndex > pe.getBlocker.VoteIndex){
+                pe.getActorRef(CFRDActorType.ActorType.voter) ! SpecifyVoteHeight(info.blocker)
+              } else{
+                RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"node is synchoronizing,recv endorse request,endorse height=${info.blc.height},local height=${pe.getCurrentHeight}"))
+              }
+              //本地正在同步
+              2
+            }else if(info.blc.hashOfBlock.toStringUtf8 == pe.getCurrentBlockHash){
+              if(pe.getBlocker.blocker == ""){
+                RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"local not vote,start vote,recv endorse request,endorse height=${info.blc.height},local height=${pe.getCurrentHeight}"))
+                pe.getActorRef(CFRDActorType.ActorType.voter) ! VoteOfForce
+                //本地开始抽签
+                4
+              }else if(info.blocker.voteIndex != pe.getBlocker.VoteIndex){
+                pe.getActorRef(CFRDActorType.ActorType.voter) ! VoteOfReset
+                RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"do not endorsed,vote index not equal,reset vote,recv endorse request,endorse height=${info.blc.height},local height=${pe.getCurrentHeight}"))
+                //重置抽签
+                5
+              }else{
+                RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"do not endorsed,unknow of reason,recv endorse request,endorse height=${info.blc.height},local height=${pe.getCurrentHeight}"))
+                6
+              }
             }else{
               RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"do not endorsed,unknow of reason,recv endorse request,endorse height=${info.blc.height},local height=${pe.getCurrentHeight}"))
               6
             }
-          }else{
-            RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"do not endorsed,unknow of reason,recv endorse request,endorse height=${info.blc.height},local height=${pe.getCurrentHeight}"))
-            6
           }
+        } else {
+          //不是候选节点，不能够参与背书
+          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( "it is not candidator node,recv endorse request,endorse height=${info.blc.height},local height=${pe.getCurrentHeight}"))
+          3
         }
-      } else {
-        //不是候选节点，不能够参与背书
-        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( "it is not candidator node,recv endorse request,endorse height=${info.blc.height},local height=${pe.getCurrentHeight}"))
-        3
       }
-    }
   }
 
   private def VerifyInfo(blc: Block) = {
@@ -256,10 +260,12 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
 
   override def receive = {
     //Endorsement block
-    case EndorsementInfo(block, blocker,voteindex) =>
+    //case EndorsementInfo(block, blocker,voteindex) =>
+    case EndorsementInfo(block, blocker) =>
       if(!pe.isSynching){
         RepTimeTracer.setStartTime(pe.getSysTag, s"recvendorsement-${moduleName}", System.currentTimeMillis(),block.height,block.transactions.size)
-        EndorseHandler(EndorsementInfo(block, blocker,voteindex))
+        //EndorseHandler(EndorsementInfo(block, blocker,voteindex))
+        EndorseHandler(EndorsementInfo(block, blocker))
         RepTimeTracer.setEndTime(pe.getSysTag, s"recvendorsement-${moduleName}", System.currentTimeMillis(),block.height,block.transactions.size)
       }else{
         sender ! ResultOfEndorsed(ResultFlagOfEndorse.EnodrseNodeIsSynching, null, block.hashOfBlock.toStringUtf8(),pe.getSystemCurrentChainStatus,pe.getBlocker)

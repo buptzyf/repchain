@@ -21,7 +21,11 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import rep.protos.peer.Transaction
 import java.util.concurrent.locks._
 
+import rep.app.conf.SystemProfile
 import rep.log.RepLogger
+import rep.utils.SerializeUtils
+
+import scala.collection.mutable.ArrayBuffer
 //import scala.jdk.CollectionConverters._
 import scala.collection.JavaConverters._
 import java.util.concurrent.ConcurrentSkipListMap
@@ -177,4 +181,17 @@ class TransactionPoolMgrForCFRD extends ITransctionPoolMgr {
   override def getTransListClone(num: Int, sysName: String): Seq[Transaction] = {Seq.empty}
 
   override def startupSchedule(sysName: String): Unit = {}
+
+  override def saveTransaction(sysName: String): Unit = {
+    if (SystemProfile.getIsPersistenceTxToDB == 1) {
+      var r = new ArrayBuffer[Array[Byte]]()
+      this.transactions.values.foreach(t => {
+        r += t.toByteArray
+      })
+      SerializeUtils.serialise(r)
+      var da = ImpDataAccess.GetDataAccess(sysName)
+      da.Put(sysName + "-" + txPrefix, SerializeUtils.serialise(r))
+    }
+  }
+
 }

@@ -5,12 +5,14 @@ import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedQueue, Concurren
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, LongAdder}
 
 import scala.collection.JavaConverters._
-import rep.app.conf.TimePolicy
+import rep.app.conf.{SystemProfile, TimePolicy}
 import rep.log.RepLogger
 import rep.network.cache.ITransactionPool
 import rep.protos.peer.Transaction
 import rep.storage.ImpDataAccess
+import rep.utils.SerializeUtils
 
+import scala.collection.mutable.ArrayBuffer
 import scala.util.control.Breaks.{break, breakable}
 
 class TransactionPoolMgr extends ITransctionPoolMgr {
@@ -189,4 +191,19 @@ class TransactionPoolMgr extends ITransctionPoolMgr {
   }
 
   override def getTransListClone(start: Int, num: Int, sysName: String): Seq[Transaction] = {Seq.empty}
+
+  override def saveTransaction(sysName: String): Unit = {
+    if (SystemProfile.getIsPersistenceTxToDB == 1) {
+      var r = new ArrayBuffer[Array[Byte]]()
+      this.transQueueOfTx.forEach(t=>{
+        r += t.toByteArray
+    })
+      SerializeUtils.serialise(r)
+      var da = ImpDataAccess.GetDataAccess(sysName)
+      da.Put(sysName + "-" + txPrefix, SerializeUtils.serialise(r))
+    }
+  }
+
+
+
 }

@@ -77,7 +77,8 @@ class CollectionerOfBlocker(moduleName: String) extends ModuleBase(moduleName) {
   }
 
   override def receive = {
-    case CollectEndorsement(block, blocker,index) =>
+    //case CollectEndorsement(block, blocker,index) =>
+    case CollectEndorsement(block, blocker) =>
       //待请求背书的块的上一个块的hash不等于系统最新的上一个块的hash，停止发送背书
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"--------recv endorse new block,bheight=${block.height}"))
       if (NodeHelp.isBlocker(pe.getSysTag, pe.getBlocker.blocker)) {
@@ -85,7 +86,8 @@ class CollectionerOfBlocker(moduleName: String) extends ModuleBase(moduleName) {
           //pe.setConfirmHeight(block.height)
           this.lastBlock = block
           RepTimeTracer.setStartTime(pe.getSysTag, "Endorsement", System.currentTimeMillis(), block.height, block.transactions.size)
-          val re = ExecuteOfEndorsementInStream(CollectEndorsement(block, blocker,index))
+          //val re = ExecuteOfEndorsementInStream(CollectEndorsement(block, blocker,index))
+          val re = ExecuteOfEndorsementInStream(CollectEndorsement(block, blocker))
           if (re!= null && re.result) {
             pe.setConfirmHeight(block.height)
             this.lastBlock = re.block

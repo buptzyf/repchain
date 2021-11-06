@@ -87,6 +87,7 @@ object SystemProfile {
   private[this] var _MAX_THREADS: Int = 10
   private[this] var _ALIVE_TIME: Int = 10
   private[this] var _PRISMA_URL: String = ""
+  private[this] var _IS_PERSISTENCE_TX_TO_DB = 0
   
   //实时图的事件是否发送，如果不发送，前端实时图将收不到任何消息。
   private[this] var _REALTIMEGRAPH_ENABLE = 1 ////0 unable;1 enable; default 1
@@ -139,6 +140,13 @@ object SystemProfile {
   private def PRISMA_URL: String = _PRISMA_URL
   private def ENDORSE_RESEND_TIMES:Int = _ENDORSE_RESEND_TIMES
   private def SYNCH_TYPE:String = _SYNCH_TYPE
+
+  private def IS_PERSISTENCE_TX_TO_DB:Int = _IS_PERSISTENCE_TX_TO_DB
+
+
+  private def IS_PERSISTENCE_TX_TO_DB_=(value:Int):Unit={
+    _IS_PERSISTENCE_TX_TO_DB = value
+  }
 
   private def ENDORSE_RESEND_TIMES_=(value:Int):Unit={
     _ENDORSE_RESEND_TIMES = value
@@ -363,6 +371,7 @@ object SystemProfile {
 
     SYNCH_TYPE_=(config.getString("system.consensus.synch_type"))
     ENDORSE_RESEND_TIMES_=(config.getInt("system.time.timeout.endorse_resend_times"))
+    IS_PERSISTENCE_TX_TO_DB_=(config.getInt("system.is_persistence_tx_to_db"))
   }
 
   //zhj
@@ -443,6 +452,8 @@ object SystemProfile {
   def getBlockNumberOfBlocker = BLOCKNUMBER_BLOCKER
 
   def getChainCertName = CHAIN_CERT_NAME
+
+  def getIsPersistenceTxToDB:Int=IS_PERSISTENCE_TX_TO_DB
 
 
 }

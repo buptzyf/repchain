@@ -2,11 +2,11 @@ package rep.network.consensus.cfrdinstream.block
 
 import akka.actor.Props
 import akka.pattern.{AskTimeoutException, ask}
-import rep.app.conf.{SystemProfile}
+import rep.app.conf.SystemProfile
 import rep.log.{RepLogger, RepTimeTracer}
 import rep.network.autotransaction.Topic
-import rep.network.consensus.cfrd.MsgOfCFRD.{CollectEndorsement, CreateBlock}
-import rep.network.consensus.common.MsgOfConsensus.{ PreTransBlock, PreTransBlockOfCache, PreTransBlockResult, preTransBlockResultOfCache}
+import rep.network.consensus.cfrd.MsgOfCFRD.{CollectEndorsement, CreateBlock, ForceVoteInfo}
+import rep.network.consensus.common.MsgOfConsensus.{PreTransBlock, PreTransBlockOfCache, PreTransBlockResult, preTransBlockResultOfCache}
 import rep.network.consensus.common.block.IBlocker
 import rep.network.consensus.util.BlockHelp
 import rep.network.module.ModuleActorType
@@ -15,6 +15,7 @@ import rep.network.util.NodeHelp
 import rep.protos.peer.{Block, Event}
 import rep.storage.ImpDataPreloadMgr
 import rep.utils.GlobalUtils.{BlockerInfo, EventType}
+
 import scala.concurrent.Await
 
 
@@ -136,7 +137,8 @@ class BlockerOfCFRDInStream(moduleName: String) extends IBlocker(moduleName){
         this.lastPreloadBlock = blk
         this.lastPreloadBlock = BlockHelp.AddSignToBlock(this.lastPreloadBlock, pe.getSysTag)
         RepTimeTracer.setStartTime(pe.getSysTag, "Endorsement", System.currentTimeMillis(), newHeight, this.lastPreloadBlock.transactions.size)
-        pe.getActorRef(CFRDActorType.ActorType.endorsementcollectionerinstream) ! CollectEndorsement(this.lastPreloadBlock, pe.getSysTag,pe.getBlocker.VoteIndex)
+        //pe.getActorRef(CFRDActorType.ActorType.endorsementcollectionerinstream) ! CollectEndorsement(this.lastPreloadBlock, pe.getSysTag,pe.getBlocker.VoteIndex)
+        pe.getActorRef(CFRDActorType.ActorType.endorsementcollectionerinstream) ! CollectEndorsement(this.lastPreloadBlock, ForceVoteInfo(this.voteinfo.voteBlockHash,this.voteinfo.VoteHeight,this.voteinfo.VoteIndex,pe.getSysTag))
       }else{
         pe.getTransPoolMgr.rollbackTransaction("blockidentifier_"+blk.height)
       }

@@ -18,7 +18,8 @@ object MsgOfCFRD {
   case object VoteOfReset
   case class TransformBlocker(preBlocker:String,heightOfBlocker:Long,lastHashOfBlocker:String,voteIndexOfBlocker:Int)
 
-  case class ForceVoteInfo(blockHash:String,blockHeight:String,voteIndex:Int)
+  //case class ForceVoteInfo(blockHash:String,blockHeight:String,voteIndex:Int)
+  case class ForceVoteInfo(blockHash:String,blockHeight:Long,voteIndex:Int,blocker:String)
   case class SpecifyVoteHeight(info:ForceVoteInfo)
   ////////////////////////////////Vote（抽签）消息，结束//////////////////////////////
 
@@ -50,7 +51,8 @@ object MsgOfCFRD {
   case class ResultOfEndorsementInStream(voteinfo:BlockerInfo,currentBlockSerial:Int,blockHash:String,isFirst:Boolean,isLastBlock:Boolean,result: Boolean, endor: Signature,endorser: Address)
   //case class ResendEndorseInfoInStream(voteinfo:BlockerInfo,currentBlockSerial:Int,blockHash:String,isFirst:Boolean,isLastBlock:Boolean,endorer: Address)
 
-  case class RequesterOfEndorsement(blc: Block, blocker: String, endorer: Address,voteindex:Int)
+  //case class RequesterOfEndorsement(blc: Block, blocker: String, endorer: Address,voteindex:Int)
+  case class RequesterOfEndorsement(blc: Block, blocker: ForceVoteInfo, endorer: Address)
   case class RequesterOfEndorsementInStream(blc: Block, blocker: String, endorer: Address,voteindex:Int,voteHeight:Long)
   case class ResendEndorseInfo(endorer: Address)
 
@@ -61,18 +63,23 @@ object MsgOfCFRD {
   case class EndorsementFinishMsgInStream(block:Block,result:Boolean)
 
   //给背书人的背书消息
-  case class EndorsementInfo(blc: Block, blocker: String,voteindex:Int)
+  //case class EndorsementInfo(blc: Block, blocker: String,voteindex:Int)
+  case class EndorsementInfo(blc: Block, blocker: ForceVoteInfo)
   case class EndorsementInfoInStream(blc: Block, blocker: String,voteIndex:Int,voteHeight:Long)
 
-  case class verifyTransOfEndorsement(blc: Block, blocker: String)
+  /*case class verifyTransOfEndorsement(blc: Block, blocker: String)
   case class verifyTransRepeatOfEndorsement(blc: Block, blocker: String)
-  case class verifyTransPreloadOfEndorsement(blc: Block, blocker: String)
+  case class verifyTransPreloadOfEndorsement(blc: Block, blocker: String)*/
+
+  case class verifyTransOfEndorsement(blc: Block, blocker: ForceVoteInfo)
+  case class verifyTransRepeatOfEndorsement(blc: Block, blocker: ForceVoteInfo)
+  case class verifyTransPreloadOfEndorsement(blc: Block, blocker: ForceVoteInfo)
 
 
   //背书收集者消息
   //case class CollectEndorsement(blc: Block, blocker: String)
-  case class CollectEndorsement(blc: Block, blocker: String,blockerIndex:Int)
-
+  //case class CollectEndorsement(blc: Block, blocker: String,blockerIndex:Int)
+  case class CollectEndorsement(blc: Block, blocker: ForceVoteInfo)
   //背书人返回的背书结果
   case class ResultOfEndorsed(result: Int, endor: Signature, BlockHash: String,endorserOfChainInfo:BlockchainInfo,endorserOfVote:BlockerInfo)
 
