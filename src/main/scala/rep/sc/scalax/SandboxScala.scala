@@ -17,6 +17,7 @@
 package rep.sc.scalax
 import _root_.com.google.protobuf.ByteString
 import rep.log.RepLogger
+import rep.log.httplog.AlertInfo
 import rep.protos.peer.{Transaction, _}
 import rep.sc.Sandbox
 import rep.sc.Sandbox._
@@ -133,6 +134,7 @@ class SandboxScala(cid: ChaincodeId) extends Sandbox(cid) {
         RepLogger.except4Throwable(RepLogger.Sandbox_Logger, t.id, e)
         //akka send 无法序列化原始异常,简化异常信息
         val e1 = new SandboxException(e.getMessage)
+        RepLogger.sendAlertToDB(new AlertInfo("CONTRACT",4,s"Node Name=${pe.getSysTag},txid=${t.id},erroInfo=${e.getMessage},Transaction Exception."))
         shim.srOfTransaction.roolback
         new TransactionResult(t.id, _root_.scala.Seq.empty,Option(ActionResult(102,e1.getMessage)))
         /*new DoTransactionResult(t.id, null,

@@ -5,6 +5,7 @@ import com.typesafe.config.Config
 import rep.app.conf.SystemProfile.Trans_Create_Type_Enum
 import rep.app.conf.{SystemProfile, TimePolicy}
 import rep.crypto.cert.SignTool
+import rep.log.httplog.AlertInfo
 import rep.log.{RepLogger, RepTimeTracer}
 import rep.network.autotransaction.PeerHelper
 import rep.network.base.ModuleBase
@@ -49,6 +50,7 @@ class IModuleManager(moduleName: String, sysTag: String, enableStatistic: Boolea
     var r = true
     try {
       if (!verify4Storage.verify(sysTag)) {
+        RepLogger.sendAlertToDB(new AlertInfo("SYSTEM",1,s"Node Name=${this.sysTag},BlockChain file error."))
         r = false
       }
     } catch {

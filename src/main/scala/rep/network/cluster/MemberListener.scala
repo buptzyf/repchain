@@ -38,6 +38,7 @@ import rep.log.RepLogger
 import rep.protos.peer.Event
 import rep.network.util.NodeHelp
 import rep.app.RepChainMgr
+import rep.log.httplog.AlertInfo
 import rep.network.autotransaction.Topic
 import rep.network.consensus.byzantium.ConsensusCondition
 
@@ -148,6 +149,7 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
       RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("Member is Up: {}. {} nodes in cluster" + "~" + member.address + "~" + pe.getNodeMgr.getNodes.mkString("|")))
       pe.getNodeMgr.putNode(member.address)
       if (member.roles != null && !member.roles.isEmpty && NodeHelp.isCandidatorNode(member.roles)) {
+        RepLogger.sendAlertToDB(new AlertInfo("NETWORK",4,s"Node Name=${NodeHelp.getNodeName(member.roles)},Node Address=${member.address.toString},is up."))
         preloadNodesMap.put(member.address, (TimeUtils.getCurrentTime(), NodeHelp.getNodeName(member.roles)))
         RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"Member is Up:  nodes is condidator,node name=${NodeHelp.getNodeName(member.roles)}"))
         sendEvent(EventType.PUBLISH_INFO, mediator, NodeHelp.getNodeName(member.roles), Topic.Event, Event.Action.MEMBER_UP)
@@ -163,6 +165,7 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
       RepLogger.trace(RepLogger.System_Logger, this.getLogMsgPrefix(" MemberListening recollection"))
       preloadNodesMap.foreach(node => {
         if (isStableNode(node._2._1, TimePolicy.getSysNodeStableDelay)) {
+          RepLogger.sendAlertToDB(new AlertInfo("NETWORK",4,s"Node Name=${node._2._2},Node Address=${node._2._1},is stable node."))
           pe.getNodeMgr.putStableNode(node._1, node._2._2)
         } else {
           RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"Recollection:  nodes not stable,node name=${node._2._2}"))
