@@ -192,6 +192,7 @@ class TransactionPoolMgrForCFRD extends ITransctionPoolMgr {
       var da = ImpDataAccess.GetDataAccess(sysName)
       da.Put(sysName + "-" + txPrefix, SerializeUtils.serialise(r))
     }
+    RepLogger.info(RepLogger.TransLifeCycle_Logger, s"systemname=${sysName},save trans to leveldb")
   }
 
 }

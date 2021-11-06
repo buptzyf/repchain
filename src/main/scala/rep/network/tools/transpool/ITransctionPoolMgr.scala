@@ -57,6 +57,7 @@ trait ITransctionPoolMgr {
               val tx = Transaction.parseFrom(bs)
               this.putTran(tx, sysName)
             })
+            RepLogger.info(RepLogger.TransLifeCycle_Logger, s"systemname=${sysName},load trans from leveldb")
           }
         }
       } catch {

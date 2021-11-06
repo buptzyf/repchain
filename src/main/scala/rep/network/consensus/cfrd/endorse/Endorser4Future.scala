@@ -126,6 +126,7 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
               if(!pe.isSynching){
                 pe.getActorRef(CFRDActorType.ActorType.synchrequester) ! StartSync(false)
               }else if(info.blocker.blockHeight == pe.getBlocker.VoteHeight && info.blocker.blockHash == pe.getBlocker.voteBlockHash && info.blocker.voteIndex > pe.getBlocker.VoteIndex){
+                RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"vote index not equal，,endorse height=${info.blc.height},local height=${pe.getCurrentHeight},blocker index=${info.blocker.voteIndex},local index=${pe.getBlocker.VoteIndex}"))
                 pe.getActorRef(CFRDActorType.ActorType.voter) ! SpecifyVoteHeight(info.blocker)
               } else{
                 RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"node is synchoronizing,recv endorse request,endorse height=${info.blc.height},local height=${pe.getCurrentHeight}"))
