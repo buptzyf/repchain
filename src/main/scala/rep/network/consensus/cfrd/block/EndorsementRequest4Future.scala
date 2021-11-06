@@ -32,6 +32,7 @@ import rep.log.RepLogger
 import rep.log.RepTimeTracer
 import rep.network.module.cfrd.CFRDActorType
 import rep.network.util.NodeHelp
+import rep.utils.GlobalUtils.BlockerInfo
 
 /**
  * Created by jiangbuyun on 2020/03/19.
@@ -121,6 +122,7 @@ class EndorsementRequest4Future(moduleName: String) extends ModuleBase(moduleNam
     
     RepTimeTracer.setEndTime(pe.getSysTag, s"Endorsement-request-${moduleName}", System.currentTimeMillis(),reqinfo.blc.height,reqinfo.blc.transactions.size)
   }
+
 
   override def receive = {
     case RequesterOfEndorsement(block, blocker, addr,voteindex) =>

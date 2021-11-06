@@ -63,6 +63,8 @@ object SystemProfile {
   private[this] var _IS_VERIFY_OF_ENDORSEMENT = true//is_verify_of_endorsement
   private[this] var _NUMBER_OF_ENDORSEMENT: Int = 2
   private[this] var _TYPE_OF_CONSENSUS:String = "PBFT"
+  private[this] var _ENDORSE_RESEND_TIMES:Int = 3
+  private[this] var _SYNCH_TYPE:String = "CFRD"
   private[this] var _BLOCKNUMBER_BLOCKER = 5 //
   private[this] var _ISSTREAM = 1
   private[this] var _HTTPSERVICEACTORNUMBER= 5//httpServiceActorNumber
@@ -135,6 +137,16 @@ object SystemProfile {
   private def MAX_THREADS: Int = _MAX_THREADS
   private def ALIVE_TIME: Int = _ALIVE_TIME
   private def PRISMA_URL: String = _PRISMA_URL
+  private def ENDORSE_RESEND_TIMES:Int = _ENDORSE_RESEND_TIMES
+  private def SYNCH_TYPE:String = _SYNCH_TYPE
+
+  private def ENDORSE_RESEND_TIMES_=(value:Int):Unit={
+    _ENDORSE_RESEND_TIMES = value
+  }
+
+  private def SYNCH_TYPE_=(value:String):Unit={
+    _SYNCH_TYPE = value
+  }
 
   private def CHAIN_CERT_NAME_=(value:String):Unit={
     _CHAIN_CERT_NAME = value
@@ -348,6 +360,9 @@ object SystemProfile {
     MAX_THREADS_=(config.getInt("system.output_alert.max_threads"))
     ALIVE_TIME_=(config.getInt("system.output_alert.alive_time"))
     PRISMA_URL_=(config.getString("system.output_alert.prisma_url"))
+
+    SYNCH_TYPE_=(config.getString("system.consensus.synch_type"))
+    ENDORSE_RESEND_TIMES_=(config.getInt("system.time.timeout.endorse_resend_times"))
   }
 
   //zhj
@@ -400,7 +415,11 @@ object SystemProfile {
   def getHttpServicePort(SystemName:String):Int={
     this.SERVERPORT.get(SystemName)
   }
-  
+
+  def getSynchType:String=SYNCH_TYPE
+
+  def getEndorseResendTimes:Int=ENDORSE_RESEND_TIMES
+
   def getCheckCertValidate = CHECKCERTVALIDATE
   
   def getContractOperationMode = CONTRACTOPERATIONMODE

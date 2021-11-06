@@ -7,7 +7,7 @@ import rep.app.conf.{SystemCertList, SystemProfile, TimePolicy}
 import rep.log.RepLogger
 import rep.network.autotransaction.Topic
 import rep.network.consensus.byzantium.ConsensusCondition
-import rep.network.consensus.cfrd.MsgOfCFRD.{CreateBlock, VoteOfBlocker, VoteOfForce, VoteOfReset}
+import rep.network.consensus.cfrd.MsgOfCFRD.{CreateBlock, ForceVoteInfo, VoteOfBlocker, VoteOfForce, VoteOfReset}
 
 import scala.collection.JavaConverters._
 import rep.network.consensus.cfrdtream.util.MsgOfCFRD4Stream.{JoinVoteSyncMsg, ReponseVoteSyncMsg}
@@ -70,7 +70,7 @@ class VoteOfCFRD4Stream(moduleName: String) extends IVoter(moduleName: String) {
     RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"the first voter,height=${pe.getCurrentHeight}" + "~" + selfAddr))
   }
 
-  override protected def vote(isForce: Boolean): Unit = {
+  override protected def vote(isForce: Boolean,forceInfo:ForceVoteInfo): Unit = {
     if(this.Blocker.blocker == ""){
       this.FirstVote
     }else{
@@ -167,7 +167,7 @@ class VoteOfCFRD4Stream(moduleName: String) extends IVoter(moduleName: String) {
   override def receive: Receive = {
     case VoteOfBlocker =>
       if (NodeHelp.isCandidateNow(pe.getSysTag, SystemCertList.getSystemCertList)) {
-        voteMsgHandler(false)
+        voteMsgHandler(false,null)
       }
     case JoinVoteSyncMsg =>
       if(!NodeHelp.isSameNodeForString(this.selfAddr,NodeHelp.getNodePath(sender()))) {
@@ -179,10 +179,10 @@ class VoteOfCFRD4Stream(moduleName: String) extends IVoter(moduleName: String) {
         ResponseVoteSyncHandler(rvs)
       }
     case VoteOfForce=>
-      voteMsgHandler(true)
+      voteMsgHandler(true,null)
     case VoteOfReset=>
       cleanVoteInfo
-      voteMsgHandler(true)
+      voteMsgHandler(true,null)
 
 
   }

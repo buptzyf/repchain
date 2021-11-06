@@ -5,7 +5,7 @@ import akka.cluster.pubsub.DistributedPubSubMediator.Publish
 import rep.app.conf.{SystemCertList, SystemProfile, TimePolicy}
 import rep.log.RepLogger
 import rep.network.autotransaction.Topic
-import rep.network.consensus.cfrd.MsgOfCFRD.{CreateBlock, TransformBlocker, VoteOfBlocker, VoteOfForce}
+import rep.network.consensus.cfrd.MsgOfCFRD.{CreateBlock, ForceVoteInfo, TransformBlocker, VoteOfBlocker, VoteOfForce}
 import rep.network.consensus.common.algorithm.ISequencialAlgorithmOfVote
 import rep.network.consensus.common.vote.IVoter
 import rep.network.module.cfrd.CFRDActorType
@@ -196,7 +196,7 @@ class VoteOfCFRDInStream (moduleName: String) extends IVoter(moduleName: String)
     RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},read block voter,currentHeight=${this.Blocker.VoteHeight +SystemProfile.getBlockNumberOfRaft},currentHash=${currentblockhash}" + "~" + selfAddr))
   }
 
-  override protected def vote(isForce: Boolean): Unit = {
+  override protected def vote(isForce: Boolean,forceInfo:ForceVoteInfo): Unit = {
     if(this.Blocker.blocker == ""){
       blockerIsNull
     }else{
@@ -207,10 +207,10 @@ class VoteOfCFRDInStream (moduleName: String) extends IVoter(moduleName: String)
   override def receive: Receive = {
     case VoteOfBlocker =>
       if (NodeHelp.isCandidateNow(pe.getSysTag, SystemCertList.getSystemCertList)) {
-        voteMsgHandler(false)
+        voteMsgHandler(false,null)
       }
     case VoteOfForce=>
-      voteMsgHandler(true)
+      voteMsgHandler(true,null)
     case TransformBlocker(preBlocker,heightOfBlocker,lastHashOfBlocker,voteIndexOfBlocker)=>
       if(!NodeHelp.isBlocker(preBlocker,pe.getSysTag)){
         this.transformInfo = TransformBlocker(preBlocker,heightOfBlocker,lastHashOfBlocker,voteIndexOfBlocker)

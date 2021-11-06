@@ -6,6 +6,7 @@ import akka.actor.Props
 import rep.app.Repchain
 import rep.app.conf.{SystemCertList, TimePolicy}
 import rep.log.RepLogger
+import rep.network.consensus.cfrd.MsgOfCFRD.ForceVoteInfo
 import rep.network.consensus.pbft.MsgOfPBFT.{CreateBlock, VoteOfBlocker, VoteOfForce}
 import rep.network.consensus.common.algorithm.{IRandomAlgorithmOfVote, ISequencialAlgorithmOfVote}
 import rep.network.consensus.common.vote.IVoter
@@ -41,7 +42,7 @@ class VoterOfPBFT(moduleName: String) extends IVoter(moduleName: String) {
     schedulerLink = scheduler.scheduleOnce(TimePolicy.getVoteRetryDelay.millis, self, VoteOfBlocker("voter"))
   }
 
-  override protected def vote(isForce: Boolean): Unit = {
+  override protected def vote(isForce: Boolean,forceInfo:ForceVoteInfo): Unit = {
     if (checkTranNum || isForce) {
       val currentblockhash = pe.getCurrentBlockHash
       val currentheight = pe.getCurrentHeight
@@ -85,10 +86,10 @@ class VoterOfPBFT(moduleName: String) extends IVoter(moduleName: String) {
     case VoteOfBlocker(flag:String) =>
       RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", VoteOfBlocker: " + flag)
       if (NodeHelp.isCandidateNow(pe.getSysTag, SystemCertList.getSystemCertList)) {
-        voteMsgHandler(false)
+        voteMsgHandler(false,null)
       }
     case VoteOfForce=>
       RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", VoteOfForce: ")
-      voteMsgHandler(true)
+      voteMsgHandler(true,null)
   }
 }

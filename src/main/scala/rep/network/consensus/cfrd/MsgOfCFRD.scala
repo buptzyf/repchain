@@ -17,6 +17,9 @@ object MsgOfCFRD {
   case object VoteOfForce
   case object VoteOfReset
   case class TransformBlocker(preBlocker:String,heightOfBlocker:Long,lastHashOfBlocker:String,voteIndexOfBlocker:Int)
+
+  case class ForceVoteInfo(blockHash:String,blockHeight:String,voteIndex:Int)
+  case class SpecifyVoteHeight(info:ForceVoteInfo)
   ////////////////////////////////Vote（抽签）消息，结束//////////////////////////////
 
 
@@ -50,6 +53,10 @@ object MsgOfCFRD {
   case class RequesterOfEndorsement(blc: Block, blocker: String, endorer: Address,voteindex:Int)
   case class RequesterOfEndorsementInStream(blc: Block, blocker: String, endorer: Address,voteindex:Int,voteHeight:Long)
   case class ResendEndorseInfo(endorer: Address)
+
+  case class DelayResendEndorseInfo(blockHash:String)
+  case class VoteIndexChange(VoteHash:String,VoteIndex:Int)
+
   case class ResendEndorseInfoInStream(endorer: Address,blockhash:String)
   case class EndorsementFinishMsgInStream(block:Block,result:Boolean)
 

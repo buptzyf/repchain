@@ -6,6 +6,7 @@ import rep.crypto.Sha256
 import rep.log.RepLogger
 import rep.network.base.ModuleBase
 import rep.network.consensus.byzantium.ConsensusCondition
+import rep.network.consensus.cfrd.MsgOfCFRD.ForceVoteInfo
 import rep.network.consensus.common.algorithm.IAlgorithmOfVote
 import rep.network.module.cfrd.CFRDActorType
 import rep.network.util.NodeHelp
@@ -67,11 +68,11 @@ abstract class IVoter(moduleName: String) extends ModuleBase(moduleName) {
 
   protected def DelayVote:Unit
 
-  protected def vote(isForce:Boolean):Unit
+  protected def vote(isForce:Boolean,forceInfo:ForceVoteInfo):Unit
 
 
 
-  protected def voteMsgHandler(isForce:Boolean) = {
+  protected def voteMsgHandler(isForce:Boolean,forceInfo:ForceVoteInfo) = {
     if (ConsensusCondition.CheckWorkConditionOfSystem(pe.getNodeMgr.getStableNodes.size)) {
       //只有共识节点符合要求之后开始工作
       if (getSystemBlockHash == "") {
@@ -89,7 +90,7 @@ abstract class IVoter(moduleName: String) extends ModuleBase(moduleName) {
         }
       } else {
         if (!pe.isSynching) {
-          vote(isForce)
+          vote(isForce,forceInfo)
         }
       }
     }
