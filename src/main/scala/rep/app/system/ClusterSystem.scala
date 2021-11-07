@@ -209,7 +209,9 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
     initConsensusNodeOfConfig
     if (sysStart) {
       sysActor = ActorSystem(SystemConf.SYSTEM_NAME, sysConf)
-      clusterAddr = Cluster(sysActor).selfAddress
+      clusterOfInner = Cluster(sysActor)
+      clusterAddr = clusterOfInner.selfAddress
+      //clusterAddr = Cluster(sysActor).selfAddress
     }
 
     RepLogger.trace(RepLogger.System_Logger, sysTag + "~" + "System" + " ~ " + s"System(${sysTag}) init successfully" + " ~ ")
@@ -246,7 +248,8 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
   }
 
   def shutdown = {
-    Cluster(sysActor).down(clusterAddr)
+    //Cluster(sysActor).down(clusterAddr)
+    this.clusterOfInner.down(clusterAddr)
     System.err.println(s"shutdown ~~ address=${clusterAddr.toString},systemname=${this.sysTag}")
   }
 
@@ -286,7 +289,8 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
 
     if (!hasDiskSpace) {
       RepLogger.sendAlertToDB(new AlertInfo("STORAGE",1,s"Node Name=${this.sysTag},Insufficient disk space."))
-      Cluster(sysActor).down(clusterAddr)
+      //Cluster(sysActor).down(clusterAddr)
+      this.clusterOfInner.down(clusterAddr)
       throw new Exception("not enough disk space")
     }
 
