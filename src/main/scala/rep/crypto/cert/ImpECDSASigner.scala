@@ -37,7 +37,8 @@ import sun.security.ec.ECPublicKeyImpl
  * @version	1.0
  */
 class ImpECDSASigner extends ISigner {
-  private val alg = "SHA1withECDSA"
+  //private val alg = "SHA1withECDSA"
+  private val alg = "SHA256withECDSA"
 
   override def sign(privateKey: PrivateKey, message: Array[Byte]): Array[Byte] = {
     if(privateKey == null) throw new RuntimeException("签名时私钥为空！") 

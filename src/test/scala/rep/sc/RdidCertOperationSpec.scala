@@ -128,7 +128,7 @@ class RdidCertOperationSpec(_system: ActorSystem) extends TestKit(_system) with 
     val superCertId = CertId("951002007l78123233", "super_admin")
     val millis = System.currentTimeMillis()
     //生成Did的身份证书
-    val superAuthCert = rep.protos.peer.Certificate(superCertPem, "SHA1withECDSA", true, Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, CertType.CERT_AUTHENTICATION, Option(superCertId), superCertHash, "1.0")
+    val superAuthCert = rep.protos.peer.Certificate(superCertPem, "SHA256withECDSA", true, Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, CertType.CERT_AUTHENTICATION, Option(superCertId), superCertHash, "1.0")
     // 账户
     val superSigner = Signer("super_admin", "951002007l78123233", "13856789234", Seq.empty, Seq.empty, Seq.empty, Seq.empty, List(superAuthCert), "", Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, true, "1.0")
     val t6 = PeerHelper.createTransaction4Invoke(superAdmin, cid, ACTION.SignUpSigner, Seq(JsonFormat.toJsonString(superSigner)))

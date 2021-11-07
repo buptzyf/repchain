@@ -177,7 +177,7 @@ object GenesisBuilderTool {
       val certfile = scala.io.Source.fromFile(Path.of(certsFile.getPath, signers(i).creditCode + "." + signers(i).name + ".cer").toFile, "UTF-8")
       val certstr = try certfile.mkString finally certfile.close()
       val millis = System.currentTimeMillis()
-      val cert = Certificate(certstr, "SHA1withECDSA", true, Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), id = Option(CertId(signers(i).creditCode, signers(i).name)))
+      val cert = Certificate(certstr, "SHA256withECDSA", true, Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), id = Option(CertId(signers(i).creditCode, signers(i).name)))
       certInfos(i) = cert
     }
     certInfos

@@ -87,7 +87,7 @@ class RdidOperOperationSpec(_system: ActorSystem) extends TestKit(_system) with 
   val superCertId = CertId("951002007l78123233", "super_admin")
   val millis: Long = System.currentTimeMillis()
   //生成Did的身份证书
-  val superAuthCert = Certificate(superCertPem, "SHA1withECDSA", true, Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, CertType.CERT_AUTHENTICATION, Option(superCertId), Sha256.hashstr(superCertPem), "1.0")
+  val superAuthCert = Certificate(superCertPem, "SHA256withECDSA", true, Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, CertType.CERT_AUTHENTICATION, Option(superCertId), Sha256.hashstr(superCertPem), "1.0")
 
   val signers: Array[Signer] = Array(
     Signer("super_admin", "951002007l78123233", "13856789234", Seq.empty, Seq.empty, Seq.empty, Seq.empty, List(superAuthCert), "", Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, true, "1.0"),

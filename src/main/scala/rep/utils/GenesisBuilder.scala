@@ -94,7 +94,8 @@ object GenesisBuilder {
      // val cert = SignTool.getCertByFile("jks/"+signers(i).creditCode+"."+signers(i).name+".cer")
       val millis = System.currentTimeMillis()
       
-      val tmp = Certificate(certstr,"SHA1withECDSA",true,Option(Timestamp(millis/1000 , ((millis % 1000) * 1000000).toInt)), id = Option(CertId(signers(i).creditCode, signers(i).name)))
+      //val tmp = Certificate(certstr,"SHA256withECDSA",true,Option(Timestamp(millis/1000 , ((millis % 1000) * 1000000).toInt)), id = Option(CertId(signers(i).creditCode, signers(i).name)))
+      val tmp = Certificate(certstr,"SHA256withECDSA",true,Option(Timestamp(millis/1000 , ((millis % 1000) * 1000000).toInt)), id = Option(CertId(signers(i).creditCode, signers(i).name)))
        //val aa = new ContractCert
       translist(i+7) = PeerHelper.createTransaction4Invoke("951002007l78123233.super_admin", cid,
                     "SignUpCert", Seq(JsonFormat.toJsonString(tmp)))

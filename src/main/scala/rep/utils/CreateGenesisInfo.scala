@@ -56,7 +56,7 @@ object CreateGenesisInfo {
       val certid = IdTool.getCertIdFromName(nodes(i)._2 + "." + nodes(i)._1)
       val millis = System.currentTimeMillis()
       //生成Did的身份证书
-      val authcert = rep.protos.peer.Certificate(certstr, "SHA1withECDSA", true, Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)),
+      val authcert = rep.protos.peer.Certificate(certstr, "SHA256withECDSA", true, Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)),
         _root_.scala.None, CertType.CERT_AUTHENTICATION, Option(certid), certstrhash, "1.0")
       val signer_tmp = rep.protos.peer.Signer(nodes(i)._1, nodes(i)._2, nodes(i)._3, _root_.scala.Seq.empty,
         _root_.scala.Seq.empty, _root_.scala.Seq.empty, _root_.scala.Seq.empty, List(authcert), "",
