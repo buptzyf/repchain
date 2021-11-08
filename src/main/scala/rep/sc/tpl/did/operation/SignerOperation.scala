@@ -30,6 +30,7 @@ object SignerOperation extends DidOperation {
 
   /**
     * 注册Signer
+    * 不公开，权限比较高，一般不授予出去
     *
     * @param ctx
     * @param signer
@@ -39,7 +40,7 @@ object SignerOperation extends DidOperation {
     // 判断signer是否已经存在
     if (ctx.api.getVal(signerPrefix + signer.creditCode) != null) {
       throw ContractException(toJsonErrMsg(signerExists))
-    } else if (signer.creditCode.isEmpty) {
+    } else if (signer.creditCode.isBlank) {
       // 校验creditCode是否为空，不能为空
       throw ContractException(toJsonErrMsg(creditCodeEmpty))
     } else if (signer.certNames.nonEmpty || signer.authorizeIds.nonEmpty || signer.operateIds.nonEmpty || signer.credentialMetadataIds.nonEmpty) {
@@ -99,6 +100,7 @@ object SignerOperation extends DidOperation {
 
   /**
     * 禁用或启用Signer
+    * 不公开，权限比较高，一般不授予出去
     *
     * @param ctx
     * @param status

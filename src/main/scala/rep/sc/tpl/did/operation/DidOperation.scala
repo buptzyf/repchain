@@ -1,5 +1,6 @@
 package rep.sc.tpl.did.operation
 
+import rep.app.conf.SystemProfile
 import rep.protos.peer.{ActionResult, Signer}
 import rep.sc.scalax.{ContractContext, ContractException}
 import rep.sc.tpl.did.operation.SignerOperation.signerNotExists
@@ -11,6 +12,8 @@ import scalapb.json4s.JsonFormat
   * @author zyf
   */
 protected trait DidOperation {
+
+  val didChainCodeName = SystemProfile.getAccountChaincodeName
 
   val signerNotValid = ActionResult(11001, "Signer状态是无效的")
   val notChainCert = ActionResult(11002, "非链证书")
