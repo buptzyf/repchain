@@ -86,7 +86,7 @@ object CreateGenesisInfo {
       val snls = List("transaction.stream", "transaction.postTranByString", "transaction.postTranStream", "transaction.postTran")
       //生成Operate
       var op: Operate = null
-      if (i == 3 || i == 4 || i == 11) {
+      if (i == 3 || i == 4 || i ==7 || i == 8 || i == 9 || i ==10 || i == 11) {
         // 公开操作，无需授权，普通用户可以绑定给自己的证书
         op = rep.protos.peer.Operate(opsOfContract(i)._1, opsOfContract(i)._2, super_credit, true, OperateType.OPERATE_CONTRACT,
           snls, "*", opsOfContract(i)._3, Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)),

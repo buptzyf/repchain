@@ -64,7 +64,7 @@ object OperOperation extends DidOperation {
 
   /**
     * 注册Operate
-    * 链密钥对为自己注册service，为自己注册deploy与setState，其他用户通过授权
+    * 公开，无需授权，链密钥对为自己注册service，为自己注册deploy与setState，以及did合约相关操作，因此可以公开
     * 普通合约拥有者（操作拥有者）给自己注册合约相关的操作
     *
     * @param ctx
@@ -79,13 +79,14 @@ object OperOperation extends DidOperation {
         if (!isAdmin) {
           throw ContractException(toJsonErrMsg(onlyAdminCanManageServiceOperate))
         }
+        // TODO 判断hash是否匹配
       case OperateType.OPERATE_CONTRACT =>
         if (operate.authFullName.endsWith(".deploy") || operate.authFullName.endsWith(".setState")) {
           if (!isAdmin) {
             throw ContractException(toJsonErrMsg(onlyAdminCanRegisterOperate))
           }
         } else {
-          // 非deploy与setState的，则必须是合约部署者
+          // 非deploy与setState以及"RdidOperateAuthorizeTPL.function"的，则必须是合约部署者
           if (!isContractDeployer(ctx, operate)) {
             throw ContractException(toJsonErrMsg(notContractDeployer))
           }
@@ -97,18 +98,19 @@ object OperOperation extends DidOperation {
         throw ContractException(toJsonErrMsg(operateTypeUndefined))
     }
     val certId = ctx.t.getSignature.getCertId
-    // 只允许自己给自己注册
-    if (!operate.register.equals(certId.creditCode)) {
-      throw ContractException(toJsonErrMsg(registerNotTranPoster))
-    }
     if (ctx.api.getVal(operPrefix + operate.opId) == null) {
-      // 检查账户的有效性
-      val signer = checkSignerValid(ctx, operate.register)
-      val newSigner = signer.withOperateIds(signer.operateIds.:+(operate.opId))
-      // 将operateId注册到Signer里
-      ctx.api.setVal(signerPrefix + operate.register, newSigner)
-      // 保存operate
-      ctx.api.setVal(operPrefix + operate.opId, operate)
+      // 只允许自己给自己注册
+      if (operate.register.equals(certId.creditCode)) {
+        // 检查账户的有效性
+        val signer = checkSignerValid(ctx, operate.register)
+        val newSigner = signer.withOperateIds(signer.operateIds.:+(operate.opId))
+        // 将operateId注册到Signer里
+        ctx.api.setVal(signerPrefix + operate.register, newSigner)
+        // 保存operate
+        ctx.api.setVal(operPrefix + operate.opId, operate)
+      } else {
+        throw ContractException(toJsonErrMsg(registerNotTranPoster))
+      }
     } else {
       throw ContractException(toJsonErrMsg(operateExists))
     }
@@ -116,7 +118,8 @@ object OperOperation extends DidOperation {
   }
 
   /**
-    * 禁用或启用Operate
+    * 更新操作状态
+    * 公开，无需授权，操作注册者禁用或启用Operate，自己 禁用/启用 自己的操作，或者管理员 禁用/启用 其他用户的操作
     *
     * @param ctx
     * @param status
@@ -126,21 +129,23 @@ object OperOperation extends DidOperation {
     val oldOperate = ctx.api.getVal(operPrefix + status.opId)
     if (oldOperate != null) {
       val operate = oldOperate.asInstanceOf[Operate]
-      val certId = ctx.t.getSignature.getCertId
-      // 只能禁用自己的操作
-      if (!operate.register.equals(certId.creditCode)) {
+      val tranCertId = ctx.t.getSignature.getCertId
+      val isAdmin = ctx.api.isAdminCert(tranCertId.creditCode)
+      // 自己禁用自己的操作，或者管理员禁用
+      if (operate.register.equals(tranCertId.creditCode) || isAdmin) {
+        // 检查账户的有效性
+        checkSignerValid(ctx, operate.register)
+        var newOperate = Operate.defaultInstance
+        if (status.state) {
+          newOperate = operate.withOpValid(status.state).clearDisableTime
+        } else {
+          val disableTime = ctx.t.getSignature.getTmLocal
+          newOperate = operate.withOpValid(status.state).withDisableTime(disableTime)
+        }
+        ctx.api.setVal(operPrefix + status.opId, newOperate)
+      } else {
         throw ContractException(toJsonErrMsg(registerNotTranPoster))
       }
-      // 检查账户的有效性
-      checkSignerValid(ctx, operate.register)
-      var newOperate = Operate.defaultInstance
-      if (status.state) {
-        newOperate = operate.withOpValid(status.state).clearDisableTime
-      } else {
-        val disableTime = ctx.t.getSignature.getTmLocal
-        newOperate = operate.withOpValid(status.state).withDisableTime(disableTime)
-      }
-      ctx.api.setVal(operPrefix + status.opId, newOperate)
     } else {
       throw ContractException(toJsonErrMsg(operateNotExists))
     }

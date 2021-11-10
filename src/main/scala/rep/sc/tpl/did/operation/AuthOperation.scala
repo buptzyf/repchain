@@ -25,7 +25,8 @@ object AuthOperation extends DidOperation {
   case class AuthorizeStatus(authId: String, state: Boolean)
 
   /**
-    * 授予操作
+    * 公开，授予操作
+    * 操作拥有者可以将自己<拥有的操作以及自己被授予的可继续让渡的操作>授予别人
     *
     * @param ctx
     * @param authorizeList 授权操作列表
@@ -78,7 +79,8 @@ object AuthOperation extends DidOperation {
   }
 
   /**
-    * 禁用或启用授权操作
+    * 公开，禁用或启用授权操作
+    * 授权者或superAdmin可修改授权状态
     *
     * @param ctx
     * @param status
@@ -88,10 +90,11 @@ object AuthOperation extends DidOperation {
     val oldAuthorize = ctx.api.getVal(authPrefix + status.authId)
     if (oldAuthorize != null) {
       val authorize = oldAuthorize.asInstanceOf[Authorize]
+      val isAdmin = ctx.api.isAdminCert(ctx.t.getSignature.getCertId.creditCode)
       // 检查签名者是否为授权者
-      if (ctx.t.getSignature.getCertId.creditCode.equals(authorize.grant)) {
+      if (ctx.t.getSignature.getCertId.creditCode.equals(authorize.grant) || isAdmin) {
         // 检查账户的有效性
-        checkSignerValid(ctx, authorize.grant)
+        // checkSignerValid(ctx, authorize.grant)
         var newAuthorize = Authorize.defaultInstance
         if (status.state) {
           newAuthorize = authorize.withAuthorizeValid(status.state).clearDisableTime
@@ -110,7 +113,7 @@ object AuthOperation extends DidOperation {
   }
 
   /**
-    * 绑定权限到证书上
+    * 公开，绑定权限到证书上
     *
     * @param ctx
     * @param bindCertToAuthorize
