@@ -41,6 +41,8 @@ import rep.utils.SerializeUtils.deserialise
 import rep.log.{RepLogger, RepTimeTracer}
 import rep.authority.check.PermissionVerify
 
+import scala.collection.immutable.HashMap
+
 /**
  * 合约容器的抽象类伴生对象,定义了交易执行结果的case类
  *
@@ -49,6 +51,7 @@ import rep.authority.check.PermissionVerify
  */
 object Sandbox {
   val ERR_UNKNOWN_TRANSACTION_TYPE = "无效的交易类型"
+  val ERR_UNKNOWN_CONTRACT_STATUS = "未知的合约状态"
 
   val SplitChainCodeId = "_"
   //日志前缀
@@ -111,12 +114,13 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
   def receive = {
     //交易处理请求
     case dotrans: DoTransactionOfSandbox =>
+      isStart = true
       RepTimeTracer.setStartTime(pe.getSysTag, "transaction-sandbox-do", System.currentTimeMillis(), pe.getCurrentHeight+1, dotrans.ts.length)
       val tr = onTransactions(dotrans)
       RepTimeTracer.setEndTime(pe.getSysTag, "transaction-sandbox-do", System.currentTimeMillis(), pe.getCurrentHeight+1, dotrans.ts.length)
       sender ! tr.toSeq
     case dotransOfCache: DoTransactionOfSandboxOfCache =>
-
+      isStart = true
       if(pe.getTrans(dotransOfCache.cacheIdentifier) != null){
         val ts = pe.getTrans(dotransOfCache.cacheIdentifier)
         RepTimeTracer.setStartTime(pe.getSysTag, "transaction-sandbox-do", System.currentTimeMillis(), pe.getCurrentHeight+1, ts.length)
@@ -168,80 +172,66 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
    */
   def doTransaction(dotrans: DoTransactionOfSandboxInSingle): TransactionResult
 
-  private var  ContractState : Int = 0  //0 未初始化；1 init; 2 unknow; 3 = true; 4=false
+  protected var ContractStatus : Option[Boolean] = None
+  protected var ContractStatusSource : Option[Int] = None //1 来自持久化；2 来自预执行
+  private var isStart : Boolean = true
 
-  private def getContractEnableValueFromLevelDB(txcid: String): Option[Boolean] = {
-    if(this.ContractState == 0 || this.ContractState == 2){
-      val db = ImpDataAccess.GetDataAccess(this.sTag)
-      val key_tx_state = WorldStateKeyPreFix + txcid + PRE_STATE
-      val state_bytes = db.Get(key_tx_state)
-      if (state_bytes == null) {
-        this.ContractState = 2
-      } else {
-        val state = deserialise(state_bytes).asInstanceOf[Boolean]
-        if(state){
-          this.ContractState = 3
-        }else{
-          this.ContractState = 4
+  private def getContractStatus(txcid: String,contractStateType: ContractStateType.Value)= {
+    var tmpStatus : Option[Boolean] = None
+    if(this.ContractStatus == None){
+      //说明合约容器处于初始化状态
+      if(contractStateType == ContractStateType.ContractInSnapshot){
+        //当前合约处于快照中，尚未出块,属于部署阶段
+        tmpStatus = getStatusFromSnapshot(txcid)
+        ContractStatusSource = Some(2)
+      }else if(contractStateType == ContractStateType.ContractInLevelDB){
+        //当前合约部署已经出块，从持久化中装载该合约的状态
+        tmpStatus = getStatusFromDB(txcid)
+        ContractStatusSource = Some(1)
+      }
+      if(tmpStatus == None){
+        throw SandboxException(ERR_UNKNOWN_CONTRACT_STATUS)
+      }else{
+        ContractStatus = tmpStatus
+        isStart = false
+      }
+    }else if(isStart){
+        //当前交易序列第一次检查合约状态，需要判断是否需要重新装载合约状态
+        if(contractStateType == ContractStateType.ContractInLevelDB && ContractStatusSource.get == 2) {
+          //当前合约已经持久化，并且合约状态的值还是来自于预执行，需要重新装载
+          tmpStatus = getStatusFromDB(txcid)
+          if (tmpStatus == None) {
+            throw SandboxException(ERR_UNKNOWN_CONTRACT_STATUS)
+          } else {
+            ContractStatus = tmpStatus
+            ContractStatusSource = Some(1)
+          }
         }
-      }
+      isStart = false
     }
 
-    if(this.ContractState == 2){
-      None
-    }else{
-      var b : Boolean = false
-      if(this.ContractState == 3){
-        b = true
-      }
-      Some(b)
-    }
-
-    /*val db = ImpDataAccess.GetDataAccess(this.sTag)
-    val key_tx_state = WorldStateKeyPreFix + txcid + PRE_STATE
-    val state_bytes = db.Get(key_tx_state)
-    if (state_bytes == null) {
-      None
-    } else {
-      val state = deserialise(state_bytes).asInstanceOf[Boolean]
-      Some(state)
-    }*/
+    this.ContractStatus
   }
 
-  private var  ContractExist : Int = 0  //0 未初始化；1 存在；2 不存在
-
-  private def ContraceIsExist(txcid: String) {
-    if(this.ContractExist == 0){
-      val key_tx_state = WorldStateKeyPreFix + txcid + PRE_STATE
-      //val state_bytes = shim.sr.Get(key_tx_state)
-      val state_bytes = shim.srOfTransaction.Get(key_tx_state)
-      //合约不存在
-      if (state_bytes == null) {
-        this.ContractExist = 2
-      }else{
-        this.ContractExist = 1
-      }
-      /*val db = ImpDataAccess.GetDataAccess(this.sTag)
-      val db_state_bytes = shim.sr.Get(key_tx_state)
-      if (state_bytes == null) {
-        System.err.println(s"read contract state,System name=${this.sTag},cid=${key_tx_state},db do not read state")
-      }else{
-        System.err.println(s"read contract state,System name=${this.sTag},cid=${key_tx_state},db  read state")
-      }
-      System.err.println(s"read contract state,System name=${this.sTag},cid=${key_tx_state},ContractExist=${this.ContractExist}")*/
-    }else{
-      if(this.ContractExist == 2){
-        throw new SandboxException(ERR_INVOKE_CHAINCODE_NOT_EXIST)
-      }
+  private def getStatusFromDB(txcid: String):Option[Boolean]={
+    var r : Option[Boolean] = None
+    val db = ImpDataAccess.GetDataAccess(this.sTag)
+    val key_tx_state = WorldStateKeyPreFix + txcid + PRE_STATE
+    val state_bytes = db.Get(key_tx_state)
+    if(state_bytes != null){
+      r = Some(deserialise(state_bytes).asInstanceOf[Boolean])
     }
-    //System.err.println(s"ContraceIsExist,System name=${this.sTag},cid=${txcid},ContractExist=${this.ContractExist},ContractState=${this.ContractState}")
-    //修改为只检查一次，不需要每次都检查
-    /*val key_tx_state = WorldStateKeyPreFix + txcid + PRE_STATE
-    val state_bytes = shim.sr.Get(key_tx_state)
-    //合约不存在
-    if (state_bytes == null) {
-      throw new SandboxException(ERR_INVOKE_CHAINCODE_NOT_EXIST)
-    }*/
+    r
+  }
+
+  private def getStatusFromSnapshot(txcid: String):Option[Boolean]={
+    var r : Option[Boolean] = None
+    val key_tx_state = WorldStateKeyPreFix + txcid + PRE_STATE
+    val state_bytes = shim.srOfTransaction.Get(key_tx_state)
+    if(state_bytes != null){
+      r = Some(deserialise(state_bytes).asInstanceOf[Boolean])
+    }
+    r
   }
 
   private def IsCurrentSigner(dotrans: DoTransactionOfSandboxInSingle) {
@@ -272,9 +262,7 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
               IsCurrentSigner(dotrans)
             }
         }
-
       case Transaction.Type.CHAINCODE_SET_STATE =>
-        ContraceIsExist(txcid)
         //检查合约部署者以及权限
         if(IdTool.isDidContract){
           permissioncheck.CheckPermissionOfSetStateContract(dotrans,shim)
@@ -283,26 +271,15 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
         }
 
       case Transaction.Type.CHAINCODE_INVOKE =>
-        ContraceIsExist(txcid)
-        val cstateInLevelDB = getContractEnableValueFromLevelDB(txcid)
-        cstateInLevelDB match {
-          case None =>
-            dotrans.contractStateType match {
-              case ContractStateType.ContractInSnapshot =>
-              //ignor
-              case _ =>
-                //except
-                throw new SandboxException(ERR_DISABLE_CID)
-            }
-          case _ =>
-            if (!cstateInLevelDB.get) {
-              throw new SandboxException(ERR_DISABLE_CID)
-            } else {
-              //ignore
-            }
-        }
-        if(IdTool.isDidContract) {
-          permissioncheck.CheckPermissionOfInvokeContract(dotrans, shim)
+        val status = getContractStatus(txcid,dotrans.contractStateType)
+        if(status == None ){
+          throw SandboxException(ERR_UNKNOWN_CONTRACT_STATUS)
+        }else if( !status.get){
+          throw new SandboxException(ERR_DISABLE_CID)
+        }else{
+          if(IdTool.isDidContract) {
+            permissioncheck.CheckPermissionOfInvokeContract(dotrans, shim)
+          }
         }
       case _ => throw SandboxException(ERR_UNKNOWN_TRANSACTION_TYPE)
     }

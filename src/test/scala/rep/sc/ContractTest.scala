@@ -244,9 +244,9 @@ class ContractTest(_system: ActorSystem) extends TestKit(_system) with Matchers 
     val t13 = this.createCertTransInvoke(sysName, 1, ACTION.SignUpSigner, JsonFormat.toJsonString(signer3))
     ExecuteTrans(probe, sandbox: ActorRef, t13, "dbnumber1", TypeOfSender.FromPreloader, 13, true)
 
-    //证书已经存在，会失败
+    //由于合约被禁用，证书不存在，会成功
     val t14 = this.createCertTransInvoke(sysName, 1, ACTION.SignUpCert, JsonFormat.toJsonString(certinfo))
-    ExecuteTrans(probe, sandbox: ActorRef, t14, "dbnumber1", TypeOfSender.FromPreloader, 14, false)
+    ExecuteTrans(probe, sandbox: ActorRef, t14, "dbnumber1", TypeOfSender.FromPreloader, 14, true)
 
     var probes = new Array[TestProbe](10)
     var doparams = new Array[DoTransaction](10)

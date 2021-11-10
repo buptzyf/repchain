@@ -52,6 +52,7 @@ class PermissionVerify(sysTag:String) {
         if (od == null) {
           //操作不存在
           RepLogger.Permission_Logger.trace(s"System=${this.sysTag},PermissionVerify.CheckPermission op is not found,did=${did},opname=${opname}")
+          r = false
           throw new SandboxException(ERR_NO_OPERATE)
         } else if (od.opValid) {
           //操作有效

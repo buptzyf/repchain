@@ -163,7 +163,7 @@ class StateSpec(_system: ActorSystem) extends TestKit(_system) with Matchers wit
     val msg_recv4 = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
     msg_recv4.head.getResult.reason.isEmpty should be(true)
 
-    //生成invoke交易
+    //生成invoke交易，调用cd1的set方法，给账户预置金额；122000002n00123567这个账户不存证不可以设置金额？？？？？？？？？
     val sm: SetMap = Map("121000005l35120456" -> 50, "12110107bi45jh675g" -> 50, "122000002n00123567" -> 50)
     val sms = write(sm)
     val t5 = PeerHelper.createTransaction4Invoke(superAdmin, cid1, ACTION.set, Seq(sms))
@@ -200,7 +200,7 @@ class StateSpec(_system: ActorSystem) extends TestKit(_system) with Matchers wit
         msg_recv6(0).getResult.reason should be(rcs(i))
     }
 
-    // 不具有操作者，不能禁用合约
+     //不具有操作者，不能禁用合约
     var t = PeerHelper.createTransaction4State(node2Name, cid1, false)
     var msg_send = DoTransaction(Seq[Transaction](t), "test-db", TypeOfSender.FromPreloader)
     probe.send(sandbox, msg_send)
@@ -216,7 +216,7 @@ class StateSpec(_system: ActorSystem) extends TestKit(_system) with Matchers wit
 
     // superAdmin 为用户授权
     val granteds = new ArrayBuffer[String]
-    granteds.+=(sysName.split("\\.")(0))
+    //granteds.+=(sysName.split("\\.")(0))
     granteds.+=(node2Name.split("\\.")(0))
     millis = System.currentTimeMillis()
     val at = rep.protos.peer.Authorize(IdTool.getRandomUUID, superAdmin.split("\\.")(0), granteds, Seq(Sha256.hashstr("ContractAssetsTPL.setState")),
@@ -243,19 +243,19 @@ class StateSpec(_system: ActorSystem) extends TestKit(_system) with Matchers wit
       msg_recv6(0).getResult.reason should be(SandboxDispatcher.ERR_DISABLE_CID)
     }
 
-    //非部署者无法启用合约
-    t = PeerHelper.createTransaction4State(node2Name, cid1, true)
-    msg_send = DoTransaction(Seq[Transaction](t), "test-db", TypeOfSender.FromPreloader)
+    //非授权者无法启用合约
+     t = PeerHelper.createTransaction4State(sysName, cid1, true)
+     msg_send = DoTransaction(Seq[Transaction](t), "test-db", TypeOfSender.FromPreloader)
     probe.send(sandbox, msg_send)
-    msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    msg_recv(0).getResult.reason should be(SandboxDispatcher.ERR_CODER)
+     msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
+    msg_recv(0).getResult.reason should be(SandboxDispatcher.ERR_NO_OP_IN_AUTHORIZE)
 
-    //部署者可以启用合约
-    t = PeerHelper.createTransaction4State(sysName, cid1, true)
-    msg_send = DoTransaction(Seq[Transaction](t), "test-db", TypeOfSender.FromPreloader)
+    //授权者可以启用合约
+     t = PeerHelper.createTransaction4State(node2Name, cid1, true)
+     msg_send = DoTransaction(Seq[Transaction](t), "test-db", TypeOfSender.FromPreloader)
     probe.send(sandbox, msg_send)
-    msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    msg_recv4(0).result.isEmpty should be(true)
+     msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
+    msg_recv4(0).getResult.reason.isEmpty should be(true)
 
     //启用合约之后,可以Invoke合约
     for (i <- 0 until 1) {
@@ -263,8 +263,8 @@ class StateSpec(_system: ActorSystem) extends TestKit(_system) with Matchers wit
       val msg_send6 = DoTransaction(Seq[Transaction](t6), "test-db", TypeOfSender.FromPreloader)
       probe.send(sandbox, msg_send6)
       val msg_recv6 = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-      if (msg_recv6(0).result.isEmpty && i == 0)
-        msg_recv6(0).result.isEmpty should be(true)
+      if (msg_recv6(0).getResult.reason.isEmpty && i == 0)
+        msg_recv6(0).getResult.reason.isEmpty should be(true)
       else
         msg_recv6(0).getResult.reason should equal(rcs(i))
     }

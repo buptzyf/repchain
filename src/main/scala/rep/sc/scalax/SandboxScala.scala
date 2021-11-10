@@ -63,6 +63,8 @@ class SandboxScala(cid: ChaincodeId) extends Sandbox(cid) {
     //写入初始状态
     val key_tx_state = WorldStateKeyPreFix + tx_cid + PRE_STATE
     val state_enable = serialise(true)
+    this.ContractStatus = Some(true)
+    this.ContractStatusSource = Some(2)
     //shim.sr.Put(key_tx_state, state_enable)
     shim.srOfTransaction.Put(key_tx_state, state_enable)
     shim.ol.append(OperLog(key_tx_state, ByteString.EMPTY, ByteString.copyFrom(state_enable)))
@@ -103,11 +105,11 @@ class SandboxScala(cid: ChaincodeId) extends Sandbox(cid) {
           val action = ipt.function
           //获得传入参数
           val data = ipt.args
-          //由于本actor的顺序一定是先收到CHAINCODE_DEPLOY 再收到CHAINCODE_INVOKE所以 cobj一定已经实例化了
           cobj.onAction(ctx, action, data.head)
         case Transaction.Type.CHAINCODE_SET_STATE =>
           val key_tx_state = WorldStateKeyPreFix + tx_cid + PRE_STATE
           val state = t.para.state.get
+
           val state_bytes = serialise(state)
 
           //val oldstate = shim.sr.Get(key_tx_state)
@@ -116,19 +118,21 @@ class SandboxScala(cid: ChaincodeId) extends Sandbox(cid) {
           if(oldstate != null){
             oldbytestring = ByteString.copyFrom(state_bytes)
           }
-
-          //shim.sr.Put(key_tx_state, state_bytes)
           shim.srOfTransaction.Put(key_tx_state, state_bytes)
           shim.ol.append(OperLog(key_tx_state, oldbytestring, ByteString.copyFrom(state_bytes)))
+          this.ContractStatus = Some(state)
+          this.ContractStatusSource = Some(2)
           null
         case _ => throw SandboxException(ERR_UNKNOWN_TRANSACTION_TYPE)
       }
 
+      shim.srOfTransaction.commit
       if(r == null){
         new TransactionResult(t.id, shim.ol.toList,Option(new ActionResult(0,"")))
       }else{
         new TransactionResult(t.id, shim.ol.toList,Option(r))
       }
+
     } catch {
       case e: Throwable =>
         RepLogger.except4Throwable(RepLogger.Sandbox_Logger, t.id, e)
