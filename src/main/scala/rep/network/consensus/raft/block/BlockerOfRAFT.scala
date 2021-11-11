@@ -49,7 +49,9 @@ class BlockerOfRAFT (moduleName: String) extends IBlocker(moduleName){
       if (blc != null) {
         RepTimeTracer.setEndTime(pe.getSysTag, "PreloadTrans", System.currentTimeMillis(), blc.height, blc.transactions.size)
         RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,prelaod success,height=${blc.height},local height=${pe.getBlocker.VoteHeight}" + "~" + selfAddr))
-        blc = BlockHelp.AddBlockHash(blc)
+        if (blc.hashOfBlock == _root_.com.google.protobuf.ByteString.EMPTY) {
+          blc = BlockHelp.AddBlockHash(blc)
+        }
         RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,AddBlockHash success,height=${blc.height},local height=${pe.getBlocker.VoteHeight}" + "~" + selfAddr))
         BlockHelp.AddSignToBlock(blc, pe.getSysTag)
       } else {

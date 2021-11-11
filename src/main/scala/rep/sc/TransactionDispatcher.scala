@@ -1,10 +1,10 @@
 package rep.sc
 
 
-import akka.actor.{ ActorRef, Props}
+import akka.actor.{ActorRef, Props}
 import rep.network.base.ModuleBase
-import rep.sc.SandboxDispatcher.DoTransaction
-import rep.log.RepLogger
+import rep.sc.SandboxDispatcher.{DoTransaction, DoTransactions}
+import rep.log.{RepLogger, RepTimeTracer}
 
 object TransactionDispatcher {
   def props(name: String): Props = Props(classOf[TransactionDispatcher], name)
@@ -37,6 +37,14 @@ class TransactionDispatcher(moduleName: String) extends ModuleBase(moduleName) {
   }
 
   override def receive = {
+    case trs: DoTransactions =>
+      RepTimeTracer.setStartTime(pe.getSysTag, "transaction-dispatcher", System.currentTimeMillis(), pe.getCurrentHeight+1, trs.ts.length)
+      if (trs.ts != null && trs.ts.length > 0) {
+        val ref: ActorRef = CheckTransActor(IdTool.getTXCId(trs.ts(0)))
+        ref.forward(trs)
+      } else {
+        RepLogger.error(RepLogger.Business_Logger, this.getLogMsgPrefix("recv DoTransaction is null"))
+      }
     case tr: DoTransaction =>
       if (tr.t != null) {
         val ref: ActorRef = CheckTransActor(IdTool.getTXCId(tr.t))

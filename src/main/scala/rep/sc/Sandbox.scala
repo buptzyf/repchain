@@ -16,7 +16,7 @@
 
 package rep.sc
 
-import akka.actor.{ Actor, ActorRef, Props, actorRef2Scala }
+import akka.actor.{Actor, ActorRef, Props, actorRef2Scala}
 import rep.utils._
 import rep.api.rest._
 import rep.protos.peer._
@@ -25,8 +25,9 @@ import java.util.concurrent.Executors
 import java.lang.Exception
 import java.lang.Thread._
 import java.io.File._
+
 import org.slf4j.LoggerFactory
-import org.json4s.{ DefaultFormats, Formats, jackson }
+import org.json4s.{DefaultFormats, Formats, jackson}
 import de.heikoseeberger.akkahttpjson4s.Json4sSupport
 import org.json4s._
 import akka.util.Timeout
@@ -37,7 +38,7 @@ import rep.storage.IdxPrefix.WorldStateKeyPreFix
 import rep.storage._
 import rep.utils.SerializeUtils.deserialise
 import rep.utils.SerializeUtils.serialise
-import rep.log.RepLogger
+import rep.log.{RepLogger, RepTimeTracer}
 
 /**
  * 合约容器的抽象类伴生对象,定义了交易执行结果的case类
@@ -47,6 +48,7 @@ import rep.log.RepLogger
  */
 object Sandbox {
   val ERR_UNKNOWN_TRANSACTION_TYPE = "无效的交易类型"
+  val ERR_UNKNOWN_CONTRACT_STATUS = "未知的合约状态"
 
   val SplitChainCodeId = "_"
   //日志前缀
@@ -101,12 +103,27 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
    */
   def receive = {
     //交易处理请求
+    case dotrans: DoTransactionOfSandboxs =>
+      RepTimeTracer.setStartTime(pe.getSysTag, "transaction-sandbox-do", System.currentTimeMillis(), pe.getCurrentHeight+1, dotrans.ts.length)
+      val tr = onTransactions(dotrans)
+      RepTimeTracer.setEndTime(pe.getSysTag, "transaction-sandbox-do", System.currentTimeMillis(), pe.getCurrentHeight+1, dotrans.ts.length)
+      sender ! tr.toSeq
     case dotrans: DoTransactionOfSandbox =>
-      val tr = onTransaction(dotrans)
-      sender ! tr
+      var rs = scala.collection.mutable.ArrayBuffer[TransactionResult]()
+      rs += onTransaction(DoTransactionOfSandboxInSingle(dotrans.t,dotrans.da,dotrans.contractStateType))
+      sender ! rs
   }
 
-  def onTransaction(dotrans: DoTransactionOfSandbox): DoTransactionResult = {
+  private def onTransactions(dotrans: DoTransactionOfSandboxs): Array[TransactionResult] = {
+    var rs = scala.collection.mutable.ArrayBuffer[TransactionResult]()
+    dotrans.ts.foreach(t=>{
+      rs += onTransaction(DoTransactionOfSandboxInSingle(t,dotrans.da,dotrans.contractStateType))
+    })
+    RepTimeTracer.setEndTime(pe.getSysTag, "transaction-dispatcher", System.currentTimeMillis(), pe.getCurrentHeight+1, dotrans.ts.length)
+    rs.toArray
+  }
+
+  def onTransaction(dotrans: DoTransactionOfSandboxInSingle):  TransactionResult = {
     try {
       //shim.sr = ImpDataPreloadMgr.GetImpDataPreload(sTag, dotrans.da)
       shim.srOfTransaction = new TransactionOfDataPreload(dotrans.t.id,ImpDataPreloadMgr.GetImpDataPreload(sTag, dotrans.da))
@@ -115,14 +132,14 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
       doTransaction(dotrans)
     } catch {
       case e: Exception =>
+        RepLogger.except4Throwable(RepLogger.Sandbox_Logger,e.getMessage,e)
         RepLogger.except(RepLogger.Sandbox_Logger, dotrans.t.id, e)
-        new DoTransactionResult(dotrans.t.id, null, null,
-          Option(akka.actor.Status.Failure(e)))
+        new TransactionResult(dotrans.t.id, _root_.scala.Seq.empty,Option(ActionResult(101,e.getMessage)))
     }
   }
 
 
-  def doTransaction(dotrans: DoTransactionOfSandbox): DoTransactionResult
+  def doTransaction(dotrans: DoTransactionOfSandboxInSingle): TransactionResult
 
   private def getContractEnableValueFromLevelDB(txcid: String): Option[Boolean] = {
     val db = ImpDataAccess.GetDataAccess(this.sTag)
@@ -136,7 +153,7 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
     }
   }
 
-  private def IsCurrentSigner(dotrans: DoTransactionOfSandbox) {
+  private def IsCurrentSigner(dotrans: DoTransactionOfSandboxInSingle) {
     val cn = dotrans.t.cid.get.chaincodeName
     val key_coder = WorldStateKeyPreFix + cn
     //val coder_bytes = shim.sr.Get(key_coder)
@@ -159,7 +176,7 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
     }
   }
 
-  private def checkTransaction(dotrans: DoTransactionOfSandbox) = {
+  private def checkTransaction(dotrans: DoTransactionOfSandboxInSingle) = {
     val txcid = IdTool.getTXCId(dotrans.t)
     dotrans.t.`type` match {
       case Transaction.Type.CHAINCODE_DEPLOY =>
