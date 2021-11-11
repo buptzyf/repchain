@@ -17,9 +17,11 @@
 package rep.storage
 
 import rep.storage.leveldb.AbstractLevelDB
+
 import scala.collection.mutable
 import rep.protos.peer._
 import java.io.File
+
 import org.fusesource.leveldbjni.JniDBFactory
 import org.iq80.leveldb.DB
 import org.iq80.leveldb.DBIterator
@@ -27,11 +29,13 @@ import org.iq80.leveldb.Options
 import org.iq80.leveldb.WriteBatch
 import rep.storage.cfg.StoreConfig4Scala
 import rep.storage.util.pathUtil
+
 import scala.collection.mutable
 import rep.storage.util.StoreUtil
 import com.google.protobuf.ByteString
 import rep.crypto._
 import rep.log.RepLogger
+import rep.storage.block.BlockFileMgr
 
 /**
  * @author jiangbuyun
@@ -47,6 +51,11 @@ abstract class IDataAccess(val SystemName: String) extends AbstractLevelDB(Syste
   private var synchObject: Object = new Object()
   private var IsTrans: Boolean = false
   private var batch: WriteBatch = null
+
+  /*//区块存储时采用缓存策略，
+  private var cache :java.util.concurrent.ConcurrentHashMap[String,Array[Byte]] = new java.util.concurrent.ConcurrentHashMap[String,Array[Byte]]
+  private var filemgr: BlockFileMgr = new BlockFileMgr(this.SystemName)*/
+
 
   if (SystemName == null || SystemName.equalsIgnoreCase("")) {
     RepLogger.info(RepLogger.Storager_Logger,  SystemName+"~"+"start")

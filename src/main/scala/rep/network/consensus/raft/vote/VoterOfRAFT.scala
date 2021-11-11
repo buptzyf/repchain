@@ -77,10 +77,14 @@ class VoterOfRAFT (moduleName: String) extends IVoter(moduleName: String) {
       RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},first voter,currentHeight=${currentheight},currentHash=${currentblockhash}" + "~" + selfAddr))
     }else if((this.Blocker.VoteHeight +SystemProfile.getBlockNumberOfRaft) <= pe.getMaxHeight4SimpleRaft){
       RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},second voter,currentHeight=${pe.getMaxHeight4SimpleRaft}" + "~" + selfAddr))
-      val block = dataaccess.getBlock4ObjectByHeight(this.Blocker.VoteHeight +SystemProfile.getBlockNumberOfRaft)
-      if(block != null){
-        val currentblockhash = block.hashOfBlock.toStringUtf8()
-        val currentheight = block.height
+      //val block = dataaccess.getBlock4ObjectByHeight(this.Blocker.VoteHeight +SystemProfile.getBlockNumberOfRaft)
+      val blockHash = dataaccess.getBlockHashByHeight(this.Blocker.VoteHeight +SystemProfile.getBlockNumberOfRaft)
+      //if(block != null){
+      if(blockHash != ""){
+        //val currentblockhash = block.hashOfBlock.toStringUtf8()
+        //val currentheight = block.height
+        val currentblockhash = blockHash
+        val currentheight = this.Blocker.VoteHeight +SystemProfile.getBlockNumberOfRaft
         this.cleanVoteInfo
         this.resetCandidator(currentblockhash)
         this.resetBlocker(0, currentblockhash, currentheight)
