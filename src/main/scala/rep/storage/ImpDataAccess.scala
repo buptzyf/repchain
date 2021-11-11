@@ -31,6 +31,7 @@ import rep.sc.Shim._
 import rep.utils._
 import java.io._
 
+import com.googlecode.concurrentlinkedhashmap.{ConcurrentLinkedHashMap, Weighers}
 import rep.api.rest.RestActor.BlockTime
 import rep.protos.peer.OperLog
 
@@ -45,6 +46,7 @@ import rep.crypto.cert.certCache
 
 import scala.util.control.Breaks._
 
+
 /**
  * @author jiangbuyun
  * @version	0.7
@@ -58,6 +60,9 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
   //var bi: BlockInstances = BlockInstances.getDBInstance()
 
   filemgr = new BlockFileMgr(this.SystemName)
+  private val cacheSize = 10000
+  private var fileIdxs = new IdxCache(cacheSize)
+
 
   //private var chainInfoCache: ChainInfoInCache = new ChainInfoInCache(this)
 
@@ -192,11 +197,18 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
   def getBlockIdxByHeight(h: Long): blockindex = {
     var rb: blockindex = null
     val key = IdxPrefix.IdxBlockHeight + String.valueOf(h)
-    val value = this.Get(key)
-    if (value != null) {
-      val bkey = this.byteToString(value)
-      if (!bkey.equalsIgnoreCase("")) {
-        rb = getBlockIdxByHash(bkey)
+    //首先从缓存中获取区块的索引
+    val tmpidx = this.fileIdxs.Get(key)
+    if(tmpidx != null){
+       rb = tmpidx
+    }else{
+      //缓存中没有该区块的索引，从持久化中获取
+      val value = this.Get(key)
+      if (value != null) {
+        val bkey = this.byteToString(value)
+        if (!bkey.equalsIgnoreCase("")) {
+          rb = getBlockIdxByHash(bkey)
+        }
       }
     }
     rb
@@ -835,6 +847,7 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
           "system_name=" + this.SystemName + "\t new height=" + newh + "\t new file no=" + newno + "\t new tx number=" + newtxnumber)
 
         this.Put(IdxPrefix.IdxBlockPrefix + bidx.getBlockHash(), bidx.toArrayByte())
+        this.fileIdxs.Put(IdxPrefix.IdxBlockHeight + String.valueOf(bidx.getBlockHeight()),bidx)
         RepLogger.trace(
           RepLogger.Storager_Logger,
           "system_name=" + this.SystemName + "\t blockhash=" + bidx.getBlockHash())
@@ -962,6 +975,7 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
     if (l == -1) l = 0
     return l
   }
+
 
   /**
    * @author jiangbuyun

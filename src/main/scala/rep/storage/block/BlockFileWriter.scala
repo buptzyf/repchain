@@ -121,7 +121,7 @@ class BlockFileWriter(val SystemName: String, val fileIndex: Long, val isPreAllo
    * @param	,startpos Long 区块信息存储的起始位置,bb byte[] 区块字节数组
    * @return	如果写入成功返回true，否则false
    */
-  /*def writeBlock(startpos: Long, bb: Array[Byte]): Boolean = {
+  def writeBlock(startpos: Long, bb: Array[Byte]): Boolean = {
     var b = false
     synchronized {
       try {
@@ -140,9 +140,9 @@ class BlockFileWriter(val SystemName: String, val fileIndex: Long, val isPreAllo
       }
     }
     b
-  }*/
+  }
 
-  def writeBlock(startpos: Long, bb: Array[Byte]): Boolean = {
+  /*def writeBlock(startpos: Long, bb: Array[Byte]): Boolean = {
     var b = false
     synchronized {
       try {
@@ -155,7 +155,7 @@ class BlockFileWriter(val SystemName: String, val fileIndex: Long, val isPreAllo
       }
     }
     b
-  }
+  }*/
 
   /**
    * @author jiangbuyun

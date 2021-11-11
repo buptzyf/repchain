@@ -62,6 +62,7 @@ libraryDependencies += "javax.xml.bind" % "jaxb-api" % "2.3.1"
 
 // https://mvnrepository.com/artifact/org.apache.httpcomponents/httpclient
 libraryDependencies += "org.apache.httpcomponents" % "httpclient" % "4.5.13"
+libraryDependencies += "com.googlecode.concurrentlinkedhashmap" % "concurrentlinkedhashmap-lru" % "1.4.2"
 
 
 libraryDependencies ++= Seq(
