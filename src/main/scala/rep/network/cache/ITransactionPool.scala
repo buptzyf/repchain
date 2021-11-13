@@ -121,17 +121,6 @@ abstract class ITransactionPool (moduleName: String) extends ModuleBase(moduleNa
       //保存交易到本地
       sendEvent(EventType.RECEIVE_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)
       addTransToCache(t)
-
-      //广播交易到其他共识节点
-      if (ActorUtils.isHelper(sender().path.toString) ||  ActorUtils.isAPI(sender().path.toString)) {
-        //广播交易
-        publishTrans(t)
-        RepLogger.trace(RepLogger.System_Logger,this.getLogMsgPrefix(s"${pe.getSysTag}  recv self created tran,txid=${t.id}"))
-        //广播发送交易事件
-        sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)
-      } else{
-        RepLogger.trace(RepLogger.System_Logger,this.getLogMsgPrefix(s"${pe.getSysTag}  recv broadcast tran,txid=${t.id}"))
-      }
     case _ => //ignore
   }
 }
