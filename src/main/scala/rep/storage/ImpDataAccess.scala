@@ -177,10 +177,16 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
   private def getBlockIdxByHash(bh: String): blockindex = {
     var rb: blockindex = null
     val key = IdxPrefix.IdxBlockPrefix + bh
-    val value = this.Get(key)
-    if (value != null) {
-      rb = new blockindex()
-      rb.InitBlockIndex(value)
+    //首先从缓存中获取区块的高度
+    val h = this.fileIdxs.GetHeightByHash(key)
+    if(h != -1){
+      rb = getBlockIdxByHeight(h)
+    }else {
+      val value = this.Get(key)
+      if (value != null) {
+        rb = new blockindex()
+        rb.InitBlockIndex(value)
+      }
     }
     rb
   }
@@ -848,6 +854,7 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
 
         this.Put(IdxPrefix.IdxBlockPrefix + bidx.getBlockHash(), bidx.toArrayByte())
         this.fileIdxs.Put(IdxPrefix.IdxBlockHeight + String.valueOf(bidx.getBlockHeight()),bidx)
+        this.fileIdxs.PutForHash(IdxPrefix.IdxBlockPrefix + bidx.getBlockHash(),bidx.getBlockHeight())
         RepLogger.trace(
           RepLogger.Storager_Logger,
           "system_name=" + this.SystemName + "\t blockhash=" + bidx.getBlockHash())

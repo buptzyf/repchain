@@ -5,9 +5,11 @@ import com.googlecode.concurrentlinkedhashmap.Weighers;
 
 public class IdxCache {
     private ConcurrentLinkedHashMap<String, blockindex> fileIdxs = null;
+    private ConcurrentLinkedHashMap<String, Long>  hashcaches = null;
 
     public IdxCache(int maxSize){
-         this.fileIdxs = new ConcurrentLinkedHashMap.Builder<String,blockindex>().maximumWeightedCapacity(maxSize).weigher(Weighers.singleton()).build();
+        this.fileIdxs = new ConcurrentLinkedHashMap.Builder<String,blockindex>().maximumWeightedCapacity(maxSize).weigher(Weighers.singleton()).build();
+        this.hashcaches = new ConcurrentLinkedHashMap.Builder<String,Long>().maximumWeightedCapacity(maxSize).weigher(Weighers.singleton()).build();
     }
 
     public blockindex Get(String key){
@@ -20,5 +22,17 @@ public class IdxCache {
 
     public void Put(String key,blockindex idx){
         this.fileIdxs.put(key,idx);
+    }
+
+    public void PutForHash(String key,Long height){
+        this.hashcaches.put(key,height);
+    }
+
+    public Long GetHeightByHash(String hash){
+        Long h = -1l;
+        if(this.hashcaches.containsKey(hash)){
+            h = this.hashcaches.get(hash);
+        }
+        return h;
     }
 }
