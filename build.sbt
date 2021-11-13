@@ -96,6 +96,7 @@ libraryDependencies += "com.thesamet.scalapb" %% "scalapb-runtime" % scalapb.com
 //scalacOptions += "-P:linter:disable:UseIfExpression+VariableAssignedUnusedValue+UseGetOrElseNotPatMatch"
 //scapegoatVersion in ThisBuild := "1.3.3"
 //scapegoatDisabledInspections := Seq("OptionGet", "AsInstanceOf","MethodReturningAny")
+libraryDependencies += "com.googlecode.concurrentlinkedhashmap" % "concurrentlinkedhashmap-lru" % "1.4.2"
 
 assemblyMergeStrategy in assembly := {
   case PathList("org", "iq80", "leveldb", xs @ _*) => MergeStrategy.first

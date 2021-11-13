@@ -51,6 +51,7 @@ import rep.authority.cache.signercache.ImpSignerCache
 import rep.authority.cache.certcache.ImpCertCache
 import rep.authority.cache.authbind.ImpAuthBindToCert
 import rep.sc.tpl.did.DidTplPrefix
+import com.googlecode.concurrentlinkedhashmap.{ConcurrentLinkedHashMap, Weighers}
 
 /**
  * @author jiangbuyun
@@ -65,6 +66,9 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
   //var bi: BlockInstances = BlockInstances.getDBInstance()
 
   filemgr = new BlockFileMgr(this.SystemName)
+
+  private val cacheSize = 10000
+  private var fileIdxs = new IdxCache(cacheSize)
 
   //private var chainInfoCache: ChainInfoInCache = new ChainInfoInCache(this)
 
@@ -181,12 +185,17 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
   private def getBlockIdxByHash(bh: String): blockindex = {
     var rb: blockindex = null
     val key = IdxPrefix.IdxBlockPrefix + bh
-    val value = this.Get(key)
-    if (value != null) {
-      //rb = new blockindex()
-      //rb.InitBlockIndex(value)
-      rb = SerializeUtils.deserialise(value).asInstanceOf[blockindex]
+    //首先从缓存中获取区块的高度
+    val h = this.fileIdxs.GetHeightByHash(key)
+    if(h != -1){
+      rb = getBlockIdxByHeight(h)
+    }else{
+      val value = this.Get(key)
+      if (value != null) {
+        rb = SerializeUtils.deserialise(value).asInstanceOf[blockindex]
+      }
     }
+
     rb
   }
 
@@ -202,11 +211,18 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
   def getBlockIdxByHeight(h: Long): blockindex = {
     var rb: blockindex = null
     val key = IdxPrefix.IdxBlockHeight + String.valueOf(h)
-    val value = this.Get(key)
-    if (value != null) {
-      val bkey = this.byteToString(value)
-      if (!bkey.equalsIgnoreCase("")) {
-        rb = getBlockIdxByHash(bkey)
+    //首先从缓存中获取区块的索引
+    val tmpidx = this.fileIdxs.GetByHeight(key)
+    if(tmpidx != null){
+      rb = tmpidx
+    }else {
+      //缓存中没有该区块的索引，从持久化中获取
+      val value = this.Get(key)
+      if (value != null) {
+        val bkey = this.byteToString(value)
+        if (!bkey.equalsIgnoreCase("")) {
+          rb = getBlockIdxByHash(bkey)
+        }
       }
     }
     rb
@@ -928,6 +944,8 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
 
         //this.Put(IdxPrefix.IdxBlockPrefix + bidx.getBlockHash(), bidx.toArrayByte())
         this.Put(IdxPrefix.IdxBlockPrefix + bidx.getBlockHash(), SerializeUtils.serialise(bidx))
+        this.fileIdxs.PutForHeight(IdxPrefix.IdxBlockHeight + String.valueOf(bidx.getBlockHeight()),bidx)
+        this.fileIdxs.PutForHash(IdxPrefix.IdxBlockPrefix + bidx.getBlockHash(),bidx.getBlockHeight())
 
         RepLogger.trace(
           RepLogger.Storager_Logger,
