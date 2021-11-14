@@ -54,7 +54,9 @@ class ModuleManagerOfRAFT(moduleName: String, sysTag: String, enableStatistic: B
     pe.register(CFRDActorType.ActorType.synchrequester,context.actorOf(SynchRequesterOfRAFT.props("synchrequester").withDispatcher("consensus-dispatcher"), "synchrequester"))
     pe.register(CFRDActorType.ActorType.synchresponser,context.actorOf(SynchronizeResponser.props("synchresponser").withDispatcher("consensus-dispatcher"), "synchresponser"))
   }*/
-    pe.register(ModuleActorType.ActorType.transactionpool, context.actorOf(TransactionPoolOfRAFT.props("transactionpool"), "transactionpool"))
+    if (SystemProfile.getVoteNodeList.contains(this.sysTag)) {
+      pe.register(ModuleActorType.ActorType.transactionpool, context.actorOf(TransactionPoolOfRAFT.props("transactionpool"), "transactionpool"))
+    }
     //pe.register(ModuleActorType.ActorType.transactioncollectioner, context.actorOf(TransactionOfCollectioner.props("transactioncollectioner"), "transactioncollectioner"))
     pe.register(ModuleActorType.ActorType.storager,context.actorOf(StoragerOfRAFT.props("storager"), "storager"))
     if(SystemProfile.getIsStream == 1){
