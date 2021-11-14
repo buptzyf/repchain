@@ -3,6 +3,7 @@
 package rep.network.module.pbft
 
 import akka.actor.Props
+import rep.app.conf.SystemProfile
 import rep.log.RepLogger
 import rep.network.cache.TransactionOfCollectioner
 import rep.network.cache.pbft.TransactionPoolOfPBFT
@@ -39,7 +40,9 @@ class ModuleManagerOfPBFT(moduleName: String, sysTag: String, enableStatistic: B
   }
 
   override def loadConsensusModule = {
-    pe.register(ModuleActorType.ActorType.transactionpool, context.actorOf(TransactionPoolOfPBFT.props("transactionpool"), "transactionpool"))//zhj
+    if (SystemProfile.getVoteNodeList.contains(this.sysTag)) {
+      pe.register(ModuleActorType.ActorType.transactionpool, context.actorOf(TransactionPoolOfPBFT.props("transactionpool"), "transactionpool")) //zhj
+    }
     //pe.register(ModuleActorType.ActorType.transactioncollectioner, context.actorOf(TransactionOfCollectioner.props("transactioncollectioner"), "transactioncollectioner"))
     pe.register(ModuleActorType.ActorType.storager,context.actorOf(StoragerOfPBFT.props("storager"), "storager"))
     pe.register(PBFTActorType.ActorType.blocker,context.actorOf(BlockerOfPBFT.props("blocker"), "blocker"))

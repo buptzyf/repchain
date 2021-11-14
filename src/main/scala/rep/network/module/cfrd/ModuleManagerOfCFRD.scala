@@ -40,7 +40,9 @@ class ModuleManagerOfCFRD(moduleName: String, sysTag: String, enableStatistic: B
 
   override def loadConsensusModule = {
     //pe.register(ModuleActorType.ActorType.transactionpool, context.actorOf(TransactionPoolOfCFRD.props("transactionpool"), "transactionpool"))
-    pe.register(ModuleActorType.ActorType.transactioncollectioner, context.actorOf(TransactionOfCollectioner.props("transactioncollectioner"), "transactioncollectioner"))
+    if (SystemProfile.getVoteNodeList.contains(this.sysTag)) {
+      pe.register(ModuleActorType.ActorType.transactioncollectioner, context.actorOf(TransactionOfCollectioner.props("transactioncollectioner"), "transactioncollectioner"))
+    }
     pe.register(ModuleActorType.ActorType.storager,context.actorOf(StoragerOfCFRD.props("storager"), "storager"))
     pe.register(CFRDActorType.ActorType.blocker,context.actorOf(BlockerOfCFRD.props("blocker"), "blocker"))
     pe.register(CFRDActorType.ActorType.confirmerofblock,context.actorOf(ConfirmOfBlock.props("confirmerofblock"), "confirmerofblock"))
