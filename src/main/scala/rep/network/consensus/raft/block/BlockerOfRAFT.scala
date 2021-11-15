@@ -74,7 +74,7 @@ class BlockerOfRAFT (moduleName: String) extends IBlocker(moduleName){
       this.preblock = blc
       schedulerLink = clearSched()
       pe.setCreateHeight(preblock.height)
-      mediator ! Publish(Topic.Block, ConfirmedBlock(preblock, self))
+      //mediator ! Publish(Topic.Block, ConfirmedBlock(preblock, self))
       var confirms = new BoardcastComfirmBlock(context,ConfirmedBlock(preblock, self),pe.getNodeMgr.getNodes,pe.getNodeMgr.getStableNodes)
       this.works.execute(confirms)
     } else {

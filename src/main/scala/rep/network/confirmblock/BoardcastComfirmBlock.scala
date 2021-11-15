@@ -11,10 +11,10 @@ class BoardcastComfirmBlock(context:ActorContext,cb:ConfirmedBlock,nodeAddress:S
   }
   override def run(): Unit = {
     nodeAddress.foreach(addr=>{
-      if(!stableNodeAddress.contains(addr)){
+      //if(stableNodeAddress.contains(addr)){
         val selection: ActorSelection = context.actorSelection(toAkkaUrl(addr.toString, responseActorName));
         val future1 = selection ! cb
-      }
+      //}
     })
   }
 }
