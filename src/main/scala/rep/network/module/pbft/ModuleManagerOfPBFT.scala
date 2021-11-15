@@ -42,7 +42,6 @@ class ModuleManagerOfPBFT(moduleName: String, sysTag: String, enableStatistic: B
   override def loadConsensusModule = {
     if (SystemProfile.getVoteNodeList.contains(this.sysTag)) {
       pe.register(ModuleActorType.ActorType.transactionpool, context.actorOf(TransactionPoolOfPBFT.props("transactionpool"), "transactionpool")) //zhj
-      pe.register(PBFTActorType.ActorType.voter,context.actorOf(VoterOfPBFT.props("voter"), "voter"))
     }
     //pe.register(ModuleActorType.ActorType.transactioncollectioner, context.actorOf(TransactionOfCollectioner.props("transactioncollectioner"), "transactioncollectioner"))
     pe.register(ModuleActorType.ActorType.storager,context.actorOf(StoragerOfPBFT.props("storager"), "storager"))
@@ -55,6 +54,8 @@ class ModuleManagerOfPBFT(moduleName: String, sysTag: String, enableStatistic: B
 
     pe.register(PBFTActorType.ActorType.synchrequester,context.actorOf(SynchRequesterOfPBFT.props("synchrequester"), "synchrequester"))
     pe.register(PBFTActorType.ActorType.synchresponser,context.actorOf(SynchronizeResponser.props("synchresponser"), "synchresponser"))
+    pe.register(PBFTActorType.ActorType.voter,context.actorOf(VoterOfPBFT.props("voter"), "voter"))
+
 
     pe.register(PBFTActorType.ActorType.pbftpreprepare, context.actorOf(PbftPrePrepare.props("pbftpreprepare"), "pbftpreprepare"))
     pe.register(PBFTActorType.ActorType.pbftprepare, context.actorOf(PbftPrepare.props("pbftprepare"), "pbftprepare"))
