@@ -46,7 +46,9 @@ class ConfirmOfBlock(moduleName: String) extends IConfirmOfBlock(moduleName) {
 
   override def preStart(): Unit = {
     RepLogger.info(RepLogger.Consensus_Logger, this.getLogMsgPrefix("ConfirmOfBlock module start"))
-    SubscribeTopic(mediator, self, selfAddr, Topic.Block, false)
+    if (SystemProfile.getVoteNodeList.contains(pe.getSysTag)) {
+      SubscribeTopic(mediator, self, selfAddr, Topic.Block, false)
+    }
   }
 
   override protected def handler(block: Block, actRefOfBlock: ActorRef) = {

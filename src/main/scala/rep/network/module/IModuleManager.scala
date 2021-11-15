@@ -85,7 +85,7 @@ class IModuleManager(moduleName: String, sysTag: String, enableStatistic: Boolea
   private def loadApiModule = {
     if (enableStatistic) RepTimeTracer.openTimeTrace else RepTimeTracer.closeTimeTrace
     if (enableWebSocket) {
-      pe.register(ModuleActorType.ActorType.webapi,context.system.actorOf(Props[EventServer], "webapi"))
+      pe.register(ModuleActorType.ActorType.webapi,context.system.actorOf(EventServer.props(this.sysTag), "webapi"))
     }
   }
 

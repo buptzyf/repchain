@@ -24,12 +24,14 @@ import rep.app.conf.TimePolicy
 import rep.log.RepLogger
 import rep.network.autotransaction.Topic
 import rep.network.base.ModuleBase
+import rep.network.confirmblock.BoardcastComfirmBlock
 import rep.network.consensus.util.BlockHelp
 import rep.network.module.ModuleActorType
 import rep.network.util.NodeHelp
 import rep.protos.peer._
 import rep.storage.ImpDataAccess
-import rep.network.consensus.common.MsgOfConsensus.{ConfirmedBlock,GenesisBlock,PreTransBlockResult,PreTransBlock}
+import rep.network.consensus.common.MsgOfConsensus.{ConfirmedBlock, GenesisBlock, PreTransBlock, PreTransBlockResult}
+
 import scala.concurrent._
 
 /**
@@ -77,6 +79,9 @@ class GenesisBlocker(moduleName: String) extends ModuleBase(moduleName) {
       if(dataaccess.getBlockChainInfo().height == 0 && NodeHelp.isSeedNode(pe.getSysTag)  ){
         if(this.preblock != null){
           mediator ! Publish(Topic.Block, ConfirmedBlock(preblock, sender))
+          /*var confirms = new BoardcastComfirmBlock(context,ConfirmedBlock(preblock, sender),pe.getNodeMgr.getNodes)
+          var thread = new Thread(confirms)
+          thread.start()*/
         }else{
           RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( "Create genesis block"))
           preblock = BlockHelp.CreateGenesisBlock

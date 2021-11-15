@@ -52,7 +52,8 @@ import akka.NotUsed
  */
 object EventServer {
 //def props(name: String): Props = Props(classOf[EventServer], name)
-  
+def props(sysTag: String): Props = Props(classOf[EventServer],sysTag)
+
   implicit def myExceptionHandler = ExceptionHandler {
     //合约执行异常，回送HTTP 200，包容chrome的跨域尝试
     case e: SandboxException =>
@@ -70,12 +71,12 @@ object EventServer {
  *  @param sys ActorSystem
  *  @param port 指定侦听的端口
  */
-  def start(sys:ActorSystem ,port:Int) {
+  def start(sys:ActorSystem ,port:Int,sysTag:String) {
     implicit val system =sys
     implicit val materializer = ActorMaterializer()
     implicit val executionContext = system.dispatcher
     
-    val evtactor = system.actorOf(Props[RecvEventActor],"RecvEventActor")
+    val evtactor = system.actorOf(RecvEventActor.props(sysTag),"RecvEventActor")
     
 
     
@@ -125,8 +126,8 @@ object EventServer {
 /** Event服务类，提供web实时图、swagger-UI、ws的Event订阅服务
  * @author c4w
  */
-class EventServer extends Actor{
-  override def preStart(): Unit =EventServer.start(context.system, SystemProfile.getHttpServicePort)
+class EventServer(sysTag:String) extends Actor{
+  override def preStart(): Unit =EventServer.start(context.system, SystemProfile.getHttpServicePort,sysTag)
 
   def receive = {
     case Event =>

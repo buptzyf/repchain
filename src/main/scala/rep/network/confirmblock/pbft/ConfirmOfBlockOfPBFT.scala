@@ -47,7 +47,9 @@ class ConfirmOfBlockOfPBFT(moduleName: String) extends IConfirmOfBlock(moduleNam
 
   override def preStart(): Unit = {
     RepLogger.info(RepLogger.Consensus_Logger, this.getLogMsgPrefix("confirm Block module start"))
-    SubscribeTopic(mediator, self, selfAddr, Topic.Block, false)
+    if (SystemProfile.getVoteNodeList.contains(pe.getSysTag)) {
+      SubscribeTopic(mediator, self, selfAddr, Topic.Block, false)
+    }
   }
   import rep.protos.peer._
 

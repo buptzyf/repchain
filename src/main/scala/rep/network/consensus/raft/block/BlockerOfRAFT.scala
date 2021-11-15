@@ -8,10 +8,11 @@ import rep.network.module.cfrd.CFRDActorType
 import rep.network.util.NodeHelp
 import rep.protos.peer.{Block, Event}
 import rep.utils.GlobalUtils.EventType
-import rep.network.consensus.cfrd.MsgOfCFRD.{ CreateBlock,VoteOfBlocker}
+import rep.network.consensus.cfrd.MsgOfCFRD.{CreateBlock, VoteOfBlocker}
 import rep.network.consensus.common.block.IBlocker
 import rep.network.consensus.common.MsgOfConsensus.ConfirmedBlock
-import rep.app.conf.{SystemProfile}
+import rep.app.conf.SystemProfile
+import rep.network.confirmblock.BoardcastComfirmBlock
 import rep.network.consensus.util.BlockHelp
 
 
@@ -74,6 +75,8 @@ class BlockerOfRAFT (moduleName: String) extends IBlocker(moduleName){
       schedulerLink = clearSched()
       pe.setCreateHeight(preblock.height)
       mediator ! Publish(Topic.Block, ConfirmedBlock(preblock, self))
+      var confirms = new BoardcastComfirmBlock(context,ConfirmedBlock(preblock, self),pe.getNodeMgr.getNodes,pe.getNodeMgr.getStableNodes)
+      this.works.execute(confirms)
     } else {
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("create new block error,CreateBlock is null" + "~" + selfAddr))
       pe.getActorRef(CFRDActorType.ActorType.voter) ! VoteOfBlocker
