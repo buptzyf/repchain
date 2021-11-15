@@ -71,7 +71,7 @@ class EndorsementRequest4Future(moduleName: String) extends ModuleBase(moduleNam
   }
 
   private def toAkkaUrl(addr: Address, actorName: String): String = {
-    return addr.toString + "/" + actorName;
+    return addr.toString  + actorName;
   }
 
   private def EndorsementVerify(block: Block, result: ResultOfEndorsed): Boolean = {

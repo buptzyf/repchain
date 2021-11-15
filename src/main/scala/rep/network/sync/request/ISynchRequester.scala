@@ -38,7 +38,7 @@ abstract class ISynchRequester(moduleName: String) extends ModuleBase(moduleName
 
 
   protected def toAkkaUrl(addr: String, actorName: String): String = {
-    return addr + "/" + actorName;
+    return addr + actorName;
   }
 
   protected def AsyncGetNodeOfChainInfo(addr: Address, lh: Long): Future[ResponseInfo] = Future {
