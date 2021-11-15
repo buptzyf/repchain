@@ -78,10 +78,10 @@ class GenesisBlocker(moduleName: String) extends ModuleBase(moduleName) {
     case GenesisBlock =>
       if(dataaccess.getBlockChainInfo().height == 0 && NodeHelp.isSeedNode(pe.getSysTag)  ){
         if(this.preblock != null){
-          mediator ! Publish(Topic.Block, ConfirmedBlock(preblock, sender))
-          /*var confirms = new BoardcastComfirmBlock(context,ConfirmedBlock(preblock, sender),pe.getNodeMgr.getNodes)
+          //mediator ! Publish(Topic.Block, ConfirmedBlock(preblock, sender))
+          var confirms = new BoardcastComfirmBlock(context,ConfirmedBlock(preblock, sender),pe.getNodeMgr.getNodes)
           var thread = new Thread(confirms)
-          thread.start()*/
+          thread.start()
         }else{
           RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( "Create genesis block"))
           preblock = BlockHelp.CreateGenesisBlock
