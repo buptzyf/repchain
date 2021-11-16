@@ -18,15 +18,16 @@ package rep.network.tools.transpool
 
 import rep.protos.peer.Transaction
 import java.util.concurrent.locks._
+
 import rep.app.conf.SystemProfile
 import rep.log.RepLogger
 import rep.utils.SerializeUtils
+
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.JavaConverters._
-import java.util.concurrent.ConcurrentSkipListMap
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicInteger
-import rep.app.conf.{TimePolicy}
+import java.util.concurrent.{ConcurrentHashMap, ConcurrentSkipListMap, Executors, TimeUnit}
+import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
+import rep.app.conf.TimePolicy
 import rep.storage.ImpDataAccess
 import scala.util.control.Breaks._
 
@@ -36,6 +37,33 @@ class TransactionPoolMgr {
   private implicit var transactions = new ConcurrentSkipListMap[Long, Transaction]() asScala
   private implicit var transKeys = new ConcurrentHashMap[String, Long]() asScala
   private implicit var transNumber = new AtomicInteger(0)
+
+  private implicit var lastCount = new AtomicInteger(0)
+  private implicit var CurrentCount = new AtomicInteger(0)
+  private implicit var startTime = new AtomicLong(0)
+  private implicit var lastTime = new AtomicLong(0)
+
+  var scheduledExecutorService = Executors.newSingleThreadScheduledExecutor
+
+  this.scheduledExecutorService.
+    scheduleWithFixedDelay(
+    new Runnable {
+      override def run(): Unit = {
+        val end = System.currentTimeMillis()
+        val c1 = CurrentCount.get() - lastCount.get()
+        val c2 = CurrentCount.get()
+        val t1 = end - lastTime.get()
+        val t2 = end - startTime.get()
+        if(t1 > 0 && t2 > 0){
+          val rtps = (c1 * 1000) / t1
+          val atps = (c2 * 1000)/ t2
+          RepLogger.trace(RepLogger.StatisTime_Logger,  s"transactionPool,rtps=${rtps},atps=${atps}")
+          lastTime.set(end)
+          lastCount.set(CurrentCount.get())
+        }
+      }
+    },5,5, TimeUnit.SECONDS
+  )
 
   def getTransListClone(start: Int, num: Int, sysName: String): Seq[Transaction] = {
     var translist = scala.collection.mutable.ArrayBuffer[Transaction]()
@@ -96,6 +124,10 @@ class TransactionPoolMgr {
         transactions.put(time, tran)
         transKeys.put(txid, time)
         transNumber.incrementAndGet()
+        if(this.startTime.get() == 0){
+          this.startTime.set(System.currentTimeMillis())
+        }
+        this.CurrentCount.incrementAndGet()
         RepLogger.info(RepLogger.TransLifeCycle_Logger, s"systemname=${sysName},transNumber=${transNumber},trans entry pool,${tran.id},entry time = ${time}")
       }
     } finally {
