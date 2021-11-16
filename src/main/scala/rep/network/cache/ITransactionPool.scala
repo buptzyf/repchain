@@ -1,5 +1,7 @@
 package rep.network.cache
 
+import java.util.concurrent.{ExecutorService, Executors}
+
 import akka.actor.{Address, Props}
 import rep.app.conf.SystemProfile
 import rep.crypto.cert.SignTool
@@ -7,6 +9,7 @@ import rep.log.RepLogger
 import rep.network.autotransaction.Topic
 import rep.network.base.ModuleBase
 import rep.network.cache.ITransactionPool.CheckedTransactionResult
+import rep.network.tools.transpool.TransactionPoolMgr
 import rep.network.util.NodeHelp
 import rep.protos.peer.{Event, Transaction}
 import rep.storage.ImpDataAccess
@@ -30,6 +33,8 @@ abstract class ITransactionPool (moduleName: String) extends ModuleBase(moduleNa
   private val transPoolActorName = "/user/modulemanager/transactionpool"
   private var addr4NonUser = ""
   val dataaccess: ImpDataAccess = ImpDataAccess.GetDataAccess(pe.getSysTag)
+  protected var works : ExecutorService = Executors.newFixedThreadPool(5)
+  var poolIsEmpty = pe.getTransPoolMgr.isEmpty
 
   override def preStart(): Unit = {
     //注册接收交易的广播
@@ -59,7 +64,7 @@ abstract class ITransactionPool (moduleName: String) extends ModuleBase(moduleNa
     var resultMsg = ""
     var result = false
 
-    if(SystemProfile.getHasPreloadTransOfApi){
+    //if(SystemProfile.getHasPreloadTransOfApi){
       val sig = t.getSignature
       val tOutSig = t.clearSignature //t.withSignature(null)
       val cert = sig.getCertId
@@ -79,9 +84,9 @@ abstract class ITransactionPool (moduleName: String) extends ModuleBase(moduleNa
       } catch {
         case e: RuntimeException => throw e
       }
-    }else{
-      result = true
-    }
+    //}else{
+    //  result = true
+    //}
 
     CheckedTransactionResult(result, resultMsg)
   }
@@ -120,7 +125,16 @@ abstract class ITransactionPool (moduleName: String) extends ModuleBase(moduleNa
     case t: Transaction =>
       //保存交易到本地
       sendEvent(EventType.RECEIVE_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)
-      addTransToCache(t)
+      //addTransToCache(t)
+      this.works.execute(new TransactionPoolWorker(pe.getTransPoolMgr,t, dataaccess))
+      if(this.poolIsEmpty){
+        if(!pe.getTransPoolMgr.isEmpty) {
+          sendVoteMessage
+          this.poolIsEmpty = false
+        }
+      }else{
+        this.poolIsEmpty = pe.getTransPoolMgr.isEmpty
+      }
     case _ => //ignore
   }
 }
