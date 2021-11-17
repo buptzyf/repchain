@@ -1,5 +1,7 @@
 package rep.network.cache
 
+import java.util.concurrent.ConcurrentLinkedQueue
+
 import rep.app.conf.SystemProfile
 import rep.crypto.cert.SignTool
 import rep.log.RepLogger
@@ -8,32 +10,33 @@ import rep.network.tools.transpool.TransactionPoolMgr
 import rep.protos.peer.Transaction
 import rep.storage.ImpDataAccess
 
-class TransactionPoolWorker(pools:TransactionPoolMgr,t: Transaction, dataAccess: ImpDataAccess) extends Runnable{
+class TransactionPoolWorker1(pools:TransactionPoolMgr, dataAccess: ImpDataAccess) extends Runnable{
+  private var qs = new ConcurrentLinkedQueue[Transaction]()
 
   def checkTransaction(t: Transaction, dataAccess: ImpDataAccess): CheckedTransactionResult = {
     var resultMsg = ""
     var result = false
 
     if(SystemProfile.getHasPreloadTransOfApi){
-      val sig = t.getSignature
-      val tOutSig = t.clearSignature
-      val cert = sig.getCertId
+    val sig = t.getSignature
+    val tOutSig = t.clearSignature
+    val cert = sig.getCertId
 
-      try {
-        val siginfo = sig.signature.toByteArray()
-        val bs = tOutSig.toByteArray
-        if (SignTool.verify(siginfo, bs , cert, dataAccess.getSystemName)) {
-          if (pools.findTrans(t.id) || dataAccess.isExistTrans4Txid(t.id)) {
-            resultMsg = s"The transaction(${t.id}) is duplicated with txid"
-          } else {
-            result = true
-          }
+    try {
+      val siginfo = sig.signature.toByteArray()
+      val bs = tOutSig.toByteArray
+      if (SignTool.verify(siginfo, bs , cert, dataAccess.getSystemName)) {
+        if (pools.findTrans(t.id) || dataAccess.isExistTrans4Txid(t.id)) {
+          resultMsg = s"The transaction(${t.id}) is duplicated with txid"
         } else {
-          resultMsg = s"The transaction(${t.id}) is not completed"
+          result = true
         }
-      } catch {
-        case e: RuntimeException => throw e
+      } else {
+        resultMsg = s"The transaction(${t.id}) is not completed"
       }
+    } catch {
+      case e: RuntimeException => throw e
+    }
     }else{
       result = true
     }
@@ -41,7 +44,7 @@ class TransactionPoolWorker(pools:TransactionPoolMgr,t: Transaction, dataAccess:
     CheckedTransactionResult(result, resultMsg)
   }
 
-  private def DoWork = {
+  private def DoWork(t:Transaction) = {
     var result = CheckedTransactionResult(false,"")
     try {
       result = checkTransaction(t, dataAccess)
@@ -55,7 +58,27 @@ class TransactionPoolWorker(pools:TransactionPoolMgr,t: Transaction, dataAccess:
     }
   }
 
+  def addTransaction(t:Transaction):Unit={
+    this.qs.offer(t)
+  }
+
   override def run(): Unit = {
-    this.DoWork
+    var count = 0
+    while(true){
+      try{
+        val t = this.qs.poll()
+        if(t != null){
+          DoWork(t)
+        }else{
+          if(count < 1000){
+            count = count + 1
+          }
+          Thread.sleep(count)
+        }
+      }catch {
+        case e:Exception=>
+          e.printStackTrace()
+      }
+    }
   }
 }

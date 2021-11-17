@@ -45,6 +45,7 @@ class TransactionPoolMgr {
 
   var scheduledExecutorService = Executors.newSingleThreadScheduledExecutor
 
+
   this.scheduledExecutorService.
     scheduleWithFixedDelay(
     new Runnable {
@@ -54,15 +55,16 @@ class TransactionPoolMgr {
         val c2 = CurrentCount.get()
         val t1 = end - lastTime.get()
         val t2 = end - startTime.get()
-        if(t1 > 0 && t2 > 0){
+        if(t1 > 0 && t2 > 0 && c2 > 0){
           val rtps = (c1 * 1000) / t1
           val atps = (c2 * 1000)/ t2
-          RepLogger.trace(RepLogger.StatisTime_Logger,  s"transactionPool,rtps=${rtps},atps=${atps}")
+          RepLogger.trace(RepLogger.StatisTime_Logger,  s"transactionPool,current=${c2},last=${lastCount.get()},c1=${c1},t1=${t1},t2=${t2},rtps=${rtps},atps=${atps}")
+          //System.out.println( s"transactionPool,current=${c2},last=${lastCount.get()},c1=${c1},t1=${t1},t2=${t2},rtps=${rtps},atps=${atps}")
           lastTime.set(end)
           lastCount.set(CurrentCount.get())
         }
       }
-    },5,5, TimeUnit.SECONDS
+    },10,5, TimeUnit.SECONDS
   )
 
   def getTransListClone(start: Int, num: Int, sysName: String): Seq[Transaction] = {
@@ -126,9 +128,10 @@ class TransactionPoolMgr {
         transNumber.incrementAndGet()
         if(this.startTime.get() == 0){
           this.startTime.set(System.currentTimeMillis())
+          this.lastTime.set(System.currentTimeMillis())
         }
         this.CurrentCount.incrementAndGet()
-        RepLogger.info(RepLogger.TransLifeCycle_Logger, s"systemname=${sysName},transNumber=${transNumber},trans entry pool,${tran.id},entry time = ${time}")
+        //RepLogger.info(RepLogger.TransLifeCycle_Logger, s"systemname=${sysName},transNumber=${transNumber},trans entry pool,${tran.id},entry time = ${time}")
       }
     } finally {
       transLock.unlock()

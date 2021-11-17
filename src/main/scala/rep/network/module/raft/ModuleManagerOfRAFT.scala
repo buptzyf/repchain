@@ -1,6 +1,7 @@
 package rep.network.module.raft
 
 import akka.actor.Props
+import rep.api.rest.DispatchPendingVerification
 import rep.app.conf.SystemProfile
 import rep.log.RepLogger
 import rep.network.cache.TransactionOfCollectioner
@@ -39,6 +40,10 @@ class ModuleManagerOfRAFT(moduleName: String, sysTag: String, enableStatistic: B
     if (SystemProfile.getVoteNodeList.contains(this.sysTag)) {
       pe.register(ModuleActorType.ActorType.transactionpool, context.actorOf(TransactionPoolOfRAFT.props("transactionpool"), "transactionpool"))
     }
+    if(SystemProfile.getIsUseValidator){
+      pe.register(ModuleActorType.ActorType.dispatchtransactiontovalidator, context.actorOf(DispatchPendingVerification.props("dispatchtransactiontovalidator"), "dispatchtransactiontovalidator"))
+    }
+
     //pe.register(ModuleActorType.ActorType.transactioncollectioner, context.actorOf(TransactionOfCollectioner.props("transactioncollectioner"), "transactioncollectioner"))
     pe.register(ModuleActorType.ActorType.storager,context.actorOf(StoragerOfRAFT.props("storager"), "storager"))
     pe.register(CFRDActorType.ActorType.blocker,context.actorOf(BlockerOfRAFT.props("blocker"), "blocker"))

@@ -16,6 +16,8 @@
 
 package rep.api.rest
 
+import java.util.concurrent.{ExecutorService, Executors}
+
 import akka.actor.Actor
 import akka.util.Timeout
 import rep.network._
@@ -149,6 +151,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
 
   implicit val timeout = Timeout(1000.seconds)
   val sr: ImpDataAccess = ImpDataAccess.GetDataAccess(pe.getSysTag)
+  protected var works : ExecutorService = Executors.newFixedThreadPool(2)
 
   // 先检查交易大小，然后再检查交易是否已存在，再去验证签名，如果没有问题，则广播
   /*def preTransaction(t: Transaction): Unit = {
@@ -219,23 +222,28 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
       sender ! PostResult(t.id, None, Option("共识节点数目太少，暂时无法处理交易"))
     } else {
       try {
-        if (SystemProfile.getHasPreloadTransOfApi) {
-          val sig = t.signature.get.signature.toByteArray
-          val tOutSig = t.clearSignature
-          val certId = t.signature.get.certId.get
-          if (SignTool.verify(sig, tOutSig.toByteArray, certId, pe.getSysTag)) {
-            mediator ! Publish(Topic.Transaction, t)
+        if (!SystemProfile.getIsUseValidator) {
+          if (SystemProfile.getHasPreloadTransOfApi) {
+            val sig = t.signature.get.signature.toByteArray
+            val tOutSig = t.clearSignature
+            val certId = t.signature.get.certId.get
+            if (SignTool.verify(sig, tOutSig.toByteArray, certId, pe.getSysTag)) {
+              mediator ! Publish(Topic.Transaction, t)
+              //广播发送交易事件
+              sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)
+              sender ! PostResult(t.id, None, None)
+            } else {
+              sender ! PostResult(t.id, None, Option("验证签名出错"))
+            }
+          } else {
+            mediator ! Publish(Topic.Transaction, t) // 给交易池发送消息 ！=》告知（getActorRef）
             //广播发送交易事件
             sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)
             sender ! PostResult(t.id, None, None)
-          } else {
-            sender ! PostResult(t.id, None, Option("验证签名出错"))
           }
-        } else {
-          mediator ! Publish(Topic.Transaction, t) // 给交易池发送消息 ！=》告知（getActorRef）
-          //广播发送交易事件
+        }else{
+          this.works.execute(new BroadcastTransactionToValidator(t,context,SystemProfile.getValidatorAddr))
           sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)
-          sender ! PostResult(t.id, None, None)
         }
       } catch {
         case e: RuntimeException =>

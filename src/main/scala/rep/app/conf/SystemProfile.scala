@@ -80,7 +80,8 @@ object SystemProfile {
   private[this] var _PRISMA_URL: String = ""
   private[this] var _IS_PERSISTENCE_TX_TO_DB = 0
 
-
+  private[this] var _IS_USE_VALIDATOR = false
+  private[this] var _VALIDATOR_ADDR:String = ""
   
   
   //实时图的事件是否发送，如果不发送，前端实时图将收不到任何消息。
@@ -131,6 +132,15 @@ object SystemProfile {
 
   private def IS_PERSISTENCE_TX_TO_DB:Int = _IS_PERSISTENCE_TX_TO_DB
 
+  private def IS_USE_VALIDATOR = _IS_USE_VALIDATOR
+  private def VALIDATOR_ADDR:String = _VALIDATOR_ADDR
+
+  private def IS_USE_VALIDATOR_=(value:Boolean):Unit={
+    _IS_USE_VALIDATOR = value
+  }
+  private def VALIDATOR_ADDR_=(value:String):Unit={
+    _VALIDATOR_ADDR = value
+  }
 
   private def IS_PERSISTENCE_TX_TO_DB_=(value:Int):Unit={
     _IS_PERSISTENCE_TX_TO_DB = value
@@ -337,6 +347,9 @@ object SystemProfile {
     PRISMA_URL_=(config.getString("system.output_alert.prisma_url"))
 
     ENDORSE_RESEND_TIMES_=(config.getInt("system.time.timeout.endorse_resend_times"))
+
+    IS_USE_VALIDATOR_=(config.getBoolean("system.transaction_validator.is_use_validator"))
+    VALIDATOR_ADDR_= (config.getString("system.transaction_validator.validator_addr"))
   }
 
   //zhj
@@ -406,4 +419,7 @@ object SystemProfile {
 
   def getSynchType:String=SYNCH_TYPE
   def getEndorseResendTimes:Int=ENDORSE_RESEND_TIMES
+
+  def getIsUseValidator:Boolean=IS_USE_VALIDATOR
+  def getValidatorAddr:String=VALIDATOR_ADDR
 }

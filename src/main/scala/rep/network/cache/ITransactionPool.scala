@@ -120,20 +120,36 @@ abstract class ITransactionPool (moduleName: String) extends ModuleBase(moduleNa
     })
   }
 
+  private def TransactionHandler(t:Transaction)={
+    this.works.execute(new TransactionPoolWorker(pe.getTransPoolMgr,t, dataaccess))
+    if(this.poolIsEmpty){
+      if(!pe.getTransPoolMgr.isEmpty) {
+        sendVoteMessage
+        this.poolIsEmpty = false
+      }
+    }
+  }
+
+  private def addTransToPool(t: Transaction) = {
+    if((SystemProfile.getMaxCacheTransNum == 0 || pe.getTransPoolMgr.getTransLength() < SystemProfile.getMaxCacheTransNum) ){
+      pe.getTransPoolMgr.putTran(t, pe.getSysTag)
+      RepLogger.trace(RepLogger.System_Logger,this.getLogMsgPrefix(s"${pe.getSysTag} trans pool recv,txid=${t.id}"))
+      if (poolIsEmpty)//加入交易之前交易池为空，发送抽签消息
+      sendVoteMessage
+    }
+  }
+
   override def receive = {
     //处理接收的交易
     case t: Transaction =>
       //保存交易到本地
       sendEvent(EventType.RECEIVE_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)
       //addTransToCache(t)
-      this.works.execute(new TransactionPoolWorker(pe.getTransPoolMgr,t, dataaccess))
-      if(this.poolIsEmpty){
-        if(!pe.getTransPoolMgr.isEmpty) {
-          sendVoteMessage
-          this.poolIsEmpty = false
-        }
+      //System.out.println(s"outputer : ${pe.getSysTag},entry verify transaction ,from:${this.sender().toString()}")
+      if(SystemProfile.getIsUseValidator){
+        addTransToPool(t)
       }else{
-        this.poolIsEmpty = pe.getTransPoolMgr.isEmpty
+        TransactionHandler(t)
       }
     case _ => //ignore
   }

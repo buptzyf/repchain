@@ -16,10 +16,13 @@
 
 package rep.network.autotransaction
 
+import java.util.concurrent.{ExecutorService, Executors}
+
 import akka.actor.Props
 import akka.cluster.pubsub.DistributedPubSubMediator.Publish
 import com.google.protobuf.ByteString
 import com.google.protobuf.timestamp.Timestamp
+import rep.api.rest.BroadcastTransactionToValidator
 import rep.app.conf.SystemProfile
 import rep.crypto.cert.SignTool
 import rep.log.RepLogger
@@ -145,6 +148,7 @@ class PeerHelper(name: String) extends ModuleBase(name) {
   //val sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
   var chaincode:ChaincodeId = new ChaincodeId("ContractAssetsTPL",1)
+  protected var works : ExecutorService = Executors.newFixedThreadPool(2)
 
   override def preStart(): Unit = {
     //注册接收交易的广播
@@ -173,7 +177,12 @@ class PeerHelper(name: String) extends ModuleBase(name) {
         //createTransForLoop //在做tps测试到时候，执行该函数，并且注释其他代码
         val t3 = createTransaction4Invoke(pe.getSysTag, chaincode,
           "transfer", Seq(li2))
-        mediator ! Publish(Topic.Transaction, t3)
+        if(SystemProfile.getIsUseValidator){
+          this.works.execute(new BroadcastTransactionToValidator(t3,context,SystemProfile.getValidatorAddr))
+        }else{
+          mediator ! Publish(Topic.Transaction, t3)
+        }
+
         sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)
          RepLogger.trace(RepLogger.System_Logger,this.getLogMsgPrefix(s"########################create transaction id =${t3.id}"))
       } catch {
