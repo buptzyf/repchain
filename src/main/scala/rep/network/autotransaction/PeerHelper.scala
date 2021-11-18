@@ -149,6 +149,8 @@ class PeerHelper(name: String) extends ModuleBase(name) {
 
   var chaincode:ChaincodeId = new ChaincodeId("ContractAssetsTPL",1)
   protected var works : ExecutorService = Executors.newFixedThreadPool(2)
+  private val  vlength = SystemProfile.getValidatorAddr.size()
+  private var  tempCount : Int = 0
 
   override def preStart(): Unit = {
     //注册接收交易的广播
@@ -178,7 +180,9 @@ class PeerHelper(name: String) extends ModuleBase(name) {
         val t3 = createTransaction4Invoke(pe.getSysTag, chaincode,
           "transfer", Seq(li2))
         if(SystemProfile.getIsUseValidator){
-          this.works.execute(new BroadcastTransactionToValidator(t3,context,SystemProfile.getValidatorAddr))
+          this.works.execute(new BroadcastTransactionToValidator(t3,context,this.tempCount % vlength))
+          this.tempCount = this.tempCount + 1
+          if(this.tempCount == Int.MaxValue) this.tempCount = 0
         }else{
           mediator ! Publish(Topic.Transaction, t3)
         }

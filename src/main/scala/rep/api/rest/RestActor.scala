@@ -152,6 +152,8 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
   implicit val timeout = Timeout(1000.seconds)
   val sr: ImpDataAccess = ImpDataAccess.GetDataAccess(pe.getSysTag)
   protected var works : ExecutorService = Executors.newFixedThreadPool(2)
+  private var  tempCount : Int = 0
+  private val  vlength = SystemProfile.getValidatorAddr.size()
 
   // 先检查交易大小，然后再检查交易是否已存在，再去验证签名，如果没有问题，则广播
   /*def preTransaction(t: Transaction): Unit = {
@@ -242,8 +244,10 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
             sender ! PostResult(t.id, None, None)
           }
         }else{
-          this.works.execute(new BroadcastTransactionToValidator(t,context,SystemProfile.getValidatorAddr))
+          this.works.execute(new BroadcastTransactionToValidator(t,context,this.tempCount % vlength))
           sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)
+          this.tempCount = this.tempCount + 1
+          if(this.tempCount == Int.MaxValue) this.tempCount = 0
           sender ! PostResult(t.id, None, None)
         }
       } catch {

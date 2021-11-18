@@ -16,6 +16,8 @@
 
 package rep.app.conf
 
+import java.util
+
 import com.typesafe.config.Config
 //import collection.JavaConversions._
 //import scala.collection.immutable._
@@ -81,7 +83,7 @@ object SystemProfile {
   private[this] var _IS_PERSISTENCE_TX_TO_DB = 0
 
   private[this] var _IS_USE_VALIDATOR = false
-  private[this] var _VALIDATOR_ADDR:String = ""
+  private[this] var _VALIDATOR_ADDR:List[String] = new ArrayList[String]
   
   
   //实时图的事件是否发送，如果不发送，前端实时图将收不到任何消息。
@@ -133,12 +135,12 @@ object SystemProfile {
   private def IS_PERSISTENCE_TX_TO_DB:Int = _IS_PERSISTENCE_TX_TO_DB
 
   private def IS_USE_VALIDATOR = _IS_USE_VALIDATOR
-  private def VALIDATOR_ADDR:String = _VALIDATOR_ADDR
+  private def VALIDATOR_ADDR:List[String] = _VALIDATOR_ADDR
 
   private def IS_USE_VALIDATOR_=(value:Boolean):Unit={
     _IS_USE_VALIDATOR = value
   }
-  private def VALIDATOR_ADDR_=(value:String):Unit={
+  private def VALIDATOR_ADDR_=(value:List[String]):Unit={
     _VALIDATOR_ADDR = value
   }
 
@@ -349,7 +351,7 @@ object SystemProfile {
     ENDORSE_RESEND_TIMES_=(config.getInt("system.time.timeout.endorse_resend_times"))
 
     IS_USE_VALIDATOR_=(config.getBoolean("system.transaction_validator.is_use_validator"))
-    VALIDATOR_ADDR_= (config.getString("system.transaction_validator.validator_addr"))
+    VALIDATOR_ADDR_= (config.getStringList("system.transaction_validator.validator_addr"))
   }
 
   //zhj
@@ -421,5 +423,5 @@ object SystemProfile {
   def getEndorseResendTimes:Int=ENDORSE_RESEND_TIMES
 
   def getIsUseValidator:Boolean=IS_USE_VALIDATOR
-  def getValidatorAddr:String=VALIDATOR_ADDR
+  def getValidatorAddr:List[String]=VALIDATOR_ADDR
 }
