@@ -244,6 +244,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
         }else{
           this.works.execute(new BroadcastTransactionToValidator(t,context,SystemProfile.getValidatorAddr))
           sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)
+          sender ! PostResult(t.id, None, None)
         }
       } catch {
         case e: RuntimeException =>
