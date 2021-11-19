@@ -1,7 +1,8 @@
 package rep.api.rest
 
-import akka.actor.Props
+import akka.actor.{ActorSelection, Props}
 import akka.cluster.pubsub.DistributedPubSubMediator.Publish
+import rep.app.conf.SystemProfile
 import rep.crypto.cert.SignTool
 import rep.log.RepLogger
 import rep.network.autotransaction.Topic
@@ -19,6 +20,7 @@ class ReceiveTransactionsOfPendingVerification (moduleName: String) extends Modu
     RepLogger.info(RepLogger.Consensus_Logger, this.getLogMsgPrefix( "ReceiveTransactionsOfPendingVerification Start"))
   }
 
+  protected val recvTransactionActorName = "/user/modulemanager/transactionpool"
   val dataaccess: ImpDataAccess = ImpDataAccess.GetDataAccess(pe.getSysTag)
 
   def checkTransaction(t: Transaction, dataAccess: ImpDataAccess): CheckedTransactionResult = {
@@ -53,7 +55,18 @@ class ReceiveTransactionsOfPendingVerification (moduleName: String) extends Modu
     case t: Transaction =>
       //System.out.println(s"outputer : ${pe.getSysTag},entry verify transaction ,from:${t.id}")
       if(this.checkTransaction(t,dataaccess).result){
-        mediator ! Publish(Topic.Transaction, t)
+        pe.getNodeMgr.getStableNodes.foreach(a=>{
+          val addr = a.toString + recvTransactionActorName
+          val selection: ActorSelection = context.actorSelection(addr)
+          try{
+            selection ! t
+          }catch{
+            case e:Exception=> e.printStackTrace()
+          }
+        })
+
+        //val selection: ActorSelection = context.actorSelection(toAkkaUrl(SystemProfile.getValidatorAddr.get(validatorAddrIdx), validatorActorName));
+        //mediator ! Publish(Topic.Transaction, t)
       }
 
     case _ => //ignore
