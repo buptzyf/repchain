@@ -18,7 +18,7 @@ package rep.api.rest
 
 import java.util.concurrent.{ExecutorService, Executors}
 
-import akka.actor.Actor
+import akka.actor.{Actor, ActorSelection, Props}
 import akka.util.Timeout
 import rep.network._
 
@@ -39,7 +39,6 @@ import org.json4s.jackson.JsonMethods
 import rep.network.tools.PeerExtension
 import rep.network.base.ModuleBase
 import rep.network.module.ModuleActorType
-import akka.actor.Props
 import rep.crypto.cert.SignTool
 import rep.protos.peer.ActionResult
 import rep.app.conf.SystemProfile
@@ -215,6 +214,17 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
   }*/
 
 
+  private def VerifyTransactionSign(t:Transaction):Boolean={
+    val sig = t.signature.get.signature.toByteArray
+    val tOutSig = t.clearSignature
+    val certId = t.signature.get.certId.get
+    if (SignTool.verify(sig, tOutSig.toByteArray, certId, pe.getSysTag)) {
+      true
+    } else {
+      false
+    }
+  }
+
   // 先检查交易大小，然后再检查交易是否已存在，再去验证签名，如果没有问题，则广播
   def preTransaction(t: Transaction): Unit = {
     val tranLimitSize = SystemProfile.getBlockLength / 3
@@ -224,31 +234,48 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
       sender ! PostResult(t.id, None, Option("共识节点数目太少，暂时无法处理交易"))
     } else {
       try {
-        if (!SystemProfile.getIsUseValidator) {
-          if (SystemProfile.getHasPreloadTransOfApi) {
-            val sig = t.signature.get.signature.toByteArray
-            val tOutSig = t.clearSignature
-            val certId = t.signature.get.certId.get
-            if (SignTool.verify(sig, tOutSig.toByteArray, certId, pe.getSysTag)) {
-              mediator ! Publish(Topic.Transaction, t)
+        if (SystemProfile.getVoteNodeList.contains(pe.getSysTag)) {
+          //是共识节点
+          if (!SystemProfile.getIsUseValidator) {
+            if (SystemProfile.getHasPreloadTransOfApi) {
+              if(VerifyTransactionSign(t)){
+                mediator ! Publish(Topic.Transaction, t)
+                //广播发送交易事件
+                sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)
+                sender ! PostResult(t.id, None, None)
+              }else{
+                sender ! PostResult(t.id, None, Option("验证签名出错"))
+              }
+            } else {
+              mediator ! Publish(Topic.Transaction, t) // 给交易池发送消息 ！=》告知（getActorRef）
               //广播发送交易事件
               sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)
               sender ! PostResult(t.id, None, None)
-            } else {
-              sender ! PostResult(t.id, None, Option("验证签名出错"))
             }
           } else {
-            mediator ! Publish(Topic.Transaction, t) // 给交易池发送消息 ！=》告知（getActorRef）
-            //广播发送交易事件
+            this.works.execute(new BroadcastTransactionToValidator(t, context, this.tempCount % vlength))
             sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)
+            this.tempCount = this.tempCount + 1
+            if (this.tempCount == Int.MaxValue) this.tempCount = 0
             sender ! PostResult(t.id, None, None)
           }
         }else{
-          this.works.execute(new BroadcastTransactionToValidator(t,context,this.tempCount % vlength))
-          sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)
-          this.tempCount = this.tempCount + 1
-          if(this.tempCount == Int.MaxValue) this.tempCount = 0
-          sender ! PostResult(t.id, None, None)
+          //不是共识节点
+          if(VerifyTransactionSign(t)){
+            pe.getNodeMgr.getStableNodes.foreach(a=>{
+              val addr = a.toString + "/user/modulemanager/transactionpool"
+              val selection: ActorSelection = context.actorSelection(addr)
+              try{
+                selection ! t
+              }catch{
+                case e:Exception=> e.printStackTrace()
+              }
+            })
+            sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)
+            sender ! PostResult(t.id, None, None)
+          }else{
+            sender ! PostResult(t.id, None, Option("验证签名出错"))
+          }
         }
       } catch {
         case e: RuntimeException =>
