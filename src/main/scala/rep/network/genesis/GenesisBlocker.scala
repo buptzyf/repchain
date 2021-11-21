@@ -24,7 +24,7 @@ import rep.app.conf.TimePolicy
 import rep.log.RepLogger
 import rep.network.autotransaction.Topic
 import rep.network.base.ModuleBase
-import rep.network.confirmblock.BoardcastComfirmBlock
+import rep.network.confirmblock.BoardcastConfirmBlock
 import rep.network.consensus.util.BlockHelp
 import rep.network.module.ModuleActorType
 import rep.network.util.NodeHelp
@@ -79,7 +79,7 @@ class GenesisBlocker(moduleName: String) extends ModuleBase(moduleName) {
       if(dataaccess.getBlockChainInfo().height == 0 && NodeHelp.isSeedNode(pe.getSysTag)  ){
         if(this.preblock != null){
           mediator ! Publish(Topic.Block, ConfirmedBlock(preblock, sender))
-          var confirms = new BoardcastComfirmBlock(context,ConfirmedBlock(preblock, sender),pe.getNodeMgr.getNodes,pe.getNodeMgr.getStableNodes)
+          var confirms = new BoardcastConfirmBlock(context,ConfirmedBlock(preblock, sender),pe.getNodeMgr.getNodes,pe.getNodeMgr.getStableNodes)
           var thread = new Thread(confirms)
           thread.start()
         }else{

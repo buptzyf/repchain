@@ -14,7 +14,7 @@ class BroadcastTransactionToValidator(t:Transaction,context:ActorContext,validat
 
   override def run(): Unit = {
         val selection: ActorSelection = context.actorSelection(toAkkaUrl(SystemProfile.getValidatorAddr.get(validatorAddrIdx), validatorActorName));
-        RepLogger.info(RepLogger.Consensus_Logger,s"^^^^^^^^${selection.anchorPath.toString}")
+        //RepLogger.info(RepLogger.Consensus_Logger,s"^^^^^^^^${selection.anchorPath.toString}")
         val future1 = selection ! t
         //System.out.println(s"send transaction to validator,addr:${SystemProfile.getValidatorAddr.get(validatorAddrIdx)}")
   }

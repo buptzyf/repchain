@@ -1,12 +1,15 @@
 package rep.network.confirmblock
 
 
+import java.util.concurrent.{ExecutorService, Executors}
+
 import akka.actor.{ActorRef, Props}
 import akka.util.Timeout
 import rep.log.{RepLogger, RepTimeTracer}
 import rep.network.base.ModuleBase
-import rep.network.consensus.common.MsgOfConsensus.{ConfirmedBlock}
+import rep.network.consensus.common.MsgOfConsensus.ConfirmedBlock
 import rep.network.consensus.util.BlockVerify
+
 import scala.concurrent._
 
 /**
@@ -71,7 +74,9 @@ abstract  class IConfirmOfBlock(moduleName: String) extends ModuleBase(moduleNam
   override def receive = {
     case ConfirmedBlock(block, actRefOfBlock) =>
       RepTimeTracer.setStartTime(pe.getSysTag, "blockconfirm", System.currentTimeMillis(), block.height, block.transactions.size)
-      checkedOfConfirmBlock(block, actRefOfBlock)
+      if(block.height > pe.getCurrentHeight){
+        checkedOfConfirmBlock(block, actRefOfBlock)
+      }
       RepTimeTracer.setEndTime(pe.getSysTag, "blockconfirm", System.currentTimeMillis(), block.height, block.transactions.size)
     case _ => //ignore
   }

@@ -1,22 +1,21 @@
 package rep.network.confirmblock
 
-import akka.actor.{ActorContext, ActorSelection, Address}
-import rep.log.RepLogger
+import akka.actor.{ActorContext, ActorSelection}
+import rep.app.conf.SystemProfile
 import rep.network.consensus.common.MsgOfConsensus.ConfirmedBlock
 
-class BoardcastComfirmBlock(context:ActorContext,cb:ConfirmedBlock,nodeAddress:Set[Address],stableNodeAddress:Set[Address]) extends Runnable{
+class BoardcastConfirmBlock1 (context:ActorContext, cb:ConfirmedBlock) extends Runnable{
   protected val responseActorName = "/user/modulemanager/confirmerofblock"
 
   protected def toAkkaUrl(addr: String, actorName: String): String = {
     addr + actorName;
   }
   override def run(): Unit = {
-    nodeAddress.foreach(addr=>{
-      if(!stableNodeAddress.contains(addr)){
+    if(SystemProfile.getIsForwarding){
+      SystemProfile.getForwardingNodes.forEach(addr=>{
         val selection: ActorSelection = context.actorSelection(toAkkaUrl(addr.toString, responseActorName));
-        RepLogger.trace(RepLogger.Consensus_Logger,s"^^^^^^^^${selection.anchorPath.toString}")
         val future1 = selection ! cb
-      }
-    })
+      })
+    }
   }
 }

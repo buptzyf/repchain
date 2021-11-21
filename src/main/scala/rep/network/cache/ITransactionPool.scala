@@ -35,6 +35,8 @@ abstract class ITransactionPool (moduleName: String) extends ModuleBase(moduleNa
   val dataaccess: ImpDataAccess = ImpDataAccess.GetDataAccess(pe.getSysTag)
   protected var works : ExecutorService = Executors.newFixedThreadPool(5)
   var poolIsEmpty = pe.getTransPoolMgr.isEmpty
+  private var txCountOfThrow = 0
+  private var txCount = 0
 
   override def preStart(): Unit = {
     //注册接收交易的广播
@@ -121,21 +123,27 @@ abstract class ITransactionPool (moduleName: String) extends ModuleBase(moduleNa
   }
 
   private def TransactionHandler(t:Transaction)={
+    this.poolIsEmpty = pe.getTransPoolMgr.isEmpty
     this.works.execute(new TransactionPoolWorker(pe.getTransPoolMgr,t, dataaccess))
     if(this.poolIsEmpty){
       if(!pe.getTransPoolMgr.isEmpty) {
         sendVoteMessage
-        this.poolIsEmpty = false
       }
     }
   }
 
   private def addTransToPool(t: Transaction) = {
+    this.txCount = this.txCount + 1
+    this.poolIsEmpty = pe.getTransPoolMgr.isEmpty
     if((SystemProfile.getMaxCacheTransNum == 0 || pe.getTransPoolMgr.getTransLength() < SystemProfile.getMaxCacheTransNum) ){
       pe.getTransPoolMgr.putTran(t, pe.getSysTag)
       RepLogger.trace(RepLogger.System_Logger,this.getLogMsgPrefix(s"${pe.getSysTag} trans pool recv,txid=${t.id}"))
-      if (poolIsEmpty)//加入交易之前交易池为空，发送抽签消息
-      sendVoteMessage
+      if (poolIsEmpty){//加入交易之前交易池为空，发送抽签消息
+        sendVoteMessage
+      }
+    }else{
+      this.txCountOfThrow = this.txCountOfThrow + 1
+      RepLogger.trace(RepLogger.System_Logger,this.getLogMsgPrefix(s"${pe.getSysTag} trans pool is full,txid=${t.id},txCount=${this.txCount},txCountThrow=${this.txCountOfThrow}"))
     }
   }
 

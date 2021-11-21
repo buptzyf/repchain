@@ -39,7 +39,7 @@ abstract class IBlocker(moduleName: String) extends ModuleBase(moduleName) {
 
   protected val dataaccess: ImpDataAccess = ImpDataAccess.GetDataAccess(pe.getSysTag)
   implicit val timeout = Timeout(TimePolicy.getTimeoutPreload.seconds)
-  protected var works : ExecutorService = Executors.newFixedThreadPool(1)
+  //protected var works : ExecutorService = Executors.newFixedThreadPool(1)
 
   protected def CollectedTransOfBlock(start: Int, num: Int, limitsize: Int): ArrayBuffer[Transaction] = {
     var result = ArrayBuffer.empty[Transaction]

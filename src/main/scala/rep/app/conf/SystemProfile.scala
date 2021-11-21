@@ -84,8 +84,10 @@ object SystemProfile {
 
   private[this] var _IS_USE_VALIDATOR = false
   private[this] var _VALIDATOR_ADDR:List[String] = new ArrayList[String]
-  
-  
+
+  private[this] var _IS_FORWARDING = false
+  private[this] var _FORWARDING_NODES:List[String] = new ArrayList[String]
+
   //实时图的事件是否发送，如果不发送，前端实时图将收不到任何消息。
   private[this] var _REALTIMEGRAPH_ENABLE = 1 ////0 unable;1 enable; default 1
   
@@ -136,6 +138,16 @@ object SystemProfile {
 
   private def IS_USE_VALIDATOR = _IS_USE_VALIDATOR
   private def VALIDATOR_ADDR:List[String] = _VALIDATOR_ADDR
+
+  private def  IS_FORWARDING = _IS_FORWARDING
+  private def  FORWARDING_NODES:List[String] = _FORWARDING_NODES
+
+  private def IS_FORWARDING_=(value:Boolean):Unit={
+    _IS_FORWARDING = value
+  }
+  private def FORWARDING_NODES_=(value:List[String]):Unit={
+    _FORWARDING_NODES = value
+  }
 
   private def IS_USE_VALIDATOR_=(value:Boolean):Unit={
     _IS_USE_VALIDATOR = value
@@ -352,6 +364,9 @@ object SystemProfile {
 
     IS_USE_VALIDATOR_=(config.getBoolean("system.transaction_validator.is_use_validator"))
     VALIDATOR_ADDR_= (config.getStringList("system.transaction_validator.validator_addr"))
+
+    IS_FORWARDING_=(config.getBoolean("system.confirm_block.is_forwarding"))
+    FORWARDING_NODES_= (config.getStringList("system.confirm_block.forwarding_nodes"))
   }
 
   //zhj
@@ -424,4 +439,7 @@ object SystemProfile {
 
   def getIsUseValidator:Boolean=IS_USE_VALIDATOR
   def getValidatorAddr:List[String]=VALIDATOR_ADDR
+
+  def getIsForwarding:Boolean=IS_USE_VALIDATOR
+  def getForwardingNodes:List[String]=VALIDATOR_ADDR
 }
