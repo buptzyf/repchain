@@ -493,24 +493,15 @@ class TransactionService(ra: RestRouter)(implicit executionContext: ExecutionCon
       }
     }
 
-  case class SignedTransData(var signedTrans: File)
   //以字节流提交签名交易
-  @POST
   @Path("/postTranStream")
-  @Operation(tags = Array("transaction"), summary = "提交带签名的交易字节流", description  = "postSignTransactionStream", method = "POST",
-    //    parameters = Array(new Parameter(name = "signedTrans", schema = new Schema(`type` = "string", format = "binary"), style = ParameterStyle.FORM, explode = Explode.TRUE))
-    requestBody = new RequestBody(description = "签名交易的二进制文件", required = true,
-      content = Array(new Content(mediaType = MediaType.MULTIPART_FORM_DATA, schema = new Schema(name = "signedTrans", implementation = classOf[SignedTransData])))
-    )
-  )
-  //  @Parameter(name = "signedTrans", schema = new Schema(`type` = "string", format = "binary"), style = ParameterStyle.FORM, explode = Explode.TRUE)
-  //  @ApiImplicitParams(Array(
-  //    // new ApiImplicitParam(name = "signer", value = "签名者", required = true, dataType = "string", paramType = "formData"),
-  //    new ApiImplicitParam(name = "signedTrans", value = "交易内容", required = true, dataType = "file", paramType = "formData")))
+  @ApiOperation(value = "提交带签名的交易字节流", notes = "", consumes = "multipart/form-data", nickname = "postSignTransactionStream", httpMethod = "POST")
+  @ApiImplicitParams(Array(
+    // new ApiImplicitParam(name = "signer", value = "签名者", required = true, dataType = "string", paramType = "formData"),
+    new ApiImplicitParam(name = "signedTrans", value = "交易内容", required = true, dataType = "file", paramType = "formData")))
   @ApiResponses(Array(
-    new ApiResponse(responseCode = "200", description = "返回交易id以及执行结果", content =  Array(new Content(mediaType = "application/json",schema = new Schema(implementation = classOf[PostResult])))),
-    new ApiResponse(responseCode = "202", description = "处理存在异常", content =  Array(new Content(mediaType = "application/json",schema = new Schema(implementation = classOf[PostResult])))))
-  )
+    new ApiResponse(code = 200, message = "返回交易id以及执行结果", response = classOf[PostResult]),
+    new ApiResponse(code = 202, message = "处理存在异常", response = classOf[PostResult])))
   def postSignTransactionStream =
     path("transaction" / "postTranStream") {
       post {
@@ -519,9 +510,21 @@ class TransactionService(ra: RestRouter)(implicit executionContext: ExecutionCon
 
           fileUpload("signedTrans") {
             case (fileInfo, fileStream) =>
-              val sink = StreamConverters.asInputStream()
-              val inputStream = fileStream.runWith(sink)
-              complete { (ra.getRestActor ? Transaction.parseFrom(inputStream)).mapTo[PostResult] }
+              RepLogger.debug(RepLogger.APIAccess_Logger, s"流式提交交易，fileInfo=$fileInfo")
+              val tranFuture: Future[ByteString] = fileStream.runFold(ByteString.empty)(_ ++ _)
+              onComplete(tranFuture) {
+                case Success(tranByteString) =>
+                  complete {
+                    (ra.getRestActor ? Transaction.parseFrom(tranByteString.toArray)).mapTo[PostResult]
+                  }
+                case Failure(ex) =>
+                  complete (StatusCodes.InternalServerError, ex.getMessage)
+              }
+//              val tranBytes = Await.result(tranFuture, Timeout(3.seconds).duration).toArray
+//              complete { (ra.getRestActor ? Transaction.parseFrom(tranBytes)).mapTo[PostResult] }
+//              val sink = StreamConverters.asInputStream()
+//              val inputStream = fileStream.runWith(sink)
+//              complete { (ra.getRestActor ? Transaction.parseFrom(inputStream)).mapTo[PostResult] }
 //              val fp = Paths.get("/tmp") resolve fileInfo.fileName
 //              val sink = FileIO.toPath(fp)
 //              val writeResult = fileStream.runWith(sink)
@@ -534,6 +537,7 @@ class TransactionService(ra: RestRouter)(implicit executionContext: ExecutionCon
         }
       }
     }
+
 
   @POST
   @Path("/postTran")
