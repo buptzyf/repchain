@@ -2,7 +2,7 @@ package rep.sc.scalax
 
 import org.json4s._
 import org.json4s.jackson.JsonMethods._
-import rep.crypto.Sha256
+import rep.crypto.Sm3
 import rep.app.conf.SystemProfile
 import collection.mutable
 import rep.storage.util.pathUtil
@@ -234,7 +234,7 @@ class CompilerOfSourceCode(targetDir: Option[File], bDebug: Boolean) {
    *  @return 类名字符串
    */
   protected def classNameForCode(code: String): String = {
-    PRE_CLS_NAME + Sha256.hashstr(code)
+    PRE_CLS_NAME + Sm3.hashstr(code)
   }
 
 }
