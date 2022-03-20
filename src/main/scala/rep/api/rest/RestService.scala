@@ -18,7 +18,7 @@ package rep.api.rest
 
 import java.io.File
 import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
-
+import scala.util.{Success, Failure}
 import scala.concurrent.{ExecutionContext, Future}
 import akka.actor.{ActorRef, ActorSelection}
 import akka.util.Timeout
@@ -493,15 +493,20 @@ class TransactionService(ra: RestRouter)(implicit executionContext: ExecutionCon
       }
     }
 
+  case class SignedTransData(var signedTrans: File)
   //以字节流提交签名交易
+  @POST
   @Path("/postTranStream")
-  @ApiOperation(value = "提交带签名的交易字节流", notes = "", consumes = "multipart/form-data", nickname = "postSignTransactionStream", httpMethod = "POST")
-  @ApiImplicitParams(Array(
-    // new ApiImplicitParam(name = "signer", value = "签名者", required = true, dataType = "string", paramType = "formData"),
-    new ApiImplicitParam(name = "signedTrans", value = "交易内容", required = true, dataType = "file", paramType = "formData")))
+  @Operation(tags = Array("transaction"), summary = "提交带签名的交易字节流", description  = "postSignTransactionStream", method = "POST",
+    //    parameters = Array(new Parameter(name = "signedTrans", schema = new Schema(`type` = "string", format = "binary"), style = ParameterStyle.FORM, explode = Explode.TRUE))
+    requestBody = new RequestBody(description = "签名交易的二进制文件", required = true,
+      content = Array(new Content(mediaType = MediaType.MULTIPART_FORM_DATA, schema = new Schema(name = "signedTrans", implementation = classOf[SignedTransData])))
+    )
+  )
   @ApiResponses(Array(
-    new ApiResponse(code = 200, message = "返回交易id以及执行结果", response = classOf[PostResult]),
-    new ApiResponse(code = 202, message = "处理存在异常", response = classOf[PostResult])))
+    new ApiResponse(responseCode = "200", description = "返回交易id以及执行结果", content =  Array(new Content(mediaType = "application/json",schema = new Schema(implementation = classOf[PostResult])))),
+    new ApiResponse(responseCode = "202", description = "处理存在异常", content =  Array(new Content(mediaType = "application/json",schema = new Schema(implementation = classOf[PostResult])))))
+  )
   def postSignTransactionStream =
     path("transaction" / "postTranStream") {
       post {
@@ -520,23 +525,11 @@ class TransactionService(ra: RestRouter)(implicit executionContext: ExecutionCon
                 case Failure(ex) =>
                   complete (StatusCodes.InternalServerError, ex.getMessage)
               }
-//              val tranBytes = Await.result(tranFuture, Timeout(3.seconds).duration).toArray
-//              complete { (ra.getRestActor ? Transaction.parseFrom(tranBytes)).mapTo[PostResult] }
-//              val sink = StreamConverters.asInputStream()
-//              val inputStream = fileStream.runWith(sink)
-//              complete { (ra.getRestActor ? Transaction.parseFrom(inputStream)).mapTo[PostResult] }
-//              val fp = Paths.get("/tmp") resolve fileInfo.fileName
-//              val sink = FileIO.toPath(fp)
-//              val writeResult = fileStream.runWith(sink)
-//              onSuccess(writeResult) { result =>
-//                //TODO protobuf 反序列化字节流及后续处理
-//                complete(s"Successfully written ${result.count} bytes")
-//                complete { (ra.getRestActor ? Transaction.parseFrom(new FileInputStream(fp.toFile()))).mapTo[PostResult] }
-//              }
           }
         }
       }
     }
+
 
 
   @POST
