@@ -64,6 +64,11 @@ libraryDependencies += "javax.xml.bind" % "jaxb-api" % "2.3.1"
 libraryDependencies += "org.apache.httpcomponents" % "httpclient" % "4.5.13"
 libraryDependencies += "com.googlecode.concurrentlinkedhashmap" % "concurrentlinkedhashmap-lru" % "1.4.2"
 
+libraryDependencies += "org.apache.hadoop" % "hadoop-common" % "3.2.0"
+libraryDependencies += "org.javatuples" % "javatuples" % "1.2"
+libraryDependencies += "com.github.mgunlogson" % "cuckoofilter4j" % "1.0.2"
+libraryDependencies += "com.squareup.jnagmp" % "jnagmp" % "3.0.0"
+
 
 libraryDependencies ++= Seq(
   "io.swagger" % "swagger-jaxrs" % "1.6.0",

@@ -23,7 +23,7 @@ object ConsensusCondition {
     if(scaledata == 2) {
       //采用大于1/2方法计算
       input >= (Math.floor(((this.ConsensusNodes.get()) * 1.0) / scaledata + 1))
-    }else if(scaledata == 2) {
+    }else if(scaledata == 3) {
       //采用大于2/3方法计算
       input >= (Math.floor((((this.ConsensusNodes.get()) * 1.0) / scaledata) * 2) + 1)
     }else{

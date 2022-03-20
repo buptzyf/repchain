@@ -192,3 +192,13 @@ message MPbftReply {
     repeated MPbftCommit commits = 1;
     Signature signature = 2;
 }
+
+//可靠广播消息，包含要广播的数据的数组
+message DataOfStripe{
+    uint32 version = 1;
+    uint32 serial = 2;
+    uint32 total = 3;
+    bytes stripe = 4;
+    bytes rootHash = 5;
+    repeated bytes branch = 6;
+}
