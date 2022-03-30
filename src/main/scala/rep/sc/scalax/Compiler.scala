@@ -17,19 +17,20 @@
 package rep.sc.scalax
 
 
-import scala.tools.nsc.{Global, Settings}
-import tools.nsc.io.{VirtualDirectory, AbstractFile}
-import scala.reflect.internal.util.AbstractFileClassLoader
-import collection.mutable
 import java.io._
-import org.json4s._
-import org.json4s.jackson.JsonMethods._
-import rep.crypto.Sha256
+
 import rep.app.conf.SystemProfile
-import scala.reflect.runtime.currentMirror
-import scala.tools.reflect.ToolBox
+import rep.crypto.Sha256
 import rep.storage.util.pathUtil
+
+import scala.collection.mutable
+import scala.reflect.internal.util.{AbstractFileClassLoader, BatchSourceFile}
 import scala.reflect.io.Path.jfile2path
+import scala.reflect.runtime.currentMirror
+import scala.tools.nsc.interpreter.IMain
+import scala.tools.nsc.io.{AbstractFile, VirtualDirectory}
+import scala.tools.nsc.{Global, Settings}
+import scala.tools.reflect.ToolBox
 
 /**
  * 动态编译工具类的伴生对象，提供静态方法
@@ -173,12 +174,18 @@ class Compiler(targetDir: Option[File], bDebug:Boolean) {
     //获取替换类名
     val ncode = Compiler.prefixCode(pcode, className)
     if(path_source!=null)
-      saveCode(className,ncode)  
-    val cls = tb.compile(tb.parse(ncode +"\nscala.reflect.classTag["
-      +className
-      +"].runtimeClass"))().asInstanceOf[Class[_]]
-    classCache(className) = cls
-    cls  
+      saveCode(className,ncode)
+    //    val cls = tb.compile(tb.parse(ncode +"\nscala.reflect.classTag["
+    //      +className
+    //      +"].runtimeClass"))().asInstanceOf[Class[_]]
+//    settings.StringSetting("-Yrepl-outdir", path_source, "Write repl-generated classfiles to given repchain output directory" , path_source)
+    val interpreter = new IMain(settings)
+    val res = interpreter.compileSources(new BatchSourceFile(className, ncode))
+    val interpreterClassLoader = interpreter.classLoader
+    val cls1 = interpreterClassLoader.loadClass(className)
+//    val name = cls1.getPackageName
+    classCache(className) = cls1
+    cls1
   }
 
 /** 尝试加载类定义
