@@ -49,13 +49,13 @@ import rep.sc.TypeOfSender
 import rep.sc.SandboxDispatcher.DoTransaction
 import rep.sc.Sandbox.DoTransactionResult
 import rep.utils.GlobalUtils.EventType
+
 /**
  * RestActor伴生object，包含可接受的传入消息定义，以及处理的返回结果定义。
  * 以及用于建立Tranaction，检索Tranaction的静态方法
  * @author c4w created
  *
  */
-
 object RestActor {
   def props(name: String): Props = Props(classOf[RestActor], name)
 
@@ -416,5 +416,6 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
       val num = sr.isFinish
       val rs = "{\"isfinish\":\"" + num + "\"}"
       sender ! QueryResult(Option(JsonMethods.parse(string2JsonInput(rs))))
+
   }
 }
