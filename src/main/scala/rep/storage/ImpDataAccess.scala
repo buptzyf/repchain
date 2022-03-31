@@ -212,18 +212,18 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
   }
 
   def getNumberOfTransInBlockByHeight(h: Long): Int = {
-    /*var rs = 0
+    var rs = 0
     val bidx = getBlockIdxByHeight(h)
     if (bidx != null) {
       rs = bidx.getNumberOfTrans
     }
-    rs*/
-    var rs = 0
+    rs
+    /*var rs = 0
     val bidx = this.bheight4bidx(h)
     if (bidx != null) {
       rs = bidx.getNumberOfTrans
     }
-    rs
+    rs*/
   }
 
   /**
@@ -467,7 +467,7 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
    */
   override def getBlockTimeOfTxid(txid: String): String = {
     //SerializeUtils.toJson(this.getBlockTime4Block(this.getBlock4ObjectByTxId(txid)))
-    SerializeUtils.toJson(this.getBlockTime4Block(txid))
+    SerializeUtils.toJson(this.getBlockTime4BlockByTxid(txid))
   }
 
   /**
@@ -482,7 +482,7 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
     SerializeUtils.toJson(this.getBlockTime4BlockByHeight(h))
   }
 
-  /*private def getBlockTime4Block(b: Block): BlockTime = {
+  private def getBlockTime4Block(b: Block): BlockTime = {
     var rs = BlockTime("", "")
     if (b != null && b.endorsements != null && b.endorsements.length >= 1) {
       val signer = b.endorsements(0)
@@ -497,16 +497,16 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
       rs = BlockTime(createTime, createTimeUtc)
     }
     rs
-  }*/
+  }
 
-  private def getBlockTime4Block(txid: String): BlockTime = {
-    /*var rs = BlockTime("", "")
+  private def getBlockTime4BlockByTxid(txid: String): BlockTime = {
+    var rs = BlockTime("", "")
     val idx = this.getBlockIdxByTxid(txid)
     if (idx != null) {
       rs = BlockTime(idx.getCreateTime, idx.getCreateTimeUtc)
     }
-    rs*/
-    var rs = BlockTime("", "")
+    rs
+    /*var rs = BlockTime("", "")
     try {
       val th = this.txid4bheight(txid)
       val idx = this.bheight4bidx(th)
@@ -516,23 +516,23 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
     } catch {
       case e: Exception =>
     }
-    rs
+    rs*/
   }
 
   private def getBlockTime4BlockByHeight(height: Long): BlockTime = {
-    /*var rs = BlockTime("", "")
+    var rs = BlockTime("", "")
     val idx = this.getBlockIdxByHeight(height)
     if (idx != null) {
       rs = BlockTime(idx.getCreateTime, idx.getCreateTimeUtc)
     }
-    rs*/
-    var rs = BlockTime("", "")
+    rs
+    /*var rs = BlockTime("", "")
     val idx = this.bheight4bidx(height)
     if (idx != null) {
       rs = BlockTime(idx.getCreateTime, idx.getCreateTimeUtc)
     }
 
-    rs
+    rs*/
   }
 
   /**

@@ -84,7 +84,7 @@ class ChainService(ra: RestRouter)(implicit executionContext: ExecutionContext)
 
 
 
-  val route = getBlockChainInfo ~ getNodeNumber ~ getCacheTransNumber ~ getAcceptedTransNumber ~ loadBlockInfoToCache ~ IsLoadBlockInfoToCache
+  val route = getBlockChainInfo ~ getNodeNumber ~ getCacheTransNumber ~ getAcceptedTransNumber
 
   @GET
   @Operation(tags = Array("chaininfo"), summary = "返回块链信息", description = "getChainInfo", method = "GET")
@@ -111,38 +111,6 @@ class ChainService(ra: RestRouter)(implicit executionContext: ExecutionContext)
         extractClientIP { ip =>
           RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} get node number")
           complete { (ra.getRestActor ? NodeNumber).mapTo[QueryResult] }
-        }
-      }
-    }
-
-  @GET
-  @Path("/loadBlockInfoToCache")
-  @Operation(tags = Array("chaininfo"), summary = "初始化装载区块索引到缓存",  description= "loadBlockInfoToCache", method = "GET")
-  @ApiResponses(Array(
-    new ApiResponse(responseCode = "200", description = "初始化装载区块索引到缓存量", content =  Array(new Content(mediaType = "application/json",schema = new Schema(implementation = classOf[QueryResult])))))
-  )
-  def loadBlockInfoToCache =
-    path("chaininfo" / "loadBlockInfoToCache") {
-      get {
-        extractClientIP { ip =>
-          RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} get loadBlockInfoToCache")
-          complete { (ra.getRestActor ? LoadBlockInfo).mapTo[QueryResult] }
-        }
-      }
-    }
-
-  @GET
-  @Path("/IsLoadBlockInfoToCache")
-  @Operation(tags = Array("chaininfo"), summary  = "是否完成始化装载区块索引到缓存", description  = "IsLoadBlockInfoToCache", method = "GET")
-  @ApiResponses(Array(
-    new ApiResponse(responseCode = "200", description = "是否完成初始化装载区块索引到缓存量", content =  Array(new Content(mediaType = "application/json",schema = new Schema(implementation = classOf[QueryResult])))))
-  )
-  def IsLoadBlockInfoToCache =
-    path("chaininfo" / "IsLoadBlockInfoToCache") {
-      get {
-        extractClientIP { ip =>
-          RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} get IsLoadBlockInfoToCache")
-          complete { (ra.getRestActor ? IsLoadBlockInfo).mapTo[QueryResult] }
         }
       }
     }
