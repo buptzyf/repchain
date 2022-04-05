@@ -34,9 +34,9 @@ import rep.crypto.Sha256
 import rep.crypto.cert.{ImpECDSASigner, SignTool}
 import rep.network.autotransaction.PeerHelper
 import rep.network.module.cfrd.ModuleManagerOfCFRD
-import rep.protos.peer.Certificate.CertType
-import rep.protos.peer.Operate.OperateType
-import rep.protos.peer._
+import rep.proto.rc2.Certificate.CertType
+import rep.proto.rc2.Operate.OperateType
+import rep.proto.rc2._
 import rep.sc.SandboxDispatcher.DoTransaction
 import rep.sc.TransferSpec.ACTION
 import rep.sc.tpl.did.operation.CertOperation
@@ -115,11 +115,11 @@ class RdidCertOperationSpec(_system: ActorSystem) extends TestKit(_system) with 
     // 部署账户管理合约
     val contractCert = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/did/RdidOperateAuthorizeTPL.scala")
     val contractCertStr = try contractCert.mkString finally contractCert.close()
-    val t = PeerHelper.createTransaction4Deploy(nodeName = superAdmin, cid, contractCertStr, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA, ChaincodeDeploy.ContractClassification.CONTRACT_SYSTEM)
+    val t = PeerHelper.createTransaction4Deploy(nodeName = superAdmin, cid, contractCertStr, "", 5000, ChaincodeDeploy.CodeType.CODE_SCALA, ChaincodeDeploy.ContractClassification.CONTRACT_SYSTEM)
     val msg_send = DoTransaction(Seq(t), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    assert(msg_recv.head.getResult.reason.isEmpty)
+    assert(msg_recv.head.getErr.reason.isEmpty)
   }
 
   test("注册superAdmin账户与操作") {
@@ -128,29 +128,29 @@ class RdidCertOperationSpec(_system: ActorSystem) extends TestKit(_system) with 
     val superCertId = CertId("951002007l78123233", "super_admin")
     val millis = System.currentTimeMillis()
     //生成Did的身份证书
-    val superAuthCert = rep.protos.peer.Certificate(superCertPem, "SHA256withECDSA", true, Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, CertType.CERT_AUTHENTICATION, Option(superCertId), superCertHash, "1.0")
+    val superAuthCert = rep.proto.rc2.Certificate(superCertPem, "SHA256withECDSA", true, Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, CertType.CERT_AUTHENTICATION, Option(superCertId), superCertHash, "1.0")
     // 账户
     val superSigner = Signer("super_admin", "951002007l78123233", "13856789234", Seq.empty, Seq.empty, Seq.empty, Seq.empty, List(superAuthCert), "", Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, true, "1.0")
     val t6 = PeerHelper.createTransaction4Invoke(superAdmin, cid, ACTION.SignUpSigner, Seq(JsonFormat.toJsonString(superSigner)))
     val msg_send6 = DoTransaction(Seq[Transaction](t6), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send6)
     val msg_recv6 = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    msg_recv6(0).getResult.reason.isEmpty should be(true)
+    msg_recv6(0).getErr.reason.isEmpty should be(true)
 
     val snls = List("transaction.stream", "transaction.postTranByString", "transaction.postTranStream", "transaction.postTran")
-    val certOpt = rep.protos.peer.Operate(Sha256.hashstr("RdidOperateAuthorizeTPL.signUpCertificate"), "注册普通证书", superAdmin.split("\\.")(0), isPublish = true, OperateType.OPERATE_CONTRACT,
+    val certOpt =  rep.proto.rc2.Operate(Sha256.hashstr("RdidOperateAuthorizeTPL.signUpCertificate"), "注册普通证书", superAdmin.split("\\.")(0), isPublish = true, OperateType.OPERATE_CONTRACT,
       snls, "*", "RdidOperateAuthorizeTPL.signUpCertificate", Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, true, "1.0")
     val t8 = PeerHelper.createTransaction4Invoke(superAdmin, cid, "signUpOperate", Seq(JsonFormat.toJsonString(certOpt)))
     probe.send(sandbox, DoTransaction(Seq[Transaction](t8), "dbnumber", TypeOfSender.FromAPI))
     val msg_recv8 = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    msg_recv8.head.getResult.reason.isEmpty should be(true)
+    msg_recv8.head.getErr.reason.isEmpty should be(true)
 
-    val certStatusOpt = rep.protos.peer.Operate(Sha256.hashstr("RdidOperateAuthorizeTPL.updateCertificateStatus"), "修改普通证书状态", superAdmin.split("\\.")(0), isPublish = true, OperateType.OPERATE_CONTRACT,
+    val certStatusOpt = rep.proto.rc2.Operate(Sha256.hashstr("RdidOperateAuthorizeTPL.updateCertificateStatus"), "修改普通证书状态", superAdmin.split("\\.")(0), isPublish = true, OperateType.OPERATE_CONTRACT,
       snls, "*", "RdidOperateAuthorizeTPL.updateCertificateStatus", Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, true, "1.0")
     val t9 = PeerHelper.createTransaction4Invoke(superAdmin, cid, "signUpOperate", Seq(JsonFormat.toJsonString(certStatusOpt)))
     probe.send(sandbox, DoTransaction(Seq[Transaction](t9), "dbnumber", TypeOfSender.FromAPI))
     val msg_recv9 = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    msg_recv9.head.getResult.reason.isEmpty should be(true)
+    msg_recv9.head.getErr.reason.isEmpty should be(true)
   }
 
   test("注册node1账户") {
@@ -159,7 +159,7 @@ class RdidCertOperationSpec(_system: ActorSystem) extends TestKit(_system) with 
     val msg_send = DoTransaction(Seq(t), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    msg_recv.head.getResult.reason.isEmpty should be(true)
+    msg_recv.head.getErr.reason.isEmpty should be(true)
   }
 
 //  test("使用node1来注册身份证书--这里使用cert2") {
@@ -175,7 +175,7 @@ class RdidCertOperationSpec(_system: ActorSystem) extends TestKit(_system) with 
     val msg_send = DoTransaction(Seq(t), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    msg_recv.head.getResult.reason.isEmpty should be(true)
+    msg_recv.head.getErr.reason.isEmpty should be(true)
   }
 
   test("使用普通证书来调用signUpCertificate，应该失败， checkAuthCertAndRule") {
@@ -185,7 +185,7 @@ class RdidCertOperationSpec(_system: ActorSystem) extends TestKit(_system) with 
 //    SignTool.verify(t.getSignature.signature.toByteArray, t.clearSignature.toByteArray, CertId("121000005l35120456", "CERT3", "1"), sysName)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    JsonFormat.parser.fromJsonString(msg_recv.head.getResult.reason)(ActionResult) should be(CertOperation.posterNotAuthCert)
+    JsonFormat.parser.fromJsonString(msg_recv.head.getErr.reason)(ActionResult) should be(CertOperation.posterNotAuthCert)
   }
 
 
@@ -194,7 +194,7 @@ class RdidCertOperationSpec(_system: ActorSystem) extends TestKit(_system) with 
     val msg_send = DoTransaction(Seq(t), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    msg_recv.head.getResult.reason.isEmpty should be(true)
+    msg_recv.head.getErr.reason.isEmpty should be(true)
   }
 
   test("禁用不存在的证书") {
@@ -202,7 +202,7 @@ class RdidCertOperationSpec(_system: ActorSystem) extends TestKit(_system) with 
     val msg_send = DoTransaction(Seq(t), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    JsonFormat.parser.fromJsonString(msg_recv.head.getResult.reason)(ActionResult) should be(CertOperation.certNotExists)
+    JsonFormat.parser.fromJsonString(msg_recv.head.getErr.reason)(ActionResult) should be(CertOperation.certNotExists)
   }
 
   test("被注册证书虽然已存在，但是应该失败，checkAuthCertAndRule") {
@@ -211,7 +211,7 @@ class RdidCertOperationSpec(_system: ActorSystem) extends TestKit(_system) with 
     val msg_send = DoTransaction(Seq(t), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    JsonFormat.parser.fromJsonString(msg_recv.head.getResult.reason)(ActionResult) should be(CertOperation.posterNotAuthCert)
+    JsonFormat.parser.fromJsonString(msg_recv.head.getErr.reason)(ActionResult) should be(CertOperation.posterNotAuthCert)
   }
 
 
@@ -221,7 +221,7 @@ class RdidCertOperationSpec(_system: ActorSystem) extends TestKit(_system) with 
     if (chaincodeId == null) t
     val txid = IdTool.getRandomUUID
     val cip = new ChaincodeInput(chaincodeInputFunc, params)
-    t = t.withId(txid).withCid(chaincodeId).withIpt(cip).withType(rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE).clearSignature
+    t = t.withId(txid).withCid(chaincodeId).withIpt(cip).withType(rep.proto.rc2.Transaction.Type.CHAINCODE_INVOKE).clearSignature
     var sobj = Signature(Option(certid), Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)))
     val privateKey = loadPrivateKey(nodeName, "123", "jks/121000005l35120456.node1.jks")
     sobj = sobj.withSignature(ByteString.copyFrom(new ImpECDSASigner().sign(privateKey, t.toByteArray)))

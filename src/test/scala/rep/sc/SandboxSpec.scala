@@ -26,8 +26,8 @@ import rep.app.system.ClusterSystem.InitType
 import rep.crypto.cert.SignTool
 import rep.network.autotransaction.PeerHelper
 import rep.network.module.cfrd.ModuleManagerOfCFRD
-import rep.protos.peer.ChaincodeDeploy.ContractClassification
-import rep.protos.peer._
+import rep.proto.rc2.ChaincodeDeploy.ContractClassification
+import rep.proto.rc2._
 import rep.sc.SandboxSpec.{ACTION, SetMap}
 import rep.sc.tpl._
 //.{CertStatus,CertInfo}
@@ -89,7 +89,7 @@ class SandboxSpec(_system: ActorSystem) extends TestKit(_system) with Matchers w
     val cid = ChaincodeId(SystemProfile.getAccountChaincodeName, 1)
     val s1 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/did/RdidOperateAuthorizeTPL.scala")
     val l1 = try s1.mkString finally s1.close()
-    val t1 = PeerHelper.createTransaction4Deploy(superAdmin, cid, l1, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA, ContractClassification.CONTRACT_SYSTEM)
+    val t1 = PeerHelper.createTransaction4Deploy(superAdmin, cid, l1, "", 5000, ChaincodeDeploy.CodeType.CODE_SCALA, ContractClassification.CONTRACT_SYSTEM)
     val msg_send1 = DoTransaction(Seq[Transaction](t1), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send1)
     val msg_recv1 = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)

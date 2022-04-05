@@ -1,7 +1,7 @@
 package rep.storage.test
 
 import rep.storage.ImpDataAccess
-import rep.protos.peer._
+import rep.proto.rc2._
 import scalapb.json4s.JsonFormat
 import org.json4s.{DefaultFormats, Formats, jackson}
 import org.json4s.jackson.JsonMethods._
@@ -18,14 +18,14 @@ object checkTrans extends App {
   var lastheight = 2l
  
   /**
-   * 
+   *  TODO
    * 该方法通过账号名称，获取账号的所有状态信息
    * */
   printlnAllBlockTrans("921000005k36123789")
 
   //从区块中分析对应账号的交易数据
   private def printlnTransValue(block:Block,height:Long,key:String)={
-    block.transactionResults.foreach(f=>{
+  /*  block.transactionResults.foreach(f=>{
       var st = s"height=${height},txid=${f.txId},code=${f.getResult.code},"
       var valuelist = ""
      
@@ -55,7 +55,7 @@ object checkTrans extends App {
         st = st + valuelist
         println(st)
       }
-    })
+    })*/
   }
 
   

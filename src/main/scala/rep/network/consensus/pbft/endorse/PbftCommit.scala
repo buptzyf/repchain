@@ -21,7 +21,7 @@ case object PbftCommit {
 }
 
 class PbftCommit(moduleName: String) extends ModuleBase(moduleName) {
-  import rep.protos.peer._
+  import rep.proto.rc2._
 
   import scala.concurrent.duration._
 
@@ -56,9 +56,9 @@ class PbftCommit(moduleName: String) extends ModuleBase(moduleName) {
   override def receive = {
 
     case MsgPbftCommit(senderPath,block,blocker,commit,chainInfo) =>
-      RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", PbftCommit commit: " + blocker + ", " + block.hashOfBlock.toStringUtf8)
+      RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", PbftCommit commit: " + blocker + ", " + block.header.get.hashPresent.toStringUtf8)
       //already verified
-      val hash = block.hashOfBlock
+      val hash = block.header.get.hashPresent
       if ( hash.equals(recvedHash)) {
         recvedCommits += commit
       } else {

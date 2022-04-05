@@ -18,7 +18,7 @@ package rep.storage.verify
 
 import rep.storage.ImpDataAccess
 import rep.log.RepLogger
-import rep.protos.peer._
+import rep.proto.rc2._
 import rep.crypto.Sha256
 import scala.util.control.Breaks._
 import rep.network.consensus.util.{BlockVerify,BlockHelp}
@@ -70,7 +70,7 @@ object verify4Storage {
       if(start != null){
         if(VerfiyBlock(start,sr.SystemName)){
           val prehash = BlockHelp.GetBlockHash(start)
-          if(prehash == end.previousBlockHash.toStringUtf8()){
+          if(prehash == end.header.get.hashPrevious.toStringUtf8()){
             r = true
           }
         }
@@ -86,7 +86,7 @@ object verify4Storage {
     val r = BlockVerify.VerifyAllEndorseOfBlock(block, sysName)
     if(r._1){
       val hash = BlockHelp.GetBlockHash(block)
-      if(hash == block.hashOfBlock.toStringUtf8()){
+      if(hash == block.header.get.hashPresent.toStringUtf8()){
         vr = true
       }
     }

@@ -45,7 +45,7 @@ object Endorser4Future {
 
 class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
   import context.dispatcher
-  import rep.protos.peer._
+  import rep.proto.rc2._
   import rep.storage.ImpDataAccess
 
   import scala.concurrent._
@@ -61,7 +61,7 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
     pe.getActorRef(ModuleActorType.ActorType.dispatchofpreload).ask(PreTransBlock(block, "endors"))(timeout).
       mapTo[PreTransBlockResult].flatMap(f => {
       val result = Promise[Boolean]
-      var tmpblock = f.blc.withHashOfBlock(block.hashOfBlock)
+      var tmpblock = f.blc.withHeader(f.blc.header.get.withHashPresent(block.header.get.hashPresent))
       if (BlockVerify.VerifyHashOfBlock(tmpblock)) {
         result.success(true)
       } else {
@@ -150,24 +150,24 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
   private def CheckMessage(block : Block, blocker: String) = {
     var r = ResultFlagOfEndorse.success
     RepLogger.debug(RepLogger.zLogger, "R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) +
-      ", PrePrepare 3a: " + Repchain.nn(blocker) + ", " + Repchain.h4(block.hashOfBlock.toStringUtf8))
-    if (block.height > pe.getCurrentHeight + 1) {
+      ", PrePrepare 3a: " + Repchain.nn(blocker) + ", " + Repchain.h4(block.header.get.hashPresent.toStringUtf8))
+    if (block.header.get.height > pe.getCurrentHeight + 1) {
       pe.getActorRef(PBFTActorType.ActorType.synchrequester) ! StartSync(false)
       RepLogger.debug(RepLogger.zLogger, Repchain.nn(pe.getSysTag) +
-       ", BlockHeightError: " + Repchain.nn(block.hashOfBlock.toStringUtf8) + ", " + block.height + "," +
+       ", BlockHeightError: " + Repchain.nn(block.header.get.hashPresent.toStringUtf8) + ", " + block.header.get.height + "," +
         Repchain.h4(pe.getCurrentBlockHash) + "," + pe.getCurrentHeight)
       r = ResultFlagOfEndorse.BlockHeightError
     } else {
       if (NodeHelp.isCandidateNow(pe.getSysTag, SystemCertList.getSystemCertList)
         //是候选节点，可以背书
         && (!pe.isSynching)
-        && (block.previousBlockHash.toStringUtf8 == pe.getBlocker.voteBlockHash)
+        && (block.header.get.hashPrevious.toStringUtf8 == pe.getBlocker.voteBlockHash)
         && NodeHelp.isBlocker(blocker, pe.getBlocker.blocker)) {
         r = ResultFlagOfEndorse.success
       }else{
         RepLogger.debug(RepLogger.zLogger, "R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) +
           ",  MsgPbftPrePrepare 6: " + pe.isSynching + "," +
-          Repchain.h4(block.previousBlockHash.toStringUtf8) + "," + Repchain.h4(pe.getBlocker.voteBlockHash) +"," +
+          Repchain.h4(block.header.get.hashPrevious.toStringUtf8) + "," + Repchain.h4(pe.getBlocker.voteBlockHash) +"," +
           Repchain.nn(blocker) + ", " + Repchain.nn(pe.getBlocker.blocker))
         r = ResultFlagOfEndorse.CandidatorError
       }
@@ -176,7 +176,7 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
   }
 
   private def CheckMessage2(block : Block, blocker: String):Boolean = {
-    val r : Boolean = (block.previousBlockHash.toStringUtf8 == pe.getBlocker.voteBlockHash) &&
+    val r : Boolean = (block.header.get.hashPrevious.toStringUtf8 == pe.getBlocker.voteBlockHash) &&
             NodeHelp.isBlocker(blocker, pe.getBlocker.blocker)
     r
   }
@@ -184,14 +184,14 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
   private def ProcessMsgPbftPrePrepare(prePrepare: MsgPbftPrePrepare): Int = {
     var r = CheckMessage(prePrepare.block,prePrepare.blocker)
     if (r==ResultFlagOfEndorse.success) {
-      RepLogger.debug(RepLogger.zLogger, "R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", PrePrepare 3: " + Repchain.nn(prePrepare.blocker) + ", " + Repchain.h4(prePrepare.block.hashOfBlock.toStringUtf8))
+      RepLogger.debug(RepLogger.zLogger, "R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", PrePrepare 3: " + Repchain.nn(prePrepare.blocker) + ", " + Repchain.h4(prePrepare.block.header.get.hashPresent.toStringUtf8))
       if (prePrepare.blocker != pe.getSysTag) {
         var b = true;
         if (SystemProfile.getIsVerifyOfEndorsement)
           b = VerifyInfo(prePrepare)
-        RepLogger.debug(RepLogger.zLogger, "R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", PrePrepare 4: " + Repchain.nn(prePrepare.blocker) + ", " + Repchain.h4(prePrepare.block.hashOfBlock.toStringUtf8))
+        RepLogger.debug(RepLogger.zLogger, "R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", PrePrepare 4: " + Repchain.nn(prePrepare.blocker) + ", " + Repchain.h4(prePrepare.block.header.get.hashPresent.toStringUtf8))
         if (b) {
-          RepLogger.debug(RepLogger.zLogger, "R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", PrePrepare 5: " + Repchain.nn(prePrepare.blocker) + ", " + Repchain.h4(prePrepare.block.hashOfBlock.toStringUtf8))
+          RepLogger.debug(RepLogger.zLogger, "R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", PrePrepare 5: " + Repchain.nn(prePrepare.blocker) + ", " + Repchain.h4(prePrepare.block.header.get.hashPresent.toStringUtf8))
           pe.getActorRef(PBFTActorType.ActorType.pbftpreprepare) ! prePrepare
 
         } else
@@ -205,7 +205,7 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
 
   //prepare start-------------------------------------------
   private def VerifyPrepare(block: Block, prepare: MPbftPrepare): Boolean = {
-    val bb = block.clearEndorsements.toByteArray
+    val bb = block.withHeader(block.header.get.clearEndorsements).toByteArray
     val signature = prepare.signature.get//todo get?
     val ev = BlockVerify.VerifyOneEndorseOfBlock(signature, bb, pe.getSysTag)
     ev._1
@@ -241,30 +241,30 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
   override def receive = {
     //Endorsement block
     case MsgPbftPrePrepare(senderPath,block, blocker) =>
-      RepLogger.debug(RepLogger.zLogger, "R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", PrePrepare 1: " + Repchain.nn(blocker) + ", " + Repchain.h4(block.hashOfBlock.toStringUtf8))
+      RepLogger.debug(RepLogger.zLogger, "R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", PrePrepare 1: " + Repchain.nn(blocker) + ", " + Repchain.h4(block.header.get.hashPresent.toStringUtf8))
       var r = ResultFlagOfEndorse.success
       if(!pe.isSynching){
-        RepTimeTracer.setStartTime(pe.getSysTag, s"recvendorsement-${moduleName}", System.currentTimeMillis(),block.height,block.transactions.size)
-        RepLogger.debug(RepLogger.zLogger, "R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", PrePrepare 2: " + Repchain.nn(blocker) + ", " + Repchain.h4(block.hashOfBlock.toStringUtf8))
+        RepTimeTracer.setStartTime(pe.getSysTag, s"recvendorsement-${moduleName}", System.currentTimeMillis(),block.header.get.height,block.transactions.size)
+        RepLogger.debug(RepLogger.zLogger, "R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", PrePrepare 2: " + Repchain.nn(blocker) + ", " + Repchain.h4(block.header.get.hashPresent.toStringUtf8))
         r = ProcessMsgPbftPrePrepare(MsgPbftPrePrepare(sender.path.toString, block, blocker))
-        RepTimeTracer.setEndTime(pe.getSysTag, s"recvendorsement-${moduleName}", System.currentTimeMillis(),block.height,block.transactions.size)
+        RepTimeTracer.setEndTime(pe.getSysTag, s"recvendorsement-${moduleName}", System.currentTimeMillis(),block.header.get.height,block.transactions.size)
       } else
         r = ResultFlagOfEndorse.EnodrseNodeIsSynching
 
         if (r != ResultFlagOfEndorse.success) {
-          if (block.height >= pe.getCurrentHeight) {//zhj0623
+          if (block.header.get.height >= pe.getCurrentHeight) {//zhj0623
             sender ! MsgPbftPrePrepareResend(senderPath,block, blocker)
-            RepLogger.debug(RepLogger.zLogger, "R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", PrePrepare resend: " + r + ", " + Repchain.nn(blocker) + ", " + Repchain.h4(block.hashOfBlock.toStringUtf8) +","+Repchain.h4(pe.getBlocker.voteBlockHash))
+            RepLogger.debug(RepLogger.zLogger, "R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", PrePrepare resend: " + r + ", " + Repchain.nn(blocker) + ", " + Repchain.h4(block.header.get.hashPresent.toStringUtf8) +","+Repchain.h4(pe.getBlocker.voteBlockHash))
           } //else
             //RepLogger.debug(RepLogger.zLogger, "R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", PrePrepare not resend: " + r + ", " + Repchain.nn(blocker) + ", " + Repchain.h4(block.hashOfBlock.toStringUtf8) +","+Repchain.h4(pe.getBlocker.voteBlockHash))
         }
 
     case MsgPbftPrepare(senderPath,result, block, blocker, prepare, chainInfo) =>
-      RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", Prepare: " + Repchain.nn(blocker) + ", " + Repchain.h4(block.hashOfBlock.toStringUtf8))
+      RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", Prepare: " + Repchain.nn(blocker) + ", " + Repchain.h4(block.header.get.hashPresent.toStringUtf8))
       ProcessMsgPbftPepare(MsgPbftPrepare(senderPath,result, block, blocker, prepare, chainInfo))
 
     case MsgPbftCommit(senderPath,block,blocker,commit,chainInfo) =>
-      RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", Commit: " + Repchain.nn(blocker) + ", " + Repchain.h4(block.hashOfBlock.toStringUtf8))
+      RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", Commit: " + Repchain.nn(blocker) + ", " + Repchain.h4(block.header.get.hashPresent.toStringUtf8))
       ProcessMsgPbftCommit(MsgPbftCommit(senderPath,block,blocker,commit,chainInfo))
 
     case _ => //ignore

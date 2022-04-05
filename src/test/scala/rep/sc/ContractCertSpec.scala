@@ -30,7 +30,7 @@ import rep.crypto.Sha256
 import rep.crypto.cert.SignTool
 import rep.network.autotransaction.PeerHelper
 import rep.network.module.cfrd.ModuleManagerOfCFRD
-import rep.protos.peer._
+import rep.proto.rc2._
 import rep.sc.TransferSpec.ACTION
 import rep.sc.tpl._
 import rep.sc.tpl.ContractCert
@@ -113,11 +113,11 @@ class ContractCertSpec(_system: ActorSystem) extends TestKit(_system) with Match
     // 部署账户管理合约
     val contractCert = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/ContractCert.scala")
     val contractCertStr = try contractCert.mkString finally contractCert.close()
-    val t = PeerHelper.createTransaction4Deploy(sysName, cid, contractCertStr, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
+    val t = PeerHelper.createTransaction4Deploy(sysName, cid, contractCertStr, "", 5000, ChaincodeDeploy.CodeType.CODE_SCALA)
     val msg_send = DoTransaction(Seq[Transaction](t), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    assert(msg_recv(0).getResult.reason.isEmpty)
+    assert(msg_recv(0).getErr.reason.isEmpty)
   }
 
   // 注册node1 账户
@@ -128,7 +128,7 @@ class ContractCertSpec(_system: ActorSystem) extends TestKit(_system) with Match
     val msg_send = DoTransaction(Seq[Transaction](t), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    msg_recv(0).getResult.reason.isEmpty should be(true)
+    msg_recv(0).getErr.reason.isEmpty should be(true)
   }
 
   // 注册node1 证书
@@ -138,7 +138,7 @@ class ContractCertSpec(_system: ActorSystem) extends TestKit(_system) with Match
     val msg_send = DoTransaction(Seq[Transaction](t), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    msg_recv(0).getResult.reason.isEmpty should be(true)
+    msg_recv(0).getErr.reason.isEmpty should be(true)
   }
 
   //重复注册一个证书会提示错误
@@ -148,7 +148,7 @@ class ContractCertSpec(_system: ActorSystem) extends TestKit(_system) with Match
     val msg_send = DoTransaction(Seq[Transaction](t), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    msg_recv(0).getResult.reason should be(new ContractCert().certExists)
+    msg_recv(0).getErr.reason should be(new ContractCert().certExists)
   }
 
   // 不能将证书注册到一个不存在的账户
@@ -158,7 +158,7 @@ class ContractCertSpec(_system: ActorSystem) extends TestKit(_system) with Match
     val msg_send = DoTransaction(Seq[Transaction](t), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    msg_recv(0).getResult.reason should be(new ContractCert().signerNotExists)
+    msg_recv(0).getErr.reason should be(new ContractCert().signerNotExists)
   }
 
   // 将证书2追加到 node1的账户中，使用node2作为certName
@@ -168,7 +168,7 @@ class ContractCertSpec(_system: ActorSystem) extends TestKit(_system) with Match
     val msg_send = DoTransaction(Seq[Transaction](t), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    msg_recv(0).getResult.reason.isEmpty should be(true)
+    msg_recv(0).getErr.reason.isEmpty should be(true)
   }
 
   // 更新证书状态,将刚刚追加的node2的证书状态修改为false
@@ -178,7 +178,7 @@ class ContractCertSpec(_system: ActorSystem) extends TestKit(_system) with Match
     val msg_send = DoTransaction(Seq[Transaction](t), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    msg_recv(0).getResult.reason.isEmpty should be(true)
+    msg_recv(0).getErr.reason.isEmpty should be(true)
   }
 
   // 更新证书状态，对应的证书不存在
@@ -188,7 +188,7 @@ class ContractCertSpec(_system: ActorSystem) extends TestKit(_system) with Match
     val msg_send = DoTransaction(Seq[Transaction](t), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    msg_recv(0).getResult.reason should be(new ContractCert().certNotExists)
+    msg_recv(0).getErr.reason should be(new ContractCert().certNotExists)
   }
 
   // 更新账户信息，将账户node1中的name改为node2，并且修改手机号
@@ -199,6 +199,6 @@ class ContractCertSpec(_system: ActorSystem) extends TestKit(_system) with Match
     val msg_send = DoTransaction(Seq[Transaction](t), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    msg_recv(0).getResult.reason.isEmpty should be(true)
+    msg_recv(0).getErr.reason.isEmpty should be(true)
   }
 }

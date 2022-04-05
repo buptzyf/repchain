@@ -9,8 +9,8 @@ import rep.authority.cache.signercache.ISignerCache.signerData
 import rep.authority.cache.signercache.ImpSignerCache
 import rep.crypto.cert.certCache
 import rep.log.RepLogger
-import rep.protos.peer.CertId
-import rep.protos.peer.Transaction.Type
+import rep.proto.rc2.CertId
+import rep.proto.rc2.Transaction.Type
 import rep.sc.Sandbox.SandboxException
 import rep.sc.SandboxDispatcher._
 import rep.sc.Shim

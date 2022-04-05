@@ -1,8 +1,8 @@
 package rep.sc.tpl.did.operation
 
 import rep.crypto.Sha256
-import rep.protos.peer.Operate.OperateType
-import rep.protos.peer.{ActionResult, Operate}
+import rep.proto.rc2.Operate.OperateType
+import rep.proto.rc2.{ActionResult, Operate}
 import rep.sc.scalax.{ContractContext, ContractException}
 import rep.sc.tpl.did.DidTplPrefix.{operPrefix, signerPrefix}
 import rep.storage.IdxPrefix.WorldStateKeyPreFix

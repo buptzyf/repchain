@@ -26,7 +26,7 @@ import rep.log.{RepLogger, RepTimeTracer}
 import rep.network.base.ModuleBase
 import rep.network.consensus.common.MsgOfConsensus.{PreTransBlock, PreTransBlockOfCache, PreTransBlockResult, preTransBlockResultOfCache}
 import rep.network.consensus.util.BlockHelp
-import rep.protos.peer._
+import rep.proto.rc2._
 import rep.sc.Sandbox.DoTransactionResult
 import rep.sc.SandboxDispatcher.{DoTransaction, DoTransactionOfCache}
 import rep.sc.TypeOfSender
@@ -125,7 +125,7 @@ class PreloaderForTransaction(moduleName: String) extends ModuleBase(moduleName)
   private def createErrorData(ts: scala.collection.Seq[Transaction], err: Option[akka.actor.Status.Failure]): Array[TransactionResult] = {
     var rs = scala.collection.mutable.ArrayBuffer[TransactionResult]()
     ts.foreach(t => {
-      rs += new TransactionResult(t.id, _root_.scala.Seq.empty, Option(ActionResult(103, err.get.cause.getMessage))) //new TransactionResult(t.id, null, null, err)
+      rs += new TransactionResult(t.id, Map.empty,Map.empty, Option(ActionResult(103, err.get.cause.getMessage))) //new TransactionResult(t.id, null, null, err)
     })
     rs.toArray
   }
@@ -182,11 +182,18 @@ class PreloaderForTransaction(moduleName: String) extends ModuleBase(moduleName)
 
   private def AssembleTransResult(block: Block, transResult: Seq[TransactionResult], db_indentifier: String): Option[Block] = {
     try {
-      var rblock = block.withTransactionResults(transResult)
-      val statehashstr = Sha256.hashstr(Array.concat(pe.getSystemCurrentChainStatus.currentStateHash.toByteArray(), SerializeUtils.serialise(transResult)))
-      rblock = rblock.withStateHash(ByteString.copyFromUtf8(statehashstr))
+      //TODO 合并读写集合,异常交易
+      var rblock = block
+      for(tr <- transResult){
+        if(!tr.err.isEmpty)
+          rblock.addTransactionErrors(new TransactionError(tr.txId, tr.err.get.code, tr.err.get.reason))
+        rblock.addAllStatesGet(tr.statesGet)
+        rblock.addAllStatesSet(tr.statesSet)
+      }
+      //val statehashstr = Sha256.hashstr(Array.concat(pe.getSystemCurrentChainStatus.currentStateHash.toByteArray(), SerializeUtils.serialise(transResult)))
+      //rblock = rblock.withStateHash(ByteString.copyFromUtf8(statehashstr))
       //RepLogger.error(RepLogger.Business_Logger, this.getLogMsgPrefix( s" current block height=${block.height},trans create serial: ${outputTransSerialOfBlock(block,rblock)}"))
-      if (rblock.hashOfBlock == _root_.com.google.protobuf.ByteString.EMPTY) {
+      if (rblock.header.get.hashPresent == _root_.com.google.protobuf.ByteString.EMPTY) {
         //如果没有当前块的hash在这里生成，如果是背书已经有了hash不再进行计算
         rblock = BlockHelp.AddBlockHash(rblock)
         //this.DbInstance = new DB_Instance_Type(this.DbInstance.tagName,rblock.hashOfBlock.toStringUtf8)
@@ -249,7 +256,7 @@ class PreloaderForTransaction(moduleName: String) extends ModuleBase(moduleName)
   }
 
   private def getSameCid(ts: Seq[Transaction], startIndex: Int): (Int, Seq[Transaction]) = {
-    var rts = Seq.empty[rep.protos.peer.Transaction]
+    var rts = Seq.empty[rep.proto.rc2.Transaction]
     if (startIndex < ts.length) {
       val len = ts.length - 1
       val ft = ts(startIndex)
@@ -278,21 +285,21 @@ class PreloaderForTransaction(moduleName: String) extends ModuleBase(moduleName)
     case PreTransBlock(block, prefixOfDbTag) =>
       RepTimeTracer.setStartTime(pe.getSysTag, "PreloadTrans-inner", System.currentTimeMillis(), pe.getBlocker.VoteHeight + 1, 0)
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("entry preload"))
-      if ((block.previousBlockHash.toStringUtf8() == pe.getCurrentBlockHash || block.previousBlockHash == ByteString.EMPTY) &&
-        block.height == (pe.getCurrentHeight + 1)) {
+      if ((block.header.get.hashPrevious.toStringUtf8() == pe.getCurrentBlockHash || block.header.get.hashPrevious == ByteString.EMPTY) &&
+        block.header.get.height == (pe.getCurrentHeight + 1)) {
         var preLoadTrans = mutable.HashMap.empty[String, Transaction]
         //preLoadTrans = block.transactions.map(trans => (trans.id, trans))(breakOut): mutable.HashMap[String, Transaction]
         //preLoadTrans = block.transactions.map(trans => (trans.id, trans)).to(mutable.HashMap)  //.HashMap[String, Transaction]
         //preLoadTrans = block.transactions.map(trans => (trans.id, trans))(breakOut): mutable.HashMap[String, Transaction]
-        var transResult = Seq.empty[rep.protos.peer.TransactionResult]
+        var transResult = Seq.empty[rep.proto.rc2.TransactionResult]
         val dbtag = prefixOfDbTag //prefixOfDbTag+"_"+moduleName+"_"+block.transactions.head.id
         var curBlockHash = "temp_" + Random.nextInt(100)
-        if (block.hashOfBlock != _root_.com.google.protobuf.ByteString.EMPTY) {
-          curBlockHash = block.hashOfBlock.toStringUtf8
+        if (block.header.get.hashPresent != _root_.com.google.protobuf.ByteString.EMPTY) {
+          curBlockHash = block.header.get.hashPresent.toStringUtf8
         }
         //setDbInstanceName(block.previousBlockHash.toStringUtf8,curBlockHash)
         //val dbtag = this.DbInstance.tagName
-        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s" preload db instance name, name: ${dbtag},height:${block.height}"))
+        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s" preload db instance name, name: ${dbtag},height:${block.header.get.height}"))
         //确保提交的时候顺序执行
         RepTimeTracer.setStartTime(pe.getSysTag, "PreloadTrans-exe", System.currentTimeMillis(), pe.getBlocker.VoteHeight + 1, 0)
 
@@ -323,18 +330,18 @@ class PreloaderForTransaction(moduleName: String) extends ModuleBase(moduleName)
             transResult = (transResult ++ ts)
           }
         })*/
-        RepTimeTracer.setEndTime(pe.getSysTag, "PreloadTrans-exe", System.currentTimeMillis(), block.height, block.transactions.size)
+        RepTimeTracer.setEndTime(pe.getSysTag, "PreloadTrans-exe", System.currentTimeMillis(), block.header.get.height, block.transactions.size)
         if (preloadReuslt) {
           RepTimeTracer.setStartTime(pe.getSysTag, "PreloadTrans-assemble", System.currentTimeMillis(), pe.getBlocker.VoteHeight + 1, 0)
           var newblock = AssembleTransResult(block, transResult, dbtag)
-          RepTimeTracer.setEndTime(pe.getSysTag, "PreloadTrans-assemble", System.currentTimeMillis(), block.height, block.transactions.size)
+          RepTimeTracer.setEndTime(pe.getSysTag, "PreloadTrans-assemble", System.currentTimeMillis(), block.header.get.height, block.transactions.size)
           //全部交易执行完成
           sender ! PreTransBlockResult(newblock.get, true)
         } else {
-          RepLogger.error(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s" All Transaction failed, error: ${block.height}"))
+          RepLogger.error(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s" All Transaction failed, error: ${block.header.get.height}"))
           sender ! PreTransBlockResult(null, false)
         }
-        RepTimeTracer.setEndTime(pe.getSysTag, "PreloadTrans-inner", System.currentTimeMillis(), block.height, block.transactions.size)
+        RepTimeTracer.setEndTime(pe.getSysTag, "PreloadTrans-inner", System.currentTimeMillis(), block.header.get.height, block.transactions.size)
       }
 
     case PreTransBlockOfCache(blockIdentifierInCache, prefixOfDbTag) =>
@@ -344,16 +351,16 @@ class PreloaderForTransaction(moduleName: String) extends ModuleBase(moduleName)
         sender ! preTransBlockResultOfCache(false)
       } else {
         RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("entry preload"))
-        if ((block.previousBlockHash.toStringUtf8() == pe.getCurrentBlockHash || block.previousBlockHash == ByteString.EMPTY) &&
-          block.height == (pe.getCurrentHeight + 1)) {
+        if ((block.header.get.hashPrevious.toStringUtf8() == pe.getCurrentBlockHash || block.header.get.hashPrevious == ByteString.EMPTY) &&
+          block.header.get.height == (pe.getCurrentHeight + 1)) {
           var preLoadTrans = mutable.HashMap.empty[String, Transaction]
-          var transResult = Seq.empty[rep.protos.peer.TransactionResult]
+          var transResult = Seq.empty[rep.proto.rc2.TransactionResult]
           val dbtag = prefixOfDbTag //prefixOfDbTag+"_"+moduleName+"_"+block.transactions.head.id
           var curBlockHash = "temp_" + Random.nextInt(100)
-          if (block.hashOfBlock != _root_.com.google.protobuf.ByteString.EMPTY) {
-            curBlockHash = block.hashOfBlock.toStringUtf8
+          if (block.header.get.hashPresent != _root_.com.google.protobuf.ByteString.EMPTY) {
+            curBlockHash = block.header.get.hashPresent.toStringUtf8
           }
-          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s" preload db instance name, name: ${dbtag},height:${block.height}"))
+          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s" preload db instance name, name: ${dbtag},height:${block.header.get.height}"))
           //确保提交的时候顺序执行
           RepTimeTracer.setStartTime(pe.getSysTag, "PreloadTrans-exe", System.currentTimeMillis(), pe.getBlocker.VoteHeight + 1, 0)
 
@@ -377,19 +384,19 @@ class PreloaderForTransaction(moduleName: String) extends ModuleBase(moduleName)
                 loop = data._1 + 1
               }
             })
-          RepTimeTracer.setEndTime(pe.getSysTag, "PreloadTrans-exe", System.currentTimeMillis(), block.height, block.transactions.size)
+          RepTimeTracer.setEndTime(pe.getSysTag, "PreloadTrans-exe", System.currentTimeMillis(), block.header.get.height, block.transactions.size)
           if (preloadReuslt) {
             RepTimeTracer.setStartTime(pe.getSysTag, "PreloadTrans-assemble", System.currentTimeMillis(), pe.getBlocker.VoteHeight + 1, 0)
             var newblock = AssembleTransResult(block, transResult, dbtag)
-            RepTimeTracer.setEndTime(pe.getSysTag, "PreloadTrans-assemble", System.currentTimeMillis(), block.height, block.transactions.size)
+            RepTimeTracer.setEndTime(pe.getSysTag, "PreloadTrans-assemble", System.currentTimeMillis(), block.header.get.height, block.transactions.size)
             //全部交易执行完成
             pe.addBlock(blockIdentifierInCache,newblock.get)
             sender ! preTransBlockResultOfCache(true)
           } else {
-            RepLogger.error(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s" All Transaction failed, error: ${block.height}"))
+            RepLogger.error(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s" All Transaction failed, error: ${block.header.get.height}"))
             sender ! preTransBlockResultOfCache(false)
           }
-          RepTimeTracer.setEndTime(pe.getSysTag, "PreloadTrans-inner", System.currentTimeMillis(), block.height, block.transactions.size)
+          RepTimeTracer.setEndTime(pe.getSysTag, "PreloadTrans-inner", System.currentTimeMillis(), block.header.get.height, block.transactions.size)
         }
       }
 

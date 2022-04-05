@@ -1,6 +1,6 @@
 package rep.storage.test
 
-import rep.protos.peer.Block
+import rep.proto.rc2.Block
 import rep.storage.ImpDataAccess
 
 import scala.collection.mutable.ArrayBuffer
@@ -33,10 +33,8 @@ object testBigKey extends App {
           txids += t.id
         })
 
-        blk.transactionResults.foreach(tr=>{
-          tr.ol.foreach(ol=>{
-            keys += ol.key
-          })
+        blk.statesSet.keys.foreach(k=>{
+          keys += k
         })
       }
 

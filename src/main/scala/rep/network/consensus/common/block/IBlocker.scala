@@ -11,7 +11,7 @@ import rep.network.base.ModuleBase
 import rep.network.consensus.common.MsgOfConsensus.{PreTransBlock, PreTransBlockResult}
 import rep.network.consensus.util.BlockHelp
 import rep.network.module.ModuleActorType
-import rep.protos.peer.{Block, TransactionResult}
+import rep.proto.rc2.{Block, TransactionResult}
 import rep.storage.{ImpDataAccess, ImpDataPreloadMgr}
 import rep.utils.SerializeUtils
 
@@ -31,7 +31,7 @@ object IBlocker {
 }
 
 abstract class IBlocker(moduleName: String) extends ModuleBase(moduleName) {
-  import rep.protos.peer.Transaction
+  import rep.proto.rc2.Transaction
 
   import scala.collection.mutable.ArrayBuffer
   import scala.concurrent.duration._
@@ -145,15 +145,15 @@ abstract class IBlocker(moduleName: String) extends ModuleBase(moduleName) {
       RepTimeTracer.setEndTime(pe.getSysTag, "collectTransToBlock", System.currentTimeMillis(), pe.getBlocker.VoteHeight + 1, trans.size)
       //此处建立新块必须采用抽签模块的抽签结果来进行出块，否则出现刚抽完签，马上有新块的存储完成，就会出现错误
       var blc = BlockHelp.WaitingForExecutionOfBlock(pe.getBlocker.voteBlockHash, pe.getBlocker.VoteHeight + 1, trans)
-      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,height=${blc.height},local height=${pe.getBlocker.VoteHeight}" + "~" + selfAddr))
-      RepTimeTracer.setStartTime(pe.getSysTag, "PreloadTrans", System.currentTimeMillis(), blc.height, blc.transactions.size)
+      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,height=${blc.header.get.height},local height=${pe.getBlocker.VoteHeight}" + "~" + selfAddr))
+      RepTimeTracer.setStartTime(pe.getSysTag, "PreloadTrans", System.currentTimeMillis(), blc.header.get.height, blc.transactions.size)
       blc = ExecuteTransactionOfBlock(blc)
       if (blc != null) {
-        RepTimeTracer.setEndTime(pe.getSysTag, "PreloadTrans", System.currentTimeMillis(), blc.height, blc.transactions.size)
-        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,prelaod success,height=${blc.height},local height=${pe.getBlocker.VoteHeight}" + "~" + selfAddr))
+        RepTimeTracer.setEndTime(pe.getSysTag, "PreloadTrans", System.currentTimeMillis(), blc.header.get.height, blc.transactions.size)
+        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,prelaod success,height=${blc.header.get.height},local height=${pe.getBlocker.VoteHeight}" + "~" + selfAddr))
         //块hash在预执行中生成
         //blc = BlockHelp.AddBlockHash(blc)
-        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,AddBlockHash success,height=${blc.height},local height=${pe.getBlocker.VoteHeight}" + "~" + selfAddr))
+        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,AddBlockHash success,height=${blc.header.get.height},local height=${pe.getBlocker.VoteHeight}" + "~" + selfAddr))
         BlockHelp.AddSignToBlock(blc, pe.getSysTag)
       } else {
         RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("create new block error,preload error" + "~" + selfAddr))

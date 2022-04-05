@@ -22,7 +22,7 @@ import rep.network.base.ModuleBase
 import rep.network.sync.SyncMsg
 import rep.network.sync.SyncMsg.{BlockDataOfRequest, ChainInfoOfRequest, ResponseInfo}
 import rep.network.util.NodeHelp
-import rep.protos.peer._
+import rep.proto.rc2._
 import rep.storage.{ImpDataAccess, JsonUtil}
 import rep.utils.GlobalUtils.{BlockEvent, EventType}
 import rep.network.tools.transpool.TransactionPoolMgr
@@ -64,9 +64,10 @@ class SynchronizeResponser(moduleName: String) extends ModuleBase(moduleName) {
           RepLogger.debug(RepLogger.BlockSyncher_Logger, "getBlock4ObjectByHeight,time=" + (System.currentTimeMillis() - ti1) + "," + pe.getTransPoolMgr.getTransLength())
           RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(  s"node number:${pe.getSysTag},recv synch chaininfo request,request height:${height},local chaininof=${responseInfo.height}"))
           ChainInfoOfSpecifiedHeight = ChainInfoOfSpecifiedHeight.withHeight(height)
-          ChainInfoOfSpecifiedHeight = ChainInfoOfSpecifiedHeight.withCurrentBlockHash(b.hashOfBlock)
-          ChainInfoOfSpecifiedHeight = ChainInfoOfSpecifiedHeight.withPreviousBlockHash(b.previousBlockHash)
-          ChainInfoOfSpecifiedHeight = ChainInfoOfSpecifiedHeight.withCurrentStateHash(b.stateHash)
+          ChainInfoOfSpecifiedHeight = ChainInfoOfSpecifiedHeight.withCurrentBlockHash(b.header.get.hashPresent)
+          ChainInfoOfSpecifiedHeight = ChainInfoOfSpecifiedHeight.withPreviousBlockHash(b.header.get.hashPrevious)
+          //TODO
+          //ChainInfoOfSpecifiedHeight = ChainInfoOfSpecifiedHeight.withCurrentStateHash(b.stateHash)
         }
         sender ! ResponseInfo(responseInfo,self,ChainInfoOfSpecifiedHeight,pe.getSysTag)
       //}

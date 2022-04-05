@@ -2,7 +2,7 @@ package rep.sc
 
 import akka.actor.{Actor, ActorRef, Props, actorRef2Scala}
 import delight.nashornsandbox._
-import rep.protos.peer._
+import rep.proto.rc2._
 import rep.sc.Sandbox._
 import rep.utils.{GlobalUtils, TimeUtils}
 import rep.storage._
@@ -232,7 +232,7 @@ class SandboxDispatcher(moduleName: String, cid: String) extends ModuleBase(modu
    */
   private def CreateSandbox(ctype: ChaincodeDeploy.CodeType, cid: ChaincodeId, sandboxName: String): ActorRef = {
     ctype match {
-      case ChaincodeDeploy.CodeType.CODE_SCALA | ChaincodeDeploy.CodeType.CODE_SCALA_PARALLEL =>
+      case ChaincodeDeploy.CodeType.CODE_SCALA  =>
         context.actorOf(Props(new SandboxScala(cid)).withDispatcher("contract-dispatcher"), sandboxName)
       //默认采用Scala容器
       case _ => context.actorOf(Props(new SandboxScala(cid)).withDispatcher("contract-dispatcher"), sandboxName)
@@ -246,10 +246,10 @@ class SandboxDispatcher(moduleName: String, cid: String) extends ModuleBase(modu
       SetContractState(special_t, dotrans.da)
       RepLogger.debug(RepLogger.Sandbox_Logger, s"sandbox dispatcher ${cid},execute setcontractstate after , contract state ${this.ContractState},txid=${special_t.id},da=${dotrans.da}.")
       if (this.ContractState == ContractStateType.ContractInLevelDB) {
-        this.createParallelRouter(this.DeployTransactionCache.cid.get, this.DeployTransactionCache.para.spec.get.ctype)
+        this.createParallelRouter(this.DeployTransactionCache.cid.get, this.DeployTransactionCache.para.spec.get.cType)
         RepLogger.debug(RepLogger.Sandbox_Logger, s"sandbox dispatcher ${cid},create parallel router after ,txid=${special_t.id},da=${dotrans.da}.")
       }
-      this.createSerialSandbox(this.DeployTransactionCache.cid.get, this.DeployTransactionCache.para.spec.get.ctype)
+      this.createSerialSandbox(this.DeployTransactionCache.cid.get, this.DeployTransactionCache.para.spec.get.cType)
       RepLogger.debug(RepLogger.Sandbox_Logger, s"sandbox dispatcher ${cid},create serial sandbox  after , contract state ${this.ContractState},txid=${special_t.id},da=${dotrans.da}.")
 
       this.ContractState match {
@@ -262,8 +262,8 @@ class SandboxDispatcher(moduleName: String, cid: String) extends ModuleBase(modu
               RepLogger.debug(RepLogger.Sandbox_Logger, s"sandbox dispatcher ${cid},send msg to Parallel sandbox from api,txid=${special_t.id},da=${dotrans.da}.")
               this.RouterOfParallelSandboxs.route(DoTransactionOfSandbox(dotrans.ts, dotrans.da, this.ContractState), sender)
             case _ =>
-              this.DeployTransactionCache.para.spec.get.ctype match {
-                case ChaincodeDeploy.CodeType.CODE_SCALA_PARALLEL =>
+              this.DeployTransactionCache.para.spec.get.rType match {
+                case ChaincodeDeploy.RunType.RUN_PARALLEL =>
                   RepLogger.debug(RepLogger.Sandbox_Logger, s"sandbox dispatcher ${cid},send msg to Parallel sandbox from parallel,txid=${special_t.id},da=${dotrans.da}.")
                   this.RouterOfParallelSandboxs.route(DoTransactionOfSandbox(dotrans.ts, dotrans.da, this.ContractState), sender)
                 case _ => 
@@ -290,10 +290,10 @@ class SandboxDispatcher(moduleName: String, cid: String) extends ModuleBase(modu
       SetContractState(special_t, dotrans.da)
       RepLogger.debug(RepLogger.Sandbox_Logger, s"sandbox dispatcher ${cid},execute setcontractstate after , contract state ${this.ContractState},txid=${special_t.id},da=${dotrans.da}.")
       if (this.ContractState == ContractStateType.ContractInLevelDB) {
-        this.createParallelRouter(this.DeployTransactionCache.cid.get, this.DeployTransactionCache.para.spec.get.ctype)
+        this.createParallelRouter(this.DeployTransactionCache.cid.get, this.DeployTransactionCache.para.spec.get.cType)
         RepLogger.debug(RepLogger.Sandbox_Logger, s"sandbox dispatcher ${cid},create parallel router after ,txid=${special_t.id},da=${dotrans.da}.")
       }
-      this.createSerialSandbox(this.DeployTransactionCache.cid.get, this.DeployTransactionCache.para.spec.get.ctype)
+      this.createSerialSandbox(this.DeployTransactionCache.cid.get, this.DeployTransactionCache.para.spec.get.cType)
       RepLogger.debug(RepLogger.Sandbox_Logger, s"sandbox dispatcher ${cid},create serial sandbox  after , contract state ${this.ContractState},txid=${special_t.id},da=${dotrans.da}.")
 
       this.ContractState match {
@@ -306,8 +306,8 @@ class SandboxDispatcher(moduleName: String, cid: String) extends ModuleBase(modu
               RepLogger.debug(RepLogger.Sandbox_Logger, s"sandbox dispatcher ${cid},send msg to Parallel sandbox from api,txid=${special_t.id},da=${dotrans.da}.")
               this.RouterOfParallelSandboxs.route(DoTransactionOfSandboxOfCache(dotrans.cacheIdentifier, dotrans.da, this.ContractState), sender)
             case _ =>
-              this.DeployTransactionCache.para.spec.get.ctype match {
-                case ChaincodeDeploy.CodeType.CODE_SCALA_PARALLEL =>
+              this.DeployTransactionCache.para.spec.get.rType match {
+                case ChaincodeDeploy.RunType.RUN_PARALLEL =>
                   RepLogger.debug(RepLogger.Sandbox_Logger, s"sandbox dispatcher ${cid},send msg to Parallel sandbox from parallel,txid=${special_t.id},da=${dotrans.da}.")
                   this.RouterOfParallelSandboxs.route(DoTransactionOfSandboxOfCache(dotrans.cacheIdentifier, dotrans.da, this.ContractState), sender)
                 case _ =>
@@ -324,19 +324,12 @@ class SandboxDispatcher(moduleName: String, cid: String) extends ModuleBase(modu
         sender ! rs.toSeq
     }
   }
-  /*private def createErrorData(ts:scala.collection.Seq[Transaction],err: Option[akka.actor.Status.Failure]):Array[DoTransactionResult]={
-    var rs = scala.collection.mutable.ArrayBuffer[DoTransactionResult]()
-    ts.foreach(t=>{
-      rs += new DoTransactionResult(t.id, null, null, err)
-    })
-    rs.toArray
-  }*/
 
 
-  private def createErrorData(ts: scala.collection.Seq[Transaction], err: Option[akka.actor.Status.Failure]): Array[TransactionResult] = {
-    var rs = scala.collection.mutable.ArrayBuffer[TransactionResult]()
+  private def createErrorData(ts: scala.collection.Seq[Transaction], err: Option[akka.actor.Status.Failure]): Array[TransactionError] = {
+    var rs = scala.collection.mutable.ArrayBuffer[TransactionError]()
     ts.foreach(t => {
-      rs += new TransactionResult(t.id, _root_.scala.Seq.empty, Option(ActionResult(105, err.get.cause.getMessage))) //new TransactionResult(t.id, null, null, err)
+      rs += new TransactionError(t.id, 105, err.get.cause.getMessage) //new TransactionResult(t.id, null, null, err)
     })
     rs.toArray
   }

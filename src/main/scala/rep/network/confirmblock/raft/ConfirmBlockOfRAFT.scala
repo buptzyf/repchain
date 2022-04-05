@@ -9,7 +9,7 @@ import rep.network.consensus.common.MsgOfConsensus.BlockRestore
 import rep.network.module.ModuleActorType
 import rep.network.persistence.IStorager.SourceOfBlock
 import rep.network.util.NodeHelp
-import rep.protos.peer.{Block, Event}
+import rep.proto.rc2.{Block, Event}
 import rep.utils.GlobalUtils.EventType
 import rep.network.consensus.common.MsgOfConsensus.BatchStore
 
@@ -29,21 +29,21 @@ class ConfirmBlockOfRAFT(moduleName: String) extends IConfirmOfBlock(moduleName:
   }
 
   override protected def handler(block: Block, actRefOfBlock: ActorRef) = {
-    RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"confirm verify endorsement start,height=${block.height}"))
+    RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"confirm verify endorsement start,height=${block.header.get.height}"))
     if (SystemProfile.getIsVerifyOfEndorsement) {
       if (asyncVerifyEndorses(block)) {
-        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"confirm verify endorsement end,height=${block.height}"))
+        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"confirm verify endorsement end,height=${block.header.get.height}"))
         //背书人的签名一致
-        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"confirm verify endorsement sort,height=${block.height}"))
+        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"confirm verify endorsement sort,height=${block.header.get.height}"))
         pe.getBlockCacheMgr.addToCache(BlockRestore(block, SourceOfBlock.CONFIRMED_BLOCK, actRefOfBlock))
         pe.getActorRef(ModuleActorType.ActorType.storager) ! BatchStore
         sendEvent(EventType.RECEIVE_INFO, mediator, pe.getSysTag, Topic.Block, Event.Action.BLOCK_NEW)
       } else {
         //背书验证有错误
-        RepLogger.error(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"confirm verify endorsement error,height=${block.height}"))
+        RepLogger.error(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"confirm verify endorsement error,height=${block.header.get.height}"))
       }
     } else {
-      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"confirm verify endorsement sort,height=${block.height}"))
+      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"confirm verify endorsement sort,height=${block.header.get.height}"))
       pe.getBlockCacheMgr.addToCache(BlockRestore(block, SourceOfBlock.CONFIRMED_BLOCK, actRefOfBlock))
       pe.getActorRef(ModuleActorType.ActorType.storager) ! BatchStore
       sendEvent(EventType.RECEIVE_INFO, mediator, pe.getSysTag, Topic.Block, Event.Action.BLOCK_NEW)
@@ -51,18 +51,18 @@ class ConfirmBlockOfRAFT(moduleName: String) extends IConfirmOfBlock(moduleName:
   }
 
   override protected def checkedOfConfirmBlock(block: Block, actRefOfBlock: ActorRef) = {
-    if (pe.getCurrentBlockHash == "" && block.previousBlockHash.isEmpty()) {
+    if (pe.getCurrentBlockHash == "" && block.header.get.hashPrevious.isEmpty()) {
       //if (NodeHelp.isSeedNode(pe.getNodeMgr.getStableNodeName4Addr(actRefOfBlock.path.address))) {
-        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"confirm verify blockhash,height=${block.height}"))
+        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"confirm verify blockhash,height=${block.header.get.height}"))
         handler(block, actRefOfBlock)
       //}else{
       //  RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"not confirm genesis block,blocker is not seed node,height=${block.height}"))
       //}
     } else {
       //与上一个块一致
-      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"confirm verify blockhash,height=${block.height}"))
+      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"confirm verify blockhash,height=${block.header.get.height}"))
       handler(block, actRefOfBlock)
-      pe.setConfirmHeight(block.height)
+      pe.setConfirmHeight(block.header.get.height)
       pe.resetTimeoutOfRaft
     }
   }

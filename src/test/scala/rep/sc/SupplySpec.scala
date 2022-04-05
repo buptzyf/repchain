@@ -27,8 +27,8 @@ import rep.app.system.ClusterSystem.InitType
 import rep.crypto.cert.SignTool
 import rep.network.autotransaction.PeerHelper
 import rep.network.module.cfrd.ModuleManagerOfCFRD
-import rep.protos.peer.ChaincodeDeploy.ContractClassification
-import rep.protos.peer._
+import rep.proto.rc2.ChaincodeDeploy.ContractClassification
+import rep.proto.rc2._
 import rep.sc.SandboxDispatcher.DoTransaction
 import rep.sc.tpl.SupplyType._
 import rep.storage.ImpDataAccess
@@ -98,11 +98,11 @@ class SupplySpec(_system: ActorSystem) extends TestKit(_system) with Matchers wi
     val l1 = try s1.mkString finally s1.close()
     val cid = new ChaincodeId("Supply", 1)
     //生成deploy交易
-    val t1 = PeerHelper.createTransaction4Deploy(superAdmin, cid, l1, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA, ContractClassification.CONTRACT_CUSTOM)
+    val t1 = PeerHelper.createTransaction4Deploy(superAdmin, cid, l1, "", 5000, ChaincodeDeploy.CodeType.CODE_SCALA, ContractClassification.CONTRACT_CUSTOM)
     val msg_send1 = DoTransaction(Seq[Transaction](t1), "test-db", TypeOfSender.FromPreloader)
     probe.send(sandbox, msg_send1)
     val msg_recv1 = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    val ol1 = msg_recv1.head.ol
+    val ol1 = msg_recv1.head.statesSet
 
     //生成invoke交易
     val t2 = PeerHelper.createTransaction4Invoke(superAdmin, cid, ACTION.SignFixed, Seq(l2))
@@ -125,18 +125,15 @@ class SupplySpec(_system: ActorSystem) extends TestKit(_system) with Matchers wi
       val msg_send4 = DoTransaction(Seq[Transaction](t4), "test-db", TypeOfSender.FromPreloader)
       probe.send(sandbox, msg_send4)
       val msg_recv4 = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-      val ol4 = msg_recv4.head.ol
+      val ol4 = msg_recv4.head.statesSet
       for (elem <- ol4) {
-        val elemStr = JsonFormat.toJsonString(elem)
-        println(s"oper log:$elemStr")
+        //val elemStr = JsonFormat.toJsonString(elem)
+        println(s"oper log:$elem")
       }
       //分账之后总额应保持一致
       var total = 0
-      ol4.foreach {
-        ol =>
-          total += deserialise(ol.newValue.toByteArray()).asInstanceOf[Int]
-          if (ol.oldValue != null)
-            total -= deserialise(ol.oldValue.toByteArray()).asInstanceOf[Int]
+      for((k,v) <- ol4){
+        total += deserialise(v.toByteArray()).asInstanceOf[Int]
       }
       total should equal(el)
     }
@@ -149,18 +146,15 @@ class SupplySpec(_system: ActorSystem) extends TestKit(_system) with Matchers wi
       val msg_send4 = DoTransaction(Seq[Transaction](t4), "test-db", TypeOfSender.FromPreloader)
       probe.send(sandbox, msg_send4)
       val msg_recv4 = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-      val ol4 = msg_recv4.head.ol
+      val ol4 = msg_recv4.head.statesSet
       for (elem <- ol4) {
-        val elemStr = JsonFormat.toJsonString(elem)
-        println(s"oper log:$elemStr")
+        //val elemStr = JsonFormat.toJsonString(elem)
+        println(s"oper log:$elem")
       }
       //分账之后总额应保持一致
       var total = 0
-      ol4.foreach {
-        ol =>
-          total += deserialise(ol.newValue.toByteArray()).asInstanceOf[Int]
-          if (ol.oldValue != null)
-            total -= deserialise(ol.oldValue.toByteArray()).asInstanceOf[Int]
+      for((k,v) <- ol4){
+        total += deserialise(v.toByteArray()).asInstanceOf[Int]
       }
       total should be(el)
     }

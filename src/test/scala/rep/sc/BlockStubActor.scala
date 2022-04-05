@@ -14,7 +14,7 @@ import rep.app.conf.{SystemProfile, TimePolicy}
 import rep.network.base.ModuleBase
 import rep.network.consensus.common.MsgOfConsensus.{PreTransBlock, PreTransBlockResult}
 import rep.network.tools.PeerExtension
-import rep.protos.peer._
+import rep.proto.rc2._
 import rep.network.consensus.common.MsgOfConsensus.BlockRestore
 import rep.sc.SandboxDispatcher.DoTransaction
 import rep.sc.Sandbox.DoTransactionResult
@@ -72,10 +72,10 @@ class BlockStubActor(moduleName: String) extends ModuleBase(moduleName) {
     //todo 交易排序
     if (trans.size > SystemProfile.getMinBlockTransNum) {
       var blc = BlockHelp.WaitingForExecutionOfBlock(pe.getCurrentBlockHash, pe.getCurrentHeight + 1, trans)
-      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,height=${blc.height},local height=${pe.getCurrentHeight}" + "~" + selfAddr))
+      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,height=${blc.header.get.height},local height=${pe.getCurrentHeight}" + "~" + selfAddr))
       blc = ExecuteTransactionOfBlock(blc)
       if (blc != null) {
-        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,prelaod success,height=${blc.height},local height=${pe.getCurrentHeight}" + "~" + selfAddr))
+        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,prelaod success,height=${blc.header.get.height},local height=${pe.getCurrentHeight}" + "~" + selfAddr))
         blc = BlockHelp.AddBlockHash(blc)
         BlockHelp.AddSignToBlock(blc, pe.getSysTag)
       } else {

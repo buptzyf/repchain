@@ -173,8 +173,8 @@ class VoterOfRAFT (moduleName: String) extends IVoter(moduleName: String) {
     val hash = this.transformInfo.lastHashOfBlocker
     val block = dataaccess.getBlock4ObjectByHeight(h)
     if(block != null){
-      val currentblockhash = block.hashOfBlock.toStringUtf8()
-      val currentheight = block.height
+      val currentblockhash = block.header.get.hashPresent.toStringUtf8()
+      val currentheight = block.header.get.height
       this.voteIndex = this.transformInfo.voteIndexOfBlocker
       this.transformInfo = null
       pe.resetTimeoutOfRaft

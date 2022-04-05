@@ -17,7 +17,7 @@
 package rep.storage
 
 import scala.util.parsing.json._
-import rep.protos.peer._
+import rep.proto.rc2._
 import rep.storage.leveldb._
 import rep.storage.cfg._
 import rep.crypto._
@@ -44,8 +44,8 @@ class blockindex() {
   private var createTimeUtc: String = ""
 
   private def ReadBlockTime(b: Block) = {
-    if (b != null && b.endorsements != null && b.endorsements.length >= 1) {
-      val signer = b.endorsements(0)
+    if (b != null && b.header.get.endorsements != null && b.header.get.endorsements.length >= 1) {
+      val signer = b.header.get.endorsements(0)
       val date = new java.util.Date(signer.tmLocal.get.seconds * 1000);
       val formatstr = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
       formatstr.setTimeZone(java.util.TimeZone.getTimeZone("ETC/GMT-8"))
@@ -64,10 +64,9 @@ class blockindex() {
       //不能使用statehash作为block的hashid
       //this.blockHash = b.stateHash.toString("UTF-8");
       //this.blockHash = b.
-      this.blockHeight = b.height
-      this.blockHash = b.hashOfBlock.toStringUtf8()
-      this.blockPrevHash = b.previousBlockHash.toStringUtf8()
-      this.stateHash = b.stateHash.toStringUtf8()
+      this.blockHeight = b.header.get.height
+      this.blockHash = b.header.get.hashPresent.toStringUtf8()
+      this.blockPrevHash = b.header.get.hashPrevious.toStringUtf8()
       this.ReadBlockTime(b)
       val ts = b.transactions
       if (ts != null && ts.length > 0) {

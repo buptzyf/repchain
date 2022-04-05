@@ -1,7 +1,7 @@
 package rep.network.consensus.common
 
 import akka.actor.ActorRef
-import rep.protos.peer.Block
+import rep.proto.rc2.Block
 import rep.utils.GlobalUtils.BlockerInfo
 
 

@@ -26,7 +26,7 @@ object Endorser4FutureInStream{
 class Endorser4FutureInStream(moduleName: String) extends ModuleBase(moduleName) {
   import context.dispatcher
   import scala.concurrent.duration._
-  import rep.protos.peer._
+  import rep.proto.rc2._
   import rep.storage.ImpDataAccess
   import scala.concurrent._
 
@@ -45,20 +45,20 @@ class Endorser4FutureInStream(moduleName: String) extends ModuleBase(moduleName)
 
   private def AskPreloadTransactionOfBlock(block: Block): Boolean = {
     var b = false
-    RepTimeTracer.setStartTime(pe.getSysTag, s"recvendorsement-${moduleName}-AskPreloadTransactionOfBlock", System.currentTimeMillis(),block.height,block.transactions.size)
-    RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry 14,height=${block.height}"))
+    RepTimeTracer.setStartTime(pe.getSysTag, s"recvendorsement-${moduleName}-AskPreloadTransactionOfBlock", System.currentTimeMillis(),block.header.get.height,block.transactions.size)
+    RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry 14,height=${block.header.get.height}"))
     try {
-      var tmpblock = block.withHashOfBlock(ByteString.EMPTY)
+      var tmpblock = block.withHeader(block.header.get.withHashPresent(ByteString.EMPTY))
       val future1 = pe.getActorRef(ModuleActorType.ActorType.dispatchofpreloadinstream).ask(PreTransBlock(tmpblock, this.dbtag))
       val result = Await.result(future1, timeout.duration).asInstanceOf[PreTransBlockResult]
       //var tmpblock = result.blc.withHashOfBlock(block.hashOfBlock)  //
       //if (BlockVerify.VerifyHashOfBlock(tmpblock)) {
-        if(block.hashOfBlock.toStringUtf8 == result.blc.hashOfBlock.toStringUtf8){
+        if(block.header.get.hashPresent.toStringUtf8 == result.blc.header.get.hashPresent.toStringUtf8){
         b = true
       }else{
-          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry 14.5,eb-height=${block.height}," +
-            s"lb-height=${pe.getCurrentHeight},cb-height=${pe.getConfirmHeight},blockhash=${block.hashOfBlock.toStringUtf8}," +
-            s"tmpblockhash=${result.blc.hashOfBlock.toStringUtf8},voteheight=${voteinfo.VoteHeight},voteindex=${voteinfo.VoteIndex}"))
+          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry 14.5,eb-height=${block.header.get.height}," +
+            s"lb-height=${pe.getCurrentHeight},cb-height=${pe.getConfirmHeight},blockhash=${block.header.get.hashPresent.toStringUtf8}," +
+            s"tmpblockhash=${result.blc.header.get.hashPresent.toStringUtf8},voteheight=${voteinfo.VoteHeight},voteindex=${voteinfo.VoteIndex}"))
           ImpDataPreloadMgr.Free(pe.getSysTag, "endors_dbidentifier_"+this.voteinfo.VoteHeight+"_"+this.voteinfo.VoteIndex)
         }
     } catch {
@@ -69,37 +69,37 @@ class Endorser4FutureInStream(moduleName: String) extends ModuleBase(moduleName)
     }finally {
       //ImpDataPreloadMgr.Free(pe.getSysTag,"endors_"+block.transactions(0).id)
     }
-    RepTimeTracer.setEndTime(pe.getSysTag, s"recvendorsement-${moduleName}-AskPreloadTransactionOfBlock", System.currentTimeMillis(),block.height,block.transactions.size)
+    RepTimeTracer.setEndTime(pe.getSysTag, s"recvendorsement-${moduleName}-AskPreloadTransactionOfBlock", System.currentTimeMillis(),block.header.get.height,block.transactions.size)
     b
   }
 
   private def checkEndorseSign(block: Block): Boolean = {
     //println(s"${pe.getSysTag}:entry checkEndorseSign")
-    RepTimeTracer.setStartTime(pe.getSysTag, s"recvendorsement-${moduleName}-checkEndorseSign", System.currentTimeMillis(),block.height,block.transactions.size)
+    RepTimeTracer.setStartTime(pe.getSysTag, s"recvendorsement-${moduleName}-checkEndorseSign", System.currentTimeMillis(),block.header.get.height,block.transactions.size)
     var result = false
     val r = BlockVerify.VerifyAllEndorseOfBlock(block, pe.getSysTag)
     result = r._1
     //println(s"${pe.getSysTag}:entry checkEndorseSign after,checkEndorseSign=${result}")
-    RepTimeTracer.setEndTime(pe.getSysTag, s"recvendorsement-${moduleName}-checkEndorseSign", System.currentTimeMillis(),block.height,block.transactions.size)
+    RepTimeTracer.setEndTime(pe.getSysTag, s"recvendorsement-${moduleName}-checkEndorseSign", System.currentTimeMillis(),block.header.get.height,block.transactions.size)
     result
   }
 
   private def turnVote(vi: BlockerInfo, blc: Block):Int={
     var r = -1
-    if(blc.previousBlockHash.toStringUtf8 == pe.getCurrentBlockHash){
+    if(blc.header.get.hashPrevious.toStringUtf8 == pe.getCurrentBlockHash){
       //allow
-      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry 20,height=${blc.height}"))
+      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry 20,height=${blc.header.get.height}"))
       this.voteinfo = vi
       r = 0
     }else{
-      if(blc.height > (pe.getCreateHeight+1)){
+      if(blc.header.get.height > (pe.getCreateHeight+1)){
         //do not allow,entry synch
-        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry 21,height=${blc.height}"))
+        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry 21,height=${blc.header.get.height}"))
         r = 2
         ImpDataPreloadMgr.Free(pe.getSysTag, "endors_dbidentifier_"+this.voteinfo.VoteHeight+"_"+this.voteinfo.VoteIndex)
         pe.getActorRef(CFRDActorType.ActorType.synchrequester) ! StartSync(false)
       }else{
-        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry 22,height=${blc.height}"))
+        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry 22,height=${blc.header.get.height}"))
         6
       }
     }
@@ -118,8 +118,8 @@ class Endorser4FutureInStream(moduleName: String) extends ModuleBase(moduleName)
     }
 
 
-    if(info.blc.height >= (vi.VoteHeight + SystemProfile.getBlockNumberOfRaft)){
-      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry 24,height=${info.blc.height}"))
+    if(info.blc.header.get.height >= (vi.VoteHeight + SystemProfile.getBlockNumberOfRaft)){
+      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry 24,height=${info.blc.header.get.height}"))
       r = 2
       pe.getActorRef(CFRDActorType.ActorType.synchrequester) ! StartSync(false)
     }else if (this.voteinfo == null) {
@@ -133,14 +133,14 @@ class Endorser4FutureInStream(moduleName: String) extends ModuleBase(moduleName)
         if (this.blockOfEndorement == null) {
           r = turnVote(vi,info.blc)
         } else {
-          if(info.blc.previousBlockHash.toStringUtf8 == this.blockOfEndorement.hashOfBlock.toStringUtf8){
-            RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry 25,height=${info.blc.height}"))
+          if(info.blc.header.get.hashPrevious.toStringUtf8 == this.blockOfEndorement.header.get.hashPresent.toStringUtf8){
+            RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry 25,height=${info.blc.header.get.height}"))
             r = 0
-          }else  if (info.blc.height == pe.getConfirmHeight+1) {
-            RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry 26,height=${info.blc.height}"))
+          }else  if (info.blc.header.get.height == pe.getConfirmHeight+1) {
+            RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry 26,height=${info.blc.header.get.height}"))
             r = 0
           }else{
-            RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry 27,height=${info.blc.height}"))
+            RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry 27,height=${info.blc.header.get.height}"))
             r = 6
           }
         }
@@ -151,7 +151,7 @@ class Endorser4FutureInStream(moduleName: String) extends ModuleBase(moduleName)
 
   private def isAllowEndorse(info: EndorsementInfoInStream): Int = {
     if (info.blocker == pe.getSysTag) {
-      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"endorser is itself,do not endorse,recv endorse request,endorse height=${info.blc.height},local height=${pe.getCurrentHeight}"))
+      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"endorser is itself,do not endorse,recv endorse request,endorse height=${info.blc.header.get.height},local height=${pe.getCurrentHeight}"))
       1
     } else {
       if (NodeHelp.isCandidateNow(pe.getSysTag, SystemCertList.getSystemCertList)) {
@@ -215,17 +215,17 @@ class Endorser4FutureInStream(moduleName: String) extends ModuleBase(moduleName)
   }*/
 
   private def VerifyInfo(blc: Block) = {
-    RepTimeTracer.setStartTime(pe.getSysTag, s"recvendorsement-${moduleName}-VerifyInfo", System.currentTimeMillis(),blc.height,blc.transactions.size)
+    RepTimeTracer.setStartTime(pe.getSysTag, s"recvendorsement-${moduleName}-VerifyInfo", System.currentTimeMillis(),blc.header.get.height,blc.transactions.size)
     var r = false
-    RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry 11,height=${blc.height}"))
+    RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry 11,height=${blc.header.get.height}"))
     if(checkEndorseSign(blc)){
-      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry 12,height=${blc.height}"))
+      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry 12,height=${blc.header.get.height}"))
       if(AskPreloadTransactionOfBlock(blc)){
-        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry 13,height=${blc.height}"))
+        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry 13,height=${blc.header.get.height}"))
         r = true
       }
     }
-    RepTimeTracer.setEndTime(pe.getSysTag, s"recvendorsement-${moduleName}-VerifyInfo", System.currentTimeMillis(),blc.height,blc.transactions.size)
+    RepTimeTracer.setEndTime(pe.getSysTag, s"recvendorsement-${moduleName}-VerifyInfo", System.currentTimeMillis(),blc.header.get.height,blc.transactions.size)
 
     r
   }
@@ -234,16 +234,16 @@ class Endorser4FutureInStream(moduleName: String) extends ModuleBase(moduleName)
 
   private def SendVerifyEndorsementInfo(blc: Block,result1:Boolean) = {
     if (result1) {
-      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry 7,height=${blc.height}"))
+      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry 7,height=${blc.header.get.height}"))
       sendEvent(EventType.RECEIVE_INFO, mediator, pe.getSysTag, Topic.Endorsement,Event.Action.ENDORSEMENT)
       this.resultOfEndorement =  ResultOfEndorsed(ResultFlagOfEndorse.success, BlockHelp.SignBlock(blc, pe.getSysTag),
-        blc.hashOfBlock.toStringUtf8(),pe.getSystemCurrentChainStatus,pe.getBlocker)
+        blc.header.get.hashPresent.toStringUtf8(),pe.getSystemCurrentChainStatus,pe.getBlocker)
       this.blockOfEndorement = blc
       sender ! this.resultOfEndorement
     } else {
-      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry 8,eb-height=${blc.height}," +
+      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry 8,eb-height=${blc.header.get.height}," +
         s"lb-height=${pe.getCurrentHeight},cb-height=${pe.getConfirmHeight},voteheight=${voteinfo.VoteHeight},voteindex=${voteinfo.VoteIndex}"))
-      this.resultOfEndorement = ResultOfEndorsed(ResultFlagOfEndorse.VerifyError, null, blc.hashOfBlock.toStringUtf8(),
+      this.resultOfEndorement = ResultOfEndorsed(ResultFlagOfEndorse.VerifyError, null, blc.header.get.hashPresent.toStringUtf8(),
         pe.getSystemCurrentChainStatus,pe.getBlocker)
       this.blockOfEndorement = null
       sender ! this.resultOfEndorement
@@ -256,7 +256,7 @@ class Endorser4FutureInStream(moduleName: String) extends ModuleBase(moduleName)
     var r = false
 
     if(this.blockOfEndorement != null && this.resultOfEndorement != null) {
-      if( info.blc.hashOfBlock.toStringUtf8 == this.blockOfEndorement.hashOfBlock.toStringUtf8){
+      if( info.blc.header.get.hashPresent.toStringUtf8 == this.blockOfEndorement.header.get.hashPresent.toStringUtf8){
         r = true
       }
     }
@@ -265,7 +265,7 @@ class Endorser4FutureInStream(moduleName: String) extends ModuleBase(moduleName)
 
   private def EndorseHandler(info: EndorsementInfoInStream) = {
     val r = isAllowEndorse(info)
-    RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry 9,height=${info.blc.height}"))
+    RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry 9,height=${info.blc.header.get.height}"))
     /*r match {
       case 0 =>
 
@@ -319,12 +319,12 @@ class Endorser4FutureInStream(moduleName: String) extends ModuleBase(moduleName)
     //Endorsement block
     case EndorsementInfoInStream(block, blocker,voteIndex,voteHeight) =>
       if(!pe.isSynching){
-        RepTimeTracer.setStartTime(pe.getSysTag, s"recvendorsement-${moduleName}", System.currentTimeMillis(),block.height,block.transactions.size)
+        RepTimeTracer.setStartTime(pe.getSysTag, s"recvendorsement-${moduleName}", System.currentTimeMillis(),block.header.get.height,block.transactions.size)
         EndorseHandler(EndorsementInfoInStream(block, blocker,voteIndex,voteHeight))
-        RepTimeTracer.setEndTime(pe.getSysTag, s"recvendorsement-${moduleName}", System.currentTimeMillis(),block.height,block.transactions.size)
+        RepTimeTracer.setEndTime(pe.getSysTag, s"recvendorsement-${moduleName}", System.currentTimeMillis(),block.header.get.height,block.transactions.size)
       }else{
-        sender ! ResultOfEndorsed(ResultFlagOfEndorse.EnodrseNodeIsSynching, null, block.hashOfBlock.toStringUtf8(),pe.getSystemCurrentChainStatus,pe.getBlocker)
-        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"do not endorse,it is synching,recv endorse request,endorse height=${block.height},local height=${pe.getCurrentHeight}"))
+        sender ! ResultOfEndorsed(ResultFlagOfEndorse.EnodrseNodeIsSynching, null, block.header.get.hashPresent.toStringUtf8(),pe.getSystemCurrentChainStatus,pe.getBlocker)
+        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"do not endorse,it is synching,recv endorse request,endorse height=${block.header.get.height},local height=${pe.getCurrentHeight}"))
       }
 
     case _ => //ignore

@@ -18,7 +18,7 @@ package rep.crypto.cert
 import java.security.{KeyStore, PrivateKey, PublicKey}
 import java.security.cert.{Certificate, CertificateFactory, X509Certificate}
 
-import rep.protos.peer.CertId
+import rep.proto.rc2.CertId
 
 import scala.collection.mutable
 import java.io._

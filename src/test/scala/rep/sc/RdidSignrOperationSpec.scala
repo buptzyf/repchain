@@ -29,7 +29,7 @@ import rep.crypto.Sha256
 import rep.crypto.cert.SignTool
 import rep.network.autotransaction.PeerHelper
 import rep.network.module.cfrd.ModuleManagerOfCFRD
-import rep.protos.peer._
+import rep.proto.rc2._
 import rep.sc.tpl.did.operation.SignerOperation
 import rep.sc.tpl.did.operation.SignerOperation.SignerStatus
 import scalapb.json4s.JsonFormat
@@ -116,11 +116,11 @@ class RdidSignrOperationSpec(_system: ActorSystem) extends TestKit(_system) with
     // 部署账户管理合约
     val contractCert = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/did/RdidOperateAuthorizeTPL.scala")
     val contractCertStr = try contractCert.mkString finally contractCert.close()
-    val t = PeerHelper.createTransaction4Deploy(superAdmin, cid, contractCertStr, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA, ChaincodeDeploy.ContractClassification.CONTRACT_SYSTEM)
+    val t = PeerHelper.createTransaction4Deploy(superAdmin, cid, contractCertStr, "", 5000, ChaincodeDeploy.CodeType.CODE_SCALA, ChaincodeDeploy.ContractClassification.CONTRACT_SYSTEM)
     val msg_send = DoTransaction(Seq(t), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    assert(msg_recv.head.getResult.reason.isEmpty)
+    assert(msg_recv.head.getErr.reason.isEmpty)
   }
 
   test("注册账户-node1") {
@@ -129,7 +129,7 @@ class RdidSignrOperationSpec(_system: ActorSystem) extends TestKit(_system) with
     val msg_send = DoTransaction(Seq(t), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    msg_recv.head.getResult.reason.isEmpty should be(true)
+    msg_recv.head.getErr.reason.isEmpty should be(true)
   }
 
   test("注册账户-node1，账户已存在") {
@@ -138,7 +138,7 @@ class RdidSignrOperationSpec(_system: ActorSystem) extends TestKit(_system) with
     val msg_send = DoTransaction(Seq(t), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    JsonFormat.parser.fromJsonString(msg_recv.head.getResult.reason)(ActionResult) should be(SignerOperation.signerExists)
+    JsonFormat.parser.fromJsonString(msg_recv.head.getErr.reason)(ActionResult) should be(SignerOperation.signerExists)
   }
 
   test("注册账户-node2，certNames不为空") {
@@ -147,7 +147,7 @@ class RdidSignrOperationSpec(_system: ActorSystem) extends TestKit(_system) with
     val msg_send = DoTransaction(Seq(t), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    JsonFormat.parser.fromJsonString(msg_recv.head.getResult.reason)(ActionResult) should be(SignerOperation.someFieldsNonEmpty)
+    JsonFormat.parser.fromJsonString(msg_recv.head.getErr.reason)(ActionResult) should be(SignerOperation.someFieldsNonEmpty)
   }
 
   test("注册账户-node3，operatesId不为空") {
@@ -156,7 +156,7 @@ class RdidSignrOperationSpec(_system: ActorSystem) extends TestKit(_system) with
     val msg_send = DoTransaction(Seq(t), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    JsonFormat.parser.fromJsonString(msg_recv.head.getResult.reason)(ActionResult) should be(SignerOperation.someFieldsNonEmpty)
+    JsonFormat.parser.fromJsonString(msg_recv.head.getErr.reason)(ActionResult) should be(SignerOperation.someFieldsNonEmpty)
   }
 
   test("注册账户-node4，存在普通证书，注册账户时不能有普通证书") {
@@ -165,7 +165,7 @@ class RdidSignrOperationSpec(_system: ActorSystem) extends TestKit(_system) with
     val msg_send = DoTransaction(Seq(t), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    JsonFormat.parser.fromJsonString(msg_recv.head.getResult.reason)(ActionResult) should be(SignerOperation.customCertExists)
+    JsonFormat.parser.fromJsonString(msg_recv.head.getErr.reason)(ActionResult) should be(SignerOperation.customCertExists)
   }
 
   test("注册账户-node5，两个一模一样的证书") {
@@ -174,7 +174,7 @@ class RdidSignrOperationSpec(_system: ActorSystem) extends TestKit(_system) with
     val msg_send = DoTransaction(Seq(t), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    JsonFormat.parser.fromJsonString(msg_recv.head.getResult.reason)(ActionResult).code should be(SignerOperation.authCertExistsCode)
+    JsonFormat.parser.fromJsonString(msg_recv.head.getErr.reason)(ActionResult).code should be(SignerOperation.authCertExistsCode)
   }
 
   test("注册账户-node1，signer 与 cert 的 creditCode 不一致") {
@@ -183,7 +183,7 @@ class RdidSignrOperationSpec(_system: ActorSystem) extends TestKit(_system) with
     val msg_send = DoTransaction(Seq(t), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    JsonFormat.parser.fromJsonString(msg_recv.head.getResult.reason)(ActionResult) should be(SignerOperation.SignerCertificateNotMatch)
+    JsonFormat.parser.fromJsonString(msg_recv.head.getErr.reason)(ActionResult) should be(SignerOperation.SignerCertificateNotMatch)
   }
 
   test("禁用账户") {
@@ -191,7 +191,7 @@ class RdidSignrOperationSpec(_system: ActorSystem) extends TestKit(_system) with
     val msg_send = DoTransaction(Seq(t), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    msg_recv.head.getResult.reason.isEmpty should be(true)
+    msg_recv.head.getErr.reason.isEmpty should be(true)
   }
 
 }

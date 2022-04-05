@@ -6,7 +6,7 @@ import rep.network.consensus.byzantium.ConsensusCondition
 import rep.network.sync.SyncMsg._
 import rep.network.tools.NodeMgr
 import rep.network.util.NodeHelp
-import rep.protos.peer.BlockchainInfo
+import rep.proto.rc2.BlockchainInfo
 import rep.storage.ImpDataAccess
 
 import scala.util.control.Breaks.{break, breakable}

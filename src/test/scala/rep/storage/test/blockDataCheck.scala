@@ -19,8 +19,8 @@ package rep.storage.test
 import rep.storage.ImpDataAccess
 import org.json4s.{DefaultFormats, jackson}
 import org.json4s.native.Serialization.{write, writePretty}
-import rep.protos.peer.CertId
-import rep.protos.peer.Signature
+import rep.proto.rc2.CertId
+import rep.proto.rc2.Signature
 import java.util.Date
 
 import rep.crypto.Sha256
@@ -294,7 +294,7 @@ object blockDataCheck extends App {
   def readBlockHash(da: ImpDataAccess, h: Long) = {
     for (i <- 0 to 9) {
       val b = da.getBlock4ObjectByHeight(h - i)
-      println(s"hash---systemname=${da.SystemName},,height=${(h - i)},hashcode=${b.hashOfBlock.toStringUtf8()}")
+      println(s"hash---systemname=${da.SystemName},,height=${(h - i)},hashcode=${b.header.get.hashPresent.toStringUtf8()}")
     }
   }
 
@@ -316,7 +316,7 @@ object blockDataCheck extends App {
 
   def findEndorseTime(da: ImpDataAccess, h: Long): String = {
     val b = da.getBlock4ObjectByHeight(h)
-    val endors = b.endorsements
+    val endors = b.header.get.endorsements
     var mintime = Long.MaxValue
     var certid: CertId = null
     var eidx: Signature = null
@@ -371,7 +371,7 @@ object blockDataCheck extends App {
     nodes(4) = "921000006e0012v696.node5"
     val b = da.getBlock4ObjectByHeight(h)
 
-    val candidatorCur = candidators(da.getSystemName, b.hashOfBlock.toStringUtf8(), nodes.toSet, Sha256.hash(b.hashOfBlock.toStringUtf8()))
+    val candidatorCur = candidators(da.getSystemName, b.header.get.hashPrevious.toStringUtf8(), nodes.toSet, Sha256.hash(b.header.get.hashPrevious.toStringUtf8()))
     println(s"height=$h,systemname=${da.SystemName},${candidatorCur.mkString("|")}")
   }
 

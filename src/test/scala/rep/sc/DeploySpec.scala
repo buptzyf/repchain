@@ -22,7 +22,7 @@ import akka.testkit.TestKit
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
-import rep.protos.peer._
+import rep.proto.rc2._
 import rep.app.system.ClusterSystem
 import rep.app.system.ClusterSystem.InitType
 import org.json4s.{DefaultFormats, jackson}
@@ -40,10 +40,10 @@ import Json4sSupport._
 import com.google.protobuf.timestamp.Timestamp
 import rep.app.conf.SystemProfile
 import rep.crypto.Sha256
-import rep.protos.peer.Authorize.TransferType
-import rep.protos.peer.Certificate.CertType
-import rep.protos.peer.ChaincodeDeploy.ContractClassification
-import rep.protos.peer.Operate.OperateType
+import rep.proto.rc2.Authorize.TransferType
+import rep.proto.rc2.Certificate.CertType
+import rep.proto.rc2.ChaincodeDeploy.ContractClassification
+import rep.proto.rc2.Operate.OperateType
 import rep.sc.TransferSpec.ACTION
 import rep.utils.{IdTool, SerializeUtils}
 import scalapb.json4s.JsonFormat
@@ -90,44 +90,44 @@ class DeploySpec(_system: ActorSystem) extends TestKit(_system) with Matchers wi
     val sandbox = system.actorOf(TransactionDispatcher.props("transactiondispatcher"), "transactiondispatcher")
     //生成deploy交易
     val cid = new ChaincodeId("Assets", 1)
-    val t1 = PeerHelper.createTransaction4Deploy(superAdmin, cid, l1, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA, ContractClassification.CONTRACT_CUSTOM)
+    val t1 = PeerHelper.createTransaction4Deploy(superAdmin, cid, l1, "", 5000, ChaincodeDeploy.CodeType.CODE_SCALA, ContractClassification.CONTRACT_CUSTOM)
     val msg_send1 = DoTransaction(Seq[Transaction](t1), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send1)
     val msg_recv1 = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    msg_recv1(0).getResult.code should be(0)
+    msg_recv1(0).getErr.code should be(0)
 
     //同样合约id不允许重复部署
-    val t2 = PeerHelper.createTransaction4Deploy(superAdmin, cid, l1, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA, ContractClassification.CONTRACT_CUSTOM)
+    val t2 = PeerHelper.createTransaction4Deploy(superAdmin, cid, l1, "", 5000, ChaincodeDeploy.CodeType.CODE_SCALA, ContractClassification.CONTRACT_CUSTOM)
     val msg_send2 = DoTransaction(Seq[Transaction](t2), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send2)
     val msg_recv2 = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    msg_recv2(0).getResult.reason should be(SandboxDispatcher.ERR_REPEATED_CID)
+    msg_recv2(0).getErr.reason should be(SandboxDispatcher.ERR_REPEATED_CID)
 
     val cid3 = new ChaincodeId("Assets", 2)
     //同一合约部署者允许部署同样名称不同版本合约
-    val t3 = PeerHelper.createTransaction4Deploy(superAdmin, cid3, l1, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA, ContractClassification.CONTRACT_CUSTOM)
+    val t3 = PeerHelper.createTransaction4Deploy(superAdmin, cid3, l1, "", 5000, ChaincodeDeploy.CodeType.CODE_SCALA, ContractClassification.CONTRACT_CUSTOM)
     val msg_send3 = DoTransaction(Seq[Transaction](t3), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send3)
     val msg_recv3 = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    msg_recv3(0).getResult.code should be(0)
+    msg_recv3(0).getErr.code should be(0)
 
     // 不允不具有权限的用户许部署同样名称不同版本合约
     val cid4 = new ChaincodeId("Assets", 3)
-    val t4 = PeerHelper.createTransaction4Deploy(sysName, cid4, l1, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA, ContractClassification.CONTRACT_CUSTOM)
+    val t4 = PeerHelper.createTransaction4Deploy(sysName, cid4, l1, "", 5000, ChaincodeDeploy.CodeType.CODE_SCALA, ContractClassification.CONTRACT_CUSTOM)
     val msg_send4 = DoTransaction(Seq[Transaction](t4), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send4)
     val msg_recv4 = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    msg_recv4(0).getResult.reason should be(SandboxDispatcher.ERR_NO_OPERATE)
+    msg_recv4(0).getErr.reason should be(SandboxDispatcher.ERR_NO_OPERATE)
 
     // 部署账户管理合约
     val cid2 = ChaincodeId(SystemProfile.getAccountChaincodeName, 1)
     val s2 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/did/RdidOperateAuthorizeTPL.scala")
     val l2 = try s2.mkString finally s2.close()
-    val t5 = PeerHelper.createTransaction4Deploy(superAdmin, cid2, l2, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA, ContractClassification.CONTRACT_SYSTEM)
+    val t5 = PeerHelper.createTransaction4Deploy(superAdmin, cid2, l2, "", 5000, ChaincodeDeploy.CodeType.CODE_SCALA, ContractClassification.CONTRACT_SYSTEM)
     val msg_send5 = DoTransaction(Seq[Transaction](t5), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send5)
     val msg_recv5 = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    msg_recv5(0).getResult.code should be(0)
+    msg_recv5(0).getErr.code should be(0)
 
     // 注册账户
     val superCert = scala.io.Source.fromFile("jks/certs/951002007l78123233.super_admin.cer", "UTF-8")
@@ -136,14 +136,14 @@ class DeploySpec(_system: ActorSystem) extends TestKit(_system) with Matchers wi
     val superCertId = CertId("951002007l78123233", "super_admin")
     var millis = System.currentTimeMillis()
     //生成Did的身份证书
-    val superAuthCert = rep.protos.peer.Certificate(superCertPem, "SHA256withECDSA", true, Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, CertType.CERT_AUTHENTICATION, Option(superCertId), superCertHash, "1.0")
+    val superAuthCert = rep.proto.rc2.Certificate(superCertPem, "SHA256withECDSA", true, Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, CertType.CERT_AUTHENTICATION, Option(superCertId), superCertHash, "1.0")
     // 账户
     val superSigner = Signer("super_admin", "951002007l78123233", "13856789234", Seq.empty, Seq.empty, Seq.empty, Seq.empty, List(superAuthCert), "", Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, true, "1.0")
     val t6 = PeerHelper.createTransaction4Invoke(superAdmin, cid2, ACTION.SignUpSigner, Seq(JsonFormat.toJsonString(superSigner)))
     val msg_send6 = DoTransaction(Seq[Transaction](t6), "dbnumber", TypeOfSender.FromPreloader)
     probe.send(sandbox, msg_send6)
     val msg_recv6 = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    msg_recv6(0).getResult.reason.isEmpty should be(true)
+    msg_recv6(0).getErr.reason.isEmpty should be(true)
 
     // 注册账户
     val node1CertFile = scala.io.Source.fromFile("jks/certs/121000005l35120456.node1.cer", "UTF-8")
@@ -152,41 +152,41 @@ class DeploySpec(_system: ActorSystem) extends TestKit(_system) with Matchers wi
     val node1CertId = CertId("121000005l35120456", "node1")
     millis = System.currentTimeMillis()
     //生成Did的身份证书
-    val node1AuthCert = rep.protos.peer.Certificate(node1CertPem, "SHA256withECDSA", true, Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, CertType.CERT_AUTHENTICATION, Option(node1CertId), node1CertHash, "1.0")
+    val node1AuthCert = rep.proto.rc2.Certificate(node1CertPem, "SHA256withECDSA", true, Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, CertType.CERT_AUTHENTICATION, Option(node1CertId), node1CertHash, "1.0")
     // 账户
     val node1Signer = Signer("node1", "121000005l35120456", "13856789234", Seq.empty, Seq.empty, Seq.empty, Seq.empty, List(node1AuthCert), "", Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, true, "1.0")
     val t7 = PeerHelper.createTransaction4Invoke(superAdmin, cid2, ACTION.SignUpSigner, Seq(JsonFormat.toJsonString(node1Signer)))
     val msg_send7 = DoTransaction(Seq[Transaction](t7), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send7)
     val msg_recv7 = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    msg_recv7.head.getResult.reason.isEmpty should be(true)
+    msg_recv7.head.getErr.reason.isEmpty should be(true)
 
     val snls = List("transaction.stream", "transaction.postTranByString", "transaction.postTranStream", "transaction.postTran")
-    val setStateOpt = rep.protos.peer.Operate(Sha256.hashstr("Assets.deploy"), "修改合约状态", superAdmin.split("\\.")(0), isPublish = false, OperateType.OPERATE_CONTRACT,
+    val setStateOpt = rep.proto.rc2.Operate(Sha256.hashstr("Assets.deploy"), "修改合约状态", superAdmin.split("\\.")(0), isPublish = false, OperateType.OPERATE_CONTRACT,
       snls, "*", "ContractAssetsTPL.setState", Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, true, "1.0")
     val t8 = PeerHelper.createTransaction4Invoke(superAdmin, cid2, "signUpOperate", Seq(JsonFormat.toJsonString(setStateOpt)))
     probe.send(sandbox, DoTransaction(Seq[Transaction](t8), "dbnumber", TypeOfSender.FromPreloader))
     val msg_recv8 = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    msg_recv8.head.getResult.reason.isEmpty should be(true)
+    msg_recv8.head.getErr.reason.isEmpty should be(true)
 
     // superAdmin 为用户授权
     val granteds = new ArrayBuffer[String]
     granteds.+=(sysName.split("\\.")(0))
     millis = System.currentTimeMillis()
-    val at = rep.protos.peer.Authorize(IdTool.getRandomUUID, superAdmin.split("\\.")(0), granteds, Seq(Sha256.hashstr("Assets.deploy")),
+    val at = rep.proto.rc2.Authorize(IdTool.getRandomUUID, superAdmin.split("\\.")(0), granteds, Seq(Sha256.hashstr("Assets.deploy")),
       TransferType.TRANSFER_REPEATEDLY, Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, true, "1.0")
     val als: List[String] = List(JsonFormat.toJsonString(at))
     val t10 = PeerHelper.createTransaction4Invoke(superAdmin, cid2, "grantOperate", Seq(SerializeUtils.compactJson(als)))
     probe.send(sandbox, DoTransaction(Seq[Transaction](t10), "dbnumber", TypeOfSender.FromAPI))
     val msg_recv10 = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    msg_recv10.head.getResult.reason.isEmpty should be(true)
+    msg_recv10.head.getErr.reason.isEmpty should be(true)
 
     // 拥有权限即可升级对应的合约
-    val t11 = PeerHelper.createTransaction4Deploy(sysName, cid4, l1, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA, ContractClassification.CONTRACT_CUSTOM)
+    val t11 = PeerHelper.createTransaction4Deploy(sysName, cid4, l1, "", 5000, rep.proto.rc2.ChaincodeDeploy.CodeType.CODE_SCALA, ContractClassification.CONTRACT_CUSTOM)
     val msg_send11 = DoTransaction(Seq[Transaction](t11), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send11)
     val msg_recv11 = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    msg_recv11(0).getResult.code should be(0)
+    msg_recv11(0).getErr.code should be(0)
 
   }
 }

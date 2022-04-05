@@ -11,7 +11,7 @@ import rep.network.module.ModuleActorType
 import rep.network.persistence.IStorager.SourceOfBlock
 import rep.network.sync.SyncMsg.{BlockDataOfRequest, BlockDataOfResponse, ChainInfoOfRequest, MaxBlockInfo, ResponseInfo}
 import rep.network.util.NodeHelp
-import rep.protos.peer.Event
+import rep.proto.rc2.Event
 import rep.utils.GlobalUtils.{BlockEvent, EventType}
 import rep.network.consensus.common.MsgOfConsensus.BlockRestore
 

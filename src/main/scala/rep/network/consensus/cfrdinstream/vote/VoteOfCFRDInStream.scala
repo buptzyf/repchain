@@ -144,8 +144,8 @@ class VoteOfCFRDInStream (moduleName: String) extends IVoter(moduleName: String)
         RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},second voter,prevheight=${this.Blocker.VoteHeight},prevvoteindex=${this.voteIndex},lh=${pe.getCurrentHeight},currentHeight=${pe.getMaxHeight4SimpleRaft}" + "~" + selfAddr))
         val block = dataaccess.getBlock4ObjectByHeight(this.Blocker.VoteHeight +SystemProfile.getBlockNumberOfRaft)
         if(block != null){
-          val currentblockhash = block.hashOfBlock.toStringUtf8()
-          val currentheight = block.height
+          val currentblockhash = block.header.get.hashPresent.toStringUtf8()
+          val currentheight = block.header.get.height
           pe.resetTimeoutOfRaft
           this.blockTimeout = false
           this.cleanVoteInfo
@@ -167,8 +167,8 @@ class VoteOfCFRDInStream (moduleName: String) extends IVoter(moduleName: String)
     val hash = this.transformInfo.lastHashOfBlocker
     val block = dataaccess.getBlock4ObjectByHeight(h)
     if(block != null){
-      val currentblockhash = block.hashOfBlock.toStringUtf8()
-      val currentheight = block.height
+      val currentblockhash = block.header.get.hashPresent.toStringUtf8()
+      val currentheight = block.header.get.height
       this.voteIndex = this.transformInfo.voteIndexOfBlocker
       this.transformInfo = null
       pe.resetTimeoutOfRaft

@@ -16,15 +16,17 @@
 
 package rep.utils
 
+import com.google.protobuf.ByteString
+
 import java.io.{File, FileFilter, FileWriter, PrintWriter}
 import java.util
-
 import com.google.protobuf.timestamp.Timestamp
 import org.json4s.jackson.JsonMethods.{pretty, render}
 import org.json4s.{DefaultFormats, jackson}
 import rep.crypto.cert.SignTool
 import rep.network.autotransaction.PeerHelper
-import rep.protos.peer._
+import rep.proto.rc2._
+import scalapb.internal.compat.JavaConverters
 import scalapb.json4s.JsonFormat
 
 import scala.collection.mutable
@@ -54,7 +56,7 @@ object GenesisBuilderMulti {
     val s1 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/ContractCert.scala", "UTF-8")
     val l1 = try s1.mkString finally s1.close()
     val cid1 = new ChaincodeId("ContractCert", 1)
-    val dep_trans = PeerHelper.createTransaction4Deploy("951002007l78123233.super_admin", cid1, l1, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
+    val dep_trans = PeerHelper.createTransaction4Deploy("951002007l78123233.super_admin", cid1, l1, "", 5000, ChaincodeDeploy.CodeType.CODE_SCALA)
 
     transList.add(dep_trans)
 
@@ -74,7 +76,7 @@ object GenesisBuilderMulti {
     val s2 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/ContractAssetsTPL.scala", "UTF-8")
     val l2 = try s2.mkString finally s2.close()
     val cid2 = new ChaincodeId("ContractAssetsTPL", 1)
-    val dep_asserts_trans = PeerHelper.createTransaction4Deploy(sysName, cid2, l2, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
+    val dep_asserts_trans = PeerHelper.createTransaction4Deploy(sysName, cid2, l2, "", 5000, ChaincodeDeploy.CodeType.CODE_SCALA)
 
     transList.add(dep_asserts_trans)
 
@@ -94,11 +96,14 @@ object GenesisBuilderMulti {
     //    // 如果没有上述的业务合约，这里需要注释
     //    transList.add(dep_process_proof)
 
-    var blk = new Block(1, 1, transList.toArray(new Array[Transaction](transList.size())), Seq(), _root_.com.google.protobuf.ByteString.EMPTY,
-      _root_.com.google.protobuf.ByteString.EMPTY)
+    var blk = new Block(
+      Option(new BlockHeader(2,1,null,null,ByteString.EMPTY, ByteString.EMPTY,
+        null,null,0,null)),
+      JavaConverters.asScalaIteratorConverter(transList.iterator()).asScala.toSeq,
+      Seq(), Map.empty,Map.empty, null)
 
-    blk = blk.clearEndorsements
-    blk = blk.clearTransactionResults
+    blk = blk.withHeader(blk.header.get.clearEndorsements)
+    blk = blk.clearTransactionErrors
     val r = MessageToJson.toJson(blk)
     val rStr = pretty(render(r))
     println(rStr)

@@ -7,7 +7,7 @@ import rep.log.{RepLogger, RepTimeTracer}
 import rep.network.autotransaction.Topic
 import rep.network.module.cfrd.CFRDActorType
 import rep.network.util.NodeHelp
-import rep.protos.peer.{Block, Event}
+import rep.proto.rc2.{Block, Event}
 import rep.utils.GlobalUtils.EventType
 import rep.network.consensus.cfrd.MsgOfCFRD.{CreateBlock, VoteOfBlocker}
 import rep.network.consensus.common.block.IBlocker
@@ -97,15 +97,15 @@ class BlockerOfRAFT (moduleName: String) extends IBlocker(moduleName){
       RepTimeTracer.setEndTime(pe.getSysTag, "collectTransToBlock", System.currentTimeMillis(), newHeight, trans.size)
       //此处建立新块必须采用抽签模块的抽签结果来进行出块，否则出现刚抽完签，马上有新块的存储完成，就会出现错误
       var blc = BlockHelp.WaitingForExecutionOfBlock(pe.getCurrentBlockHash, newHeight, trans)
-      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,height=${blc.height},local height=${pe.getCurrentHeight}" + "~" + selfAddr))
-      RepTimeTracer.setStartTime(pe.getSysTag, "PreloadTrans", System.currentTimeMillis(), blc.height, blc.transactions.size)
+      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,height=${blc.header.get.height},local height=${pe.getCurrentHeight}" + "~" + selfAddr))
+      RepTimeTracer.setStartTime(pe.getSysTag, "PreloadTrans", System.currentTimeMillis(), blc.header.get.height, blc.transactions.size)
       blc = ExecuteTransactionOfBlock(blc)
       //blc = ExecuteTransactionOfBlockOfCache(blc)
       if (blc != null) {
-        RepTimeTracer.setEndTime(pe.getSysTag, "PreloadTrans", System.currentTimeMillis(), blc.height, blc.transactions.size)
-        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,prelaod success,height=${blc.height},local height=${pe.getBlocker.VoteHeight}" + "~" + selfAddr))
+        RepTimeTracer.setEndTime(pe.getSysTag, "PreloadTrans", System.currentTimeMillis(), blc.header.get.height, blc.transactions.size)
+        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,prelaod success,height=${blc.header.get.height},local height=${pe.getBlocker.VoteHeight}" + "~" + selfAddr))
         blc = BlockHelp.AddBlockHash(blc)
-        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,AddBlockHash success,height=${blc.height},local height=${pe.getBlocker.VoteHeight}" + "~" + selfAddr))
+        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,AddBlockHash success,height=${blc.header.get.height},local height=${pe.getBlocker.VoteHeight}" + "~" + selfAddr))
         BlockHelp.AddSignToBlock(blc, pe.getSysTag)
       } else {
         RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("create new block error,preload error" + "~" + selfAddr))
@@ -121,12 +121,12 @@ class BlockerOfRAFT (moduleName: String) extends IBlocker(moduleName){
     var blc : Block = null
 
     blc = PackedBlock(0)
-    if (blc != null && !blc.hashOfBlock.isEmpty && blc.transactions.length > 0 ) {
-      RepTimeTracer.setEndTime(pe.getSysTag, "createBlock", System.currentTimeMillis(), blc.height, blc.transactions.size)
+    if (blc != null && !blc.header.get.hashPresent.isEmpty && blc.transactions.length > 0 ) {
+      RepTimeTracer.setEndTime(pe.getSysTag, "createBlock", System.currentTimeMillis(), blc.header.get.height, blc.transactions.size)
       this.preblock = blc
       schedulerLink = clearSched()
-      pe.setCreateHeight(preblock.height)
-      pe.getTransPoolMgr.cleanPreloadCache("identifier-"+blc.height)
+      pe.setCreateHeight(preblock.header.get.height)
+      pe.getTransPoolMgr.cleanPreloadCache("identifier-"+blc.header.get.height)
       if(!pe.getZeroOfTransNumFlag)
         mediator ! Publish(Topic.Block, ConfirmedBlock(preblock, self))
     } else {
@@ -143,7 +143,7 @@ class BlockerOfRAFT (moduleName: String) extends IBlocker(moduleName){
       if (!pe.isSynching) {
         if (NodeHelp.isBlocker(pe.getBlocker.blocker, pe.getSysTag) && !pe.getZeroOfTransNumFlag){
           sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Block, Event.Action.CANDIDATOR)
-          if (preblock == null || (preblock.previousBlockHash.toStringUtf8() != pe.getCurrentBlockHash)) {
+          if (preblock == null || (preblock.header.get.hashPrevious.toStringUtf8() != pe.getCurrentBlockHash)) {
             //是出块节点
             if((pe.getMaxHeight4SimpleRaft - pe.getBlocker.VoteHeight ) <= SystemProfile.getBlockNumberOfRaft && !pe.getZeroOfTransNumFlag) {
               CreateBlockHandler

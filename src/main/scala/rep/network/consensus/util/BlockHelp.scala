@@ -21,13 +21,13 @@ import com.google.protobuf.timestamp.Timestamp
 import scalapb.json4s.JsonFormat
 import rep.app.conf.SystemProfile
 import rep.crypto.{BytesHex, Sha256}
-import rep.protos.peer.{Block, CertId, ChaincodeId, Event, Signature, Transaction}
+import rep.proto.rc2.{Block, BlockHeader, CertId, ChaincodeId, Event, Signature, Transaction}
 import rep.utils.TimeUtils
 import rep.storage.IdxPrefix
 import rep.sc.Shim._
 import rep.storage._
-import java.security.cert.Certificate
 
+import java.security.cert.Certificate
 import akka.cluster.pubsub.DistributedPubSubMediator.Publish
 import rep.utils.SerializeUtils
 
@@ -44,6 +44,7 @@ object BlockHelp {
 
   private val  versionOfBlock = 1
 /****************************背书相关的操作开始**********************************************************/
+  //TODO 此处应改为对Block Header签名
   def SignDataOfBlock(NonEndorseDataOfBlock: Array[Byte], alise: String): Signature = {
     try {
       val millis = TimeUtils.getCurrentTime()
@@ -59,7 +60,7 @@ object BlockHelp {
 
   def SignBlock(block: Block, alise: String): Signature = {
     try {
-      val tmpblock = block.clearEndorsements
+      val tmpblock = block.withHeader(block.header.get.clearEndorsements)
       SignDataOfBlock(tmpblock.toByteArray, alise)
     } catch {
       case e: RuntimeException => throw e
@@ -77,10 +78,10 @@ object BlockHelp {
 
   def AddEndorsementToBlock(block: Block, signdata: Signature): Block = {
     try {
-      if (block.endorsements.isEmpty) {
-        block.withEndorsements(Seq(signdata))
+      if (block.header.get.endorsements.isEmpty) {
+        block.withHeader(block.header.get.withEndorsements(Seq(signdata)))
       } else {
-        block.withEndorsements(block.endorsements.+:(signdata))
+        block.withHeader(block.header.get.withEndorsements(block.header.get.endorsements.+:(signdata)))
       }
     } catch {
       case e: RuntimeException => throw e
@@ -93,16 +94,16 @@ object BlockHelp {
   //该方法在预执行结束之后才能调用
   def AddBlockHash(block: Block): Block = {
     try {
-      block.withHashOfBlock(ByteString.copyFromUtf8(GetBlockHash(block)))
+      block.withHeader(block.header.get.withHashPresent(ByteString.copyFromUtf8(GetBlockHash(block))))
     } catch {
       case e: RuntimeException => throw e
     }
   }
-
+//TODO
   def GetBlockHash(block: Block): String = {
     try {
-      val blkOutEndorse = block.clearEndorsements
-      val blkOutBlockHash = blkOutEndorse.withHashOfBlock(ByteString.EMPTY)
+      val blkOutEndorse = block.withHeader(block.header.get.clearEndorsements)
+      val blkOutBlockHash = blkOutEndorse.withHeader(blkOutEndorse.header.get.withHashPresent(ByteString.EMPTY))
       Sha256.hashstr(blkOutBlockHash.toByteArray)
     } catch {
       case e: RuntimeException => throw e
@@ -114,14 +115,9 @@ object BlockHelp {
     try {
       val millis = TimeUtils.getCurrentTime()
       new Block(
-        versionOfBlock,
-        h,
-        trans,
-        null,
-        _root_.com.google.protobuf.ByteString.EMPTY,
-        ByteString.copyFromUtf8(preBlockHash),
-        Seq(),
-        _root_.com.google.protobuf.ByteString.EMPTY)
+        Option(new BlockHeader(versionOfBlock,h,null,null,ByteString.EMPTY, ByteString.copyFromUtf8(preBlockHash),
+          null,null,0,null)),
+        trans, Seq(), Map.empty,Map.empty, null)
     } catch {
       case e: RuntimeException => throw e
     }

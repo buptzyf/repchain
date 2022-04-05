@@ -9,7 +9,7 @@ import rep.network.base.ModuleBase
 import rep.network.consensus.cfrd.MsgOfCFRD.{CollectEndorsement, EndorsementFinishMsgInStream}
 import rep.network.module.cfrd.CFRDActorType
 import rep.network.util.NodeHelp
-import rep.protos.peer.Block
+import rep.proto.rc2.Block
 import akka.pattern.{AskTimeoutException, ask}
 import rep.network.autotransaction.Topic
 import rep.network.consensus.common.MsgOfConsensus.ConfirmedBlock
@@ -34,15 +34,15 @@ class CollectionerOfBlocker(moduleName: String) extends ModuleBase(moduleName) {
 
   private def ExecuteOfEndorsementInStream(data: CollectEndorsement): EndorsementFinishMsgInStream = {
     try {
-      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"--------ExecuteOfEndorsementInStream waiting resultheight=${data.blc.height},local height=${pe.getCurrentHeight}"))
+      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"--------ExecuteOfEndorsementInStream waiting resultheight=${data.blc.header.get.height},local height=${pe.getCurrentHeight}"))
       val future1 = pe.getActorRef(CFRDActorType.ActorType.endorsementcollectioner) ? data
       Await.result(future1, timeout.duration).asInstanceOf[EndorsementFinishMsgInStream]
     } catch {
       case e: AskTimeoutException =>
-        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"--------ExecuteOfEndorsement timeout,height=${data.blc.height},local height=${pe.getCurrentHeight}"))
+        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"--------ExecuteOfEndorsement timeout,height=${data.blc.header.get.height},local height=${pe.getCurrentHeight}"))
         null
       case te: TimeoutException =>
-        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"--------ExecuteOfEndorsement java timeout,height=${data.blc.height},local height=${pe.getCurrentHeight}"))
+        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"--------ExecuteOfEndorsement java timeout,height=${data.blc.header.get.height},local height=${pe.getCurrentHeight}"))
         null
     }
   }
@@ -64,9 +64,9 @@ class CollectionerOfBlocker(moduleName: String) extends ModuleBase(moduleName) {
         if (this.lastBlock == null) {
           r = true
         } else {
-          if (this.lastBlock.height <= (this.voteinfo.VoteHeight + SystemProfile.getBlockNumberOfRaft) && !pe.getZeroOfTransNumFlag) {
-            if(block.previousBlockHash.toStringUtf8 == this.lastBlock.hashOfBlock.toStringUtf8){
-              RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"--------accept endorse,bheight=${block.height}"))
+          if (this.lastBlock.header.get.height <= (this.voteinfo.VoteHeight + SystemProfile.getBlockNumberOfRaft) && !pe.getZeroOfTransNumFlag) {
+            if(block.header.get.hashPrevious.toStringUtf8 == this.lastBlock.header.get.hashPresent.toStringUtf8){
+              RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"--------accept endorse,bheight=${block.header.get.height}"))
               r = true
             }
           }
@@ -80,26 +80,26 @@ class CollectionerOfBlocker(moduleName: String) extends ModuleBase(moduleName) {
     //case CollectEndorsement(block, blocker,index) =>
     case CollectEndorsement(block, blocker) =>
       //待请求背书的块的上一个块的hash不等于系统最新的上一个块的hash，停止发送背书
-      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"--------recv endorse new block,bheight=${block.height}"))
+      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"--------recv endorse new block,bheight=${block.header.get.height}"))
       if (NodeHelp.isBlocker(pe.getSysTag, pe.getBlocker.blocker)) {
         if (isAcceptEndorseRequest(pe.getBlocker, block)) {
           //pe.setConfirmHeight(block.height)
           this.lastBlock = block
-          RepTimeTracer.setStartTime(pe.getSysTag, "Endorsement", System.currentTimeMillis(), block.height, block.transactions.size)
+          RepTimeTracer.setStartTime(pe.getSysTag, "Endorsement", System.currentTimeMillis(), block.header.get.height, block.transactions.size)
           //val re = ExecuteOfEndorsementInStream(CollectEndorsement(block, blocker,index))
           val re = ExecuteOfEndorsementInStream(CollectEndorsement(block, blocker))
           if (re!= null && re.result) {
-            pe.setConfirmHeight(block.height)
+            pe.setConfirmHeight(block.header.get.height)
             this.lastBlock = re.block
             mediator ! Publish(Topic.Block, new ConfirmedBlock(re.block, sender))
-            pe.getTransPoolMgr.cleanPreloadCache("blockidentifier_"+this.lastBlock.height)
+            pe.getTransPoolMgr.cleanPreloadCache("blockidentifier_"+this.lastBlock.header.get.height)
           }else{
-            pe.getTransPoolMgr.rollbackTransaction("blockidentifier_"+this.lastBlock.height)
+            pe.getTransPoolMgr.rollbackTransaction("blockidentifier_"+this.lastBlock.header.get.height)
           }
-          RepTimeTracer.setEndTime(pe.getSysTag, "Endorsement", System.currentTimeMillis(), block.height, block.transactions.size)
+          RepTimeTracer.setEndTime(pe.getSysTag, "Endorsement", System.currentTimeMillis(), block.header.get.height, block.transactions.size)
         }
       }else{
-        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"--------recv endorse new block,local not blocker,bheight=${block.height}"))
+        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"--------recv endorse new block,local not blocker,bheight=${block.header.get.height}"))
       }
     case _ => //ignore
   }

@@ -19,9 +19,9 @@ package rep.sc
 
 import akka.actor.ActorSystem
 import rep.network.tools.PeerExtension
-import rep.protos.peer.{OperLog}
-import rep.storage.{  TransactionOfDataPreload}
-import rep.utils.{IdTool}
+import rep.protos.peer.OperLog
+import rep.storage.TransactionOfDataPreload
+import rep.utils.IdTool
 import rep.utils.SerializeUtils.deserialise
 import rep.utils.SerializeUtils.serialise
 import rep.crypto.cert.SignTool
@@ -29,6 +29,7 @@ import _root_.com.google.protobuf.ByteString
 import rep.log.RepLogger
 import org.slf4j.Logger
 import rep.app.conf.SystemProfile
+import rep.proto.rc2.TransactionResult
 
 /** Shim伴生对象
  *  @author c4w
@@ -69,8 +70,11 @@ class Shim(system: ActorSystem, cName: String) {
   var srOfTransaction : TransactionOfDataPreload = null
 
   //记录状态修改日志
-  var ol = scala.collection.mutable.ListBuffer.empty[OperLog]
-    
+  //var ol = scala.collection.mutable.ListBuffer.empty[OperLog]
+
+  //记录读写集合
+  var tr = TransactionResult.defaultInstance
+
   def setVal(key: Key, value: Any):Unit ={
     setState(key, serialise(value))
   }
@@ -79,16 +83,16 @@ class Shim(system: ActorSystem, cName: String) {
   }
  
   def setState(key: Key, value: Array[Byte]): Unit = {
-    val pkey = pre_key + key
-    val oldValue = get(pkey)
+    val pKey = pre_key + key
+    val oldValue = get(pKey)
     //sr.Put(pkey, value)
-    this.srOfTransaction.Put(pkey,value)
+    this.srOfTransaction.Put(pKey,value)
     val ov = if(oldValue == null) ByteString.EMPTY else ByteString.copyFrom(oldValue)
     val nv = if(value == null) ByteString.EMPTY else ByteString.copyFrom(value)
     //记录操作日志
     //getLogger.trace(s"nodename=${sr.getSystemName},dbname=${sr.getInstanceName},txid=${txid},key=${key},old=${deserialise(oldValue)},new=${deserialise(value)}")
-    //ol += new OperLog(key,ov, nv)
-    ol += new OperLog(pkey,ov, nv)
+    //最后写入，加到写入集合
+    tr.addStatesSet((pKey,nv))
   }
 
   private def get(key: Key): Array[Byte] = {
@@ -97,7 +101,12 @@ class Shim(system: ActorSystem, cName: String) {
   }
 
   def getState(key: Key): Array[Byte] = {
-    get(pre_key + key)
+    val pKey = pre_key + key
+    val pVal = get(pKey)
+    //第一次读取,加到读取集合
+    if(!tr.statesGet.contains(pKey))
+      tr.addStatesSet((pKey, ByteString.copyFrom(pVal)))
+    pVal
   }
 
   def getStateEx(cName:String, key: Key): Array[Byte] = {

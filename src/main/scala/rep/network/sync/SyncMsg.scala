@@ -16,7 +16,7 @@
 
 package rep.network.sync
 
-import rep.protos.peer._
+import rep.proto.rc2._
 import akka.actor.{ ActorRef, Props }
 
 /**

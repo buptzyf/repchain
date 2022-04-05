@@ -16,13 +16,13 @@
 
 package rep.utils
 
-import rep.protos.peer.ChaincodeId
-import rep.protos.peer.CertId
+import rep.proto.rc2.ChaincodeId
+import rep.proto.rc2.CertId
 import java.util.UUID
 
 import rep.app.conf.SystemProfile
 //import com.gilt.timeuuid.TimeUuid
-import rep.protos.peer.Transaction
+import rep.proto.rc2.Transaction
 
 
 object IdTool {

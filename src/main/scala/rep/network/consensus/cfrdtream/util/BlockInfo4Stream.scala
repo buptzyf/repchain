@@ -6,7 +6,7 @@ import rep.app.conf.{ TimePolicy}
 import rep.network.consensus.byzantium.ConsensusCondition
 import rep.network.consensus.util.{BlockHelp, BlockVerify}
 import scala.collection.JavaConverters._
-import rep.protos.peer.{Block, Signature, Transaction}
+import rep.proto.rc2.{Block, Signature, Transaction}
 import rep.utils.GlobalUtils.BlockerInfo
 import scala.collection.mutable.ArrayBuffer
 
@@ -36,15 +36,15 @@ class BlockInfo4Stream(SystemName:String) {
 
   def checkEndorsement: Boolean = {
     var r = false
-    if (this.block != null && !this.block.hashOfBlock.isEmpty && !this.isFinishVerify.get()) {
+    if (this.block != null && !this.block.header.get.hashPresent.isEmpty && !this.isFinishVerify.get()) {
       val vsize = this.verifyEndorseResult
       if(ConsensusCondition.ConsensusConditionChecked(vsize + 1)){
         this.recvedEndorseInfo.foreach(f => {
           this.block = BlockHelp.AddEndorsementToBlock(this.block, f._2.sign)
         })
-        var consensus = this.block.endorsements.toArray[Signature]
+        var consensus = this.block.header.get.endorsements.toArray[Signature]
         consensus = BlockVerify.sort(consensus)
-        this.block = this.block.withEndorsements(consensus)
+        this.block = this.block.withHeader(this.block.header.get.withEndorsements(consensus))
         this.isFinishVerify.set(true)
         r = true
       }
@@ -56,7 +56,7 @@ class BlockInfo4Stream(SystemName:String) {
   private def verifyEndorseResult: Int = {
     var r = 0
     var err = new ArrayBuffer[String]()
-    val bb = block.clearEndorsements.toByteArray
+    val bb = block.withHeader(block.header.get.clearEndorsements).toByteArray
 
     this.recvedEndorseInfo.foreach(f => {
       if (!f._2.isVerify) {
@@ -104,9 +104,9 @@ class BlockInfo4Stream(SystemName:String) {
   }
 
   def addEndorse4Self(blc: Block) = {
-    if (this.block != null && this.block.height == blc.height
-      && this.block.previousBlockHash.toStringUtf8 == blc.previousBlockHash.toStringUtf8
-      && !this.block.hashOfBlock.isEmpty) {
+    if (this.block != null && this.block.header.get.height == blc.header.get.height
+      && this.block.header.get.hashPrevious.toStringUtf8 == blc.header.get.hashPrevious.toStringUtf8
+      && !this.block.header.get.hashPresent.isEmpty) {
       this.block = blc
     }
   }

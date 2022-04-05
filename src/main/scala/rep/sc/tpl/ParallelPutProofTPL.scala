@@ -18,7 +18,7 @@ package rep.sc.tpl
 
 import org.json4s.DefaultFormats
 import org.json4s.jackson.JsonMethods.parse
-import rep.protos.peer.ActionResult
+import rep.proto.rc2.ActionResult
 import rep.sc.scalax.{ContractContext, IContract}
 
 final case class ProofDataSingle(key: String, value: String)

@@ -30,7 +30,7 @@ class BlockCache {
   private implicit var caches  = new ConcurrentHashMap[Long, BlockRestore] asScala
   
   def addToCache(block:BlockRestore)={
-    this.caches += block.blk.height -> block
+    this.caches += block.blk.header.get.height -> block
   }
   
   def removeFromCache(height:Long)={

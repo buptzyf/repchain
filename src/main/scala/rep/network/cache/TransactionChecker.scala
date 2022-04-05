@@ -7,7 +7,7 @@ import rep.log.RepLogger
 import rep.network.autotransaction.Topic
 import rep.network.base.ModuleBase
 import rep.network.module.cfrd.CFRDActorType
-import rep.protos.peer.{Event, Transaction}
+import rep.proto.rc2.{Event, Transaction}
 import rep.storage.ImpDataAccess
 import rep.utils.GlobalUtils.EventType
 import rep.network.consensus.cfrd.MsgOfCFRD.VoteOfBlocker

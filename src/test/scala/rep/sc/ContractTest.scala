@@ -9,7 +9,7 @@ import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, Matchers}
 import rep.app.system.ClusterSystem
 import rep.app.system.ClusterSystem.InitType
 import rep.network.module.cfrd.ModuleManagerOfCFRD
-import rep.protos.peer._
+import rep.proto.rc2._
 import rep.sc.TransferSpec.SetMap
 import rep.storage.ImpDataAccess
 import rep.utils.SerializeUtils.toJson
@@ -63,7 +63,7 @@ class ContractTest(_system: ActorSystem) extends TestKit(_system) with Matchers 
     val cid1 = ChaincodeId("ContractAssetsTPL", version)
     //生成deploy交易
     val t1 = PeerHelper.createTransaction4Deploy(sysName, cid1,
-      l1, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
+      l1, "", 5000, ChaincodeDeploy.CodeType.CODE_SCALA)
     t1
   }
 
@@ -79,7 +79,7 @@ class ContractTest(_system: ActorSystem) extends TestKit(_system) with Matchers 
     val l2 = try s2.mkString finally s2.close()
     val cid2 = ChaincodeId(SystemProfile.getAccountChaincodeName, version)
     val t2 = PeerHelper.createTransaction4Deploy(sysName, cid2,
-      l2, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
+      l2, "", 5000, ChaincodeDeploy.CodeType.CODE_SCALA)
     t2
   }
 
@@ -94,8 +94,9 @@ class ContractTest(_system: ActorSystem) extends TestKit(_system) with Matchers 
     val s3 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/ParallelPutProofTPL.scala")
     val l3 = try s3.mkString finally s3.close()
     val cid3 = ChaincodeId("ParallelPutProofTPL", version)
+    //TODO 该方法需要进行增强，将合约语言类型与串行/并行控制 区分处理
     val t3 = PeerHelper.createTransaction4Deploy(sysName, cid3,
-      l3, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA_PARALLEL)
+      l3, "", 5000, ChaincodeDeploy.CodeType.CODE_SCALA)
     t3
   }
 
@@ -110,11 +111,11 @@ class ContractTest(_system: ActorSystem) extends TestKit(_system) with Matchers 
     val msg_send1 = DoTransaction(Seq[Transaction](t), snapshotName, sendertype)
     probe.send(sandbox, msg_send1)
     val msg_recv1 = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    if (msg_recv1(0).getResult.reason.isEmpty) {
+    if (msg_recv1(0).getErr.reason.isEmpty) {
       println(s"serial:${serial},expect result:${eresult},exeresult:true")
-      msg_recv1(0).getResult.reason.isEmpty should be(true)
+      msg_recv1(0).getErr.reason.isEmpty should be(true)
     } else {
-      println(msg_recv1(0).getResult.reason)
+      println(msg_recv1(0).getErr.reason)
       println(s"serial:${serial},expect result:${eresult},exeresult:false")
     }
   }
@@ -265,11 +266,11 @@ class ContractTest(_system: ActorSystem) extends TestKit(_system) with Matchers 
 
     for (i <- 0 to 9) {
       val msg_recv1 = probes(i).expectMsgType[Seq[TransactionResult]](1000.seconds)
-      if (msg_recv1.head.getResult.reason.isEmpty) {
+      if (msg_recv1.head.getErr.reason.isEmpty) {
         println(s"serial:${15 + i},expect result:${true},exeresult:true")
-        msg_recv1.head.getResult.reason.isEmpty should be(true)
+        msg_recv1.head.getErr.reason.isEmpty should be(true)
       } else {
-        println(msg_recv1.head.getResult.reason)
+        println(msg_recv1.head.getErr.reason)
         println(s"serial:${15 + i},expect result:${true},exeresult:false")
       }
     }

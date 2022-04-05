@@ -17,7 +17,7 @@
 package rep.network.tools
 
 import akka.actor.{ActorRef, ActorSystem, Address, ExtendedActorSystem, Extension, ExtensionId, ExtensionIdProvider}
-import rep.protos.peer.{Block, BlockchainInfo, Transaction}
+import rep.proto.rc2.{Block, BlockchainInfo, Transaction}
 import java.util.concurrent.atomic._
 
 import rep.utils.GlobalUtils.{BlockerInfo, NodeStatus}

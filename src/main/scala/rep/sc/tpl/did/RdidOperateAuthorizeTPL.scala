@@ -2,7 +2,7 @@ package rep.sc.tpl.did
 
 import org.json4s.DefaultFormats
 import org.json4s.jackson.JsonMethods.parse
-import rep.protos.peer._
+import rep.proto.rc2._
 import rep.sc.scalax.{ContractContext, ContractException, IContract}
 import rep.sc.tpl.did.operation.AuthOperation.AuthorizeStatus
 import rep.sc.tpl.did.operation.CertOperation.CertStatus

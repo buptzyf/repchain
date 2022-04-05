@@ -18,7 +18,7 @@ package rep.network.tools.transpool
 
 import java.util.concurrent.ConcurrentLinkedQueue
 
-import rep.protos.peer.Transaction
+import rep.proto.rc2.Transaction
 import java.util.concurrent.locks._
 
 import rep.app.conf.SystemProfile

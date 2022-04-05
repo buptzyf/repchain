@@ -29,11 +29,11 @@ import rep.crypto.Sha256
 import rep.crypto.cert.SignTool
 import rep.network.autotransaction.PeerHelper
 import rep.network.tools.PeerExtension
-import rep.protos.peer.Authorize.TransferType
-import rep.protos.peer.Certificate.CertType
-import rep.protos.peer.ChaincodeDeploy.ContractClassification
-import rep.protos.peer.Operate.OperateType
-import rep.protos.peer._
+import rep.proto.rc2.Authorize.TransferType
+import rep.proto.rc2.Certificate.CertType
+import rep.proto.rc2.ChaincodeDeploy.ContractClassification
+import rep.proto.rc2.Operate.OperateType
+import rep.proto.rc2._
 import rep.sc.SandboxDispatcher.DoTransaction
 import rep.sc.TransferSpec.{ACTION, SetMap}
 import rep.sc.tpl.Transfer
@@ -103,17 +103,17 @@ class StateSpec(_system: ActorSystem) extends TestKit(_system) with Matchers wit
     val sandbox = system.actorOf(TransactionDispatcher.props("transactiondispatcher"), "transactiondispatcher")
 
     //生成deploy交易
-    val t1 = PeerHelper.createTransaction4Deploy(superAdmin, cid1, l1, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA, ContractClassification.CONTRACT_CUSTOM)
+    val t1 = PeerHelper.createTransaction4Deploy(superAdmin, cid1, l1, "", 5000, ChaincodeDeploy.CodeType.CODE_SCALA, ContractClassification.CONTRACT_CUSTOM)
     val msg_send1 = DoTransaction(Seq[Transaction](t1), "test-db", TypeOfSender.FromPreloader)
     probe.send(sandbox, msg_send1)
     val msg_recv1 = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    msg_recv1(0).getResult.code should be(0)
+    msg_recv1(0).getErr.code should be(0)
 
-    val t2 = PeerHelper.createTransaction4Deploy(superAdmin, cid2, l2, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA, ContractClassification.CONTRACT_SYSTEM)
+    val t2 = PeerHelper.createTransaction4Deploy(superAdmin, cid2, l2, "", 5000, ChaincodeDeploy.CodeType.CODE_SCALA, ContractClassification.CONTRACT_SYSTEM)
     val msg_send2 = DoTransaction(Seq[Transaction](t2), "test-db", TypeOfSender.FromPreloader)
     probe.send(sandbox, msg_send2)
     val msg_recv2 = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    msg_recv2(0).getResult.code should be(0)
+    msg_recv2(0).getErr.code should be(0)
 
     // 注册账户
     val superCert = scala.io.Source.fromFile("jks/certs/951002007l78123233.super_admin.cer", "UTF-8")
@@ -122,14 +122,14 @@ class StateSpec(_system: ActorSystem) extends TestKit(_system) with Matchers wit
     val superCertId = CertId("951002007l78123233", "super_admin")
     var millis = System.currentTimeMillis()
     //生成Did的身份证书
-    val superAuthCert = rep.protos.peer.Certificate(superCertPem, "SHA256withECDSA", true, Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, CertType.CERT_AUTHENTICATION, Option(superCertId), superCertHash, "1.0")
+    val superAuthCert = rep.proto.rc2.Certificate(superCertPem, "SHA256withECDSA", true, Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, CertType.CERT_AUTHENTICATION, Option(superCertId), superCertHash, "1.0")
     // 账户
     val superSigner = Signer("super_admin", "951002007l78123233", "13856789234", Seq.empty, Seq.empty, Seq.empty, Seq.empty, List(superAuthCert), "", Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, true, "1.0")
     val t3 = PeerHelper.createTransaction4Invoke(superAdmin, cid2, ACTION.SignUpSigner, Seq(JsonFormat.toJsonString(superSigner)))
     val msg_send3 = DoTransaction(Seq[Transaction](t3), "test-db", TypeOfSender.FromPreloader)
     probe.send(sandbox, msg_send3)
     val msg_recv3 = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    msg_recv3(0).getResult.reason.isEmpty should be(true)
+    msg_recv3(0).getErr.reason.isEmpty should be(true)
 
     // 注册账户
     val node1CertFile = scala.io.Source.fromFile("jks/certs/121000005l35120456.node1.cer", "UTF-8")
@@ -138,14 +138,14 @@ class StateSpec(_system: ActorSystem) extends TestKit(_system) with Matchers wit
     val node1CertId = CertId("121000005l35120456", "node1")
     millis = System.currentTimeMillis()
     //生成Did的身份证书
-    val node1AuthCert = rep.protos.peer.Certificate(node1CertPem, "SHA256withECDSA", true, Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, CertType.CERT_AUTHENTICATION, Option(node1CertId), node1CertHash, "1.0")
+    val node1AuthCert = rep.proto.rc2.Certificate(node1CertPem, "SHA256withECDSA", true, Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, CertType.CERT_AUTHENTICATION, Option(node1CertId), node1CertHash, "1.0")
     // 账户
     val node1Signer = Signer("node1", "121000005l35120456", "13856789234", Seq.empty, Seq.empty, Seq.empty, Seq.empty, List(node1AuthCert), "", Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, true, "1.0")
     val t9 = PeerHelper.createTransaction4Invoke(superAdmin, cid2, ACTION.SignUpSigner, Seq(JsonFormat.toJsonString(node1Signer)))
     val msg_send9 = DoTransaction(Seq[Transaction](t9), "test-db", TypeOfSender.FromPreloader)
     probe.send(sandbox, msg_send9)
     val msg_recv9 = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    msg_recv9.head.getResult.reason.isEmpty should be(true)
+    msg_recv9.head.getErr.reason.isEmpty should be(true)
 
     // 注册账户
     val node2CertFile = scala.io.Source.fromFile("jks/certs/12110107bi45jh675g.node2.cer", "UTF-8")
@@ -154,14 +154,14 @@ class StateSpec(_system: ActorSystem) extends TestKit(_system) with Matchers wit
     val node2CertId = CertId("12110107bi45jh675g", "node2")
     millis = System.currentTimeMillis()
     //生成Did的身份证书
-    val node2AuthCert = rep.protos.peer.Certificate(node2CertPem, "SHA256withECDSA", true, Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, CertType.CERT_AUTHENTICATION, Option(node2CertId), node2CertHash, "1.0")
+    val node2AuthCert = rep.proto.rc2.Certificate(node2CertPem, "SHA256withECDSA", true, Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, CertType.CERT_AUTHENTICATION, Option(node2CertId), node2CertHash, "1.0")
     // 账户
     val node2Signer = Signer("node2", "12110107bi45jh675g", "13856789234", Seq.empty, Seq.empty, Seq.empty, Seq.empty, List(node2AuthCert), "", Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, true, "1.0")
     val t4 = PeerHelper.createTransaction4Invoke(superAdmin, cid2, ACTION.SignUpSigner, Seq(JsonFormat.toJsonString(node2Signer)))
     val msg_send4 = DoTransaction(Seq[Transaction](t4), "test-db", TypeOfSender.FromPreloader)
     probe.send(sandbox, msg_send4)
     val msg_recv4 = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    msg_recv4.head.getResult.reason.isEmpty should be(true)
+    msg_recv4.head.getErr.reason.isEmpty should be(true)
 
     //生成invoke交易，调用cd1的set方法，给账户预置金额；122000002n00123567这个账户不存证不可以设置金额？？？？？？？？？
     val sm: SetMap = Map("121000005l35120456" -> 50, "12110107bi45jh675g" -> 50, "122000002n00123567" -> 50)
@@ -170,17 +170,17 @@ class StateSpec(_system: ActorSystem) extends TestKit(_system) with Matchers wit
     val msg_send5 = DoTransaction(Seq[Transaction](t5), "test-db", TypeOfSender.FromPreloader)
     probe.send(sandbox, msg_send5)
     val msg_recv5 = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    msg_recv5(0).getResult.reason.isEmpty should be(true)
+    msg_recv5(0).getErr.reason.isEmpty should be(true)
 
     // superAdmin 为自己注册操作（superAdmin不注册操作也能通过授权 ），目的是为了给其他用户授权
     val snls = List("transaction.stream", "transaction.postTranByString", "transaction.postTranStream", "transaction.postTran")
     // 公开操作，无需授权
-    val transferOpt = rep.protos.peer.Operate(Sha256.hashstr("ContractAssetsTPL.transfer"), "转账交易", superAdmin.split("\\.")(0), true, OperateType.OPERATE_CONTRACT,
+    val transferOpt = rep.proto.rc2.Operate(Sha256.hashstr("ContractAssetsTPL.transfer"), "转账交易", superAdmin.split("\\.")(0), true, OperateType.OPERATE_CONTRACT,
       snls, "*", "ContractAssetsTPL.transfer", Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, true, "1.0")
     val t7 = PeerHelper.createTransaction4Invoke(superAdmin, cid2, "signUpOperate", Seq(JsonFormat.toJsonString(transferOpt)))
     probe.send(sandbox, DoTransaction(Seq[Transaction](t7), "test-db", TypeOfSender.FromPreloader))
     val msg_recv7 = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    msg_recv7.head.getResult.reason.isEmpty should be(true)
+    msg_recv7.head.getErr.reason.isEmpty should be(true)
 
     //正常调用
     val tcs = Array(
@@ -194,10 +194,10 @@ class StateSpec(_system: ActorSystem) extends TestKit(_system) with Matchers wit
       val msg_send6 = DoTransaction(Seq[Transaction](t6), "test-db", TypeOfSender.FromPreloader)
       probe.send(sandbox, msg_send6)
       val msg_recv6 = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-      if (msg_recv6(0).getResult.reason.isEmpty && i == 0)
-        msg_recv6(0).getResult.reason.isEmpty should be(true)
+      if (msg_recv6(0).getErr.reason.isEmpty && i == 0)
+        msg_recv6(0).getErr.reason.isEmpty should be(true)
       else
-        msg_recv6(0).getResult.reason should be(rcs(i))
+        msg_recv6(0).getErr.reason should be(rcs(i))
     }
 
      //不具有操作者，不能禁用合约
@@ -205,34 +205,34 @@ class StateSpec(_system: ActorSystem) extends TestKit(_system) with Matchers wit
     var msg_send = DoTransaction(Seq[Transaction](t), "test-db", TypeOfSender.FromPreloader)
     probe.send(sandbox, msg_send)
     var msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    msg_recv(0).getResult.reason should equal(SandboxDispatcher.ERR_NO_OPERATE)
+    msg_recv(0).getErr.reason should equal(SandboxDispatcher.ERR_NO_OPERATE)
 
-    val setStateOpt = rep.protos.peer.Operate(Sha256.hashstr("ContractAssetsTPL.setState"), "修改合约状态", superAdmin.split("\\.")(0), isPublish = false, OperateType.OPERATE_CONTRACT,
+    val setStateOpt = rep.proto.rc2.Operate(Sha256.hashstr("ContractAssetsTPL.setState"), "修改合约状态", superAdmin.split("\\.")(0), isPublish = false, OperateType.OPERATE_CONTRACT,
       snls, "*", "ContractAssetsTPL.setState", Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, true, "1.0")
     val t8 = PeerHelper.createTransaction4Invoke(superAdmin, cid2, "signUpOperate", Seq(JsonFormat.toJsonString(setStateOpt)))
     probe.send(sandbox, DoTransaction(Seq[Transaction](t8), "test-db", TypeOfSender.FromPreloader))
     val msg_recv8 = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    msg_recv8.head.getResult.reason.isEmpty should be(true)
+    msg_recv8.head.getErr.reason.isEmpty should be(true)
 
     // superAdmin 为用户授权
     val granteds = new ArrayBuffer[String]
     //granteds.+=(sysName.split("\\.")(0))
     granteds.+=(node2Name.split("\\.")(0))
     millis = System.currentTimeMillis()
-    val at = rep.protos.peer.Authorize(IdTool.getRandomUUID, superAdmin.split("\\.")(0), granteds, Seq(Sha256.hashstr("ContractAssetsTPL.setState")),
+    val at = rep.proto.rc2.Authorize(IdTool.getRandomUUID, superAdmin.split("\\.")(0), granteds, Seq(Sha256.hashstr("ContractAssetsTPL.setState")),
       TransferType.TRANSFER_REPEATEDLY, Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, true, "1.0")
     val als: List[String] = List(JsonFormat.toJsonString(at))
     val t10 = PeerHelper.createTransaction4Invoke(superAdmin, cid2, "grantOperate", Seq(SerializeUtils.compactJson(als)))
     probe.send(sandbox, DoTransaction(Seq[Transaction](t10), "test-db", TypeOfSender.FromPreloader))
     val msg_recv10 = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    msg_recv10.head.getResult.reason.isEmpty should be(true)
+    msg_recv10.head.getErr.reason.isEmpty should be(true)
 
     //被授权者可以禁用合约
     val t11 = PeerHelper.createTransaction4State(node2Name, cid1, state = false)
     val msg_send11 = DoTransaction(Seq[Transaction](t11), "test-db", TypeOfSender.FromPreloader)
     probe.send(sandbox, msg_send11)
     val msg_recv11 = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    msg_recv11(0).getResult.reason.isEmpty should be(true)
+    msg_recv11(0).getErr.reason.isEmpty should be(true)
 
     //禁用合约之后，无法Invoke合约
     for (i <- 0 until 1) {
@@ -240,7 +240,7 @@ class StateSpec(_system: ActorSystem) extends TestKit(_system) with Matchers wit
       val msg_send6 = DoTransaction(Seq[Transaction](t6), "test-db", TypeOfSender.FromPreloader)
       probe.send(sandbox, msg_send6)
       val msg_recv6 = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-      msg_recv6(0).getResult.reason should be(SandboxDispatcher.ERR_DISABLE_CID)
+      msg_recv6(0).getErr.reason should be(SandboxDispatcher.ERR_DISABLE_CID)
     }
 
     //非授权者无法启用合约
@@ -248,14 +248,14 @@ class StateSpec(_system: ActorSystem) extends TestKit(_system) with Matchers wit
      msg_send = DoTransaction(Seq[Transaction](t), "test-db", TypeOfSender.FromPreloader)
     probe.send(sandbox, msg_send)
      msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    msg_recv(0).getResult.reason should be(SandboxDispatcher.ERR_NO_OP_IN_AUTHORIZE)
+    msg_recv(0).getErr.reason should be(SandboxDispatcher.ERR_NO_OP_IN_AUTHORIZE)
 
     //授权者可以启用合约
      t = PeerHelper.createTransaction4State(node2Name, cid1, true)
      msg_send = DoTransaction(Seq[Transaction](t), "test-db", TypeOfSender.FromPreloader)
     probe.send(sandbox, msg_send)
      msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    msg_recv4(0).getResult.reason.isEmpty should be(true)
+    msg_recv4(0).getErr.reason.isEmpty should be(true)
 
     //启用合约之后,可以Invoke合约
     for (i <- 0 until 1) {
@@ -263,10 +263,10 @@ class StateSpec(_system: ActorSystem) extends TestKit(_system) with Matchers wit
       val msg_send6 = DoTransaction(Seq[Transaction](t6), "test-db", TypeOfSender.FromPreloader)
       probe.send(sandbox, msg_send6)
       val msg_recv6 = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-      if (msg_recv6(0).getResult.reason.isEmpty && i == 0)
-        msg_recv6(0).getResult.reason.isEmpty should be(true)
+      if (msg_recv6(0).getErr.reason.isEmpty && i == 0)
+        msg_recv6(0).getErr.reason.isEmpty should be(true)
       else
-        msg_recv6(0).getResult.reason should equal(rcs(i))
+        msg_recv6(0).getErr.reason should equal(rcs(i))
     }
   }
 }

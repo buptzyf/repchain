@@ -20,12 +20,12 @@ package rep.sc.tpl
 import org.json4s._
 import org.json4s.jackson.JsonMethods._
 import rep.app.conf.SystemProfile
-import rep.protos.peer.ChaincodeId
+import rep.proto.rc2.ChaincodeId
 import rep.utils.IdTool
 import java.text.SimpleDateFormat
 
 import rep.sc.scalax.{ContractContext, ContractException, IContract}
-import rep.protos.peer.ActionResult
+import rep.proto.rc2.ActionResult
 
 
 /**

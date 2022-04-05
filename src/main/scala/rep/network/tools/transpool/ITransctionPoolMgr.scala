@@ -4,7 +4,7 @@ import java.util.concurrent.ConcurrentSkipListMap
 
 import rep.app.conf.{SystemProfile, TimePolicy}
 import rep.log.RepLogger
-import rep.protos.peer.Transaction
+import rep.proto.rc2.Transaction
 import rep.storage.ImpDataAccess
 import rep.utils.SerializeUtils
 

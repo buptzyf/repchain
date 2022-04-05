@@ -18,7 +18,7 @@ package rep.storage
 
 import rep.storage.leveldb.AbstractLevelDB
 import scala.collection.mutable
-import rep.protos.peer._
+import rep.proto.rc2._
 import java.io.File
 import org.fusesource.leveldbjni.JniDBFactory
 import org.iq80.leveldb.DB

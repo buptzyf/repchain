@@ -29,7 +29,7 @@ import org.json4s.{DefaultFormats, Formats, jackson}
 import rep.sc.tpl.SupplyType._
 import rep.sc.scalax.IContract
 import rep.sc.scalax.ContractContext
-import rep.protos.peer.ActionResult
+import rep.proto.rc2.ActionResult
 
 /**
   * 供应链分账合约

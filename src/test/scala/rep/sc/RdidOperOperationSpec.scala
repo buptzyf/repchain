@@ -30,9 +30,9 @@ import rep.crypto.Sha256
 import rep.crypto.cert.SignTool
 import rep.network.autotransaction.PeerHelper
 import rep.network.module.cfrd.ModuleManagerOfCFRD
-import rep.protos.peer.Certificate.CertType
-import rep.protos.peer.Operate.OperateType
-import rep.protos.peer._
+import rep.proto.rc2.Certificate.CertType
+import rep.proto.rc2.Operate.OperateType
+import rep.proto.rc2._
 import rep.sc.SandboxDispatcher.DoTransaction
 import rep.sc.tpl.did.operation.{DidOperation, OperOperation, SignerOperation}
 import rep.sc.tpl.did.operation.OperOperation.{OperateStatus, operateNotExists}
@@ -106,11 +106,11 @@ class RdidOperOperationSpec(_system: ActorSystem) extends TestKit(_system) with 
     // 部署账户管理合约
     val contractCert = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/did/RdidOperateAuthorizeTPL.scala")
     val contractCertStr = try contractCert.mkString finally contractCert.close()
-    val t = PeerHelper.createTransaction4Deploy(superAdmin, cid, contractCertStr, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA, ChaincodeDeploy.ContractClassification.CONTRACT_SYSTEM)
+    val t = PeerHelper.createTransaction4Deploy(superAdmin, cid, contractCertStr, "", 5000, ChaincodeDeploy.CodeType.CODE_SCALA, ChaincodeDeploy.ContractClassification.CONTRACT_SYSTEM)
     val msg_send = DoTransaction(Seq(t), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    assert(msg_recv.head.getResult.reason.isEmpty)
+    assert(msg_recv.head.getErr.reason.isEmpty)
   }
 
   test("提交者与操作的注册者creditCode不匹配") {
@@ -118,7 +118,7 @@ class RdidOperOperationSpec(_system: ActorSystem) extends TestKit(_system) with 
     val msg_send = DoTransaction(Seq(t), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    JsonFormat.parser.fromJsonString(msg_recv.head.getResult.reason)(ActionResult) should be(OperOperation.registerNotTranPoster)
+    JsonFormat.parser.fromJsonString(msg_recv.head.getErr.reason)(ActionResult) should be(OperOperation.registerNotTranPoster)
   }
 
   test("signer不存在，无法注册Operate") {
@@ -126,7 +126,7 @@ class RdidOperOperationSpec(_system: ActorSystem) extends TestKit(_system) with 
     val msg_send = DoTransaction(Seq(t), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    JsonFormat.parser.fromJsonString(msg_recv.head.getResult.reason)(ActionResult) should be(SignerOperation.signerNotExists)
+    JsonFormat.parser.fromJsonString(msg_recv.head.getErr.reason)(ActionResult) should be(SignerOperation.signerNotExists)
   }
 
   test("注册账户") {
@@ -135,7 +135,7 @@ class RdidOperOperationSpec(_system: ActorSystem) extends TestKit(_system) with 
     val msg_send = DoTransaction(Seq(t), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    msg_recv.head.getResult.reason.isEmpty should be(true)
+    msg_recv.head.getErr.reason.isEmpty should be(true)
   }
 
   test("禁用Operate，Operate不存在") {
@@ -143,7 +143,7 @@ class RdidOperOperationSpec(_system: ActorSystem) extends TestKit(_system) with 
     val msg_send = DoTransaction(Seq(t), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    JsonFormat.parser.fromJsonString(msg_recv.head.getResult.reason)(ActionResult) should be(OperOperation.operateNotExists)
+    JsonFormat.parser.fromJsonString(msg_recv.head.getErr.reason)(ActionResult) should be(OperOperation.operateNotExists)
   }
 
   test("第一次注册Operate") {
@@ -151,7 +151,7 @@ class RdidOperOperationSpec(_system: ActorSystem) extends TestKit(_system) with 
     val msg_send = DoTransaction(Seq(t), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    msg_recv.head.getResult.reason.isEmpty should be(true)
+    msg_recv.head.getErr.reason.isEmpty should be(true)
   }
 
   test("第二次注册Operate，Operate已存在") {
@@ -159,7 +159,7 @@ class RdidOperOperationSpec(_system: ActorSystem) extends TestKit(_system) with 
     val msg_send = DoTransaction(Seq(t), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    JsonFormat.parser.fromJsonString(msg_recv.head.getResult.reason)(ActionResult) should be(OperOperation.operateExists)
+    JsonFormat.parser.fromJsonString(msg_recv.head.getErr.reason)(ActionResult) should be(OperOperation.operateExists)
   }
 
   test("禁用Operate") {
@@ -167,7 +167,7 @@ class RdidOperOperationSpec(_system: ActorSystem) extends TestKit(_system) with 
     val msg_send = DoTransaction(Seq(t), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    msg_recv.head.getResult.reason.isEmpty should be(true)
+    msg_recv.head.getErr.reason.isEmpty should be(true)
   }
 
 }

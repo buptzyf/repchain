@@ -19,19 +19,20 @@ package rep.sc
 import akka.actor.{Actor, ActorRef, Props, actorRef2Scala}
 import rep.utils._
 import rep.api.rest._
-import rep.protos.peer._
+import rep.proto.rc2._
 import delight.nashornsandbox._
+
 import java.util.concurrent.Executors
 import java.lang.Exception
 import java.lang.Thread._
 import java.io.File._
-
 import org.slf4j.LoggerFactory
 import org.json4s.{DefaultFormats, Formats, jackson}
 import de.heikoseeberger.akkahttpjson4s.Json4sSupport
 import org.json4s._
 import akka.util.Timeout
 import Shim._
+import com.google.protobuf.ByteString
 import rep.app.conf.SystemProfile
 import rep.crypto.BytesHex
 import rep.network.tools.PeerExtension
@@ -64,7 +65,8 @@ object Sandbox {
    * @param err 执行中抛出的异常信息
    */
   case class DoTransactionResult(txId: String, r: ActionResult,
-                                 ol:  List[OperLog],
+                                 rSet: Map[String,ByteString],
+                                 wSet: Map[String,ByteString],
                                  err: Option[akka.actor.Status.Failure])
 
   /**
@@ -153,15 +155,14 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
       //shim.sr = ImpDataPreloadMgr.GetImpDataPreload(sTag, dotrans.da)
       shim.srOfTransaction = new TransactionOfDataPreload(dotrans.t.id,ImpDataPreloadMgr.GetImpDataPreload(sTag, dotrans.da))
       checkTransaction(dotrans)
-      shim.ol = new scala.collection.mutable.ListBuffer[OperLog]
+      //重置交易执行结果
+      shim.tr = TransactionResult.defaultInstance
       doTransaction(dotrans)
     } catch {
       case e: Exception =>
         RepLogger.except4Throwable(RepLogger.Sandbox_Logger,e.getMessage,e)
         RepLogger.except(RepLogger.Sandbox_Logger, dotrans.t.id, e)
-        new TransactionResult(dotrans.t.id, _root_.scala.Seq.empty,Option(ActionResult(101,e.getMessage)))
-      /*new DoTransactionResult(dotrans.t.id, null, null,
-        Option(akka.actor.Status.Failure(e)))*/
+        new TransactionResult(dotrans.t.id, Map.empty,  Map.empty, Option(ActionResult(101,e.getMessage)))
     }
   }
 

@@ -26,7 +26,7 @@ import rep.sc.scalax.IContract
 
 import rep.sc.scalax.ContractContext
 import rep.sc.scalax.ContractException
-import rep.protos.peer.ActionResult
+import rep.proto.rc2.ActionResult
 
 /**
   * 资产管理合约

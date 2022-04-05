@@ -19,7 +19,7 @@ package rep.storage
 import rep.storage.block._
 import rep.storage.leveldb._
 import rep.storage.cfg._
-import rep.protos.peer._
+import rep.proto.rc2._
 
 import scala.collection.JavaConverters._
 import com.google.protobuf.ByteString
@@ -650,13 +650,13 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
   private def isLastBlock(newblock: Block, lastblockhash: String): Boolean = {
     var b: Boolean = false
     if (lastblockhash == null) {
-      if (newblock.previousBlockHash.isEmpty()) {
+      if (newblock.header.get.hashPrevious.isEmpty()) {
         b = true
       } else {
         b = false
       }
     } else {
-      val prve = newblock.previousBlockHash.toStringUtf8()
+      val prve = newblock.header.get.hashPrevious.toStringUtf8()
       //目前直接从上一个块中获取
       //val cur = lastblock.hashOfBlock.toStringUtf8()
       //if (prve.equals(cur) && (lastblock.height + 1) == newblock.height) {
@@ -789,10 +789,14 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
     rel
   }
 
+  //TODO 新版依据block.statesSet 直接写入即可
   private def WriteOperLogToDBWithRestoreBlock(block: Block) = {
     try {
       //var writetodbtxidserial = "write txid result to db for serial="
-      val txresults = block.transactionResults
+      for((k,v )<- block.statesSet){
+        this.Put(k, v.toByteArray)
+      }
+    /*  val txresults = block.transactionResults
       if (!txresults.isEmpty) {
         val len = txresults.length -1
         for( i <- 0 to len){
@@ -816,7 +820,7 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
             })
           }
         }
-      }
+      }*/
     } catch {
       case e: RuntimeException => throw e
     }
@@ -835,13 +839,13 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
    * @author jiangbuyun
    * @version	0.7
    * @since	2017-09-28
-   * @category	写入单个区块到系统
+   * @category	写入单个区块到系统 TODO 函数命名与注释明显不符！！！
    * @param	block  待写入系统的区块
    * @return	如果成功返回true，否则返回false
    */
   override def restoreBlock(block: Block): (Boolean, Long, Long, String, String, String) = {
     if (block == null) return (false, 0l, 0l, "", "", "")
-    if (block.hashOfBlock == null || block.hashOfBlock.isEmpty()) return (false, 0l, 0l, "", "", "")
+    if (block.header.get.hashPresent == null || block.header.get.hashPresent.isEmpty()) return (false, 0l, 0l, "", "", "")
     synchronized {
       val oldh = getBlockHeight()
       val oldno = this.getMaxFileNo()
@@ -849,30 +853,31 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
       var prevblockhash: String = null
 
       if (oldh > 0) {
-        RepTimeTracer.setStartTime(this.SystemName, "storage-save-get-preblock", System.currentTimeMillis(), block.height, block.transactions.size)
+        RepTimeTracer.setStartTime(this.SystemName, "storage-save-get-preblock", System.currentTimeMillis(), block.header.get.height, block.transactions.size)
         //val tbs = this.getBlockByHeight(oldh)
         //prevblock = getBlockIdxByHeight(block.height - 1)
-        prevblockhash = this.getLastBlockHash(block.height - 1)
+        prevblockhash = this.getLastBlockHash(block.header.get.height - 1)
         //prevblock = Block.parseFrom(tbs)
-        RepTimeTracer.setEndTime(this.SystemName, "storage-save-get-preblock", System.currentTimeMillis(), block.height, block.transactions.size)
+        RepTimeTracer.setEndTime(this.SystemName, "storage-save-get-preblock", System.currentTimeMillis(), block.header.get.height, block.transactions.size)
       }
 
       if (isLastBlock(block, prevblockhash)) {
         try {
           this.BeginTrans
-          RepTimeTracer.setStartTime(this.SystemName, "storage-save-write-operlog", System.currentTimeMillis(), block.height, block.transactions.size)
+          RepTimeTracer.setStartTime(this.SystemName, "storage-save-write-operlog", System.currentTimeMillis(), block.header.get.height, block.transactions.size)
           WriteOperLogToDBWithRestoreBlock(block)
-          RepTimeTracer.setEndTime(this.SystemName, "storage-save-write-operlog", System.currentTimeMillis(), block.height, block.transactions.size)
-          RepTimeTracer.setStartTime(this.SystemName, "storage-save-commit", System.currentTimeMillis(), block.height, block.transactions.size)
+          RepTimeTracer.setEndTime(this.SystemName, "storage-save-write-operlog", System.currentTimeMillis(), block.header.get.height, block.transactions.size)
+          RepTimeTracer.setStartTime(this.SystemName, "storage-save-commit", System.currentTimeMillis(), block.header.get.height, block.transactions.size)
           if (this.commitAndAddBlock(block, oldh, oldno, oldtxnumber)) {
-            RepTimeTracer.setEndTime(this.SystemName, "storage-save-commit", System.currentTimeMillis(), block.height, block.transactions.size)
+            RepTimeTracer.setEndTime(this.SystemName, "storage-save-commit", System.currentTimeMillis(), block.header.get.height, block.transactions.size)
             this.CommitTrans
             /*chainInfoCache.setHeight(block.height)
             chainInfoCache.setTXNumber(oldtxnumber + block.transactions.length)
             chainInfoCache.setBlockHash(block.hashOfBlock.toStringUtf8())
             chainInfoCache.setPrevBlockHash(block.previousBlockHash.toStringUtf8())
             chainInfoCache.setBlockStateHash(block.stateHash.toStringUtf8())*/
-            (true, block.height, oldtxnumber + block.transactions.length, block.hashOfBlock.toStringUtf8(), block.previousBlockHash.toStringUtf8(), block.stateHash.toStringUtf8())
+            (true, block.header.get.height, oldtxnumber + block.transactions.length, block.header.get.hashPresent.toStringUtf8(),
+              block.header.get.hashPrevious.toStringUtf8(), null)
           } else {
             this.RollbackTrans
             (false, 0l, 0l, "", "", "")
@@ -905,8 +910,8 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
     var b: Boolean = false
     //var block = _block
     if (block == null) return b
-    if (block.hashOfBlock == null || block.hashOfBlock.isEmpty()) return b
-    if (block.previousBlockHash == null) return b
+    if (block.header.get.hashPresent == null || block.header.get.hashPresent.isEmpty()) return b
+    if (block.header.get.hashPrevious == null) return b
     RepLogger.trace(
       RepLogger.Storager_Logger,
       "system_name=" + this.SystemName + "\t store a block")
@@ -914,9 +919,9 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
       try {
         var bidx = new blockindex()
         bidx.InitBlockIndex(block)
-        var newh = block.height
+        var newh = block.header.get.height
         setBlockHeight(newh)
-        this.setLastBlockHash(block.hashOfBlock.toStringUtf8)
+        this.setLastBlockHash(block.header.get.hashPresent.toStringUtf8)
 
         var newno = oldno
         var newtxnumber = oldtxnumber
@@ -962,9 +967,9 @@ class ImpDataAccess private (SystemName: String) extends IDataAccess(SystemName)
         this.setBlockAllTxNumber(newtxnumber)
         //jiangbuyun modify 20180430,块写入文件系统时，增加块长度写入文件中，方便以后没有leveldb时，可以完全依靠块文件快速恢复系统,该位置实现字节数组的合并
         //bhelp.writeBlock(bidx.getBlockFileNo(), bidx.getBlockFilePos(), rbb)
-        RepTimeTracer.setStartTime(this.SystemName, "storage-save-write-file", System.currentTimeMillis(), block.height, block.transactions.size)
+        RepTimeTracer.setStartTime(this.SystemName, "storage-save-write-file", System.currentTimeMillis(), block.header.get.height, block.transactions.size)
         filemgr.writeBlock(bidx.getBlockFileNo(), bidx.getBlockFilePos() - 8, pathUtil.longToByte(blenght) ++ rbb)
-        RepTimeTracer.setEndTime(this.SystemName, "storage-save-write-file", System.currentTimeMillis(), block.height, block.transactions.size)
+        RepTimeTracer.setEndTime(this.SystemName, "storage-save-write-file", System.currentTimeMillis(), block.header.get.height, block.transactions.size)
         b = true
 
         RepLogger.trace(

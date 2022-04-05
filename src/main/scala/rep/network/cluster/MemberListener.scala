@@ -35,7 +35,7 @@ import rep.network.sync.SyncMsg.StartSync
 import scala.util.control.Breaks._
 import scala.collection.mutable.ArrayBuffer
 import rep.log.RepLogger
-import rep.protos.peer.Event
+import rep.proto.rc2.Event
 import rep.network.util.NodeHelp
 import rep.app.RepChainMgr
 import rep.log.httplog.AlertInfo

@@ -10,7 +10,7 @@ import rep.network.consensus.common.MsgOfConsensus.{PreTransBlockOfStream, preTr
 import rep.network.consensus.util.BlockHelp
 import rep.network.module.ModuleActorType
 import rep.network.module.cfrd.CFRDActorType
-import rep.protos.peer.{ActionResult, Block, Transaction, TransactionResult}
+import rep.proto.rc2.{ActionResult, Block, Transaction, TransactionResult}
 import rep.sc.SandboxDispatcher.DoTransactionOfCache
 import rep.sc.TypeOfSender
 import rep.utils.{IdTool, SerializeUtils}
@@ -45,17 +45,22 @@ class PreloadTransactionOfStream(moduleName: String) extends ModuleBase(moduleNa
   private def createErrorData(ts: scala.collection.Seq[Transaction], err: Option[akka.actor.Status.Failure]): Array[TransactionResult] = {
     var rs = scala.collection.mutable.ArrayBuffer[TransactionResult]()
     ts.foreach(t => {
-      rs += new TransactionResult(t.id, _root_.scala.Seq.empty, Option(ActionResult(103, err.get.cause.getMessage))) //new TransactionResult(t.id, null, null, err)
+      rs += new TransactionResult(t.id, Map.empty, Map.empty, Option(ActionResult(103, err.get.cause.getMessage))) //new TransactionResult(t.id, null, null, err)
     })
     rs.toArray
   }
-
+  //TODO AssembleTransResult 方法为何多处定义? 是否可以合并
   private def AssembleTransResult(block: Block, transResult: Seq[TransactionResult], db_indentifier: String): Option[Block] = {
     try {
-      var rblock = block.withTransactionResults(transResult)
+      var rblock = block
+      //状态读写集合合并,TODO 剔除重复
+      transResult.foreach(tr => {
+        rblock = block.addAllStatesSet(tr.statesSet)
+        rblock = block.addAllStatesGet(tr.statesGet)
+      })
       val statehashstr = Sha256.hashstr(Array.concat(pe.getSystemCurrentChainStatus.currentStateHash.toByteArray(), SerializeUtils.serialise(transResult)))
-      rblock = rblock.withStateHash(ByteString.copyFromUtf8(statehashstr))
-      if (rblock.hashOfBlock == _root_.com.google.protobuf.ByteString.EMPTY) {
+      rblock = rblock.withHeader(rblock.header.get.withHashPresent(ByteString.copyFromUtf8(statehashstr)))
+      if (rblock.header.get.hashPresent == _root_.com.google.protobuf.ByteString.EMPTY) {
         //如果没有当前块的hash在这里生成，如果是背书已经有了hash不再进行计算
         rblock = BlockHelp.AddBlockHash(rblock)
         //this.DbInstance = new DB_Instance_Type(this.DbInstance.tagName,rblock.hashOfBlock.toStringUtf8)
@@ -75,7 +80,7 @@ class PreloadTransactionOfStream(moduleName: String) extends ModuleBase(moduleNa
   }
 
   private def getSameCid(ts: Seq[Transaction], startIndex: Int): (Int, Seq[Transaction]) = {
-    var rts = Seq.empty[rep.protos.peer.Transaction]
+    var rts = Seq.empty[rep.proto.rc2.Transaction]
     if (startIndex < ts.length) {
       val len = ts.length - 1
       val ft = ts(startIndex)
@@ -119,20 +124,20 @@ class PreloadTransactionOfStream(moduleName: String) extends ModuleBase(moduleNa
   private def IsAcceptBlock(block: Block): Boolean = {
     var r = false
     if (checkedStatus) {
-      if (block.previousBlockHash == ByteString.EMPTY) {
+      if (block.header.get.hashPrevious == ByteString.EMPTY) {
         //创世块直接进入
         r = true
       } else {
         if (this.preBlockHash != null) {
-          if (block.previousBlockHash.toStringUtf8 == this.preBlockHash) {
+          if (block.header.get.hashPrevious.toStringUtf8 == this.preBlockHash) {
             r = true
           } else {
-            if (block.previousBlockHash.toStringUtf8 == pe.getCurrentBlockHash) {
+            if (block.header.get.hashPrevious.toStringUtf8 == pe.getCurrentBlockHash) {
               r = true
             }
           }
         } else {
-          if (block.previousBlockHash.toStringUtf8 == pe.getCurrentBlockHash) {
+          if (block.header.get.hashPrevious.toStringUtf8 == pe.getCurrentBlockHash) {
             r = true
           }
         }
@@ -154,15 +159,15 @@ class PreloadTransactionOfStream(moduleName: String) extends ModuleBase(moduleNa
   override def receive = {
     case ts: Seq[TransactionResult] =>
       pe.removeTrans(this.transactionCacheIdentifier)
-      RepTimeTracer.setEndTime(pe.getSysTag, "PreloadTrans-exe", System.currentTimeMillis(), this.curBlock.height, this.curBlock.transactions.size)
+      RepTimeTracer.setEndTime(pe.getSysTag, "PreloadTrans-exe", System.currentTimeMillis(), this.curBlock.header.get.height, this.curBlock.transactions.size)
       if (ts.size > 0) {
         RepTimeTracer.setStartTime(pe.getSysTag, "PreloadTrans-assemble", System.currentTimeMillis(), pe.getBlocker.VoteHeight + 1, 0)
         var newblock = AssembleTransResult(this.curBlock, ts, this.dbIdentifier)
         //全部交易执行完成
         pe.addBlock(this.blockIdentifier, newblock.get)
         pe.getActorRef(CFRDActorType.ActorType.blocker) ! preTransBlockResultOfStream(this.blockIdentifier, true)
-        this.preBlockHash = newblock.get.hashOfBlock.toStringUtf8
-        RepTimeTracer.setEndTime(pe.getSysTag, "PreloadTrans-assemble", System.currentTimeMillis(), this.curBlock.height, this.curBlock.transactions.size)
+        this.preBlockHash = newblock.get.header.get.hashPresent.toStringUtf8
+        RepTimeTracer.setEndTime(pe.getSysTag, "PreloadTrans-assemble", System.currentTimeMillis(), this.curBlock.header.get.height, this.curBlock.transactions.size)
         this.resetStatus
       } else {
         pe.getActorRef(CFRDActorType.ActorType.blocker) ! preTransBlockResultOfStream(this.blockIdentifier, false)

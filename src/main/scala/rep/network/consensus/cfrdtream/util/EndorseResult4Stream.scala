@@ -1,6 +1,6 @@
 package rep.network.consensus.cfrdtream.util
 
-import rep.protos.peer.{Signature}
+import rep.proto.rc2.{Signature}
 
 class EndorseResult4Stream {
   var endorseName:String = ""

@@ -24,7 +24,7 @@ import org.json4s.DefaultFormats
 import rep.app.conf.SystemProfile
 import rep.utils.{IdTool, SerializeUtils}
 import rep.sc.scalax.{ContractContext, ContractException, IContract}
-import rep.protos.peer.ActionResult
+import rep.proto.rc2.ActionResult
 import scalapb.json4s.JsonFormat
 
 /**

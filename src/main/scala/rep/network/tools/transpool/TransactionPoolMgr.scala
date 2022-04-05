@@ -8,7 +8,7 @@ import scala.collection.JavaConverters._
 import rep.app.conf.{SystemProfile, TimePolicy}
 import rep.log.RepLogger
 import rep.network.cache.ITransactionPool
-import rep.protos.peer.Transaction
+import rep.proto.rc2.Transaction
 import rep.storage.ImpDataAccess
 import rep.utils.SerializeUtils
 

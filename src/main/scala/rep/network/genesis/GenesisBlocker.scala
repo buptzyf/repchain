@@ -27,7 +27,7 @@ import rep.network.base.ModuleBase
 import rep.network.consensus.util.BlockHelp
 import rep.network.module.ModuleActorType
 import rep.network.util.NodeHelp
-import rep.protos.peer._
+import rep.proto.rc2._
 import rep.storage.{ImpDataAccess, ImpDataPreloadMgr}
 import rep.network.consensus.common.MsgOfConsensus.{ConfirmedBlock, GenesisBlock, PreTransBlock, PreTransBlockResult}
 

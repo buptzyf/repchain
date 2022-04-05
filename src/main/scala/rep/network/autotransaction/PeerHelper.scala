@@ -24,7 +24,7 @@ import rep.app.conf.SystemProfile
 import rep.crypto.cert.SignTool
 import rep.log.RepLogger
 import rep.network.base.ModuleBase
-import rep.protos.peer._
+import rep.proto.rc2._
 import rep.utils.{IdTool, TimeUtils}
 import rep.network.module.ModuleActorType
 import rep.utils.GlobalUtils.EventType
@@ -76,7 +76,7 @@ object PeerHelper {
     t = t.withId(txid)
     t = t.withCid(chaincodeId)
     t = t.withIpt(cip)
-    t = t.withType(rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE)
+    t = t.withType(rep.proto.rc2.Transaction.Type.CHAINCODE_INVOKE)
     t = t.clearSignature
     val certid = IdTool.getCertIdFromName(nodeName)
     var sobj = Signature(Option(certid), Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)))
@@ -89,7 +89,7 @@ object PeerHelper {
 
   def createTransaction4Deploy(nodeName: String, chaincodeId: ChaincodeId,
                                spcPackage: String, legal_prose: String, timeout: Int,
-                               ctype: rep.protos.peer.ChaincodeDeploy.CodeType): Transaction = {
+                               ctype:ChaincodeDeploy.CodeType): Transaction = {
     var t: Transaction = new Transaction()
     val millis = TimeUtils.getCurrentTime()
     if (chaincodeId == null) t
@@ -98,11 +98,11 @@ object PeerHelper {
     var cip = new ChaincodeDeploy(timeout)
     cip = cip.withCodePackage(spcPackage)
     cip = cip.withLegalProse(legal_prose)
-    cip = cip.withCtype(ctype)
+    cip = cip.withCType(ctype)
     t = t.withId(txid)
     t = t.withCid(chaincodeId)
     t = t.withSpec(cip)
-    t = t.withType(rep.protos.peer.Transaction.Type.CHAINCODE_DEPLOY)
+    t = t.withType(Transaction.Type.CHAINCODE_DEPLOY)
     t = t.clearSignature
     
     val certid = IdTool.getCertIdFromName(nodeName)
@@ -116,8 +116,8 @@ object PeerHelper {
 
   def createTransaction4Deploy(nodeName: String, chaincodeId: ChaincodeId,
                                spcPackage: String, legal_prose: String, timeout: Int,
-                               ctype: rep.protos.peer.ChaincodeDeploy.CodeType,
-                               cclassfiction:rep.protos.peer.ChaincodeDeploy.ContractClassification): Transaction = {
+                               ctype: ChaincodeDeploy.CodeType,
+                               cclassfiction:ChaincodeDeploy.ContractClassification): Transaction = {
     var t: Transaction = new Transaction()
     val millis = TimeUtils.getCurrentTime()
     if (chaincodeId == null) t
@@ -126,12 +126,12 @@ object PeerHelper {
     var cip = new ChaincodeDeploy(timeout)
     cip = cip.withCodePackage(spcPackage)
     cip = cip.withLegalProse(legal_prose)
-    cip = cip.withCtype(ctype)
+    cip = cip.withCType(ctype)
     cip = cip.withCclassification(cclassfiction)
     t = t.withId(txid)
     t = t.withCid(chaincodeId)
     t = t.withSpec(cip)
-    t = t.withType(rep.protos.peer.Transaction.Type.CHAINCODE_DEPLOY)
+    t = t.withType(Transaction.Type.CHAINCODE_DEPLOY)
     t = t.clearSignature
 
     val certid = IdTool.getCertIdFromName(nodeName)
@@ -152,7 +152,7 @@ object PeerHelper {
     val txid = IdTool.getRandomUUID
     t = t.withId(txid)
     t = t.withCid(chaincodeId)
-    t = t.withType(rep.protos.peer.Transaction.Type.CHAINCODE_SET_STATE)
+    t = t.withType(Transaction.Type.CHAINCODE_SET_STATE)
     t = t.withState(state)
     t = t.clearSignature
     val certid = IdTool.getCertIdFromName(nodeName)

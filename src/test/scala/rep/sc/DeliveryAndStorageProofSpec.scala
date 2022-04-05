@@ -25,8 +25,8 @@ import rep.app.system.ClusterSystem
 import rep.app.system.ClusterSystem.InitType
 import rep.crypto.cert.SignTool
 import rep.network.autotransaction.PeerHelper
-import rep.protos.peer.ChaincodeDeploy.ContractClassification
-import rep.protos.peer._
+import rep.proto.rc2.ChaincodeDeploy.ContractClassification
+import rep.proto.rc2._
 import rep.sc.SandboxDispatcher.DoTransaction
 
 import scala.concurrent.Await
@@ -70,10 +70,10 @@ class DeliveryAndStorageProofSpec(_system: ActorSystem) extends TestKit(_system)
 
     //生成deploy交易
     val cid = new ChaincodeId("DeliveryAndStorageProof", 1)
-    val t1 = PeerHelper.createTransaction4Deploy(superAdmin, cid, l1, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA, ContractClassification.CONTRACT_CUSTOM)
+    val t1 = PeerHelper.createTransaction4Deploy(superAdmin, cid, l1, "", 5000, ChaincodeDeploy.CodeType.CODE_SCALA, ContractClassification.CONTRACT_CUSTOM)
     val msg_send1 = DoTransaction(Seq[Transaction](t1), "test-db", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send1)
     val msg_recv1 = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    msg_recv1.head.getResult.code should be(0)
+    msg_recv1.head.getErr.code should be(0)
   }
 }

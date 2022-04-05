@@ -49,14 +49,14 @@ class ConfirmOfBlockOfPBFT(moduleName: String) extends IConfirmOfBlock(moduleNam
     RepLogger.info(RepLogger.Consensus_Logger, this.getLogMsgPrefix("confirm Block module start"))
     SubscribeTopic(mediator, self, selfAddr, Topic.Block, false)
   }
-  import rep.protos.peer._
+  import rep.proto.rc2._
 
   import scala.concurrent.duration._
 
   case class DataSig(data:Array[Byte], sig : Signature)
 
   private def asyncVerifyEndorses(block: Block, replies : Seq[MPbftReply]): Boolean = {
-    val b = block.clearEndorsements.toByteArray
+    val b = block.header.get.clearEndorsements.toByteArray
 
     val ds = scala.collection.mutable.Buffer[DataSig]()
     replies.foreach( r => {
@@ -91,7 +91,7 @@ class ConfirmOfBlockOfPBFT(moduleName: String) extends IConfirmOfBlock(moduleNam
       result1.foreach(f => {
         if (!f) {
           result = false
-          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"comfirmOfBlock verify endorse is error, break,block height=${block.height},local height=${pe.getCurrentHeight}"))
+          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"comfirmOfBlock verify endorse is error, break,block height=${block.header.get.height},local height=${pe.getCurrentHeight}"))
         }
       })
     }
@@ -104,7 +104,7 @@ class ConfirmOfBlockOfPBFT(moduleName: String) extends IConfirmOfBlock(moduleNam
   }
 
   private def handler(block: Block, actRefOfBlock: ActorRef, replies : Seq[MPbftReply]) = {
-    RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"confirm verify endorsement start,height=${block.height}"))
+    RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"confirm verify endorsement start,height=${block.header.get.height}"))
     var b = true
     if (SystemProfile.getIsVerifyOfEndorsement)
         b = asyncVerifyEndorses(block,replies)
@@ -130,12 +130,12 @@ class ConfirmOfBlockOfPBFT(moduleName: String) extends IConfirmOfBlock(moduleNam
   }
 
   private def checkedOfConfirmBlock(block: Block, actRefOfBlock: ActorRef, replies : Seq[MPbftReply]) = {
-    if (pe.getCurrentBlockHash == "" && block.previousBlockHash.isEmpty()) {
-      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"confirm verify blockhash,height=${block.height}"))
+    if (pe.getCurrentBlockHash == "" && block.header.get.hashPrevious.isEmpty()) {
+      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"confirm verify blockhash,height=${block.header.get.height}"))
       handler(block, actRefOfBlock, replies)
     } else {
       //与上一个块一致
-      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"confirm verify blockhash,height=${block.height}"))
+      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"confirm verify blockhash,height=${block.header.get.height}"))
 
       /* if (SystemProfile.getNumberOfEndorsement == 1) {
         if (block.height > pe.getCurrentHeight + 1) {
@@ -155,15 +155,15 @@ class ConfirmOfBlockOfPBFT(moduleName: String) extends IConfirmOfBlock(moduleNam
   override def receive = {
     //Endorsement block
     case MsgOfConsensus.ConfirmedBlock(block, actRefOfBlock) =>
-      RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", ConfirmedBlock(2p): " + ", " + Repchain.h4(block.hashOfBlock.toStringUtf8))
-      RepTimeTracer.setStartTime(pe.getSysTag, "blockconfirm", System.currentTimeMillis(), block.height, block.transactions.size)
+      RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", ConfirmedBlock(2p): " + ", " + Repchain.h4(block.header.get.hashPresent.toStringUtf8))
+      RepTimeTracer.setStartTime(pe.getSysTag, "blockconfirm", System.currentTimeMillis(), block.header.get.height, block.transactions.size)
       checkedOfConfirmBlock(block, actRefOfBlock, Seq.empty)
-      RepTimeTracer.setEndTime(pe.getSysTag, "blockconfirm", System.currentTimeMillis(), block.height, block.transactions.size)
+      RepTimeTracer.setEndTime(pe.getSysTag, "blockconfirm", System.currentTimeMillis(), block.header.get.height, block.transactions.size)
     case MsgOfPBFT.ConfirmedBlock(block, actRefOfBlock, replies) =>
-      RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", ConfirmedBlock: " + ", " + Repchain.h4(block.hashOfBlock.toStringUtf8))
-      RepTimeTracer.setStartTime(pe.getSysTag, "blockconfirm", System.currentTimeMillis(), block.height, block.transactions.size)
+      RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", ConfirmedBlock: " + ", " + Repchain.h4(block.header.get.hashPresent.toStringUtf8))
+      RepTimeTracer.setStartTime(pe.getSysTag, "blockconfirm", System.currentTimeMillis(), block.header.get.height, block.transactions.size)
       checkedOfConfirmBlock(block, actRefOfBlock, replies)
-      RepTimeTracer.setEndTime(pe.getSysTag, "blockconfirm", System.currentTimeMillis(), block.height, block.transactions.size)
+      RepTimeTracer.setEndTime(pe.getSysTag, "blockconfirm", System.currentTimeMillis(), block.header.get.height, block.transactions.size)
     case _ => //ignore
   }
 

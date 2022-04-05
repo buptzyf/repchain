@@ -29,10 +29,10 @@ import rep.crypto.cert.SignTool
 import rep.network.autotransaction.PeerHelper
 import rep.network.module.cfrd.ModuleManagerOfCFRD
 import rep.protos.peer.Authorize.TransferType
-import rep.protos.peer.Certificate.CertType
-import rep.protos.peer.ChaincodeDeploy.ContractClassification
-import rep.protos.peer.Operate.OperateType
-import rep.protos.peer._
+import rep.proto.rc2.Certificate.CertType
+import rep.proto.rc2.ChaincodeDeploy.ContractClassification
+import rep.proto.rc2.Operate.OperateType
+import rep.proto.rc2._
 import rep.sc.TransferSpec.{ACTION, SetMap}
 
 import scalapb.json4s.JsonFormat
@@ -104,18 +104,18 @@ class TransferSpec(_system: ActorSystem) extends TestKit(_system) with Matchers 
     val sandbox = system.actorOf(TransactionDispatcher.props("transactiondispatcher"), "transactiondispatcher")
 
     //生成deploy交易，部署ContractAssetsTPL
-    val t1 = PeerHelper.createTransaction4Deploy(superAdmin, cid1, l1, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA, ContractClassification.CONTRACT_CUSTOM)
+    val t1 = PeerHelper.createTransaction4Deploy(superAdmin, cid1, l1, "", 5000, ChaincodeDeploy.CodeType.CODE_SCALA, ContractClassification.CONTRACT_CUSTOM)
     val msg_send1 = DoTransaction(Seq[Transaction](t1), "test-db", TypeOfSender.FromPreloader)
     probe.send(sandbox, msg_send1)
     val msg_recv1 = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    msg_recv1(0).getResult.reason.isEmpty should be(true)
+    msg_recv1(0).getErr.reason.isEmpty should be(true)
 
     // 生成deploy交易，部署RdidOperateAuthorizeTPL
-    val t2 = PeerHelper.createTransaction4Deploy(superAdmin, cid2, l2, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA, ContractClassification.CONTRACT_SYSTEM)
+    val t2 = PeerHelper.createTransaction4Deploy(superAdmin, cid2, l2, "", 5000, ChaincodeDeploy.CodeType.CODE_SCALA, ContractClassification.CONTRACT_SYSTEM)
     val msg_send2 = DoTransaction(Seq[Transaction](t2), "test-db", TypeOfSender.FromPreloader)
     probe.send(sandbox, msg_send2)
     val msg_recv2 = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    msg_recv2(0).getResult.reason.isEmpty should be(true)
+    msg_recv2(0).getErr.reason.isEmpty should be(true)
 
     // 生成invoke交易
     // 注册账户
@@ -125,14 +125,14 @@ class TransferSpec(_system: ActorSystem) extends TestKit(_system) with Matchers 
     val superCertId = CertId("951002007l78123233", "super_admin")
     var millis = System.currentTimeMillis()
     //生成Did的身份证书
-    val superAuthCert = rep.protos.peer.Certificate(superCertPem, "SHA256withECDSA", true, Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, CertType.CERT_AUTHENTICATION, Option(superCertId), superCertHash, "1.0")
+    val superAuthCert = rep.proto.rc2.Certificate(superCertPem, "SHA256withECDSA", true, Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, CertType.CERT_AUTHENTICATION, Option(superCertId), superCertHash, "1.0")
     // 账户
     val superSigner = Signer("super_admin", "951002007l78123233", "13856789234", Seq.empty, Seq.empty, Seq.empty, Seq.empty, List(superAuthCert), "", Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, true, "1.0")
     val t3 = PeerHelper.createTransaction4Invoke(superAdmin, cid2, ACTION.SignUpSigner, Seq(JsonFormat.toJsonString(superSigner)))
     val msg_send3 = DoTransaction(Seq[Transaction](t3), "test-db", TypeOfSender.FromPreloader)
     probe.send(sandbox, msg_send3)
     val msg_recv3 = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    msg_recv3(0).getResult.reason.isEmpty should be(true)
+    msg_recv3(0).getErr.reason.isEmpty should be(true)
 
     // 注册账户
     val node1CertFile = scala.io.Source.fromFile("jks/certs/121000005l35120456.node1.cer", "UTF-8")
@@ -141,14 +141,14 @@ class TransferSpec(_system: ActorSystem) extends TestKit(_system) with Matchers 
     val node1CertId = CertId("121000005l35120456", "node1")
     millis = System.currentTimeMillis()
     //生成Did的身份证书
-    val node1AuthCert = rep.protos.peer.Certificate(node1CertPem, "SHA256withECDSA", true, Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, CertType.CERT_AUTHENTICATION, Option(node1CertId), node1CertHash, "1.0")
+    val node1AuthCert = rep.proto.rc2.Certificate(node1CertPem, "SHA256withECDSA", true, Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, CertType.CERT_AUTHENTICATION, Option(node1CertId), node1CertHash, "1.0")
     // 账户
     val node1Signer = Signer("node1", "121000005l35120456", "13856789234", Seq.empty, Seq.empty, Seq.empty, Seq.empty, List(node1AuthCert), "", Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, true, "1.0")
     val t9 = PeerHelper.createTransaction4Invoke(superAdmin, cid2, ACTION.SignUpSigner, Seq(JsonFormat.toJsonString(node1Signer)))
     val msg_send9 = DoTransaction(Seq[Transaction](t9), "test-db", TypeOfSender.FromPreloader)
     probe.send(sandbox, msg_send9)
     val msg_recv9 = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    msg_recv9.head.getResult.reason.isEmpty should be(true)
+    msg_recv9.head.getErr.reason.isEmpty should be(true)
 
     // 注册账户
     val node2CertFile = scala.io.Source.fromFile("jks/certs/12110107bi45jh675g.node2.cer", "UTF-8")
@@ -157,14 +157,14 @@ class TransferSpec(_system: ActorSystem) extends TestKit(_system) with Matchers 
     val node2CertId = CertId("12110107bi45jh675g", "node2")
     millis = System.currentTimeMillis()
     //生成Did的身份证书
-    val node2AuthCert = rep.protos.peer.Certificate(node2CertPem, "SHA256withECDSA", true, Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, CertType.CERT_AUTHENTICATION, Option(node2CertId), node2CertHash, "1.0")
+    val node2AuthCert = rep.proto.rc2.Certificate(node2CertPem, "SHA256withECDSA", true, Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, CertType.CERT_AUTHENTICATION, Option(node2CertId), node2CertHash, "1.0")
     // 账户
     val node2Signer = Signer("node2", "12110107bi45jh675g", "13856789234", Seq.empty, Seq.empty, Seq.empty, Seq.empty, List(node2AuthCert), "", Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, true, "1.0")
     val t4 = PeerHelper.createTransaction4Invoke(superAdmin, cid2, ACTION.SignUpSigner, Seq(JsonFormat.toJsonString(node2Signer)))
     val msg_send4 = DoTransaction(Seq[Transaction](t4), "test-db", TypeOfSender.FromPreloader)
     probe.send(sandbox, msg_send4)
     val msg_recv4 = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    msg_recv4.head.getResult.reason.isEmpty should be(true)
+    msg_recv4.head.getErr.reason.isEmpty should be(true)
 
     //生成invoke交易，给账户赋初值
     val sm: SetMap = Map("121000005l35120456" -> 50, "12110107bi45jh675g" -> 50, "122000002n00123567" -> 50)
@@ -173,17 +173,17 @@ class TransferSpec(_system: ActorSystem) extends TestKit(_system) with Matchers 
     val msg_send5 = DoTransaction(Seq[Transaction](t5), "test-db", TypeOfSender.FromPreloader)
     probe.send(sandbox, msg_send5)
     val msg_recv5 = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    msg_recv5(0).getResult.reason.isEmpty should be(true)
+    msg_recv5(0).getErr.reason.isEmpty should be(true)
 
     // superAdmin 为自己注册操作（superAdmin不注册操作也能通过授权 ），目的是为了给其他用户授权
     val snls = List("transaction.stream", "transaction.postTranByString", "transaction.postTranStream", "transaction.postTran")
     // 公开操作，无需授权
-    val transferOpt = rep.protos.peer.Operate(Sha256.hashstr("ContractAssetsTPL.transfer"), "转账交易", superAdmin.split("\\.")(0), true, OperateType.OPERATE_CONTRACT,
+    val transferOpt = rep.proto.rc2.Operate(Sha256.hashstr("ContractAssetsTPL.transfer"), "转账交易", superAdmin.split("\\.")(0), true, OperateType.OPERATE_CONTRACT,
       snls, "*", "ContractAssetsTPL.transfer", Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, true, "1.0")
     val t7 = PeerHelper.createTransaction4Invoke(superAdmin, cid2, "signUpOperate", Seq(JsonFormat.toJsonString(transferOpt)))
     probe.send(sandbox, DoTransaction(Seq[Transaction](t7), "test-db", TypeOfSender.FromPreloader))
     val msg_recv7 = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    msg_recv7.head.getResult.reason.isEmpty should be(true)
+    msg_recv7.head.getErr.reason.isEmpty should be(true)
 
     // superAdmin 为用户授权
     //    val granteds = new ArrayBuffer[String]
@@ -195,7 +195,7 @@ class TransferSpec(_system: ActorSystem) extends TestKit(_system) with Matchers 
     //    val t8 = PeerHelper.createTransaction4Invoke(superAdmin, cid2, "grantOperate", Seq(SerializeUtils.compactJson(als)))
     //    probe.send(sandbox, DoTransaction(Seq[Transaction](t8), "test-db", TypeOfSender.FromPreloader))
     //    val msg_recv8 = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    //    msg_recv8.head.getResult.reason.isEmpty should be(true)
+    //    msg_recv8.head.getErr.reason.isEmpty should be(true)
 
     // 转账测试
     // 转账测试集
@@ -210,10 +210,10 @@ class TransferSpec(_system: ActorSystem) extends TestKit(_system) with Matchers 
       val msg_send6 = DoTransaction(Seq[Transaction](t6), "test-db", TypeOfSender.FromPreloader)
       probe.send(sandbox, msg_send6)
       val msg_recv6 = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-      if (msg_recv6(0).getResult.reason.isEmpty && i == 0)
-        msg_recv6(0).getResult.reason.isEmpty should be(rcs(0))
+      if (msg_recv6(0).getErr.reason.isEmpty && i == 0)
+        msg_recv6(0).getErr.reason.isEmpty should be(rcs(0))
       else
-        msg_recv6(0).getResult.reason should be(rcs(i))
+        msg_recv6(0).getErr.reason should be(rcs(i))
     }
   }
 }

@@ -26,8 +26,8 @@ import rep.app.system.ClusterSystem
 import rep.app.system.ClusterSystem.InitType
 import rep.crypto.cert.SignTool
 import rep.network.autotransaction.PeerHelper
-import rep.protos.peer.ChaincodeDeploy.ContractClassification
-import rep.protos.peer._
+import rep.proto.rc2.ChaincodeDeploy.ContractClassification
+import rep.proto.rc2._
 import rep.sc.SandboxDispatcher.DoTransaction
 import rep.sc.tpl.SupplyType._
 import rep.utils.SerializeUtils.{deserialise, toJson}
@@ -95,11 +95,11 @@ class SupplySpec2(_system: ActorSystem) extends TestKit(_system) with Matchers w
     val s1 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/SupplyTPL2.scala")
     val l1 = try s1.mkString finally s1.close()
     val cid = ChaincodeId("Supply", 2)
-    val t1 = PeerHelper.createTransaction4Deploy(superAdmin, cid, l1, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA, ContractClassification.CONTRACT_CUSTOM)
+    val t1 = PeerHelper.createTransaction4Deploy(superAdmin, cid, l1, "", 5000, ChaincodeDeploy.CodeType.CODE_SCALA, ContractClassification.CONTRACT_CUSTOM)
     val msg_send1 = DoTransaction(Seq[Transaction](t1), "test-db", TypeOfSender.FromPreloader)
     probe.send(sandbox, msg_send1)
     val msg_recv1 = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    val ol1 = msg_recv1(0).ol
+    val ol1 = msg_recv1(0).statesSet
 
     //生成invoke交易
     val t2 = PeerHelper.createTransaction4Invoke(superAdmin, cid, ACTION.SignFixed, Seq(l2))
@@ -107,39 +107,39 @@ class SupplySpec2(_system: ActorSystem) extends TestKit(_system) with Matchers w
     probe.send(sandbox, msg_send2)
     val msg_recv2 = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
     //由于版本2支持SignFixed 分账方法,因此能够正确处理
-    msg_recv2(0).getResult.code should be(0)
+    msg_recv2(0).getErr.code should be(0)
 
     var t = PeerHelper.createTransaction4Invoke(superAdmin, cid, ACTION.SignShare, Seq(l3))
     var msg_send = DoTransaction(Seq[Transaction](t), "test-db", TypeOfSender.FromPreloader)
     probe.send(sandbox, msg_send)
     var msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
     //由于版本2不支持SignShare 分账方法,因此无法正确处理
-    msg_recv(0).getResult.code should be(102)
+    msg_recv(0).getErr.code should be(102)
 
 
     //部署版本3
     val s7 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/SupplyTPL3.scala")
     val l7 = try s7.mkString finally s7.close()
     val cid2 = new ChaincodeId("Supply", 3)
-    t = PeerHelper.createTransaction4Deploy(superAdmin, cid2, l7, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA, ContractClassification.CONTRACT_CUSTOM)
+    t = PeerHelper.createTransaction4Deploy(superAdmin, cid2, l7, "", 5000, ChaincodeDeploy.CodeType.CODE_SCALA, ContractClassification.CONTRACT_CUSTOM)
     msg_send = DoTransaction(Seq[Transaction](t), "test-db", TypeOfSender.FromPreloader)
     probe.send(sandbox, msg_send)
     msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-    msg_recv(0).getResult.reason.isEmpty should be(true)
+    msg_recv(0).getErr.reason.isEmpty should be(true)
 
     t = PeerHelper.createTransaction4Invoke(superAdmin, cid2, ACTION.SignShare, Seq(l3))
     msg_send = DoTransaction(Seq[Transaction](t), "test-db", TypeOfSender.FromPreloader)
     probe.send(sandbox, msg_send)
     msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
     //由于版本3支持SignShare 分账方法,因此正确处理
-    msg_recv(0).getResult.reason.isEmpty should be(true)
+    msg_recv(0).getErr.reason.isEmpty should be(true)
 
     t = PeerHelper.createTransaction4Invoke(superAdmin, cid2, ACTION.SignFixed, Seq(l3))
     msg_send = DoTransaction(Seq[Transaction](t), "test-db", TypeOfSender.FromPreloader)
     probe.send(sandbox, msg_send)
     msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
     //由于版本3不支持SignFiexed 分账方法,因此无法正确处理
-    msg_recv(0).getResult.code should be(102)
+    msg_recv(0).getErr.code should be(102)
 
 
     //测试各种金额下的分账结果
@@ -152,18 +152,14 @@ class SupplySpec2(_system: ActorSystem) extends TestKit(_system) with Matchers w
       val msg_send4 = DoTransaction(Seq[Transaction](t4), "test-db", TypeOfSender.FromPreloader)
       probe.send(sandbox, msg_send4)
       val msg_recv4 = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-      val ol4 = msg_recv4(0).ol
+      val ol4 = msg_recv4(0).statesSet
       for (elem <- ol4) {
-        val elemStr = JsonFormat.toJsonString(elem)
-        println(s"oper log:$elemStr")
+        println(s"oper log:$elem")
       }
       //分账之后总额应保持一致
       var total = 0
-      ol4.foreach {
-        ol =>
-          total += deserialise(ol.newValue.toByteArray()).asInstanceOf[Int]
-          if (ol.oldValue != null)
-            total -= deserialise(ol.oldValue.toByteArray()).asInstanceOf[Int]
+      for((k,v) <- ol4){
+        total += deserialise(v.toByteArray()).asInstanceOf[Int]
       }
       total should be(el)
     }
@@ -176,19 +172,14 @@ class SupplySpec2(_system: ActorSystem) extends TestKit(_system) with Matchers w
       val msg_send4 = DoTransaction(Seq[Transaction](t4), "test-db", TypeOfSender.FromPreloader)
       probe.send(sandbox, msg_send4)
       val msg_recv4 = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
-      val ol4 = msg_recv4(0).ol
+      val ol4 = msg_recv4(0).statesSet
       for (elem <- ol4) {
-        val elemStr = JsonFormat.toJsonString(elem)
-        println(s"oper log:$elemStr")
+        println(s"oper log:$elem")
       }
       //分账之后总额应保持一致
       var total = 0
-      ol4.foreach {
-        ol =>
-          total += deserialise(ol.newValue.toByteArray()).asInstanceOf[Int]
-          //由于不同版本共享kv,前面的分账结果导致账户不为空
-          ol.oldValue should not be null
-          total -= deserialise(ol.oldValue.toByteArray()).asInstanceOf[Int]
+      for((k,v) <- ol4){
+        total += deserialise(v.toByteArray()).asInstanceOf[Int]
       }
       total should be(el)
     }

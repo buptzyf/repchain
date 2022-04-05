@@ -18,7 +18,7 @@ package rep.sc.scalax
 import _root_.com.google.protobuf.ByteString
 import rep.log.RepLogger
 import rep.log.httplog.AlertInfo
-import rep.protos.peer.{Transaction, _}
+import rep.proto.rc2.{Transaction, _}
 import rep.sc.Sandbox
 import rep.sc.Sandbox._
 import rep.sc.SandboxDispatcher.{DoTransactionOfSandboxInSingle, ERR_INVOKE_CHAINCODE_NOT_EXIST}
@@ -58,7 +58,7 @@ class SandboxScala(cid: ChaincodeId) extends Sandbox(cid) {
     val txid = serialise(t.id)
     //shim.sr.Put(key_tx, txid)
     shim.srOfTransaction.Put(key_tx, txid)
-    shim.ol.append(OperLog(key_tx, ByteString.EMPTY, ByteString.copyFrom(txid)))
+    shim.tr.addStatesSet((key_tx, ByteString.copyFrom(txid)))
 
     //写入初始状态
     val key_tx_state = WorldStateKeyPreFix + tx_cid + PRE_STATE
@@ -67,13 +67,13 @@ class SandboxScala(cid: ChaincodeId) extends Sandbox(cid) {
     this.ContractStatusSource = Some(2)
     //shim.sr.Put(key_tx_state, state_enable)
     shim.srOfTransaction.Put(key_tx_state, state_enable)
-    shim.ol.append(OperLog(key_tx_state, ByteString.EMPTY, ByteString.copyFrom(state_enable)))
+    shim.tr.addStatesSet((key_tx_state, ByteString.copyFrom(state_enable)))
 
     //利用kv记住合约的开发者
     val coder_bytes = serialise(coder)
     //shim.sr.Put(key_coder, coder_bytes)
     shim.srOfTransaction.Put(key_coder, coder_bytes)
-    shim.ol.append(OperLog(key_coder, ByteString.EMPTY, ByteString.copyFrom(coder_bytes)))
+    shim.tr.addStatesSet((key_coder, ByteString.copyFrom(coder_bytes)))
   }
 
   def doTransaction(dotrans: DoTransactionOfSandboxInSingle): TransactionResult = {
@@ -119,7 +119,7 @@ class SandboxScala(cid: ChaincodeId) extends Sandbox(cid) {
             oldbytestring = ByteString.copyFrom(state_bytes)
           }
           shim.srOfTransaction.Put(key_tx_state, state_bytes)
-          shim.ol.append(OperLog(key_tx_state, oldbytestring, ByteString.copyFrom(state_bytes)))
+          shim.tr.addStatesSet((key_tx_state, ByteString.copyFrom(state_bytes)))
           this.ContractStatus = Some(state)
           this.ContractStatusSource = Some(2)
           null
@@ -128,9 +128,9 @@ class SandboxScala(cid: ChaincodeId) extends Sandbox(cid) {
 
       shim.srOfTransaction.commit
       if(r == null){
-        new TransactionResult(t.id, shim.ol.toList,Option(new ActionResult(0,"")))
+        shim.tr.withErr(new ActionResult(0,""))
       }else{
-        new TransactionResult(t.id, shim.ol.toList,Option(r))
+        shim.tr.withErr(r)
       }
 
     } catch {
@@ -140,7 +140,7 @@ class SandboxScala(cid: ChaincodeId) extends Sandbox(cid) {
         val e1 = new SandboxException(e.getMessage)
         RepLogger.sendAlertToDB(new AlertInfo("CONTRACT",4,s"Node Name=${pe.getSysTag},txid=${t.id},erroInfo=${e.getMessage},Transaction Exception."))
         shim.srOfTransaction.roolback
-        new TransactionResult(t.id, _root_.scala.Seq.empty,Option(ActionResult(102,e1.getMessage)))
+        new TransactionResult(t.id, Map.empty,Map.empty,Option(ActionResult(102,e1.getMessage)))
         /*new DoTransactionResult(t.id, null,
           shim.ol.toList,
           Option(akka.actor.Status.Failure(e1)))*/

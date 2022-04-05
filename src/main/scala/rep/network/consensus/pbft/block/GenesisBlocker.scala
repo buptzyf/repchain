@@ -30,7 +30,7 @@ import rep.app.conf.{SystemProfile, TimePolicy}
 import rep.crypto.Sha256
 import rep.network._
 import rep.network.base.ModuleBase
-import rep.protos.peer._
+import rep.proto.rc2._
 import rep.storage.ImpDataAccess
 import rep.utils.GlobalUtils.{BlockEvent, EventType, NodeStatus}
 
@@ -73,7 +73,7 @@ class GenesisBlocker(moduleName: String) extends ModuleBase(moduleName) {
   import scala.concurrent.duration._
   import akka.actor.ActorSelection
   import scala.collection.mutable.ArrayBuffer
-  import rep.protos.peer.{ Transaction }
+  import rep.proto.rc2.{ Transaction }
 
   val dataaccess: ImpDataAccess = ImpDataAccess.GetDataAccess(pe.getSysTag)
   implicit val timeout = Timeout(TimePolicy.getTimeoutPreload*20.seconds)

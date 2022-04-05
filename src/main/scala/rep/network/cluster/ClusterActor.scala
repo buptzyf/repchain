@@ -18,7 +18,7 @@ package rep.network.cluster
 
 import akka.actor.{Actor, ActorRef}
 import akka.cluster.pubsub.DistributedPubSubMediator.{Publish, Subscribe}
-import rep.protos.peer.Event
+import rep.proto.rc2.Event
 import rep.utils.ActorUtils
 import rep.utils.GlobalUtils.EventType
 import rep.app.conf.SystemProfile

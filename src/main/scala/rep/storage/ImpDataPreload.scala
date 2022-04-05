@@ -20,7 +20,7 @@ import rep.app.conf.SystemProfile
 import rep.utils._
 import rep.storage.leveldb._
 import scala.collection.mutable.ArrayBuffer
-import rep.protos.peer._
+import rep.proto.rc2._
 import scala.util.control.Breaks
 import rep.log.RepLogger
 import rep.authority.cache.authbind.{ImpAuthBindToCert, ImpAuthBindToCertOfPreload}

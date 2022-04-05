@@ -1,6 +1,6 @@
 package rep.sc.tpl.did.operation
 
-import rep.protos.peer.{ActionResult, Credential, CredentialContentMetadata}
+import rep.proto.rc2.{ActionResult, Credential, CredentialContentMetadata}
 import rep.sc.scalax.{ContractContext, ContractException}
 import rep.sc.tpl.did.DidTplPrefix.{signerPrefix, ccmdPrefix, credPrefix}
 

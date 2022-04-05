@@ -24,7 +24,7 @@ import scala.concurrent.duration._
 import akka.pattern.{AskTimeoutException, ask}
 
 import scala.concurrent._
-import rep.protos.peer._
+import rep.proto.rc2._
 import rep.crypto._
 import rep.sc.Shim._
 import rep.network.autotransaction.PeerHelper._
@@ -39,7 +39,7 @@ import rep.network.base.ModuleBase
 import rep.network.module.ModuleActorType
 import akka.actor.Props
 import rep.crypto.cert.SignTool
-import rep.protos.peer.ActionResult
+import rep.proto.rc2.ActionResult
 import rep.app.conf.SystemProfile
 import rep.log.RepLogger
 import rep.network.autotransaction.PeerHelper
@@ -119,11 +119,11 @@ object RestActor {
     }
     val ctype = c.ctype match {
       case 2 =>
-        rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA
+        rep.proto.rc2.ChaincodeDeploy.CodeType.CODE_SCALA
       case 3 =>
-        rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA_PARALLEL
+        rep.proto.rc2.ChaincodeDeploy.CodeType.CODE_VCL_DLL
       case _ =>
-        rep.protos.peer.ChaincodeDeploy.CodeType.CODE_JAVASCRIPT
+        rep.proto.rc2.ChaincodeDeploy.CodeType.CODE_JAVASCRIPT
     }
 
     val chaincodeId = new ChaincodeId(c.chaincodename, c.chaincodeversion)
@@ -479,7 +479,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
     val tr = ExecuteTransaction(txs,dbtag)//+"_"+h+"_"+Random.nextInt(10000))
     if(tr._2.length > 0){
       tr._2.foreach(trs=>{
-        var ts = TransactionResult(trs.txId, trs.ol.toSeq, Option(trs.r))
+        var ts = TransactionResult(trs.txId, trs.rSet, trs.wSet, Option(trs.r))
         txresults += Some(ts)
       })
     }

@@ -37,7 +37,7 @@ case object PbftPrepare {
 }
 
 class PbftPrepare(moduleName: String) extends ModuleBase(moduleName) {
-  import rep.protos.peer._
+  import rep.proto.rc2._
 
   import scala.concurrent.duration._
 
@@ -77,8 +77,8 @@ class PbftPrepare(moduleName: String) extends ModuleBase(moduleName) {
 
     case MsgPbftPrepare(senderPath,result, block, blocker, prepare, chainInfo) =>
           //already verified
-          RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", PbftPrepare prepare: " + blocker + ", " + block.hashOfBlock.toStringUtf8)
-          val hash = block.hashOfBlock
+          RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", PbftPrepare prepare: " + blocker + ", " + block.header.get.hashPresent.toStringUtf8)
+          val hash = block.header.get.hashPresent
           if ( hash.equals(recvedHash)) {
             recvedPrepares += prepare
           } else {

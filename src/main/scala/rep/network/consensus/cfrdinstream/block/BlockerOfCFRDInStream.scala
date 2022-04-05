@@ -12,7 +12,7 @@ import rep.network.consensus.util.BlockHelp
 import rep.network.module.ModuleActorType
 import rep.network.module.cfrd.CFRDActorType
 import rep.network.util.NodeHelp
-import rep.protos.peer.{Block, Event}
+import rep.proto.rc2.{Block, Event}
 import rep.storage.ImpDataPreloadMgr
 import rep.utils.GlobalUtils.{BlockerInfo, EventType}
 
@@ -47,7 +47,7 @@ class BlockerOfCFRDInStream(moduleName: String) extends IBlocker(moduleName){
       }
     } catch {
       case e: AskTimeoutException =>
-        pe.getTransPoolMgr.rollbackTransaction("blockidentifier_"+block.height)
+        pe.getTransPoolMgr.rollbackTransaction("blockidentifier_"+block.header.get.height)
         null
     }
   }
@@ -66,7 +66,7 @@ class BlockerOfCFRDInStream(moduleName: String) extends IBlocker(moduleName){
       }
     } catch {
       case e: AskTimeoutException =>
-        pe.getTransPoolMgr.rollbackTransaction("blockidentifier_"+block.height+"_"+this.voteinfo.VoteIndex)
+        pe.getTransPoolMgr.rollbackTransaction("blockidentifier_"+block.header.get.height+"_"+this.voteinfo.VoteIndex)
         null
     }finally {
       pe.removeBlock(cacheIdentifier)
@@ -90,8 +90,8 @@ class BlockerOfCFRDInStream(moduleName: String) extends IBlocker(moduleName){
         if(this.lastPreloadBlock == null){
           r = true
         }else{
-          if(this.lastPreloadBlock.height <= (this.voteinfo.VoteHeight + SystemProfile.getBlockNumberOfRaft) && !pe.getZeroOfTransNumFlag) {
-            if(this.lastPreloadBlock.height <= pe.getConfirmHeight)
+          if(this.lastPreloadBlock.header.get.height <= (this.voteinfo.VoteHeight + SystemProfile.getBlockNumberOfRaft) && !pe.getZeroOfTransNumFlag) {
+            if(this.lastPreloadBlock.header.get.height <= pe.getConfirmHeight)
               r = true
           }
         }
@@ -104,7 +104,7 @@ class BlockerOfCFRDInStream(moduleName: String) extends IBlocker(moduleName){
     if(this.lastPreloadBlock == null){
       pe.getCurrentHeight + 1
     }else{
-      this.lastPreloadBlock.height + 1
+      this.lastPreloadBlock.header.get.height + 1
     }
   }
 
@@ -112,7 +112,7 @@ class BlockerOfCFRDInStream(moduleName: String) extends IBlocker(moduleName){
     if(this.lastPreloadBlock == null){
       pe.getCurrentBlockHash
     }else{
-      this.lastPreloadBlock.hashOfBlock.toStringUtf8
+      this.lastPreloadBlock.header.get.hashPresent.toStringUtf8
     }
   }
 
@@ -140,7 +140,7 @@ class BlockerOfCFRDInStream(moduleName: String) extends IBlocker(moduleName){
         //pe.getActorRef(CFRDActorType.ActorType.endorsementcollectionerinstream) ! CollectEndorsement(this.lastPreloadBlock, pe.getSysTag,pe.getBlocker.VoteIndex)
         pe.getActorRef(CFRDActorType.ActorType.endorsementcollectionerinstream) ! CollectEndorsement(this.lastPreloadBlock, ForceVoteInfo(this.voteinfo.voteBlockHash,this.voteinfo.VoteHeight,this.voteinfo.VoteIndex,pe.getSysTag))
       }else{
-        pe.getTransPoolMgr.rollbackTransaction("blockidentifier_"+blk.height)
+        pe.getTransPoolMgr.rollbackTransaction("blockidentifier_"+blk.header.get.height)
       }
     }else{
       pe.getTransPoolMgr.cleanPreloadCache(this.blockIdentifier_prefix+newHeight)

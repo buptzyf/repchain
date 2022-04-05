@@ -1,6 +1,6 @@
 package rep.sc.tpl.did.operation
 
-import rep.protos.peer._
+import rep.proto.rc2._
 import rep.sc.scalax.{ContractContext, ContractException}
 import rep.sc.tpl.did.DidTplPrefix._
 import scalapb.json4s.JsonFormat

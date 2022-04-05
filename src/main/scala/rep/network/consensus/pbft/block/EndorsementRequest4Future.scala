@@ -28,7 +28,7 @@ import rep.network.base.ModuleBase
 import rep.network.consensus.pbft.MsgOfPBFT
 import rep.network.consensus.pbft.MsgOfPBFT.{MsgPbftPrePrepare, MsgPbftPrePrepareResend, MsgPbftReply, MsgPbftReplyOk, RequesterOfEndorsement, ResendEndorseInfo, ResultFlagOfEndorse, ResultOfEndorsed}
 import rep.network.consensus.util.BlockVerify
-import rep.protos.peer._
+import rep.proto.rc2._
 
 import scala.concurrent._
 
@@ -80,7 +80,7 @@ class EndorsementRequest4Future(moduleName: String) extends ModuleBase(moduleNam
 
   private def ProcessMsgPbftReply(reply: MsgPbftReply){
     if (VerifyReply(reply.block,reply.reply)) {
-      val hash = reply.block.hashOfBlock
+      val hash = reply.block.header.get.hashPresent
       if ( hash.equals(recvedHash)) {
         recvedReplies += reply.reply
       } else {
@@ -101,7 +101,7 @@ class EndorsementRequest4Future(moduleName: String) extends ModuleBase(moduleNam
 
   override def receive = {
     case MsgPbftReply(block,reply,chainInfo) =>
-      RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", MsgPbftReply: " + ", " + Repchain.h4(block.hashOfBlock.toStringUtf8))
+      RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", MsgPbftReply: " + ", " + Repchain.h4(block.header.get.hashPresent.toStringUtf8))
       ProcessMsgPbftReply(MsgPbftReply(block,reply,chainInfo))
 
     case MsgPbftPrePrepareResend(senderPath,block, blocker) =>
@@ -109,11 +109,11 @@ class EndorsementRequest4Future(moduleName: String) extends ModuleBase(moduleNam
 
     case RequesterOfEndorsement(block, blocker, addr) =>
       //待请求背书的块的上一个块的hash不等于系统最新的上一个块的hash，停止发送背书
-      RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", RequesterOfEndorsement: " + ", " + Repchain.h4(block.hashOfBlock.toStringUtf8))
-      if(block.previousBlockHash.toStringUtf8() == pe.getCurrentBlockHash){
+      RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", RequesterOfEndorsement: " + ", " + Repchain.h4(block.header.get.hashPresent.toStringUtf8))
+      if(block.header.get.hashPrevious.toStringUtf8() == pe.getCurrentBlockHash){
         handler(RequesterOfEndorsement(block, blocker, addr))
       }else{
-        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"--------endorsementRequest4Future back out  endorsement,prehash not equal pe.currenthash ,height=${block.height},local height=${pe.getCurrentHeight} "))
+        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"--------endorsementRequest4Future back out  endorsement,prehash not equal pe.currenthash ,height=${block.header.get.height},local height=${pe.getCurrentHeight} "))
       }
 
     case _ => //ignore

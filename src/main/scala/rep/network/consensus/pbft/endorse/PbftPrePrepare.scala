@@ -34,7 +34,7 @@ case object PbftPrePrepare {
 }
 
 class PbftPrePrepare(moduleName: String) extends ModuleBase(moduleName) {
-  import rep.protos.peer._
+  import rep.proto.rc2._
 
   import scala.concurrent.duration._
 
@@ -55,7 +55,7 @@ class PbftPrePrepare(moduleName: String) extends ModuleBase(moduleName) {
 
   override def receive = {
     case MsgPbftPrePrepare(senderPath,block, blocker) =>
-      RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", PbftPrePrepare preprepare: " + blocker + ", " + block.hashOfBlock.toStringUtf8)
+      RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", PbftPrePrepare preprepare: " + blocker + ", " + block.header.get.hashPresent.toStringUtf8)
       ProcessMsgPbftPrePrepare(MsgPbftPrePrepare(senderPath, block, blocker))
 
     case _ => //ignore

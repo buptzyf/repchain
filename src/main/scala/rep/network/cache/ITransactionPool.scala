@@ -8,7 +8,7 @@ import rep.network.autotransaction.Topic
 import rep.network.base.ModuleBase
 import rep.network.cache.ITransactionPool.CheckedTransactionResult
 import rep.network.util.NodeHelp
-import rep.protos.peer.{Event, Transaction}
+import rep.proto.rc2.{Event, Transaction}
 import rep.storage.ImpDataAccess
 import rep.utils.ActorUtils
 import rep.utils.GlobalUtils.EventType

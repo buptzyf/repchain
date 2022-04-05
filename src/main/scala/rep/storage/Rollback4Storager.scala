@@ -18,7 +18,7 @@ package rep.storage
 
 import scala.util.control.Breaks._
 import rep.log.RepLogger
-import rep.protos.peer._
+import rep.proto.rc2._
 import rep.storage.block.BlockFileMgr
 
 class Rollback4Storager(val dbop: ImpDataAccess,val filemgr: BlockFileMgr) {
@@ -71,9 +71,9 @@ class Rollback4Storager(val dbop: ImpDataAccess,val filemgr: BlockFileMgr) {
   }
 
   private def rollbackAllIndex(block: Block) = {
-    dbop.Delete(IdxPrefix.IdxBlockPrefix + block.hashOfBlock.toStringUtf8())
-    dbop.Delete(IdxPrefix.IdxBlockHeight + String.valueOf(block.height))
-    dbop.Put(IdxPrefix.Height, String.valueOf(block.height - 1).getBytes())
+    dbop.Delete(IdxPrefix.IdxBlockPrefix + block.header.get.hashPresent.toStringUtf8())
+    dbop.Delete(IdxPrefix.IdxBlockHeight + String.valueOf(block.header.get.height))
+    dbop.Put(IdxPrefix.Height, String.valueOf(block.header.get.height - 1).getBytes())
   }
 
   private def rollbackFileFirstHeight(bidx: blockindex) = {
@@ -110,8 +110,9 @@ class Rollback4Storager(val dbop: ImpDataAccess,val filemgr: BlockFileMgr) {
     }
     rel
   }
-
+//TODO 回滚依赖 oldValue，新的数据结构里已经没有了
   private def rollbackWorldState(block: Block) = {
+    /*
     try {
       val txresults = block.transactionResults
       if (!txresults.isEmpty) {
@@ -140,6 +141,7 @@ class Rollback4Storager(val dbop: ImpDataAccess,val filemgr: BlockFileMgr) {
     } catch {
       case e: RuntimeException => throw e
     }
+    */
   }
 
 }

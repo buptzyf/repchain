@@ -11,7 +11,7 @@ import rep.network.sync.parser.ISynchAnalyzer
 import rep.network.sync.parser.raft.IRAFTSynchAnalyzer
 import rep.network.sync.request.ISynchRequester
 import rep.network.util.NodeHelp
-import rep.protos.peer.Event
+import rep.proto.rc2.Event
 import rep.storage.ImpDataAccess
 import rep.utils.GlobalUtils.{BlockEvent, EventType}
 import akka.pattern.{AskTimeoutException, ask}

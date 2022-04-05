@@ -31,7 +31,7 @@ import rep.network.consensus.util.BlockHelp
 import rep.network.module.ModuleActorType.ActorType
 import rep.network.module.pbft.PBFTActorType
 import rep.network.util.NodeHelp
-import rep.protos.peer._
+import rep.proto.rc2._
 import rep.storage.ImpDataAccess
 import rep.utils.GlobalUtils.EventType
 
@@ -52,7 +52,7 @@ object BlockerOfPBFT {
  */
 class BlockerOfPBFT(moduleName: String) extends ModuleBase(moduleName) {
 
-  import rep.protos.peer.Transaction
+  import rep.proto.rc2.Transaction
 
   import scala.collection.mutable.ArrayBuffer
   import scala.concurrent.duration._
@@ -120,14 +120,14 @@ class BlockerOfPBFT(moduleName: String) extends ModuleBase(moduleName) {
       RepTimeTracer.setEndTime(pe.getSysTag, "collectTransToBlock", System.currentTimeMillis(), pe.getBlocker.VoteHeight + 1, trans.size)
       //此处建立新块必须采用抽签模块的抽签结果来进行出块，否则出现刚抽完签，马上有新块的存储完成，就会出现错误
       var blc = BlockHelp.WaitingForExecutionOfBlock(pe.getBlocker.voteBlockHash, pe.getBlocker.VoteHeight + 1, trans.toSeq)
-      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,height=${blc.height},local height=${pe.getBlocker.VoteHeight}" + "~" + selfAddr))
-      RepTimeTracer.setStartTime(pe.getSysTag, "PreloadTrans", System.currentTimeMillis(), blc.height, blc.transactions.size)
+      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,height=${blc.header.get.height},local height=${pe.getBlocker.VoteHeight}" + "~" + selfAddr))
+      RepTimeTracer.setStartTime(pe.getSysTag, "PreloadTrans", System.currentTimeMillis(), blc.header.get.height, blc.transactions.size)
       blc = ExecuteTransactionOfBlock(blc)
       if (blc != null) {
-        RepTimeTracer.setEndTime(pe.getSysTag, "PreloadTrans", System.currentTimeMillis(), blc.height, blc.transactions.size)
-        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,prelaod success,height=${blc.height},local height=${pe.getBlocker.VoteHeight}" + "~" + selfAddr))
+        RepTimeTracer.setEndTime(pe.getSysTag, "PreloadTrans", System.currentTimeMillis(), blc.header.get.height, blc.transactions.size)
+        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,prelaod success,height=${blc.header.get.height},local height=${pe.getBlocker.VoteHeight}" + "~" + selfAddr))
         blc = BlockHelp.AddBlockHash(blc)
-        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,AddBlockHash success,height=${blc.height},local height=${pe.getBlocker.VoteHeight}" + "~" + selfAddr))
+        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,AddBlockHash success,height=${blc.header.get.height},local height=${pe.getBlocker.VoteHeight}" + "~" + selfAddr))
         BlockHelp.AddSignToBlock(blc, pe.getSysTag)
       } else {
         RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("create new block error,preload error" + "~" + selfAddr))
@@ -151,14 +151,14 @@ class BlockerOfPBFT(moduleName: String) extends ModuleBase(moduleName) {
       RepTimeTracer.setEndTime(pe.getSysTag, "collectTransToBlock", System.currentTimeMillis(), pe.getBlocker.VoteHeight + 1, trans.size)
       //此处建立新块必须采用抽签模块的抽签结果来进行出块，否则出现刚抽完签，马上有新块的存储完成，就会出现错误
       var blc = BlockHelp.WaitingForExecutionOfBlock(pe.getCurrentBlockHash, pe.getCurrentHeight + 1, trans)
-      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,height=${blc.height},local height=${pe.getCurrentHeight}" + "~" + selfAddr))
-      RepTimeTracer.setStartTime(pe.getSysTag, "PreloadTrans", System.currentTimeMillis(), blc.height, blc.transactions.size)
+      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,height=${blc.header.get.height},local height=${pe.getCurrentHeight}" + "~" + selfAddr))
+      RepTimeTracer.setStartTime(pe.getSysTag, "PreloadTrans", System.currentTimeMillis(), blc.header.get.height, blc.transactions.size)
       blc = ExecuteTransactionOfBlock(blc)
       if (blc != null) {
-        RepTimeTracer.setEndTime(pe.getSysTag, "PreloadTrans", System.currentTimeMillis(), blc.height, blc.transactions.size)
-        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,prelaod success,height=${blc.height},local height=${pe.getBlocker.VoteHeight}" + "~" + selfAddr))
+        RepTimeTracer.setEndTime(pe.getSysTag, "PreloadTrans", System.currentTimeMillis(), blc.header.get.height, blc.transactions.size)
+        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,prelaod success,height=${blc.header.get.height},local height=${pe.getBlocker.VoteHeight}" + "~" + selfAddr))
         blc = BlockHelp.AddBlockHash(blc)
-        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,AddBlockHash success,height=${blc.height},local height=${pe.getBlocker.VoteHeight}" + "~" + selfAddr))
+        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,AddBlockHash success,height=${blc.header.get.height},local height=${pe.getBlocker.VoteHeight}" + "~" + selfAddr))
         BlockHelp.AddSignToBlock(blc, pe.getSysTag)
       } else {
         RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("create new block error,preload error" + "~" + selfAddr))
@@ -180,9 +180,9 @@ class BlockerOfPBFT(moduleName: String) extends ModuleBase(moduleName) {
     //}
      
     if (blc != null) {
-      RepTimeTracer.setEndTime(pe.getSysTag, "createBlock", System.currentTimeMillis(), blc.height, blc.transactions.size)
+      RepTimeTracer.setEndTime(pe.getSysTag, "createBlock", System.currentTimeMillis(), blc.header.get.height, blc.transactions.size)
       this.preblock = blc
-      RepLogger.debug(RepLogger.zLogger, pe.getSysTag + ", preblock= " + preblock.height + "," +Repchain.h4(preblock.hashOfBlock.toStringUtf8) )
+      RepLogger.debug(RepLogger.zLogger, pe.getSysTag + ", preblock= " + preblock.header.get.height + "," +Repchain.h4(preblock.header.get.hashPresent.toStringUtf8) )
       schedulerLink = clearSched()
 
       // if (SystemProfile.getNumberOfEndorsement == 1) {
@@ -190,7 +190,7 @@ class BlockerOfPBFT(moduleName: String) extends ModuleBase(moduleName) {
       //  mediator ! Publish(Topic.Block, ConfirmedBlock(preblock, self))
       //}else{
         //在发出背书时，告诉对方我是当前出块人，取出系统的名称
-        RepTimeTracer.setStartTime(pe.getSysTag, "Endorsement", System.currentTimeMillis(), blc.height, blc.transactions.size)
+        RepTimeTracer.setStartTime(pe.getSysTag, "Endorsement", System.currentTimeMillis(), blc.header.get.height, blc.transactions.size)
         val ar = pe.getActorRef(PBFTActorType.ActorType.endorsementcollectioner)
         RepLogger.debug(RepLogger.zLogger, pe.getSysTag + ", send CollectEndorsement to " + ar )
         ar ! CollectEndorsement(this.preblock, pe.getSysTag)
@@ -212,7 +212,7 @@ class BlockerOfPBFT(moduleName: String) extends ModuleBase(moduleName) {
             sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Block, Event.Action.CANDIDATOR)
 
             //是出块节点
-            if (preblock == null || (preblock.previousBlockHash.toStringUtf8() != pe.getBlocker.voteBlockHash)) {
+            if (preblock == null || (preblock.header.get.hashPrevious.toStringUtf8() != pe.getBlocker.voteBlockHash)) {
               RepLogger.debug(RepLogger.zLogger, "CreateBlockHandler, " + "Me: "+Repchain.nn(pe.getSysTag))
               CreateBlockHandler
             }

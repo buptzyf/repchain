@@ -1,7 +1,7 @@
 package rep.network.consensus.pbft
 
 import akka.actor.{ActorRef, Address}
-import rep.protos.peer.{Block, BlockchainInfo, MPbftCommit, MPbftPrepare, MPbftReply, Signature}
+import rep.proto.rc2.{Block, BlockchainInfo, MPbftCommit, MPbftPrepare, MPbftReply, Signature}
 import rep.utils.GlobalUtils.BlockerInfo
 
 //zhj

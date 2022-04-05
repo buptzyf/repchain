@@ -7,7 +7,7 @@ import rep.app.conf.SystemProfile
 import rep.network.autotransaction.Topic
 import rep.network.base.ModuleBase
 import rep.network.consensus.byzantium.ConsensusCondition
-import rep.protos.peer.{Event, Transaction}
+import rep.proto.rc2.{Event, Transaction}
 import rep.utils.GlobalUtils.EventType
 
 object AcceptTransactionActor {
