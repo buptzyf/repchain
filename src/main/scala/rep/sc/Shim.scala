@@ -87,7 +87,7 @@ class Shim(system: ActorSystem, cName: String) {
     val oldValue = get(pKey)
     //sr.Put(pkey, value)
     this.srOfTransaction.Put(pKey,value)
-    val ov = if(oldValue == null) ByteString.EMPTY else ByteString.copyFrom(oldValue)
+    //val ov = if(oldValue == null) ByteString.EMPTY else ByteString.copyFrom(oldValue)
     val nv = if(value == null) ByteString.EMPTY else ByteString.copyFrom(value)
     //记录操作日志
     //getLogger.trace(s"nodename=${sr.getSystemName},dbname=${sr.getInstanceName},txid=${txid},key=${key},old=${deserialise(oldValue)},new=${deserialise(value)}")
@@ -104,8 +104,12 @@ class Shim(system: ActorSystem, cName: String) {
     val pKey = pre_key + key
     val pVal = get(pKey)
     //第一次读取,加到读取集合
-    if(!tr.statesGet.contains(pKey))
-      tr.addStatesSet((pKey, ByteString.copyFrom(pVal)))
+    if(!tr.statesGet.contains(pKey)) {
+      if(pVal ==null)
+        tr.addStatesGet((pKey,null))
+      else
+        tr.addStatesGet((pKey, ByteString.copyFrom(pVal)))
+    }
     pVal
   }
 
