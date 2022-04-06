@@ -23,7 +23,7 @@ import com.google.protobuf.ByteString
 import com.google.protobuf.timestamp.Timestamp
 import rep.protos.peer._
 import scalapb.json4s.JsonFormat
-import rep.crypto.Sha256
+import rep.crypto.{CryptoMgr, Sha256}
 import org.json4s.{DefaultFormats, Formats, jackson}
 import org.json4s.jackson.JsonMethods._
 import org.json4s.DefaultFormats._
@@ -46,9 +46,10 @@ object GenesisBuilder {
   implicit val formats       = DefaultFormats
 
   def main(args: Array[String]): Unit = {
-    SignTool.loadPrivateKey("121000005l35120456.node1", "123", "jks/121000005l35120456.node1.jks")
-    SignTool.loadNodeCertList("changeme", "jks/mytruststore.jks")
-    SignTool.loadPrivateKey("951002007l78123233.super_admin", "super_admin", "jks/951002007l78123233.super_admin.jks")
+    CryptoMgr.loadSystemConfInDebug
+    SignTool.loadPrivateKey("121000005l35120456.node1", "123", s"${CryptoMgr.getKeyFileSuffix.substring(1)}/121000005l35120456.node1${CryptoMgr.getKeyFileSuffix}")
+    SignTool.loadNodeCertList("changeme", s"${CryptoMgr.getKeyFileSuffix.substring(1)}/mytruststore${CryptoMgr.getKeyFileSuffix}")
+    SignTool.loadPrivateKey("951002007l78123233.super_admin", "super_admin", s"${CryptoMgr.getKeyFileSuffix.substring(1)}/951002007l78123233.super_admin${CryptoMgr.getKeyFileSuffix}")
     val sysName = "121000005l35120456.node1"
     //交易发起人是超级管理员
     //增加scala的资产管理合约   
@@ -89,9 +90,9 @@ object GenesisBuilder {
     
     
     for(i<-0 to 5){
-      val certfile = scala.io.Source.fromFile("jks/"+signers(i).creditCode+"."+signers(i).name+".cer","UTF-8")
+      val certfile = scala.io.Source.fromFile(s"${CryptoMgr.getKeyFileSuffix.substring(1)}/"+signers(i).creditCode+"."+signers(i).name+".cer","UTF-8")
       val certstr = try certfile.mkString finally certfile.close()
-     // val cert = SignTool.getCertByFile("jks/"+signers(i).creditCode+"."+signers(i).name+".cer")
+     // val cert = SignTool.getCertByFile(s"${CryptoMgr.getKeyFileSuffix.substring(1)}/"+signers(i).creditCode+"."+signers(i).name+".cer")
       val millis = System.currentTimeMillis()
       
       //val tmp = Certificate(certstr,"SHA256withECDSA",true,Option(Timestamp(millis/1000 , ((millis % 1000) * 1000000).toInt)), id = Option(CertId(signers(i).creditCode, signers(i).name)))

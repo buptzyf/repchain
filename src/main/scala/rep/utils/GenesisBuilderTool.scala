@@ -24,6 +24,7 @@ import com.google.common.io.Files
 import com.google.protobuf.timestamp.Timestamp
 import org.json4s.jackson.JsonMethods.{pretty, render}
 import org.json4s.{DefaultFormats, jackson}
+import rep.crypto.CryptoMgr
 import rep.crypto.cert.SignTool
 import rep.network.autotransaction.PeerHelper
 import rep.protos.peer._
@@ -43,7 +44,7 @@ object GenesisBuilderTool {
   implicit val formats = DefaultFormats
   private val setMap = new mutable.HashMap[String, Int]()
   private var jksFile = new File("jks")
-  private var certsFile = new File("jks/certs")
+  private var certsFile = new File(s"${CryptoMgr.getKeyFileSuffix.substring(1)}/certs")
   private var contractFile = new File("src/main/scala/rep/sc/tpl/ContractCert.scala")
   private var adminJksName = ""
   private var node1JksName = ""

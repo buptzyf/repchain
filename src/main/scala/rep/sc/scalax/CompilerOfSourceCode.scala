@@ -1,24 +1,17 @@
 package rep.sc.scalax
 
-import org.json4s._
-import org.json4s.jackson.JsonMethods._
-import rep.crypto.Sm3
-import rep.app.conf.SystemProfile
 import collection.mutable
 import rep.storage.util.pathUtil
 
 import scala.tools.nsc.Settings
 import scala.tools.nsc.Global
 import scala.tools.nsc.reporters.ConsoleReporter
-import java.io.{ File, FileWriter }
-import scala.io.Source
-import scala.reflect.io.AbstractFile
-import scala.reflect.internal.util.SourceFile
-import java.nio.file.Files
-import java.nio.file.Paths
+import java.io.{File, FileWriter}
+
+import rep.crypto.Sha256
+
 import scala.reflect.io.VirtualDirectory
 import scala.reflect.internal.util.BatchSourceFile
-
 import scala.reflect.runtime.currentMirror
 import scala.tools.reflect.ToolBox
 
@@ -234,7 +227,7 @@ class CompilerOfSourceCode(targetDir: Option[File], bDebug: Boolean) {
    *  @return 类名字符串
    */
   protected def classNameForCode(code: String): String = {
-    PRE_CLS_NAME + Sm3.hashstr(code)
+    PRE_CLS_NAME + Sha256.hashstr(code)
   }
 
 }

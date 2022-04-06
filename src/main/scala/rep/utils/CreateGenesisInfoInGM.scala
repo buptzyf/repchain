@@ -1,11 +1,10 @@
 package rep.utils
 
-import java.io.PrintWriter
-
+import java.io.{File, PrintWriter}
 import com.google.protobuf.timestamp.Timestamp
 import com.typesafe.config.ConfigFactory
-import org.json4s.jackson.JsonMethods.{pretty, render}
 import org.json4s.{DefaultFormats, jackson}
+import org.json4s.jackson.JsonMethods.{pretty, render}
 import rep.crypto.{CryptoMgr, Sha256}
 import rep.crypto.cert.SignTool
 import rep.network.autotransaction.PeerHelper
@@ -14,22 +13,23 @@ import rep.protos.peer.Certificate.CertType
 import rep.protos.peer.Operate.OperateType
 import rep.protos.peer.{Block, ChaincodeId, Operate, Transaction}
 import scalapb.json4s.JsonFormat
-
 import scala.collection.mutable.ArrayBuffer
 
-object CreateGenesisInfo {
+object CreateGenesisInfoInGM {
   implicit val serialization = jackson.Serialization // or native.Serialization
   implicit val formats = DefaultFormats
 
   def main(args: Array[String]): Unit = {
     CryptoMgr.loadSystemConfInDebug
-    SignTool.loadPrivateKey("121000005l35120456.node1", "123", s"${CryptoMgr.getKeyFileSuffix.substring(1)}/121000005l35120456.node1${CryptoMgr.getKeyFileSuffix}")
-    SignTool.loadNodeCertList("changeme", s"${CryptoMgr.getKeyFileSuffix.substring(1)}/mytruststore${CryptoMgr.getKeyFileSuffix}")
-    SignTool.loadPrivateKey("951002007l78123233.super_admin", "super_admin", s"${CryptoMgr.getKeyFileSuffix.substring(1)}/951002007l78123233.super_admin${CryptoMgr.getKeyFileSuffix}")
-    val sysName = "121000005l35120456.node1"
-    val superAdmin = "951002007l78123233.super_admin"
-    val super_credit = "951002007l78123233"
-    val sys_credit = "121000005l35120456"
+    val dir4key = CryptoMgr.getKeyFileSuffix.substring(1)
+    val keySuffix = CryptoMgr.getKeyFileSuffix
+    SignTool.loadPrivateKey("215159697776981712.node1", "123", s"${dir4key}/215159697776981712.node1${keySuffix}")
+    SignTool.loadNodeCertList("changeme", s"${dir4key}/mytruststore${keySuffix}")
+    SignTool.loadPrivateKey("257091603041653856.super_admin", "super_admin", s"${dir4key}/257091603041653856.super_admin${keySuffix}")
+    val sysName = "215159697776981712.node1"
+    val superAdmin = "257091603041653856.super_admin"
+    val super_credit = "257091603041653856"
+    val sys_credit = "215159697776981712"
 
     val translist: ArrayBuffer[Transaction] = new ArrayBuffer[Transaction]
 
@@ -44,14 +44,14 @@ object CreateGenesisInfo {
     //注册合约的管理者，默认注册某个节点的DiD，并授予角色管理权限
     //注册节点DiD
     val nodes: Array[(String, String, String)] = new Array[(String, String, String)](6)
-    nodes(0) = ("super_admin", "951002007l78123233", "18912345678")
-    nodes(1) = ("node1", "121000005l35120456", "18912345678")
-    nodes(2) = ("node2", "12110107bi45jh675g", "18912345678")
-    nodes(3) = ("node3", "122000002n00123567", "18912345678")
-    nodes(4) = ("node4", "921000005k36123789", "18912345678")
-    nodes(5) = ("node5", "921000006e0012v696", "18912345678")
+    nodes(0) = ("super_admin", "257091603041653856", "18912345678")
+    nodes(1) = ("node1", "215159697776981712", "18912345678")
+    nodes(2) = ("node2", "904703631549900672", "18912345678")
+    nodes(3) = ("node3", "989038588418990208", "18912345678")
+    nodes(4) = ("node4", "645377164372772928", "18912345678")
+    nodes(5) = ("node5", "379552050023903168", "18912345678")
     for (i <- 0 to 5) {
-      val certfile = scala.io.Source.fromFile(s"${CryptoMgr.getKeyFileSuffix.substring(1)}/" + nodes(i)._2 + "." + nodes(i)._1 + ".cer", "UTF-8")
+      val certfile = scala.io.Source.fromFile(s"${dir4key}/" + nodes(i)._2 + "." + nodes(i)._1 + ".cer", "UTF-8")
       val certstr = try certfile.mkString finally certfile.close()
       val certstrhash = Sha256.hashstr(certstr)
       val certid = IdTool.getCertIdFromName(nodes(i)._2 + "." + nodes(i)._1)
@@ -191,7 +191,7 @@ object CreateGenesisInfo {
     // 设置账户初始金额
     val s3 = scala.io.Source.fromFile("api_req/json/set.json", "UTF-8")
     val ct1 = try s3.mkString finally s3.close()
-    translist += PeerHelper.createTransaction4Invoke("951002007l78123233.super_admin", cid2, "set", Seq(ct1))
+    translist += PeerHelper.createTransaction4Invoke("257091603041653856.super_admin", cid2, "set", Seq(ct1))
 
 
 
@@ -209,15 +209,15 @@ object CreateGenesisInfo {
     //超级管理员背书（角色）
     //创建者背书（1）
     /*blk = blk.withEndorsements(Seq(
-        BlockHelp.SignDataOfBlock(blk_hash,"951002007l78123233.super_admin"),
-        BlockHelp.SignDataOfBlock(blk_hash,"121000005l35120456.node1")))*/
+        BlockHelp.SignDataOfBlock(blk_hash,"257091603041653856.super_admin"),
+        BlockHelp.SignDataOfBlock(blk_hash,"215159697776981712.node1")))*/
     blk = blk.clearEndorsements
     blk = blk.clearTransactionResults
     val r = JsonFormat.toJson(blk)
     val rstr = pretty(render(r))
     println(rstr)
 
-    val pw = new PrintWriter("json/genesis.json", "UTF-8")
+    val pw = new PrintWriter("json/genesis_gm.json", "UTF-8")
     pw.write(rstr)
     pw.flush()
     pw.close()

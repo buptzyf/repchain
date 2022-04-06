@@ -23,6 +23,7 @@ import org.json4s.native.Serialization.{write, writePretty}
 import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, FunSuiteLike, Matchers}
 import rep.app.system.ClusterSystem
 import rep.app.system.ClusterSystem.InitType
+import rep.crypto.CryptoMgr
 import rep.crypto.cert.SignTool
 import rep.network.autotransaction.PeerHelper
 import rep.network.module.cfrd.ModuleManagerOfCFRD
@@ -78,9 +79,9 @@ class SandboxSpec(_system: ActorSystem) extends TestKit(_system) with Matchers w
     // 初始化配置项，主要是为了初始化存储路径
     SystemProfile.initConfigSystem(system.settings.config, sysName)
     // 加载node1的私钥
-    SignTool.loadPrivateKey(sysName, "123", "jks/" + sysName + ".jks")
+    SignTool.loadPrivateKey(sysName, "123", s"${CryptoMgr.getKeyFileSuffix.substring(1)}/" + sysName + "${CryptoMgr.getKeyFileSuffix}")
     // 加载super_admin的私钥
-    SignTool.loadPrivateKey(superAdmin, "super_admin", "jks/" + superAdmin + ".jks")
+    SignTool.loadPrivateKey(superAdmin, "super_admin", s"${CryptoMgr.getKeyFileSuffix.substring(1)}/" + superAdmin + "${CryptoMgr.getKeyFileSuffix}")
 
     //准备探针以验证调用返回结果
     val probe = TestProbe()

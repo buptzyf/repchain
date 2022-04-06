@@ -39,7 +39,7 @@ import akka.testkit.TestActorRef
 import Json4sSupport._
 import com.google.protobuf.timestamp.Timestamp
 import rep.app.conf.SystemProfile
-import rep.crypto.Sha256
+import rep.crypto.{CryptoMgr, Sha256}
 import rep.protos.peer.Authorize.TransferType
 import rep.protos.peer.Certificate.CertType
 import rep.protos.peer.ChaincodeDeploy.ContractClassification
@@ -75,11 +75,11 @@ class DeploySpec(_system: ActorSystem) extends TestKit(_system) with Matchers wi
     // 初始化配置项，主要是为了初始化存储路径
     SystemProfile.initConfigSystem(system.settings.config, sysName)
     // 加载node1的私钥
-    SignTool.loadPrivateKey(sysName, "123", "jks/" + sysName + ".jks")
+    SignTool.loadPrivateKey(sysName, "123", s"${CryptoMgr.getKeyFileSuffix.substring(1)}/" + sysName + "${CryptoMgr.getKeyFileSuffix}")
     // 加载node2的私钥，在这里添加一个私钥的装载，因为系统默认只装载自己的节点私钥
-    SignTool.loadPrivateKey(node2Name, "123", "jks/" + node2Name + ".jks")
+    SignTool.loadPrivateKey(node2Name, "123", s"${CryptoMgr.getKeyFileSuffix.substring(1)}/" + node2Name + "${CryptoMgr.getKeyFileSuffix}")
     // 加载super_admin的私钥
-    SignTool.loadPrivateKey(superAdmin, "super_admin", "jks/" + superAdmin + ".jks")
+    SignTool.loadPrivateKey(superAdmin, "super_admin", s"${CryptoMgr.getKeyFileSuffix.substring(1)}/" + superAdmin + "${CryptoMgr.getKeyFileSuffix}")
 
     //加载合约脚本
     val s1 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/ContractAssetsTPL.scala")
@@ -130,7 +130,7 @@ class DeploySpec(_system: ActorSystem) extends TestKit(_system) with Matchers wi
     msg_recv5(0).getResult.code should be(0)
 
     // 注册账户
-    val superCert = scala.io.Source.fromFile("jks/certs/951002007l78123233.super_admin.cer", "UTF-8")
+    val superCert = scala.io.Source.fromFile(s"${CryptoMgr.getKeyFileSuffix.substring(1)}/certs/951002007l78123233.super_admin.cer", "UTF-8")
     val superCertPem = try superCert.mkString finally superCert.close()
     val superCertHash = Sha256.hashstr(superCertPem)
     val superCertId = CertId("951002007l78123233", "super_admin")
@@ -146,7 +146,7 @@ class DeploySpec(_system: ActorSystem) extends TestKit(_system) with Matchers wi
     msg_recv6(0).getResult.reason.isEmpty should be(true)
 
     // 注册账户
-    val node1CertFile = scala.io.Source.fromFile("jks/certs/121000005l35120456.node1.cer", "UTF-8")
+    val node1CertFile = scala.io.Source.fromFile(s"${CryptoMgr.getKeyFileSuffix.substring(1)}/certs/121000005l35120456.node1.cer", "UTF-8")
     val node1CertPem = try node1CertFile.mkString finally node1CertFile.close()
     val node1CertHash = Sha256.hashstr(node1CertPem)
     val node1CertId = CertId("121000005l35120456", "node1")

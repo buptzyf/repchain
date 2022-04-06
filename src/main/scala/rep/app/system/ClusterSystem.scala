@@ -140,14 +140,14 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
     /*val myConfig =
       ConfigFactory.parseString("akka.remote.netty.ssl.security.key-store = \"jks/" + sysName +
         ".jks\"")*/
-    val myConfig =
+    /*val myConfig =
       ConfigFactory.parseString("akka.remote.artery.ssl.config-ssl-engine.key-store = \"jks/" + sysName +
-        ".jks\"")
+        ".jks\"")*/
     val regularConfig = getUserCombinedConf(USER_CONFIG_PATH)
-    val combined =
-      myConfig.withFallback(regularConfig)
-    val complete =
-      ConfigFactory.load(combined)
+    //val combined =
+      //myConfig.withFallback(regularConfig)
+    val complete =ConfigFactory.load(regularConfig)
+      //ConfigFactory.load(combined)
     complete
   }
 

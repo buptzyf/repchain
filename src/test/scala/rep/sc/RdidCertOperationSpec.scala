@@ -30,7 +30,7 @@ import org.scalatest._
 import rep.app.conf.SystemProfile
 import rep.app.system.ClusterSystem
 import rep.app.system.ClusterSystem.InitType
-import rep.crypto.Sha256
+import rep.crypto.{CryptoMgr, Sha256}
 import rep.crypto.cert.{ImpECDSASigner, SignTool}
 import rep.network.autotransaction.PeerHelper
 import rep.network.module.cfrd.ModuleManagerOfCFRD
@@ -70,23 +70,23 @@ class RdidCertOperationSpec(_system: ActorSystem) extends TestKit(_system) with 
   // 初始化配置项，主要是为了初始化存储路径
   SystemProfile.initConfigSystem(system.settings.config, sysName)
   // 加载node1的私钥
-  SignTool.loadPrivateKey(sysName, "123", "jks/" + sysName + ".jks")
+  SignTool.loadPrivateKey(sysName, "123", s"${CryptoMgr.getKeyFileSuffix.substring(1)}/" + sysName + "${CryptoMgr.getKeyFileSuffix}")
   // 加载super_admin的私钥
-  SignTool.loadPrivateKey(superAdmin, "super_admin", "jks/" + superAdmin + ".jks")
+  SignTool.loadPrivateKey(superAdmin, "super_admin", s"${CryptoMgr.getKeyFileSuffix.substring(1)}/" + superAdmin + "${CryptoMgr.getKeyFileSuffix}")
 
   val cid = ChaincodeId("RdidOperateAuthorizeTPL", 1)
 
-  val certNode1: BufferedSource = scala.io.Source.fromFile("jks/certs/121000005l35120456.node1.cer")
+  val certNode1: BufferedSource = scala.io.Source.fromFile(s"${CryptoMgr.getKeyFileSuffix.substring(1)}/certs/121000005l35120456.node1.cer")
   val certStr1: String = try certNode1.mkString finally certNode1.close()
-  val certNode2: BufferedSource = scala.io.Source.fromFile("jks/certs/12110107bi45jh675g.node2.cer")
+  val certNode2: BufferedSource = scala.io.Source.fromFile(s"${CryptoMgr.getKeyFileSuffix.substring(1)}/certs/12110107bi45jh675g.node2.cer")
   val certStr2: String = try certNode2.mkString finally certNode2.close()
-  val certNode3: BufferedSource = scala.io.Source.fromFile("jks/certs/122000002n00123567.node3.cer")
+  val certNode3: BufferedSource = scala.io.Source.fromFile(s"${CryptoMgr.getKeyFileSuffix.substring(1)}/certs/122000002n00123567.node3.cer")
   val certStr3: String = try certNode3.mkString finally certNode3.close()
-  val certNode4: BufferedSource = scala.io.Source.fromFile("jks/certs/921000005k36123789.node4.cer")
+  val certNode4: BufferedSource = scala.io.Source.fromFile(s"${CryptoMgr.getKeyFileSuffix.substring(1)}/certs/921000005k36123789.node4.cer")
   val certStr4: String = try certNode4.mkString finally certNode4.close()
-  val certNode5: BufferedSource = scala.io.Source.fromFile("jks/certs/921000006e0012v696.node5.cer")
+  val certNode5: BufferedSource = scala.io.Source.fromFile(s"${CryptoMgr.getKeyFileSuffix.substring(1)}/certs/921000006e0012v696.node5.cer")
   val certStr5: String = try certNode5.mkString finally certNode5.close()
-  val superCert: BufferedSource = scala.io.Source.fromFile("jks/certs/951002007l78123233.super_admin.cer", "UTF-8")
+  val superCert: BufferedSource = scala.io.Source.fromFile(s"${CryptoMgr.getKeyFileSuffix.substring(1)}/certs/951002007l78123233.super_admin.cer", "UTF-8")
   val superCertPem: String = try superCert.mkString finally superCert.close()
   val certs: mutable.Map[String, String] = mutable.Map("node1" -> certStr1, "node2" -> certStr2, "node3" -> certStr3, "node4" -> certStr4, "node5" -> certStr5)
 
@@ -223,7 +223,7 @@ class RdidCertOperationSpec(_system: ActorSystem) extends TestKit(_system) with 
     val cip = new ChaincodeInput(chaincodeInputFunc, params)
     t = t.withId(txid).withCid(chaincodeId).withIpt(cip).withType(rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE).clearSignature
     var sobj = Signature(Option(certid), Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)))
-    val privateKey = loadPrivateKey(nodeName, "123", "jks/121000005l35120456.node1.jks")
+    val privateKey = loadPrivateKey(nodeName, "123", s"${CryptoMgr.getKeyFileSuffix.substring(1)}/121000005l35120456.node1${CryptoMgr.getKeyFileSuffix}")
     sobj = sobj.withSignature(ByteString.copyFrom(new ImpECDSASigner().sign(privateKey, t.toByteArray)))
     t = t.withSignature(sobj)
     t

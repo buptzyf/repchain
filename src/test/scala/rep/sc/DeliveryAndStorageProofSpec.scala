@@ -23,6 +23,7 @@ import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, Matchers}
 import rep.app.conf.SystemProfile
 import rep.app.system.ClusterSystem
 import rep.app.system.ClusterSystem.InitType
+import rep.crypto.CryptoMgr
 import rep.crypto.cert.SignTool
 import rep.network.autotransaction.PeerHelper
 import rep.protos.peer.ChaincodeDeploy.ContractClassification
@@ -56,9 +57,9 @@ class DeliveryAndStorageProofSpec(_system: ActorSystem) extends TestKit(_system)
     // 初始化配置项，主要是为了初始化存储路径
     SystemProfile.initConfigSystem(system.settings.config, sysName)
     // 加载node1的私钥
-    SignTool.loadPrivateKey(sysName, "123", "jks/" + sysName + ".jks")
+    SignTool.loadPrivateKey(sysName, "123", s"${CryptoMgr.getKeyFileSuffix.substring(1)}/" + sysName + "${CryptoMgr.getKeyFileSuffix}")
     // 加载super_admin的私钥
-    SignTool.loadPrivateKey(superAdmin, "super_admin", "jks/" + superAdmin + ".jks")
+    SignTool.loadPrivateKey(superAdmin, "super_admin", s"${CryptoMgr.getKeyFileSuffix.substring(1)}/" + superAdmin + "${CryptoMgr.getKeyFileSuffix}")
 
     //加载合约脚本
     val s1 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/DeliveryAndStorageProof.scala")

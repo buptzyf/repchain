@@ -22,6 +22,7 @@ import java.util
 import com.google.protobuf.timestamp.Timestamp
 import org.json4s.jackson.JsonMethods.{pretty, render}
 import org.json4s.{DefaultFormats, jackson}
+import rep.crypto.CryptoMgr
 import rep.crypto.cert.SignTool
 import rep.network.autotransaction.PeerHelper
 import rep.protos.peer._
@@ -42,10 +43,13 @@ object GenesisBuilderMulti {
   private val setMap = new mutable.HashMap[String, Int]()
 
   def main(args: Array[String]): Unit = {
+    CryptoMgr.loadSystemConfInDebug
+    val dir4key = CryptoMgr.getKeyFileSuffix.substring(1)
+    val keySuffix = CryptoMgr.getKeyFileSuffix
 
-    SignTool.loadPrivateKey("121000005l35120456.node1", "123", "jks/121000005l35120456.node1.jks")
-    SignTool.loadNodeCertList("changeme", "jks/mytruststore.jks")
-    SignTool.loadPrivateKey("951002007l78123233.super_admin", "super_admin", "jks/951002007l78123233.super_admin.jks")
+    SignTool.loadPrivateKey("121000005l35120456.node1", "123", s"${dir4key}/121000005l35120456.node1${keySuffix}")
+    SignTool.loadNodeCertList("changeme", s"${dir4key}/mytruststore${keySuffix}")
+    SignTool.loadPrivateKey("951002007l78123233.super_admin", "super_admin", s"${dir4key}/951002007l78123233.super_admin${keySuffix}")
 
     val transList = new util.ArrayList[Transaction]
 
@@ -116,12 +120,12 @@ object GenesisBuilderMulti {
     */
   // TODO 排个序，只注册部分
   def fillSigners(): Array[Signer] = {
-    val fileDir = new File("jks")
+    val fileDir = new File(CryptoMgr.getKeyFileSuffix.substring(1))
     // 过滤掉非节点node的jks
     val files = fileDir.listFiles(new FileFilter {
       override def accept(file: File): Boolean = {
         val fileName = file.getName
-        fileName.endsWith("jks") && fileName.indexOf("node") != -1
+        fileName.endsWith(CryptoMgr.getKeyFileSuffix.substring(1)) && fileName.indexOf("node") != -1
       }
     })
 
@@ -137,10 +141,10 @@ object GenesisBuilderMulti {
   def fillCerts(signers: Array[Signer]): Array[Certificate] = {
     val certInfos: Array[Certificate] = new Array[Certificate](signers.length)
     for (i <- 0 until certInfos.length) {
-      val certfile = scala.io.Source.fromFile("jks/" + signers(i).creditCode + "." + signers(i).name + ".cer", "UTF-8")
+      val certfile = scala.io.Source.fromFile(s"${CryptoMgr.getKeyFileSuffix.substring(1)}/" + signers(i).creditCode + "." + signers(i).name + ".cer", "UTF-8")
       val certstr = try certfile.mkString finally certfile.close()
       val millis = System.currentTimeMillis()
-      val cert = Certificate(certstr, "SHA256withECDSA", true, Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), id = Option(CertId(signers(i).creditCode, signers(i).name)))
+      val cert = Certificate(certstr, CryptoMgr.getSignAlgType, true, Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), id = Option(CertId(signers(i).creditCode, signers(i).name)))
       certInfos(i) = cert
     }
     certInfos

@@ -91,7 +91,12 @@ object SystemProfile {
   
   //实时图的事件是否发送，如果不发送，前端实时图将收不到任何消息。
   private[this] var _REALTIMEGRAPH_ENABLE = 1 ////0 unable;1 enable; default 1
-  
+
+  private[this] var _IS_USE_GM = false
+  private[this] var _GM_JCE_PROVIDER: String = ""
+  private[this] var _GM_JCE_PROVIDER_NAME: String = ""
+  private[this] var _GM_TRUST_STORE_NAME : String = ""
+
   
   
   
@@ -143,6 +148,25 @@ object SystemProfile {
 
   private def IS_PERSISTENCE_TX_TO_DB:Int = _IS_PERSISTENCE_TX_TO_DB
 
+
+  private def IS_USE_GM = _IS_USE_GM
+  private def GM_JCE_PROVIDER: String = _GM_JCE_PROVIDER
+  private def GM_JCE_PROVIDER_NAME: String = _GM_JCE_PROVIDER_NAME
+  private def GM_TRUST_STORE_NAME : String = _GM_TRUST_STORE_NAME
+
+  private def GM_TRUST_STORE_NAME_=(value:String):Unit = {
+    _GM_TRUST_STORE_NAME = value
+  }
+
+  private def IS_USE_GM_=(value:Boolean) = {
+    _IS_USE_GM = value
+  }
+  private def GM_JCE_PROVIDER_=(value:String) = {
+    _GM_JCE_PROVIDER = value
+  }
+  private def GM_JCE_PROVIDER_NAME_=(value:String) = {
+    _GM_JCE_PROVIDER_NAME = value
+  }
 
   private def IS_PERSISTENCE_TX_TO_DB_=(value:Int):Unit={
     _IS_PERSISTENCE_TX_TO_DB = value
@@ -372,6 +396,11 @@ object SystemProfile {
     SYNCH_TYPE_=(config.getString("system.consensus.synch_type"))
     ENDORSE_RESEND_TIMES_=(config.getInt("system.time.timeout.endorse_resend_times"))
     IS_PERSISTENCE_TX_TO_DB_=(config.getInt("system.is_persistence_tx_to_db"))
+
+    IS_USE_GM_=(config.getBoolean("system.gm.is_use_gm"))
+    GM_JCE_PROVIDER_= (config.getString("system.gm.gm_jce_provider"))
+    GM_JCE_PROVIDER_NAME_= (config.getString("system.gm.gm_jce_provider_name"))
+    GM_TRUST_STORE_NAME_= (config.getString("system.gm.gm_trust_store_name"))
   }
 
   //zhj
@@ -455,5 +484,9 @@ object SystemProfile {
 
   def getIsPersistenceTxToDB:Int=IS_PERSISTENCE_TX_TO_DB
 
+  def getIsUseGm:Boolean=IS_USE_GM
+  def getGmJCEProvider:String=GM_JCE_PROVIDER
+  def getGmJCEProviderName:String=GM_JCE_PROVIDER_NAME
+  def getGmTrustStoreName:String=GM_TRUST_STORE_NAME
 
 }

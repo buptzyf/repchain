@@ -25,7 +25,8 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-distributed-data" % akkaVersion
 )
 
-libraryDependencies += "com.typesafe.akka" %% "akka-http-xml" % akkaHttpVersion
+libraryDependencies += "com.typesafe.akka" %% "akka-http-xml" % "10.2.9"
+  //akkaHttpVersion
 libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value
 libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value
 
@@ -57,13 +58,15 @@ libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.3"
 
 libraryDependencies += "org.codehaus.janino" % "janino" % "3.0.12"
 
-libraryDependencies += "org.bouncycastle" % "bcprov-jdk15on" % "1.61"
+//libraryDependencies += "org.bouncycastle" % "bcprov-jdk15on" % "1.61"
 libraryDependencies += "javax.xml.bind" % "jaxb-api" % "2.3.1"
 
 //add erasurecode for java
 libraryDependencies += "org.apache.hadoop" % "hadoop-common" % "3.2.0"
 //libraryDependencies += "org.python" % "jython" % "2.7.2"
 libraryDependencies += "org.javatuples" % "javatuples" % "1.2"
+//add java encrpto for bc
+libraryDependencies += "org.bouncycastle" % "bcprov-jdk15on" % "1.67"
 
 libraryDependencies ++= Seq(
 //  "io.swagger" % "swagger-jaxrs" % "1.6.0",
@@ -72,8 +75,10 @@ libraryDependencies ++= Seq(
   "javax.ws.rs" % "javax.ws.rs-api" % "2.0.1",
   "com.github.swagger-akka-http" %% "swagger-akka-http" % "2.0.4",
 //  "io.swagger" % "swagger-jersey2-jaxrs" % "1.6.0",
-  "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
-  "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpVersion,
+  "com.typesafe.akka" %% "akka-http" % "10.2.9",
+//akkaHttpVersion  "10.2.9"
+  "com.typesafe.akka" %% "akka-http-spray-json" % "10.2.9",
+    //akkaHttpVersion,
   "org.json4s" %% "json4s-native" % "3.6.7",
   "org.json4s" %% "json4s-jackson" % "3.6.7",
 
@@ -105,6 +110,9 @@ assemblyMergeStrategy in assembly := {
   case PathList("google", "protobuf", "field_mask.proto") => MergeStrategy.discard
 
   case PathList("org", "slf4j", xs @ _*)         => MergeStrategy.first
+  case PathList(ps @ _*) if ps.last endsWith "axiom.xml" => MergeStrategy.filterDistinctLines
+  case PathList(ps @ _*) if ps.last endsWith "Log$Logger.class" => MergeStrategy.first
+  case PathList(ps @ _*) if ps.last endsWith "ILoggerFactory.class" => MergeStrategy.first
   case PathList(ps @ _*) if ps.last endsWith "StaticLoggerBinder.class" => MergeStrategy.first
   case PathList(ps @ _*) if ps.last endsWith "StaticMDCBinder.class" => MergeStrategy.first
   case PathList(ps @ _*) if ps.last endsWith "StaticMarkerBinder.class" => MergeStrategy.first

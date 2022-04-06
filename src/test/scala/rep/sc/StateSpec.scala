@@ -25,7 +25,7 @@ import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, Matchers}
 import rep.app.conf.SystemProfile
 import rep.app.system.ClusterSystem
 import rep.app.system.ClusterSystem.InitType
-import rep.crypto.Sha256
+import rep.crypto.{CryptoMgr, Sha256}
 import rep.crypto.cert.SignTool
 import rep.network.autotransaction.PeerHelper
 import rep.network.tools.PeerExtension
@@ -82,11 +82,11 @@ class StateSpec(_system: ActorSystem) extends TestKit(_system) with Matchers wit
     SystemProfile.initConfigSystem(system.settings.config, sysName)
     PeerExtension(system).setSysTag(sysName)
     // 加载node1的私钥
-    SignTool.loadPrivateKey(sysName, "123", "jks/" + sysName + ".jks")
+    SignTool.loadPrivateKey(sysName, "123", s"${CryptoMgr.getKeyFileSuffix.substring(1)}/" + sysName + "${CryptoMgr.getKeyFileSuffix}")
     // 加载node2的私钥
-    SignTool.loadPrivateKey(node2Name, "123", "jks/" + node2Name + ".jks")
+    SignTool.loadPrivateKey(node2Name, "123", s"${CryptoMgr.getKeyFileSuffix.substring(1)}/" + node2Name + "${CryptoMgr.getKeyFileSuffix}")
     // 加载super_admin的私钥
-    SignTool.loadPrivateKey(superAdmin, "super_admin", "jks/" + superAdmin + ".jks")
+    SignTool.loadPrivateKey(superAdmin, "super_admin", s"${CryptoMgr.getKeyFileSuffix.substring(1)}/" + superAdmin + "${CryptoMgr.getKeyFileSuffix}")
 
     // 部署资产管理
     val cid1 = ChaincodeId("ContractAssetsTPL", 1)
@@ -116,7 +116,7 @@ class StateSpec(_system: ActorSystem) extends TestKit(_system) with Matchers wit
     msg_recv2(0).getResult.code should be(0)
 
     // 注册账户
-    val superCert = scala.io.Source.fromFile("jks/certs/951002007l78123233.super_admin.cer", "UTF-8")
+    val superCert = scala.io.Source.fromFile(s"${CryptoMgr.getKeyFileSuffix.substring(1)}/certs/951002007l78123233.super_admin.cer", "UTF-8")
     val superCertPem = try superCert.mkString finally superCert.close()
     val superCertHash = Sha256.hashstr(superCertPem)
     val superCertId = CertId("951002007l78123233", "super_admin")
@@ -132,7 +132,7 @@ class StateSpec(_system: ActorSystem) extends TestKit(_system) with Matchers wit
     msg_recv3(0).getResult.reason.isEmpty should be(true)
 
     // 注册账户
-    val node1CertFile = scala.io.Source.fromFile("jks/certs/121000005l35120456.node1.cer", "UTF-8")
+    val node1CertFile = scala.io.Source.fromFile(s"${CryptoMgr.getKeyFileSuffix.substring(1)}/certs/121000005l35120456.node1.cer", "UTF-8")
     val node1CertPem = try node1CertFile.mkString finally node1CertFile.close()
     val node1CertHash = Sha256.hashstr(node1CertPem)
     val node1CertId = CertId("121000005l35120456", "node1")
@@ -148,7 +148,7 @@ class StateSpec(_system: ActorSystem) extends TestKit(_system) with Matchers wit
     msg_recv9.head.getResult.reason.isEmpty should be(true)
 
     // 注册账户
-    val node2CertFile = scala.io.Source.fromFile("jks/certs/12110107bi45jh675g.node2.cer", "UTF-8")
+    val node2CertFile = scala.io.Source.fromFile(s"${CryptoMgr.getKeyFileSuffix.substring(1)}/certs/12110107bi45jh675g.node2.cer", "UTF-8")
     val node2CertPem = try node2CertFile.mkString finally node2CertFile.close()
     val node2CertHash = Sha256.hashstr(node2CertPem)
     val node2CertId = CertId("12110107bi45jh675g", "node2")

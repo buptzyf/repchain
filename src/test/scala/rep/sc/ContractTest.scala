@@ -14,6 +14,7 @@ import rep.sc.TransferSpec.SetMap
 import rep.storage.ImpDataAccess
 import rep.utils.SerializeUtils.toJson
 import rep.app.conf.SystemProfile
+import rep.crypto.CryptoMgr
 import rep.network.autotransaction.PeerHelper
 import rep.network.tools.PeerExtension
 
@@ -141,7 +142,7 @@ class ContractTest(_system: ActorSystem) extends TestKit(_system) with Matchers 
     //val aa = new ContractCert
 
     val signer = Signer("node2", "12110107bi45jh675g", "13856789234", Seq("node2"))
-    val cert = scala.io.Source.fromFile("jks/certs/12110107bi45jh675g.node2.cer")
+    val cert = scala.io.Source.fromFile(s"${CryptoMgr.getKeyFileSuffix.substring(1)}/certs/12110107bi45jh675g.node2.cer")
     val certStr = try cert.mkString finally cert.close()
 
     /*var aa  = new CaseClassToString()
@@ -211,7 +212,7 @@ class ContractTest(_system: ActorSystem) extends TestKit(_system) with Matchers 
     ExecuteTrans(probe, sandbox: ActorRef, t9, "dbnumber1", TypeOfSender.FromPreloader, 9, false)
 
     val signer3 = Signer("node3", "122000002n00123567", "13856789274", Seq("node3"))
-    val cert3 = scala.io.Source.fromFile("jks/certs/122000002n00123567.node3.cer")
+    val cert3 = scala.io.Source.fromFile(s"${CryptoMgr.getKeyFileSuffix.substring(1)}/certs/122000002n00123567.node3.cer")
     val certStr3 = try cert3.mkString finally cert3.close()
 
     /*var aa1  = new CaseClassToString()

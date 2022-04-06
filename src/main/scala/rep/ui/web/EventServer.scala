@@ -17,7 +17,7 @@
 package rep.ui.web
 
 import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
+import akka.http.scaladsl.{ConnectionContext, Http}
 import akka.http.scaladsl.server.Directives._
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Sink
@@ -45,7 +45,11 @@ import rep.log.EventActor4Stage
 import akka.stream.Graph
 import akka.stream.SourceShape
 import akka.NotUsed
+import akka.event.Logging
+import akka.remote.artery.tcp.ConfigSSLEngineProvider
+import rep.crypto.{CryptoMgr, GMSSLEngineProvider}
 import rep.network.tools.PeerExtension
+import akka.http.scaladsl.{ConnectionContext, Http, HttpsConnectionContext}
 
 /** Event服务伴生对象
  *  @author c4w
@@ -112,14 +116,30 @@ object EventServer {
     val ra = new RestRouter(SystemProfile.getHttpServiceActorNumber,sys)
 
     //允许跨域访问,以支持在应用中发起请求
-    Http().bindAndHandle(
-      route_evt
-        ~ cors() (
-            new BlockService(ra).route ~
-            new ChainService(ra).route ~
-            new TransactionService(ra).route ~
-            SwaggerDocService.routes),
-      "0.0.0.0", port)
+    //val httpServer = Http()
+    System.out.println("^^^^^^^^^^^^^^^^")
+    //val sslProvider = new GMSSLEngineProvider(system.settings.config,Logging.withMarker(system, classOf[ConfigSSLEngineProvider].getName))
+    val https: HttpsConnectionContext = ConnectionContext.httpsServer(() => {
+      val engine = CryptoMgr.getSslContext.createSSLEngine()
+      engine.setUseClientMode(false)
+      //engine.setNeedClientAuth(true)
+
+      engine.setEnabledCipherSuites(engine.getSupportedCipherSuites)
+      //engine.setEnabledCipherSuites(Array("ECDHE_SM4_GCM_SM3"))
+      engine.setEnabledProtocols(Array("GMSSLv1.1"))
+
+      engine
+    })
+
+    Http().newServerAt("0.0.0.0", port)
+      .enableHttps(https)
+      .bindFlow(route_evt
+      ~ cors() (
+      new BlockService(ra).route ~
+        new ChainService(ra).route ~
+        new TransactionService(ra).route ~
+        SwaggerDocService.routes))
+    System.out.println("^^^^^^^^^^^^^^^^")
     RepLogger.info(RepLogger.System_Logger, s"Event Server online at http://localhost:$port")
   }
 }
@@ -129,8 +149,9 @@ object EventServer {
  */
 class EventServer extends Actor{
   override def preStart(): Unit = {
+    context.system.settings.config
     val pe = PeerExtension(context.system)
-  EventServer.start(context.system, SystemProfile.getHttpServicePort(pe.getSysTag))
+    EventServer.start(context.system, SystemProfile.getHttpServicePort(pe.getSysTag))
 }
 
 def receive = {

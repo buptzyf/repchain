@@ -5,6 +5,7 @@ import com.typesafe.config.Config
 import rep.app.TxPools
 import rep.app.conf.SystemProfile.Trans_Create_Type_Enum
 import rep.app.conf.{SystemProfile, TimePolicy}
+import rep.crypto.CryptoMgr
 import rep.crypto.cert.SignTool
 import rep.log.httplog.AlertInfo
 import rep.log.{RepLogger, RepTimeTracer}
@@ -164,9 +165,11 @@ class ConfigerHelper(conf: Config, tag: String, dbTag: String) {
     val trustPath = conf.getString("akka.remote.netty.ssl.security.trust-store-mm")
     val trustPwd = conf.getString("akka.remote.netty.ssl.security.trust-store-password-mm")*/
 
-    val mykeyPath = conf.getString("akka.remote.artery.ssl.config-ssl-engine.base-path") + sysTag + ".jks"
-    val psw = conf.getString("akka.remote.artery.ssl.config-ssl-engine.key-store-password")
-    val trustPath = conf.getString("akka.remote.artery.ssl.config-ssl-engine.trust-store-mm")
+    //val mykeyPath = conf.getString("akka.remote.artery.ssl.config-ssl-engine.base-path") + sysTag + CryptoMgr.getKeyFileSuffix
+    val mykeyPath = CryptoMgr.getKeyFileSuffix.substring(1)+ java.io.File.separatorChar + sysTag + CryptoMgr.getKeyFileSuffix
+    val psw = "123" //conf.getString("akka.remote.artery.ssl.config-ssl-engine.key-store-password")
+    //val trustPath = conf.getString("akka.remote.artery.ssl.config-ssl-engine.trust-store-mm")
+    val trustPath = CryptoMgr.getKeyFileSuffix.substring(1)+ java.io.File.separatorChar+SystemProfile.getGmTrustStoreName + CryptoMgr.getKeyFileSuffix
     val trustPwd = conf.getString("akka.remote.artery.ssl.config-ssl-engine.trust-store-password-mm")
     authInit(sysTag, mykeyPath, psw, trustPath, trustPwd)
   }

@@ -25,10 +25,11 @@ import java.io._
 import java.util.{ArrayList, List}
 
 import rep.app.conf.SystemProfile
+import rep.crypto.CryptoMgr
 
 import scala.util.control.Breaks._
 //import fastparse.internal..utils.Base64
-import org.bouncycastle.util.io.pem.PemReader
+//import org.bouncycastle.util.io.pem.PemReader
 
 /**
  * 负责签名和验签的工具了，所有相关的功能都调用该类
@@ -37,7 +38,6 @@ import org.bouncycastle.util.io.pem.PemReader
  */
 object SignTool {
   private var signer: ISigner = null
-  private var SignType: String = "SM2"
   private var keypassword = mutable.HashMap[String, String]()
   private var keyStores = mutable.HashMap[String, KeyStore]()
   private var PublickeyCerts = mutable.HashMap[String, Certificate]()
@@ -47,13 +47,7 @@ object SignTool {
 
   synchronized {
     if (this.signer == null) {
-      if (SignType.equalsIgnoreCase("ecdsa")) {
-        signer = new ImpECDSASigner()
-      } else if (SignType.equalsIgnoreCase("sm2")) {
-        signer = new ImpSM2Signer()
-      } else {
-        throw  new RuntimeException("无效的算法")
-      }
+      signer = new ImpECDSASigner()
     }
   }
 
@@ -121,7 +115,8 @@ object SignTool {
       if (keyStores.contains(pkeyname)) {
         keyStores(pkeyname).load(fis, pwd)
       } else {
-        val pkeys = KeyStore.getInstance("PKCS12", "BC")
+        //val pkeys = KeyStore.getInstance("PKCS12", "BC")
+        val pkeys = CryptoMgr.getKeyStorer
 //        print(pkeys.getProvider)
         pkeys.load(fis, pwd)
         keyStores(pkeyname) = pkeys
@@ -140,7 +135,8 @@ object SignTool {
       if (!this.isAddPublicKey) {
         val fis = new FileInputStream(new File(path))
         val pwd = password.toCharArray()
-        val trustKeyStore = KeyStore.getInstance("PKCS12","BC")
+        //val trustKeyStore = KeyStore.getInstance("PKCS12","BC")
+        val trustKeyStore = CryptoMgr.getKeyStorer
 //        print(trustKeyStore.getProvider)
         trustKeyStore.load(fis, pwd)
         val enums = trustKeyStore.aliases()

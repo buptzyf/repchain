@@ -529,9 +529,9 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
     val nodename = Array("121000005l35120456.node1", "12110107bi45jh675g.node2",
     "122000002n00123567.node3", "921000005k36123789.node4", "921000006e0012v696.node5")
     val txinfo = new Array[String](5)
-    SignTool.loadNodeCertList("changeme", "jks/mytruststore.jks")
+    SignTool.loadNodeCertList("changeme", s"${CryptoMgr.getKeyFileSuffix.substring(1)}/mytruststore${CryptoMgr.getKeyFileSuffix}")
     for( i <- 1 to 5){
-      SignTool.loadPrivateKey(nodename(i-1), "123", "jks/"+nodename(i-1)+".jks")
+      SignTool.loadPrivateKey(nodename(i-1), "123", s"${CryptoMgr.getKeyFileSuffix.substring(1)}/"+nodename(i-1)+"${CryptoMgr.getKeyFileSuffix}")
       val si2 = scala.io.Source.fromFile("api_req/json/transfer_" + nodename(i-1) + ".json","UTF-8")
       txinfo(i-1) = try si2.mkString finally si2.close()
     }
@@ -588,9 +588,9 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
     val nodename = Array("121000005l35120456.node1", "12110107bi45jh675g.node2",
       "122000002n00123567.node3", "921000005k36123789.node4", "921000006e0012v696.node5")
     val txinfo = new Array[String](5)
-    SignTool.loadNodeCertList("changeme", "jks/mytruststore.jks")
+    SignTool.loadNodeCertList("changeme", s"${CryptoMgr.getKeyFileSuffix.substring(1)}/mytruststore${CryptoMgr.getKeyFileSuffix}")
     for( i <- 1 to 5){
-      SignTool.loadPrivateKey(nodename(i-1), "123", "jks/"+nodename(i-1)+".jks")
+      SignTool.loadPrivateKey(nodename(i-1), "123", s"${CryptoMgr.getKeyFileSuffix.substring(1)}/"+nodename(i-1)+"${CryptoMgr.getKeyFileSuffix}")
       val si2 = scala.io.Source.fromFile("api_req/json/transfer_" + nodename(i-1) + ".json","UTF-8")
       txinfo(i-1) = try si2.mkString finally si2.close()
     }

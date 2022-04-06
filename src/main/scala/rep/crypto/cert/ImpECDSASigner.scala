@@ -16,20 +16,11 @@
 package rep.crypto.cert
 
 import java.security._
-import java.io._
-import java.security.cert.{ Certificate, CertificateFactory }
+import java.security.cert.Certificate
 import rep.app.conf.SystemProfile
-import com.google.protobuf.ByteString
-//import fastparse.utils.Base64
-import rep.utils.SerializeUtils
-import rep.storage._
-import scala.collection.mutable
-//import com.fasterxml.jackson.core.Base64Variants
+import rep.crypto.CryptoMgr
 import java.security.cert.X509Certificate
-//import javax.xml.bind.DatatypeConverter
-import java.util.ArrayList
-import java.util.List
-import sun.security.ec.ECPublicKeyImpl
+import rep.log.RepLogger
 
 /**
  * 实现系统签名和验签功能，第三方使用不需要直接调用该类
@@ -37,13 +28,11 @@ import sun.security.ec.ECPublicKeyImpl
  * @version	1.0
  */
 class ImpECDSASigner extends ISigner {
-  //private val alg = "SHA1withECDSA"
-  private val alg = "SHA256withECDSA"
 
   override def sign(privateKey: PrivateKey, message: Array[Byte]): Array[Byte] = {
     if(privateKey == null) throw new RuntimeException("签名时私钥为空！") 
     if(message == null || message.length <= 0 ) throw new RuntimeException("待签名内容为空！")
-    val s1 = Signature.getInstance(alg);
+    val s1 = CryptoMgr.getSignaturer
     s1.initSign(privateKey)
     s1.update(message)
     s1.sign()
@@ -53,7 +42,7 @@ class ImpECDSASigner extends ISigner {
     if(publicKey == null) throw new RuntimeException("验证签名时公钥为空！") 
     if(signature == null || signature.length <= 0) throw new RuntimeException("待验证的签名信息为空！") 
     if(message == null || message.length <= 0 ) throw new RuntimeException("待签名内容为空！")
-    val s2 = Signature.getInstance(alg);
+    val s2 = CryptoMgr.getSignaturer
     s2.initVerify(publicKey)
     s2.update(message)
     s2.verify(signature)
@@ -80,7 +69,7 @@ class ImpECDSASigner extends ISigner {
             case e : Exception => isValid = false
         }
         var end = System.currentTimeMillis()
-        //println("check cert validate,spent time="+(end-start))
+        RepLogger.OutputTime_Logger.debug(s"Cert Check,spent time=${(end-start)}(ms)")
         isValid;
    }
   

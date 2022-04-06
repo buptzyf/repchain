@@ -24,6 +24,7 @@ import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, Matchers}
 import rep.app.conf.SystemProfile
 import rep.app.system.ClusterSystem
 import rep.app.system.ClusterSystem.InitType
+import rep.crypto.CryptoMgr
 import rep.crypto.cert.SignTool
 import rep.network.autotransaction.PeerHelper
 import rep.protos.peer.ChaincodeDeploy.ContractClassification
@@ -61,9 +62,9 @@ class SupplySpec2(_system: ActorSystem) extends TestKit(_system) with Matchers w
     // 初始化配置项，主要是为了初始化存储路径
     SystemProfile.initConfigSystem(system.settings.config, sysName)
     // 加载node1的私钥
-    SignTool.loadPrivateKey(sysName, "123", "jks/" + sysName + ".jks")
+    SignTool.loadPrivateKey(sysName, "123", s"${CryptoMgr.getKeyFileSuffix.substring(1)}/" + sysName + "${CryptoMgr.getKeyFileSuffix}")
     // 加载super_admin的私钥
-    SignTool.loadPrivateKey(superAdmin, "super_admin", "jks/" + superAdmin + ".jks")
+    SignTool.loadPrivateKey(superAdmin, "super_admin", s"${CryptoMgr.getKeyFileSuffix.substring(1)}/" + superAdmin + "${CryptoMgr.getKeyFileSuffix}")
 
     val fm: FixedMap = Map("A" -> 0.2, "B" -> 0.2, "C" -> 0.1, "D" -> 0.1)
     val sm: ShareMap = Map(
