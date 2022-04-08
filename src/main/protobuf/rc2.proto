@@ -28,21 +28,21 @@ message Event {
     string to = 2;
     //event事件
     enum Action {
-        SUBSCRIBE_TOPIC = 0;
-        TRANSACTION = 1;
-        BLOCK_NEW = 2;
-        BLOCK_ENDORSEMENT = 3;
-        ENDORSEMENT = 4;
-        MEMBER_UP = 5;
-        MEMBER_DOWN = 6;
-        CANDIDATOR = 7;
-        GENESIS_BLOCK = 8;
-        BLOCK_SYNC = 9;
-        BLOCK_SYNC_DATA = 10;
-        BLOCK_SYNC_SUC = 11;
+        SUBSCRIBE_TOPIC = 0;//订阅主题
+        TRANSACTION = 1;//签名交易
+        BLOCK_NEW = 2;//新出区块
+        BLOCK_ENDORSEMENT = 3;//区块背书请求
+        ENDORSEMENT = 4;//背书
+        MEMBER_UP = 5;//组网节点入网
+        MEMBER_DOWN = 6;//组网节点离网
+        CANDIDATOR = 7;//下轮抽签
+        GENESIS_BLOCK = 8;//创世块加载
+        BLOCK_SYNC = 9;//区块同步请求
+        BLOCK_SYNC_DATA = 10;//区块同步
+        BLOCK_SYNC_SUC = 11;//区块同步完成
     }
     Action action = 3;
-    Block blk = 4;
+    Block blk = 4;//事件关联区块
 }
 
 //账户
@@ -77,27 +77,27 @@ message Certificate {
     google.protobuf.Timestamp 	reg_Time = 4; //注册时间
     google.protobuf.Timestamp 	unreg_Time = 5; //注销时间
     enum CertType {
-        CERT_UNDEFINED = 0;
-        CERT_AUTHENTICATION = 1;
-        CERT_CUSTOM = 2;
+        CERT_UNDEFINED = 0;//未定义证书类型
+        CERT_AUTHENTICATION = 1;//1=普通证书
+        CERT_CUSTOM = 2;//2=身份验证证书
     }
-    CertType 	cert_type = 6; //1=普通证书，2=身份验证证书，
+    CertType 	cert_type = 6; //证书类型
     CertId 	id = 7; //证书名称
     string 	cert_hash = 8;//证书的SHA256
     string	version=9;//默认1.0
 }
-
+//授权操作
 message	Operate{
     string 	op_id = 1;//操作的id，通过uuid自动生成，合约需要查重
     string	description = 2;//操作的描述，用于显示
     string	register = 3;//操作的注册者，使用credit code或者rdid
     bool	is_publish = 4;//操作是否属于公开，公开表示不需要授权，只要拥有rdid就可以调用；不公开，需要授权；默认false
     enum OperateType {
-        OPERATE_UNDEFINED = 0;
-        OPERATE_CONTRACT = 1;
-        OPERATE_SERVICE = 2;
+        OPERATE_UNDEFINED = 0;//未定义操作类型
+        OPERATE_CONTRACT = 1;//合约操作类型，需要提供合约方法的访问；
+        OPERATE_SERVICE = 2;//服务操作类型，服务类型只需要提供服务器和服务名就可以；
     }
-    OperateType operate_type = 5;//操作类型表示是否属于服务类型，服务类型只需要提供服务器和服务名就可以；如果是合约方式，需要提供合约方法的访问；
+    OperateType operate_type = 5;//操作类型表示是否属于服务类型；
     repeated    string	operate_service_name = 6;//服务名称
     string	operate_endpoint = 7;//服务器地址
     string	auth_full_name = 8;//限制内容，具体操作限制，如访问的链的合约的方法
@@ -106,30 +106,30 @@ message	Operate{
     bool    op_valid = 11;//是否有效，默认有效，否则为禁用，值=false
     string	version=12;//默认1.0
 }
-
+//授权
 message Authorize{
     string 	id = 1;//权限id
     string	grant = 2;//授权者，credit code或者rdid
     repeated    string 	granted = 3;//操作权限的被授予者,credit code或者rdid
     repeated    string	op_id = 4;//操作id
     enum TransferType {
-        TRANSFER_DISABLE = 0;
-        TRANSFER_ONCE = 1;
-        TRANSFER_REPEATEDLY = 2;
+        TRANSFER_DISABLE = 0;//权限让渡类型-不能让渡；
+        TRANSFER_ONCE = 1;//权限让渡类型-让渡一次；
+        TRANSFER_REPEATEDLY = 2;//权限让渡类型-可以无限次让渡
     }
-    TransferType 	is_transfer = 5;//TRANSFER_DISABLE 不能让渡；TRANSFER_ONCE 让渡一次；TRANSFER_REPEATEDLY 可以无限让渡
+    TransferType 	is_transfer = 5;//权限让渡类型-
     google.protobuf.Timestamp 	create_time = 6; //建立时间
     google.protobuf.Timestamp 	disable_time = 7; //禁用时间
     bool    authorize_valid = 8;//是否有效，默认有效，否则为禁用，值=false
-    string	version=9;//默认1.0
+    string	version=9;//版本号,默认1.0
 }
-
+//授权目标账户证书
 message BindCertToAuthorize{
     string authorize_id = 1 ;//权限id
-    CertId granted = 2;//
-    string	version=3;//默认1.0
+    CertId granted = 2;//目标账户的证书Id
+    string	version=3;//版本号，默认1.0
 }
-
+//凭据
 message Credential{
     string	id=1;//凭据id，用于查询方便
     string	credential_type = 2;//凭据数据的类型
@@ -144,41 +144,41 @@ message Credential{
     bool		credential_valid = 11;//凭据是否有效
     string		version=12;//默认1.0
 }
-
+//凭据元数据定义
 message  MetadataDefine{
-    string	key = 1;
-    bool  is_open = 2;
-    repeated    MetadataDefine  childs = 3;
+    string	key = 1;//元数据名
+    bool  is_open = 2;//是否可见
+    repeated    MetadataDefine  childs = 3;//子凭据元数据定义
 }
-
+//凭据内容元数据
 message CredentialContentMetadata{
     string	id=1;//ccm id 凭据内容元数据id
     string	 	publisher = 2;//凭据元数据的发布者的did
-    repeated	MetadataDefine  metadata = 3;
-    string	meta_version = 4;
+    repeated	MetadataDefine  metadata = 3;//凭据元数据定义
+    string	meta_version = 4;//元数据版本
     google.protobuf.Timestamp update_time = 5; //建立时间
-    string	version = 6;
+    string	version = 6;//凭据内容版本
 }
 
 
-//背书，可用于Transaction和Block
+//签名，可用于Transaction签名和Block签名
 message Signature {
     //证书标识
     CertId cert_id = 1;
     google.protobuf.Timestamp tm_local = 2; //签名时间
-    //签名
+    //签名数据
     bytes signature = 3;
 }
 
 //合约方法调用及实际参数
 message ChaincodeInput {
-    string function = 1;
-    repeated string args  = 2;
+    string function = 1;//合约方法名称
+    repeated string args  = 2;//合约方法参数
 }
-//指定合约名称和版本,确定唯一的合约代码
+//指定合约名称和版本,确定唯一的合约代码标识
 message ChaincodeId {
-    string chaincodeName = 1;
-    int32 version = 2;
+    string chaincodeName = 1;//合约名称
+    int32 version = 2;//合约版本号
 }
 message Block {
     //区块头
@@ -254,13 +254,12 @@ message Transaction {
         // 用于启用/禁用合约的签名交易
         CHAINCODE_SET_STATE = 3;
     }
-    Type type = 2;
-    //store ChaincodeID as bytes so its encrypted value can be stored
-    ChaincodeId cid = 3;
+    Type type = 2;//签名交易类型
+    ChaincodeId cid = 3; //合约标识
     oneof para {
-        ChaincodeDeploy spec = 4;
-        ChaincodeInput ipt = 5;
-        bool state = 6;
+        ChaincodeDeploy spec = 4;//部署合约的签名交易方法参数
+        ChaincodeInput ipt = 5;//调用合约的签名交易方法参数
+        bool state = 6;//启用/禁用合约的签名交易方法参数
     }
     //可选，如果有设置按照预设的资源消耗,超出则终止执行；否则不限制。
     uint32 gas_limit = 7;
@@ -281,11 +280,11 @@ message ChaincodeDeploy {
     string code_package = 2;
     //合约规则的法律描述文本
     string legal_prose =3;
-    //合约类型
+    //合约语言类型
     enum CodeType {
-        CODE_UNDEFINED = 0;
-        CODE_JAVASCRIPT = 1;
-        CODE_SCALA = 2;
+        CODE_UNDEFINED = 0;//未定义合约语言
+        CODE_JAVASCRIPT = 1;//JavaScript合约语言
+        CODE_SCALA = 2;//Scala合约语言
         //合约多语言：vcl合约
         //VCL 以动态库加载执行
         CODE_VCL_DLL = 3;
@@ -296,7 +295,7 @@ message ChaincodeDeploy {
         //WASM字节码合约
         CODE_WASM = 6;
     }
-    CodeType c_type = 4;
+    CodeType c_type = 4;//合约语言类型
     //指定串行并行执行
     enum RunType {
         RUN_UNDEFINED = 0;
@@ -307,23 +306,23 @@ message ChaincodeDeploy {
         //由调度模块决定
         RUN_OPTIONAL = 3;
     }
-    RunType r_type = 5;
+    RunType r_type = 5;//合约串行/并行调度类型
     //轻节点证明：合约可决定是否需要在全局状态中维护存在性证明
     //例如:存证类合约，由于状态值不会反复修改，无需全局存在性证明
     enum StateType {
-        STATE_UNDEFINED = 0;
-        STATE_BLOCK = 1;
-        STATE_GLOBAL= 2;
+        STATE_UNDEFINED = 0;//未定义模式
+        STATE_BLOCK = 1;//区块内状态证明，用于存证类合约
+        STATE_GLOBAL= 2;//全局状态证明，用于资产类合约
     }
-    StateType s_type = 6;
-    string init_parameter=7;
+    StateType s_type = 6;//合约状态证明模式
+    string init_parameter=7;//合约初始化参数
     //合约分级 系统合约 用户合约
     enum ContractClassification {
-        CONTRACT_UNDEFINED = 0;
-        CONTRACT_SYSTEM = 1;
-        CONTRACT_CUSTOM = 2;
+        CONTRACT_UNDEFINED = 0;//未定义等级
+        CONTRACT_SYSTEM = 1;//系统内置合约
+        CONTRACT_CUSTOM = 2;//用户合约
     }
-    ContractClassification  cclassification = 8;
+    ContractClassification  cclassification = 8;//合约等级
 }
 //合约方法返回
 message ActionResult{
@@ -335,45 +334,16 @@ message ActionResult{
 
 // 状态存在性证明
 message StateProof{
-    string key=1;
-    bytes value=2;
-    bytes proof=3;
+    string key=1;//状态名
+    bytes value=2;//状态值
+    bytes proof=3;//状态存在性证明
 }
-
+//链概要信息
 message BlockchainInfo {
-    uint64 height = 1;
-    uint64 totalTransactions = 2;
-    bytes  currentBlockHash = 3;
-    bytes  previousBlockHash = 4;
-    bytes  currentStateHash = 5;
+    uint64 height = 1;//当前高度
+    uint64 totalTransactions = 2;//签名交易总数
+    bytes  currentBlockHash = 3;//当前区块Hash
+    bytes  previousBlockHash = 4;//前一区块Hash
+    bytes  currentStateHash = 5;//当前账本状态承诺
 }
-
-
-//zhj
-message MPbftPrepare {
-    Signature signature = 1;
-}
-
-//zhj
-message MPbftCommit {
-    repeated MPbftPrepare prepares = 1;
-    Signature signature = 2;
-}
-
-//zhj
-message MPbftReply {
-    repeated MPbftCommit commits = 1;
-    Signature signature = 2;
-}
-
- //交易执行日志及输出指令，只保存出错的交易结果，并且忽略OperLog
-  //  repeated TransactionResult transactionResults = 4;
-
-//状态存在于区块证明：可用于存证类合约，只写入一次，无需在全局State树中维护
-//交易存在于区块及正确执行证明：用于跨链互操作下，条件满足验证
-
-//插入更新速度较快，证明生成较慢，轻节点验证采用挑战机制，收到挑战时生成状态的多值证明。
-
-//在创世区块中一次性调用chainInfo合约，将链信息：链Id、平台Id、平台版本、共识算法等信息写入状态，
-//跨链互操作需要确认链Id、区块合法性、交易存在性、交易执行正常、
 
