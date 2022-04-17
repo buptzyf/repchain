@@ -4,8 +4,6 @@ import java.util.concurrent.ConcurrentHashMap
 
 import rep.authority.check.PermissionKeyPrefix
 import rep.log.RepLogger
-import rep.protos.peer.Operate
-import rep.protos.peer.Operate.OperateType
 import rep.utils.SerializeUtils
 
 import scala.collection.JavaConverters._

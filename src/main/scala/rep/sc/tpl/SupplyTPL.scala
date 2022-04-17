@@ -20,16 +20,14 @@ package rep.sc.tpl
 
 import org.json4s._
 import org.json4s.jackson.JsonMethods._
-import scala.reflect.ManifestFactory.classType
+
 import scala.collection.mutable.Map
-import org.json4s.native.Serialization
 import org.json4s.native.Serialization.{read, write}
 import org.json4s.{DefaultFormats, Formats, jackson}
-
+import rep.proto.rc2.ActionResult
 import rep.sc.tpl.SupplyType._
 import rep.sc.scalax.IContract
 import rep.sc.scalax.ContractContext
-import rep.protos.peer.ActionResult
 
 /**
   * 供应链分账合约

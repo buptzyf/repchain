@@ -4,9 +4,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 import rep.authority.check.PermissionKeyPrefix
 import rep.log.RepLogger
-import rep.protos.peer.Authorize
 import rep.utils.SerializeUtils
-
 import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._

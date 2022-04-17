@@ -24,9 +24,8 @@ import rep.app.conf.SystemProfile
 import rep.crypto.cert.SignTool
 import rep.log.RepLogger
 import rep.network.base.ModuleBase
-import rep.protos.peer._
 import rep.utils.{IdTool, TimeUtils}
-import rep.network.module.ModuleActorType
+import rep.proto.rc2.{ChaincodeDeploy, ChaincodeId, ChaincodeInput, Event, Signature, Transaction}
 import rep.utils.GlobalUtils.EventType
 /**
  *
@@ -67,99 +66,141 @@ object PeerHelper {
    */
   def createTransaction4Invoke(nodeName: String, chaincodeId: ChaincodeId,
                                chaincodeInputFunc: String, params: Seq[String]): Transaction = {
+    createTransaction4Invoke(nodeName, chaincodeId, chaincodeInputFunc, params, 0,"")
+  }
+
+  def createTransaction4Invoke(nodeName: String, chaincodeId: ChaincodeId,
+                               chaincodeInputFunc: String, params: Seq[String],
+                               gasLimited:Int,oid:String): Transaction = {
+    //create transaction
     var t: Transaction = new Transaction()
     val millis = TimeUtils.getCurrentTime()
     if (chaincodeId == null) t
 
+    //create transaction Id
     val txid = IdTool.getRandomUUID
+    //create transaction input
     val cip = new ChaincodeInput(chaincodeInputFunc, params)
+    //add transaction id
     t = t.withId(txid)
+    //add chaincode
     t = t.withCid(chaincodeId)
+    //add transaction input
     t = t.withIpt(cip)
-    t = t.withType(rep.protos.peer.Transaction.Type.CHAINCODE_INVOKE)
+    ////add transaction type
+    t = t.withType(rep.proto.rc2.Transaction.Type.CHAINCODE_INVOKE)
+    //add transaction gas,default 0=not limit
+    t = t.withGasLimit(gasLimited)
+    //add transaction instance name
+    t = t.withOid(oid)
+    //clean signature
     t = t.clearSignature
+    //use node's key sign transaction
     val certid = IdTool.getCertIdFromName(nodeName)
     var sobj = Signature(Option(certid), Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)))
     sobj = sobj.withSignature(ByteString.copyFrom(SignTool.sign(nodeName, t.toByteArray)))
-
+    //add signature
     t = t.withSignature(sobj)
-
+    //finsih
     t
   }
 
   def createTransaction4Deploy(nodeName: String, chaincodeId: ChaincodeId,
                                spcPackage: String, legal_prose: String, timeout: Int,
-                               ctype: rep.protos.peer.ChaincodeDeploy.CodeType): Transaction = {
-    var t: Transaction = new Transaction()
-    val millis = TimeUtils.getCurrentTime()
-    if (chaincodeId == null) t
-
-    val txid = IdTool.getRandomUUID
-    var cip = new ChaincodeDeploy(timeout)
-    cip = cip.withCodePackage(spcPackage)
-    cip = cip.withLegalProse(legal_prose)
-    cip = cip.withCtype(ctype)
-    t = t.withId(txid)
-    t = t.withCid(chaincodeId)
-    t = t.withSpec(cip)
-    t = t.withType(rep.protos.peer.Transaction.Type.CHAINCODE_DEPLOY)
-    t = t.clearSignature
-    
-    val certid = IdTool.getCertIdFromName(nodeName)
-    var sobj = Signature(Option(certid), Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)))
-    sobj = sobj.withSignature(ByteString.copyFrom(SignTool.sign(nodeName, t.toByteArray)))
-
-    t = t.withSignature(sobj)
-
-    t
+                               ctype: rep.proto.rc2.ChaincodeDeploy.CodeType): Transaction = {
+    createTransaction4Deploy(nodeName, chaincodeId,
+      spcPackage, legal_prose, timeout: Int, ctype,
+      rep.proto.rc2.ChaincodeDeploy.RunType.RUN_SERIAL,//default RUN_SERIAL
+      rep.proto.rc2.ChaincodeDeploy.StateType.STATE_BLOCK,//default STATE_BLOCK
+      rep.proto.rc2.ChaincodeDeploy.ContractClassification.CONTRACT_CUSTOM,//default CONTRACT_CUSTOM
+      0)
   }
 
   def createTransaction4Deploy(nodeName: String, chaincodeId: ChaincodeId,
                                spcPackage: String, legal_prose: String, timeout: Int,
-                               ctype: rep.protos.peer.ChaincodeDeploy.CodeType,
-                               cclassfiction:rep.protos.peer.ChaincodeDeploy.ContractClassification): Transaction = {
+                               ctype: rep.proto.rc2.ChaincodeDeploy.CodeType,
+                               rtype: rep.proto.rc2.ChaincodeDeploy.RunType,//default RUN_SERIAL
+                               stype: rep.proto.rc2.ChaincodeDeploy.StateType,//default STATE_BLOCK
+                               cclassfiction:rep.proto.rc2.ChaincodeDeploy.ContractClassification,//default CONTRACT_CUSTOM
+                               gasLimited:Int): Transaction = {
     var t: Transaction = new Transaction()
     val millis = TimeUtils.getCurrentTime()
     if (chaincodeId == null) t
 
     val txid = IdTool.getRandomUUID
+    //*************create deploy content************************
     var cip = new ChaincodeDeploy(timeout)
+    //add contract code
     cip = cip.withCodePackage(spcPackage)
+    //add LegalProse
     cip = cip.withLegalProse(legal_prose)
-    cip = cip.withCtype(ctype)
+    //add code language
+    cip = cip.withCType(ctype)
+    //add run type
+    cip = cip.withRType(rtype)
+    //add worldState member proof type
+    cip = cip.withSType(stype)
+    //add contract level
     cip = cip.withCclassification(cclassfiction)
-    t = t.withId(txid)
-    t = t.withCid(chaincodeId)
-    t = t.withSpec(cip)
-    t = t.withType(rep.protos.peer.Transaction.Type.CHAINCODE_DEPLOY)
-    t = t.clearSignature
+    //*************create deploy content************************
 
+    //*************create transaction content************************
+    //add transaction id
+    t = t.withId(txid)
+    //add chaincode id
+    t = t.withCid(chaincodeId)
+    //***add deploy content***
+    t = t.withSpec(cip)
+    //add transaction type
+    t = t.withType(rep.proto.rc2.Transaction.Type.CHAINCODE_DEPLOY)
+    //add transaction gas,default 0=not limit
+    t = t.withGasLimit(gasLimited)
+    //clean signature
+    t = t.clearSignature
+    //use node's key sign transaction
     val certid = IdTool.getCertIdFromName(nodeName)
     var sobj = Signature(Option(certid), Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)))
     sobj = sobj.withSignature(ByteString.copyFrom(SignTool.sign(nodeName, t.toByteArray)))
-
+    //add transaction's signature
     t = t.withSignature(sobj)
-
+    //finish
     t
   }
-  
+
   def createTransaction4State(nodeName: String, chaincodeId: ChaincodeId,
-                               state:Boolean): Transaction = {
+                              state:Boolean): Transaction = {
+    createTransaction4State(nodeName, chaincodeId,
+      state,0)
+  }
+
+  def createTransaction4State(nodeName: String, chaincodeId: ChaincodeId,
+                               state:Boolean,gasLimited:Int): Transaction = {
+    //create transaction
     var t: Transaction = new Transaction()
     val millis = TimeUtils.getCurrentTime()
     if (chaincodeId == null) t
 
+    //create transaction Id
     val txid = IdTool.getRandomUUID
+    //add transaction id
     t = t.withId(txid)
+    //add chaincode
     t = t.withCid(chaincodeId)
-    t = t.withType(rep.protos.peer.Transaction.Type.CHAINCODE_SET_STATE)
+
+    //add transaction type
+    t = t.withType(rep.proto.rc2.Transaction.Type.CHAINCODE_SET_STATE)
+    //add contract state
     t = t.withState(state)
+    t = t.withGasLimit(gasLimited)
+    //clean signature
     t = t.clearSignature
+    //use node's key sign transaction
     val certid = IdTool.getCertIdFromName(nodeName)
     var sobj = Signature(Option(certid), Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)))
     sobj = sobj.withSignature(ByteString.copyFrom(SignTool.sign(nodeName, t.toByteArray)))
-
+    //add transaction's signature
     t = t.withSignature(sobj)
+    //finish
     t
   }
 

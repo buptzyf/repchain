@@ -2,14 +2,11 @@ package rep.sc.scalax
 
 import collection.mutable
 import rep.storage.util.pathUtil
-
 import scala.tools.nsc.Settings
 import scala.tools.nsc.Global
 import scala.tools.nsc.reporters.ConsoleReporter
 import java.io.{File, FileWriter}
-
 import rep.crypto.Sha256
-
 import scala.reflect.io.VirtualDirectory
 import scala.reflect.internal.util.BatchSourceFile
 import scala.reflect.runtime.currentMirror

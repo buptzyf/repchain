@@ -3,7 +3,7 @@ package rep.network.consensus.cfrd.endorse
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
 
 import akka.util.ByteString
-import rep.protos.peer.Block
+import rep.proto.rc2.Block
 
 class RecvEndorsInfo {
   var block : Block = null

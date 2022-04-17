@@ -17,7 +17,7 @@
 package rep.utils
 
 
-import rep.protos.peer.{Transaction}
+
 /**
   * 全局变量
   * Created by shidianyue on 2017/5/22.

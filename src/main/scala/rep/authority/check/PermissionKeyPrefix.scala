@@ -2,7 +2,6 @@ package rep.authority.check
 
 import rep.app.conf.SystemProfile
 import rep.sc.tpl.did.DidTplPrefix
-import rep.storage.IdxPrefix
 
 object PermissionKeyPrefix {
   val prefix = IdxPrefix.WorldStateKeyPreFix + SystemProfile.getAccountChaincodeName + "_"

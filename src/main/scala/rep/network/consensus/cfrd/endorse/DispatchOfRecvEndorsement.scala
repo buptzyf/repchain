@@ -21,25 +21,8 @@ import akka.cluster.pubsub.DistributedPubSubMediator.Publish
 import akka.routing._
 import rep.app.conf.{SystemCertList, SystemProfile, TimePolicy}
 import rep.network.base.ModuleBase
-import rep.network.tools.PeerExtension
-import rep.protos.peer._
-import rep.utils.GlobalUtils.EventType
-import rep.utils._
-
-import scala.collection.mutable._
-import rep.network.consensus.util.BlockVerify
-
-import scala.util.control.Breaks
-import rep.network.util.NodeHelp
-import rep.network.consensus.util.BlockHelp
-import rep.network.consensus.util.BlockVerify
 import rep.log.RepLogger
-import rep.log.RepTimeTracer
-import rep.network.autotransaction.Topic
 import rep.network.consensus.cfrd.MsgOfCFRD.{EndorsementInfo, ResultFlagOfEndorse, ResultOfEndorsed, verifyTransOfEndorsement, verifyTransPreloadOfEndorsement, verifyTransRepeatOfEndorsement}
-import rep.network.module.cfrd.CFRDActorType
-import rep.network.sync.SyncMsg.StartSync
-import akka.util.ByteString
 
 /**
  * Created by jiangbuyun on 2020/03/19.

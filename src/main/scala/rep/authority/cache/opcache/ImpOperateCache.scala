@@ -1,10 +1,7 @@
 package rep.authority.cache.opcache
 
 import java.util.concurrent.ConcurrentHashMap
-
 import rep.crypto.Sha256
-import rep.storage.{ImpDataAccess, ImpDataPreload}
-
 import scala.collection.JavaConverters._
 
 /**

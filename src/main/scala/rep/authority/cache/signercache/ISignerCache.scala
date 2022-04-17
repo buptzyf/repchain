@@ -5,8 +5,7 @@ import java.util.concurrent.ConcurrentHashMap
 import rep.authority.cache.authcache.ImpAuthorizeCache
 import rep.authority.check.PermissionKeyPrefix
 import rep.log.RepLogger
-import rep.protos.peer.Signer
-import rep.storage.ImpDataPreload
+
 import rep.utils.SerializeUtils
 
 import scala.collection.JavaConverters._

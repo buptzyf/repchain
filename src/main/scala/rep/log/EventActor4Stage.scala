@@ -16,16 +16,12 @@
 
 package rep.log
 
-import akka.actor.{ActorRef,Props}
+import akka.actor.{ActorRef, Props}
 import akka.stream.{Attributes, FlowShape, Inlet, Outlet}
-import rep.protos.peer._
-import scala.collection.mutable
 import akka.stream.stage.{GraphStage, GraphStageLogic, InHandler, OutHandler}
 import akka.stream.SourceShape
 import rep.log.RecvEventActor.Register
-import rep.protos.peer._
-import akka.actor.ActorSystem
-import rep.utils.IdTool
+import rep.proto.rc2.Event
 
 class EventActor4Stage(eventactor: ActorRef) extends GraphStage[SourceShape[Event]]{
 //class EventActor4Stage(system: ActorSystem) extends GraphStage[SourceShape[Event]]{

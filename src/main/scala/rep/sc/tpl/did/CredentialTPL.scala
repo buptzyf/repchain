@@ -2,7 +2,7 @@ package rep.sc.tpl.did
 
 import org.json4s.DefaultFormats
 import org.json4s.jackson.JsonMethods.parse
-import rep.protos.peer.{ActionResult, Credential, CredentialContentMetadata}
+import rep.proto.rc2.{ActionResult, Credential, CredentialContentMetadata}
 import rep.sc.scalax.{ContractContext, ContractException, IContract}
 import rep.sc.tpl.did.operation.CredentialOperation
 import scalapb.json4s.JsonFormat

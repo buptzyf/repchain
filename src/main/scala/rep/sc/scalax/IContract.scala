@@ -16,8 +16,8 @@
 
 package rep.sc.scalax
 
-import rep.protos.peer.Transaction
-import rep.protos.peer.ActionResult
+
+import rep.proto.rc2.{ActionResult, Transaction}
 import rep.sc.Shim
 
 final class ContractContext(val api:Shim, val t:Transaction)

@@ -10,9 +10,9 @@ import rep.network.base.ModuleBase
 import rep.network.module.cfrd.CFRDActorType
 import rep.network.sync.SyncMsg.{StartSync, SyncRequestOfStorager}
 import rep.network.util.NodeHelp
-import rep.protos.peer.{BlockchainInfo, Event}
-import rep.storage.ImpDataAccess
-import rep.network.consensus.common.MsgOfConsensus.{BatchStore,BlockRestore}
+import rep.network.consensus.common.MsgOfConsensus.{BatchStore, BlockRestore}
+import rep.proto.rc2.{BlockchainInfo, Event}
+import rep.storage.chain.block.{BlockSearcher, BlockStorager}
 import scala.util.control.Breaks.{break, breakable}
 
 /**
@@ -43,28 +43,32 @@ abstract class IStorager (moduleName: String) extends ModuleBase(moduleName) {
   import scala.concurrent.duration._
   import rep.network.persistence.IStorager.{ SourceOfBlock }
 
-  val dataaccess: ImpDataAccess = ImpDataAccess.GetDataAccess(pe.getSysTag)
+  val store: BlockStorager = BlockStorager.getBlockStorager(pe.getSysTag)
+  val search : BlockSearcher = new BlockSearcher(pe.getSysTag)
 
   //private var precache: immutable.TreeMap[Long, BlockRestore] = new immutable.TreeMap[Long, BlockRestore]()
 
   private def SaveBlock(blkRestore: BlockRestore): Integer = {
     var re: Integer = 0
     try {
-      RepTimeTracer.setStartTime(pe.getSysTag, "storage-save", System.currentTimeMillis(),blkRestore.blk.height,blkRestore.blk.transactions.size)
+      RepTimeTracer.setStartTime(pe.getSysTag, "storage-save", System.currentTimeMillis(),blkRestore.blk.getHeader.height,blkRestore.blk.transactions.size)
       RepLogger.trace(RepLogger.Storager_Logger, this.getLogMsgPrefix( s"PreBlockHash(Before presistence): ${pe.getCurrentBlockHash}" + "~" + selfAddr))
-      val result = dataaccess.restoreBlock(blkRestore.blk)
-      if (result._1) {
-        RepLogger.trace(RepLogger.Storager_Logger, this.getLogMsgPrefix( s"Restore blocks success,node number: ${pe.getSysTag},block number=${blkRestore.blk.height}" + "~" + selfAddr))
+      val result : BlockStorager.BlockStoreResult = store.saveBlock(Some(blkRestore.blk))
+      if (result.isSuccess) {
+        RepLogger.trace(RepLogger.Storager_Logger, this.getLogMsgPrefix( s"Restore blocks success,node number: ${pe.getSysTag},block number=${blkRestore.blk.getHeader.height}" + "~" + selfAddr))
 
-        RepTimeTracer.setEndTime(pe.getSysTag, "storage-save", System.currentTimeMillis(),blkRestore.blk.height,blkRestore.blk.transactions.size)
+        RepTimeTracer.setEndTime(pe.getSysTag, "storage-save", System.currentTimeMillis(),blkRestore.blk.getHeader.height,blkRestore.blk.transactions.size)
 
-        if(blkRestore.SourceOfBlock == SourceOfBlock.CONFIRMED_BLOCK && pe.getSysTag == pe.getBlocker.blocker && pe.getBlocker.VoteHeight+1 == blkRestore.blk.height){
-          RepTimeTracer.setEndTime(pe.getSysTag, "Block", System.currentTimeMillis(),blkRestore.blk.height,blkRestore.blk.transactions.size)
+        if(blkRestore.SourceOfBlock == SourceOfBlock.CONFIRMED_BLOCK && pe.getSysTag == pe.getBlocker.blocker && pe.getBlocker.VoteHeight+1 == blkRestore.blk.getHeader.height){
+          RepTimeTracer.setEndTime(pe.getSysTag, "Block", System.currentTimeMillis(),blkRestore.blk.getHeader.height,blkRestore.blk.transactions.size)
         }
 
-        pe.getTransPoolMgr.removeTrans(blkRestore.blk.transactions,pe.getSysTag)
-        pe.resetSystemCurrentChainStatus(new BlockchainInfo(result._2, result._3, ByteString.copyFromUtf8(result._4), ByteString.copyFromUtf8(result._5),ByteString.copyFromUtf8(result._6)))
-        pe.getBlockCacheMgr.removeFromCache(blkRestore.blk.height)
+        pe.getTransactionPool.removeTransactionsFromCache(blkRestore.blk.transactions)
+
+        pe.resetSystemCurrentChainStatus(new BlockchainInfo(result.lastHeight,result.transactionCount,
+          ByteString.copyFromUtf8(result.blockHash),  ByteString.copyFromUtf8(result.previousBlockHash), ByteString.EMPTY
+          ))
+        pe.getBlockCacheMgr.removeFromCache(blkRestore.blk.getHeader.height)
 
         if (blkRestore.SourceOfBlock == SourceOfBlock.CONFIRMED_BLOCK && NodeHelp.checkBlocker(selfAddr, akka.serialization.Serialization.serializedActorPath(blkRestore.blker))) {
           mediator ! Publish(Topic.Event, new Event(selfAddr, Topic.Block, Event.Action.BLOCK_NEW, Some(blkRestore.blk)))
@@ -73,7 +77,7 @@ abstract class IStorager (moduleName: String) extends ModuleBase(moduleName) {
         RepLogger.trace(RepLogger.Storager_Logger, this.getLogMsgPrefix( s"CurrentHash(After presistence): ${pe.getCurrentBlockHash}" + "~" + selfAddr))
         RepLogger.trace(RepLogger.Storager_Logger, this.getLogMsgPrefix( s"save block success,height=${pe.getCurrentHeight},hash=${pe.getCurrentBlockHash}" + "~" + selfAddr))
       } else {
-        throw new Exception(s"Restore blocks error,save block info:height=${blkRestore.blk.height},prehash=${blkRestore.blk.previousBlockHash.toStringUtf8()},currenthash=${blkRestore.blk.hashOfBlock.toStringUtf8()}")
+        throw new Exception(s"Restore blocks error,save block info:height=${blkRestore.blk.getHeader.height},prehash=${blkRestore.blk.getHeader.hashPrevious.toStringUtf8()},currenthash=${blkRestore.blk.getHeader.hashPresent.toStringUtf8()}")
       }
 
     } catch {
@@ -112,7 +116,7 @@ abstract class IStorager (moduleName: String) extends ModuleBase(moduleName) {
     try {
       var localchaininfo = pe.getSystemCurrentChainStatus
       if (localchaininfo.height <= 0) {
-        localchaininfo = dataaccess.getBlockChainInfo()
+        localchaininfo = search.getChainInfo
         pe.resetSystemCurrentChainStatus(localchaininfo)
       }
       if(!pe.getBlockCacheMgr.isEmpty){
@@ -150,27 +154,27 @@ abstract class IStorager (moduleName: String) extends ModuleBase(moduleName) {
   def RestoreBlock(blkRestore: BlockRestore): Integer = {
     var re: Integer = 1
     try {
-      if (blkRestore.blk.height == (pe.getCurrentHeight + 1)) {
-        if (blkRestore.blk.previousBlockHash.toStringUtf8 == pe.getCurrentBlockHash ||
-          (pe.getCurrentHeight == 0 && blkRestore.blk.previousBlockHash == ByteString.EMPTY)) {
-          RepLogger.trace(RepLogger.Storager_Logger, this.getLogMsgPrefix(s"node number:${pe.getSysTag},entry save,height:${blkRestore.blk.height}" + "~" + selfAddr))
+      if (blkRestore.blk.getHeader.height == (pe.getCurrentHeight + 1)) {
+        if (blkRestore.blk.getHeader.hashPrevious.toStringUtf8 == pe.getCurrentBlockHash ||
+          (pe.getCurrentHeight == 0 && blkRestore.blk.getHeader.hashPrevious == ByteString.EMPTY)) {
+          RepLogger.trace(RepLogger.Storager_Logger, this.getLogMsgPrefix(s"node number:${pe.getSysTag},entry save,height:${blkRestore.blk.getHeader.height}" + "~" + selfAddr))
           if (SaveBlock(blkRestore) == 0) {
             if(blkRestore.SourceOfBlock == SourceOfBlock.TEST_PROBE){
               sender ! 0
             }
             re = 0
           } else {
-            pe.getBlockCacheMgr.removeFromCache(blkRestore.blk.height)
-            RepLogger.trace(RepLogger.Storager_Logger, this.getLogMsgPrefix(s"block save is failed in persistence module,must restart height:${blkRestore.blk.height}" + "~" + selfAddr))
+            pe.getBlockCacheMgr.removeFromCache(blkRestore.blk.getHeader.height)
+            RepLogger.trace(RepLogger.Storager_Logger, this.getLogMsgPrefix(s"block save is failed in persistence module,must restart height:${blkRestore.blk.getHeader.height}" + "~" + selfAddr))
           }
         } else {
-          pe.getBlockCacheMgr.removeFromCache(blkRestore.blk.height)
+          pe.getBlockCacheMgr.removeFromCache(blkRestore.blk.getHeader.height)
           pe.getActorRef(CFRDActorType.ActorType.synchrequester) ! StartSync(false)
-          RepLogger.trace(RepLogger.Storager_Logger, this.getLogMsgPrefix(s"block restor is failed in persistence module,block prehash  error,must restart height:${blkRestore.blk.height}" + "~" + selfAddr))
+          RepLogger.trace(RepLogger.Storager_Logger, this.getLogMsgPrefix(s"block restor is failed in persistence module,block prehash  error,must restart height:${blkRestore.blk.getHeader.height}" + "~" + selfAddr))
         }
-      } else if (blkRestore.blk.height < (pe.getCurrentHeight + 1)) {
-        pe.getBlockCacheMgr.removeFromCache(blkRestore.blk.height)
-        RepLogger.trace(RepLogger.Storager_Logger, this.getLogMsgPrefix(s"Restore blocks error : current height=${blkRestore.blk.height} less than local height${pe.getCurrentHeight}" + "~" + selfAddr))
+      } else if (blkRestore.blk.getHeader.height < (pe.getCurrentHeight + 1)) {
+        pe.getBlockCacheMgr.removeFromCache(blkRestore.blk.getHeader.height)
+        RepLogger.trace(RepLogger.Storager_Logger, this.getLogMsgPrefix(s"Restore blocks error : current height=${blkRestore.blk.getHeader.height} less than local height${pe.getCurrentHeight}" + "~" + selfAddr))
       }
     } catch {
       case e: RuntimeException =>
@@ -181,11 +185,11 @@ abstract class IStorager (moduleName: String) extends ModuleBase(moduleName) {
 
   override def receive = {
     case blkRestore: BlockRestore =>
-      RepLogger.trace(RepLogger.Storager_Logger, this.getLogMsgPrefix( s"node number:${pe.getSysTag},restore single block,height:${blkRestore.blk.height}" + "~" + selfAddr))
-      RepTimeTracer.setStartTime(pe.getSysTag, "storage-handle", System.currentTimeMillis(),blkRestore.blk.height,blkRestore.blk.transactions.size)
+      RepLogger.trace(RepLogger.Storager_Logger, this.getLogMsgPrefix( s"node number:${pe.getSysTag},restore single block,height:${blkRestore.blk.getHeader.height}" + "~" + selfAddr))
+      RepTimeTracer.setStartTime(pe.getSysTag, "storage-handle", System.currentTimeMillis(),blkRestore.blk.getHeader.height,blkRestore.blk.transactions.size)
       pe.getBlockCacheMgr.addToCache(blkRestore)
       Handler
-      RepTimeTracer.setEndTime(pe.getSysTag, "storage-handle", System.currentTimeMillis(),blkRestore.blk.height,blkRestore.blk.transactions.size)
+      RepTimeTracer.setEndTime(pe.getSysTag, "storage-handle", System.currentTimeMillis(),blkRestore.blk.getHeader.height,blkRestore.blk.transactions.size)
 
     case  BatchStore =>
       RepTimeTracer.setStartTime(pe.getSysTag, "storage-handle-noarg-batch", System.currentTimeMillis(),pe.getCurrentHeight,120)

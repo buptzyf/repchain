@@ -24,10 +24,9 @@ import rep.app.conf.SystemProfile
 import rep.log.RepLogger
 import rep.network.autotransaction.Topic
 import rep.network.base.ModuleBase
-import rep.network.consensus.cfrd.MsgOfCFRD.{ResultFlagOfEndorse, ResultOfEndorsed}
 import rep.network.consensus.pbft.MsgOfPBFT
 import rep.network.consensus.pbft.MsgOfPBFT.{CollectEndorsement, MsgPbftReplyOk, RequesterOfEndorsement}
-import rep.protos.peer._
+import rep.proto.rc2.{Block, Event, Signature}
 import rep.utils.GlobalUtils.EventType
 
 object EndorseCollector {
@@ -73,33 +72,33 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
 
   override def receive = {
     case CollectEndorsement(block, blocker) =>
-      RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", CollectEndorsement: " + ", " + Repchain.h4(block.hashOfBlock.toStringUtf8) +","+block.height)
+      RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", CollectEndorsement: " + ", " + Repchain.h4(block.getHeader.hashPresent.toStringUtf8) +","+block.getHeader.height)
       if(!pe.isSynching){
         createRouter
-        if (this.block != null && this.block.hashOfBlock.toStringUtf8() == block.hashOfBlock.toStringUtf8()) {
-          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"collectioner is waiting endorse result,height=${block.height},local height=${pe.getCurrentHeight}"))
+        if (this.block != null && this.block.getHeader.hashPresent.toStringUtf8() == block.getHeader.hashPresent.toStringUtf8()) {
+          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"collectioner is waiting endorse result,height=${block.getHeader.height},local height=${pe.getCurrentHeight}"))
         } else {
-          if(block.previousBlockHash.toStringUtf8() == pe.getCurrentBlockHash){
-            RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"collectioner recv endorsement,height=${block.height},local height=${pe.getCurrentHeight}"))
+          if(block.getHeader.hashPrevious.toStringUtf8() == pe.getCurrentBlockHash){
+            RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"collectioner recv endorsement,height=${block.getHeader.height},local height=${pe.getCurrentHeight}"))
             resetEndorseInfo(block, blocker)
             pe.getNodeMgr.getStableNodes.foreach(f => {
-              RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"collectioner send endorsement to requester,height=${block.height},local height=${pe.getCurrentHeight}"))
+              RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"collectioner send endorsement to requester,height=${block.getHeader.height},local height=${pe.getCurrentHeight}"))
               router.route(RequesterOfEndorsement(block, blocker, f), self)
             })
           }else{
-            RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"collectioner back out endorsement request,height=${block.height},local height=${pe.getCurrentHeight}"))
+            RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"collectioner back out endorsement request,height=${block.getHeader.height},local height=${pe.getCurrentHeight}"))
           }
         }
       }
 
     case MsgPbftReplyOk(block, replies) =>
-      RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", MsgPbftReplyOk: " + ", " + Repchain.h4(block.hashOfBlock.toStringUtf8))
+      RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", MsgPbftReplyOk: " + ", " + Repchain.h4(block.getHeader.hashPresent.toStringUtf8))
       if(!pe.isSynching) {
         //block不空，该块的上一个块等于最后存储的hash，背书结果的块hash跟当前发出的块hash一致
         val hash = pe.getCurrentBlockHash
         if (this.block != null)
-          if (this.block.previousBlockHash.toStringUtf8 == hash)
-            if (this.block.hashOfBlock == block.hashOfBlock) {
+          if (this.block.getHeader.hashPrevious.toStringUtf8 == hash)
+            if (this.block.getHeader.hashPresent.toStringUtf8 == block.getHeader.hashPresent.toStringUtf8) {
               sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Endorsement, Event.Action.ENDORSEMENT)
               //this.block = this.block.withReplies(block.replies)
               mediator ! Publish(Topic.Block, new MsgOfPBFT.ConfirmedBlock(this.block, sender, replies))

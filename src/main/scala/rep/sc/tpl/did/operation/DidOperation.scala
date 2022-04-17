@@ -1,7 +1,7 @@
 package rep.sc.tpl.did.operation
 
 import rep.app.conf.SystemProfile
-import rep.protos.peer.{ActionResult, Signer}
+import rep.proto.rc2.{ActionResult, Signer}
 import rep.sc.scalax.{ContractContext, ContractException}
 import rep.sc.tpl.did.operation.SignerOperation.signerNotExists
 import rep.sc.tpl.did.DidTplPrefix.signerPrefix

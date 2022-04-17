@@ -10,11 +10,10 @@ import rep.network.consensus.cfrd.MsgOfCFRD.ForceVoteInfo
 import rep.network.consensus.common.algorithm.IAlgorithmOfVote
 import rep.network.module.cfrd.CFRDActorType
 import rep.network.util.NodeHelp
-import rep.storage.ImpDataAccess
 import rep.utils.GlobalUtils.BlockerInfo
 import rep.network.consensus.common.MsgOfConsensus.GenesisBlock
 import rep.network.sync.SyncMsg.StartSync
-
+import rep.storage.chain.block.BlockSearcher
 /**
  * Created by jiangbuyun on 2020/03/17.
  * 抽象抽签类
@@ -25,8 +24,7 @@ object IVoter{
 }
 
 abstract class IVoter(moduleName: String) extends ModuleBase(moduleName) {
-
-  val dataaccess: ImpDataAccess = ImpDataAccess.GetDataAccess(pe.getSysTag)
+  val searcher = new BlockSearcher(pe.getSysTag)
 
   protected var candidator: Array[String] = Array.empty[String]
   protected var Blocker: BlockerInfo = BlockerInfo("", -1, Long.MaxValue, "", -1)
@@ -36,7 +34,7 @@ abstract class IVoter(moduleName: String) extends ModuleBase(moduleName) {
 
 
   protected def checkTranNum: Boolean = {
-    pe.getTransPoolMgr.getTransLength() >= SystemProfile.getMinBlockTransNum
+    pe.getTransactionPool.getCachePoolSize >= SystemProfile.getMinBlockTransNum
   }
 
   protected def cleanVoteInfo = {
@@ -48,7 +46,7 @@ abstract class IVoter(moduleName: String) extends ModuleBase(moduleName) {
 
   protected def getSystemBlockHash: String = {
     if (pe.getCurrentBlockHash == "") {
-      pe.resetSystemCurrentChainStatus(dataaccess.getBlockChainInfo())
+      pe.resetSystemCurrentChainStatus(searcher.getChainInfo)
     }
     pe.getCurrentBlockHash
   }

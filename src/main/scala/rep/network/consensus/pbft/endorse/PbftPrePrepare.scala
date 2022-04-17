@@ -26,7 +26,7 @@ import rep.app.Repchain
 import rep.app.conf.TimePolicy
 import rep.network.base.ModuleBase
 import rep.log.RepLogger
-import rep.network.consensus.pbft.MsgOfPBFT.{MsgPbftPrePrepare, MsgPbftPrepare, ResultFlagOfEndorse}
+import rep.network.consensus.pbft.MsgOfPBFT.{MPbftPrepare, MsgPbftPrePrepare, MsgPbftPrepare, ResultFlagOfEndorse}
 import rep.network.consensus.util.BlockHelp
 
 case object PbftPrePrepare {
@@ -34,8 +34,6 @@ case object PbftPrePrepare {
 }
 
 class PbftPrePrepare(moduleName: String) extends ModuleBase(moduleName) {
-  import rep.protos.peer._
-
   import scala.concurrent.duration._
 
   implicit val timeout = Timeout(TimePolicy.getTimeoutPreload.seconds)
@@ -48,14 +46,14 @@ class PbftPrePrepare(moduleName: String) extends ModuleBase(moduleName) {
     pe.getNodeMgr.getStableNodes.foreach(f => {
       val actorPath = f.toString + "/user/modulemanager/dispatchofRecvendorsement"
       val actor : ActorSelection = context.actorSelection(actorPath)
-      val prepare : MPbftPrepare = MPbftPrepare().withSignature(BlockHelp.SignBlock(prePrepare.block, pe.getSysTag))
+      val prepare : MPbftPrepare = MPbftPrepare(Some(BlockHelp.SignBlock(prePrepare.block.getHeader, pe.getSysTag)))
       actor ! MsgPbftPrepare(prePrepare.senderPath, ResultFlagOfEndorse.success, prePrepare.block, prePrepare.blocker,prepare, pe.getSystemCurrentChainStatus)
     })
   }
 
   override def receive = {
     case MsgPbftPrePrepare(senderPath,block, blocker) =>
-      RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", PbftPrePrepare preprepare: " + blocker + ", " + block.hashOfBlock.toStringUtf8)
+      RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", PbftPrePrepare preprepare: " + blocker + ", " + block.getHeader.hashPresent.toStringUtf8)
       ProcessMsgPbftPrePrepare(MsgPbftPrePrepare(senderPath, block, blocker))
 
     case _ => //ignore

@@ -18,7 +18,7 @@ import rep.network.consensus.common.MsgOfConsensus.BlockRestore
 import scala.collection.{Seq, Set}
 import scala.concurrent.{Await, Future, TimeoutException}
 import rep.network.sync.parser.ISynchAnalyzer
-import rep.storage.ImpDataAccess
+import rep.storage.chain.block.{BlockSearcher, BlockStorager}
 
 /**
  * Created by jiangbuyun on 2020/03/18.
@@ -164,12 +164,12 @@ abstract class ISynchRequester(moduleName: String) extends ModuleBase(moduleName
       setStartVoteInfo(analyzerInSynch.getMaxBlockInfo)
 
       if (rresult != null) {
-        val da = ImpDataAccess.GetDataAccess(pe.getSysTag)
-        if (da.rollbackToheight(rresult.destHeight)) {
+        val da = BlockStorager.getBlockStorager(pe.getSysTag)
+        if (da.rollbackToHeight(rresult.destHeight)) {
           if (sresult != null) {
             getBlockDatas(sresult.start, sresult.end, sresult.server)
           } else {
-            pe.resetSystemCurrentChainStatus(da.getBlockChainInfo())
+            pe.resetSystemCurrentChainStatus(new BlockSearcher(pe.getSysTag).getChainInfo)
           }
         } else {
           RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"回滚块失败，failed height=${rresult.destHeight}"))
@@ -189,8 +189,7 @@ abstract class ISynchRequester(moduleName: String) extends ModuleBase(moduleName
 
   protected def initSystemChainInfo = {
     if (pe.getCurrentHeight == 0) {
-      val dataaccess: ImpDataAccess = ImpDataAccess.GetDataAccess(pe.getSysTag)
-      pe.resetSystemCurrentChainStatus(dataaccess.getBlockChainInfo())
+      pe.resetSystemCurrentChainStatus(new BlockSearcher(pe.getSysTag).getChainInfo)
     }
   }
 

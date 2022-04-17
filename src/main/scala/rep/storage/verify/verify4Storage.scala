@@ -16,26 +16,27 @@
 
 package rep.storage.verify
 
-import rep.storage.ImpDataAccess
+
 import rep.log.RepLogger
-import rep.protos.peer._
-import rep.crypto.Sha256
-import scala.util.control.Breaks._
-import rep.network.consensus.util.{BlockVerify,BlockHelp}
+import rep.network.consensus.util.{BlockHelp, BlockVerify}
+import rep.proto.rc2.Block
+import rep.storage.chain.block.BlockSearcher
+
 import scala.util.Random
 import scala.util.control.Breaks._
 
 object verify4Storage {
   
-  private def getFileInfo(sr: ImpDataAccess,blockHeight:Long):Set[(Int,Long,Long)] = {
-    val fno = sr.getMaxFileNo()
+  private def getFileInfo(sr: BlockSearcher, blockHeight:Long):Set[(Int,Long,Long)] = {
+    val lastInfo = sr.getLastChainInfo
+    val fno = lastInfo.maxFileNo
     val fls = new Array[(Int,Long,Long)](fno+1)
     var i : Int = 0
     while(i <= fno){
-      val first = sr.getFileFirstHeight(i)
+      val first = sr.getBlockHeightInFileFirstBlockByFileNo(i).get
       var last = blockHeight
       if(i < fno){
-        last = sr.getFileFirstHeight(i+1)
+        last = sr.getBlockHeightInFileFirstBlockByFileNo(i+1).get
       }
       fls(i) = (i,first,last)
       i += 1
@@ -43,7 +44,7 @@ object verify4Storage {
     fls.toSet
   }
   
-  private def verfiyFileForFileInfo(firstHeigh:Long,lastHeight:Long,sr: ImpDataAccess):Boolean={
+  private def verfiyFileForFileInfo(firstHeigh:Long,lastHeight:Long,sr: BlockSearcher):Boolean={
      var r = true
      val seed = lastHeight-firstHeigh
      breakable(
@@ -58,19 +59,19 @@ object verify4Storage {
      r
   }
   
-  private def verfiyBlockOfFile(height:Long,sr: ImpDataAccess):Boolean={
+  private def verfiyBlockOfFile(height:Long,sr: BlockSearcher):Boolean={
     var r = false
     var start:Block = null
     var end:Block = null
     if(height > 1){
-      start = sr.getBlock4ObjectByHeight(height-1)
+      start = sr.getBlockByHeight(height-1).get
     }
-    end = sr.getBlock4ObjectByHeight(height)
-    if(VerfiyBlock(end,sr.SystemName)){
+    end = sr.getBlockByHeight(height).get
+    if(VerfiyBlock(end,sr.getSystemName)){
       if(start != null){
-        if(VerfiyBlock(start,sr.SystemName)){
-          val prehash = BlockHelp.GetBlockHash(start)
-          if(prehash == end.previousBlockHash.toStringUtf8()){
+        if(VerfiyBlock(start,sr.getSystemName)){
+          val prehash = BlockHelp.GetBlockHeaderHash(start.getHeader)
+          if(prehash == end.getHeader.hashPrevious.toStringUtf8()){
             r = true
           }
         }
@@ -85,8 +86,8 @@ object verify4Storage {
     var vr = false
     val r = BlockVerify.VerifyAllEndorseOfBlock(block, sysName)
     if(r._1){
-      val hash = BlockHelp.GetBlockHash(block)
-      if(hash == block.hashOfBlock.toStringUtf8()){
+      val hash = BlockHelp.GetBlockHeaderHash(block.getHeader)
+      if(hash == block.getHeader.hashPresent.toStringUtf8()){
         vr = true
       }
     }
@@ -101,8 +102,8 @@ object verify4Storage {
       println("921000006e0012v696.node5")
     }
     try{
-      val sr: ImpDataAccess = ImpDataAccess.GetDataAccess(sysName)
-      val bcinfo = sr.getBlockChainInfo()
+      val sr: BlockSearcher = new BlockSearcher(sysName)
+      val bcinfo = sr.getChainInfo
       if(bcinfo != null){
         if(bcinfo.height > 1){
           val flist = getFileInfo(sr,bcinfo.height)
@@ -115,7 +116,7 @@ object verify4Storage {
             }
           })
           )
-        }else if(bcinfo.height == 1 && !VerfiyBlock(sr.getBlock4ObjectByHeight(1),sysName)){
+        }else if(bcinfo.height == 1 && !VerfiyBlock(sr.getBlockByHeight(1).get,sysName)){
             errorInfo = "系统自检错误：存储检查失败，LevelDB或者Block文件损坏，请与管理员联系!"
             b = false
         }

@@ -4,18 +4,18 @@ package rep.app
 import scala.collection.JavaConverters._
 import java.util.concurrent.ConcurrentHashMap
 
-import rep.network.tools.transpool.{ITransctionPoolMgr}
+import rep.network.tools.transpool.PoolOfTransaction
 
 
 object TxPools {
-  private implicit var mgrs = new ConcurrentHashMap[String,ITransctionPoolMgr]() asScala
+  private implicit var mgrs = new ConcurrentHashMap[String,PoolOfTransaction]() asScala
 
-  def registPoolMgr(sysName:String,pm:ITransctionPoolMgr):Unit={
+  def registerTransactionPool(sysName:String,pm:PoolOfTransaction):Unit={
     this.mgrs.put(sysName,pm)
   }
 
-  def getPoolMgr(sysName:String):ITransctionPoolMgr={
-    var r : ITransctionPoolMgr = null
+  def getTransactionPool(sysName:String):PoolOfTransaction={
+    var r : PoolOfTransaction = null
     if(this.mgrs.contains(sysName)){
       r = this.mgrs.getOrElse(sysName,null)
     }

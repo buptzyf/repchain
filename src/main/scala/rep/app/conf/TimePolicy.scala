@@ -119,7 +119,7 @@ object TimePolicy {
     SYS_NODE_STABLE_DELAY = config.getLong("system.cluster.node_stable_delay")
     STABLE_TIME_DUR = config.getInt("system.time.stable_time_dur")
     //val policyType = config.getInt("system.time.timeout_policy_type")
-    TRANSCATION_WAITING = config.getInt("system.time.timeout.transcation_waiting")
+    TRANSCATION_WAITING = config.getInt("system.time.timeout.transaction_waiting")
     
     
     //policyType match {

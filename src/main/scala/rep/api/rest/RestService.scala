@@ -18,7 +18,8 @@ package rep.api.rest
 
 import java.io.File
 import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
-import scala.util.{Success, Failure}
+
+import scala.util.{Failure, Success}
 import scala.concurrent.{ExecutionContext, Future}
 import akka.actor.{ActorRef, ActorSelection}
 import akka.util.Timeout
@@ -37,6 +38,7 @@ import io.swagger.v3.oas.models.media.BinarySchema
 import javax.ws.rs._
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.Path
+import rep.proto.rc2.{Block, Transaction}
 //import org.glassfish.jersey.media.multipart.FormDataParam
 //import io.swagger.annotations._
 import akka.http.scaladsl.model._
@@ -47,7 +49,6 @@ import rep.sc.Sandbox.SandboxException
 import rep.sc.Sandbox._
 import rep.sc.Shim._
 import de.heikoseeberger.akkahttpjson4s.Json4sSupport
-import rep.protos.peer._
 import rep.api.rest.RestActor._
 import spray.json.DefaultJsonProtocol._
 import org.json4s.{DefaultFormats, Formats, jackson}
@@ -409,7 +410,14 @@ class TransactionService(ra: RestRouter)(implicit executionContext: ExecutionCon
           (x \ "legal_prose").text,
           (x \ "code").text,
           (x \ "ctype").text.toInt,
-          (x \ "state").text.toBoolean)
+          (x \ "state").text.toBoolean,
+
+          (x \ "gasLimited").text.toInt,
+          (x \ "oid").text,
+          (x \ "runType").text.toInt,
+          (x \ "stateType").text.toInt,
+          (x \ "contractLevel").text.toInt
+        )
     },
     //只能处理application/json
     unmarshaller[CSpec].forContentTypes(MediaTypes.`application/json`))

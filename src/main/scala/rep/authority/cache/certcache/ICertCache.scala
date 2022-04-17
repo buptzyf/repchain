@@ -6,7 +6,6 @@ import java.util.concurrent.ConcurrentHashMap
 import org.bouncycastle.util.io.pem.PemReader
 import rep.authority.check.PermissionKeyPrefix
 import rep.log.RepLogger
-import rep.protos.peer.Certificate
 import rep.utils.{IdTool, SerializeUtils}
 
 import scala.collection.JavaConverters._

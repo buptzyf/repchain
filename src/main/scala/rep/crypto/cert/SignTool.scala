@@ -18,18 +18,14 @@ package rep.crypto.cert
 import java.security.{KeyStore, PrivateKey, PublicKey}
 import java.security.cert.{Certificate, CertificateFactory, X509Certificate}
 
-import rep.protos.peer.CertId
-
 import scala.collection.mutable
 import java.io._
 import java.util.{ArrayList, List}
 
-import rep.app.conf.SystemProfile
 import rep.crypto.CryptoMgr
+import rep.proto.rc2.CertId
 
 import scala.util.control.Breaks._
-//import fastparse.internal..utils.Base64
-//import org.bouncycastle.util.io.pem.PemReader
 
 /**
  * 负责签名和验签的工具了，所有相关的功能都调用该类

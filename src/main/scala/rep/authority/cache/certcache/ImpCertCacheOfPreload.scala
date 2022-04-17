@@ -1,6 +1,5 @@
 package rep.authority.cache.certcache
 
-import rep.storage.ImpDataPreload
 
 /**
  * Created by jiangbuyun on 2020/07/5.

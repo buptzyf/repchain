@@ -27,9 +27,10 @@ import rep.network.base.ModuleBase
 import rep.network.consensus.util.BlockHelp
 import rep.network.module.ModuleActorType
 import rep.network.util.NodeHelp
-import rep.protos.peer._
-import rep.storage.{ImpDataAccess, ImpDataPreloadMgr}
 import rep.network.consensus.common.MsgOfConsensus.{ConfirmedBlock, GenesisBlock, PreTransBlock, PreTransBlockResult}
+import rep.proto.rc2.Block
+import rep.storage.chain.block.BlockSearcher
+import rep.storage.chain.preload.BlockPreload
 
 import scala.concurrent._
 
@@ -45,7 +46,7 @@ class GenesisBlocker(moduleName: String) extends ModuleBase(moduleName) {
 
   import scala.concurrent.duration._
 
-  val dataaccess: ImpDataAccess = ImpDataAccess.GetDataAccess(pe.getSysTag)
+  val searcher: BlockSearcher = new BlockSearcher(pe.getSysTag)
   implicit val timeout = Timeout(TimePolicy.getTimeoutPreload*20.seconds)
 
   var preblock: Block = null
@@ -70,14 +71,14 @@ class GenesisBlocker(moduleName: String) extends ModuleBase(moduleName) {
     } catch {
       case e: AskTimeoutException => null
     }finally {
-      ImpDataPreloadMgr.Free(pe.getSysTag,"Genesis-preload")
+      BlockPreload.freeInstance("Genesis-preload",pe.getSysTag)
     }
   }
 
   override def receive = {
     //创建块请求（给出块人）
     case GenesisBlock =>
-      if(dataaccess.getBlockChainInfo().height == 0 && NodeHelp.isSeedNode(pe.getSysTag)  ){
+      if(searcher.getChainInfo.height == 0 && NodeHelp.isSeedNode(pe.getSysTag)  ){
         if(this.preblock != null){
           mediator ! Publish(Topic.Block, ConfirmedBlock(preblock, sender))
         }else{
@@ -86,7 +87,7 @@ class GenesisBlocker(moduleName: String) extends ModuleBase(moduleName) {
           preblock = ExecuteTransactionOfBlock(preblock)
           if (preblock != null) {
             //preblock = BlockHelp.AddBlockHash(preblock)
-            preblock = BlockHelp.AddSignToBlock(preblock, pe.getSysTag)
+            preblock = preblock.withHeader(BlockHelp.AddHeaderSignToBlock(preblock.getHeader, pe.getSysTag))
             //sendEvent(EventType.RECEIVE_INFO, mediator, selfAddr, Topic.Block, Event.Action.BLOCK_NEW)
             mediator ! Publish(Topic.Block, ConfirmedBlock(preblock, self))
             //getActorRef(pe.getSysTag, ActorType.PERSISTENCE_MODULE) ! BlockRestore(blc, SourceOfBlock.CONFIRMED_BLOCK, self)

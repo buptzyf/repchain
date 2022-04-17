@@ -4,7 +4,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 import rep.authority.check.PermissionKeyPrefix
 import rep.log.RepLogger
-import rep.protos.peer.BindCertToAuthorize
+import rep.proto.rc2.BindCertToAuthorize
 import rep.utils.SerializeUtils
 
 import scala.collection.JavaConverters._

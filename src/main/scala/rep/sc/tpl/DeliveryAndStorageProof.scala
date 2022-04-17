@@ -4,11 +4,10 @@ package rep.sc.tpl
 import org.json4s.DefaultFormats
 import org.json4s.jackson.JsonMethods.parse
 import org.json4s.jackson.Serialization.write
-import rep.protos.peer.ActionResult
-import rep.sc.scalax.{ContractContext, IContract, ContractException}
+import rep.sc.scalax.{ContractContext, ContractException, IContract}
 import org.json4s.jvalue2extractable
 import org.json4s.string2JsonInput
-import scala.reflect.ManifestFactory.classType
+import rep.proto.rc2.ActionResult
 
 final case class  DeliveryAndStorageProof(
     fileID: String, 

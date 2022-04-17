@@ -1,6 +1,6 @@
 package rep.storage.test
 
-import rep.storage.IdxPrefix.WorldStateKeyPreFix
+import .WorldStateKeyPreFix
 import rep.storage.ImpDataAccess
 
 //import scala.collection.immutable._

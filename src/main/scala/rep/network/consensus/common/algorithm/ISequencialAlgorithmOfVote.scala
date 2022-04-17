@@ -1,9 +1,5 @@
 package rep.network.consensus.common.algorithm
-//zhj
-import rep.log.RepLogger
-import rep.storage.util.pathUtil
 
-import scala.math.pow
 
 /**
  * Created by jiangbuyun on 2020/03/17.

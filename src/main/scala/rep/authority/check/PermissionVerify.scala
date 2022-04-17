@@ -9,14 +9,10 @@ import rep.authority.cache.signercache.ISignerCache.signerData
 import rep.authority.cache.signercache.ImpSignerCache
 import rep.crypto.cert.certCache
 import rep.log.RepLogger
-import rep.protos.peer.CertId
-import rep.protos.peer.Transaction.Type
 import rep.sc.Sandbox.SandboxException
 import rep.sc.SandboxDispatcher._
 import rep.sc.Shim
-import rep.storage.{ImpDataPreload, TransactionOfDataPreload}
 import rep.utils.IdTool
-
 import scala.util.control.Breaks.{break, breakable}
 
 /**

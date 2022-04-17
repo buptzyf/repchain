@@ -11,10 +11,11 @@ import rep.network.sync.parser.ISynchAnalyzer
 import rep.network.sync.parser.raft.IRAFTSynchAnalyzer
 import rep.network.sync.request.ISynchRequester
 import rep.network.util.NodeHelp
-import rep.protos.peer.Event
-import rep.storage.ImpDataAccess
 import rep.utils.GlobalUtils.{BlockEvent, EventType}
 import akka.pattern.{AskTimeoutException, ask}
+import rep.proto.rc2.Event
+import rep.storage.chain.block.BlockStorager
+
 import scala.concurrent.{Await, Future, TimeoutException}
 import scala.concurrent.duration._
 
@@ -74,8 +75,8 @@ class SynchRequesterOfRAFT (moduleName: String) extends ISynchRequester(moduleNa
           //当前hash不一致
           if(res.response.previousBlockHash.toStringUtf8 == lprehash){
             //前面一个块的hash一致，回滚一个块
-            val da = ImpDataAccess.GetDataAccess(pe.getSysTag)
-            if (da.rollbackToheight(lh - 1)) {
+            val da = BlockStorager.getBlockStorager(pe.getSysTag)
+            if (da.rollbackToHeight(lh - 1)) {
               RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"entry rollback block,localhost=${lh}"))
               //同步区块
               getBlockDatas(lh-1, lh, res.responser)
@@ -95,8 +96,8 @@ class SynchRequesterOfRAFT (moduleName: String) extends ISynchRequester(moduleNa
           getBlockDatas(lh+1, res.response.height, res.responser)
         }else{
           if(res.ChainInfoOfSpecifiedHeight.previousBlockHash == lprehash){
-            val da = ImpDataAccess.GetDataAccess(pe.getSysTag)
-            if (da.rollbackToheight(lh - 1)) {
+            val da = BlockStorager.getBlockStorager(pe.getSysTag)
+            if (da.rollbackToHeight(lh - 1)) {
               RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"entry rollback block,localhost=${lh}"))
               getBlockDatas(lh-1, res.response.height, res.responser)
             }

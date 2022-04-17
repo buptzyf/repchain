@@ -16,13 +16,14 @@
 
 package rep.utils
 
-import rep.protos.peer.ChaincodeId
-import rep.protos.peer.CertId
+
+
 import java.util.UUID
 
-import rep.app.conf.SystemProfile
+import rep.app.conf.{RepChainConfig, SystemProfile}
+import rep.proto.rc2.{CertId, ChaincodeId, Transaction}
 //import com.gilt.timeuuid.TimeUuid
-import rep.protos.peer.Transaction
+
 
 
 object IdTool {
@@ -37,8 +38,8 @@ object IdTool {
   }
   
 
-  def isDidContract:Boolean = {
-    SystemProfile.getAccountChaincodeName == "RdidOperateAuthorizeTPL"
+  def isDidContract(systemName:String):Boolean = {
+    RepChainConfig.getSystemConfig(systemName).getAccountContractName == "RdidOperateAuthorizeTPL"
   }
 
   /** 从部署合约的交易，获得其部署的合约的链码id
@@ -51,7 +52,7 @@ object IdTool {
   } 
   
   def getCid(chaincodeid:ChaincodeId):String={
-    chaincodeid.chaincodeName+"_"+chaincodeid.version.toString()
+    chaincodeid.chaincodeName+"-"+chaincodeid.version.toString()
   }
   
   def getSigner4String(certid:CertId):String={

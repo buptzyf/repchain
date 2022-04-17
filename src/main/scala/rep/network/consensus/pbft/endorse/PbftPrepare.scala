@@ -29,16 +29,15 @@ import rep.app.conf.{SystemProfile, TimePolicy}
 import rep.crypto.cert.SignTool
 import rep.log.RepLogger
 import rep.network.base.ModuleBase
-import rep.network.consensus.pbft.MsgOfPBFT.{MsgPbftCommit, MsgPbftPrepare}
-import rep.utils.{IdTool, TimeUtils}
+import rep.network.consensus.pbft.MsgOfPBFT.{MPbftCommit, MPbftPrepare, MsgPbftCommit, MsgPbftPrepare}
+import rep.proto.rc2.Signature
+import rep.utils.{IdTool, SerializeUtils, TimeUtils}
 
 case object PbftPrepare {
   def props(name: String): Props = Props(classOf[PbftPrepare], name)
 }
 
 class PbftPrepare(moduleName: String) extends ModuleBase(moduleName) {
-  import rep.protos.peer._
-
   import scala.concurrent.duration._
 
   private var recvedHash : ByteString = null
@@ -53,14 +52,12 @@ class PbftPrepare(moduleName: String) extends ModuleBase(moduleName) {
   private def ProcessMsgPbftPepare(prepare:MsgPbftPrepare) = {
     val prepares = recvedPrepares
       .sortWith( (left,right)=> left.signature.get.certId.toString < right.signature.get.certId.toString)
-    val bytes = MPbftCommit().withPrepares(prepares).toByteArray//prepares.reduce((a,f)=>a.toByteString.concat(f.toByteString))
+    val bytes = SerializeUtils.serialise(MPbftCommit(prepares,None)) //prepares.reduce((a,f)=>a.toByteString.concat(f.toByteString))
     val certId = IdTool.getCertIdFromName(pe.getSysTag)
     val millis = TimeUtils.getCurrentTime()
     val sig = Signature(Option(certId),Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)),
       ByteString.copyFrom(SignTool.sign(pe.getSysTag, bytes)))
-    var commit : MPbftCommit = MPbftCommit()
-      .withPrepares(prepares)
-      .withSignature(sig)
+    var commit : MPbftCommit = MPbftCommit(prepares,Some(sig))
 
     pe.getNodeMgr.getStableNodes.foreach(f => {
       val actorPath = f.toString + "/user/modulemanager/dispatchofRecvendorsement"
@@ -77,8 +74,8 @@ class PbftPrepare(moduleName: String) extends ModuleBase(moduleName) {
 
     case MsgPbftPrepare(senderPath,result, block, blocker, prepare, chainInfo) =>
           //already verified
-          RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", PbftPrepare prepare: " + blocker + ", " + block.hashOfBlock.toStringUtf8)
-          val hash = block.hashOfBlock
+          RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", PbftPrepare prepare: " + blocker + ", " + block.getHeader.hashPresent.toStringUtf8)
+          val hash = block.getHeader.hashPresent
           if ( hash.equals(recvedHash)) {
             recvedPrepares += prepare
           } else {

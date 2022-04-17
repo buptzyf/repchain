@@ -106,14 +106,14 @@ class VoterOfRAFT (moduleName: String) extends IVoter(moduleName: String) {
       //检查是否存在迁移出块人消息
       RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},transform,preblocker=${this.transformInfo.preBlocker}," +
         s"prevoteindex=${this.transformInfo.voteIndexOfBlocker},preblockheight=${this.transformInfo.heightOfBlocker},lvoteindex=${this.voteIndex},lheight=${pe.getCurrentHeight}" +
-        s",transpoolcount=${pe.getTransPoolMgr.getTransLength()}" + "~" + selfAddr))
+        s",transpoolcount=${pe.getTransactionPool.getCachePoolSize}" + "~" + selfAddr))
       transform
-    }else if(pe.getTransPoolMgr.getTransLength() <= 0){
+    }else if(pe.getTransactionPool.getCachePoolSize <= 0){
       if(NodeHelp.isBlocker(this.Blocker.blocker, pe.getSysTag)){
         if(this.zeroOfTransNumTimeout == -1){
           RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},set zero trans time,lblocker=${this.Blocker.blocker}," +
             s"lvoteindex=${this.voteIndex},lblockheight=${pe.getCurrentHeight}" +
-            s",transpoolcount=${pe.getTransPoolMgr.getTransLength()}" + "~" + selfAddr))
+            s",transpoolcount=${pe.getTransactionPool.getCachePoolSize}" + "~" + selfAddr))
           this.zeroOfTransNumTimeout = System.currentTimeMillis()
         }else{
           if((System.currentTimeMillis() - this.zeroOfTransNumTimeout) > TimePolicy.getVoteWaitingDelay * 10){
@@ -121,7 +121,7 @@ class VoterOfRAFT (moduleName: String) extends IVoter(moduleName: String) {
             //发出迁移出块人消息
             RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},set zero trans timeout,lblocker=${this.Blocker.blocker}," +
               s"lvoteindex=${this.voteIndex},lblockheight=${pe.getCurrentHeight}" +
-              s",transpoolcount=${pe.getTransPoolMgr.getTransLength()}" + "~" + selfAddr))
+              s",transpoolcount=${pe.getTransactionPool.getCachePoolSize}" + "~" + selfAddr))
             pe.setZeroOfTransNumFlag(true)
             this.zeroOfTransNumTimeout = System.currentTimeMillis()
             this.zeroOfTransNumTimeout = -1
@@ -145,7 +145,7 @@ class VoterOfRAFT (moduleName: String) extends IVoter(moduleName: String) {
       if((this.Blocker.VoteHeight +SystemProfile.getBlockNumberOfRaft) <= pe.getMaxHeight4SimpleRaft){
         RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},second voter,prevheight=${this.Blocker.VoteHeight},prevvoteindex=${this.voteIndex},lh=${pe.getCurrentHeight},currentHeight=${pe.getMaxHeight4SimpleRaft}" + "~" + selfAddr))
         //val block = dataaccess.getBlock4ObjectByHeight(this.Blocker.VoteHeight +SystemProfile.getBlockNumberOfRaft)
-        val blockHash = dataaccess.getBlockHashByHeight(this.Blocker.VoteHeight +SystemProfile.getBlockNumberOfRaft)
+        val blockHash = searcher.getBlockHashByHeight(this.Blocker.VoteHeight +SystemProfile.getBlockNumberOfRaft)
         //if(block != null){
         if(blockHash != ""){
           //val currentblockhash = block.hashOfBlock.toStringUtf8()
@@ -171,10 +171,10 @@ class VoterOfRAFT (moduleName: String) extends IVoter(moduleName: String) {
   private def transform={
     val h = this.transformInfo.heightOfBlocker
     val hash = this.transformInfo.lastHashOfBlocker
-    val block = dataaccess.getBlock4ObjectByHeight(h)
-    if(block != null){
-      val currentblockhash = block.hashOfBlock.toStringUtf8()
-      val currentheight = block.height
+    val block = searcher.getBlockByHeight(h)
+    if(block != None){
+      val currentblockhash = block.get.getHeader.hashPresent.toStringUtf8()
+      val currentheight = block.get.getHeader.height
       this.voteIndex = this.transformInfo.voteIndexOfBlocker
       this.transformInfo = null
       pe.resetTimeoutOfRaft

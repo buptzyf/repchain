@@ -17,19 +17,16 @@
 package rep.network.tools
 
 import akka.actor.{ActorRef, ActorSystem, Address, ExtendedActorSystem, Extension, ExtensionId, ExtensionIdProvider}
-import rep.protos.peer.{Block, BlockchainInfo, Transaction}
 import java.util.concurrent.atomic._
 
 import rep.utils.GlobalUtils.{BlockerInfo, NodeStatus}
 import rep.network.persistence.BlockCache
-import rep.network.tools.transpool.{ITransctionPoolMgr, TransactionPoolMgr, TransactionPoolMgrForCFRD}
+import rep.network.tools.transpool.PoolOfTransaction
 import java.util.concurrent.ConcurrentHashMap
-
-import rep.app.conf.SystemProfile
 import rep.network.consensus.cfrd.endorse.RecvEndorsInfo
-//import scala.jdk.CollectionConverters._
 import scala.collection.JavaConverters._
 import rep.network.sync.SyncMsg.MaxBlockInfo
+import rep.proto.rc2.{Block, BlockchainInfo, Transaction}
 
 /**
  * Peer business logic node stared space（based on system）
@@ -42,24 +39,16 @@ import rep.network.sync.SyncMsg.MaxBlockInfo
 class PeerExtensionImpl extends Extension {
 
 /*********交易池缓存管理开始************/
-  private val transactionmgr : ITransctionPoolMgr =  setPoolMgr
+  private val poolOfTransaction : PoolOfTransaction =  null
 
-  private def setPoolMgr:ITransctionPoolMgr={
-    if(SystemProfile.getTypeOfConsensus == "RAFT"  || SystemProfile.getTypeOfConsensus == "CFRDINSTREAM"){
-      new TransactionPoolMgr
-    }else{
-      new TransactionPoolMgrForCFRD
-    }
+  def createPoolOfTransaction:PoolOfTransaction={
+    new PoolOfTransaction(getSysTag)
   }
 
-  private val transactionmgrforcfrd = new TransactionPoolMgrForCFRD
-  def getTransPoolMgr: ITransctionPoolMgr = {
-    this.transactionmgr
+  def getTransactionPool: PoolOfTransaction = {
+    this.poolOfTransaction
   }
 
-  def getTransPoolMgrForCfrd : TransactionPoolMgrForCFRD = {
-    this.transactionmgrforcfrd
-  }
 /*********交易池缓存管理结束************/
 
 /*********区块缓存管理开始************/

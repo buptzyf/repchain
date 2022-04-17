@@ -1,8 +1,9 @@
 package rep.network.consensus.pbft
 
 import akka.actor.{ActorRef, Address}
-import rep.protos.peer.{Block, BlockchainInfo, MPbftCommit, MPbftPrepare, MPbftReply, Signature}
+import rep.proto.rc2.{Block, BlockchainInfo, Signature}
 import rep.utils.GlobalUtils.BlockerInfo
+import rep.utils.SerializeUtils
 
 //zhj
 /**
@@ -65,5 +66,10 @@ object MsgOfPBFT {
   case class MsgPbftCommit(senderPath:String,block: Block, blocker: String, commit: MPbftCommit, chainInfo : BlockchainInfo)
   case class MsgPbftReply(block: Block, reply: MPbftReply, chainInfo : BlockchainInfo)
   case class MsgPbftReplyOk(block: Block, replies : Seq[MPbftReply])
+
+  //以下三个类的定义从proto文件中迁移
+  case class MPbftPrepare(signature:Option[Signature])
+  case class MPbftCommit(prepares:Seq[MPbftPrepare],signature:Option[Signature])
+  case class MPbftReply(commits:Seq[MPbftCommit],signature:Option[Signature])
 
 }

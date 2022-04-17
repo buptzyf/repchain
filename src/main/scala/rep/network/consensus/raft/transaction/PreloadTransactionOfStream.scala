@@ -10,12 +10,11 @@ import rep.network.consensus.common.MsgOfConsensus.{PreTransBlockOfStream, preTr
 import rep.network.consensus.util.BlockHelp
 import rep.network.module.ModuleActorType
 import rep.network.module.cfrd.CFRDActorType
-import rep.protos.peer.{ActionResult, Block, Transaction, TransactionResult}
+import rep.proto.rc2.{ActionResult, Block, Transaction, TransactionResult}
 import rep.sc.SandboxDispatcher.DoTransactionOfCache
 import rep.sc.TypeOfSender
 import rep.utils.{IdTool, SerializeUtils}
 
-import scala.collection.mutable
 import scala.util.Random
 import scala.util.control.Breaks.{break, breakable}
 
@@ -45,22 +44,22 @@ class PreloadTransactionOfStream(moduleName: String) extends ModuleBase(moduleNa
   private def createErrorData(ts: scala.collection.Seq[Transaction], err: Option[akka.actor.Status.Failure]): Array[TransactionResult] = {
     var rs = scala.collection.mutable.ArrayBuffer[TransactionResult]()
     ts.foreach(t => {
-      rs += new TransactionResult(t.id, _root_.scala.Seq.empty, Option(ActionResult(103, err.get.cause.getMessage))) //new TransactionResult(t.id, null, null, err)
+      rs += new TransactionResult(t.id, Map.empty,Map.empty, Option(ActionResult(103, err.get.cause.getMessage))) //new TransactionResult(t.id, null, null, err)
     })
     rs.toArray
   }
 
   private def AssembleTransResult(block: Block, transResult: Seq[TransactionResult], db_indentifier: String): Option[Block] = {
     try {
-      var rblock = block.withTransactionResults(transResult)
-      val statehashstr = Sha256.hashstr(Array.concat(pe.getSystemCurrentChainStatus.currentStateHash.toByteArray(), SerializeUtils.serialise(transResult)))
-      rblock = rblock.withStateHash(ByteString.copyFromUtf8(statehashstr))
-      if (rblock.hashOfBlock == _root_.com.google.protobuf.ByteString.EMPTY) {
+      var rBlock = block.withTransactionResults(transResult)
+      //val statehashstr = Sha256.hashstr(Array.concat(pe.getSystemCurrentChainStatus.currentStateHash.toByteArray(), SerializeUtils.serialise(transResult)))
+      //rblock = rblock.withStateHash(ByteString.copyFromUtf8(statehashstr))
+      if (rBlock.getHeader.hashPresent == _root_.com.google.protobuf.ByteString.EMPTY) {
         //如果没有当前块的hash在这里生成，如果是背书已经有了hash不再进行计算
-        rblock = BlockHelp.AddBlockHash(rblock)
+        rBlock = BlockHelp.AddBlockHeaderHash(rBlock)
         //this.DbInstance = new DB_Instance_Type(this.DbInstance.tagName,rblock.hashOfBlock.toStringUtf8)
       }
-      Some(rblock)
+      Some(rBlock)
     } catch {
       case e: RuntimeException =>
         RepLogger.error(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s" AssembleTransResult error, error: ${e.getMessage}"))
@@ -75,7 +74,7 @@ class PreloadTransactionOfStream(moduleName: String) extends ModuleBase(moduleNa
   }
 
   private def getSameCid(ts: Seq[Transaction], startIndex: Int): (Int, Seq[Transaction]) = {
-    var rts = Seq.empty[rep.protos.peer.Transaction]
+    var rts = Seq.empty[Transaction]
     if (startIndex < ts.length) {
       val len = ts.length - 1
       val ft = ts(startIndex)
@@ -119,20 +118,20 @@ class PreloadTransactionOfStream(moduleName: String) extends ModuleBase(moduleNa
   private def IsAcceptBlock(block: Block): Boolean = {
     var r = false
     if (checkedStatus) {
-      if (block.previousBlockHash == ByteString.EMPTY) {
+      if (block.getHeader.hashPrevious == ByteString.EMPTY) {
         //创世块直接进入
         r = true
       } else {
         if (this.preBlockHash != null) {
-          if (block.previousBlockHash.toStringUtf8 == this.preBlockHash) {
+          if (block.getHeader.hashPrevious.toStringUtf8 == this.preBlockHash) {
             r = true
           } else {
-            if (block.previousBlockHash.toStringUtf8 == pe.getCurrentBlockHash) {
+            if (block.getHeader.hashPrevious.toStringUtf8 == pe.getCurrentBlockHash) {
               r = true
             }
           }
         } else {
-          if (block.previousBlockHash.toStringUtf8 == pe.getCurrentBlockHash) {
+          if (block.getHeader.hashPrevious.toStringUtf8 == pe.getCurrentBlockHash) {
             r = true
           }
         }
@@ -154,15 +153,15 @@ class PreloadTransactionOfStream(moduleName: String) extends ModuleBase(moduleNa
   override def receive = {
     case ts: Seq[TransactionResult] =>
       pe.removeTrans(this.transactionCacheIdentifier)
-      RepTimeTracer.setEndTime(pe.getSysTag, "PreloadTrans-exe", System.currentTimeMillis(), this.curBlock.height, this.curBlock.transactions.size)
+      RepTimeTracer.setEndTime(pe.getSysTag, "PreloadTrans-exe", System.currentTimeMillis(), this.curBlock.getHeader.height, this.curBlock.transactions.size)
       if (ts.size > 0) {
         RepTimeTracer.setStartTime(pe.getSysTag, "PreloadTrans-assemble", System.currentTimeMillis(), pe.getBlocker.VoteHeight + 1, 0)
         var newblock = AssembleTransResult(this.curBlock, ts, this.dbIdentifier)
         //全部交易执行完成
         pe.addBlock(this.blockIdentifier, newblock.get)
         pe.getActorRef(CFRDActorType.ActorType.blocker) ! preTransBlockResultOfStream(this.blockIdentifier, true)
-        this.preBlockHash = newblock.get.hashOfBlock.toStringUtf8
-        RepTimeTracer.setEndTime(pe.getSysTag, "PreloadTrans-assemble", System.currentTimeMillis(), this.curBlock.height, this.curBlock.transactions.size)
+        this.preBlockHash = newblock.get.getHeader.hashPresent.toStringUtf8
+        RepTimeTracer.setEndTime(pe.getSysTag, "PreloadTrans-assemble", System.currentTimeMillis(), this.curBlock.getHeader.height, this.curBlock.transactions.size)
         this.resetStatus
       } else {
         pe.getActorRef(CFRDActorType.ActorType.blocker) ! preTransBlockResultOfStream(this.blockIdentifier, false)

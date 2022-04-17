@@ -25,23 +25,9 @@ import akka.pattern.AskTimeoutException
 import scala.concurrent._
 import akka.actor.{ActorRef, Address, Props}
 import akka.cluster.pubsub.DistributedPubSubMediator.Publish
-import com.google.protobuf.ByteString
 import rep.app.conf.{SystemProfile, TimePolicy}
-import rep.crypto.Sha256
-import rep.network._
 import rep.network.base.ModuleBase
-import rep.protos.peer._
-import rep.storage.ImpDataAccess
-import rep.utils.GlobalUtils.{BlockEvent, EventType, NodeStatus}
-
-import scala.collection.mutable
-import com.sun.beans.decoder.FalseElementHandler
 import rep.app.Repchain
-
-import scala.util.control.Breaks
-import rep.utils.IdTool
-
-import scala.util.control.Breaks._
 import rep.network.consensus.util.{BlockHelp, BlockVerify}
 import rep.network.util.NodeHelp
 import rep.log.RepLogger
@@ -50,7 +36,8 @@ import rep.network.consensus.common.MsgOfConsensus.{PreTransBlock, PreTransBlock
 import rep.network.consensus.pbft.MsgOfPBFT
 import rep.network.consensus.pbft.MsgOfPBFT.ConfirmedBlock
 import rep.network.module.ModuleActorType
-import rep.network.module.pbft.PBFTActorType
+import rep.proto.rc2.Block
+import rep.storage.chain.block.BlockSearcher
 
 object GenesisBlocker {
   def props(name: String): Props = Props(classOf[GenesisBlocker], name)
@@ -71,12 +58,8 @@ class GenesisBlocker(moduleName: String) extends ModuleBase(moduleName) {
 
   import context.dispatcher
   import scala.concurrent.duration._
-  import akka.actor.ActorSelection
-  import scala.collection.mutable.ArrayBuffer
-  import rep.protos.peer.{ Transaction }
-
-  val dataaccess: ImpDataAccess = ImpDataAccess.GetDataAccess(pe.getSysTag)
   implicit val timeout = Timeout(TimePolicy.getTimeoutPreload*20.seconds)
+  val searcher = new BlockSearcher(pe.getSysTag)
 
   var preblock: Block = null
 
@@ -106,7 +89,7 @@ class GenesisBlocker(moduleName: String) extends ModuleBase(moduleName) {
     //创建块请求（给出块人）
     case GenesisBlocker.GenesisBlock =>
       RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", GenesisBlock: ")
-      if(dataaccess.getBlockChainInfo().height == 0 && NodeHelp.isSeedNode(pe.getSysTag)  ){
+      if(searcher.getChainInfo.height == 0 && NodeHelp.isSeedNode(pe.getSysTag)  ){
         if(this.preblock != null){
           mediator ! Publish(Topic.Block, MsgOfPBFT.ConfirmedBlock(preblock, sender, Seq.empty))
         }else{
@@ -114,8 +97,8 @@ class GenesisBlocker(moduleName: String) extends ModuleBase(moduleName) {
           preblock = BlockHelp.CreateGenesisBlock
           preblock = ExecuteTransactionOfBlock(preblock)
           if (preblock != null) {
-            preblock = BlockHelp.AddBlockHash(preblock)
-            preblock = BlockHelp.AddSignToBlock(preblock, pe.getSysTag)
+            preblock = BlockHelp.AddBlockHeaderHash(preblock)
+            preblock = preblock.withHeader(BlockHelp.AddHeaderSignToBlock(preblock.getHeader, pe.getSysTag))
             //sendEvent(EventType.RECEIVE_INFO, mediator, selfAddr, Topic.Block, Event.Action.BLOCK_NEW)
             mediator ! Publish(Topic.Block, ConfirmedBlock(preblock, self, Seq.empty))
             //getActorRef(pe.getSysTag, ActorType.PERSISTENCE_MODULE) ! BlockRestore(blc, SourceOfBlock.CONFIRMED_BLOCK, self)

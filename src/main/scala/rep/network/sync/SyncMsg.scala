@@ -16,8 +16,8 @@
 
 package rep.network.sync
 
-import rep.protos.peer._
-import akka.actor.{ ActorRef, Props }
+import akka.actor.{ActorRef, Props}
+import rep.proto.rc2.{Block, BlockchainInfo}
 
 /**
  * Created by jiangbuyun on 2020/03/19.

@@ -17,7 +17,6 @@
 package rep.network.persistence
 
 import java.util.concurrent.ConcurrentHashMap
-//import scala.jdk.CollectionConverters._
 import scala.collection.JavaConverters._
 import rep.network.consensus.common.MsgOfConsensus.BlockRestore
 
@@ -30,7 +29,7 @@ class BlockCache {
   private implicit var caches  = new ConcurrentHashMap[Long, BlockRestore] asScala
   
   def addToCache(block:BlockRestore)={
-    this.caches += block.blk.height -> block
+    this.caches += block.blk.getHeader.height -> block
   }
   
   def removeFromCache(height:Long)={

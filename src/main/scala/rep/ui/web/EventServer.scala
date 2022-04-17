@@ -32,7 +32,6 @@ import akka.http.scaladsl.server._
 import StatusCodes._
 import Directives._
 import ch.megard.akka.http.cors.scaladsl.CorsDirectives._
-import rep.protos.peer._
 import akka.util.ByteString
 import rep.api.SwaggerDocService
 import rep.api.rest._
@@ -50,6 +49,7 @@ import akka.remote.artery.tcp.ConfigSSLEngineProvider
 import rep.crypto.{CryptoMgr, GMSSLEngineProvider}
 import rep.network.tools.PeerExtension
 import akka.http.scaladsl.{ConnectionContext, Http, HttpsConnectionContext}
+import rep.proto.rc2.Event
 
 /** Event服务伴生对象
  *  @author c4w
@@ -118,7 +118,8 @@ object EventServer {
     //允许跨域访问,以支持在应用中发起请求
     //val httpServer = Http()
     System.out.println("^^^^^^^^^^^^^^^^")
-    //val sslProvider = new GMSSLEngineProvider(system.settings.config,Logging.withMarker(system, classOf[ConfigSSLEngineProvider].getName))
+
+    /*
     val https: HttpsConnectionContext = ConnectionContext.httpsServer(() => {
       val engine = CryptoMgr.getSslContext.createSSLEngine()
       engine.setUseClientMode(false)
@@ -130,9 +131,10 @@ object EventServer {
 
       engine
     })
+    */
 
     Http().newServerAt("0.0.0.0", port)
-      .enableHttps(https)
+     // .enableHttps(https)
       .bindFlow(route_evt
       ~ cors() (
       new BlockService(ra).route ~

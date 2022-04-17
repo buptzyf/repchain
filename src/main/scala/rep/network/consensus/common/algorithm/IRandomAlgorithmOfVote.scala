@@ -2,7 +2,6 @@ package rep.network.consensus.common.algorithm
 
 import rep.log.RepLogger
 import rep.storage.util.pathUtil
-
 import scala.math.pow
 
 /**

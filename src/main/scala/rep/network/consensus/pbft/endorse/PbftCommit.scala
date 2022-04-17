@@ -13,16 +13,15 @@ import rep.app.conf.{SystemProfile, TimePolicy}
 import rep.crypto.cert.SignTool
 import rep.log.RepLogger
 import rep.network.base.ModuleBase
-import rep.network.consensus.pbft.MsgOfPBFT.{MsgPbftCommit, MsgPbftReply}
-import rep.utils.{IdTool, TimeUtils}
+import rep.network.consensus.pbft.MsgOfPBFT.{MPbftCommit, MPbftReply, MsgPbftCommit, MsgPbftReply}
+import rep.proto.rc2.Signature
+import rep.utils.{IdTool, SerializeUtils, TimeUtils}
 
 case object PbftCommit {
   def props(name: String): Props = Props(classOf[PbftCommit], name)
 }
 
 class PbftCommit(moduleName: String) extends ModuleBase(moduleName) {
-  import rep.protos.peer._
-
   import scala.concurrent.duration._
 
   private var recvedHash : ByteString = null
@@ -37,14 +36,12 @@ class PbftCommit(moduleName: String) extends ModuleBase(moduleName) {
   private def ProcessMsgPbftCommit(commit: MsgPbftCommit){
     val commits = recvedCommits
       .sortWith( (left,right)=> left.signature.get.certId.toString < right.signature.get.certId.toString)
-    val bytes = MPbftReply().withCommits(commits).toByteArray
+    val bytes =  SerializeUtils.serialise(MPbftReply(commits,None))
     val certId = IdTool.getCertIdFromName(pe.getSysTag)
     val millis = TimeUtils.getCurrentTime()
     val sig = Signature(Option(certId),Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)),
       ByteString.copyFrom(SignTool.sign(pe.getSysTag, bytes)))
-    var reply : MPbftReply = MPbftReply()
-      .withCommits(commits)
-      .withSignature(sig)
+    var reply : MPbftReply = MPbftReply(commits,Some(sig))
 
     val actor = context.actorSelection(commit.senderPath)
     actor ! MsgPbftReply(commit.block,reply,pe.getSystemCurrentChainStatus)
@@ -56,9 +53,9 @@ class PbftCommit(moduleName: String) extends ModuleBase(moduleName) {
   override def receive = {
 
     case MsgPbftCommit(senderPath,block,blocker,commit,chainInfo) =>
-      RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", PbftCommit commit: " + blocker + ", " + block.hashOfBlock.toStringUtf8)
+      RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", PbftCommit commit: " + blocker + ", " + block.getHeader.hashPresent.toStringUtf8)
       //already verified
-      val hash = block.hashOfBlock
+      val hash = block.getHeader.hashPresent
       if ( hash.equals(recvedHash)) {
         recvedCommits += commit
       } else {

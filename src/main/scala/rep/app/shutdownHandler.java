@@ -1,6 +1,5 @@
 package rep.app;
 
-import rep.network.tools.transpool.TransactionPoolMgr;
 import sun.misc.Signal;
 import sun.misc.SignalHandler;
 

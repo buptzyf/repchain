@@ -275,18 +275,18 @@ message BlockchainInfo {
 
 
 //zhj
-message MPbftPrepare {
-    Signature signature = 1;
-}
+//message MPbftPrepare {
+//    Signature signature = 1;
+//}
 
 //zhj
-message MPbftCommit {
-    repeated MPbftPrepare prepares = 1;
-    Signature signature = 2;
-}
+//message MPbftCommit {
+//    repeated MPbftPrepare prepares = 1;
+//    Signature signature = 2;
+//}
 
 //zhj
-message MPbftReply {
-    repeated MPbftCommit commits = 1;
-    Signature signature = 2;
-}
+//message MPbftReply {
+//    repeated MPbftCommit commits = 1;
+//    Signature signature = 2;
+//}

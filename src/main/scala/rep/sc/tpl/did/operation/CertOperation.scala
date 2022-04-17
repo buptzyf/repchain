@@ -1,7 +1,7 @@
 package rep.sc.tpl.did.operation
 
 import rep.crypto.Sha256
-import rep.protos.peer.{ActionResult, Certificate, Signer}
+import rep.proto.rc2.{ActionResult, Certificate}
 import rep.sc.scalax.{ContractContext, ContractException}
 import rep.sc.tpl.did.DidTplPrefix.{certPrefix, hashPrefix, signerPrefix}
 

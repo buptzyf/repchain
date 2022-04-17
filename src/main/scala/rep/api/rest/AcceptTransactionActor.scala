@@ -2,12 +2,10 @@ package rep.api.rest
 
 import akka.actor.Props
 import akka.cluster.pubsub.DistributedPubSubMediator.Publish
-import rep.api.rest.RestActor.PostResult
 import rep.app.conf.SystemProfile
 import rep.network.autotransaction.Topic
 import rep.network.base.ModuleBase
-import rep.network.consensus.byzantium.ConsensusCondition
-import rep.protos.peer.{Event, Transaction}
+import rep.proto.rc2.{Event, Transaction}
 import rep.utils.GlobalUtils.EventType
 
 object AcceptTransactionActor {
@@ -25,7 +23,7 @@ class AcceptTransactionActor(moduleName: String) extends ModuleBase(moduleName) 
       try {
         //if (pe.getTransPoolMgr.getTransLength() < SystemProfile.getMaxCacheTransNum) {
 
-        pe.getTransPoolMgr.putTran(t,pe.getSysTag)
+        pe.getTransactionPool.addTransactionToCache(t)
 
         if(SystemProfile.getIsBroadcastTransaction== 1)
           mediator ! Publish(Topic.Transaction, t)

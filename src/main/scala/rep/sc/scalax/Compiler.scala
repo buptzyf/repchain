@@ -18,11 +18,9 @@ package rep.sc.scalax
 
 
 import java.io._
-
 import rep.app.conf.SystemProfile
 import rep.crypto.Sha256
 import rep.storage.util.pathUtil
-
 import scala.collection.mutable
 import scala.reflect.internal.util.{AbstractFileClassLoader, BatchSourceFile}
 import scala.reflect.io.Path.jfile2path

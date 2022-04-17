@@ -6,7 +6,6 @@ import rep.log.{RepLogger, RepTimeTracer}
 import rep.network.autotransaction.Topic
 import rep.network.module.cfrd.CFRDActorType
 import rep.network.util.NodeHelp
-import rep.protos.peer.{Block, Event}
 import rep.utils.GlobalUtils.EventType
 import rep.network.consensus.cfrd.MsgOfCFRD.{CreateBlock, VoteOfBlocker}
 import rep.network.consensus.common.block.IBlocker
@@ -14,7 +13,7 @@ import rep.network.consensus.common.MsgOfConsensus.{ConfirmedBlock, PreTransBloc
 import rep.app.conf.{SystemProfile, TimePolicy}
 import rep.network.consensus.util.BlockHelp
 import rep.network.module.ModuleActorType
-import rep.storage.ImpDataPreloadMgr
+import rep.proto.rc2.{Block, Event}
 
 import scala.util.Random
 
@@ -43,13 +42,12 @@ class BlockOfRaftInStram(moduleName: String) extends IBlocker(moduleName) {
     } else {
       //当前存在预执行的区块
       if(this.isPublish){
-        if(this.preblock.previousBlockHash.toStringUtf8 != pe.getCurrentBlockHash){
+        if(this.preblock.getHeader.hashPrevious.toStringUtf8 != pe.getCurrentBlockHash){
           r = true
         }
       }else{
         if ((System.currentTimeMillis() - this.blockStartTime) / 1000 > this.timeoutOfRaft) {
           //超时，重置当前Actor状态
-          pe.getTransPoolMgr.rollbackTransaction("identifier-" + this.preblock.height)
           resetStatus
           r = true
         }
@@ -71,20 +69,19 @@ class BlockOfRaftInStram(moduleName: String) extends IBlocker(moduleName) {
     RepTimeTracer.setStartTime(pe.getSysTag, "Block", System.currentTimeMillis(), newHeight, 0)
     RepTimeTracer.setStartTime(pe.getSysTag, "createBlock", System.currentTimeMillis(), newHeight, 0)
     RepTimeTracer.setStartTime(pe.getSysTag, "collectTransToBlock", System.currentTimeMillis(), newHeight, 0)
-    val trans = pe.getTransPoolMgr.packageTransaction("identifier-" + newHeight, SystemProfile.getLimitBlockTransNum, pe.getSysTag) //CollectedTransOfBlock(start, SystemProfile.getLimitBlockTransNum, SystemProfile.getBlockLength).reverse.toSeq
+    val trans = pe.getTransactionPool.packageTransactionToBlock
     //todo 交易排序
     if (trans.size >= SystemProfile.getMinBlockTransNum) {
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,CollectedTransOfBlock success,height=${newHeight},local height=${pe.getBlocker.VoteHeight}" + "~" + selfAddr))
       RepTimeTracer.setEndTime(pe.getSysTag, "collectTransToBlock", System.currentTimeMillis(), newHeight, trans.size)
       //此处建立新块必须采用抽签模块的抽签结果来进行出块，否则出现刚抽完签，马上有新块的存储完成，就会出现错误
-      this.preblock = BlockHelp.WaitingForExecutionOfBlock(pe.getCurrentBlockHash, newHeight, trans)
-      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,height=${this.preblock.height},local height=${pe.getCurrentHeight}" + "~" + selfAddr))
-      RepTimeTracer.setStartTime(pe.getSysTag, "PreloadTrans", System.currentTimeMillis(), this.preblock.height, this.preblock.transactions.size)
+      this.preblock = BlockHelp.buildBlock(pe.getCurrentBlockHash, newHeight, trans)
+      RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,height=${this.preblock.getHeader.height},local height=${pe.getCurrentHeight}" + "~" + selfAddr))
+      RepTimeTracer.setStartTime(pe.getSysTag, "PreloadTrans", System.currentTimeMillis(), this.preblock.getHeader.height, this.preblock.transactions.size)
       this.blockIdentifier = "blockCache_" + Random.nextInt(10000)
       if (this.dbIdentifier == null) {
         this.dbIdentifier = pe.getBlocker.voteBlockHash
       } else if (this.dbIdentifier != pe.getBlocker.voteBlockHash) {
-        ImpDataPreloadMgr.Free(pe.getSysTag, "preload-" + this.dbIdentifier)
         this.dbIdentifier = pe.getBlocker.voteBlockHash
       }
       pe.addBlock(this.blockIdentifier, this.preblock)
@@ -100,15 +97,14 @@ class BlockOfRaftInStram(moduleName: String) extends IBlocker(moduleName) {
   }
 
   private def preloadedHandler={
-    RepTimeTracer.setEndTime(pe.getSysTag, "PreloadTrans", System.currentTimeMillis(), this.preblock.height, this.preblock.transactions.size)
-    RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,prelaod success,height=${this.preblock.height},local height=${pe.getBlocker.VoteHeight}" + "~" + selfAddr))
+    RepTimeTracer.setEndTime(pe.getSysTag, "PreloadTrans", System.currentTimeMillis(), this.preblock.getHeader.height, this.preblock.transactions.size)
+    RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,prelaod success,height=${this.preblock.getHeader.height},local height=${pe.getBlocker.VoteHeight}" + "~" + selfAddr))
     this.preblock = pe.getBlock(this.blockIdentifier)
-    RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,AddBlockHash success,height=${this.preblock.height},local height=${pe.getBlocker.VoteHeight}" + "~" + selfAddr))
-    this.preblock = BlockHelp.AddSignToBlock(this.preblock, pe.getSysTag)
+    RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,AddBlockHash success,height=${this.preblock.getHeader.height},local height=${pe.getBlocker.VoteHeight}" + "~" + selfAddr))
+    this.preblock = this.preblock.withHeader(BlockHelp.AddHeaderSignToBlock(this.preblock.getHeader, pe.getSysTag))
     schedulerLink = clearSched()
-    pe.setCreateHeight(preblock.height)
-    pe.getTransPoolMgr.cleanPreloadCache("identifier-" + this.preblock.height)
-    RepTimeTracer.setEndTime(pe.getSysTag, "createBlock", System.currentTimeMillis(), this.preblock.height, this.preblock.transactions.size)
+    pe.setCreateHeight(preblock.getHeader.height)
+    RepTimeTracer.setEndTime(pe.getSysTag, "createBlock", System.currentTimeMillis(), this.preblock.getHeader.height, this.preblock.transactions.size)
     this.isPublish = true
     if(!pe.getZeroOfTransNumFlag) {
       mediator ! Publish(Topic.Block, ConfirmedBlock(this.preblock, self))
@@ -145,11 +141,10 @@ class BlockOfRaftInStram(moduleName: String) extends IBlocker(moduleName) {
             preloadedHandler
         } else{
           //执行失败，开始清理
-          pe.getTransPoolMgr.rollbackTransaction("identifier-" + this.preblock.height)
           this.resetStatus
           RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("new block result error" + "~" + selfAddr))
           //如果缓存还有交易，让抽签模块，立即抽签
-          if(pe.getTransPoolMgr.getTransLength() > SystemProfile.getMinBlockTransNum)
+          if(pe.getTransactionPool.getCachePoolSize > SystemProfile.getMinBlockTransNum)
             pe.getActorRef(CFRDActorType.ActorType.voter) ! VoteOfBlocker
         }
       }

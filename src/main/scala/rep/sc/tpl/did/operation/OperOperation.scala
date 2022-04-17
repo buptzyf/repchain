@@ -1,12 +1,10 @@
 package rep.sc.tpl.did.operation
 
 import rep.crypto.Sha256
-import rep.protos.peer.Operate.OperateType
-import rep.protos.peer.{ActionResult, Operate}
+import rep.proto.rc2.Operate.OperateType
+import rep.proto.rc2.{ActionResult, Operate}
 import rep.sc.scalax.{ContractContext, ContractException}
 import rep.sc.tpl.did.DidTplPrefix.{operPrefix, signerPrefix}
-import rep.storage.IdxPrefix.WorldStateKeyPreFix
-import rep.utils.SerializeUtils.deserialise
 
 /**
   * 注册操作，禁用启用操作
@@ -39,8 +37,9 @@ object OperOperation extends DidOperation {
   def isContractDeployer(ctx: ContractContext, operate: Operate): Boolean = {
     var res = false
     // 查看合约开发者
-    val key_coder = WorldStateKeyPreFix + operate.authFullName.split("\\.")(0)
-    val creditCode = deserialise(ctx.api.srOfTransaction.Get(key_coder)).asInstanceOf[String]
+    //todo
+    //val key_coder = WorldStateKeyPreFix + operate.authFullName.split("\\.")(0)
+    val creditCode = ctx.api.getCurrentContractDeployer
     if (creditCode == null) {
       throw ContractException(toJsonErrMsg(contractOwnerNotExists))
     } else {

@@ -23,15 +23,14 @@ import rep.app.conf.{SystemProfile, TimePolicy}
 import rep.network.base.ModuleBase
 import rep.network.consensus.common.MsgOfConsensus.ConfirmedBlock
 import rep.network.consensus.cfrd.MsgOfCFRD.{CollectEndorsement, DelayResendEndorseInfo, ForceVoteInfo, RequesterOfEndorsement, ResendEndorseInfo, ResultOfEndorseRequester}
-import rep.protos.peer._
-import rep.utils.GlobalUtils.{BlockerInfo, EventType}
-import rep.network.util.NodeHelp
+import rep.utils.GlobalUtils.{ EventType}
 import rep.network.consensus.util.BlockHelp
 import rep.network.consensus.util.BlockVerify
 import rep.log.RepLogger
 import rep.log.RepTimeTracer
 import rep.network.autotransaction.Topic
 import rep.network.consensus.byzantium.ConsensusCondition
+import rep.proto.rc2.{Block, Event, Signature}
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -104,13 +103,13 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
     if (ConsensusCondition.ConsensusConditionChecked(this.recvedEndorse.size + 1)) {
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("collectioner package endorsement to block"))
       this.recvedEndorse.foreach(f => {
-        this.block = BlockHelp.AddEndorsementToBlock(this.block, f._2)
+        this.block = this.block.withHeader(BlockHelp.AddEndorsementToBlock(this.block.getHeader, f._2))
       })
-      var consensus = this.block.endorsements.toArray[Signature]
+      var consensus = this.block.getHeader.endorsements.toArray[Signature]
       consensus=BlockVerify.sort(consensus)
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("collectioner endorsement sort"))
-      this.block = this.block.withEndorsements(consensus)
-      RepTimeTracer.setEndTime(pe.getSysTag, "Endorsement", System.currentTimeMillis(),this.block.height,this.block.transactions.size)
+      this.block = this.block.withHeader(this.block.getHeader.withEndorsements(consensus))
+      RepTimeTracer.setEndTime(pe.getSysTag, "Endorsement", System.currentTimeMillis(),this.block.getHeader.height,this.block.transactions.size)
       mediator ! Publish(Topic.Block, new ConfirmedBlock(this.block, sender))
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( "collectioner endorsementt finish"))
       clearEndorseInfo
@@ -125,41 +124,41 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
       if(!pe.isSynching && ConsensusCondition.CheckWorkConditionOfSystem(pe.getNodeMgr.getStableNodes.size)) {
         createRouter
 
-        if (this.block != null && this.block.hashOfBlock.toStringUtf8() == block.hashOfBlock.toStringUtf8()) {
+        if (this.block != null && this.block.getHeader.hashPresent.toStringUtf8() == block.getHeader.hashPresent.toStringUtf8()) {
           //需要重启背书
           //if (this.blockerIndex < index && blocker == this.blocker) {
           if(this.blocker.voteIndex < blocker.voteIndex && blocker.blocker == this.blocker.blocker){
-            if (block.previousBlockHash.toStringUtf8() == pe.getCurrentBlockHash) {
-              RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"collectioner recv endorsement in repeat endorsement,height=${block.height},local height=${pe.getCurrentHeight}"))
+            if (block.getHeader.hashPrevious.toStringUtf8() == pe.getCurrentBlockHash) {
+              RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"collectioner recv endorsement in repeat endorsement,height=${block.getHeader.height},local height=${pe.getCurrentHeight}"))
               //resetEndorseInfo(block, blocker, index)
               resetEndorseInfo(block, blocker)
               pe.getNodeMgr.getStableNodes.foreach(f => {
-                RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"collectioner send endorsement to requester in repeat endorsement,height=${block.height},local height=${pe.getCurrentHeight}"))
+                RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"collectioner send endorsement to requester in repeat endorsement,height=${block.getHeader.height},local height=${pe.getCurrentHeight}"))
                 //router.route(RequesterOfEndorsement(block, blocker, f, pe.getBlocker.VoteIndex), self)
                 router.route(RequesterOfEndorsement(block, blocker, f), self)
               })
             } else {
-              RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"collectioner back out endorsement request in repeat endorsement,height=${block.height},local height=${pe.getCurrentHeight}"))
+              RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"collectioner back out endorsement request in repeat endorsement,height=${block.getHeader.height},local height=${pe.getCurrentHeight}"))
             }
           }
-          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"collectioner is waiting endorse result in repeat endorsement,height=${block.height},local height=${pe.getCurrentHeight}"))
+          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"collectioner is waiting endorse result in repeat endorsement,height=${block.getHeader.height},local height=${pe.getCurrentHeight}"))
         } else {
           //第一次背书
-          if (block.previousBlockHash.toStringUtf8() == pe.getCurrentBlockHash) {
-            RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"collectioner recv endorsement in first endorsement,height=${block.height},local height=${pe.getCurrentHeight}"))
+          if (block.getHeader.hashPrevious.toStringUtf8() == pe.getCurrentBlockHash) {
+            RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"collectioner recv endorsement in first endorsement,height=${block.getHeader.height},local height=${pe.getCurrentHeight}"))
             //resetEndorseInfo(block, blocker, index)
             resetEndorseInfo(block, blocker)
             pe.getNodeMgr.getStableNodes.foreach(f => {
-              RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"collectioner send endorsement to requester in first endorsement,height=${block.height},local height=${pe.getCurrentHeight}"))
+              RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"collectioner send endorsement to requester in first endorsement,height=${block.getHeader.height},local height=${pe.getCurrentHeight}"))
               //router.route(RequesterOfEndorsement(block, blocker, f, pe.getBlocker.VoteIndex), self)
               router.route(RequesterOfEndorsement(block, blocker, f), self)
             })
           } else {
-            RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"collectioner back out endorsement request in first endorsement,height=${block.height},local height=${pe.getCurrentHeight}"))
+            RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"collectioner back out endorsement request in first endorsement,height=${block.getHeader.height},local height=${pe.getCurrentHeight}"))
           }
         }
       }else{
-        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"collectioner do not send endorsement request ,reason:synch?;nodes too little,height=${block.height},local height=${pe.getCurrentHeight}"))
+        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"collectioner do not send endorsement request ,reason:synch?;nodes too little,height=${block.getHeader.height},local height=${pe.getCurrentHeight}"))
       }
         /*//第一次背书和重启背书采用同一逻辑
         if( block.previousBlockHash.toStringUtf8() == pe.getCurrentBlockHash){
@@ -193,13 +192,13 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
     case ResultOfEndorseRequester(result, endors, blockhash, endorser) =>
       if(!pe.isSynching){
         //block不空，该块的上一个块等于最后存储的hash，背书结果的块hash跟当前发出的块hash一致
-        if (this.block != null && this.block.previousBlockHash.toStringUtf8() == pe.getCurrentBlockHash && this.block.hashOfBlock.toStringUtf8() == blockhash) {
+        if (this.block != null && this.block.getHeader.hashPrevious.toStringUtf8() == pe.getCurrentBlockHash && this.block.getHeader.hashPresent.toStringUtf8() == blockhash) {
             if (result) {
-              RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"collectioner recv endorsement result,height=${block.height},local height=${pe.getCurrentHeight}"))
+              RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"collectioner recv endorsement result,height=${block.getHeader.height},local height=${pe.getCurrentHeight}"))
               recvedEndorse += endorser.toString -> endors
               CheckAndFinishHandler
             } else {
-              RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"collectioner recv endorsement result,is error,height=${block.height},local height=${pe.getCurrentHeight}"))
+              RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"collectioner recv endorsement result,is error,height=${block.getHeader.height},local height=${pe.getCurrentHeight}"))
             }
         }else{
           RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"collectioner back out endorsement result,local height=${pe.getCurrentHeight}"))
@@ -207,19 +206,19 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
       }
     case ResendEndorseInfo(endorer)=>
       if(!pe.isSynching && ConsensusCondition.CheckWorkConditionOfSystem(pe.getNodeMgr.getStableNodes.size)){
-        if (this.block != null && this.block.previousBlockHash.toStringUtf8() == pe.getCurrentBlockHash ) {
+        if (this.block != null && this.block.getHeader.hashPrevious.toStringUtf8() == pe.getCurrentBlockHash ) {
           if(this.router != null){
             if(this.resendTimes <= SystemProfile.getEndorseResendTimes){
               if(this.resendEndorsements.isEmpty){
                 this.schedulerLink = clearSched()
-                schedulerLink = scheduler.scheduleOnce(( TimePolicy.getTimeoutEndorse * 2 ).second, self, DelayResendEndorseInfo(this.block.hashOfBlock.toStringUtf8))
+                schedulerLink = scheduler.scheduleOnce(( TimePolicy.getTimeoutEndorse * 2 ).second, self, DelayResendEndorseInfo(this.block.getHeader.hashPresent.toStringUtf8))
               }
               this.resendEndorsements += endorer
             }else{
-              RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"ResendEndorseInfo endorse info,resend times eq ${this.resendTimes} ,height=${block.height},local height=${pe.getCurrentHeight}"))
+              RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"ResendEndorseInfo endorse info,resend times eq ${this.resendTimes} ,height=${block.getHeader.height},local height=${pe.getCurrentHeight}"))
             }
           }else{
-            RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"ResendEndorseInfo collectioner's router is null,height=${block.height},local height=${pe.getCurrentHeight}"))
+            RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"ResendEndorseInfo collectioner's router is null,height=${block.getHeader.height},local height=${pe.getCurrentHeight}"))
           }
         }else{
           RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"ResendEndorseInfo collectioner back out resend endorsement request,local height=${pe.getCurrentHeight}"))
@@ -248,7 +247,7 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
     case DelayResendEndorseInfo(bHash)=>
       this.schedulerLink = clearSched()
       if(!pe.isSynching && ConsensusCondition.CheckWorkConditionOfSystem(pe.getNodeMgr.getStableNodes.size)){
-        if (this.block != null && bHash == this.block.hashOfBlock.toStringUtf8 && this.block.previousBlockHash.toStringUtf8() == pe.getCurrentBlockHash ) {
+        if (this.block != null && bHash == this.block.getHeader.hashPresent.toStringUtf8 && this.block.getHeader.hashPrevious.toStringUtf8() == pe.getCurrentBlockHash ) {
           if(this.router != null){
             if(this.resendTimes <= SystemProfile.getEndorseResendTimes){
               this.resendTimes += 1
@@ -257,11 +256,11 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
                 router.route(RequesterOfEndorsement(this.block, this.blocker, addr), self)
               })
             }else{
-              RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"DelayResendEndorseInfo endorse info,resend times eq ${this.resendTimes} ,height=${block.height},local height=${pe.getCurrentHeight}"))
+              RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"DelayResendEndorseInfo endorse info,resend times eq ${this.resendTimes} ,height=${block.getHeader.height},local height=${pe.getCurrentHeight}"))
             }
 
           }else{
-            RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"DelayResendEndorseInfo collectioner's router is null,height=${block.height},local height=${pe.getCurrentHeight}"))
+            RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"DelayResendEndorseInfo collectioner's router is null,height=${block.getHeader.height},local height=${pe.getCurrentHeight}"))
           }
         }else{
           RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"DelayResendEndorseInfo collectioner back out resend endorsement request,local height=${pe.getCurrentHeight}"))

@@ -27,10 +27,12 @@ import rep.network.confirmblock.IConfirmOfBlock
 import rep.network.consensus.common.MsgOfConsensus
 import rep.network.consensus.common.MsgOfConsensus.{BatchStore, BlockRestore}
 import rep.network.consensus.pbft.MsgOfPBFT
+import rep.network.consensus.pbft.MsgOfPBFT.{MPbftCommit, MPbftReply}
 import rep.network.consensus.util.BlockVerify
 import rep.network.module.ModuleActorType.ActorType
 import rep.network.persistence.IStorager.SourceOfBlock
 import rep.utils.GlobalUtils.EventType
+import rep.utils.SerializeUtils
 
 import scala.concurrent._
 
@@ -60,9 +62,9 @@ class ConfirmOfBlockOfPBFT(moduleName: String) extends IConfirmOfBlock(moduleNam
 
     val ds = scala.collection.mutable.Buffer[DataSig]()
     replies.foreach( r => {
-        ds += DataSig(r.clearSignature.toByteArray, r.signature.get)
+        ds += DataSig(SerializeUtils.serialise(MPbftReply(r.commits,None)), r.signature.get)
       for (c <- r.commits) {
-          ds += DataSig(c.clearSignature.toByteArray, c.signature.get)
+          ds += DataSig(SerializeUtils.serialise(MPbftCommit(c.prepares,None)), c.signature.get)
           c.prepares.foreach(p=>{
             ds += DataSig(b, p.signature.get)
           })

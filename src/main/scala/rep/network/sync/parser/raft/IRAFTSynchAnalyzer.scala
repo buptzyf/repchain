@@ -5,7 +5,7 @@ import rep.network.sync.SyncMsg.{AnalysisResult, MaxBlockInfo, RollbackAction, S
 import rep.network.sync.SyncMsg
 import rep.network.sync.parser.ISynchAnalyzer
 import rep.network.tools.NodeMgr
-import rep.protos.peer.BlockchainInfo
+import rep.proto.rc2.BlockchainInfo
 
 /**
  * Created by jiangbuyun on 2020/03/18.

@@ -1,7 +1,7 @@
 package rep.network.consensus.cfrd
 
 import akka.actor.{ActorRef, Address}
-import rep.protos.peer.{Block, BlockchainInfo, Signature, Transaction, TransactionResult}
+import rep.proto.rc2.{Block, BlockchainInfo, Signature}
 import rep.utils.GlobalUtils.BlockerInfo
 
 

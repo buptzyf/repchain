@@ -20,12 +20,8 @@ package rep.sc.tpl
 import org.json4s._
 import org.json4s.jackson.JsonMethods._
 import rep.app.conf.SystemProfile
-import rep.protos.peer.ChaincodeId
-import rep.utils.IdTool
-import java.text.SimpleDateFormat
-
+import rep.proto.rc2.ActionResult
 import rep.sc.scalax.{ContractContext, ContractException, IContract}
-import rep.protos.peer.ActionResult
 
 
 /**
@@ -59,13 +55,14 @@ class ContractAssetsTPL_Legal extends IContract {
     if (!data.from.equals(ctx.t.getSignature.getCertId.creditCode))
       return new ActionResult(-1, "只允许从本人账户转出")
     // 跨合约读账户，该处并未反序列化
-    if (IdTool.isDidContract) {
+    //todo 跨合约读需要修改
+    /*if (ctx.api.isDidContract) {
       if (ctx.api.getStateEx(chaincodeName, "signer_" + data.to) == null)
         return new ActionResult(-2, "目标账户不存在")
     } else {
       if (ctx.api.getStateEx(chaincodeName, data.to) == null)
         return new ActionResult(-2, "目标账户不存在")
-    }
+    }*/
     val sfrom: Any = ctx.api.getVal(data.from)
     val dfrom = sfrom.asInstanceOf[Int]
     if (dfrom < data.amount)

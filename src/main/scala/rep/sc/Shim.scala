@@ -19,16 +19,19 @@ package rep.sc
 
 import akka.actor.ActorSystem
 import rep.network.tools.PeerExtension
-import rep.protos.peer.{OperLog}
-import rep.storage.{  TransactionOfDataPreload}
-import rep.utils.{IdTool}
+import rep.utils.IdTool
 import rep.utils.SerializeUtils.deserialise
 import rep.utils.SerializeUtils.serialise
 import rep.crypto.cert.SignTool
 import _root_.com.google.protobuf.ByteString
 import rep.log.RepLogger
 import org.slf4j.Logger
-import rep.app.conf.SystemProfile
+import rep.app.conf.RepChainConfig
+import rep.proto.rc2.Transaction
+import rep.storage.chain.KeyPrefixManager
+import rep.storage.chain.preload.{BlockPreload, TransactionPreload}
+import scala.collection.immutable.HashMap
+
 
 /** Shim伴生对象
  *  @author c4w
@@ -39,8 +42,6 @@ object Shim {
   type Key = String  
   type Value = Array[Byte]
 
-
-  import rep.storage.IdxPrefix._
   val ERR_CERT_EXIST = "证书已存在"
   val PRE_CERT_INFO = "CERT_INFO_"
   val PRE_CERT = "CERT_"
@@ -51,62 +52,115 @@ object Shim {
  *  @author c4w
  * @constructor 根据actor System和合约的链码id建立shim实例
  * @param system 所属的actorSystem
- * @param cName 合约的链码id
+ * @param t 合约执行的交易
+ * @param identifier 合约执行的交易
  */
-class Shim(system: ActorSystem, cName: String) {
+class Shim(system: ActorSystem,t:Transaction,identifier:String) {
 
   import Shim._
-  import rep.storage.IdxPrefix._
 
-  val PRE_SPLIT = "_"
+  private val PRE_SPLIT = "_"
   //本chaincode的 key前缀
-  val pre_key = WorldStateKeyPreFix + cName + PRE_SPLIT
+  private var pre_key : String = KeyPrefixManager.getWorldStateKeyPrefix(pe.getSysTag,IdTool.getCid(t.getCid),t.oid)
   //存储模块提供的system单例
-  val pe = PeerExtension(system)
+  private val pe = PeerExtension(system)
   //从交易传入, 内存中的worldState快照
   //不再直接使用区块预执行对象，后面采用交易预执行对象，可以更细粒度到控制交易事务
-  //var sr:ImpDataPreload = null
-  var srOfTransaction : TransactionOfDataPreload = null
+  private var srOfTransaction : TransactionPreload = BlockPreload.getBlockPreload(identifier,pe.getSysTag).getTransactionPreload(t.id)
+  private var config  = RepChainConfig.getSystemConfig(pe.getSysTag)
 
   //记录状态修改日志
-  var ol = scala.collection.mutable.ListBuffer.empty[OperLog]
-    
+  private var stateGet : HashMap[String,ByteString] = new HashMap[String,ByteString]()
+  private var stateSet : HashMap[String,ByteString] = new HashMap[String,ByteString]()
+
+  def getStateGet:HashMap[String,ByteString]={
+    this.stateGet
+  }
+
+  def getStateSet:HashMap[String,ByteString]={
+    this.stateSet
+  }
+
   def setVal(key: Key, value: Any):Unit ={
     setState(key, serialise(value))
   }
    def getVal(key: Key):Any ={
-    deserialise(getState(key))
+     val v = getState(key)
+     if(v == null)
+       null
+     else
+      deserialise(v)
   }
  
-  def setState(key: Key, value: Array[Byte]): Unit = {
-    val pkey = pre_key + key
-    val oldValue = get(pkey)
-    //sr.Put(pkey, value)
-    this.srOfTransaction.Put(pkey,value)
-    val ov = if(oldValue == null) ByteString.EMPTY else ByteString.copyFrom(oldValue)
-    val nv = if(value == null) ByteString.EMPTY else ByteString.copyFrom(value)
-    //记录操作日志
-    //getLogger.trace(s"nodename=${sr.getSystemName},dbname=${sr.getInstanceName},txid=${txid},key=${key},old=${deserialise(oldValue)},new=${deserialise(value)}")
-    //ol += new OperLog(key,ov, nv)
-    ol += new OperLog(pkey,ov, nv)
+  private def setState(key: Key, value: Array[Byte]): Unit = {
+    val pkey = pre_key + PRE_SPLIT + key
+    if(!this.stateGet.contains(pkey)){
+      //如果该键从来没有read，从DB获取read，并写入到read日志
+      val oldValue = get(pkey)
+      if(oldValue == null){
+        //如果没有读到，写入None的字节数组
+        this.stateGet += pkey->ByteString.EMPTY
+      }else{
+        this.stateGet += pkey->ByteString.copyFrom(oldValue)
+      }
+    }
+    if(value != null){
+      this.srOfTransaction.put(pkey,value)
+      this.stateSet += pkey -> ByteString.copyFrom(value)
+    }else{
+      //如果待写入的值是null，采用None替代，并转字节数组
+      val nv = ByteString.EMPTY
+      this.srOfTransaction.put(pkey,nv.toByteArray)
+      this.stateSet += pkey -> nv
+    }
   }
 
   private def get(key: Key): Array[Byte] = {
-    //sr.Get(key)
-    this.srOfTransaction.Get(key)
+    val v = this.srOfTransaction.get(key)
+    if(v == None){
+      this.stateGet += key -> ByteString.EMPTY
+      null
+    }else{
+      val bv = v.get.asInstanceOf[Array[Byte]]
+      if(bv.length == 0){
+        this.stateGet += key -> ByteString.EMPTY
+        null
+      }else{
+        this.stateGet += key -> ByteString.copyFrom(bv)
+        bv
+      }
+    }
   }
 
-  def getState(key: Key): Array[Byte] = {
-    get(pre_key + key)
+  private def getState(key: Key): Array[Byte] = {
+    get(pre_key + PRE_SPLIT + key)
   }
 
-  def getStateEx(cName:String, key: Key): Array[Byte] = {
-    get(WorldStateKeyPreFix + cName + PRE_SPLIT + key)
+  def getStateEx(chainId:String,contractId:String,contractInstanceId:String, key: Key): Array[Byte] = {
+    get(chainId + PRE_SPLIT + contractId + PRE_SPLIT + contractInstanceId + PRE_SPLIT + key)
+  }
+
+  def getStateEx(chainId:String,contractId:String, key: Key): Array[Byte] = {
+    get(chainId + PRE_SPLIT + contractId + PRE_SPLIT + PRE_SPLIT + PRE_SPLIT + key)
   }
   
   //判断账号是否节点账号 TODO
   def bNodeCreditCode(credit_code: String) : Boolean ={
     SignTool.isNode4Credit(credit_code)
+  }
+
+  def getCurrentContractDeployer:String={
+    val key_coder = KeyPrefixManager.getWorldStateKey(pe.getSysTag,t.getCid.chaincodeName,IdTool.getCid(t.getCid),t.oid)
+    val coder = this.srOfTransaction.get(key_coder)
+    if(coder == None){
+      ""
+    }else{
+      coder.get.asInstanceOf[String]
+    }
+  }
+
+  def isDidContract:Boolean = {
+    IdTool.isDidContract(pe.getSysTag)
   }
 
   /**
@@ -117,7 +171,7 @@ class Shim(system: ActorSystem, cName: String) {
     */
   def isAdminCert(credit_code: String): Boolean = {
     var r = true
-    val certId = IdTool.getCertIdFromName(SystemProfile.getChainCertName)
+    val certId = IdTool.getCertIdFromName(config.getChainCertName)
     if (!certId.creditCode.equals(credit_code)) {
       r = false
     }

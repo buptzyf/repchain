@@ -21,23 +21,9 @@ import com.google.protobuf.timestamp.Timestamp
 import scalapb.json4s.JsonFormat
 import rep.app.conf.SystemProfile
 import rep.crypto.{BytesHex, Sha256}
-import rep.protos.peer.{Block, CertId, ChaincodeId, Event, Signature, Transaction}
 import rep.utils.TimeUtils
-import rep.storage.IdxPrefix
-import rep.sc.Shim._
-import rep.storage._
-import java.security.cert.Certificate
-
-import akka.cluster.pubsub.DistributedPubSubMediator.Publish
-import rep.utils.SerializeUtils
-
-import scala.util.control.Breaks
-import org.slf4j.LoggerFactory
-import rep.api.rest.RestActor.PostResult
 import rep.crypto.cert.SignTool
-import rep.network.autotransaction.{PeerHelper, Topic}
-import rep.network.consensus.byzantium.ConsensusCondition
-import rep.utils.GlobalUtils.EventType
+import rep.proto.rc2.{Block, BlockHeader, Signature, Transaction}
 import rep.utils.IdTool
 
 object BlockHelp {
@@ -57,7 +43,7 @@ object BlockHelp {
     }
   }
 
-  def SignBlock(block: Block, alise: String): Signature = {
+  def SignBlock(block: BlockHeader, alise: String): Signature = {
     try {
       val tmpblock = block.clearEndorsements
       SignDataOfBlock(tmpblock.toByteArray, alise)
@@ -66,7 +52,7 @@ object BlockHelp {
     }
   }
 
-  def AddSignToBlock(block: Block, alise: String): Block = {
+  def AddHeaderSignToBlock(block: BlockHeader, alise: String): BlockHeader = {
     try {
       var signdata = SignBlock(block, alise)
       AddEndorsementToBlock(block, signdata)
@@ -75,7 +61,7 @@ object BlockHelp {
     }
   }
 
-  def AddEndorsementToBlock(block: Block, signdata: Signature): Block = {
+  def AddEndorsementToBlock(block: BlockHeader, signdata: Signature): BlockHeader = {
     try {
       if (block.endorsements.isEmpty) {
         block.withEndorsements(Seq(signdata))
@@ -91,41 +77,44 @@ object BlockHelp {
 /****************************背书相关的操作结束**********************************************************/
 
   //该方法在预执行结束之后才能调用
-  def AddBlockHash(block: Block): Block = {
+  def AddBlockHeaderHash(block: Block): Block = {
     try {
-      block.withHashOfBlock(ByteString.copyFromUtf8(GetBlockHash(block)))
+      val hash = GetBlockHeaderHash(block.getHeader)
+      val header = block.getHeader.withHashPresent(ByteString.copyFromUtf8(hash))
+      block.withHeader(header)
     } catch {
       case e: RuntimeException => throw e
     }
   }
 
-  def GetBlockHash(block: Block): String = {
+  def GetBlockHeaderHash(header: BlockHeader): String = {
     try {
-      val blkOutEndorse = block.clearEndorsements
-      val blkOutBlockHash = blkOutEndorse.withHashOfBlock(ByteString.EMPTY)
-      Sha256.hashstr(blkOutBlockHash.toByteArray)
+      val headerOutEndorse = header.clearEndorsements
+      val headerOutBlockHash = headerOutEndorse.withHashPresent(ByteString.EMPTY)
+      Sha256.hashstr(headerOutBlockHash.toByteArray)
     } catch {
       case e: RuntimeException => throw e
     }
   }
-  
-  //打包交易到区块，等待预执行
-  def WaitingForExecutionOfBlock(preBlockHash: String, h: Long, trans: Seq[Transaction]): Block = {
+
+  /**
+   * @author jiangbuyun
+   * @version	2.0
+   * @since	2022-04-14
+   * @category	打包交易，建立新的区块
+   * @param	preBlockHash:String 上一个区块的Hash,h:Long 上一个区块的高度，trans: Seq[Transaction]交易列表
+   * @return 返回Block
+   * */
+  def buildBlock(preBlockHash: String, h: Long, trans: Seq[Transaction]): Block = {
     try {
-      val millis = TimeUtils.getCurrentTime()
-      new Block(
-        versionOfBlock,
-        h,
-        trans,
-        null,
-        _root_.com.google.protobuf.ByteString.EMPTY,
-        ByteString.copyFromUtf8(preBlockHash),
-        Seq(),
-        _root_.com.google.protobuf.ByteString.EMPTY)
+      val blockHeader = new BlockHeader(2,h,ByteString.EMPTY,ByteString.EMPTY,ByteString.EMPTY,
+        ByteString.copyFromUtf8(preBlockHash),ByteString.EMPTY,ByteString.EMPTY,0l,Seq.empty)
+      new Block(Some(blockHeader),trans,Seq.empty,None)
     } catch {
       case e: RuntimeException => throw e
     }
   }
+
 
   def CreateGenesisBlock:Block={
     var genesisFileName = "genesis.json"

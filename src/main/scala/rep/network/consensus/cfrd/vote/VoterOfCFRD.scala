@@ -8,7 +8,6 @@ import rep.network.module.cfrd.CFRDActorType
 import rep.network.consensus.cfrd.MsgOfCFRD.{CreateBlock, ForceVoteInfo, SpecifyVoteHeight, VoteOfBlocker, VoteOfForce, VoteOfReset}
 import rep.network.util.NodeHelp
 import rep.network.consensus.common.algorithm.IRandomAlgorithmOfVote
-import rep.utils.GlobalUtils.BlockerInfo
 
 /**
  * Created by jiangbuyun on 2020/03/17.

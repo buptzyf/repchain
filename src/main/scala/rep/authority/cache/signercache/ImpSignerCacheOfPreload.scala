@@ -1,6 +1,5 @@
 package rep.authority.cache.signercache
 
-import rep.storage.ImpDataPreload
 
 /**
  * Created by jiangbuyun on 2020/06/24.

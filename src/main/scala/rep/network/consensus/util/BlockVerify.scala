@@ -16,12 +16,12 @@
 
 package rep.network.consensus.util
 
-import rep.protos.peer._
-import rep.crypto.cert.SignTool
 
+import rep.crypto.cert.SignTool
 import scala.util.control.Breaks._
 import com.google.protobuf.ByteString
 import rep.crypto.Sha256
+import rep.proto.rc2.{Block, Signature, Transaction}
 import rep.utils.IdTool
 
 object BlockVerify {
@@ -110,8 +110,8 @@ object BlockVerify {
 
   def VerifyAllEndorseOfBlock(block: Block, sysName: String): (Boolean, String) = {
     try {
-      val endors = block.endorsements
-      val blkOutEndorse = block.clearEndorsements
+      val endors = block.getHeader.endorsements
+      val blkOutEndorse = block.getHeader.clearEndorsements
       VerifyMutliEndorseOfBlock(endors, blkOutEndorse.toByteArray, sysName)
     } catch {
       case e: RuntimeException => (false, s"Endorsement's sign Error,info=${e.getMessage}")
@@ -123,9 +123,9 @@ object BlockVerify {
   def VerifyHashOfBlock(block: Block): Boolean = {
     var result = false
     try {
-      val oldhash = block.hashOfBlock.toStringUtf8()
-      val blkOutEndorse = block.clearEndorsements
-      val blkOutBlockHash = blkOutEndorse.withHashOfBlock(ByteString.EMPTY)
+      val oldhash = block.getHeader.hashPresent.toStringUtf8()
+      val blkOutEndorse = block.getHeader.clearEndorsements
+      val blkOutBlockHash = blkOutEndorse.withHashPresent(ByteString.EMPTY)
       val hash = Sha256.hashstr(blkOutBlockHash.toByteArray)
       if (oldhash.equals(hash)) {
         result = true
@@ -142,7 +142,7 @@ object BlockVerify {
   def EndorsementIsFinishOfBlock(block: Block, NodeNumber: Int): Boolean = {
     var result = false
     try {
-      val endorseNumber = block.endorsements.size
+      val endorseNumber = block.getHeader.endorsements.size
       if ((endorseNumber - 1) >= Math.floor(((NodeNumber) * 1.0) / 2)) {
         result = true
       }

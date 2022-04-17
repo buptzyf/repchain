@@ -15,11 +15,11 @@ import rep.network.cluster.MemberListener
 import rep.network.module.cfrd.CFRDActorType
 import rep.network.transaction.DispatchOfPreload
 import rep.sc.TransactionDispatcher
-import rep.storage.ImpDataAccess
 import rep.storage.verify.verify4Storage
 import rep.ui.web.EventServer
 import rep.utils.ActorUtils
 import rep.network.genesis.GenesisBlocker
+import rep.storage.db.factory.DBFactory
 
 
 /**
@@ -70,11 +70,11 @@ class IModuleManager(moduleName: String, sysTag: String, enableStatistic: Boolea
     val (ip, port) = ActorUtils.getIpAndPort(selfAddr)
     pe.setIpAndPort(ip, port)
     pe.setSysTag(sysTag)
+    pe.createPoolOfTransaction
     val confHeler = new ConfigerHelper(conf, sysTag, pe.getSysTag)
     confHeler.init()
-    pe.getTransPoolMgr.readTransaction(sysTag)
-    TxPools.registPoolMgr(sysTag,pe.getTransPoolMgr)
-    pe.getTransPoolMgr.startupSchedule(sysTag)
+    pe.getTransactionPool.restoreCachePoolFromDB
+    TxPools.registerTransactionPool(sysTag,pe.getTransactionPool)
   }
 
   private def loadCommonActor:Unit = {
@@ -180,14 +180,13 @@ class ConfigerHelper(conf: Config, tag: String, dbTag: String) {
    * @param dbTag
    */
   private def dbInit(dbTag: String): Unit = {
-    ImpDataAccess.GetDataAccess(dbTag)
-
+    DBFactory.getDBAccess(dbTag)
   }
 
   /**
    * 初始化系统相关配置
    *
-   * @param config
+   * @param
    */
   /*private def sysInit(config: Config): Unit = {
     SystemProfile.initConfigSystem(config)

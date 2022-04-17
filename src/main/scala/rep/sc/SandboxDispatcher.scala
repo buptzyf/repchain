@@ -1,30 +1,18 @@
 package rep.sc
 
-import akka.actor.{Actor, ActorRef, Props, actorRef2Scala}
-import delight.nashornsandbox._
-import rep.protos.peer._
+import akka.actor.{ ActorRef, Props, actorRef2Scala}
 import rep.sc.Sandbox._
-import rep.utils.{GlobalUtils, TimeUtils}
-import rep.storage._
-
 import scala.concurrent.duration._
-import scala.concurrent._
 import akka.util.Timeout
-import akka.pattern.ask
-import java.lang.Exception
-
-import rep.storage.IdxPrefix.WorldStateKeyPreFix
-import rep.utils.SerializeUtils
-import rep.network.tools.PeerExtension
 import rep.sc.scalax.SandboxScala
-import rep.utils.SerializeUtils.deserialise
-import rep.utils.SerializeUtils.serialise
-import org.slf4j.LoggerFactory
 import rep.network.base.ModuleBase
 import rep.log.RepLogger
 import akka.routing._
 import rep.app.conf.SystemProfile
-
+import rep.proto.rc2.{ActionResult, ChaincodeDeploy, ChaincodeId, Transaction, TransactionResult}
+import rep.storage.chain.KeyPrefixManager
+import rep.storage.chain.block.BlockSearcher
+import rep.storage.chain.preload.BlockPreload
 
 
 /**
@@ -126,16 +114,12 @@ class SandboxDispatcher(moduleName: String, cid: String) extends ModuleBase(modu
    * @author jiangbuyun
    * @Result 返回cid所在的交易
    */
-  private def getTransOfContractFromLevelDB: Option[Transaction] = {
-    val db = ImpDataAccess.GetDataAccess(pe.getSysTag)
-    val key_tx = WorldStateKeyPreFix + cid
-    val txid = db.Get(key_tx)
-    if (txid == null) {
-      None
-    } else {
-      //this.txidOfContractDeploy = deserialise(txid).asInstanceOf[String]
-      //db.getTransDataByTxId(this.txidOfContractDeploy)
-      db.getTransDataByTxId(deserialise(txid).asInstanceOf[String])
+  private def getTransOfContractFromLevelDB(da:String,oid:String): Option[Transaction] = {
+    val bp = BlockPreload.getBlockPreload(da,pe.getSysTag)
+    val txId = bp.getFromDB[String](KeyPrefixManager.getWorldStateKey(pe.getSysTag,cid,cid,oid))
+    txId match {
+      case None => None
+      case _ => bp.getTransactionByTxId(txId.get)
     }
   }
 
@@ -144,18 +128,13 @@ class SandboxDispatcher(moduleName: String, cid: String) extends ModuleBase(modu
    * @author jiangbuyun
    * @Result 返回true，表示合约已经存在对应的实例中，否则，没有
    */
-  private def IsContractInSnapshot(da: String): Boolean = {
-    var b = false
-    val key_tx = WorldStateKeyPreFix + cid
-    val snapshot = ImpDataPreloadMgr.GetImpDataPreload(pe.getSysTag, da)
-    val txid = snapshot.Get(key_tx)
-    if (txid != null) {
-      //val txid_str = deserialise(txid).asInstanceOf[String]
-      //if (txid_str == this.txidOfContractDeploy) {
-        b = true
-      //}
+  private def IsContractInSnapshot(da: String,oid:String): Boolean = {
+    val preload = BlockPreload.getBlockPreload(da,pe.getSysTag)
+    val txid = preload.get(KeyPrefixManager.getWorldStateKey(pe.getSysTag,cid,cid,oid))
+    txid match {
+      case None => false
+      case _ => true
     }
-    b
   }
 
   /**
@@ -164,18 +143,18 @@ class SandboxDispatcher(moduleName: String, cid: String) extends ModuleBase(modu
    */
   private def SetContractState(t: Transaction, da: String) = {
     if (this.ContractState == ContractStateType.ContractInSnapshot || this.ContractState == ContractStateType.ContractInNone) {
-      val ctx = getTransOfContractFromLevelDB
+      val ctx = getTransOfContractFromLevelDB(da,t.oid)
       if (ctx == None) {
         //cc not exist
         if (t.`type` == Transaction.Type.CHAINCODE_DEPLOY) {
-          if (IsContractInSnapshot(da)) {
+          if (IsContractInSnapshot(da,t.oid)) {
             throw new SandboxException(ERR_REPEATED_CID)
           }else{
             this.ContractState = ContractStateType.ContractInSnapshot
             this.DeployTransactionCache = t
           }
         } else {
-          if (IsContractInSnapshot(da)) {
+          if (IsContractInSnapshot(da,t.oid)) {
             //contract in snapshot
             if (this.ContractState == ContractStateType.ContractInNone) {
               this.ContractState = ContractStateType.ContractInSnapshot
@@ -197,11 +176,11 @@ class SandboxDispatcher(moduleName: String, cid: String) extends ModuleBase(modu
    * 建立并行处理交易的路由器，用于并发执行交易，采用路由器分发交易的方式达到交易并行执行的目标
    * @author jiangbuyun
    */
-  private def createParallelRouter(chaincodeid: ChaincodeId, ctype: ChaincodeDeploy.CodeType) = {
+  private def createParallelRouter(chaincodeid: ChaincodeId, cType: ChaincodeDeploy.CodeType) = {
     if (RouterOfParallelSandboxs == null) {
       var list: Array[Routee] = new Array[Routee](SystemProfile.getNumberOfTransProcessor)
       for (i <- 0 to SystemProfile.getNumberOfTransProcessor - 1) {
-        var ca = CreateSandbox(ctype, chaincodeid, "sandbox_for_Parallel_of_router_" + cid + "_" + i)
+        var ca = CreateSandbox(cType, chaincodeid, "sandbox_for_Parallel_of_router_" + cid + "_" + i)
         context.watch(ca)
         list(i) = new ActorRefRoutee(ca)
       }
@@ -214,10 +193,22 @@ class SandboxDispatcher(moduleName: String, cid: String) extends ModuleBase(modu
    * 建立并行处理交易的路由器，用于并发执行交易，采用路由器分发交易的方式达到交易并行执行的目标
    * @author jiangbuyun
    */
-  private def createSerialSandbox(chaincodeid: ChaincodeId, ctype: ChaincodeDeploy.CodeType) = {
+  private def createSerialSandbox(chaincodeid: ChaincodeId, cType: ChaincodeDeploy.CodeType) = {
     if (this.SerialSandbox == null) {
-      SerialSandbox = CreateSandbox(ctype, chaincodeid, "sandbox_for_Serial_" + cid)
-      context.watch(SerialSandbox)
+      cType match {
+        case ChaincodeDeploy.CodeType.CODE_JAVASCRIPT =>
+        case ChaincodeDeploy.CodeType.CODE_SCALA =>
+          CreateSandbox(cType, chaincodeid, "sandbox_for_Serial_" + cid)
+          context.watch(SerialSandbox)
+        case ChaincodeDeploy.CodeType.CODE_VCL_DLL =>
+
+        case ChaincodeDeploy.CodeType.CODE_VCL_EXE =>
+
+        case ChaincodeDeploy.CodeType.CODE_VCL_WASM =>
+
+        case ChaincodeDeploy.CodeType.CODE_WASM =>
+
+      }
     }
   }
 
@@ -226,93 +217,72 @@ class SandboxDispatcher(moduleName: String, cid: String) extends ModuleBase(modu
    * @author c4w
    * @modify by jiangbuyun
    * 用于建立sandbox
-   * @param ctype 合约容器的类型，目前只支持scala
+   * @param cType 合约容器的类型，目前只支持scala
    * @param cid 合约的ChaincodeId
    * @param sandboxName 该合约容器的名称
    */
-  private def CreateSandbox(ctype: ChaincodeDeploy.CodeType, cid: ChaincodeId, sandboxName: String): ActorRef = {
-    ctype match {
-      case ChaincodeDeploy.CodeType.CODE_SCALA | ChaincodeDeploy.CodeType.CODE_SCALA_PARALLEL =>
+  private def CreateSandbox(cType: ChaincodeDeploy.CodeType, cid: ChaincodeId, sandboxName: String): ActorRef = {
+    cType match {
+      case ChaincodeDeploy.CodeType.CODE_JAVASCRIPT =>
+        null
+      case ChaincodeDeploy.CodeType.CODE_SCALA =>
         context.actorOf(Props(new SandboxScala(cid)).withDispatcher("contract-dispatcher"), sandboxName)
-      //默认采用Scala容器
-      case _ => context.actorOf(Props(new SandboxScala(cid)).withDispatcher("contract-dispatcher"), sandboxName)
+      case ChaincodeDeploy.CodeType.CODE_VCL_DLL =>
+        null
+      case ChaincodeDeploy.CodeType.CODE_VCL_EXE =>
+        null
+      case ChaincodeDeploy.CodeType.CODE_VCL_WASM =>
+        null
+      case ChaincodeDeploy.CodeType.CODE_WASM =>
+        null
     }
   }
 
-  private def Dispatch(dotrans: DoTransaction) = {
+  private def Dispatch(ts:Seq[Transaction], da: String, typeOfSender: TypeOfSender.Value,cacheIdentifier:String) = {
     try {
-      val special_t = dotrans.ts(0)
-      RepLogger.debug(RepLogger.Sandbox_Logger, s"entry sandbox dispatcher for ${cid} , contract state ${this.ContractState},txid=${special_t.id},da=${dotrans.da}.")
-      SetContractState(special_t, dotrans.da)
-      RepLogger.debug(RepLogger.Sandbox_Logger, s"sandbox dispatcher ${cid},execute setcontractstate after , contract state ${this.ContractState},txid=${special_t.id},da=${dotrans.da}.")
+      val special_t = ts(0)
+      RepLogger.debug(RepLogger.Sandbox_Logger, s"entry sandbox dispatcher for ${cid} , contract state ${this.ContractState},txid=${special_t.id},da=${da}.")
+      SetContractState(special_t, da)
+      RepLogger.debug(RepLogger.Sandbox_Logger, s"sandbox dispatcher ${cid},execute setcontractstate after , contract state ${this.ContractState},txid=${special_t.id},da=${da}.")
       if (this.ContractState == ContractStateType.ContractInLevelDB) {
-        this.createParallelRouter(this.DeployTransactionCache.cid.get, this.DeployTransactionCache.para.spec.get.ctype)
-        RepLogger.debug(RepLogger.Sandbox_Logger, s"sandbox dispatcher ${cid},create parallel router after ,txid=${special_t.id},da=${dotrans.da}.")
+        if(this.DeployTransactionCache.getSpec.rType == ChaincodeDeploy.RunType.RUN_PARALLEL){
+          this.createParallelRouter(this.DeployTransactionCache.cid.get, this.DeployTransactionCache.para.spec.get.cType)
+          RepLogger.debug(RepLogger.Sandbox_Logger, s"sandbox dispatcher ${cid},create parallel router after ,txid=${special_t.id},da=${da}.")
+        }
+
       }
-      this.createSerialSandbox(this.DeployTransactionCache.cid.get, this.DeployTransactionCache.para.spec.get.ctype)
-      RepLogger.debug(RepLogger.Sandbox_Logger, s"sandbox dispatcher ${cid},create serial sandbox  after , contract state ${this.ContractState},txid=${special_t.id},da=${dotrans.da}.")
+      this.createSerialSandbox(this.DeployTransactionCache.cid.get, this.DeployTransactionCache.para.spec.get.cType)
+      RepLogger.debug(RepLogger.Sandbox_Logger, s"sandbox dispatcher ${cid},create serial sandbox  after , contract state ${this.ContractState},txid=${special_t.id},da=${da}.")
 
       this.ContractState match {
         case ContractStateType.ContractInSnapshot =>
-          RepLogger.debug(RepLogger.Sandbox_Logger, s"sandbox dispatcher ${cid},send msg to serial sandbox from preload or endorse,txid=${special_t.id},da=${dotrans.da}.")
-          this.SerialSandbox.forward(DoTransactionOfSandbox(dotrans.ts, dotrans.da, this.ContractState))
+          RepLogger.debug(RepLogger.Sandbox_Logger, s"sandbox dispatcher ${cid},send msg to serial sandbox from preload or endorse,txid=${special_t.id},da=${da}.")
+          if(cacheIdentifier == null)
+            this.SerialSandbox.forward(DoTransactionOfSandbox(ts, da, this.ContractState))
+          else
+            this.SerialSandbox.forward(DoTransactionOfSandboxOfCache(cacheIdentifier,da, this.ContractState))
         case ContractStateType.ContractInLevelDB =>
-          dotrans.typeOfSender match {
+          typeOfSender match {
             case TypeOfSender.FromAPI =>
-              RepLogger.debug(RepLogger.Sandbox_Logger, s"sandbox dispatcher ${cid},send msg to Parallel sandbox from api,txid=${special_t.id},da=${dotrans.da}.")
-              this.RouterOfParallelSandboxs.route(DoTransactionOfSandbox(dotrans.ts, dotrans.da, this.ContractState), sender)
+              RepLogger.debug(RepLogger.Sandbox_Logger, s"sandbox dispatcher ${cid},send msg to Parallel sandbox from api,txid=${special_t.id},da=${da}.")
+              if(cacheIdentifier == null)
+                this.RouterOfParallelSandboxs.route(DoTransactionOfSandbox(ts, da, this.ContractState), sender)
+              else
+                this.RouterOfParallelSandboxs.route(DoTransactionOfSandboxOfCache(cacheIdentifier, da, this.ContractState), sender)
             case _ =>
-              this.DeployTransactionCache.para.spec.get.ctype match {
-                case ChaincodeDeploy.CodeType.CODE_SCALA_PARALLEL =>
-                  RepLogger.debug(RepLogger.Sandbox_Logger, s"sandbox dispatcher ${cid},send msg to Parallel sandbox from parallel,txid=${special_t.id},da=${dotrans.da}.")
-                  this.RouterOfParallelSandboxs.route(DoTransactionOfSandbox(dotrans.ts, dotrans.da, this.ContractState), sender)
+              this.DeployTransactionCache.para.spec.get.rType match {
+                case ChaincodeDeploy.RunType.RUN_PARALLEL =>
+                  RepLogger.debug(RepLogger.Sandbox_Logger, s"sandbox dispatcher ${cid},send msg to Parallel sandbox from parallel,txid=${special_t.id},da=${da}.")
+                  if(cacheIdentifier == null)
+                    this.RouterOfParallelSandboxs.route(DoTransactionOfSandbox(ts, da, this.ContractState), sender)
+                  else
+                    this.RouterOfParallelSandboxs.route(DoTransactionOfSandboxOfCache(cacheIdentifier, da, this.ContractState), sender)
                 case _ => 
-                  RepLogger.debug(RepLogger.Sandbox_Logger, s"sandbox dispatcher ${cid},send msg to serial sandbox from other reason,txid=${special_t.id},da=${dotrans.da}.")
-                  this.SerialSandbox.forward(DoTransactionOfSandbox(dotrans.ts, dotrans.da, this.ContractState))
-              }
-          }
-      }
-    } catch {
-      case e: Exception =>
-        RepLogger.except4Throwable(RepLogger.Sandbox_Logger,e.getMessage,e)
-        val rs = createErrorData(dotrans.ts.toSeq,Option(akka.actor.Status.Failure(e)))
-        //向请求发送方返回包含执行异常的结果
-        sender ! rs.toSeq
-    }
-  }
-
-
-  private def DispatchOfCache(dotrans: DoTransactionOfCache) = {
-    val ts = pe.getTrans(dotrans.cacheIdentifier)
-    val special_t = ts(0)
-    try {
-      RepLogger.debug(RepLogger.Sandbox_Logger, s"entry sandbox dispatcher for ${cid} , contract state ${this.ContractState},txid=${special_t.id},da=${dotrans.da}.")
-      SetContractState(special_t, dotrans.da)
-      RepLogger.debug(RepLogger.Sandbox_Logger, s"sandbox dispatcher ${cid},execute setcontractstate after , contract state ${this.ContractState},txid=${special_t.id},da=${dotrans.da}.")
-      if (this.ContractState == ContractStateType.ContractInLevelDB) {
-        this.createParallelRouter(this.DeployTransactionCache.cid.get, this.DeployTransactionCache.para.spec.get.ctype)
-        RepLogger.debug(RepLogger.Sandbox_Logger, s"sandbox dispatcher ${cid},create parallel router after ,txid=${special_t.id},da=${dotrans.da}.")
-      }
-      this.createSerialSandbox(this.DeployTransactionCache.cid.get, this.DeployTransactionCache.para.spec.get.ctype)
-      RepLogger.debug(RepLogger.Sandbox_Logger, s"sandbox dispatcher ${cid},create serial sandbox  after , contract state ${this.ContractState},txid=${special_t.id},da=${dotrans.da}.")
-
-      this.ContractState match {
-        case ContractStateType.ContractInSnapshot =>
-          RepLogger.debug(RepLogger.Sandbox_Logger, s"sandbox dispatcher ${cid},send msg to serial sandbox from preload or endorse,txid=${special_t.id},da=${dotrans.da}.")
-          this.SerialSandbox.forward(DoTransactionOfSandboxOfCache(dotrans.cacheIdentifier, dotrans.da, this.ContractState))
-        case ContractStateType.ContractInLevelDB =>
-          dotrans.typeOfSender match {
-            case TypeOfSender.FromAPI =>
-              RepLogger.debug(RepLogger.Sandbox_Logger, s"sandbox dispatcher ${cid},send msg to Parallel sandbox from api,txid=${special_t.id},da=${dotrans.da}.")
-              this.RouterOfParallelSandboxs.route(DoTransactionOfSandboxOfCache(dotrans.cacheIdentifier, dotrans.da, this.ContractState), sender)
-            case _ =>
-              this.DeployTransactionCache.para.spec.get.ctype match {
-                case ChaincodeDeploy.CodeType.CODE_SCALA_PARALLEL =>
-                  RepLogger.debug(RepLogger.Sandbox_Logger, s"sandbox dispatcher ${cid},send msg to Parallel sandbox from parallel,txid=${special_t.id},da=${dotrans.da}.")
-                  this.RouterOfParallelSandboxs.route(DoTransactionOfSandboxOfCache(dotrans.cacheIdentifier, dotrans.da, this.ContractState), sender)
-                case _ =>
-                  RepLogger.debug(RepLogger.Sandbox_Logger, s"sandbox dispatcher ${cid},send msg to serial sandbox from other reason,txid=${special_t.id},da=${dotrans.da}.")
-                  this.SerialSandbox.forward(DoTransactionOfSandboxOfCache(dotrans.cacheIdentifier, dotrans.da, this.ContractState))
+                  RepLogger.debug(RepLogger.Sandbox_Logger, s"sandbox dispatcher ${cid},send msg to serial sandbox from other reason,txid=${special_t.id},da=${da}.")
+                  if(cacheIdentifier == null)
+                    this.SerialSandbox.forward(DoTransactionOfSandbox(ts, da, this.ContractState))
+                  else
+                    this.SerialSandbox.forward(DoTransactionOfSandboxOfCache(cacheIdentifier,da, this.ContractState))
               }
           }
       }
@@ -324,19 +294,11 @@ class SandboxDispatcher(moduleName: String, cid: String) extends ModuleBase(modu
         sender ! rs.toSeq
     }
   }
-  /*private def createErrorData(ts:scala.collection.Seq[Transaction],err: Option[akka.actor.Status.Failure]):Array[DoTransactionResult]={
-    var rs = scala.collection.mutable.ArrayBuffer[DoTransactionResult]()
-    ts.foreach(t=>{
-      rs += new DoTransactionResult(t.id, null, null, err)
-    })
-    rs.toArray
-  }*/
-
 
   private def createErrorData(ts: scala.collection.Seq[Transaction], err: Option[akka.actor.Status.Failure]): Array[TransactionResult] = {
     var rs = scala.collection.mutable.ArrayBuffer[TransactionResult]()
     ts.foreach(t => {
-      rs += new TransactionResult(t.id, _root_.scala.Seq.empty, Option(ActionResult(105, err.get.cause.getMessage))) //new TransactionResult(t.id, null, null, err)
+      rs += new TransactionResult(t.id, Map.empty,Map.empty, Option(ActionResult(105, err.get.cause.getMessage)))
     })
     rs.toArray
   }
@@ -347,11 +309,12 @@ class SandboxDispatcher(moduleName: String, cid: String) extends ModuleBase(modu
   def receive = {
     //执行交易请求
     case ti: DoTransaction =>
-      Dispatch(ti)
+      Dispatch(ti.asInstanceOf[Seq[Transaction]] ,ti.da,ti.typeOfSender,null)
     case tiOfCache:DoTransactionOfCache =>
-      if(pe.getTrans(tiOfCache.cacheIdentifier) != null)
-        DispatchOfCache(tiOfCache)
-
+      val ts = pe.getTrans(tiOfCache.cacheIdentifier)
+      if(ts != null){
+        Dispatch(ts.asInstanceOf[Seq[Transaction]],tiOfCache.da,tiOfCache.typeOfSender,tiOfCache.cacheIdentifier)
+      }
   }
 
 }

@@ -16,36 +16,30 @@
 
 package rep.app.system
 
-import java.io.File
+
 
 import akka.actor.{ActorRef, ActorSystem, Address, Props}
 import akka.cluster.Cluster
 import com.typesafe.config.{Config, ConfigFactory}
 import rep.app.conf.{SystemConf, SystemProfile, TimePolicy}
 import rep.app.system.ClusterSystem.InitType
-import rep.network.base.ModuleBase
 import rep.network.module.cfrd.ModuleManagerOfCFRD
 import rep.storage.cfg._
 import java.io.File
-
-import scala.collection.mutable
 import com.typesafe.config.ConfigValueFactory
 import java.util.List
 import java.util.ArrayList
-
 import akka.util.Timeout
 import org.slf4j.LoggerFactory
 import rep.log.RepLogger
-
 import scala.concurrent.{Await, ExecutionContext}
 import scala.concurrent.duration._
 import akka.actor.Terminated
 import rep.app.TxPools
 import rep.log.httplog.AlertInfo
-import rep.network.module.cfrdinstream.ModuleManagerOfCFRDInStream
 import rep.network.module.pbft.ModuleManagerOfPBFT
 import rep.network.module.raft.ModuleManagerOfRAFT
-import rep.network.tools.PeerExtension
+
 
 
 /**
@@ -257,8 +251,8 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
     var r = true
     implicit val timeout = Timeout(120.seconds)
     try{
-      val mgr = TxPools.getPoolMgr(this.sysTag)
-      mgr.saveTransaction(this.sysTag)
+      val mgr = TxPools.getTransactionPool(this.sysTag)
+      mgr.saveCachePoolToDB
       val result = sysActor.terminate
       val result1 = Await.result(result, timeout.duration).asInstanceOf[Terminated]
       r = result1.getAddressTerminated
@@ -301,8 +295,6 @@ class ClusterSystem(sysTag: String, initType: Int, sysStart: Boolean) {
       moduleManager = sysActor.actorOf(ModuleManagerOfRAFT.props("modulemanager", sysTag, enableStatistic, enableWebSocket, true), "modulemanager")
     }else if(typeConsensus == "PBFT"){
       moduleManager = sysActor.actorOf(ModuleManagerOfPBFT.props("modulemanager", sysTag, enableStatistic, enableWebSocket, true), "modulemanager")
-    }else if(typeConsensus == "CFRDINSTREAM"){
-      moduleManager = sysActor.actorOf(ModuleManagerOfCFRDInStream.props("modulemanager", sysTag, enableStatistic, enableWebSocket, true), "modulemanager")
     } else{
       RepLogger.error(RepLogger.System_Logger, sysTag + "~" + "System" + " ~ " + s"ClusterSystem ${sysTag} not startup,unknow consensus" + " ~ ")
     }
