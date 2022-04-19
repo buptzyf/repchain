@@ -5,8 +5,9 @@ import akka.actor.{ActorRef, Props}
 import akka.util.Timeout
 import rep.log.{RepLogger, RepTimeTracer}
 import rep.network.base.ModuleBase
-import rep.network.consensus.common.MsgOfConsensus.{ConfirmedBlock}
+import rep.network.consensus.common.MsgOfConsensus.ConfirmedBlock
 import rep.network.consensus.util.BlockVerify
+import rep.proto.rc2.{Block, Signature}
 import scala.concurrent._
 
 /**
@@ -21,7 +22,6 @@ object IConfirmOfBlock{
 abstract  class IConfirmOfBlock(moduleName: String) extends ModuleBase(moduleName) {
   import context.dispatcher
   import scala.concurrent.duration._
-  import rep.protos.peer._
 
   implicit val timeout = Timeout(3.seconds)
 
@@ -38,8 +38,8 @@ abstract  class IConfirmOfBlock(moduleName: String) extends ModuleBase(moduleNam
   }
 
   protected def asyncVerifyEndorses(block: Block): Boolean = {
-    val b = block.clearEndorsements.toByteArray
-    val listOfFuture: Seq[Future[Boolean]] = block.endorsements.map(x => {
+    val b = block.getHeader.clearEndorsements.toByteArray
+    val listOfFuture: Seq[Future[Boolean]] = block.getHeader.endorsements.map(x => {
       asyncVerifyEndorse(x, b)
     })
     val futureOfList: Future[List[Boolean]] = Future.sequence(listOfFuture.toList).recover({
@@ -56,7 +56,7 @@ abstract  class IConfirmOfBlock(moduleName: String) extends ModuleBase(moduleNam
       result1.foreach(f => {
         if (!f) {
           result = false
-          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"comfirmOfBlock verify endorse is error, break,block height=${block.height},local height=${pe.getCurrentHeight}"))
+          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"comfirmOfBlock verify endorse is error, break,block height=${block.getHeader.height},local height=${pe.getCurrentHeight}"))
         }
       })
     }
@@ -70,9 +70,9 @@ abstract  class IConfirmOfBlock(moduleName: String) extends ModuleBase(moduleNam
 
   override def receive = {
     case ConfirmedBlock(block, actRefOfBlock) =>
-      RepTimeTracer.setStartTime(pe.getSysTag, "blockconfirm", System.currentTimeMillis(), block.height, block.transactions.size)
+      RepTimeTracer.setStartTime(pe.getSysTag, "blockconfirm", System.currentTimeMillis(), block.getHeader.height, block.transactions.size)
       checkedOfConfirmBlock(block, actRefOfBlock)
-      RepTimeTracer.setEndTime(pe.getSysTag, "blockconfirm", System.currentTimeMillis(), block.height, block.transactions.size)
+      RepTimeTracer.setEndTime(pe.getSysTag, "blockconfirm", System.currentTimeMillis(), block.getHeader.height, block.transactions.size)
     case _ => //ignore
   }
 }

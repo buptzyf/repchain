@@ -5,7 +5,6 @@ import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.security.{GeneralSecurityException, KeyStore, Provider, SecureRandom, Security}
-
 import scala.util.Try
 import akka.actor.ActorSystem
 import akka.event.Logging
@@ -21,7 +20,6 @@ import javax.net.ssl.SSLSession
 import javax.net.ssl.TrustManager
 import javax.net.ssl.TrustManagerFactory
 import akka.remote.artery.tcp.{SSLEngineProvider, SslTransportException}
-
 import scala.util.control.Breaks._
 import scala.util.control.Breaks.breakable
 

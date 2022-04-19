@@ -21,7 +21,6 @@ import java.io.{File, PrintWriter}
 import com.typesafe.config.ConfigFactory
 import com.google.protobuf.ByteString
 import com.google.protobuf.timestamp.Timestamp
-import rep.protos.peer._
 import scalapb.json4s.JsonFormat
 import rep.crypto.{CryptoMgr, Sha256}
 import org.json4s.{DefaultFormats, Formats, jackson}
@@ -30,6 +29,7 @@ import org.json4s.DefaultFormats._
 import rep.network.consensus.util.BlockHelp
 import rep.crypto.cert.SignTool
 import rep.network.autotransaction.PeerHelper
+import rep.proto.rc2.{CertId, Certificate, ChaincodeDeploy, ChaincodeId, Signer, Transaction}
 
 import scala.collection.mutable
 import rep.sc.tpl._
@@ -63,9 +63,9 @@ object GenesisBuilder {
     
     
     //val dep_trans = PeerHelper.createTransaction4Deploy(sysName, cid,
-    //           l1, "",5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
+    //           l1, "",5000, ChaincodeDeploy.CodeType.CODE_SCALA)
     val dep_trans = PeerHelper.createTransaction4Deploy("951002007l78123233.super_admin", cid,
-               l1, "",5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
+               l1, "",5000, ChaincodeDeploy.CodeType.CODE_SCALA)
     translist(0) = dep_trans
     
     //val dep_trans_state = PeerHelper.createTransaction4State(sysName, cid, true)
@@ -107,7 +107,7 @@ object GenesisBuilder {
     val c2 = try s2.mkString finally s2.close()
     val cid2 = new ChaincodeId("ContractAssetsTPL",1)
     val dep_asserts_trans = PeerHelper.createTransaction4Deploy(sysName, cid2,
-               c2, "",5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
+               c2, "",5000, ChaincodeDeploy.CodeType.CODE_SCALA)
     translist(13) = dep_asserts_trans
     
     // read invoke scala contract
@@ -122,8 +122,9 @@ object GenesisBuilder {
     //create gensis block
     val millis = ConfigFactory.load().getLong("akka.genesisblock.creationBlockTime")
      
-    var blk = new Block(1,1,translist,Seq(),_root_.com.google.protobuf.ByteString.EMPTY,
-        _root_.com.google.protobuf.ByteString.EMPTY)
+    var blk = BlockHelp.buildBlock("",1,translist)
+      //new Block(1,1,translist,Seq(),_root_.com.google.protobuf.ByteString.EMPTY,
+      //  _root_.com.google.protobuf.ByteString.EMPTY)
      
     //获得管理员证书和签名
 //    val (priKA, pubKA, certA) = ECDSASign.getKeyPair("super_admin")
@@ -136,7 +137,7 @@ object GenesisBuilder {
     /*blk = blk.withEndorsements(Seq(
         BlockHelp.SignDataOfBlock(blk_hash,"951002007l78123233.super_admin"),
         BlockHelp.SignDataOfBlock(blk_hash,"121000005l35120456.node1")))*/
-        blk = blk.clearEndorsements
+        blk = blk.withHeader(blk.getHeader.clearEndorsements)
         blk = blk.clearTransactionResults
     val r = MessageToJson.toJson(blk)
     val rstr = pretty(render(r))

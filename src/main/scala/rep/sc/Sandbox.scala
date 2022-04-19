@@ -238,7 +238,7 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
           case _ =>
             //检查合约部署者以及权限
             if(IdTool.isDidContract(pe.getSysTag)){
-              permissioncheck.CheckPermissionOfDeployContract(dotrans,shim)
+              permissioncheck.CheckPermissionOfDeployContract(dotrans)
             }else{
               IsCurrentSigner(dotrans)
             }
@@ -246,7 +246,7 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
       case Transaction.Type.CHAINCODE_SET_STATE =>
         //检查合约部署者以及权限
         if(IdTool.isDidContract(pe.getSysTag)){
-          permissioncheck.CheckPermissionOfSetStateContract(dotrans,shim)
+          permissioncheck.CheckPermissionOfSetStateContract(dotrans)
         }else{
           IsCurrentSigner(dotrans)
         }
@@ -259,7 +259,7 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
           throw new SandboxException(ERR_DISABLE_CID)
         }else{
           if(IdTool.isDidContract(pe.getSysTag)) {
-            permissioncheck.CheckPermissionOfInvokeContract(dotrans, shim)
+            permissioncheck.CheckPermissionOfInvokeContract(dotrans)
           }
         }
       case _ => throw SandboxException(ERR_UNKNOWN_TRANSACTION_TYPE)

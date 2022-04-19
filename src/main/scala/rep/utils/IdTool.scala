@@ -19,11 +19,8 @@ package rep.utils
 
 
 import java.util.UUID
-
-import rep.app.conf.{RepChainConfig, SystemProfile}
+import rep.app.conf.{RepChainConfig}
 import rep.proto.rc2.{CertId, ChaincodeId, Transaction}
-//import com.gilt.timeuuid.TimeUuid
-
 
 
 object IdTool {

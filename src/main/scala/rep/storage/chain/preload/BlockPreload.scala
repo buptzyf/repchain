@@ -48,7 +48,7 @@ class BlockPreload(preloadId:String,systemName:String,isEncrypt:Boolean=false)
    * @param	key String 指定的键
    * @return	返回对应键的值 Array[Byte]
    * */
-  def getFormCache(key : String):Option[Any]={
+  def getFromCache(key : String):Option[Any]={
     var ro : Option[Any] = None
     try{
       if(this.update.containsKey(key)){

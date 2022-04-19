@@ -15,7 +15,6 @@
  */
 
 package rep.crypto
-import java.security.MessageDigest
 import com.google.protobuf.ByteString
 
 /**

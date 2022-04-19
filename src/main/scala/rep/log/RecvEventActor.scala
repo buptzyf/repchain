@@ -16,7 +16,6 @@
 
 package rep.log
 
-import rep.protos.peer._
 import akka.actor.{Actor, ActorRef, Address, Props, Terminated}
 import akka.cluster.pubsub.DistributedPubSub
 import akka.cluster.pubsub.DistributedPubSubMediator.{Publish, Subscribe}
@@ -32,6 +31,7 @@ import scala.collection.mutable.{HashSet, Set}
 import rep.log.RecvEventActor.Register
 import rep.network.autotransaction.Topic
 import rep.network.util.NodeHelp
+import rep.proto.rc2.Event
 
 object RecvEventActor {
   def props: Props = Props[RecvEventActor]

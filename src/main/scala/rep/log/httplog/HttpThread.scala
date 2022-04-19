@@ -4,7 +4,6 @@ package rep.log.httplog
 import java.text.SimpleDateFormat
 import java.util
 import java.util.Date
-
 import org.apache.http.client.config.RequestConfig
 import org.apache.http.client.methods.CloseableHttpResponse
 import org.apache.http.client.methods.HttpPost

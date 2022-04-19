@@ -16,9 +16,7 @@
 
 package rep.sc.tpl
 
-
 import org.json4s.jackson.JsonMethods._
-
 import scala.collection.mutable.Map
 import org.json4s.DefaultFormats
 import rep.proto.rc2.{ActionResult, Certificate, Signer}

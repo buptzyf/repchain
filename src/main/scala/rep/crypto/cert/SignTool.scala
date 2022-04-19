@@ -16,14 +16,17 @@
 package rep.crypto.cert
 
 import java.security.{KeyStore, PrivateKey, PublicKey}
-import java.security.cert.{Certificate, CertificateFactory, X509Certificate}
+import java.security.cert.Certificate
 
 import scala.collection.mutable
 import java.io._
 import java.util.{ArrayList, List}
 
+import rep.authority.cache.CertificateCache.certData
+import rep.authority.cache.{CertificateCache, PermissionCacheManager}
 import rep.crypto.CryptoMgr
 import rep.proto.rc2.CertId
+import rep.sc.tpl.did.DidTplPrefix
 
 import scala.util.control.Breaks._
 
@@ -77,7 +80,11 @@ object SignTool {
     if (PublickeyCerts.contains(pubkeyname)) {
       pkcert = PublickeyCerts.get(pubkeyname).get
     } else {
-      pkcert = certCache.getCertForUser(pubkeyname, sysName)
+      val cache = PermissionCacheManager.getCache(sysName,DidTplPrefix.certPrefix).asInstanceOf[CertificateCache]
+      val cert = cache.get(pubkeyname,null)
+      if(cert != None){
+        pkcert = cert.get.certificate
+      }
     }
 
     if (pkcert == null) {

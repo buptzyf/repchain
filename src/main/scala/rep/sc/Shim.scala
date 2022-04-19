@@ -50,14 +50,25 @@ object Shim {
 
 /** 为合约容器提供底层API的类
  *  @author c4w
- * @constructor 根据actor System和合约的链码id建立shim实例
- * @param system 所属的actorSystem
- * @param t 合约执行的交易
- * @param identifier 合约执行的交易
  */
-class Shim(system: ActorSystem,t:Transaction,identifier:String) {
-
+class Shim {
   import Shim._
+  private var  system : ActorSystem = null
+  private var  t : Transaction = null
+  private var identifier : String = null
+
+  /**
+   * @constructor 根据actor System和合约的链码id建立shim实例
+   * @param system 所属的actorSystem
+   * @param t 合约执行的交易
+   * @param identifier 合约执行的交易
+   */
+  def this(system: ActorSystem,t:Transaction,identifier:String){
+    this()
+    this.system = system
+    this.t = t
+    this.identifier = identifier
+  }
 
   private val PRE_SPLIT = "_"
   //本chaincode的 key前缀

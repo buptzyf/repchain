@@ -172,6 +172,10 @@ class RepChainConfig private {
     this.sysConf.getString("system.account.cert_status_change_function")
   }
 
+  def getAccountCacheSize:Int={
+    this.sysConf.getInt("system.account.cache_size")
+  }
+
   def getBlockNumberOfBlocker:Int={
     this.sysConf.getInt("system.block.block_number_blocker")
   }

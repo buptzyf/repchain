@@ -1,21 +1,18 @@
 package rep.storage.chain.block
 
 import rep.app.conf.RepChainConfig
-import rep.authority.cache.authbind.ImpAuthBindToCert
-import rep.authority.cache.authcache.ImpAuthorizeCache
-import rep.authority.cache.certcache.ImpCertCache
-import rep.authority.cache.opcache.ImpOperateCache
-import rep.authority.cache.signercache.ImpSignerCache
-import rep.crypto.cert.certCache
+import rep.authority.cache.PermissionCacheManager
 import rep.log.RepLogger
 import rep.proto.rc2.{Block, Transaction}
 import rep.sc.tpl.did.DidTplPrefix
 import rep.storage.chain.KeyPrefixManager
-import rep.storage.db.common.{ITransactionCallback}
+import rep.storage.db.common.ITransactionCallback
 import rep.storage.encrypt.{EncryptFactory, IEncrypt}
 import rep.storage.filesystem.common.IFileWriter
 import rep.storage.filesystem.factory.FileFactory
 import rep.storage.util.pathUtil
+import rep.utils.IdTool
+
 import scala.collection.mutable
 import scala.util.control.Breaks.{break, breakable}
 
@@ -31,6 +28,7 @@ class BlockStorager private(systemName:String,isEncrypt:Boolean=false) extends B
   private val blockFileMaxLength = RepChainConfig.getSystemConfig(this.systemName).getStorageBlockFileMaxLength * 1024 * 1024
   private var lastChainInfo : Option[KeyPrefixManager.ChainInfo] = None
   private val lock: Object = new Object()
+
 
   /**
    * @author jiangbuyun
@@ -78,11 +76,11 @@ class BlockStorager private(systemName:String,isEncrypt:Boolean=false) extends B
           if(t.getCid.chaincodeName.equalsIgnoreCase(accountContractName) &&
             t.`type` == Transaction.Type.CHAINCODE_INVOKE && t.para.ipt.get.function.equalsIgnoreCase(certMethod)){
             //证书修改
-            certCache.CertStatusUpdate(k)
+            PermissionCacheManager.updateCertCache(this.systemName,k)
           }else if(t.getCid.chaincodeName.equalsIgnoreCase(accountContractName) &&
-            t.`type` == Transaction.Type.CHAINCODE_INVOKE){
+            t.`type` == Transaction.Type.CHAINCODE_INVOKE && IdTool.isDidContract(this.systemName)){
             //账户修改
-            updateCache4Account(k,v.toByteArray)
+            PermissionCacheManager.updateCache(this.systemName,k)
           }
         })
       }
@@ -91,37 +89,7 @@ class BlockStorager private(systemName:String,isEncrypt:Boolean=false) extends B
     hm
   }
 
-  /**
-   * @author jiangbuyun
-   * @version	2.0
-   * @since	2022-04-13
-   * @category	更新账户数据
-   * @param k:String,value:Array[Byte]
-   * @return
-   * */
-  private def updateCache4Account(k:String,value:Array[Byte]):Unit={
-    if(k.indexOf("_"+DidTplPrefix.operPrefix)>0){
-      val opcache = ImpOperateCache.GetOperateCache(this.systemName)
-      if(opcache != null)
-        opcache.ChangeValue(k)
-    }else if(k.indexOf("_"+DidTplPrefix.authPrefix)>0){
-      val authcache = ImpAuthorizeCache.GetAuthorizeCache(this.systemName)
-      if(authcache != null)
-        authcache.ChangeValue(k)
-    }else if(k.indexOf("_"+DidTplPrefix.signerPrefix)>0){
-      val signercache = ImpSignerCache.GetSignerCache(this.systemName)
-      if(signercache != null)
-        signercache.ChangeValue(k)
-    }else if(k.indexOf("_"+DidTplPrefix.certPrefix)>0) {
-      val certcache1 = ImpCertCache.GetCertCache(this.systemName)
-      if(certcache1 != null)
-        certcache1.ChangeValue(k)
-    }else if(k.indexOf("_"+DidTplPrefix.bindPrefix)>0) {
-      val authbindcert = ImpAuthBindToCert.GetAuthBindToCertCache(this.systemName)
-      if(authbindcert != null)
-        authbindcert.ChangeValue(k)
-    }
-  }
+
 
   /**
    * @author jiangbuyun
@@ -291,11 +259,11 @@ class BlockStorager private(systemName:String,isEncrypt:Boolean=false) extends B
           if(t.getCid.chaincodeName.equalsIgnoreCase(accountContractName) &&
             t.`type` == Transaction.Type.CHAINCODE_INVOKE && t.para.ipt.get.function.equalsIgnoreCase(certMethod)){
             //证书修改
-            certCache.CertStatusUpdate(k)
+            PermissionCacheManager.updateCertCache(this.systemName,k)
           }else if(t.getCid.chaincodeName.equalsIgnoreCase(accountContractName) &&
             t.`type` == Transaction.Type.CHAINCODE_INVOKE){
             //账户修改
-            updateCache4Account(k,v.toByteArray)
+            PermissionCacheManager.updateCache(this.systemName,k)
           }
         })
       }

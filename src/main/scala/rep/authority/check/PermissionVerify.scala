@@ -1,17 +1,17 @@
 package rep.authority.check
 
 import java.util.concurrent.ConcurrentHashMap
-import rep.app.conf.SystemProfile
-import rep.authority.cache.authbind.ImpAuthBindToCert
-import rep.authority.cache.authcache.ImpAuthorizeCache
-import rep.authority.cache.opcache.ImpOperateCache
-import rep.authority.cache.signercache.ISignerCache.signerData
-import rep.authority.cache.signercache.ImpSignerCache
-import rep.crypto.cert.certCache
+
+import rep.app.conf.RepChainConfig
+import rep.authority.cache.SignerCache.signerData
+import rep.authority.cache.{AuthenticateBindToCertCache, AuthenticateCache, CertificateCache, CertificateHashCache, OperateCache, PermissionCacheManager, SignerCache}
 import rep.log.RepLogger
+import rep.proto.rc2.CertId
+import rep.proto.rc2.Transaction.Type
 import rep.sc.Sandbox.SandboxException
 import rep.sc.SandboxDispatcher._
-import rep.sc.Shim
+import rep.sc.tpl.did.DidTplPrefix
+import rep.storage.chain.preload.BlockPreload
 import rep.utils.IdTool
 import scala.util.control.Breaks.{break, breakable}
 
@@ -21,59 +21,61 @@ import scala.util.control.Breaks.{break, breakable}
  */
 
 class PermissionVerify(sysTag:String) {
-  val opcache = ImpOperateCache.GetOperateCache(this.sysTag)
-  val authcache = ImpAuthorizeCache.GetAuthorizeCache(this.sysTag)
-  val sigcache = ImpSignerCache.GetSignerCache(this.sysTag)
-  val bind = ImpAuthBindToCert.GetAuthBindToCertCache(this.sysTag)
+  val opcache = PermissionCacheManager.getCache(this.sysTag,DidTplPrefix.operPrefix).asInstanceOf[OperateCache]
+  val authcache = PermissionCacheManager.getCache(this.sysTag,DidTplPrefix.authPrefix).asInstanceOf[AuthenticateCache]
+  val sigcache = PermissionCacheManager.getCache(this.sysTag,DidTplPrefix.signerPrefix).asInstanceOf[SignerCache]
+  val bind = PermissionCacheManager.getCache(this.sysTag,DidTplPrefix.bindPrefix).asInstanceOf[AuthenticateBindToCertCache]
+  val certCache = PermissionCacheManager.getCache(this.sysTag,DidTplPrefix.certPrefix).asInstanceOf[CertificateCache]
+  val certHashCache = PermissionCacheManager.getCache(this.sysTag,DidTplPrefix.hashPrefix).asInstanceOf[CertificateHashCache]
 
   //合约权限校验
   //dbinstance没有的情况，参数的值为null
   //did，opname必填
-  def CheckPermission(did:String,certName:String,opname:String,dbinstance:TransactionOfDataPreload): Boolean ={
+  def CheckPermission(did:String,certName:String,opname:String,dbinstance: BlockPreload): Boolean ={
     var r = false
     RepLogger.Permission_Logger.trace(s"System=${this.sysTag},PermissionVerify.CheckPermission entry check,did=${did},opname=${opname}")
     if(!IsChainCert(did)) {
       RepLogger.Permission_Logger.trace(s"System=${this.sysTag},PermissionVerify.CheckPermission is not chain cert,did=${did},opname=${opname}")
       //不是链证书，检查是否有合约部署权限
       //获取Signer信息
-      val od = opcache.getOperateData(opname, dbinstance.getDbInstance)
-      val sd = sigcache.getSignerData(did,dbinstance.getDbInstance)
-      if(sd == null){
+      val od = opcache.get(opname, dbinstance)
+      val sd = sigcache.get(did,dbinstance)
+      if(sd == None){
         //实体账户不存在
         RepLogger.Permission_Logger.trace(s"System=${this.sysTag},PermissionVerify.CheckPermission signer is not exist,did=${did},opname=${opname}")
         throw new SandboxException(ERR_NO_OPERATE)
-      }else if(sd.signer_valid){
+      }else if(sd.get.signer_valid){
         //实体账户有效
         RepLogger.Permission_Logger.trace(s"System=${this.sysTag},PermissionVerify.CheckPermission signer valid,did=${did},opname=${opname}")
-        if (od == null) {
+        if (od == None) {
           //操作不存在
           RepLogger.Permission_Logger.trace(s"System=${this.sysTag},PermissionVerify.CheckPermission op is not found,did=${did},opname=${opname}")
           r = false
           throw new SandboxException(ERR_NO_OPERATE)
-        } else if (od.opValid) {
+        } else if (od.get.opValid) {
           //操作有效
           RepLogger.Permission_Logger.trace(s"System=${this.sysTag},PermissionVerify.CheckPermission op valid,did=${did},opname=${opname}")
-          if (od.isOpen) {
+          if (od.get.isOpen) {
             //属于开放操作
             RepLogger.Permission_Logger.trace(s"System=${this.sysTag},PermissionVerify.CheckPermission op is open,did=${did},opname=${opname}")
             r = true
           } else {
-            if (od.register.equals(did)) {
+            if (od.get.register.equals(did)) {
               //属于自己注册的操作
               RepLogger.Permission_Logger.trace(s"System=${this.sysTag},PermissionVerify.CheckPermission op owner,did=${did},opname=${opname}")
               r = true
             } else {
               //不属于自己的操作，检查是否有授权
               RepLogger.Permission_Logger.trace(s"System=${this.sysTag},PermissionVerify.CheckPermission check auth,did=${did},opname=${opname}")
-              if(sd.opids.containsKey(od.opId)){
-                val opid = sd.opids.get(od.opId)
+              if(sd.get.opIds.containsKey(od.get.opId)){
+                val opid = sd.get.opIds.get(od.get.opId)
                 if(opid != null){
                   if(opid.length > 0){
                     breakable(opid.foreach(f=>{
-                      val ad = authcache.getAuthorizeData(f,dbinstance.getDbInstance)
-                      if(ad != null){
-                        if(ad.authorizeValid){
-                          val b = IsBindCert(ad.authid,sd,dbinstance)
+                      val ad = authcache.get(f,dbinstance)
+                      if(ad != None){
+                        if(ad.get.authorizeValid){
+                          val b = IsBindCert(ad.get.authid,sd.get,dbinstance)
                           if(b._1){
                             if(b._2.equals(did+"."+certName)){
                               r = true
@@ -129,79 +131,89 @@ class PermissionVerify(sysTag:String) {
   }
 
   //通过证书的Id对象来校验权限
-  def CheckPermissionOfCertId(certid:CertId, opname:String, dbinstance:TransactionOfDataPreload): Boolean ={
-    CheckPermission(certid.creditCode,certid.certName,opname,dbinstance)
+  def CheckPermissionOfCertId(certId:CertId, opName:String, dbInstance:BlockPreload): Boolean ={
+    CheckPermission(certId.creditCode,certId.certName,opName,dbInstance)
   }
 
   //通过证书Id的字符串来校验权限
-  def CheckPermissionOfCertIdStr(certid:String, opname:String, dbinstance:TransactionOfDataPreload): Boolean ={
-    CheckPermissionOfCertId(IdTool.getCertIdFromName(certid), opname, dbinstance)
+  def CheckPermissionOfCertIdStr(certId:String, opName:String, dbInstance:BlockPreload): Boolean ={
+    CheckPermissionOfCertId(IdTool.getCertIdFromName(certId), opName, dbInstance)
   }
 
   //通过证书的hash来校验权限
-  def CheckPermissionOfCertHash(certhash:String, opname:String, dbinstance:TransactionOfDataPreload): Boolean ={
-    CheckPermissionOfCertIdStr(certCache.getCertIdForHash(certhash,sysTag,dbinstance.getDbInstance), opname, dbinstance)
+  def CheckPermissionOfCertHash(certHash:String, opName:String, dbInstance:BlockPreload): Boolean ={
+    val certId = certHashCache.get(certHash,dbInstance)
+    if(certId == None){
+      RepLogger.Permission_Logger.trace(s"System=${this.sysTag},PermissionVerify.CheckPermission certHash not exist,certHash=${certHash},opName=${opName}")
+      false
+    }else{
+      CheckPermissionOfCertIdStr(certId.get, opName, dbInstance)
+    }
+
   }
 
-  def CheckPermissionOfDeployContract(dotrans: DoTransactionOfSandboxInSingle,shim:Shim):Boolean={
+  def CheckPermissionOfDeployContract(doTrans: DoTransactionOfSandboxInSingle):Boolean={
     var r = true
-    val cid = dotrans.t.cid.get
+    val cid = doTrans.t.cid.get
 
-    if(dotrans.t.`type` == Type.CHAINCODE_DEPLOY && dotrans.t.cid.get.chaincodeName == "ContractAssetsTPL"){
+    val dbInstance = BlockPreload.getBlockPreload(doTrans.da,sysTag)
+    if(doTrans.t.`type` == Type.CHAINCODE_DEPLOY && doTrans.t.cid.get.chaincodeName == "ContractAssetsTPL"){
       System.out.println("")
     }
     try {
-      if (!CheckPermissionOfCertId(dotrans.t.signature.get.certId.get, opname = "*.deploy", shim.srOfTransaction)) {
-        r = CheckPermissionOfCertId(dotrans.t.signature.get.certId.get, cid.chaincodeName + ".deploy", shim.srOfTransaction)
+      if (!CheckPermissionOfCertId(doTrans.t.signature.get.certId.get, opName = "*.deploy", dbInstance)) {
+        r = CheckPermissionOfCertId(doTrans.t.signature.get.certId.get, cid.chaincodeName + ".deploy", dbInstance)
       }
     } catch {
       case e: SandboxException =>
-        r = CheckPermissionOfCertId(dotrans.t.signature.get.certId.get, cid.chaincodeName + ".deploy", shim.srOfTransaction)
+        r = CheckPermissionOfCertId(doTrans.t.signature.get.certId.get, cid.chaincodeName + ".deploy", dbInstance)
     }
 
     r
   }
 
-  def CheckPermissionOfSetStateContract(dotrans: DoTransactionOfSandboxInSingle,shim:Shim)={
+  def CheckPermissionOfSetStateContract(doTrans: DoTransactionOfSandboxInSingle)={
     var r = true
-    val cid = dotrans.t.cid.get
+    val cid = doTrans.t.cid.get
+    val dbInstance = BlockPreload.getBlockPreload(doTrans.da,sysTag)
     try {
-      if (!CheckPermissionOfCertId(dotrans.t.signature.get.certId.get, opname = "*.setState", shim.srOfTransaction)) {
-        r = CheckPermissionOfCertId(dotrans.t.signature.get.certId.get, cid.chaincodeName + ".setState", shim.srOfTransaction)
+      if (!CheckPermissionOfCertId(doTrans.t.signature.get.certId.get, opName = "*.setState", dbInstance)) {
+        r = CheckPermissionOfCertId(doTrans.t.signature.get.certId.get, cid.chaincodeName + ".setState", dbInstance)
       }
     } catch {
       case e: SandboxException =>
-        r = CheckPermissionOfCertId(dotrans.t.signature.get.certId.get, cid.chaincodeName + ".setState", shim.srOfTransaction)
+        r = CheckPermissionOfCertId(doTrans.t.signature.get.certId.get, cid.chaincodeName + ".setState", dbInstance)
     }
 
     r
   }
 
-  def CheckPermissionOfInvokeContract(dotrans: DoTransactionOfSandboxInSingle,shim:Shim)={
-    val cid = dotrans.t.cid.get
-    if( dotrans.t.getIpt.function == "grantOperate"){
+  def CheckPermissionOfInvokeContract(doTrans: DoTransactionOfSandboxInSingle)={
+    val cid = doTrans.t.cid.get
+    if( doTrans.t.getIpt.function == "grantOperate"){
       System.out.println("")
     }
-    CheckPermissionOfCertId(dotrans.t.signature.get.certId.get,
-                                cid.chaincodeName+"."+dotrans.t.getIpt.function,
-                                shim.srOfTransaction)
+    val dbInstance = BlockPreload.getBlockPreload(doTrans.da,sysTag)
+    CheckPermissionOfCertId(doTrans.t.signature.get.certId.get,
+                                cid.chaincodeName+"."+doTrans.t.getIpt.function,
+                                dbInstance)
   }
 
   private def IsChainCert(did:String):Boolean={
     var r = true
-    val cid = IdTool.getCertIdFromName(SystemProfile.getChainCertName)
+    val cid = IdTool.getCertIdFromName(RepChainConfig.getSystemConfig(sysTag).getChainCertName)
     if(!cid.creditCode.equals(did)){
       r = false
     }
     r
   }
 
-  private def IsBindCert(authid:String,sd:signerData,dbinstance:TransactionOfDataPreload):(Boolean,String)={
+  private def IsBindCert(authid:String,sd:signerData,dbInstance:BlockPreload):(Boolean,String)={
     var r = (false,"")
     if(sd != null && !sd.certNames.isEmpty){
       breakable(sd.certNames.foreach(f=>{
-        val b = bind.hasAuthBindToCert(authid,f,dbinstance.getDbInstance)
-        if(b){
+        val b = bind.get(authid,f,dbInstance)
+        if(b != None && b.get){
           r = (true,f)
           break
         }
@@ -214,7 +226,7 @@ class PermissionVerify(sysTag:String) {
 
 object PermissionVerify {
   import scala.collection.JavaConverters._
-  private implicit var singleobjs = new ConcurrentHashMap[String, PermissionVerify]() asScala
+  private implicit var singleObjs = new ConcurrentHashMap[String, PermissionVerify]() asScala
   /**
    * @author jiangbuyun
    * @version	1.1
@@ -226,11 +238,11 @@ object PermissionVerify {
   def GetPermissionVerify(SystemName: String): PermissionVerify = {
     var singleobj: PermissionVerify = null
     synchronized {
-      if (singleobjs.contains(SystemName)) {
-        singleobj = singleobjs.get(SystemName).getOrElse(null)
+      if (singleObjs.contains(SystemName)) {
+        singleobj = singleObjs.get(SystemName).getOrElse(null)
       } else {
         singleobj = new PermissionVerify(SystemName)
-        singleobjs.put(SystemName, singleobj)
+        singleObjs.put(SystemName, singleobj)
       }
       singleobj
     }

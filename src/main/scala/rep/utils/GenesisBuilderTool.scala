@@ -19,7 +19,6 @@ package rep.utils
 import java.io.{File, FileFilter, PrintWriter}
 import java.nio.file.Path
 import java.util
-
 import com.google.common.io.Files
 import com.google.protobuf.timestamp.Timestamp
 import org.json4s.jackson.JsonMethods.{pretty, render}
@@ -27,9 +26,9 @@ import org.json4s.{DefaultFormats, jackson}
 import rep.crypto.CryptoMgr
 import rep.crypto.cert.SignTool
 import rep.network.autotransaction.PeerHelper
-import rep.protos.peer._
+import rep.network.consensus.util.BlockHelp
+import rep.proto.rc2.{CertId, Certificate, ChaincodeDeploy, ChaincodeId, Signer, Transaction}
 import scalapb.json4s.JsonFormat
-
 import scala.collection.mutable
 
 
@@ -82,7 +81,7 @@ object GenesisBuilderTool {
     val s1 = scala.io.Source.fromFile(contractFile, "UTF-8")
     val l1 = try s1.mkString finally s1.close()
     val cid1 = new ChaincodeId("ContractCert", 1)
-    val dep_trans = PeerHelper.createTransaction4Deploy(adminJksName.substring(0, adminJksName.length - 4), cid1, l1, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
+    val dep_trans = PeerHelper.createTransaction4Deploy(adminJksName.substring(0, adminJksName.length - 4), cid1, l1, "", 5000, ChaincodeDeploy.CodeType.CODE_SCALA)
     transList.add(dep_trans)
 
     val adminInfo = adminJksName.split("\\.")
@@ -102,15 +101,16 @@ object GenesisBuilderTool {
       val l2 = try s2.mkString finally s2.close()
       val tplFileName = tplFile.getName.split("\\.")(0)
       val cid4 = new ChaincodeId(tplFileName, 1)
-      val dep_custom_proof = PeerHelper.createTransaction4Deploy(node1JksName.substring(0, node1JksName.length - 4), cid4, l2, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA)
+      val dep_custom_proof = PeerHelper.createTransaction4Deploy(node1JksName.substring(0, node1JksName.length - 4), cid4, l2, "", 5000, ChaincodeDeploy.CodeType.CODE_SCALA)
       transList.add(dep_custom_proof)
     }
 
     // 构建Block
-    var blk = new Block(1, 1, transList.toArray(new Array[Transaction](transList.size())), Seq(), _root_.com.google.protobuf.ByteString.EMPTY,
-      _root_.com.google.protobuf.ByteString.EMPTY)
+    var blk = BlockHelp.buildBlock("",1,transList.toArray(new Array[Transaction](transList.size())))
+      //new Block(1, 1, transList.toArray(new Array[Transaction](transList.size())), Seq(), _root_.com.google.protobuf.ByteString.EMPTY,
+      //_root_.com.google.protobuf.ByteString.EMPTY)
 
-    blk = blk.clearEndorsements
+    blk = blk.withHeader(blk.getHeader.clearEndorsements)
     blk = blk.clearTransactionResults
     val r = MessageToJson.toJson(blk)
     val rStr = pretty(render(r))

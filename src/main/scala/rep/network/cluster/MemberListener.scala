@@ -32,15 +32,14 @@ import scala.collection.mutable.HashMap
 import rep.network.base.ModuleBase
 import rep.network.sync.SyncMsg.StartSync
 
-import scala.util.control.Breaks._
 import scala.collection.mutable.ArrayBuffer
 import rep.log.RepLogger
-import rep.protos.peer.Event
 import rep.network.util.NodeHelp
 import rep.app.RepChainMgr
 import rep.log.httplog.AlertInfo
 import rep.network.autotransaction.Topic
 import rep.network.consensus.byzantium.ConsensusCondition
+import rep.proto.rc2.Event
 
 /**
  * Cluster节点状态监听模块

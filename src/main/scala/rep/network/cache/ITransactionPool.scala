@@ -1,16 +1,15 @@
 package rep.network.cache
 
 import akka.actor.{Address, Props}
-import rep.app.conf.SystemProfile
+import rep.app.conf.RepChainConfig
 import rep.crypto.cert.SignTool
 import rep.log.RepLogger
 import rep.network.autotransaction.Topic
 import rep.network.base.ModuleBase
 import rep.network.cache.ITransactionPool.CheckedTransactionResult
 import rep.network.util.NodeHelp
-import rep.protos.peer.{Event, Transaction}
-import rep.storage.ImpDataAccess
-import rep.utils.ActorUtils
+import rep.proto.rc2.{Event, Transaction}
+import rep.storage.chain.block.BlockSearcher
 import rep.utils.GlobalUtils.EventType
 
 /**
@@ -29,7 +28,8 @@ abstract class ITransactionPool (moduleName: String) extends ModuleBase(moduleNa
 
   private val transPoolActorName = "/user/modulemanager/transactionpool"
   private var addr4NonUser = ""
-  val dataaccess: ImpDataAccess = ImpDataAccess.GetDataAccess(pe.getSysTag)
+  val searcher = new BlockSearcher(pe.getSysTag)
+  val config = RepChainConfig.getSystemConfig(pe.getSysTag)
 
   override def preStart(): Unit = {
     //注册接收交易的广播
@@ -55,11 +55,11 @@ abstract class ITransactionPool (moduleName: String) extends ModuleBase(moduleNa
    * @param dataAccess
    * @return
    */
-  def checkTransaction(t: Transaction, dataAccess: ImpDataAccess): CheckedTransactionResult = {
+  def checkTransaction(t: Transaction, dataAccess: BlockSearcher): CheckedTransactionResult = {
     var resultMsg = ""
     var result = false
 
-    if(SystemProfile.getHasPreloadTransOfApi){
+    if(config.hasPreloadOfApi){
       val sig = t.getSignature
       val tOutSig = t.clearSignature //t.withSignature(null)
       val cert = sig.getCertId
@@ -68,7 +68,7 @@ abstract class ITransactionPool (moduleName: String) extends ModuleBase(moduleNa
         val siginfo = sig.signature.toByteArray()
 
         if (SignTool.verify(siginfo, tOutSig.toByteArray, cert, pe.getSysTag)) {
-          if (pe.getTransPoolMgr.findTrans(t.id) || dataAccess.isExistTrans4Txid(t.id)) {
+          if (pe.getTransactionPool.isExist(t.id) || dataAccess.isExistTransactionByTxId(t.id)) {
             resultMsg = s"The transaction(${t.id}) is duplicated with txid"
           } else {
             result = true
@@ -89,11 +89,11 @@ abstract class ITransactionPool (moduleName: String) extends ModuleBase(moduleNa
   protected def sendVoteMessage:Unit
 
   private def addTransToCache(t: Transaction) = {
-    val checkedTransactionResult = checkTransaction(t, dataaccess)
+    val checkedTransactionResult = checkTransaction(t, searcher)
     //签名验证成功
-    val poolIsEmpty = pe.getTransPoolMgr.isEmpty
-    if((checkedTransactionResult.result) && (SystemProfile.getMaxCacheTransNum == 0 || pe.getTransPoolMgr.getTransLength() < SystemProfile.getMaxCacheTransNum) ){
-      pe.getTransPoolMgr.putTran(t, pe.getSysTag)
+    val poolIsEmpty = if(pe.getTransactionPool.getCachePoolSize <= 0) true  else false
+    if((checkedTransactionResult.result) &&  !pe.getTransactionPool.hasOverflowed ){
+      pe.getTransactionPool.addTransactionToCache(t)
       RepLogger.trace(RepLogger.System_Logger,this.getLogMsgPrefix(s"${pe.getSysTag} trans pool recv,txid=${t.id}"))
       //广播接收交易事件
       //if (pe.getTransPoolMgr.getTransLength() >= SystemProfile.getMinBlockTransNum)

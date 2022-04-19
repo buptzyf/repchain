@@ -6,7 +6,7 @@ import rep.app.conf.SystemProfile
 import rep.log.RepLogger
 import rep.network.autotransaction.Topic
 import rep.network.base.ModuleBase
-import rep.protos.peer.{Event, Transaction}
+import rep.proto.rc2.Transaction
 import scala.collection.immutable.IndexedSeq
 
 
