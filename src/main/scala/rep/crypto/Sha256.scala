@@ -15,16 +15,18 @@
  */
 
 package rep.crypto
+import java.security.MessageDigest
+
 import com.google.protobuf.ByteString
 
 /**
  * @author c4w
  * modify by jiangbuyun
  */
-object Sha256 extends CryptographicHash{
+class Sha256(digest:MessageDigest) extends CryptographicHash{
   override val DigestSize: Int = 32
   //def hash(input: Array[Byte]): Array[Byte] = MessageDigest.getInstance("SHA-256").digest(input)
-  def hash(input: Array[Byte]): Array[Byte] = CryptoMgr.getInstance.digest(input)
+  def hash(input: Array[Byte]): Array[Byte] = digest.digest(input)
 
   def hashstr(input: Array[Byte]):String ={
     BytesHex.bytes2hex(hash(input))

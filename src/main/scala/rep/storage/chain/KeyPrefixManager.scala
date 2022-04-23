@@ -32,17 +32,11 @@ object KeyPrefixManager {
    * @version	2.0
    * @since	2022-04-13
    * @category	根据系统名获取链id
-   * @param systemName:String 系统名称
+   * @param config:RepChainConfig
    * @return 返回String链id
    * */
-  private def getChainId(systemName:String):String={
-    if(chainIds.contains(systemName)){
-      chainIds.get(systemName).get
-    }else{
-      val id = RepChainConfig.getSystemConfig(systemName).getChainNetworkId
-      chainIds.put(systemName,id)
-      id
-    }
+  private def getChainId(config:RepChainConfig):String={
+    config.getChainNetworkId
   }
 
   /**
@@ -50,11 +44,11 @@ object KeyPrefixManager {
    * @version	2.0
    * @since	2022-04-13
    * @category	根据系统名称生成链相关信息关键字
-   * @param systemName:String 系统名称
+   * @param config:RepChainConfig
    * @return 返回String链相关信息关键字
    * */
-  def getBlockInfoKey(systemName:String):String={
-    getChainId(systemName)+"_"+repChainBlockInfoPrefix
+  def getBlockInfoKey(config:RepChainConfig):String={
+    getChainId(config)+"_"+repChainBlockInfoPrefix
   }
 
   /**
@@ -62,11 +56,11 @@ object KeyPrefixManager {
    * @version	2.0
    * @since	2022-04-13
    * @category	根据系统名称和区块文件号生成区块文件第一个块的关键字
-   * @param systemName:String 系统名称，fileNo:Int 文件号
+   * @param config:RepChainConfig，fileNo:Int 文件号
    * @return 返回String区块文件第一个块的关键字
    * */
-  def getBlockFileFirstHeightKey(systemName:String,fileNo:Int):String={
-    getChainId(systemName)+"_"+blockFileFirstHeightPrefix+"_"+fileNo
+  def getBlockFileFirstHeightKey(config:RepChainConfig,fileNo:Int):String={
+    getChainId(config)+"_"+blockFileFirstHeightPrefix+"_"+fileNo
   }
 
   /**
@@ -74,11 +68,11 @@ object KeyPrefixManager {
    * @version	2.0
    * @since	2022-04-13
    * @category	根据系统名称和区块高度生成区块索引的关键字
-   * @param systemName:String 系统名称，height:Long 区块高度
+   * @param config:RepChainConfig，height:Long 区块高度
    * @return 返回String区块索引的关键字
    * */
-  def getBlockIndexKey4Height(systemName:String,height:Long):String={
-    getChainId(systemName)+"_"+BlockIndexKeyByHeightPrefix+"_"+height
+  def getBlockIndexKey4Height(config:RepChainConfig,height:Long):String={
+    getChainId(config)+"_"+BlockIndexKeyByHeightPrefix+"_"+height
   }
 
   /**
@@ -86,11 +80,11 @@ object KeyPrefixManager {
    * @version	2.0
    * @since	2022-04-13
    * @category	根据系统名称和区块Hash生成区块Hash与区块高度索引的关键字
-   * @param systemName:String 系统名称，hash:String 区块Hash
+   * @param config:RepChainConfig，hash:String 区块Hash
    * @return 返回String区块Hash与区块高度索引的关键字
    * */
-  def getBlockHeightKey4Hash(systemName:String,hash:String):String={
-    getChainId(systemName)+"_"+BlockHeightKeyByHashPrefix+"_"+hash
+  def getBlockHeightKey4Hash(config:RepChainConfig,hash:String):String={
+    getChainId(config)+"_"+BlockHeightKeyByHashPrefix+"_"+hash
   }
 
   /**
@@ -98,11 +92,11 @@ object KeyPrefixManager {
    * @version	2.0
    * @since	2022-04-13
    * @category	根据系统名称和交易id生成区块交易id与区块高度索引的关键字
-   * @param systemName:String 系统名称，txId:String 交易id
+   * @param config:RepChainConfig，txId:String 交易id
    * @return 返回String区块交易id与区块高度索引的关键字
    * */
-  def getBlockHeightKey4TxId(systemName:String,txId:String):String={
-    getChainId(systemName)+"_"+BlockHeightKeyByTxIdPrefix+"_"+txId
+  def getBlockHeightKey4TxId(config:RepChainConfig,txId:String):String={
+    getChainId(config)+"_"+BlockHeightKeyByTxIdPrefix+"_"+txId
   }
 
   /**
@@ -110,21 +104,21 @@ object KeyPrefixManager {
    * @version	2.0
    * @since	2022-04-13
    * @category	根据系统名称、worldstate、合约id、实例id一起生成worldstate完整关键字
-   * @param systemName:String 系统名称,key:String worldstate,contractId:String 合约id,oid:String="_" 实例id
+   * @param config:RepChainConfig,key:String worldstate,contractId:String 合约id,oid:String="_" 实例id
    * @return 返回String生成worldstate完整关键字
    * */
-  def getWorldStateKey(systemName:String,key:String,contractId:String,oid:String="_"):String={
+  def getWorldStateKey(config:RepChainConfig,key:String,contractId:String,oid:String="_"):String={
     if(oid==null ||  oid.equalsIgnoreCase(""))
-      getChainId(systemName)+"_"+contractId+"_"+"_"+"_"+key
+      getChainId(config)+"_"+contractId+"_"+"_"+"_"+key
     else
-      getChainId(systemName)+"_"+contractId+"_"+oid+"_"+key
+      getChainId(config)+"_"+contractId+"_"+oid+"_"+key
   }
 
-  def getWorldStateKeyPrefix(systemName:String,contractId:String,oid:String="_"):String={
+  def getWorldStateKeyPrefix(config:RepChainConfig,contractId:String,oid:String="_"):String={
     if(oid==null ||  oid.equalsIgnoreCase(""))
-      getChainId(systemName)+"_"+contractId+"_"+"_"
+      getChainId(config)+"_"+contractId+"_"+"_"
     else
-      getChainId(systemName)+"_"+contractId+"_"+oid
+      getChainId(config)+"_"+contractId+"_"+oid
   }
 
   /*def getContractStateKey(systemName:String,key:String):String={

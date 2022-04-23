@@ -1,6 +1,6 @@
 package rep.log.httplog
 
-import java.util.concurrent.{LinkedBlockingQueue, ThreadPoolExecutor, TimeUnit}
+import java.util.concurrent.{ LinkedBlockingQueue, ThreadPoolExecutor, TimeUnit}
 
 
 /**
@@ -34,16 +34,29 @@ class HttpLogger(coreSize: Int, maxSize: Int, aliveTime: Int, isOutputAlert: Boo
     }
   }
 
-}
-
-object HttpLogger {
-  def getHttpLogger(coreSize: Int, maxSize: Int, aliveTime: Int, isOutputAlert: Boolean, url: String): HttpLogger = {
-    var singleobj: HttpLogger = null
-    synchronized {
-      if (singleobj == null) {
-        singleobj = new HttpLogger(coreSize, maxSize, aliveTime, isOutputAlert, url)
-      }
-      singleobj
-    }
+  def hasOutputAlert:Boolean={
+    this.isOutputAlert
   }
 }
+
+
+/*
+object HttpLogger {
+  var instances: ConcurrentHashMap[String,HttpLogger] = new ConcurrentHashMap[String,HttpLogger]()
+  def getHttpLogger(systemName:String): HttpLogger = {
+    synchronized {
+      if(instances.containsKey(systemName)){
+        instances.get(systemName)
+      }else{
+        val config = RepChainConfig.getSystemConfig(systemName)
+        var instance = new HttpLogger(config.getOuputAlertThreads,config.getOutputMaxThreads,config.getOutputAlertAliveTime,
+          config.isOutputAlert,config.getOutputAlertPrismaUrl)
+        val old = instances.putIfAbsent(systemName,instance)
+        if(old != null){
+          instance = old
+        }
+        instance
+      }
+    }
+  }
+}*/

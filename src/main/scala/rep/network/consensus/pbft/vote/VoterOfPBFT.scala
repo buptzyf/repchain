@@ -3,12 +3,12 @@
 package rep.network.consensus.pbft.vote
 
 import akka.actor.Props
-import rep.app.Repchain
-import rep.app.conf.{SystemCertList, TimePolicy}
+import rep.app.conf.TimePolicy
 import rep.log.RepLogger
+import rep.network.confirmblock.pbft.ConfirmOfBlockOfPBFT
 import rep.network.consensus.cfrd.MsgOfCFRD.ForceVoteInfo
 import rep.network.consensus.pbft.MsgOfPBFT.{CreateBlock, VoteOfBlocker, VoteOfForce}
-import rep.network.consensus.common.algorithm.{IRandomAlgorithmOfVote, ISequencialAlgorithmOfVote}
+import rep.network.consensus.common.algorithm.{ ISequencialAlgorithmOfVote}
 import rep.network.consensus.common.vote.IVoter
 import rep.network.module.pbft.PBFTActorType
 import rep.network.util.NodeHelp
@@ -84,12 +84,12 @@ class VoterOfPBFT(moduleName: String) extends IVoter(moduleName: String) {
 
   override def receive: Receive = {
     case VoteOfBlocker(flag:String) =>
-      RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", VoteOfBlocker: " + flag)
-      if (NodeHelp.isCandidateNow(pe.getSysTag, SystemCertList.getSystemCertList)) {
+      RepLogger.debug(RepLogger.zLogger,"R: " + ConfirmOfBlockOfPBFT.nn(sender) + "->" + ConfirmOfBlockOfPBFT.nn(pe.getSysTag) + ", VoteOfBlocker: " + flag)
+      if (NodeHelp.isCandidateNow(pe.getSysTag, pe.getRepChainContext.getSystemCertList.getSystemCertList)) {
         voteMsgHandler(false,null)
       }
     case VoteOfForce=>
-      RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", VoteOfForce: ")
+      RepLogger.debug(RepLogger.zLogger,"R: " + ConfirmOfBlockOfPBFT.nn(sender) + "->" + ConfirmOfBlockOfPBFT.nn(pe.getSysTag) + ", VoteOfForce: ")
       voteMsgHandler(true,null)
   }
 }

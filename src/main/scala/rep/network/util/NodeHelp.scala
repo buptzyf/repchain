@@ -16,10 +16,8 @@
 
 package rep.network.util
 
-import akka.actor.{ActorRef, Props}
-import rep.app.conf.SystemProfile
+import akka.actor.{ActorRef}
 import rep.utils.GlobalUtils.BlockerInfo
-
 import scala.util.control.Breaks._
 
 object NodeHelp {
@@ -74,8 +72,8 @@ object NodeHelp {
     b
   }
 
-  def isSeedNode(nodeName: String): Boolean = {
-    SystemProfile.getGenesisNodeName.equals(nodeName)
+  def isSeedNode(nodeName: String,genenisNode:String): Boolean = {
+    genenisNode.equals(nodeName)
   }
 
   def isCandidatorNode(roles: Set[String]): Boolean = {

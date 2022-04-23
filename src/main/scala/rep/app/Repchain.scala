@@ -27,35 +27,6 @@ import rep.app.system.ClusterSystem.InitType
  *         -Djavax.net.debug=ssl:handshake:verbose
  */
 object Repchain {
-
-  def h4(h:String) = {
-    if (h.size >= 4)
-      h.substring(0,4)
-    else
-      h
-  }
-
-  def nn(s:String) = {
-    var r = ""
-    if (s.contains("121000005l35120456.node1")) r = "node1"
-    if (s.contains("12110107bi45jh675g.node2")) r = "node2"
-    if (s.contains("122000002n00123567.node3")) r = "node3"
-    if (s.contains("921000005k36123789.node4")) r = "node4"
-    if (s.contains("921000006e0012v696.node5")) r = "node5"
-    r
-  }
-
-  def nn(sender:ActorRef) = {
-    var r = ""
-    val s = sender.path.toString
-    if (s.contains("22522")) r = "node1"
-    if (s.contains("22523")) r = "node2"
-    if (s.contains("22524")) r = "node3"
-    if (s.contains("22525")) r = "node4"
-    if (s.contains("22526")) r = "node5"
-    r
-  }
-
   def main(args: Array[String]): Unit = {
 
     //创建系统实例
@@ -65,31 +36,15 @@ object Repchain {
     nodelist(2) = "122000002n00123567.node3"
     nodelist(3) = "921000005k36123789.node4"
     nodelist(4) = "921000006e0012v696.node5"
-    var nodeports : Array[Int] = new Array[Int](5)
-    nodeports(0) = 22522
-    nodeports(1) = 22523
-    nodeports(2) = 22524
-    nodeports(3) = 22525
-    nodeports(4) = 22526
-
-    var nodehports : Array[Int] = new Array[Int](5)
-    nodehports(0) = 9081
-    nodehports(1) = 9082
-    nodehports(2) = 9083
-    nodehports(3) = 9084
-    nodehports(4) = 9085
 
     for(i <- 0 to 4) {
       Thread.sleep(5000)
-      RepChainMgr.Startup4Multi(nodelist(i),nodeports(i),nodehports(i))
+      RepChainMgr.Startup4Single(nodelist(i))
     }
-
 
     //以下代码只能在测试系统稳定性，即测试系统离网之后再入网时可以用，发布时一定要删除
     //Thread.sleep(10000)
     //RepChainMgr.StartClusterStub
-
-
 
   }
 }

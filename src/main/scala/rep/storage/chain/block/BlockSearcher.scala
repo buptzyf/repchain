@@ -3,6 +3,7 @@ package rep.storage.chain.block
 import com.fasterxml.jackson.core.Base64Variants
 import com.google.protobuf.ByteString
 import rep.api.rest.RestActor.BlockTime
+import rep.app.system.RepChainSystemContext
 import rep.proto.rc2.{Block, BlockchainInfo, Transaction}
 import rep.storage.chain.KeyPrefixManager
 import rep.storage.db.common.IDBAccess
@@ -17,8 +18,8 @@ import scala.util.control.Breaks.{break, breakable}
  * @since	2022-04-13
  * @category	区块查询器，定义所有可以查询方法。
  * */
-class BlockSearcher(systemName:String,isEncrypt:Boolean=false) {
-  protected val db : IDBAccess = DBFactory.getDBAccess(this.systemName)
+class BlockSearcher(ctx:RepChainSystemContext,isEncrypt:Boolean=false) {
+  protected val db : IDBAccess = DBFactory.getDBAccess(ctx.getConfig)
 
   /**
    * @author jiangbuyun
@@ -28,13 +29,13 @@ class BlockSearcher(systemName:String,isEncrypt:Boolean=false) {
    * @param	key String 键
    * @return 返回Option[Any]任意对象
    * */
-  protected def getObject(key:String):Option[Any]={
-    this.db.getObject(key)
+  protected def getObject[T](key:String):Option[T]={
+    this.db.getObject[T](key)
   }
 
   //获取建立该查询器的系统名称
   def getSystemName:String={
-    this.systemName
+    this.ctx.getSystemName
   }
 
   //获取该查询器是否需要加解密
@@ -136,7 +137,7 @@ class BlockSearcher(systemName:String,isEncrypt:Boolean=false) {
    * @return 返回链信息
    * */
   def getChainInfo:BlockchainInfo={
-    val obj = this.db.getObject(KeyPrefixManager.getBlockInfoKey(systemName))
+    val obj = this.db.getObject(KeyPrefixManager.getBlockInfoKey(ctx.getConfig))
     val lastChainInfo = (obj match {
       case None => Some(KeyPrefixManager.ChainInfo(0,"","",0,0,0,0))
       case _ => obj.asInstanceOf[Option[KeyPrefixManager.ChainInfo]]
@@ -146,7 +147,7 @@ class BlockSearcher(systemName:String,isEncrypt:Boolean=false) {
   }
 
   def getLastChainInfo:KeyPrefixManager.ChainInfo={
-    val obj = this.db.getObject(KeyPrefixManager.getBlockInfoKey(systemName))
+    val obj = this.db.getObject(KeyPrefixManager.getBlockInfoKey(ctx.getConfig))
     (obj match {
       case None => Some(KeyPrefixManager.ChainInfo(0,"","",0,0,0,0))
       case _ => obj.asInstanceOf[Option[KeyPrefixManager.ChainInfo]]
@@ -223,7 +224,7 @@ class BlockSearcher(systemName:String,isEncrypt:Boolean=false) {
   def getBlocksFromHeight(h: Int, limits: Int = 0): Array[Option[Block]] = {
     var rb = new scala.collection.mutable.ArrayBuffer[Option[Block]]()
     val limited = if(limits == 0) 1000 else limits
-    val lastHeight = this.getChainInfo.height
+    val lastHeight = this.getChainInfo.height.toInt
     if(h > 0 && h <= lastHeight){
       var count = 1
       breakable(
@@ -251,7 +252,7 @@ class BlockSearcher(systemName:String,isEncrypt:Boolean=false) {
    * @return 返回Option[Long]区块高度，否则返回None
   * */
   def getBlockHeightByHash(bh:String):Option[Long]={
-    this.db.getLong(KeyPrefixManager.getBlockHeightKey4Hash(systemName,bh))
+    this.db.getObject[Long](KeyPrefixManager.getBlockHeightKey4Hash(ctx.getConfig,bh))
   }
 
   /**
@@ -263,7 +264,7 @@ class BlockSearcher(systemName:String,isEncrypt:Boolean=false) {
    * @return 返回Option[Long]区块高度，否则返回None
    * */
   def getBlockHeightByTxId(tid:String):Option[Long]={
-    this.db.getLong(KeyPrefixManager.getBlockHeightKey4TxId(systemName,tid))
+    this.db.getObject[Long](KeyPrefixManager.getBlockHeightKey4TxId(ctx.getConfig,tid))
   }
   //////////////////////////////////////////////////////
 
@@ -358,7 +359,7 @@ class BlockSearcher(systemName:String,isEncrypt:Boolean=false) {
    * @return 返回Option[Long]，否则返回None
    * */
   def getBlockHeightInFileFirstBlockByFileNo(fileNo:Int):Option[Long]={
-    this.db.getLong(KeyPrefixManager.getBlockFileFirstHeightKey(systemName,fileNo))
+    this.db.getObject[Long](KeyPrefixManager.getBlockFileFirstHeightKey(ctx.getConfig,fileNo))
   }
   //////////////////////////////////////////////////////
 
@@ -399,7 +400,7 @@ class BlockSearcher(systemName:String,isEncrypt:Boolean=false) {
     h match {
       case None => None
       case _ =>
-        val idx = this.db.getObject(KeyPrefixManager.getBlockIndexKey4Height(systemName,h.get))
+        val idx = this.db.getObject(KeyPrefixManager.getBlockIndexKey4Height(ctx.getConfig,h.get))
         idx match {
           case None => null
           case _ => idx.asInstanceOf[Option[BlockIndex]]
@@ -419,7 +420,7 @@ class BlockSearcher(systemName:String,isEncrypt:Boolean=false) {
     if(bIndex == None)
       None
     else{
-      val reader = FileFactory.getReader(systemName,bIndex.get.getFileNo)
+      val reader = FileFactory.getReader(ctx.getConfig,bIndex.get.getFileNo)
       val bData = reader.readData(bIndex.get.getFilePos,bIndex.get.getLength)
       Some(Block.parseFrom(bData))
     }

@@ -16,9 +16,9 @@
 
 package rep.log
 
-import akka.actor.{ActorRef, Props}
-import akka.stream.{Attributes, FlowShape, Inlet, Outlet}
-import akka.stream.stage.{GraphStage, GraphStageLogic, InHandler, OutHandler}
+import akka.actor.{ActorRef}
+import akka.stream.{Attributes, Outlet}
+import akka.stream.stage.{GraphStage, GraphStageLogic, OutHandler}
 import akka.stream.SourceShape
 import rep.log.RecvEventActor.Register
 import rep.proto.rc2.Event

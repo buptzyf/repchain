@@ -2,7 +2,7 @@ package rep.network.sync.request.cfrd
 
 
 import akka.actor.Props
-import rep.app.conf.SystemProfile
+import rep.app.conf.RepChainConfig
 import rep.log.RepLogger
 import rep.network.consensus.byzantium.ConsensusCondition
 import rep.network.module.{IModuleManager, ModuleActorType}
@@ -27,15 +27,17 @@ class SynchRequesterOfCFRD(moduleName: String) extends ISynchRequester(moduleNam
   import context.dispatcher
 
   override protected def getAnalyzerInSynch: ISynchAnalyzer = {
-    new ICFRDOfSynchAnalyzer(pe.getSysTag, pe.getSystemCurrentChainStatus, pe.getNodeMgr)
+    new ICFRDOfSynchAnalyzer(pe.getRepChainContext, pe.getSystemCurrentChainStatus, pe.getNodeMgr)
   }
+
+
 
   override def receive: Receive = {
     case StartSync(isNoticeModuleMgr: Boolean) =>
       schedulerLink = clearSched()
       var rb = true
       initSystemChainInfo
-      if (ConsensusCondition.CheckWorkConditionOfSystem(pe.getNodeMgr.getStableNodes.size) && !pe.isSynching) {
+      if (consensusCondition.CheckWorkConditionOfSystem(pe.getNodeMgr.getStableNodes.size) && !pe.isSynching) {
         pe.setSynching(true)
         try {
             rb = Handler(isNoticeModuleMgr)
@@ -53,7 +55,7 @@ class SynchRequesterOfCFRD(moduleName: String) extends ISynchRequester(moduleNam
         }
 
       } else {
-        RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"too few node,min=${SystemProfile.getVoteNodeMin} or synching  from actorAddr" + "～" + NodeHelp.getNodePath(sender())))
+        RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"too few node,min=${pe.getRepChainContext.getConfig.getMinVoteNumber} or synching  from actorAddr" + "～" + NodeHelp.getNodePath(sender())))
       }
 
     case SyncRequestOfStorager(responser, maxHeight) =>

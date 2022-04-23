@@ -1,5 +1,7 @@
 package rep.storage.db.rocksdb
 
+import java.util.concurrent.ConcurrentHashMap
+
 import rep.storage.db.common.IDBAccess
 import org.rocksdb.{Options, RocksDB, WriteBatch, WriteOptions}
 import rep.log.RepLogger
@@ -81,7 +83,7 @@ class ImpRocksDBAccess private extends IDBAccess{
    * @param key String 指定的键
    * @return 返回对应键的值 Array[Byte]
    **/
-  override def getBytes(key: String): Option[Array[Byte]] = {
+  override protected def getBytes(key: String): Option[Array[Byte]] = {
     var r: Option[Array[Byte]] = None
     try {
       if(key != null){
@@ -111,7 +113,7 @@ class ImpRocksDBAccess private extends IDBAccess{
    * @param 	key String 指定的键，bb Array[Byte] 要存储的值
    * @return 返回成功或者失败 Boolean
    **/
-  override def putBytes(key: String, bb: Array[Byte]): Boolean = {
+  override protected def putBytes(key: String, bb: Array[Byte]): Boolean = {
     var r: Boolean = false
     try {
       if(key != null){
@@ -266,7 +268,7 @@ class ImpRocksDBAccess private extends IDBAccess{
  * @category	ImpRocksDBAccess类的伴生对象，用于单实例的生成。
  */
 object ImpRocksDBAccess{
-  private var RocksDBInstances = new mutable.HashMap[String, ImpRocksDBAccess]()
+  private var RocksDBInstances = new ConcurrentHashMap[String, ImpRocksDBAccess]()
   /**
    * @author jiangbuyun
    * @version	2.0
@@ -277,14 +279,17 @@ object ImpRocksDBAccess{
    */
   def getDBAccess(DBPath: String,cacheSize:Long,isEncrypt:Boolean=false): ImpRocksDBAccess = {
     var instance: ImpRocksDBAccess = null
-    synchronized {
-      if (RocksDBInstances.contains(DBPath)) {
-        instance = RocksDBInstances(DBPath)
-      } else {
-        instance = new ImpRocksDBAccess(DBPath,cacheSize,isEncrypt)
-        RocksDBInstances.put(DBPath, instance)
+
+    if (RocksDBInstances.containsKey(DBPath)) {
+      instance = RocksDBInstances.get(DBPath)
+    } else {
+      instance = new ImpRocksDBAccess(DBPath,cacheSize,isEncrypt)
+      val old = RocksDBInstances.putIfAbsent(DBPath,instance)
+      if(old != null){
+        instance = old
       }
-      instance
     }
+    instance
+
   }
 }

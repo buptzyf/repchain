@@ -90,10 +90,12 @@ object OperOperation extends DidOperation {
             throw ContractException(toJsonErrMsg(notContractDeployer))
           }
         }
-        if (Sha256.hashstr(operate.authFullName) != operate.opId) {
+        if (ctx.api.getSha256Tool.hashstr(operate.authFullName) != operate.opId) {
           throw ContractException(toJsonErrMsg(hashNotMatch))
         }
       case OperateType.OPERATE_UNDEFINED =>
+        throw ContractException(toJsonErrMsg(operateTypeUndefined))
+      case _ =>
         throw ContractException(toJsonErrMsg(operateTypeUndefined))
     }
     val certId = ctx.t.getSignature.getCertId

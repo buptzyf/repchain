@@ -42,7 +42,7 @@ class SynchronizeResponser(moduleName: String) extends ModuleBase(moduleName) {
     RepLogger.info(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix( "SynchronizeResponse start"))
   }
 
-  val searcher: BlockSearcher = new BlockSearcher(pe.getSysTag)
+  val searcher: BlockSearcher = pe.getRepChainContext.getBlockSearch
 
   override def receive: Receive = {
     case ChainInfoOfRequest(height) =>
@@ -62,7 +62,7 @@ class SynchronizeResponser(moduleName: String) extends ModuleBase(moduleName) {
           val ti1 = System.currentTimeMillis()
           val b = searcher.getBlockByHeight(height)
           if(b != None){
-            RepLogger.debug(RepLogger.BlockSyncher_Logger, "getBlock4ObjectByHeight,time=" + (System.currentTimeMillis() - ti1) + "," + pe.getTransactionPool.getCachePoolSize)
+            RepLogger.debug(RepLogger.BlockSyncher_Logger, "getBlock4ObjectByHeight,time=" + (System.currentTimeMillis() - ti1) + "," + pe.getRepChainContext.getTransactionPool.getCachePoolSize)
             RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(  s"node number:${pe.getSysTag},recv synch chaininfo request,request height:${height},local chaininof=${responseInfo.height}"))
             ChainInfoOfSpecifiedHeight = ChainInfoOfSpecifiedHeight.withHeight(height)
             ChainInfoOfSpecifiedHeight = ChainInfoOfSpecifiedHeight.withCurrentBlockHash(b.get.getHeader.hashPresent)

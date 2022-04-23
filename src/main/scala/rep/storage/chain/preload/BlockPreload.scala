@@ -1,12 +1,12 @@
 package rep.storage.chain.preload
 
-import java.util.Date
-import java.util.concurrent.ConcurrentHashMap
 
+import java.util.concurrent.ConcurrentHashMap
+import rep.app.system.RepChainSystemContext
 import rep.log.RepLogger
 import rep.storage.chain.block.BlockSearcher
-
 import scala.collection.mutable
+import scala.reflect.ClassTag
 
 /**
  * @author jiangbuyun
@@ -14,8 +14,8 @@ import scala.collection.mutable
  * @since	2022-04-13
  * @category	区块预执行。
  * */
-class BlockPreload(preloadId:String,systemName:String,isEncrypt:Boolean=false)
-                                      extends BlockSearcher(systemName,isEncrypt){
+class BlockPreload(preloadId:String,ctx:RepChainSystemContext,isEncrypt:Boolean=false)
+                                      extends BlockSearcher(ctx,isEncrypt){
   private val update :ConcurrentHashMap[String,Option[Any]] = new ConcurrentHashMap[String,Option[Any]]
   private val readCache  :ConcurrentHashMap[String,Option[Any]] = new ConcurrentHashMap[String,Option[Any]]
   private val transactionPreloads:ConcurrentHashMap[String,TransactionPreload] = new ConcurrentHashMap[String,TransactionPreload]
@@ -57,7 +57,7 @@ class BlockPreload(preloadId:String,systemName:String,isEncrypt:Boolean=false)
     }catch{
       case e:Exception =>{
         RepLogger.error(RepLogger.Storager_Logger,
-          s"BlockPreload get data from update Except, systemName=${this.systemName},msg=${e.getCause}")
+          s"BlockPreload get data from update Except, systemName=${this.ctx.getSystemName},msg=${e.getCause}")
         throw e
       }
     }
@@ -72,7 +72,7 @@ class BlockPreload(preloadId:String,systemName:String,isEncrypt:Boolean=false)
    * @param	key String 指定的键
    * @return	返回对应键的值 Option[T]
    * */
-  def getFromDB[T](key : String):Option[T]={
+  def getFromDB[T:ClassTag](key : String):Option[T]={
     var ro : Option[T] = None
     try{
       val tmp = this.getObject(key)
@@ -84,7 +84,7 @@ class BlockPreload(preloadId:String,systemName:String,isEncrypt:Boolean=false)
     }catch{
       case e:Exception =>{
         RepLogger.error(RepLogger.Storager_Logger,
-          s"BlockPreload get data from db Except, systemName=${this.systemName},msg=${e.getCause}")
+          s"BlockPreload get data from db Except, systemName=${this.ctx.getSystemName},msg=${e.getCause}")
         throw e
       }
     }
@@ -117,7 +117,7 @@ class BlockPreload(preloadId:String,systemName:String,isEncrypt:Boolean=false)
     }catch{
       case e:Exception =>{
         RepLogger.error(RepLogger.Storager_Logger,
-          s"BlockPreload get data Except, systemName=${this.systemName},msg=${e.getCause}")
+          s"BlockPreload get data Except, systemName=${this.ctx},msg=${e.getCause}")
         throw e
       }
     }
@@ -138,7 +138,7 @@ class BlockPreload(preloadId:String,systemName:String,isEncrypt:Boolean=false)
       key match{
         case null =>
           RepLogger.error(RepLogger.Storager_Logger,
-            s"BlockPreload put data Except, systemName=${this.systemName},msg=key is null")
+            s"BlockPreload put data Except, systemName=${this.ctx},msg=key is null")
         case _ =>
           val o = if(any == null) None else Some(any)
           this.update.put(key,o)
@@ -147,7 +147,7 @@ class BlockPreload(preloadId:String,systemName:String,isEncrypt:Boolean=false)
     }catch{
       case e:Exception =>{
         RepLogger.error(RepLogger.Storager_Logger,
-          s"BlockPreload put data Except, systemName=${this.systemName},msg=${e.getCause}")
+          s"BlockPreload put data Except, systemName=${this.ctx},msg=${e.getCause}")
         throw e
       }
     }
@@ -175,6 +175,7 @@ class BlockPreload(preloadId:String,systemName:String,isEncrypt:Boolean=false)
  * @since	2022-04-13
  * @category	区块预执行实例管理
  * */
+/*
 object BlockPreload{
   private var blockPreloadInstances = new mutable.HashMap[String, BlockPreload]()
 
@@ -223,3 +224,5 @@ object BlockPreload{
     }
   }
 }
+
+ */

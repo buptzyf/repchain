@@ -16,15 +16,9 @@
 
 package rep.utils
 
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream, ObjectInputStream, ObjectOutputStream}
-import java.security.cert.Certificate
-
-import scala.util.{Failure, Success, Try}
+import scala.util.{Failure, Success}
 import com.twitter.chill.KryoInjection
-import com.twitter.bijection._
 import org.json4s._
-import org.json4s.native.JsonMethods
-import org.json4s.native.JsonMethods._
 import org.json4s.native.Serialization.write
 import org.json4s.native.Serialization.read
 

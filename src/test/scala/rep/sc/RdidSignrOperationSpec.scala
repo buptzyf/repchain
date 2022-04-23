@@ -22,14 +22,12 @@ import org.json4s.jackson.Serialization
 import org.json4s.native.Serialization.write
 import org.json4s.{DefaultFormats, jackson}
 import org.scalatest._
-import rep.app.conf.SystemProfile
 import rep.app.system.ClusterSystem
 import rep.app.system.ClusterSystem.InitType
-import rep.crypto.{CryptoMgr, Sha256}
+import rep.crypto.Sha256
 import rep.crypto.cert.SignTool
 import rep.network.autotransaction.PeerHelper
 import rep.network.module.cfrd.ModuleManagerOfCFRD
-import rep.protos.peer._
 import rep.sc.tpl.did.operation.SignerOperation
 import rep.sc.tpl.did.operation.SignerOperation.SignerStatus
 import scalapb.json4s.JsonFormat
@@ -47,7 +45,7 @@ import scala.io.BufferedSource
   * @param _system
   */
 class RdidSignrOperationSpec(_system: ActorSystem) extends TestKit(_system) with Matchers with FunSuiteLike with BeforeAndAfterAll {
-
+/*
   def this() = this(ActorSystem("RdidSignrOperationSpec", new ClusterSystem("121000005l35120456.node1", InitType.MULTI_INIT, false).getConf))
 
   override def afterAll: Unit = {
@@ -194,4 +192,6 @@ class RdidSignrOperationSpec(_system: ActorSystem) extends TestKit(_system) with
     msg_recv.head.getResult.reason.isEmpty should be(true)
   }
 
+
+ */
 }

@@ -97,7 +97,7 @@ class GMSSLEngineProvider (protected val config: Config, protected val log: Mark
         val ctx = SSLContext.getInstance(SSLProtocol, jsseProviderName)
         //ctx.init(keyManagers, trustManagers, rng) //new TrustAllManager()
         ctx.init(keyManagers, trustManagers, rng)
-        CryptoMgr.setSslContext(ctx)
+        //CryptoMgr.getCryptoMgr(config.getString()).setSslContext(ctx)
         ctx
       } catch {
         case e: FileNotFoundException =>
@@ -142,7 +142,6 @@ class GMSSLEngineProvider (protected val config: Config, protected val log: Mark
       /*val trustManagerFactory = TrustManagerFactory.getInstance("SunX509")
       trustManagerFactory.init(loadKeystore(SSLTrustStore, SSLTrustStorePassword))
       trustManagerFactory.getTrustManagers*/
-
       Array(new TrustAllManager)
     }
 

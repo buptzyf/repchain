@@ -1,8 +1,6 @@
 package rep.network.cache
 
 import akka.actor.{Address, Props}
-import rep.app.conf.RepChainConfig
-import rep.crypto.cert.SignTool
 import rep.log.RepLogger
 import rep.network.autotransaction.Topic
 import rep.network.base.ModuleBase
@@ -28,8 +26,8 @@ abstract class ITransactionPool (moduleName: String) extends ModuleBase(moduleNa
 
   private val transPoolActorName = "/user/modulemanager/transactionpool"
   private var addr4NonUser = ""
-  val searcher = new BlockSearcher(pe.getSysTag)
-  val config = RepChainConfig.getSystemConfig(pe.getSysTag)
+  val searcher = pe.getRepChainContext.getBlockSearch
+  val config = pe.getRepChainContext.getConfig
 
   override def preStart(): Unit = {
     //注册接收交易的广播
@@ -67,8 +65,8 @@ abstract class ITransactionPool (moduleName: String) extends ModuleBase(moduleNa
       try {
         val siginfo = sig.signature.toByteArray()
 
-        if (SignTool.verify(siginfo, tOutSig.toByteArray, cert, pe.getSysTag)) {
-          if (pe.getTransactionPool.isExist(t.id) || dataAccess.isExistTransactionByTxId(t.id)) {
+        if (pe.getRepChainContext.getSignTool.verify(siginfo, tOutSig.toByteArray, cert)) {
+          if (pe.getRepChainContext.getTransactionPool.isExist(t.id) || dataAccess.isExistTransactionByTxId(t.id)) {
             resultMsg = s"The transaction(${t.id}) is duplicated with txid"
           } else {
             result = true
@@ -91,9 +89,9 @@ abstract class ITransactionPool (moduleName: String) extends ModuleBase(moduleNa
   private def addTransToCache(t: Transaction) = {
     val checkedTransactionResult = checkTransaction(t, searcher)
     //签名验证成功
-    val poolIsEmpty = if(pe.getTransactionPool.getCachePoolSize <= 0) true  else false
-    if((checkedTransactionResult.result) &&  !pe.getTransactionPool.hasOverflowed ){
-      pe.getTransactionPool.addTransactionToCache(t)
+    val poolIsEmpty = if(pe.getRepChainContext.getTransactionPool.getCachePoolSize <= 0) true  else false
+    if((checkedTransactionResult.result) &&  !pe.getRepChainContext.getTransactionPool.hasOverflowed ){
+      pe.getRepChainContext.getTransactionPool.addTransactionToCache(t)
       RepLogger.trace(RepLogger.System_Logger,this.getLogMsgPrefix(s"${pe.getSysTag} trans pool recv,txid=${t.id}"))
       //广播接收交易事件
       //if (pe.getTransPoolMgr.getTransLength() >= SystemProfile.getMinBlockTransNum)

@@ -19,24 +19,18 @@ package rep.utils
 
 
 import java.util.UUID
-import rep.app.conf.{RepChainConfig}
 import rep.proto.rc2.{CertId, ChaincodeId, Transaction}
 
 
 object IdTool {
-  
-  /*def getUUID: String = {
-    val uuid = TimeUuid()
-    uuid.toString
-  }*/
 
   def getRandomUUID: String = {
     UUID.randomUUID().toString
   }
   
 
-  def isDidContract(systemName:String):Boolean = {
-    RepChainConfig.getSystemConfig(systemName).getAccountContractName == "RdidOperateAuthorizeTPL"
+  def isDidContract(contractName:String):Boolean = {
+    contractName == "RdidOperateAuthorizeTPL"
   }
 
   /** 从部署合约的交易，获得其部署的合约的链码id

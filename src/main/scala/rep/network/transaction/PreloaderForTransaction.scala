@@ -34,7 +34,6 @@ import scala.collection.mutable
 import scala.concurrent._
 import scala.util.Random
 import rep.proto.rc2._
-import rep.storage.chain.preload.BlockPreload
 
 /**
  * Created by jiangbuyun on 2018/03/19.
@@ -97,56 +96,6 @@ class PreloaderForTransaction(moduleName: String) extends ModuleBase(moduleName)
     rs.toArray
   }
 
-  /*private def outputTransSerialOfBlock(oldBlock:Block,newBlock:Block):String={
-    var rstr = "old_txserial="
-    oldBlock.transactions.foreach(f=>{
-      rstr = rstr + f.id+","
-    })
-    rstr = rstr + "\r\n"+"new_txserial="
-    
-    newBlock.transactions.foreach(f=>{
-      rstr = rstr + f.id+","
-    })
-    
-    rstr = rstr + "\r\n"+"transresult_txserial="
-    newBlock.transactionResults.foreach(f=>{
-      rstr = rstr + f.txId+","
-    })
-    
-    rstr
-  }*/
-
-  /*private def AssembleTransResult(block:Block,preLoadTrans:mutable.HashMap[String,Transaction],transResult:Seq[TransactionResult], db_indentifier: String):Option[Block]={
-    try{
-      var newTranList = mutable.Seq.empty[ Transaction ]
-      for (tran <- transResult) {
-        if (preLoadTrans.getOrElse(tran.txId, None) != None)
-          newTranList = newTranList :+ preLoadTrans(tran.txId)
-      }
-      if(newTranList.size > 0){
-        val tmpblk = block.withTransactions(newTranList.toSeq)
-        var rblock = tmpblk.withTransactionResults(transResult)
-        val statehashstr = Sha256.hashstr(Array.concat(pe.getSystemCurrentChainStatus.currentStateHash.toByteArray() , SerializeUtils.serialise(transResult)))
-        rblock = rblock.withStateHash(ByteString.copyFromUtf8(statehashstr))
-        //RepLogger.error(RepLogger.Business_Logger, this.getLogMsgPrefix( s" current block height=${block.height},trans create serial: ${outputTransSerialOfBlock(block,rblock)}"))
-        if(rblock.hashOfBlock == _root_.com.google.protobuf.ByteString.EMPTY){
-          //如果没有当前块的hash在这里生成，如果是背书已经有了hash不再进行计算
-          rblock = BlockHelp.AddBlockHash(rblock)
-          //this.DbInstance = new DB_Instance_Type(this.DbInstance.tagName,rblock.hashOfBlock.toStringUtf8)
-        }
-        Some(rblock)
-      }else{
-        None
-      }
-    }catch{
-      case e:RuntimeException=>
-        RepLogger.error(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s" AssembleTransResult error, error: ${e.getMessage}"))
-        None
-    }finally{
-      //ImpDataPreloadMgr.Free(pe.getSysTag,db_indentifier)
-    }
-  }*/
-
   private def AssembleTransResult(block: Block, transResult: Seq[TransactionResult], db_indentifier: String): Option[Block] = {
     try {
       var rBlock = block.withTransactionResults(transResult)
@@ -155,7 +104,7 @@ class PreloaderForTransaction(moduleName: String) extends ModuleBase(moduleName)
       //RepLogger.error(RepLogger.Business_Logger, this.getLogMsgPrefix( s" current block height=${block.height},trans create serial: ${outputTransSerialOfBlock(block,rblock)}"))
       if (rBlock.getHeader.hashPresent == _root_.com.google.protobuf.ByteString.EMPTY) {
         //如果没有当前块的hash在这里生成，如果是背书已经有了hash不再进行计算
-        rBlock = BlockHelp.AddBlockHeaderHash(rBlock)
+        rBlock = BlockHelp.AddBlockHeaderHash(rBlock,pe.getRepChainContext.getHashTool)
       }
       Some(rBlock)
     } catch {
@@ -163,43 +112,12 @@ class PreloaderForTransaction(moduleName: String) extends ModuleBase(moduleName)
         RepLogger.error(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s" AssembleTransResult error, error: ${e.getMessage}"))
         None
     } finally {
-      BlockPreload.freeInstance(db_indentifier,pe.getSysTag)
+      pe.getRepChainContext.freeBlockPreloadInstance(db_indentifier)
     }
   }
 
-  /*def Handler(ts: Seq[Transaction], preLoadTrans: mutable.HashMap[String, Transaction], db_indentifier: String): Seq[TransactionResult] = {
-    var transResult1 = Seq.empty[rep.protos.peer.TransactionResult]
-    try {
-      //val result = ExecuteTransactions(ts, db_indentifier)
-      val result = ExecuteTransactionsFromCache(ts, db_indentifier)
-      result._1 match {
-        case 0 =>
-          //finish
-          val r = result._2
-          r.foreach(f=>{
-            transResult1 = (transResult1 :+ TransactionResult(f.txId, f.ol.toSeq, Option(f.r)))
-          })
-          transResult1
-        case _ =>
-          // timeout failed
-          ts.foreach(f=>{
-            preLoadTrans.remove(f.id)
-          })
-          RepLogger.error(RepLogger.Business_Logger, this.getLogMsgPrefix( s"${result._2.mkString(",")} preload error, error: timeout"))
-          transResult1
-      }
-    } catch {
-      case e: RuntimeException =>
-        ts.foreach(f=>{
-          preLoadTrans.remove(f.id)
-        })
-        RepLogger.error(RepLogger.Business_Logger, this.getLogMsgPrefix( s"${ts.mkString(",")} preload error, error: ${e.getMessage}"))
-        transResult1
-    }
-  }*/
-
   def Handler(ts: Seq[Transaction], preLoadTrans: mutable.HashMap[String, Transaction], db_indentifier: String): Seq[TransactionResult] = {
-    var transResult1 = Seq.empty[rep.protos.peer.TransactionResult]
+    var transResult1 = Seq.empty[TransactionResult]
     try {
       val result = ExecuteTransactions(ts, db_indentifier)
       result._2
@@ -246,13 +164,13 @@ class PreloaderForTransaction(moduleName: String) extends ModuleBase(moduleName)
       if ((block.getHeader.hashPrevious.toStringUtf8() == pe.getCurrentBlockHash || block.getHeader.hashPrevious == ByteString.EMPTY) &&
         block.getHeader.height == (pe.getCurrentHeight + 1)) {
         var preLoadTrans = mutable.HashMap.empty[String, Transaction]
-        var transResult = Seq.empty[TransactionResult]
+        var transResult : Seq[TransactionResult] = Seq.empty[TransactionResult]
         val dbtag = prefixOfDbTag
         var curBlockHash = "temp_" + Random.nextInt(100)
         if (block.getHeader.hashPresent != ByteString.EMPTY) {
           curBlockHash = block.getHeader.hashPresent.toStringUtf8
         }
-        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s" preload db instance name, name: ${dbtag},height:${block.height}"))
+        RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s" preload db instance name, name: ${dbtag},height:${block.getHeader.height}"))
         //确保提交的时候顺序执行
         RepTimeTracer.setStartTime(pe.getSysTag, "PreloadTrans-exe", System.currentTimeMillis(), pe.getBlocker.VoteHeight + 1, 0)
 
@@ -300,7 +218,7 @@ class PreloaderForTransaction(moduleName: String) extends ModuleBase(moduleName)
         if ((block.getHeader.hashPrevious.toStringUtf8() == pe.getCurrentBlockHash || block.getHeader.hashPrevious == ByteString.EMPTY) &&
           block.getHeader.height == (pe.getCurrentHeight + 1)) {
           var preLoadTrans = mutable.HashMap.empty[String, Transaction]
-          var transResult = Seq.empty[rep.protos.peer.TransactionResult]
+          var transResult : Seq[TransactionResult] = Seq.empty[TransactionResult]
           val dbtag = prefixOfDbTag //prefixOfDbTag+"_"+moduleName+"_"+block.transactions.head.id
           var curBlockHash = "temp_" + Random.nextInt(100)
           if (block.getHeader.hashPresent != _root_.com.google.protobuf.ByteString.EMPTY) {

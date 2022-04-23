@@ -16,18 +16,10 @@
 
 package rep.api
 
-import java.util.ArrayList
-
 import com.github.swagger.akka.SwaggerHttpService
-import com.github.swagger.akka.SwaggerHttpService.prependSlashIfNecessary
 import com.github.swagger.akka.model.{Info, License}
 import rep.api.rest._
-//import io.swagger.models.{ExternalDocs, Scheme, Swagger}
-//import io.swagger.models.auth.BasicAuthDefinition
 import io.swagger.v3.oas.models.ExternalDocumentation
-import io.swagger.v3.oas.models.security.SecurityScheme
-import io.swagger.v3.oas.models.tags.Tag
-import rep.app.conf.SystemProfile
 
 /**集成Swagger到AKKA HTTP
  * @author c4w

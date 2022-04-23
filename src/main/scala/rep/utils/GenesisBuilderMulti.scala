@@ -16,14 +16,13 @@
 
 package rep.utils
 
-import java.io.{File, FileFilter, FileWriter, PrintWriter}
+import java.io.{File, FileFilter, PrintWriter}
 import java.util
 
 import com.google.protobuf.timestamp.Timestamp
 import org.json4s.jackson.JsonMethods.{pretty, render}
 import org.json4s.{DefaultFormats, jackson}
-import rep.crypto.CryptoMgr
-import rep.crypto.cert.SignTool
+import rep.app.system.RepChainSystemContext
 import rep.network.autotransaction.PeerHelper
 import rep.network.consensus.util.BlockHelp
 import rep.proto.rc2.{CertId, Certificate, ChaincodeDeploy, ChaincodeId, Signer, Transaction}
@@ -42,15 +41,16 @@ object GenesisBuilderMulti {
   implicit val serialization = jackson.Serialization // or native.Serialization
   implicit val formats = DefaultFormats
   private val setMap = new mutable.HashMap[String, Int]()
+  val ctx = new RepChainSystemContext("121000005l35120456.node1")
 
   def main(args: Array[String]): Unit = {
-    CryptoMgr.loadSystemConfInDebug
-    val dir4key = CryptoMgr.getKeyFileSuffix.substring(1)
-    val keySuffix = CryptoMgr.getKeyFileSuffix
 
-    SignTool.loadPrivateKey("121000005l35120456.node1", "123", s"${dir4key}/121000005l35120456.node1${keySuffix}")
-    SignTool.loadNodeCertList("changeme", s"${dir4key}/mytruststore${keySuffix}")
-    SignTool.loadPrivateKey("951002007l78123233.super_admin", "super_admin", s"${dir4key}/951002007l78123233.super_admin${keySuffix}")
+    val dir4key = ctx.getCryptoMgr.getKeyFileSuffix.substring(1)
+    val keySuffix = ctx.getCryptoMgr.getKeyFileSuffix
+
+    ctx.getSignTool.loadPrivateKey("121000005l35120456.node1", "123", s"${dir4key}/121000005l35120456.node1${keySuffix}")
+    ctx.getSignTool.loadNodeCertList("changeme", s"${dir4key}/mytruststore${keySuffix}")
+    ctx.getSignTool.loadPrivateKey("951002007l78123233.super_admin", "super_admin", s"${dir4key}/951002007l78123233.super_admin${keySuffix}")
 
     val transList = new util.ArrayList[Transaction]
 
@@ -59,7 +59,7 @@ object GenesisBuilderMulti {
     val s1 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/ContractCert.scala", "UTF-8")
     val l1 = try s1.mkString finally s1.close()
     val cid1 = new ChaincodeId("ContractCert", 1)
-    val dep_trans = PeerHelper.createTransaction4Deploy("951002007l78123233.super_admin", cid1, l1, "", 5000, ChaincodeDeploy.CodeType.CODE_SCALA)
+    val dep_trans = ctx.getTransactionBuilder.createTransaction4Deploy("951002007l78123233.super_admin", cid1, l1, "", 5000, ChaincodeDeploy.CodeType.CODE_SCALA)
 
     transList.add(dep_trans)
 
@@ -67,19 +67,19 @@ object GenesisBuilderMulti {
     signers(0) = Signer("super_admin", "951002007l78123233", "18912345678", List("super_admin"))
 
     for (i <- signers.indices) {
-      transList.add(PeerHelper.createTransaction4Invoke("951002007l78123233.super_admin", cid1, "SignUpSigner", Seq(JsonFormat.toJsonString(signers(i)))))
+      transList.add(ctx.getTransactionBuilder.createTransaction4Invoke("951002007l78123233.super_admin", cid1, "SignUpSigner", Seq(JsonFormat.toJsonString(signers(i)))))
     }
 
     val certs = fillCerts(signers)
     for (i <- certs.indices) {
-      transList.add(PeerHelper.createTransaction4Invoke("951002007l78123233.super_admin", cid1, "SignUpCert", Seq(JsonFormat.toJsonString(certs(i)))))
+      transList.add(ctx.getTransactionBuilder.createTransaction4Invoke("951002007l78123233.super_admin", cid1, "SignUpCert", Seq(JsonFormat.toJsonString(certs(i)))))
     }
 
     val sysName = "121000005l35120456.node1"
     val s2 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/ContractAssetsTPL.scala", "UTF-8")
     val l2 = try s2.mkString finally s2.close()
     val cid2 = new ChaincodeId("ContractAssetsTPL", 1)
-    val dep_asserts_trans = PeerHelper.createTransaction4Deploy(sysName, cid2, l2, "", 5000, ChaincodeDeploy.CodeType.CODE_SCALA)
+    val dep_asserts_trans = ctx.getTransactionBuilder.createTransaction4Deploy(sysName, cid2, l2, "", 5000, ChaincodeDeploy.CodeType.CODE_SCALA)
 
     transList.add(dep_asserts_trans)
 
@@ -87,7 +87,7 @@ object GenesisBuilderMulti {
     //    val s3 = scala.io.Source.fromFile("api_req/json/set.json")
     //    val l3 = try s3.mkString finally s3.close()
     val l3 = SerializeUtils.compactJson(setMap)
-    val dep_set_trans = PeerHelper.createTransaction4Invoke("951002007l78123233.super_admin", cid2, "set", Seq(l3))
+    val dep_set_trans = ctx.getTransactionBuilder.createTransaction4Invoke("951002007l78123233.super_admin", cid2, "set", Seq(l3))
 
     transList.add(dep_set_trans)
 
@@ -122,12 +122,12 @@ object GenesisBuilderMulti {
     */
   // TODO 排个序，只注册部分
   def fillSigners(): Array[Signer] = {
-    val fileDir = new File(CryptoMgr.getKeyFileSuffix.substring(1))
+    val fileDir = new File(ctx.getCryptoMgr.getKeyFileSuffix.substring(1))
     // 过滤掉非节点node的jks
     val files = fileDir.listFiles(new FileFilter {
       override def accept(file: File): Boolean = {
         val fileName = file.getName
-        fileName.endsWith(CryptoMgr.getKeyFileSuffix.substring(1)) && fileName.indexOf("node") != -1
+        fileName.endsWith(ctx.getCryptoMgr.getKeyFileSuffix.substring(1)) && fileName.indexOf("node") != -1
       }
     })
 
@@ -143,10 +143,10 @@ object GenesisBuilderMulti {
   def fillCerts(signers: Array[Signer]): Array[Certificate] = {
     val certInfos: Array[Certificate] = new Array[Certificate](signers.length)
     for (i <- 0 until certInfos.length) {
-      val certfile = scala.io.Source.fromFile(s"${CryptoMgr.getKeyFileSuffix.substring(1)}/" + signers(i).creditCode + "." + signers(i).name + ".cer", "UTF-8")
+      val certfile = scala.io.Source.fromFile(s"${ctx.getCryptoMgr.getKeyFileSuffix.substring(1)}/" + signers(i).creditCode + "." + signers(i).name + ".cer", "UTF-8")
       val certstr = try certfile.mkString finally certfile.close()
       val millis = System.currentTimeMillis()
-      val cert = Certificate(certstr, CryptoMgr.getSignAlgType, true, Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), id = Option(CertId(signers(i).creditCode, signers(i).name)))
+      val cert = Certificate(certstr, ctx.getCryptoMgr.getSignAlgType, true, Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), id = Option(CertId(signers(i).creditCode, signers(i).name)))
       certInfos(i) = cert
     }
     certInfos

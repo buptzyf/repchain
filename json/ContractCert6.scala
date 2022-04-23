@@ -7,7 +7,6 @@ import org.json4s.jackson.JsonMethods._
 
 import scala.collection.mutable.Map
 import org.json4s.DefaultFormats
-import rep.app.conf.SystemProfile
 import rep.utils.{ IdTool, SerializeUtils }
 import rep.sc.scalax.{ ContractContext, ContractException, IContract }
 //import rep.protos.peer.ActionResult

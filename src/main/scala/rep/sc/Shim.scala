@@ -22,14 +22,14 @@ import rep.network.tools.PeerExtension
 import rep.utils.IdTool
 import rep.utils.SerializeUtils.deserialise
 import rep.utils.SerializeUtils.serialise
-import rep.crypto.cert.SignTool
 import _root_.com.google.protobuf.ByteString
 import rep.log.RepLogger
 import org.slf4j.Logger
-import rep.app.conf.RepChainConfig
+import rep.crypto.Sha256
 import rep.proto.rc2.Transaction
 import rep.storage.chain.KeyPrefixManager
-import rep.storage.chain.preload.{BlockPreload, TransactionPreload}
+import rep.storage.chain.preload.TransactionPreload
+
 import scala.collection.immutable.HashMap
 
 
@@ -56,6 +56,7 @@ class Shim {
   private var  system : ActorSystem = null
   private var  t : Transaction = null
   private var identifier : String = null
+  private val pe = PeerExtension(system)
 
   /**
    * @constructor 根据actor System和合约的链码id建立shim实例
@@ -70,15 +71,14 @@ class Shim {
     this.identifier = identifier
   }
 
+
   private val PRE_SPLIT = "_"
   //本chaincode的 key前缀
-  private var pre_key : String = KeyPrefixManager.getWorldStateKeyPrefix(pe.getSysTag,IdTool.getCid(t.getCid),t.oid)
-  //存储模块提供的system单例
-  private val pe = PeerExtension(system)
+  private var pre_key : String = KeyPrefixManager.getWorldStateKeyPrefix(pe.getRepChainContext.getConfig,IdTool.getCid(t.getCid),t.oid)
   //从交易传入, 内存中的worldState快照
   //不再直接使用区块预执行对象，后面采用交易预执行对象，可以更细粒度到控制交易事务
-  private var srOfTransaction : TransactionPreload = BlockPreload.getBlockPreload(identifier,pe.getSysTag).getTransactionPreload(t.id)
-  private var config  = RepChainConfig.getSystemConfig(pe.getSysTag)
+  private var srOfTransaction : TransactionPreload = pe.getRepChainContext.getBlockPreload(identifier).getTransactionPreload(t.id)
+  private var config  = pe.getRepChainContext.getConfig
 
   //记录状态修改日志
   private var stateGet : HashMap[String,ByteString] = new HashMap[String,ByteString]()
@@ -157,11 +157,11 @@ class Shim {
   
   //判断账号是否节点账号 TODO
   def bNodeCreditCode(credit_code: String) : Boolean ={
-    SignTool.isNode4Credit(credit_code)
+    pe.getRepChainContext.getSignTool.isNode4Credit(credit_code)
   }
 
   def getCurrentContractDeployer:String={
-    val key_coder = KeyPrefixManager.getWorldStateKey(pe.getSysTag,t.getCid.chaincodeName,IdTool.getCid(t.getCid),t.oid)
+    val key_coder = KeyPrefixManager.getWorldStateKey(config,t.getCid.chaincodeName,IdTool.getCid(t.getCid),t.oid)
     val coder = this.srOfTransaction.get(key_coder)
     if(coder == None){
       ""
@@ -170,8 +170,20 @@ class Shim {
     }
   }
 
+  def getChainNetId:String={
+    config.getChainNetworkId
+  }
+
+  def getAccountContractCodeName:String={
+    config.getAccountContractName
+  }
+
+  def getAccountContractVersion:Int={
+    config.getAccountContractVersion
+  }
+
   def isDidContract:Boolean = {
-    IdTool.isDidContract(pe.getSysTag)
+    IdTool.isDidContract(pe.getRepChainContext.getConfig.getAccountContractName)
   }
 
   /**
@@ -188,7 +200,11 @@ class Shim {
     }
     r
   }
-  
+
+  def getSha256Tool:Sha256={
+    pe.getRepChainContext.getHashTool
+  }
+
   //通过该接口获取日志器，合约使用此日志器输出业务日志。
   def getLogger:Logger={
     RepLogger.Business_Logger

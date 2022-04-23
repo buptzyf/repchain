@@ -18,14 +18,9 @@ package rep.network.autotransaction
 
 import akka.actor.Props
 import akka.cluster.pubsub.DistributedPubSubMediator.Publish
-import com.google.protobuf.ByteString
-import com.google.protobuf.timestamp.Timestamp
-import rep.app.conf.SystemProfile
-import rep.crypto.cert.SignTool
 import rep.log.RepLogger
 import rep.network.base.ModuleBase
-import rep.utils.{IdTool, TimeUtils}
-import rep.proto.rc2.{ChaincodeDeploy, ChaincodeId, ChaincodeInput, Event, Signature, Transaction}
+import rep.proto.rc2.{ChaincodeId,  Event}
 import rep.utils.GlobalUtils.EventType
 /**
  *
@@ -52,158 +47,12 @@ object InnerTopic {
 }
 
 object PeerHelper {
-
   def props(name: String): Props = Props(classOf[PeerHelper], name)
 
   case object Tick
   case object TickInit
   case object TickInvoke
   case object TickQuery
-
-  /**
-   * 采用节点私钥创建交易的方法
-   *
-   */
-  def createTransaction4Invoke(nodeName: String, chaincodeId: ChaincodeId,
-                               chaincodeInputFunc: String, params: Seq[String]): Transaction = {
-    createTransaction4Invoke(nodeName, chaincodeId, chaincodeInputFunc, params, 0,"")
-  }
-
-  def createTransaction4Invoke(nodeName: String, chaincodeId: ChaincodeId,
-                               chaincodeInputFunc: String, params: Seq[String],
-                               gasLimited:Int,oid:String): Transaction = {
-    //create transaction
-    var t: Transaction = new Transaction()
-    val millis = TimeUtils.getCurrentTime()
-    if (chaincodeId == null) t
-
-    //create transaction Id
-    val txid = IdTool.getRandomUUID
-    //create transaction input
-    val cip = new ChaincodeInput(chaincodeInputFunc, params)
-    //add transaction id
-    t = t.withId(txid)
-    //add chaincode
-    t = t.withCid(chaincodeId)
-    //add transaction input
-    t = t.withIpt(cip)
-    ////add transaction type
-    t = t.withType(rep.proto.rc2.Transaction.Type.CHAINCODE_INVOKE)
-    //add transaction gas,default 0=not limit
-    t = t.withGasLimit(gasLimited)
-    //add transaction instance name
-    t = t.withOid(oid)
-    //clean signature
-    t = t.clearSignature
-    //use node's key sign transaction
-    val certid = IdTool.getCertIdFromName(nodeName)
-    var sobj = Signature(Option(certid), Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)))
-    sobj = sobj.withSignature(ByteString.copyFrom(SignTool.sign(nodeName, t.toByteArray)))
-    //add signature
-    t = t.withSignature(sobj)
-    //finsih
-    t
-  }
-
-  def createTransaction4Deploy(nodeName: String, chaincodeId: ChaincodeId,
-                               spcPackage: String, legal_prose: String, timeout: Int,
-                               ctype: rep.proto.rc2.ChaincodeDeploy.CodeType): Transaction = {
-    createTransaction4Deploy(nodeName, chaincodeId,
-      spcPackage, legal_prose, timeout: Int, ctype,
-      rep.proto.rc2.ChaincodeDeploy.RunType.RUN_SERIAL,//default RUN_SERIAL
-      rep.proto.rc2.ChaincodeDeploy.StateType.STATE_BLOCK,//default STATE_BLOCK
-      rep.proto.rc2.ChaincodeDeploy.ContractClassification.CONTRACT_CUSTOM,//default CONTRACT_CUSTOM
-      0)
-  }
-
-  def createTransaction4Deploy(nodeName: String, chaincodeId: ChaincodeId,
-                               spcPackage: String, legal_prose: String, timeout: Int,
-                               ctype: rep.proto.rc2.ChaincodeDeploy.CodeType,
-                               rtype: rep.proto.rc2.ChaincodeDeploy.RunType,//default RUN_SERIAL
-                               stype: rep.proto.rc2.ChaincodeDeploy.StateType,//default STATE_BLOCK
-                               cclassfiction:rep.proto.rc2.ChaincodeDeploy.ContractClassification,//default CONTRACT_CUSTOM
-                               gasLimited:Int): Transaction = {
-    var t: Transaction = new Transaction()
-    val millis = TimeUtils.getCurrentTime()
-    if (chaincodeId == null) t
-
-    val txid = IdTool.getRandomUUID
-    //*************create deploy content************************
-    var cip = new ChaincodeDeploy(timeout)
-    //add contract code
-    cip = cip.withCodePackage(spcPackage)
-    //add LegalProse
-    cip = cip.withLegalProse(legal_prose)
-    //add code language
-    cip = cip.withCType(ctype)
-    //add run type
-    cip = cip.withRType(rtype)
-    //add worldState member proof type
-    cip = cip.withSType(stype)
-    //add contract level
-    cip = cip.withCclassification(cclassfiction)
-    //*************create deploy content************************
-
-    //*************create transaction content************************
-    //add transaction id
-    t = t.withId(txid)
-    //add chaincode id
-    t = t.withCid(chaincodeId)
-    //***add deploy content***
-    t = t.withSpec(cip)
-    //add transaction type
-    t = t.withType(rep.proto.rc2.Transaction.Type.CHAINCODE_DEPLOY)
-    //add transaction gas,default 0=not limit
-    t = t.withGasLimit(gasLimited)
-    //clean signature
-    t = t.clearSignature
-    //use node's key sign transaction
-    val certid = IdTool.getCertIdFromName(nodeName)
-    var sobj = Signature(Option(certid), Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)))
-    sobj = sobj.withSignature(ByteString.copyFrom(SignTool.sign(nodeName, t.toByteArray)))
-    //add transaction's signature
-    t = t.withSignature(sobj)
-    //finish
-    t
-  }
-
-  def createTransaction4State(nodeName: String, chaincodeId: ChaincodeId,
-                              state:Boolean): Transaction = {
-    createTransaction4State(nodeName, chaincodeId,
-      state,0)
-  }
-
-  def createTransaction4State(nodeName: String, chaincodeId: ChaincodeId,
-                               state:Boolean,gasLimited:Int): Transaction = {
-    //create transaction
-    var t: Transaction = new Transaction()
-    val millis = TimeUtils.getCurrentTime()
-    if (chaincodeId == null) t
-
-    //create transaction Id
-    val txid = IdTool.getRandomUUID
-    //add transaction id
-    t = t.withId(txid)
-    //add chaincode
-    t = t.withCid(chaincodeId)
-
-    //add transaction type
-    t = t.withType(rep.proto.rc2.Transaction.Type.CHAINCODE_SET_STATE)
-    //add contract state
-    t = t.withState(state)
-    t = t.withGasLimit(gasLimited)
-    //clean signature
-    t = t.clearSignature
-    //use node's key sign transaction
-    val certid = IdTool.getCertIdFromName(nodeName)
-    var sobj = Signature(Option(certid), Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)))
-    sobj = sobj.withSignature(ByteString.copyFrom(SignTool.sign(nodeName, t.toByteArray)))
-    //add transaction's signature
-    t = t.withSignature(sobj)
-    //finish
-    t
-  }
-
 }
 
 class PeerHelper(name: String) extends ModuleBase(name) {
@@ -211,11 +60,11 @@ class PeerHelper(name: String) extends ModuleBase(name) {
   import context.dispatcher
 
   import scala.concurrent.duration._
-
+  private val config = pe.getRepChainContext.getConfig
   //val si1 = scala.io.Source.fromFile("scripts/example_invoke_" + pe.getSysTag + ".js")
   //val li1 = try si1.mkString finally si1.close()
   var fpath = "api_req/json/transfer_" + pe.getSysTag + ".json"
-  if(SystemProfile.getIsUseGm){
+  if(config.isUseGM){
     fpath = "api_req/json/gm/transfer_" + pe.getSysTag + ".json"
   }
   val si2 = scala.io.Source.fromFile(fpath,"UTF-8")
@@ -243,13 +92,13 @@ class PeerHelper(name: String) extends ModuleBase(name) {
       scheduler.scheduleOnce(10.seconds, self, TickInit)
 
     case TickInit =>
-      if (SystemProfile.getTranCreateDur > 0)
-        scheduler.scheduleOnce(SystemProfile.getTranCreateDur.millis, self, TickInvoke)
+      if (config.getAutoCreateTransactionInterval > 0)
+        scheduler.scheduleOnce(config.getAutoCreateTransactionInterval.millis, self, TickInvoke)
  
     case TickInvoke =>
       try {
         //createTransForLoop //在做tps测试到时候，执行该函数，并且注释其他代码
-        val t3 = createTransaction4Invoke(pe.getSysTag, chaincode,
+        val t3 = pe.getRepChainContext.getTransactionBuilder.createTransaction4Invoke(pe.getSysTag, chaincode,
           "transfer", Seq(li2))
         //pe.getActorRef(ModuleActorType.ActorType.transactionpool) ! t3
         sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)
@@ -258,7 +107,7 @@ class PeerHelper(name: String) extends ModuleBase(name) {
       } catch {
         case e: RuntimeException => throw e
       }
-      scheduler.scheduleOnce(SystemProfile.getTranCreateDur.millis, self, TickInvoke)
+      scheduler.scheduleOnce(config.getAutoCreateTransactionInterval.millis, self, TickInvoke)
   }
 
   //自动循环不间断提交交易到系统，用于压力测试或者tps测试时使用。
@@ -272,10 +121,10 @@ class PeerHelper(name: String) extends ModuleBase(name) {
           //val start = System.currentTimeMillis()
           //todo 在运行时需要传送正确的chaincodename
           //val chaincodeId = new ChaincodeId("chaincode-name", 1)
-          val t3 = createTransaction4Invoke(pe.getSysTag, chaincode,
+          val t3 = pe.getRepChainContext.getTransactionBuilder.createTransaction4Invoke(pe.getSysTag, chaincode,
           "transfer", Seq(li2))
           //pe.getActorRef(ActorType.transactionpool) ! t3
-          pe.getTransPoolMgr.putTran(t3,pe.getSysTag)
+          pe.getRepChainContext.getTransactionPool.addTransactionToCache(t3)
           //mediator ! Publish(Topic.Transaction, t3)
           //RepLogger.trace(RepLogger.System_Logger,this.getLogMsgPrefix(s"########################create transaction id =${t3.id}"))
           count += 1

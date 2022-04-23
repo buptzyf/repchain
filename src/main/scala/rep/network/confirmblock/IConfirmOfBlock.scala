@@ -28,7 +28,7 @@ abstract  class IConfirmOfBlock(moduleName: String) extends ModuleBase(moduleNam
   protected def asyncVerifyEndorse(e: Signature, byteOfBlock: Array[Byte]): Future[Boolean] = {
     val result = Promise[Boolean]
 
-    val tmp = BlockVerify.VerifyOneEndorseOfBlock(e, byteOfBlock, pe.getSysTag)
+    val tmp = BlockVerify.VerifyOneEndorseOfBlock(e, byteOfBlock, pe.getRepChainContext.getSignTool)
     if (tmp._1) {
       result.success(true)
     } else {

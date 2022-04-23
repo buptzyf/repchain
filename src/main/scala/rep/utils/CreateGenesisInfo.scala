@@ -1,13 +1,13 @@
 package rep.utils
 
 import java.io.PrintWriter
+
 import com.google.protobuf.timestamp.Timestamp
 import com.typesafe.config.ConfigFactory
 import org.json4s.jackson.JsonMethods.{pretty, render}
 import org.json4s.{DefaultFormats, jackson}
-import rep.crypto.{CryptoMgr, Sha256}
-import rep.crypto.cert.SignTool
-import rep.network.autotransaction.PeerHelper
+import rep.app.system.RepChainSystemContext
+import rep.crypto.Sha256
 import rep.network.consensus.util.BlockHelp
 import rep.proto.rc2.Authorize.TransferType
 import rep.proto.rc2.Certificate.CertType
@@ -15,6 +15,7 @@ import rep.proto.rc2.ChaincodeDeploy.{CodeType, RunType, StateType}
 import rep.proto.rc2.Operate.OperateType
 import rep.proto.rc2.{Authorize, Block, Certificate, ChaincodeDeploy, ChaincodeId, Operate, Signer, Transaction}
 import scalapb.json4s.JsonFormat
+
 import scala.collection.mutable.ArrayBuffer
 
 object CreateGenesisInfo {
@@ -22,10 +23,12 @@ object CreateGenesisInfo {
   implicit val formats = DefaultFormats
 
   def main(args: Array[String]): Unit = {
-    CryptoMgr.loadSystemConfInDebug
-    SignTool.loadPrivateKey("121000005l35120456.node1", "123", s"${CryptoMgr.getKeyFileSuffix.substring(1)}/121000005l35120456.node1${CryptoMgr.getKeyFileSuffix}")
-    SignTool.loadNodeCertList("changeme", s"${CryptoMgr.getKeyFileSuffix.substring(1)}/mytruststore${CryptoMgr.getKeyFileSuffix}")
-    SignTool.loadPrivateKey("951002007l78123233.super_admin", "super_admin", s"${CryptoMgr.getKeyFileSuffix.substring(1)}/951002007l78123233.super_admin${CryptoMgr.getKeyFileSuffix}")
+    val ctx = new RepChainSystemContext("121000005l35120456.node1")
+    //CryptoMgr.loadSystemConfInDebug
+
+    ctx.getSignTool.loadPrivateKey("121000005l35120456.node1", "123", s"${ctx.getCryptoMgr.getKeyFileSuffix.substring(1)}/121000005l35120456.node1${ctx.getCryptoMgr.getKeyFileSuffix}")
+    ctx.getSignTool.loadNodeCertList("changeme", s"${ctx.getCryptoMgr.getKeyFileSuffix.substring(1)}/mytruststore${ctx.getCryptoMgr.getKeyFileSuffix}")
+    ctx.getSignTool.loadPrivateKey("951002007l78123233.super_admin", "super_admin", s"${ctx.getCryptoMgr.getKeyFileSuffix.substring(1)}/951002007l78123233.super_admin${ctx.getCryptoMgr.getKeyFileSuffix}")
     val sysName = "121000005l35120456.node1"
     val superAdmin = "951002007l78123233.super_admin"
     val super_credit = "951002007l78123233"
@@ -38,7 +41,7 @@ object CreateGenesisInfo {
     val l1 = try s1.mkString finally s1.close()
     val cid1 = new ChaincodeId("RdidOperateAuthorizeTPL", 1)
 
-    val deploy_trans = PeerHelper.createTransaction4Deploy(superAdmin, cid1, l1, "", 5000,
+    val deploy_trans = ctx.getTransactionBuilder.createTransaction4Deploy(superAdmin, cid1, l1, "", 5000,
                                                   CodeType.CODE_SCALA,RunType.RUN_SERIAL,StateType.STATE_BLOCK,
                                                   ChaincodeDeploy.ContractClassification.CONTRACT_SYSTEM,0)
     translist += deploy_trans
@@ -53,9 +56,9 @@ object CreateGenesisInfo {
     nodes(4) = ("node4", "921000005k36123789", "18912345678")
     nodes(5) = ("node5", "921000006e0012v696", "18912345678")
     for (i <- 0 to 5) {
-      val certfile = scala.io.Source.fromFile(s"${CryptoMgr.getKeyFileSuffix.substring(1)}/" + nodes(i)._2 + "." + nodes(i)._1 + ".cer", "UTF-8")
+      val certfile = scala.io.Source.fromFile(s"${ctx.getCryptoMgr.getKeyFileSuffix.substring(1)}/" + nodes(i)._2 + "." + nodes(i)._1 + ".cer", "UTF-8")
       val certstr = try certfile.mkString finally certfile.close()
-      val certstrhash = Sha256.hashstr(certstr)
+      val certstrhash = ctx.getHashTool.hashstr(certstr)
       val certid = IdTool.getCertIdFromName(nodes(i)._2 + "." + nodes(i)._1)
       val millis = System.currentTimeMillis()
       //生成Did的身份证书
@@ -64,25 +67,25 @@ object CreateGenesisInfo {
       val signer_tmp = Signer(nodes(i)._1, nodes(i)._2, nodes(i)._3, _root_.scala.Seq.empty,
         _root_.scala.Seq.empty, _root_.scala.Seq.empty, _root_.scala.Seq.empty, List(authcert), "",
         Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), _root_.scala.None, true, "1.0")
-      translist += PeerHelper.createTransaction4Invoke(superAdmin, cid1, "signUpSigner", Seq(JsonFormat.toJsonString(signer_tmp)))
+      translist += ctx.getTransactionBuilder.createTransaction4Invoke(superAdmin, cid1, "signUpSigner", Seq(JsonFormat.toJsonString(signer_tmp)))
     }
     //注册操作
     //权限管理合约操作注册
     val opsOfContract: Array[(String, String, String)] = new Array[(String, String, String)](14)
-    opsOfContract(0) = (Sha256.hashstr("RdidOperateAuthorizeTPL.signUpSigner"), "注册RDID", "RdidOperateAuthorizeTPL.signUpSigner")
-    opsOfContract(1) = (Sha256.hashstr("RdidOperateAuthorizeTPL.updateSignerStatus"), "禁用或启用RDID", "RdidOperateAuthorizeTPL.updateSignerStatus")
-    opsOfContract(2) = (Sha256.hashstr("RdidOperateAuthorizeTPL.updateSigner"), "更新信息", "RdidOperateAuthorizeTPL.updateSigner")
-    opsOfContract(3) = (Sha256.hashstr("RdidOperateAuthorizeTPL.signUpCertificate"), "用户注册证书", "RdidOperateAuthorizeTPL.signUpCertificate")
-    opsOfContract(4) = (Sha256.hashstr("RdidOperateAuthorizeTPL.updateCertificateStatus"), "用户禁用或启用证书", "RdidOperateAuthorizeTPL.updateCertificateStatus")
-    opsOfContract(5) = (Sha256.hashstr("RdidOperateAuthorizeTPL.signUpAllTypeCertificate"), "用户可为所有人注册证书，需授权", "RdidOperateAuthorizeTPL.signUpAllTypeCertificate")
-    opsOfContract(6) = (Sha256.hashstr("RdidOperateAuthorizeTPL.updateAllTypeCertificateStatus"), "用户可为所有人禁用或启用证书，需授权，super_admin特殊处理", "RdidOperateAuthorizeTPL.updateAllTypeCertificateStatus")
-    opsOfContract(7) = (Sha256.hashstr("RdidOperateAuthorizeTPL.signUpOperate"), "注册操作，自己注册自己", "RdidOperateAuthorizeTPL.signUpOperate")
-    opsOfContract(8) = (Sha256.hashstr("RdidOperateAuthorizeTPL.updateOperateStatus"), "禁用或启用操作，自己更新自己名下的操作", "RdidOperateAuthorizeTPL.updateOperateStatus")
-    opsOfContract(9) = (Sha256.hashstr("RdidOperateAuthorizeTPL.grantOperate"), "授权操作", "RdidOperateAuthorizeTPL.grantOperate")
-    opsOfContract(10) = (Sha256.hashstr("RdidOperateAuthorizeTPL.updateGrantOperateStatus"), "禁用或启用授权", "RdidOperateAuthorizeTPL.updateGrantOperateStatus")
-    opsOfContract(11) = (Sha256.hashstr("RdidOperateAuthorizeTPL.bindCertToAuthorize"), "绑定证书到授权操作", "RdidOperateAuthorizeTPL.bindCertToAuthorize")
-    opsOfContract(12) = (Sha256.hashstr("*.deploy"), "发布合约操作", "*.deploy") //*表示可以发布任意合约
-    opsOfContract(13) = (Sha256.hashstr("*.setState"), "改变合约状态操作", "*.setState") //*表示可以设置任意合约状态
+    opsOfContract(0) = (ctx.getHashTool.hashstr("RdidOperateAuthorizeTPL.signUpSigner"), "注册RDID", "RdidOperateAuthorizeTPL.signUpSigner")
+    opsOfContract(1) = (ctx.getHashTool.hashstr("RdidOperateAuthorizeTPL.updateSignerStatus"), "禁用或启用RDID", "RdidOperateAuthorizeTPL.updateSignerStatus")
+    opsOfContract(2) = (ctx.getHashTool.hashstr("RdidOperateAuthorizeTPL.updateSigner"), "更新信息", "RdidOperateAuthorizeTPL.updateSigner")
+    opsOfContract(3) = (ctx.getHashTool.hashstr("RdidOperateAuthorizeTPL.signUpCertificate"), "用户注册证书", "RdidOperateAuthorizeTPL.signUpCertificate")
+    opsOfContract(4) = (ctx.getHashTool.hashstr("RdidOperateAuthorizeTPL.updateCertificateStatus"), "用户禁用或启用证书", "RdidOperateAuthorizeTPL.updateCertificateStatus")
+    opsOfContract(5) = (ctx.getHashTool.hashstr("RdidOperateAuthorizeTPL.signUpAllTypeCertificate"), "用户可为所有人注册证书，需授权", "RdidOperateAuthorizeTPL.signUpAllTypeCertificate")
+    opsOfContract(6) = (ctx.getHashTool.hashstr("RdidOperateAuthorizeTPL.updateAllTypeCertificateStatus"), "用户可为所有人禁用或启用证书，需授权，super_admin特殊处理", "RdidOperateAuthorizeTPL.updateAllTypeCertificateStatus")
+    opsOfContract(7) = (ctx.getHashTool.hashstr("RdidOperateAuthorizeTPL.signUpOperate"), "注册操作，自己注册自己", "RdidOperateAuthorizeTPL.signUpOperate")
+    opsOfContract(8) = (ctx.getHashTool.hashstr("RdidOperateAuthorizeTPL.updateOperateStatus"), "禁用或启用操作，自己更新自己名下的操作", "RdidOperateAuthorizeTPL.updateOperateStatus")
+    opsOfContract(9) = (ctx.getHashTool.hashstr("RdidOperateAuthorizeTPL.grantOperate"), "授权操作", "RdidOperateAuthorizeTPL.grantOperate")
+    opsOfContract(10) = (ctx.getHashTool.hashstr("RdidOperateAuthorizeTPL.updateGrantOperateStatus"), "禁用或启用授权", "RdidOperateAuthorizeTPL.updateGrantOperateStatus")
+    opsOfContract(11) = (ctx.getHashTool.hashstr("RdidOperateAuthorizeTPL.bindCertToAuthorize"), "绑定证书到授权操作", "RdidOperateAuthorizeTPL.bindCertToAuthorize")
+    opsOfContract(12) = (ctx.getHashTool.hashstr("*.deploy"), "发布合约操作", "*.deploy") //*表示可以发布任意合约
+    opsOfContract(13) = (ctx.getHashTool.hashstr("*.setState"), "改变合约状态操作", "*.setState") //*表示可以设置任意合约状态
 
     for (i <- 0 to 13) {
       val millis = System.currentTimeMillis()
@@ -99,28 +102,28 @@ object CreateGenesisInfo {
           snls, "*", opsOfContract(i)._3, Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)),
           _root_.scala.None, true, "1.0")
       }
-      translist += PeerHelper.createTransaction4Invoke(superAdmin, cid1, "signUpOperate", Seq(JsonFormat.toJsonString(op)))
+      translist += ctx.getTransactionBuilder.createTransaction4Invoke(superAdmin, cid1, "signUpOperate", Seq(JsonFormat.toJsonString(op)))
     }
 
     //api操作注册
     val opsOfAPI: Array[(String, String, String)] = new Array[(String, String, String)](15)
-    opsOfAPI(0) = (Sha256.hashstr("chaininfo.chaininfo"), "获取链信息", "chaininfo.chaininfo")
-    opsOfAPI(1) = (Sha256.hashstr("chaininfo.node"), "返回组网节点数量", "chaininfo.node")
-    opsOfAPI(2) = (Sha256.hashstr("chaininfo.getcachetransnumber"), "返回系统缓存交易数量", "chaininfo.getcachetransnumber")
-    opsOfAPI(3) = (Sha256.hashstr("chaininfo.getAcceptedTransNumber"), "返回系统接收到的交易数量", "chaininfo.getAcceptedTransNumber")
+    opsOfAPI(0) = (ctx.getHashTool.hashstr("chaininfo.chaininfo"), "获取链信息", "chaininfo.chaininfo")
+    opsOfAPI(1) = (ctx.getHashTool.hashstr("chaininfo.node"), "返回组网节点数量", "chaininfo.node")
+    opsOfAPI(2) = (ctx.getHashTool.hashstr("chaininfo.getcachetransnumber"), "返回系统缓存交易数量", "chaininfo.getcachetransnumber")
+    opsOfAPI(3) = (ctx.getHashTool.hashstr("chaininfo.getAcceptedTransNumber"), "返回系统接收到的交易数量", "chaininfo.getAcceptedTransNumber")
 
-    opsOfAPI(4) = (Sha256.hashstr("block.hash"), "返回指定id的区块", "block.hash")
-    opsOfAPI(5) = (Sha256.hashstr("block.blockHeight"), "返回指定高度的区块", "block.blockHeight")
-    opsOfAPI(6) = (Sha256.hashstr("block.getTransNumberOfBlock"), "返回指定高度区块包含的交易数", "block.getTransNumberOfBlock")
-    opsOfAPI(7) = (Sha256.hashstr("block.blocktime"), "返回指定高度的区块的出块时间", "block.blocktime")
-    opsOfAPI(8) = (Sha256.hashstr("block.blocktimeoftran"), "返回指定交易的入块时间", "block.blocktimeoftran")
-    opsOfAPI(9) = (Sha256.hashstr("block.stream"), "返回指定高度的区块字节流", "block.stream")
+    opsOfAPI(4) = (ctx.getHashTool.hashstr("block.hash"), "返回指定id的区块", "block.hash")
+    opsOfAPI(5) = (ctx.getHashTool.hashstr("block.blockHeight"), "返回指定高度的区块", "block.blockHeight")
+    opsOfAPI(6) = (ctx.getHashTool.hashstr("block.getTransNumberOfBlock"), "返回指定高度区块包含的交易数", "block.getTransNumberOfBlock")
+    opsOfAPI(7) = (ctx.getHashTool.hashstr("block.blocktime"), "返回指定高度的区块的出块时间", "block.blocktime")
+    opsOfAPI(8) = (ctx.getHashTool.hashstr("block.blocktimeoftran"), "返回指定交易的入块时间", "block.blocktimeoftran")
+    opsOfAPI(9) = (ctx.getHashTool.hashstr("block.stream"), "返回指定高度的区块字节流", "block.stream")
 
-    opsOfAPI(10) = (Sha256.hashstr("transaction"), "返回指定id的交易", "transaction")
-    opsOfAPI(11) = (Sha256.hashstr("transaction.stream"), "返回指定id的交易字节流", "transaction.stream")
-    opsOfAPI(12) = (Sha256.hashstr("transaction.postTranByString"), "提交带签名的交易", "transaction.postTranByString")
-    opsOfAPI(13) = (Sha256.hashstr("transaction.postTranStream"), "提交带签名的交易字节流", "transaction.postTranStream")
-    opsOfAPI(14) = (Sha256.hashstr("transaction.postTran"), "提交交易", "transaction.postTran")
+    opsOfAPI(10) = (ctx.getHashTool.hashstr("transaction"), "返回指定id的交易", "transaction")
+    opsOfAPI(11) = (ctx.getHashTool.hashstr("transaction.stream"), "返回指定id的交易字节流", "transaction.stream")
+    opsOfAPI(12) = (ctx.getHashTool.hashstr("transaction.postTranByString"), "提交带签名的交易", "transaction.postTranByString")
+    opsOfAPI(13) = (ctx.getHashTool.hashstr("transaction.postTranStream"), "提交带签名的交易字节流", "transaction.postTranStream")
+    opsOfAPI(14) = (ctx.getHashTool.hashstr("transaction.postTran"), "提交交易", "transaction.postTran")
 
     for (i <- 0 to 14) {
       val millis = System.currentTimeMillis()
@@ -129,7 +132,7 @@ object CreateGenesisInfo {
       val op = Operate(opsOfAPI(i)._1, opsOfAPI(i)._2, super_credit, false, OperateType.OPERATE_SERVICE,
         List(opsOfAPI(i)._3), "*", "", Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)),
         _root_.scala.None, true, "1.0")
-      translist += PeerHelper.createTransaction4Invoke(superAdmin, cid1, "signUpOperate", Seq(JsonFormat.toJsonString(op)))
+      translist += ctx.getTransactionBuilder.createTransaction4Invoke(superAdmin, cid1, "signUpOperate", Seq(JsonFormat.toJsonString(op)))
     }
 
     //授权节点操作
@@ -154,22 +157,22 @@ object CreateGenesisInfo {
       TransferType.TRANSFER_REPEATEDLY, Option(Timestamp(tmpmillis / 1000, ((tmpmillis % 1000) * 1000000).toInt)),
       _root_.scala.None, true, "1.0")
     var als: List[String] = List(JsonFormat.toJsonString(at))
-    translist += PeerHelper.createTransaction4Invoke(superAdmin, cid1, "grantOperate", Seq(SerializeUtils.compactJson(als)))
+    translist += ctx.getTransactionBuilder.createTransaction4Invoke(superAdmin, cid1, "grantOperate", Seq(SerializeUtils.compactJson(als)))
 
     //部署应用合约--分账合约
     val s2 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/ContractAssetsTPL.scala", "UTF-8")
     val c2 = try s2.mkString finally s2.close()
     val cid2 = new ChaincodeId("ContractAssetsTPL", 1)
-    val dep_asserts_trans = PeerHelper.createTransaction4Deploy(sysName, cid2, c2, "", 5000,
+    val dep_asserts_trans = ctx.getTransactionBuilder.createTransaction4Deploy(sysName, cid2, c2, "", 5000,
       CodeType.CODE_SCALA,RunType.RUN_SERIAL,StateType.STATE_BLOCK,
       ChaincodeDeploy.ContractClassification.CONTRACT_SYSTEM,0)
     translist += dep_asserts_trans
 
     //建立应用合约的操作
     val opsOfCustomContract: Array[(String, String, String)] = new Array[(String, String, String)](3)
-    opsOfCustomContract(0) = (Sha256.hashstr("ContractAssetsTPL.transfer"), "转账交易", "ContractAssetsTPL.transfer")
-    opsOfCustomContract(1) = (Sha256.hashstr("ContractAssetsTPL.set"), "初始化账户", "ContractAssetsTPL.set")
-    opsOfCustomContract(2) = (Sha256.hashstr("ContractAssetsTPL.putProof"), "存证", "ContractAssetsTPL.putProof")
+    opsOfCustomContract(0) = (ctx.getHashTool.hashstr("ContractAssetsTPL.transfer"), "转账交易", "ContractAssetsTPL.transfer")
+    opsOfCustomContract(1) = (ctx.getHashTool.hashstr("ContractAssetsTPL.set"), "初始化账户", "ContractAssetsTPL.set")
+    opsOfCustomContract(2) = (ctx.getHashTool.hashstr("ContractAssetsTPL.putProof"), "存证", "ContractAssetsTPL.putProof")
 
     val tmillis = System.currentTimeMillis()
     val snls = List("transaction.stream", "transaction.postTranByString", "transaction.postTranStream", "transaction.postTran")
@@ -177,24 +180,24 @@ object CreateGenesisInfo {
     val op1 = Operate(opsOfCustomContract(0)._1, opsOfCustomContract(0)._2, sys_credit, true, OperateType.OPERATE_CONTRACT,
       snls, "*", opsOfCustomContract(0)._3, Option(Timestamp(tmillis / 1000, ((tmillis % 1000) * 1000000).toInt)),
       _root_.scala.None, true, "1.0")
-    translist += PeerHelper.createTransaction4Invoke(sysName, cid1, "signUpOperate", Seq(JsonFormat.toJsonString(op1)))
+    translist += ctx.getTransactionBuilder.createTransaction4Invoke(sysName, cid1, "signUpOperate", Seq(JsonFormat.toJsonString(op1)))
 
     //生成Operate 初始化只能是超级节点可以做，注册操作，但是不授权给其他人
     val op2 = Operate(opsOfCustomContract(1)._1, opsOfCustomContract(1)._2, sys_credit, false, OperateType.OPERATE_CONTRACT,
       snls, "*", opsOfCustomContract(1)._3, Option(Timestamp(tmillis / 1000, ((tmillis % 1000) * 1000000).toInt)),
       _root_.scala.None, true, "1.0")
-    translist += PeerHelper.createTransaction4Invoke(sysName, cid1, "signUpOperate", Seq(JsonFormat.toJsonString(op2)))
+    translist += ctx.getTransactionBuilder.createTransaction4Invoke(sysName, cid1, "signUpOperate", Seq(JsonFormat.toJsonString(op2)))
 
     //生成Operate 存证操作属于公开的，任何人都可以发起存证，无需赋权
     val op3 = Operate(opsOfCustomContract(2)._1, opsOfCustomContract(2)._2, sys_credit, true, OperateType.OPERATE_CONTRACT,
       snls, "*", opsOfCustomContract(2)._3, Option(Timestamp(tmillis / 1000, ((tmillis % 1000) * 1000000).toInt)),
       _root_.scala.None, true, "1.0")
-    translist += PeerHelper.createTransaction4Invoke(sysName, cid1, "signUpOperate", Seq(JsonFormat.toJsonString(op3)))
+    translist += ctx.getTransactionBuilder.createTransaction4Invoke(sysName, cid1, "signUpOperate", Seq(JsonFormat.toJsonString(op3)))
 
     // 设置账户初始金额
     val s3 = scala.io.Source.fromFile("api_req/json/set.json", "UTF-8")
     val ct1 = try s3.mkString finally s3.close()
-    translist += PeerHelper.createTransaction4Invoke("951002007l78123233.super_admin", cid2, "set", Seq(ct1))
+    translist += ctx.getTransactionBuilder.createTransaction4Invoke("951002007l78123233.super_admin", cid2, "set", Seq(ct1))
 
 
 

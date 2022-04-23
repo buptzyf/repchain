@@ -1,9 +1,10 @@
 package rep.authority.cache
 
+import rep.app.system.RepChainSystemContext
 import rep.sc.tpl.did.DidTplPrefix
 import rep.storage.chain.preload.BlockPreload
 
-class AuthenticateBindToCertCache(systemName:String) extends ICache(systemName) {
+class AuthenticateBindToCertCache(ctx : RepChainSystemContext) extends ICache(ctx) {
   override protected def dataTypeConvert(any: Option[Any],blockPreload: BlockPreload): Option[Any] = {
     if(any == None){
       None

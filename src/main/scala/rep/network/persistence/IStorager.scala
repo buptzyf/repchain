@@ -3,7 +3,6 @@ package rep.network.persistence
 import akka.actor.{ActorRef, Props}
 import akka.cluster.pubsub.DistributedPubSubMediator.Publish
 import com.google.protobuf.ByteString
-import rep.app.conf.SystemCertList
 import rep.log.{RepLogger, RepTimeTracer}
 import rep.network.autotransaction.Topic
 import rep.network.base.ModuleBase
@@ -43,8 +42,8 @@ abstract class IStorager (moduleName: String) extends ModuleBase(moduleName) {
   import scala.concurrent.duration._
   import rep.network.persistence.IStorager.{ SourceOfBlock }
 
-  val store: BlockStorager = BlockStorager.getBlockStorager(pe.getSysTag)
-  val search : BlockSearcher = new BlockSearcher(pe.getSysTag)
+  val store: BlockStorager = pe.getRepChainContext.getBlockStorager
+  val search : BlockSearcher = pe.getRepChainContext.getBlockSearch
 
   //private var precache: immutable.TreeMap[Long, BlockRestore] = new immutable.TreeMap[Long, BlockRestore]()
 
@@ -63,7 +62,7 @@ abstract class IStorager (moduleName: String) extends ModuleBase(moduleName) {
           RepTimeTracer.setEndTime(pe.getSysTag, "Block", System.currentTimeMillis(),blkRestore.blk.getHeader.height,blkRestore.blk.transactions.size)
         }
 
-        pe.getTransactionPool.removeTransactionsFromCache(blkRestore.blk.transactions)
+        pe.getRepChainContext.getTransactionPool.removeTransactionsFromCache(blkRestore.blk.transactions)
 
         pe.resetSystemCurrentChainStatus(new BlockchainInfo(result.lastHeight,result.transactionCount,
           ByteString.copyFromUtf8(result.blockHash),  ByteString.copyFromUtf8(result.previousBlockHash), ByteString.EMPTY
@@ -91,7 +90,7 @@ abstract class IStorager (moduleName: String) extends ModuleBase(moduleName) {
   protected def sendVoteMessage:Unit
 
   private def NoticeVoteModule = {
-    if (NodeHelp.isCandidateNow(pe.getSysTag, SystemCertList.getSystemCertList)) {
+    if (NodeHelp.isCandidateNow(pe.getSysTag, pe.getRepChainContext.getSystemCertList.getSystemCertList)) {
       if (pe.getBlockCacheMgr.isEmpty ) {
         RepLogger.trace(RepLogger.Storager_Logger, this.getLogMsgPrefix("presistence is over,this is startup vote" + "~" + selfAddr))
         //通知抽签模块，开始抽签

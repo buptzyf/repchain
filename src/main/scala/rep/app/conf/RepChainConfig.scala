@@ -1,9 +1,10 @@
 package rep.app.conf
 
 import java.io.File
+import java.util
+
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import rep.log.RepLogger
-import scala.collection.mutable
 
 
 /**
@@ -12,7 +13,8 @@ import scala.collection.mutable
  * @since	2022-04-08
  * @category	RepChain节点启动装载节点配置文件，读取配置信息，所有配置项都从此类获取。
  * */
-class RepChainConfig private {
+class RepChainConfig {
+  val ConfigFileDir = "conf/"
   private var systemName:String = ""
   private var sysConf: Config = null
 
@@ -29,7 +31,7 @@ class RepChainConfig private {
    * @category	初始化装载配置内容
    */
   private def loadConfig:Unit={
-    val userConfigFile = new File(RepChainConfig.ConfigFileDir+this.systemName)
+    val userConfigFile = new File(ConfigFileDir+this.systemName+ File.separator+"system.conf")
     this.sysConf = ConfigFactory.load()
     if (userConfigFile.exists()) {
       val combined_conf = ConfigFactory.parseFile(userConfigFile).withFallback(this.sysConf)
@@ -44,6 +46,10 @@ class RepChainConfig private {
     this.systemName
   }
 
+  def getSystemConf:Config={
+    this.sysConf
+  }
+
   /**
    * @author jiangbuyun
    * @version	2.0
@@ -54,7 +60,9 @@ class RepChainConfig private {
   def getVoteNodeList:List[String]={
     val temp = this.sysConf.getStringList("system.vote.vote_node_list")
       if(temp != null){
-        temp.asInstanceOf[List[String]]
+        val r = new Array[String](temp.size())
+        temp.toArray(r)
+        r.toList
       }else{
         null
       }
@@ -329,10 +337,18 @@ class RepChainConfig private {
  * @since	2022-04-08
  * @category	RepChainConfig实例通过此类获取。
  * */
+/*
 object RepChainConfig{
   val ConfigFileDir = "conf/"
-  private val configInstances = new mutable.HashMap[String, RepChainConfig]()
+  private val configInstances = new ConcurrentHashMap[String, RepChainConfig]()
 
+  /*def registerConfig(systemName:String):Unit={
+    synchronized {
+      if (!configInstances.containsKey(systemName)) {
+        configInstances.put(systemName, new RepChainConfig(systemName))
+      }
+    }
+  }*/
   /**
    * @author jiangbuyun
    * @version	2.0
@@ -344,8 +360,8 @@ object RepChainConfig{
   def getSystemConfig(systemName: String): RepChainConfig = {
     var instance: RepChainConfig = null
     synchronized {
-      if (configInstances.contains(systemName)) {
-        instance = configInstances(systemName)
+      if (configInstances.containsKey(systemName)) {
+        instance = configInstances.get(systemName)
       } else {
         instance = new RepChainConfig(systemName)
         configInstances.put(systemName, instance)
@@ -353,4 +369,4 @@ object RepChainConfig{
       instance
     }
   }
-}
+}*/

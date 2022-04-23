@@ -18,13 +18,6 @@ package rep.utils.sync
 
 import org.scalatest.FunSuite
 import org.scalatest.{Matchers, PropSpec}
-import rep.crypto._
-import java.io._
-import rep.network.util.NodeHelp
-import scala.collection._
-import scala.util.control.Breaks._
-import rep.protos.peer._
-import com.google.protobuf.ByteString
 
 
 object SyncHelpSpec extends PropSpec

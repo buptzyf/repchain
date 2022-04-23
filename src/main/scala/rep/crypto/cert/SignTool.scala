@@ -17,17 +17,13 @@ package rep.crypto.cert
 
 import java.security.{KeyStore, PrivateKey, PublicKey}
 import java.security.cert.Certificate
-
 import scala.collection.mutable
 import java.io._
 import java.util.{ArrayList, List}
-
-import rep.authority.cache.CertificateCache.certData
-import rep.authority.cache.{CertificateCache, PermissionCacheManager}
-import rep.crypto.CryptoMgr
+import rep.app.system.RepChainSystemContext
+import rep.authority.cache.{CertificateCache}
 import rep.proto.rc2.CertId
 import rep.sc.tpl.did.DidTplPrefix
-
 import scala.util.control.Breaks._
 
 /**
@@ -35,23 +31,16 @@ import scala.util.control.Breaks._
  * @author jiangbuyun
  * @version	1.0
  */
-object SignTool {
-  private var signer: ISigner = null
-  private var keypassword = mutable.HashMap[String, String]()
-  private var keyStores = mutable.HashMap[String, KeyStore]()
-  private var PublickeyCerts = mutable.HashMap[String, Certificate]()
-  //private var PublickeyCerts = mutable.HashMap[String, PublicKey]()
-  private var TrustNodelist: List[String] = new ArrayList[String]
+class SignTool(ctx:RepChainSystemContext) {
+  private val signer:ISigner = ctx.getSigner
+  private val keyPassword = mutable.HashMap[String, String]()
+  private val keyStores = mutable.HashMap[String, KeyStore]()
+  private val PublicKeyCerts = mutable.HashMap[String, Certificate]()
+  private val TrustNodeList: List[String] = new ArrayList[String]
   private var isAddPublicKey = false
 
-  synchronized {
-    if (this.signer == null) {
-      signer = new ImpECDSASigner()
-    }
-  }
-
   private def getPrivateKey(pkeyname: String): PrivateKey = {
-    val sk = keyStores(pkeyname).getKey(pkeyname, keypassword(pkeyname).toCharArray())
+    val sk = keyStores(pkeyname).getKey(pkeyname, keyPassword(pkeyname).toCharArray())
     sk.asInstanceOf[PrivateKey]
   }
 
@@ -60,7 +49,7 @@ object SignTool {
     if (this.keyStores.contains(pkeyname)) {
       pk = getPrivateKey(pkeyname)
     }
-    this.signer.sign(pk, message)
+    this.signer.sign(pk,message)
   }
 
   //根据CertId实现签名
@@ -74,13 +63,13 @@ object SignTool {
     this.signer.sign(privateKey, message)
   }
 
-  private def getVerifyCert(pubkeyname: String, sysName: String): PublicKey = {
+  private def getVerifyCert(pubkeyname: String): PublicKey = {
     var pkcert: Certificate = null
 
-    if (PublickeyCerts.contains(pubkeyname)) {
-      pkcert = PublickeyCerts.get(pubkeyname).get
+    if (PublicKeyCerts.contains(pubkeyname)) {
+      pkcert = PublicKeyCerts.get(pubkeyname).get
     } else {
-      val cache = PermissionCacheManager.getCache(sysName,DidTplPrefix.certPrefix).asInstanceOf[CertificateCache]
+      val cache = ctx.getPermissionCacheManager.getCache(DidTplPrefix.certPrefix).asInstanceOf[CertificateCache]
       val cert = cache.get(pubkeyname,null)
       if(cert != None){
         pkcert = cert.get.certificate
@@ -90,7 +79,7 @@ object SignTool {
     if (pkcert == null) {
       throw new RuntimeException("验证签名时证书为空！")
     }
-
+    
     if (!this.signer.CertificateIsValid(new java.util.Date(), pkcert)) {
       throw new RuntimeException("验证签名时证书已经过期！")
     }
@@ -98,9 +87,10 @@ object SignTool {
   }
 
   //根据CertId实现验签
-  def verify(signature: Array[Byte], message: Array[Byte], certinfo: CertId, sysName: String): Boolean = {
+  def verify(signature: Array[Byte], message: Array[Byte], certinfo: CertId): Boolean = {
     val k = certinfo.creditCode + "." + certinfo.certName
-    var pk = getVerifyCert(k, sysName)
+    var pk = getVerifyCert(k)
+    //this.getSigner(sysName).verify(signature, message, pk)
     this.signer.verify(signature, message, pk)
   }
 
@@ -112,15 +102,13 @@ object SignTool {
   //节点启动时需要调用该函数初始化节点私钥
   def loadPrivateKey(pkeyname: String, password: String, path: String) = {
     synchronized {
-      keypassword(pkeyname) = password
+      keyPassword(pkeyname) = password
       val fis = new FileInputStream(new File(path))
       val pwd = password.toCharArray()
       if (keyStores.contains(pkeyname)) {
         keyStores(pkeyname).load(fis, pwd)
       } else {
-        //val pkeys = KeyStore.getInstance("PKCS12", "BC")
-        val pkeys = CryptoMgr.getKeyStorer
-//        print(pkeys.getProvider)
+        val pkeys = ctx.getCryptoMgr.getKeyStorer
         pkeys.load(fis, pwd)
         keyStores(pkeyname) = pkeys
       }
@@ -138,16 +126,14 @@ object SignTool {
       if (!this.isAddPublicKey) {
         val fis = new FileInputStream(new File(path))
         val pwd = password.toCharArray()
-        //val trustKeyStore = KeyStore.getInstance("PKCS12","BC")
-        val trustKeyStore = CryptoMgr.getKeyStorer
-//        print(trustKeyStore.getProvider)
+        val trustKeyStore = ctx.getCryptoMgr.getKeyStorer
         trustKeyStore.load(fis, pwd)
         val enums = trustKeyStore.aliases()
         while (enums.hasMoreElements) {
           val alias = enums.nextElement()
           val cert = trustKeyStore.getCertificate(alias)
-          this.TrustNodelist.add(alias)
-          PublickeyCerts.put(alias, cert)
+          this.TrustNodeList.add(alias)
+          PublicKeyCerts.put(alias, cert)
         }
         this.isAddPublicKey = true
       }
@@ -156,25 +142,18 @@ object SignTool {
 
   //提供给共识获取证书列表
   def getAliasOfTrustkey: List[String] = {
-    this.TrustNodelist
-    /*var list: List[String] = new ArrayList[String]
-    val enums = PublickeyCerts.iterator
-    while (enums.hasNext) {
-      val alias = enums.next()
-      list.add(alias._1)
-    }
-    list*/
+    this.TrustNodeList
   }
 
   //判断某个名称是否是共识节点
   def isNode4Credit(credit: String): Boolean = {
     var r: Boolean = false
     val n = credit + "."
-    val size = this.TrustNodelist.size() - 1
+    val size = this.TrustNodeList.size() - 1
     var i : Int = 0
     breakable(
       while (i <= size) {
-        if (TrustNodelist.get(i).indexOf(n) == 0) {
+        if (TrustNodeList.get(i).indexOf(n) == 0) {
           r = true
           break
         }
@@ -182,19 +161,4 @@ object SignTool {
       })
     r
   }
-  
-  /*def getCertByPem(pemcert: String): Certificate = {
-    val cf = CertificateFactory.getInstance("X.509")
-    val cert = cf.generateCertificate(
-      new ByteArrayInputStream(
-        Base64.Decoder(pemcert.replaceAll("\r\n", "").stripPrefix("-----BEGIN CERTIFICATE-----").stripSuffix("-----END CERTIFICATE-----")).toByteArray))
-    cert
-  }
-  
-  def getCertByFile(path:String):Certificate = {
-    val certF = CertificateFactory.getInstance("X.509")
-    val fileInputStream = new FileInputStream(path)
-    certF.generateCertificate(fileInputStream)
-  }*/
-  
 }

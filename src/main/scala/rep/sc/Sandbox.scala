@@ -21,10 +21,8 @@ import com.google.protobuf.ByteString
 import rep.utils._
 import rep.network.tools.PeerExtension
 import rep.log.{RepLogger, RepTimeTracer}
-import rep.authority.check.PermissionVerify
 import rep.proto.rc2.{ActionResult, ChaincodeId, Transaction, TransactionResult}
 import rep.storage.chain.KeyPrefixManager
-import rep.storage.chain.preload.BlockPreload
 import scala.collection.immutable.HashMap
 
 
@@ -85,7 +83,7 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
   //与底层交互的api实例,不同版本的合约KV空间重叠
   var shim : Shim = null //new Shim(context.system, cid.chaincodeName,)
   val addr_self = akka.serialization.Serialization.serializedActorPath(self)
-  val permissioncheck = PermissionVerify.GetPermissionVerify(pe.getSysTag)
+  val permissioncheck = pe.getRepChainContext.getPermissionVerify
 
   def errAction(errCode: Int): ActionResult = {
     errCode match {
@@ -199,8 +197,8 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
   private def getStatusFromDB(txCid: String,oid:String,da:String):Option[Boolean]={
     var r : Option[Boolean] = None
 
-    val blockPreload = BlockPreload.getBlockPreload(da,pe.getSysTag)
-    val state = blockPreload.getFromDB(KeyPrefixManager.getWorldStateKey(pe.getSysTag,txCid+PRE_STATE,txCid,oid))
+    val blockPreload = pe.getRepChainContext.getBlockPreload(da)
+    val state = blockPreload.getFromDB(KeyPrefixManager.getWorldStateKey(pe.getRepChainContext.getConfig,txCid+PRE_STATE,txCid,oid))
     if(state != None){
       r = Some(state.get.asInstanceOf[Boolean])
     }
@@ -209,8 +207,8 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
 
   private def getStatusFromSnapshot(txCid: String,oid:String,da:String,tid:String):Option[Boolean]={
     var r : Option[Boolean] = None
-    val srOfTransaction = BlockPreload.getBlockPreload(da,pe.getSysTag).getTransactionPreload(tid)
-    val state = srOfTransaction.get(KeyPrefixManager.getWorldStateKey(pe.getSysTag,txCid+ PRE_STATE,txCid,oid))
+    val srOfTransaction = pe.getRepChainContext.getBlockPreload(da).getTransactionPreload(tid)
+    val state = srOfTransaction.get(KeyPrefixManager.getWorldStateKey(pe.getRepChainContext.getConfig,txCid+ PRE_STATE,txCid,oid))
     if(state != None){
       r = Some(state.get.asInstanceOf[Boolean])
     }
@@ -219,8 +217,8 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
 
   private def IsCurrentSigner(dotrans: DoTransactionOfSandboxInSingle) {
     val cn = dotrans.t.cid.get.chaincodeName
-    val srOfTransaction = BlockPreload.getBlockPreload(dotrans.da,pe.getSysTag)
-    val coder = srOfTransaction.get(KeyPrefixManager.getWorldStateKey(pe.getSysTag,cn,IdTool.getCid(dotrans.t.getCid),dotrans.t.oid))
+    val srOfTransaction = pe.getRepChainContext.getBlockPreload(dotrans.da)
+    val coder = srOfTransaction.get(KeyPrefixManager.getWorldStateKey(pe.getRepChainContext.getConfig,cn,IdTool.getCid(dotrans.t.getCid),dotrans.t.oid))
     if (coder != None) {
       //合约已存在且部署,需要重新部署，但是当前提交者不是以前提交者
       if (!dotrans.t.signature.get.certId.get.creditCode.equals(coder.get.asInstanceOf[String]))

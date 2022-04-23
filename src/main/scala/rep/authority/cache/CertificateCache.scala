@@ -2,6 +2,7 @@ package rep.authority.cache
 
 import java.io.{ByteArrayInputStream, StringReader}
 import org.bouncycastle.util.io.pem.PemReader
+import rep.app.system.RepChainSystemContext
 import rep.proto.rc2.Certificate
 import rep.sc.tpl.did.DidTplPrefix
 import rep.storage.chain.preload.BlockPreload
@@ -11,7 +12,7 @@ object CertificateCache{
   case class certData(certId:String,certHash:String,certificate:java.security.cert.Certificate,cert_valid:Boolean)
 }
 
-class CertificateCache(systemName:String) extends ICache(systemName){
+class CertificateCache(ctx : RepChainSystemContext) extends ICache(ctx){
   import CertificateCache._
 
   override protected def dataTypeConvert(any: Option[Any],blockPreload: BlockPreload): Option[Any] = {
@@ -28,7 +29,7 @@ class CertificateCache(systemName:String) extends ICache(systemName){
   }
 
   override protected def getPrefix: String = {
-    if(IdTool.isDidContract(systemName)){
+    if(IdTool.isDidContract(ctx.getConfig.getAccountContractName)){
       this.common_prefix + this.splitSign + DidTplPrefix.certPrefix
     }else{
       this.common_prefix + this.splitSign

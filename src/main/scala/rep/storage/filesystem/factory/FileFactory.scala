@@ -1,11 +1,14 @@
 package rep.storage.filesystem.factory
 
+import java.io.File
+
 import com.googlecode.concurrentlinkedhashmap.{ConcurrentLinkedHashMap, EvictionListener, Weighers}
 import rep.app.conf.RepChainConfig
 import rep.log.RepLogger
 import rep.storage.filesystem.FileOperate
 import rep.storage.filesystem.common.{IFile, IFileReader, IFileWriter}
 import rep.storage.filesystem.localfile.{ImpFileReader, ImpFileWriter}
+import rep.storage.util.pathUtil
 
 /**
  * @author jiangbuyun
@@ -14,7 +17,8 @@ import rep.storage.filesystem.localfile.{ImpFileReader, ImpFileWriter}
  * @category 构造文件访问实例工厂
  **/
 object FileFactory {
-  private val cacheSize = 30 //缓存文件读写器，默认30个
+  private val cacheSize = 100 //缓存文件读写器，默认30个
+  private val fileNamePrefix = "Repchain_BlockFile_"
 
   /**
    * @author jiangbuyun
@@ -26,6 +30,7 @@ object FileFactory {
    **/
   private val listenerOfReader : EvictionListener[String, IFileReader] = new EvictionListener[String, IFileReader]() {
     override def onEviction(key:String, value:IFileReader) {
+      value.FreeResource
       RepLogger.info(RepLogger.Storager_Logger,s"ReadCache remove reader,key=${key}")
     }
   }
@@ -40,12 +45,13 @@ object FileFactory {
    **/
   private val listenerOfWriter : EvictionListener[String, IFileWriter] = new EvictionListener[String, IFileWriter]() {
     override def onEviction(key:String, value:IFileWriter) {
+      value.FreeResource
       RepLogger.info(RepLogger.Storager_Logger,s"WriteCache remove writer,key=${key}")
     }
   }
 
-  private implicit val reads = new ConcurrentLinkedHashMap.Builder[String, IFileReader]().maximumWeightedCapacity(cacheSize).listener(listenerOfReader).weigher(Weighers.singleton[IFileReader]).build
-  private implicit val writers = new ConcurrentLinkedHashMap.Builder[String, IFileWriter]().maximumWeightedCapacity(cacheSize).listener(listenerOfWriter).weigher(Weighers.singleton[IFileWriter]).build
+  private val reads = new ConcurrentLinkedHashMap.Builder[String, IFileReader]().maximumWeightedCapacity(cacheSize).listener(listenerOfReader).weigher(Weighers.singleton[IFileReader]).build
+  private val writers = new ConcurrentLinkedHashMap.Builder[String, IFileWriter]().maximumWeightedCapacity(cacheSize).listener(listenerOfWriter).weigher(Weighers.singleton[IFileWriter]).build
 
 
   /**
@@ -53,15 +59,16 @@ object FileFactory {
    * @version 2.0
    * @since 2022-04-13
    * @category 根据系统名称和文件号建立文件读取实例
-   * @param systemName: String 系统名称, fileNo: Int 文件号
+   * @param config: RepChainConfig, fileNo: Int 文件号
    * @return 返回文件读取实例IFileReader
    **/
-  def getReader(systemName: String, fileNo: Int): IFileReader = {
+  def getReader(config: RepChainConfig, fileNo: Int): IFileReader = {
     var instance: IFileReader = null
     synchronized {
-      val config = RepChainConfig.getSystemConfig(systemName)
-      val fileName = FileOperate.mergeFilePath(Array[String](
-        config.getStorageBlockFilePath, config.getStorageBlockFileName, fileNo.toString))
+      val filePath = FileOperate.mergeFilePath(Array[String](
+        config.getStorageBlockFilePath, config.getStorageBlockFileName))
+      FileOperate.MkdirAll(filePath)
+      val fileName = filePath + fileNamePrefix + fileNo.toString
       if (reads.containsKey(fileName)) {
         instance = reads.get(fileName)
       } else {
@@ -77,20 +84,43 @@ object FileFactory {
     }
   }
 
+  def checkFreeDiskSpace(config: RepChainConfig):Boolean={
+    var r = true
+    val fileType = config.getStorageBlockFileType
+    if(fileType == "localFileSystem"){
+      val filePath = FileOperate.mergeFilePath(Array[String](
+        config.getStorageBlockFilePath, config.getStorageBlockFileName))
+      try {
+        if(pathUtil.FileExists(filePath) == -1){
+          pathUtil.MkdirAll(filePath)
+        }
+      } catch{
+        case e:Exception => e.printStackTrace()
+      }
+      val f = new File(filePath)
+
+      if (config.getMinDiskSpaceAlarm > (f.getFreeSpace() / (1000 * 1000))) {
+        r = false
+      }
+    }
+    r
+  }
+
   /**
    * @author jiangbuyun
    * @version 2.0
    * @since 2022-04-13
    * @category 根据系统名称和文件号建立文件写实例
-   * @param systemName: String 系统名称, fileNo: Int 文件号
+   * @param config: RepChainConfig, fileNo: Int 文件号
    * @return 返回文件写实例IFileWriter
    **/
-  def getWriter(systemName: String, fileNo: Int): IFileWriter = {
+  def getWriter(config: RepChainConfig, fileNo: Int): IFileWriter = {
     var instance: IFileWriter = null
     synchronized {
-      val config = RepChainConfig.getSystemConfig(systemName)
-      val fileName = FileOperate.mergeFilePath(Array[String](
-        config.getStorageBlockFilePath, config.getStorageBlockFileName, fileNo.toString))
+      val filePath = FileOperate.mergeFilePath(Array[String](
+        config.getStorageBlockFilePath, config.getStorageBlockFileName))
+      FileOperate.MkdirAll(filePath)
+      val fileName = filePath + fileNamePrefix + fileNo.toString
       if (writers.containsKey(fileName)) {
         instance = writers.get(fileName)
       } else {
@@ -118,7 +148,7 @@ object FileFactory {
       fileType match {
         case "localFileSystem" =>
           new ImpFileReader(fileName)
-        case - =>
+        case _ =>
           new ImpFileReader(fileName)
       }
     } catch {
@@ -140,7 +170,7 @@ object FileFactory {
       fileType match {
         case "localFileSystem" =>
           new ImpFileWriter(fileName)
-        case - =>
+        case _ =>
           new ImpFileWriter(fileName)
       }
     } catch {

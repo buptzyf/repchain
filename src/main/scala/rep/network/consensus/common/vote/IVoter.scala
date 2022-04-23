@@ -1,7 +1,6 @@
 package rep.network.consensus.common.vote
 
 import akka.actor.Props
-import rep.app.conf.{SystemCertList, SystemProfile}
 import rep.crypto.Sha256
 import rep.log.RepLogger
 import rep.network.base.ModuleBase
@@ -24,7 +23,7 @@ object IVoter{
 }
 
 abstract class IVoter(moduleName: String) extends ModuleBase(moduleName) {
-  val searcher = new BlockSearcher(pe.getSysTag)
+  val searcher = pe.getRepChainContext.getBlockSearch
 
   protected var candidator: Array[String] = Array.empty[String]
   protected var Blocker: BlockerInfo = BlockerInfo("", -1, Long.MaxValue, "", -1)
@@ -34,7 +33,7 @@ abstract class IVoter(moduleName: String) extends ModuleBase(moduleName) {
 
 
   protected def checkTranNum: Boolean = {
-    pe.getTransactionPool.getCachePoolSize >= SystemProfile.getMinBlockTransNum
+    pe.getRepChainContext.getTransactionPool.getCachePoolSize >= pe.getRepChainContext.getConfig.getMinTransactionNumberOfBlock
   }
 
   protected def cleanVoteInfo = {
@@ -52,7 +51,7 @@ abstract class IVoter(moduleName: String) extends ModuleBase(moduleName) {
   }
 
   protected def resetCandidator(currentblockhash: String) = {
-    candidator = algorithmInVoted.candidators(pe.getSysTag, currentblockhash, SystemCertList.getSystemCertList, Sha256.hash(currentblockhash))
+    candidator = algorithmInVoted.candidators(pe.getSysTag, currentblockhash, pe.getRepChainContext.getSystemCertList.getSystemCertList, pe.getRepChainContext.getHashTool.hash(currentblockhash))
   }
 
   protected def resetBlocker(idx: Int, currentblockhash: String, currentheight: Long) = {
@@ -71,11 +70,11 @@ abstract class IVoter(moduleName: String) extends ModuleBase(moduleName) {
 
 
   protected def voteMsgHandler(isForce:Boolean,forceInfo:ForceVoteInfo) = {
-    if (ConsensusCondition.CheckWorkConditionOfSystem(pe.getNodeMgr.getStableNodes.size)) {
+    if (new ConsensusCondition(pe.getRepChainContext.getConfig).CheckWorkConditionOfSystem(pe.getNodeMgr.getStableNodes.size)) {
       //只有共识节点符合要求之后开始工作
       if (getSystemBlockHash == "") {
         //系统属于初始化状态
-        if (NodeHelp.isSeedNode(pe.getSysTag)) {
+        if (NodeHelp.isSeedNode(pe.getSysTag,pe.getRepChainContext.getConfig.getGenesisNodeName)) {
           // 建立创世块消息
           pe.getActorRef(CFRDActorType.ActorType.gensisblock) ! GenesisBlock //zhj CFRD?
         }else{

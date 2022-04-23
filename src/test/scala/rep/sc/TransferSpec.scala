@@ -24,25 +24,14 @@ import org.json4s.native.Serialization.{write, writePretty}
 import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, Matchers}
 import rep.app.system.ClusterSystem
 import rep.app.system.ClusterSystem.InitType
-import rep.crypto.{CryptoMgr, Sha256}
+import rep.crypto.Sha256
 import rep.crypto.cert.SignTool
 import rep.network.autotransaction.PeerHelper
-import rep.network.module.cfrd.ModuleManagerOfCFRD
-import rep.protos.peer.Authorize.TransferType
-import rep.protos.peer.Certificate.CertType
-import rep.protos.peer.ChaincodeDeploy.ContractClassification
-import rep.protos.peer.Operate.OperateType
-import rep.protos.peer._
 import rep.sc.TransferSpec.{ACTION, SetMap}
 import scalapb.json4s.JsonFormat
 import rep.sc.tpl.Transfer
-import rep.storage.ImpDataAccess
-import rep.utils.SerializeUtils.toJson
-import rep.app.conf.SystemProfile
-
 import scala.concurrent.duration._
 import scala.collection.mutable.Map
-import rep.sc.SandboxDispatcher.DoTransaction
 
 object TransferSpec {
 
@@ -65,7 +54,7 @@ object TransferSpec {
   * @param _system
   */
 class TransferSpec(_system: ActorSystem) extends TestKit(_system) with Matchers with FlatSpecLike with BeforeAndAfterAll {
-
+/*
   def this() = this(ActorSystem("TransferSpec", new ClusterSystem("121000005l35120456.node1", InitType.MULTI_INIT, false).getConf))
 
   override def afterAll: Unit = {
@@ -214,4 +203,6 @@ class TransferSpec(_system: ActorSystem) extends TestKit(_system) with Matchers 
         msg_recv6(0).getResult.reason should be(rcs(i))
     }
   }
+
+ */
 }

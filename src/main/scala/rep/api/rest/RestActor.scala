@@ -24,14 +24,11 @@ import akka.pattern.{AskTimeoutException, ask}
 import scala.concurrent._
 import rep.crypto._
 import rep.network.autotransaction.PeerHelper._
-import rep.storage._
 import rep.app.TestMain
 import org.json4s._
 import org.json4s.jackson.JsonMethods
 import rep.network.module.ModuleActorType
 import akka.actor.Props
-import rep.crypto.cert.SignTool
-import rep.app.conf.SystemProfile
 import rep.log.RepLogger
 import rep.network.autotransaction.PeerHelper
 import rep.network.base.ModuleBase
@@ -58,7 +55,7 @@ import rep.utils.{MessageToJson, SerializeUtils}
 object RestActor {
   def props(name: String): Props = Props(classOf[RestActor], name)
 
-  val contractOperationMode = SystemProfile.getContractOperationMode
+
   case object ChainInfo
   case object NodeNumber
   case object TransNumber
@@ -90,6 +87,29 @@ object RestActor {
                    iptFunc: String, iptArgs: Seq[String], timeout: Int, legal_prose: String,
                    code: String, codeType: Int, state: Boolean,gasLimited:Int,oid:String,runType:Int,stateType:Int,contractLevel:Int)
   case class tranSign(tran: String)
+
+
+
+}
+
+/**
+ * RestActor负责处理rest api请求
+ *
+ */
+class RestActor(moduleName: String) extends ModuleBase(moduleName) {
+
+  import RestActor._
+  import spray.json._
+  import akka.http.scaladsl.model.{ HttpResponse, MediaTypes, HttpEntity }
+  import rep.network.autotransaction.Topic
+  import akka.cluster.pubsub.DistributedPubSubMediator.Publish
+  //import rep.utils.JsonFormat.AnyJsonFormat
+  val config = pe.getRepChainContext.getConfig
+  val contractOperationMode = config.getContractRunMode
+
+  implicit val timeout = Timeout(1000.seconds)
+  val sr: BlockSearcher = new BlockSearcher(pe.getRepChainContext)
+  private val consensusCondition = new ConsensusCondition(pe.getRepChainContext.getConfig)
 
   /**
    * 根据节点名称和chainCode定义建立交易实例
@@ -153,138 +173,24 @@ object RestActor {
     val gas_limited = if(c.gasLimited < 0) 0 else c.gasLimited
     val oid = if(c.oid == null || c.oid.equalsIgnoreCase("null"))"" else c.oid
     if (method_type == Transaction.Type.CHAINCODE_DEPLOY) {
-      PeerHelper.createTransaction4Deploy(nodeName, chaincodeId, c.code,
-                                          c.legal_prose, c.timeout, code_type,run_type,
-                                          state_type,contract_Level,gas_limited)
+      pe.getRepChainContext.getTransactionBuilder.createTransaction4Deploy(nodeName, chaincodeId, c.code,
+        c.legal_prose, c.timeout, code_type,run_type,
+        state_type,contract_Level,gas_limited)
     } else if (method_type == Transaction.Type.CHAINCODE_INVOKE) {
-      PeerHelper.createTransaction4Invoke(nodeName, chaincodeId, c.iptFunc, c.iptArgs,gas_limited,oid)
+      pe.getRepChainContext.getTransactionBuilder.createTransaction4Invoke(nodeName, chaincodeId, c.iptFunc, c.iptArgs,gas_limited,oid)
     } else if (method_type == Transaction.Type.CHAINCODE_SET_STATE) {
-      PeerHelper.createTransaction4State(nodeName, chaincodeId, c.state)
+      pe.getRepChainContext.getTransactionBuilder.createTransaction4State(nodeName, chaincodeId, c.state)
     } else {
       null
     }
   }
 
-}
-
-/**
- * RestActor负责处理rest api请求
- *
- */
-class RestActor(moduleName: String) extends ModuleBase(moduleName) {
-
-  import RestActor._
-  import spray.json._
-  import akka.http.scaladsl.model.{ HttpResponse, MediaTypes, HttpEntity }
-  import rep.network.autotransaction.Topic
-  import akka.cluster.pubsub.DistributedPubSubMediator.Publish
-  //import rep.utils.JsonFormat.AnyJsonFormat
-
-  implicit val timeout = Timeout(1000.seconds)
-  val sr: BlockSearcher = new BlockSearcher(pe.getSysTag)
-
-  // 先检查交易大小，然后再检查交易是否已存在，再去验证签名，如果没有问题，则广播
-  /*def preTransaction(t: Transaction): Unit = {
-    val tranLimitSize = SystemProfile.getBlockLength / 3
-    if (t.toByteArray.length > tranLimitSize) {
-      sender ! PostResult(t.id, None, Option(s"交易大小超出限制： ${tranLimitSize}，请重新检查"))
-    }
-
-    if (ConsensusCondition.CheckWorkConditionOfSystem(pe.getNodeMgr.getStableNodes.size)) {
-      sender ! PostResult(t.id, None, Option("共识节点数目太少，暂时无法处理交易"))
-    }
-
-    /*if (pe.getTransPoolMgr.findTrans(t.id) || sr.isExistTrans4Txid(t.id)) {
-          sender ! PostResult(t.id, None, Option(s"transactionId is exists, the transaction is \n ${t.id}"))
-    }*/
-
-    try {
-      if (SystemProfile.getHasPreloadTransOfApi) {
-        val sig = t.signature.get.signature.toByteArray
-        val tOutSig = t.clearSignature
-        val certId = t.signature.get.certId.get
-        if (pe.getTransPoolMgr.findTrans(t.id) || sr.isExistTrans4Txid(t.id)) {
-          sender ! PostResult(t.id, None, Option(s"transactionId is exists, the transaction is \n ${t.id}"))
-        } else {
-          if (SignTool.verify(sig, tOutSig.toByteArray, certId, pe.getSysTag)) {
-            //            RepLogger.info(RepLogger.Business_Logger, s"验证签名成功，txid: ${t.id},creditCode: ${t.signature.get.getCertId.creditCode}, certName: ${t.signature.get.getCertId.certName}")
-            val future = pe.getActorRef(ModuleActorType.ActorType.transactiondispatcher) ? DoTransaction(t, "api_" + t.id, TypeOfSender.FromAPI)
-            val result = Await.result(future, timeout.duration).asInstanceOf[DoTransactionResult]
-            val rv = result
-            // 释放存储实例
-
-            rv.err match {
-              case None =>
-                //预执行正常,提交并广播交易
-                pe.getActorRef(ModuleActorType.ActorType.transactionpool) ! t // 给交易池发送消息 ！=》告知（getActorRef）
-                if (rv.r == null)
-                  sender ! PostResult(t.id, None, None)
-                else
-                  sender ! PostResult(t.id, Some(rv.r), None) // legal_prose need
-              case Some(err) =>
-                //预执行异常,废弃交易，向api调用者发送异常
-                sender ! PostResult(t.id, None, Option(err.cause.getMessage))
-            }
-          } else {
-            sender ! PostResult(t.id, None, Option("验证签名出错"))
-          }
-        }
-      } else {
-        pe.getActorRef(ModuleActorType.ActorType.transactionpool) ! t // 给交易池发送消息 ！=》告知（getActorRef）
-        sender ! PostResult(t.id, None, None)
-      }
-
-    } catch {
-      case e: RuntimeException =>
-        sender ! PostResult(t.id, None, Option(e.getMessage))
-    } finally {
-      ImpDataPreloadMgr.Free(pe.getSysTag, "api_" + t.id)
-    }
-  }*/
-
-
-  // 先检查交易大小，然后再检查交易是否已存在，再去验证签名，如果没有问题，则广播
-  /*def preTransaction(t: Transaction): Unit = {
-    val tranLimitSize = SystemProfile.getBlockLength / 3
-    if (t.toByteArray.length > tranLimitSize) {
-      sender ! PostResult(t.id, None, Option(s"交易大小超出限制： ${tranLimitSize}，请重新检查"))
-    } else if (!ConsensusCondition.CheckWorkConditionOfSystem(pe.getNodeMgr.getStableNodes.size)) {
-      sender ! PostResult(t.id, None, Option("共识节点数目太少，暂时无法处理交易"))
-    } else {
-      try {
-        if (SystemProfile.getHasPreloadTransOfApi) {
-          val sig = t.signature.get.signature.toByteArray
-          val tOutSig = t.clearSignature
-          val certId = t.signature.get.certId.get
-          if (SignTool.verify(sig, tOutSig.toByteArray, certId, pe.getSysTag)) {
-            mediator ! Publish(Topic.Transaction, t)
-            //广播发送交易事件
-            sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)
-            sender ! PostResult(t.id, None, None)
-          } else {
-            sender ! PostResult(t.id, None, Option("验证签名出错"))
-          }
-        } else {
-          mediator ! Publish(Topic.Transaction, t) // 给交易池发送消息 ！=》告知（getActorRef）
-          //广播发送交易事件
-          sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)
-          sender ! PostResult(t.id, None, None)
-        }
-      } catch {
-        case e: RuntimeException =>
-          sender ! PostResult(t.id, None, Option(e.getMessage))
-      } finally {
-        ImpDataPreloadMgr.Free(pe.getSysTag, "api_" + t.id)
-      }
-    }
-  }
-*/
   // 先检查交易大小，然后再检查交易是否已存在，再去验证签名，如果没有问题，则广播
   def preTransaction(t: Transaction): Unit = {
-    val tranLimitSize = SystemProfile.getBlockLength / 3
+    val tranLimitSize = config.getBlockMaxLength / 3
     if (t.toByteArray.length > tranLimitSize) {
       sender ! PostResult(t.id, None, Option(s"交易大小超出限制： ${tranLimitSize}，请重新检查"))
-    } else if (!ConsensusCondition.CheckWorkConditionOfSystem(pe.getNodeMgr.getStableNodes.size)) {
+    } else if (!this.consensusCondition.CheckWorkConditionOfSystem(pe.getNodeMgr.getStableNodes.size)) {
       sender ! PostResult(t.id, None, Option("共识节点数目太少，暂时无法处理交易"))
     } else {
       try {
@@ -292,7 +198,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
 
         //pe.getTransPoolMgr.putTran(t,pe.getSysTag)
 
-        if(SystemProfile.getIsBroadcastTransaction== 1) {
+        if(config.isBroadcastTransaction== 1) {
           mediator ! Publish(Topic.Transaction, t)
         }
         sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)
@@ -459,12 +365,12 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
       sender ! QueryResult(Option(JsonMethods.parse(string2JsonInput(rs))))
 
     case TransNumber =>
-      val num = pe.getTransactionPool.getCachePoolSize
+      val num = pe.getRepChainContext.getTransactionPool.getCachePoolSize
       val rs = "{\"numberofcache\":\"" + num + "\"}"
       sender ! QueryResult(Option(JsonMethods.parse(string2JsonInput(rs))))
 
     case AcceptedTransNumber =>
-      val num = sr.getChainInfo.totalTransactions + pe.getTransactionPool.getCachePoolSize
+      val num = sr.getChainInfo.totalTransactions + pe.getRepChainContext.getTransactionPool.getCachePoolSize
       val rs = "{\"acceptedNumber\":\"" + num + "\"}"
       sender ! QueryResult(Option(JsonMethods.parse(string2JsonInput(rs))))
 
@@ -492,7 +398,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
     var start = System.currentTimeMillis()
     val len = h.toInt
     for( i <- 1 to len){
-      val t3 = createTransaction4Invoke(pe.getSysTag, chaincode,"transfer", Seq(li2))
+      val t3 = pe.getRepChainContext.getTransactionBuilder.createTransaction4Invoke(pe.getSysTag, chaincode,"transfer", Seq(li2))
       txs += t3
     }
     var end = System.currentTimeMillis()
@@ -556,9 +462,9 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
     val nodename = Array("121000005l35120456.node1", "12110107bi45jh675g.node2",
     "122000002n00123567.node3", "921000005k36123789.node4", "921000006e0012v696.node5")
     val txinfo = new Array[String](5)
-    SignTool.loadNodeCertList("changeme", s"${CryptoMgr.getKeyFileSuffix.substring(1)}/mytruststore${CryptoMgr.getKeyFileSuffix}")
+    pe.getRepChainContext.getSignTool.loadNodeCertList("changeme", s"${pe.getRepChainContext.getCryptoMgr.getKeyFileSuffix.substring(1)}/mytruststore${pe.getRepChainContext.getCryptoMgr.getKeyFileSuffix}")
     for( i <- 1 to 5){
-      SignTool.loadPrivateKey(nodename(i-1), "123", s"${CryptoMgr.getKeyFileSuffix.substring(1)}/"+nodename(i-1)+"${CryptoMgr.getKeyFileSuffix}")
+      pe.getRepChainContext.getSignTool.loadPrivateKey(nodename(i-1), "123", s"${pe.getRepChainContext.getCryptoMgr.getKeyFileSuffix.substring(1)}/"+nodename(i-1)+"${CryptoMgr.getKeyFileSuffix}")
       val si2 = scala.io.Source.fromFile("api_req/json/transfer_" + nodename(i-1) + ".json","UTF-8")
       txinfo(i-1) = try si2.mkString finally si2.close()
     }
@@ -577,7 +483,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
     var start = System.currentTimeMillis()
     for( i <- 1 to len){
       val j = Random.nextInt(1000) % 5
-      val t3 = createTransaction4Invoke(nodename(j), chaincode,"transfer", Seq(txinfo(j)))
+      val t3 = pe.getRepChainContext.getTransactionBuilder.createTransaction4Invoke(nodename(j), chaincode,"transfer", Seq(txinfo(j)))
       txs += t3
     }
     var end = System.currentTimeMillis()
@@ -615,9 +521,9 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
     val nodename = Array("121000005l35120456.node1", "12110107bi45jh675g.node2",
       "122000002n00123567.node3", "921000005k36123789.node4", "921000006e0012v696.node5")
     val txinfo = new Array[String](5)
-    SignTool.loadNodeCertList("changeme", s"${CryptoMgr.getKeyFileSuffix.substring(1)}/mytruststore${CryptoMgr.getKeyFileSuffix}")
+    pe.getRepChainContext.getSignTool.loadNodeCertList("changeme", s"${pe.getRepChainContext.getCryptoMgr.getKeyFileSuffix.substring(1)}/mytruststore${pe.getRepChainContext.getCryptoMgr.getKeyFileSuffix}")
     for( i <- 1 to 5){
-      SignTool.loadPrivateKey(nodename(i-1), "123", s"${CryptoMgr.getKeyFileSuffix.substring(1)}/"+nodename(i-1)+"${CryptoMgr.getKeyFileSuffix}")
+      pe.getRepChainContext.getSignTool.loadPrivateKey(nodename(i-1), "123", s"${pe.getRepChainContext.getCryptoMgr.getKeyFileSuffix.substring(1)}/"+nodename(i-1)+"${CryptoMgr.getKeyFileSuffix}")
       val si2 = scala.io.Source.fromFile("api_req/json/transfer_" + nodename(i-1) + ".json","UTF-8")
       txinfo(i-1) = try si2.mkString finally si2.close()
     }
@@ -628,7 +534,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
     var start = System.currentTimeMillis()
     for( i <- 1 to len){
       val j = Random.nextInt(1000) % 5
-      val t3 = createTransaction4Invoke(nodename(j), chaincode,"transfer", Seq(txinfo(j)))
+      val t3 = pe.getRepChainContext.getTransactionBuilder.createTransaction4Invoke(nodename(j), chaincode,"transfer", Seq(txinfo(j)))
       txs += t3
     }
     var end = System.currentTimeMillis()

@@ -2,7 +2,6 @@ package rep.log.httplog
 
 
 import java.text.SimpleDateFormat
-import java.util
 import java.util.Date
 import org.apache.http.client.config.RequestConfig
 import org.apache.http.client.methods.CloseableHttpResponse
@@ -10,7 +9,6 @@ import org.apache.http.client.methods.HttpPost
 import org.apache.http.impl.client.HttpClientBuilder
 import org.apache.http.util.EntityUtils
 import org.apache.http.entity.StringEntity
-import org.json4s.JsonAST.{JField, JNull, JObject}
 import rep.log.RepLogger
 
 

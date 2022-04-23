@@ -17,6 +17,7 @@
 package rep.network.base
 
 import akka.actor.Actor
+import rep.network.tools.PeerExtension
 
 
 /**
@@ -27,7 +28,7 @@ import akka.actor.Actor
   **/
 trait BaseActor extends Actor {
   val selfAddr = akka.serialization.Serialization.serializedActorPath(self)
-  
+  val pe = PeerExtension(context.system)
 
   var schedulerLink: akka.actor.Cancellable = null
 

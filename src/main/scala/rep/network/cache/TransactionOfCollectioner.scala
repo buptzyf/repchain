@@ -2,7 +2,6 @@ package rep.network.cache
 
 import akka.actor.Props
 import akka.routing.{ActorRefRoutee, Routee, Router, SmallestMailboxRoutingLogic}
-import rep.app.conf.SystemProfile
 import rep.log.RepLogger
 import rep.network.autotransaction.Topic
 import rep.network.base.ModuleBase
@@ -18,9 +17,10 @@ object TransactionOfCollectioner{
 class TransactionOfCollectioner  (moduleName: String) extends ModuleBase(moduleName){
   private var router: Router = null
 
+  private val config = pe.getRepChainContext.getConfig
   override def preStart(): Unit = {
     //注册接收交易的广播
-    if(SystemProfile.getVoteNodeList.contains(pe.getSysTag)){
+    if(config.getVoteNodeList.contains(pe.getSysTag)){
       //共识节点可以订阅交易的广播事件
       SubscribeTopic(mediator, self, selfAddr, Topic.Transaction, true)
     }
@@ -30,8 +30,8 @@ class TransactionOfCollectioner  (moduleName: String) extends ModuleBase(moduleN
 
   private def createRouter = {
     if (router == null) {
-      var list: Array[Routee] = new Array[Routee](SystemProfile.getVoteNodeList.size())
-      for (i <- 0 to SystemProfile.getVoteNodeList.size() - 1) {
+      var list: Array[Routee] = new Array[Routee](config.getVoteNodeList.length)
+      for (i <- 0 to config.getVoteNodeList.length - 1) {
         var ca = context.actorOf(TransactionChecker.props("transactionchecker" + i), "transactionchecker" + i)
         context.watch(ca)
         list(i) = new ActorRefRoutee(ca)

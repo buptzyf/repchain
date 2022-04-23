@@ -16,22 +16,18 @@
 
 package rep.network.cluster
 
-import akka.actor.{Actor, Address, Props}
+import akka.actor.{ Address, Props}
 import akka.cluster.ClusterEvent._
-import akka.cluster.pubsub.DistributedPubSub
-import akka.cluster.{Cluster, ClusterEvent, Member, MemberStatus}
-import rep.app.conf.TimePolicy
-import rep.app.conf.SystemProfile
+import akka.cluster.{Cluster, Member, MemberStatus}
+import rep.app.conf.{TimePolicy}
 import rep.network.cluster.MemberListener.Recollection
 import rep.network.module.cfrd.CFRDActorType
 import rep.utils.GlobalUtils.EventType
 import rep.utils.TimeUtils
 import org.slf4j.LoggerFactory
-
 import scala.collection.mutable.HashMap
 import rep.network.base.ModuleBase
 import rep.network.sync.SyncMsg.StartSync
-
 import scala.collection.mutable.ArrayBuffer
 import rep.log.RepLogger
 import rep.network.util.NodeHelp
@@ -65,7 +61,6 @@ object MemberListener {
 class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with ClusterActor {
 
   import context.dispatcher
-
   import scala.concurrent.duration._
 
   protected def log = LoggerFactory.getLogger(this.getClass)
@@ -75,6 +70,8 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
   val cluster = Cluster(context.system)
 
   var preloadNodesMap = HashMap[Address, (Long, String)]()
+
+  val consensusCondition = new ConsensusCondition(pe.getRepChainContext.getConfig)
 
   private var isStartSynch = false
 
@@ -148,7 +145,7 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
       RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("Member is Up: {}. {} nodes in cluster" + "~" + member.address + "~" + pe.getNodeMgr.getNodes.mkString("|")))
       pe.getNodeMgr.putNode(member.address)
       if (member.roles != null && !member.roles.isEmpty && NodeHelp.isCandidatorNode(member.roles)) {
-        RepLogger.sendAlertToDB(new AlertInfo("NETWORK",4,s"Node Name=${NodeHelp.getNodeName(member.roles)},Node Address=${member.address.toString},is up."))
+        RepLogger.sendAlertToDB(pe.getRepChainContext.getHttpLogger(),new AlertInfo("NETWORK",4,s"Node Name=${NodeHelp.getNodeName(member.roles)},Node Address=${member.address.toString},is up."))
         preloadNodesMap.put(member.address, (TimeUtils.getCurrentTime(), NodeHelp.getNodeName(member.roles)))
         RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"Member is Up:  nodes is condidator,node name=${NodeHelp.getNodeName(member.roles)}"))
         sendEvent(EventType.PUBLISH_INFO, mediator, NodeHelp.getNodeName(member.roles), Topic.Event, Event.Action.MEMBER_UP)
@@ -164,7 +161,7 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
       RepLogger.trace(RepLogger.System_Logger, this.getLogMsgPrefix(" MemberListening recollection"))
       preloadNodesMap.foreach(node => {
         if (isStableNode(node._2._1, TimePolicy.getSysNodeStableDelay)) {
-          RepLogger.sendAlertToDB(new AlertInfo("NETWORK",4,s"Node Name=${node._2._2},Node Address=${node._2._1},is stable node."))
+          RepLogger.sendAlertToDB(pe.getRepChainContext.getHttpLogger(),new AlertInfo("NETWORK",4,s"Node Name=${node._2._2},Node Address=${node._2._1},is stable node."))
           pe.getNodeMgr.putStableNode(node._1, node._2._2)
         } else {
           RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"Recollection:  nodes not stable,node name=${node._2._2}"))
@@ -181,13 +178,13 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
       }
 
       if (!this.isStartSynch) {
-        if (ConsensusCondition.CheckWorkConditionOfSystem(pe.getNodeMgr.getStableNodes.size)) {
+        if (this.consensusCondition.CheckWorkConditionOfSystem(pe.getNodeMgr.getStableNodes.size)) {
           //组网成功之后开始系统同步
           RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"Recollection:  system startup ,start sync,node name=${pe.getSysTag}"))
           pe.getActorRef(CFRDActorType.ActorType.synchrequester) ! StartSync(true)
           this.isStartSynch = true
         } else {
-          RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"Recollection:  nodes less ${SystemProfile.getVoteNodeMin},node name=${pe.getSysTag}"))
+          RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"Recollection:  nodes less ${pe.getRepChainContext.getConfig.getMinVoteNumber},node name=${pe.getSysTag}"))
         }
       } else {
         RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"Recollection:  local consensus start finish,node name=${pe.getSysTag}"))
@@ -247,13 +244,13 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
 
 
       if (!this.isStartSynch) {
-        if (ConsensusCondition.CheckWorkConditionOfSystem(pe.getNodeMgr.getStableNodes.size)) {
+        if (this.consensusCondition.CheckWorkConditionOfSystem(pe.getNodeMgr.getStableNodes.size)) {
           //组网成功之后开始系统同步
           RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"ReachableMember Recollection:  system startup ,start sync,node name=${pe.getSysTag}"))
           pe.getActorRef(CFRDActorType.ActorType.synchrequester) ! StartSync(true)
           this.isStartSynch = true
         } else {
-          RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"ReachableMember Recollection:  nodes less ${SystemProfile.getVoteNodeMin},node name=${pe.getSysTag}"))
+          RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"ReachableMember Recollection:  nodes less ${pe.getRepChainContext.getConfig.getMinVoteNumber},node name=${pe.getSysTag}"))
         }
       } else {
         RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"ReachableMember Recollection:  local consensus start finish,node name=${pe.getSysTag}"))

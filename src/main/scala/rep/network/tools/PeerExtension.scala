@@ -23,7 +23,10 @@ import rep.utils.GlobalUtils.{BlockerInfo, NodeStatus}
 import rep.network.persistence.BlockCache
 import rep.network.tools.transpool.PoolOfTransaction
 import java.util.concurrent.ConcurrentHashMap
+
+import rep.app.system.RepChainSystemContext
 import rep.network.consensus.cfrd.endorse.RecvEndorsInfo
+
 import scala.collection.JavaConverters._
 import rep.network.sync.SyncMsg.MaxBlockInfo
 import rep.proto.rc2.{Block, BlockchainInfo, Transaction}
@@ -38,16 +41,19 @@ import rep.proto.rc2.{Block, BlockchainInfo, Transaction}
  */
 class PeerExtensionImpl extends Extension {
 
+  private var ctx : RepChainSystemContext= null
+
+  def getRepChainContext:RepChainSystemContext={
+    this.ctx
+  }
+
+  def setRepChainContext(ctx:RepChainSystemContext):Unit={
+    this.ctx = ctx
+  }
+
+  def getSysTag = ctx.getSystemName
 /*********交易池缓存管理开始************/
-  private val poolOfTransaction : PoolOfTransaction =  null
 
-  def createPoolOfTransaction:PoolOfTransaction={
-    new PoolOfTransaction(getSysTag)
-  }
-
-  def getTransactionPool: PoolOfTransaction = {
-    this.poolOfTransaction
-  }
 
 /*********交易池缓存管理结束************/
 
@@ -159,24 +165,9 @@ private var timeoutOfRaft:AtomicLong = new AtomicLong(0)
 /*********节点状态结束************/
 
 /*********节点信息相关操作开始************/
-  private var sys_ip: AtomicReference[String] = new AtomicReference[String]("")
 
-  private var sys_port: AtomicReference[String] = new AtomicReference[String]("")
 
-  private var sysTag: AtomicReference[String] = new AtomicReference[String]("")
 
-  def setIpAndPort(ip: String, port: String): Unit = {
-    this.sys_ip.set(ip)
-    this.sys_port.set(port)
-  }
-
-  def getIp = this.sys_ip.get
-
-  def getPort = this.sys_port.get
-
-  def setSysTag(name: String) = sysTag.set(name)
-
-  def getSysTag = sysTag.get
 /*********节点信息相关操作结束************/
 
 /*********系统Actor注册相关操作开始************/

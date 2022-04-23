@@ -1,8 +1,6 @@
 package rep.storage.db.common
 
 
-
-import java.util.Date
 import rep.log.RepLogger
 import rep.storage.encrypt.EncryptFactory
 import rep.utils.SerializeUtils
@@ -15,7 +13,7 @@ import rep.utils.SerializeUtils
  * */
 abstract class IDBAccess {
   protected var isTransaction = false //是否开启事务
-  private val synchLock : Object = new Object()
+  private val lock : Object = new Object()
   protected val cipherTool = EncryptFactory.getEncrypt
   /**
    * @author jiangbuyun
@@ -25,113 +23,7 @@ abstract class IDBAccess {
    * @param	key String 指定的键
    * @return	返回对应键的值 Array[Byte]
    * */
-  def   getBytes(key : String):Option[Array[Byte]]
-
-  /**
-   * @author jiangbuyun
-   * @version	2.0
-   * @since	2022-04-07
-   * @category	获取指定的键值
-   * @param	key String 指定的键
-   * @return	返回对应键的值 String
-   * */
-  def   getString(key : String):Option[String]={
-    val d = this.getObject(key)
-    if(d == None){
-      None
-    }else{
-      if(d.get.isInstanceOf[String] ){
-        Some(d.get.asInstanceOf[String])
-      }else{
-        None
-      }
-    }
-  }
-
-  /**
-   * @author jiangbuyun
-   * @version	2.0
-   * @since	2022-04-07
-   * @category	获取指定的键值
-   * @param	key String 指定的键
-   * @return	返回对应键的值 Int
-   * */
-  def   getInt(key : String):Option[Int]={
-    val d = this.getObject(key)
-    if(d == None){
-      None
-    }else{
-      if(d.get.isInstanceOf[Int] ){
-        Some(d.get.asInstanceOf[Int])
-      }else{
-        None
-      }
-    }
-  }
-
-
-  /**
-   * @author jiangbuyun
-   * @version	2.0
-   * @since	2022-04-07
-   * @category	获取指定的键值
-   * @param	key String 指定的键
-   * @return	返回对应键的值 Long
-   * */
-  def   getLong(key : String):Option[Long]={
-    val d = this.getObject(key)
-    if(d == None){
-      None
-    }else{
-      if(d.get.isInstanceOf[Long] ){
-        Some(d.get.asInstanceOf[Long])
-      }else{
-        None
-      }
-    }
-  }
-
-  /**
-   * @author jiangbuyun
-   * @version	2.0
-   * @since	2022-04-07
-   * @category	获取指定的键值
-   * @param	key String 指定的键
-   * @return	返回对应键的值 Date
-   * */
-  def   getDate(key : String):Option[Date]={
-    val d = this.getObject(key)
-    if(d == None){
-      None
-    }else{
-      if(d.get.isInstanceOf[Date] ){
-        Some(d.get.asInstanceOf[Date])
-      }else{
-        None
-      }
-    }
-  }
-
-  /**
-   * @author jiangbuyun
-   * @version	2.0
-   * @since	2022-04-07
-   * @category	获取指定的键值
-   * @param	key String 指定的键
-   * @return	返回对应键的值 Boolean
-   * */
-  def   getBoolean(key : String):Option[Boolean]={
-    val d = this.getObject(key)
-    if(d == None){
-      None
-    }else{
-      if(d.get.isInstanceOf[Boolean] ){
-        Some(d.get.asInstanceOf[Boolean])
-      }else{
-        None
-      }
-    }
-  }
+  protected def   getBytes(key : String):Option[Array[Byte]]
 
   /**
    * @author jiangbuyun
@@ -141,20 +33,23 @@ abstract class IDBAccess {
    * @param	key String 指定的键
    * @return	返回对应键的值 Object
    * */
-  def   getObject(key : String):Option[Any]={
+  def   getObject[T](key : String):Option[T]={
     val b = this.getBytes(key)
+    RepLogger.trace(RepLogger.Storager_Logger,s"DB operate getObject, key=${key}")
     if(b == None){
+      RepLogger.trace(RepLogger.Storager_Logger,s"DB operate getObject,object==None, key=${key}")
       None
     }else{
       val o = SerializeUtils.deserialise(b.get)
       if(o == null){
+        RepLogger.trace(RepLogger.Storager_Logger,s"DB operate getObject,serialize==None, key=${key}")
         None
       }else{
-        Some(o)
+        RepLogger.trace(RepLogger.Storager_Logger,s"DB operate getObject,data!=None, key=${key},o=${o}")
+        Some(o.asInstanceOf[T])
       }
     }
   }
-
 
   /**
    * @author jiangbuyun
@@ -164,7 +59,7 @@ abstract class IDBAccess {
    * @param	key String 指定的键，bb Array[Byte] 要存储的值
    * @return	返回成功或者失败 Boolean
    * */
-  def   putBytes (key : String,bb : Array[Byte]):Boolean
+  protected def   putBytes (key : String,bb : Array[Byte]):Boolean
 
   /**
    * @author jiangbuyun
@@ -177,58 +72,13 @@ abstract class IDBAccess {
   def   putObject (key : String,o : Any):Boolean={
     var b = false
     if(o != null){
+      RepLogger.trace(RepLogger.Storager_Logger,s"DB operate putObject, key=${key}")
       val bb = SerializeUtils.serialise(o)
       b = putBytes(key,bb)
+    }else{
+      RepLogger.trace(RepLogger.Storager_Logger,s"DB operate putObject,input o is null, key=${key}")
     }
     b
-  }
-
-  /**
-   * @author jiangbuyun
-   * @version	2.0
-   * @since	2022-04-07
-   * @category	存储指定的键和值到数据库
-   * @param	key String 指定的键，str String 要存储的字符串
-   * @return	返回成功或者失败 Boolean
-   * */
-  def   putString (key : String,str : String):Boolean={
-    this.putObject(key,str)
-  }
-
-  /**
-   * @author jiangbuyun
-   * @version	2.0
-   * @since	2022-04-07
-   * @category	存储指定的键和值到数据库
-   * @param	key String 指定的键，l Long 要存储的长整型
-   * @return	返回成功或者失败 Boolean
-   * */
-  def   putLong (key : String,l : Long):Boolean={
-    this.putObject(key,l)
-  }
-
-  /**
-   * @author jiangbuyun
-   * @version	2.0
-   * @since	2022-04-07
-   * @category	存储指定的键和值到数据库
-   * @param	key String 指定的键，i Int 要存储的整型
-   * @return	返回成功或者失败 Boolean
-   * */
-  def   putLong (key : String,i : Int):Boolean={
-    this.putObject(key,i)
-  }
-
-  /**
-   * @author jiangbuyun
-   * @version	2.0
-   * @since	2022-04-07
-   * @category	存储指定的键和值到数据库
-   * @param	key String 指定的键，i Int 要存储的整型
-   * @return	返回成功或者失败 Boolean
-   * */
-  def   putDate (key : String,d : Date):Boolean={
-    this.putObject(key,d)
   }
 
   /**
@@ -277,7 +127,7 @@ abstract class IDBAccess {
    * */
   def transactionOperate(callBack: ITransactionCallback):Boolean={
     var r = false
-    synchLock.synchronized(
+    lock.synchronized(
       if(callBack != null){
         this.isTransaction = true
         try{

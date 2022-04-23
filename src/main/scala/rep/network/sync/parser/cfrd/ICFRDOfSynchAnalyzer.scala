@@ -1,5 +1,7 @@
 package rep.network.sync.parser.cfrd
 
+import rep.app.conf.RepChainConfig
+import rep.app.system.RepChainSystemContext
 import rep.log.RepLogger
 import rep.network.consensus.byzantium.ConsensusCondition
 import rep.network.sync.SyncMsg.AnalysisResult
@@ -13,13 +15,13 @@ import rep.proto.rc2.BlockchainInfo
  * 基于CFRD共识协议的同步区块信息分析的实现类
  */
 
-class ICFRDOfSynchAnalyzer(systemName: String, lchaininfo: BlockchainInfo, nodemgr: NodeMgr) extends ISynchAnalyzer( systemName,  lchaininfo,  nodemgr) {
+class ICFRDOfSynchAnalyzer(ctx:RepChainSystemContext, lchaininfo: BlockchainInfo, nodemgr: NodeMgr) extends ISynchAnalyzer(ctx,  lchaininfo,  nodemgr) {
 
   override def Parser(reslist: List[SyncMsg.ResponseInfo], isStartupSynch: Boolean): Unit = {
     val lh = lchaininfo.height
     val nodes = nodemgr.getStableNodes
 
-    if (ConsensusCondition.ConsensusConditionChecked(reslist.length)) {
+    if ( consensusCondition.ConsensusConditionChecked(reslist.length)) {
       //获取到到chaininfo信息的数量，得到大多数节点的响应，进一步判断同步的策略
       //获取返回的chaininfo信息中，大多数节点的相同高度的最大值
       val heightStatis = reslist.groupBy(x => x.response.height).map(x => (x._1, x._2.length)).toList.sortBy(x => -x._2)
@@ -30,7 +32,7 @@ class ICFRDOfSynchAnalyzer(systemName: String, lchaininfo: BlockchainInfo, nodem
 
       RepLogger.info(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"--------Info,获取同步的返回信息，统计结果=${heightStatis.mkString("|")}"))
 
-      if (ConsensusCondition.ConsensusConditionChecked(nodesOfmaxHeight)) {
+      if (consensusCondition.ConsensusConditionChecked(nodesOfmaxHeight)) {
         //得到了真正大多数节点相同的高度
         val agreementResult = checkHashAgreement(maxheight, reslist, nodes.size, 1)
         if (agreementResult._1) {

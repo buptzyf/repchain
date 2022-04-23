@@ -2,6 +2,7 @@ package rep.authority.cache
 
 import java.util.concurrent.ConcurrentHashMap
 
+import rep.app.system.RepChainSystemContext
 import rep.log.RepLogger
 import rep.proto.rc2.Signer
 import rep.sc.tpl.did.DidTplPrefix
@@ -15,12 +16,12 @@ object SignerCache{
                         certNames:Seq[String],createTime:_root_.scala.Option[com.google.protobuf.timestamp.Timestamp])
 }
 
-class SignerCache(systemName:String) extends ICache(systemName){
+class SignerCache(ctx : RepChainSystemContext) extends ICache(ctx){
   import SignerCache._
 
   protected def getOpIdInAuthid(authid:String,blockPreload: BlockPreload):List[String]={
     RepLogger.Permission_Logger.trace(s"SignerCache.getOpidInAuthid ,key=${authid}")
-    val auth = PermissionCacheManager.getCache(systemName,DidTplPrefix.authPrefix)
+    val auth = ctx.getPermissionCacheManager.getCache(DidTplPrefix.authPrefix)
     if(auth != null){
       val auth_cache = auth.asInstanceOf[AuthenticateCache]
       val data = auth_cache.get(authid,blockPreload)
@@ -69,7 +70,7 @@ class SignerCache(systemName:String) extends ICache(systemName){
   }
 
   override protected def getPrefix: String = {
-    if(IdTool.isDidContract(systemName)){
+    if(IdTool.isDidContract(ctx.getConfig.getAccountContractName)){
       this.common_prefix + this.splitSign + DidTplPrefix.signerPrefix
     }else{
       this.common_prefix + this.splitSign

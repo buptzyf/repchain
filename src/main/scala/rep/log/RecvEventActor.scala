@@ -16,18 +16,13 @@
 
 package rep.log
 
-import akka.actor.{Actor, ActorRef, Address, Props, Terminated}
+import akka.actor.{Actor, ActorRef, Props, Terminated}
 import akka.cluster.pubsub.DistributedPubSub
-import akka.cluster.pubsub.DistributedPubSubMediator.{Publish, Subscribe}
+import akka.cluster.pubsub.DistributedPubSubMediator.{ Subscribe}
 import akka.cluster.Cluster
-import akka.cluster.ClusterEvent._
 import akka.cluster.MemberStatus
-import rep.ui.web.EventServer
 import rep.network.tools.PeerExtension
-import rep.storage._
-import akka.stream.Graph
-
-import scala.collection.mutable.{HashSet, Set}
+import scala.collection.mutable.{HashSet}
 import rep.log.RecvEventActor.Register
 import rep.network.autotransaction.Topic
 import rep.network.util.NodeHelp

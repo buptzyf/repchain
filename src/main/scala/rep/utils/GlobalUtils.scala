@@ -92,10 +92,4 @@ object GlobalUtils {
     val RECEIVE_INFO = 2
   }
 
-  //
-
-  val AppConfigPath = "application.conf"
-  val SysConfigPath = "conf/system.conf"
-
-
 }

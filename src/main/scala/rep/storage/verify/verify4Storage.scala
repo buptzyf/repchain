@@ -17,6 +17,9 @@
 package rep.storage.verify
 
 
+import rep.app.system.RepChainSystemContext
+import rep.crypto.Sha256
+import rep.crypto.cert.SignTool
 import rep.log.RepLogger
 import rep.network.consensus.util.{BlockHelp, BlockVerify}
 import rep.proto.rc2.Block
@@ -25,7 +28,7 @@ import rep.storage.chain.block.BlockSearcher
 import scala.util.Random
 import scala.util.control.Breaks._
 
-object verify4Storage {
+class verify4Storage(ctx:RepChainSystemContext) {
   
   private def getFileInfo(sr: BlockSearcher, blockHeight:Long):Set[(Int,Long,Long)] = {
     val lastInfo = sr.getLastChainInfo
@@ -70,7 +73,7 @@ object verify4Storage {
     if(VerfiyBlock(end,sr.getSystemName)){
       if(start != null){
         if(VerfiyBlock(start,sr.getSystemName)){
-          val prehash = BlockHelp.GetBlockHeaderHash(start.getHeader)
+          val prehash = BlockHelp.GetBlockHeaderHash(start.getHeader,ctx.getHashTool)
           if(prehash == end.getHeader.hashPrevious.toStringUtf8()){
             r = true
           }
@@ -84,9 +87,9 @@ object verify4Storage {
   
   private def VerfiyBlock(block:Block,sysName:String):Boolean={
     var vr = false
-    val r = BlockVerify.VerifyAllEndorseOfBlock(block, sysName)
+    val r = BlockVerify.VerifyAllEndorseOfBlock(block, ctx.getSignTool)
     if(r._1){
-      val hash = BlockHelp.GetBlockHeaderHash(block.getHeader)
+      val hash = BlockHelp.GetBlockHeaderHash(block.getHeader,ctx.getHashTool)
       if(hash == block.getHeader.hashPresent.toStringUtf8()){
         vr = true
       }
@@ -102,7 +105,7 @@ object verify4Storage {
       println("921000006e0012v696.node5")
     }
     try{
-      val sr: BlockSearcher = new BlockSearcher(sysName)
+      val sr: BlockSearcher = ctx.getBlockSearch
       val bcinfo = sr.getChainInfo
       if(bcinfo != null){
         if(bcinfo.height > 1){

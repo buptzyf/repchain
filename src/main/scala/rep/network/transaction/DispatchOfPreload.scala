@@ -18,7 +18,6 @@ package rep.network.transaction
 
 import akka.actor.Props
 import akka.routing._
-import rep.app.conf.SystemProfile
 import rep.log.RepLogger
 import rep.network.base.ModuleBase
 import rep.network.consensus.common.MsgOfConsensus.{PreTransBlock, PreTransBlockOfCache}
@@ -45,7 +44,7 @@ class DispatchOfPreload(moduleName: String) extends ModuleBase(moduleName) {
 
   private def createRouter = {
     if (router == null) {
-      var len = SystemProfile.getVoteNodeList.size()
+      var len = pe.getRepChainContext.getConfig.getVoteNodeList.length
       if(len <= 0){
         len  = 1
       }

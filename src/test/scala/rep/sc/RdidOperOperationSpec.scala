@@ -23,21 +23,15 @@ import org.json4s.jackson.Serialization
 import org.json4s.native.Serialization.write
 import org.json4s.{DefaultFormats, jackson}
 import org.scalatest._
-import rep.app.conf.SystemProfile
 import rep.app.system.ClusterSystem
 import rep.app.system.ClusterSystem.InitType
-import rep.crypto.{CryptoMgr, Sha256}
+import rep.crypto.Sha256
 import rep.crypto.cert.SignTool
 import rep.network.autotransaction.PeerHelper
-import rep.network.module.cfrd.ModuleManagerOfCFRD
-import rep.protos.peer.Certificate.CertType
-import rep.protos.peer.Operate.OperateType
-import rep.protos.peer._
 import rep.sc.SandboxDispatcher.DoTransaction
 import rep.sc.tpl.did.operation.{DidOperation, OperOperation, SignerOperation}
 import rep.sc.tpl.did.operation.OperOperation.{OperateStatus, operateNotExists}
 import scalapb.json4s.JsonFormat
-
 import scala.collection.mutable
 import scala.concurrent.duration._
 import scala.io.BufferedSource
@@ -48,7 +42,7 @@ import scala.io.BufferedSource
   * @param _system
   */
 class RdidOperOperationSpec(_system: ActorSystem) extends TestKit(_system) with Matchers with FunSuiteLike with BeforeAndAfterAll {
-
+/*
   def this() = this(ActorSystem("RdidOperOperationSpec", new ClusterSystem("121000005l35120456.node1", InitType.MULTI_INIT, false).getConf))
 
   override def afterAll: Unit = {
@@ -170,4 +164,6 @@ class RdidOperOperationSpec(_system: ActorSystem) extends TestKit(_system) with 
     msg_recv.head.getResult.reason.isEmpty should be(true)
   }
 
+
+ */
 }

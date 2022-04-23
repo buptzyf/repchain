@@ -22,24 +22,17 @@ import com.google.protobuf.timestamp.Timestamp
 import org.json4s.native.Serialization.write
 import org.json4s.{DefaultFormats, jackson}
 import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, Matchers}
-import rep.app.conf.SystemProfile
 import rep.app.system.ClusterSystem
 import rep.app.system.ClusterSystem.InitType
-import rep.crypto.{CryptoMgr, Sha256}
+import rep.crypto.Sha256
 import rep.crypto.cert.SignTool
 import rep.network.autotransaction.PeerHelper
 import rep.network.tools.PeerExtension
-import rep.protos.peer.Authorize.TransferType
-import rep.protos.peer.Certificate.CertType
-import rep.protos.peer.ChaincodeDeploy.ContractClassification
-import rep.protos.peer.Operate.OperateType
-import rep.protos.peer._
 import rep.sc.SandboxDispatcher.DoTransaction
 import rep.sc.TransferSpec.{ACTION, SetMap}
 import rep.sc.tpl.Transfer
 import rep.utils.{IdTool, SerializeUtils}
 import scalapb.json4s.JsonFormat
-
 import scala.collection.mutable.{ArrayBuffer, Map}
 import scala.concurrent.duration._
 
@@ -62,7 +55,7 @@ object StateSpec {
   * @param _system
   */
 class StateSpec(_system: ActorSystem) extends TestKit(_system) with Matchers with FlatSpecLike with BeforeAndAfterAll {
-
+/*
   def this() = this(ActorSystem("StateSpec", new ClusterSystem("121000005l35120456.node1", InitType.MULTI_INIT, false).getConf))
 
   override def afterAll: Unit = {
@@ -269,4 +262,6 @@ class StateSpec(_system: ActorSystem) extends TestKit(_system) with Matchers wit
         msg_recv6(0).getResult.reason should equal(rcs(i))
     }
   }
+
+ */
 }

@@ -16,16 +16,16 @@
 //zhj
 package rep.network.consensus.pbft.block
 
-import akka.pattern.ask
 import akka.actor.{ActorSelection, Address, Props}
 import akka.pattern.AskTimeoutException
 import akka.util.Timeout
 import com.google.protobuf.ByteString
 import rep.app.Repchain
-import rep.app.conf.{SystemProfile, TimePolicy}
+import rep.app.conf.TimePolicy
 import rep.log.RepLogger
 import rep.network.base.ModuleBase
-import rep.network.consensus.pbft.MsgOfPBFT.{MPbftReply, MsgPbftPrePrepare, MsgPbftPrePrepareResend, MsgPbftReply, MsgPbftReplyOk, RequesterOfEndorsement, ResendEndorseInfo, ResultFlagOfEndorse, ResultOfEndorsed}
+import rep.network.confirmblock.pbft.ConfirmOfBlockOfPBFT
+import rep.network.consensus.pbft.MsgOfPBFT.{MPbftReply, MsgPbftPrePrepare, MsgPbftPrePrepareResend, MsgPbftReply, MsgPbftReplyOk, RequesterOfEndorsement}
 import rep.network.consensus.util.BlockVerify
 import rep.proto.rc2.Block
 import rep.utils.SerializeUtils
@@ -74,7 +74,7 @@ class EndorsementRequest4Future(moduleName: String) extends ModuleBase(moduleNam
   private def VerifyReply(block: Block, reply: MPbftReply): Boolean = {
     val bb = SerializeUtils.serialise(MPbftReply(reply.commits,None))
     val signature = reply.signature.get//todo get?
-    val ev = BlockVerify.VerifyOneEndorseOfBlock(signature, bb, pe.getSysTag)
+    val ev = BlockVerify.VerifyOneEndorseOfBlock(signature, bb, pe.getRepChainContext.getSignTool)
     ev._1
   }
 
@@ -88,7 +88,7 @@ class EndorsementRequest4Future(moduleName: String) extends ModuleBase(moduleNam
         recvedReplies.clear()
         recvedReplies += reply.reply
       }
-      if (recvedReplies.size >= (SystemProfile.getPbftF + 1)) {
+      if (recvedReplies.size >= (1 + 1)) {
         val replies = recvedReplies
           .sortWith( (left,right)=> left.signature.get.certId.toString < right.signature.get.certId.toString)
         context.parent ! MsgPbftReplyOk(reply.block, replies)
@@ -101,7 +101,7 @@ class EndorsementRequest4Future(moduleName: String) extends ModuleBase(moduleNam
 
   override def receive = {
     case MsgPbftReply(block,reply,chainInfo) =>
-      RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", MsgPbftReply: " + ", " + Repchain.h4(block.getHeader.hashPresent.toStringUtf8))
+      RepLogger.debug(RepLogger.zLogger,"R: " + ConfirmOfBlockOfPBFT.nn(sender) + "->" + ConfirmOfBlockOfPBFT.nn(pe.getSysTag) + ", MsgPbftReply: " + ", " + ConfirmOfBlockOfPBFT.h4(block.getHeader.hashPresent.toStringUtf8))
       ProcessMsgPbftReply(MsgPbftReply(block,reply,chainInfo))
 
     case MsgPbftPrePrepareResend(senderPath,block, blocker) =>
@@ -109,7 +109,7 @@ class EndorsementRequest4Future(moduleName: String) extends ModuleBase(moduleNam
 
     case RequesterOfEndorsement(block, blocker, addr) =>
       //待请求背书的块的上一个块的hash不等于系统最新的上一个块的hash，停止发送背书
-      RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", RequesterOfEndorsement: " + ", " + Repchain.h4(block.getHeader.hashPresent.toStringUtf8))
+      RepLogger.debug(RepLogger.zLogger,"R: " + ConfirmOfBlockOfPBFT.nn(sender) + "->" + ConfirmOfBlockOfPBFT.nn(pe.getSysTag) + ", RequesterOfEndorsement: " + ", " + ConfirmOfBlockOfPBFT.h4(block.getHeader.hashPresent.toStringUtf8))
       if(block.getHeader.hashPrevious.toStringUtf8() == pe.getCurrentBlockHash){
         handler(RequesterOfEndorsement(block, blocker, addr))
       }else{

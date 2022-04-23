@@ -10,18 +10,10 @@ import scala.concurrent._
 import akka.actor.{Actor, ActorRef, Props}
 import com.google.protobuf.ByteString
 import com.google.protobuf.timestamp.Timestamp
-import rep.app.conf.{SystemProfile, TimePolicy}
+import rep.app.conf.TimePolicy
 import rep.network.base.ModuleBase
 import rep.network.consensus.common.MsgOfConsensus.{PreTransBlock, PreTransBlockResult}
 import rep.network.tools.PeerExtension
-import rep.protos.peer._
-import rep.network.consensus.common.MsgOfConsensus.BlockRestore
-import rep.sc.SandboxDispatcher.DoTransaction
-import rep.sc.Sandbox.DoTransactionResult
-import rep.storage.ImpDataPreloadMgr
-
-import rep.utils._
-
 import scala.collection.mutable
 import akka.pattern.AskTimeoutException
 import rep.crypto.Sha256
@@ -35,12 +27,12 @@ object BlockStubActor {
 
   def props(name: String): Props = Props(classOf[BlockStubActor], name)
 
-  case class WriteBlockStub(trans: Seq[Transaction])
+  //case class WriteBlockStub(trans: Seq[Transaction])
 
 }
 
 class BlockStubActor(moduleName: String) extends ModuleBase(moduleName) {
-
+/*
   import context.dispatcher
   import scala.concurrent.duration._
   import rep.utils.IdTool
@@ -98,5 +90,6 @@ class BlockStubActor(moduleName: String) extends ModuleBase(moduleName) {
         pe.getActorRef(ModuleActorType.ActorType.storager).forward(BlockRestore(newblock, SourceOfBlock.TEST_PROBE, self))
       }
     case _ => //ignore
-  }
+  }*/
+  override def receive: Receive = ???
 }

@@ -18,7 +18,6 @@ package rep.network.consensus.pbft.endorse
 
 import akka.actor.Props
 import akka.routing._
-import rep.app.conf.SystemProfile
 import rep.log.RepLogger
 import rep.network.base.ModuleBase
 import rep.network.consensus.pbft.MsgOfPBFT.{MsgPbftCommit, MsgPbftPrePrepare, MsgPbftPrepare}
@@ -37,10 +36,12 @@ class DispatchOfRecvEndorsement(moduleName: String) extends ModuleBase(moduleNam
     RepLogger.info(RepLogger.Consensus_Logger, this.getLogMsgPrefix( "DispatchOfRecvEndorsement Start"))
   }
 
+  private val config = pe.getRepChainContext.getConfig
+
   private def createRouter = {
     if (router == null) {
-      var list: Array[Routee] = new Array[Routee](SystemProfile.getVoteNodeList.size())
-      for (i <- 0 to SystemProfile.getVoteNodeList.size() - 1) {
+      var list: Array[Routee] = new Array[Routee](config.getVoteNodeList.length)
+      for (i <- 0 to config.getVoteNodeList.length - 1) {
         var ca = context.actorOf(Endorser4Future.props("endorser" + i), "endorser" + i)
         context.watch(ca)
         list(i) = new ActorRefRoutee(ca)

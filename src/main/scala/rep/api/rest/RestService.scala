@@ -39,8 +39,6 @@ import javax.ws.rs._
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.Path
 import rep.proto.rc2.{Block, Transaction}
-//import org.glassfish.jersey.media.multipart.FormDataParam
-//import io.swagger.annotations._
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server._
 import StatusCodes._
@@ -59,7 +57,6 @@ import akka.http.scaladsl.marshallers.xml.ScalaXmlSupport
 import akka.http.scaladsl.model.{ContentTypes, HttpCharsets}
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import akka.stream.scaladsl.StreamConverters
-
 import scala.xml.NodeSeq
 import rep.log.RepLogger
 
@@ -75,7 +72,6 @@ class ChainService(ra: RestRouter)(implicit executionContext: ExecutionContext)
 
   import akka.pattern.ask
   import scala.concurrent.duration._
-
   import Json4sSupport._
 
   implicit val serialization = jackson.Serialization // or native.Serialization
@@ -393,7 +389,7 @@ class TransactionService(ra: RestRouter)(implicit executionContext: ExecutionCon
   implicit val serialization = jackson.Serialization // or native.Serialization
   implicit val formats = DefaultFormats
 
-  implicit val specFormat = jsonFormat10(CSpec)
+  implicit val specFormat = jsonFormat15(CSpec)
   implicit val specUnmarshaller: FromEntityUnmarshaller[CSpec] = Unmarshaller.firstOf(
     //只能处理application/xml
     nodeSeqUnmarshaller(MediaTypes.`application/xml` withCharset HttpCharsets.`UTF-8`) map {

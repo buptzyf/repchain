@@ -25,10 +25,10 @@ import akka.util.Timeout
 import com.google.protobuf.ByteString
 import com.google.protobuf.timestamp.Timestamp
 import rep.app.Repchain
-import rep.app.conf.{SystemProfile, TimePolicy}
-import rep.crypto.cert.SignTool
+import rep.app.conf.TimePolicy
 import rep.log.RepLogger
 import rep.network.base.ModuleBase
+import rep.network.confirmblock.pbft.ConfirmOfBlockOfPBFT
 import rep.network.consensus.pbft.MsgOfPBFT.{MPbftCommit, MPbftPrepare, MsgPbftCommit, MsgPbftPrepare}
 import rep.proto.rc2.Signature
 import rep.utils.{IdTool, SerializeUtils, TimeUtils}
@@ -56,7 +56,7 @@ class PbftPrepare(moduleName: String) extends ModuleBase(moduleName) {
     val certId = IdTool.getCertIdFromName(pe.getSysTag)
     val millis = TimeUtils.getCurrentTime()
     val sig = Signature(Option(certId),Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)),
-      ByteString.copyFrom(SignTool.sign(pe.getSysTag, bytes)))
+      ByteString.copyFrom(pe.getRepChainContext.getSignTool.sign(pe.getSysTag, bytes)))
     var commit : MPbftCommit = MPbftCommit(prepares,Some(sig))
 
     pe.getNodeMgr.getStableNodes.foreach(f => {
@@ -74,7 +74,7 @@ class PbftPrepare(moduleName: String) extends ModuleBase(moduleName) {
 
     case MsgPbftPrepare(senderPath,result, block, blocker, prepare, chainInfo) =>
           //already verified
-          RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", PbftPrepare prepare: " + blocker + ", " + block.getHeader.hashPresent.toStringUtf8)
+          RepLogger.debug(RepLogger.zLogger,"R: " + ConfirmOfBlockOfPBFT.nn(sender) + "->" + ConfirmOfBlockOfPBFT.nn(pe.getSysTag) + ", PbftPrepare prepare: " + blocker + ", " + block.getHeader.hashPresent.toStringUtf8)
           val hash = block.getHeader.hashPresent
           if ( hash.equals(recvedHash)) {
             recvedPrepares += prepare
@@ -83,7 +83,7 @@ class PbftPrepare(moduleName: String) extends ModuleBase(moduleName) {
             recvedPrepares.clear()
             recvedPrepares += prepare
           }
-          if ( recvedPrepares.size >= 2*SystemProfile.getPbftF)
+          if ( recvedPrepares.size >= 2*1)
             ProcessMsgPbftPepare(MsgPbftPrepare(senderPath,result, block, blocker, prepare, chainInfo))
 
     case _ => //ignore

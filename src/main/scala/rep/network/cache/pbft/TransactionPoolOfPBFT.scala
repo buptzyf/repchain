@@ -18,10 +18,7 @@ package rep.network.cache.pbft
 
 import akka.actor.Props
 import rep.network.cache.ITransactionPool
-import rep.network.consensus.pbft.MsgOfPBFT
 import rep.network.consensus.pbft.MsgOfPBFT.VoteOfBlocker
-import rep.network.consensus.pbft.vote.VoterOfPBFT
-import rep.network.module.ModuleActorType
 import rep.network.module.pbft.PBFTActorType
 
 /**

@@ -1,10 +1,7 @@
 package rep.network.sync.request.raft
 
 import akka.actor.{ActorSelection, Address, Props}
-import akka.pattern.AskTimeoutException
-import rep.app.conf.SystemProfile
 import rep.log.RepLogger
-import rep.network.consensus.byzantium.ConsensusCondition
 import rep.network.module.{IModuleManager, ModuleActorType}
 import rep.network.sync.SyncMsg.{ChainInfoOfRequest, MaxBlockInfo, ResponseInfo, StartSync, SyncPreblocker, SyncRequestOfStorager}
 import rep.network.sync.parser.ISynchAnalyzer
@@ -13,6 +10,7 @@ import rep.network.sync.request.ISynchRequester
 import rep.network.util.NodeHelp
 import rep.utils.GlobalUtils.{BlockEvent, EventType}
 import akka.pattern.{AskTimeoutException, ask}
+import rep.network.consensus.byzantium.ConsensusCondition
 import rep.proto.rc2.Event
 import rep.storage.chain.block.BlockStorager
 
@@ -32,8 +30,10 @@ class SynchRequesterOfRAFT (moduleName: String) extends ISynchRequester(moduleNa
   import context.dispatcher
 
   override protected def getAnalyzerInSynch: ISynchAnalyzer = {
-    new IRAFTSynchAnalyzer(pe.getSysTag, pe.getSystemCurrentChainStatus, pe.getNodeMgr)
+    new IRAFTSynchAnalyzer(pe.getRepChainContext, pe.getSystemCurrentChainStatus, pe.getNodeMgr)
   }
+
+
 
   protected def GetNodeOfChainInfo(addr: Address, lh: Long):ResponseInfo = {
     var result: ResponseInfo = null
@@ -75,7 +75,7 @@ class SynchRequesterOfRAFT (moduleName: String) extends ISynchRequester(moduleNa
           //当前hash不一致
           if(res.response.previousBlockHash.toStringUtf8 == lprehash){
             //前面一个块的hash一致，回滚一个块
-            val da = BlockStorager.getBlockStorager(pe.getSysTag)
+            val da = pe.getRepChainContext.getBlockStorager
             if (da.rollbackToHeight(lh - 1)) {
               RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"entry rollback block,localhost=${lh}"))
               //同步区块
@@ -91,12 +91,12 @@ class SynchRequesterOfRAFT (moduleName: String) extends ISynchRequester(moduleNa
       }else if(res.response.height < lh){
         RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"synch success,localhost=${lh},preblocker=${res.response.height}"))
       }else{
-        if(res.ChainInfoOfSpecifiedHeight.currentBlockHash == lhash){
+        if(res.ChainInfoOfSpecifiedHeight.currentBlockHash.toStringUtf8 == lhash){
           RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"entry synch block,localhost=${lh},preblocker=${res.response.height}"))
           getBlockDatas(lh+1, res.response.height, res.responser)
         }else{
-          if(res.ChainInfoOfSpecifiedHeight.previousBlockHash == lprehash){
-            val da = BlockStorager.getBlockStorager(pe.getSysTag)
+          if(res.ChainInfoOfSpecifiedHeight.previousBlockHash.toStringUtf8 == lprehash){
+            val da = pe.getRepChainContext.getBlockStorager
             if (da.rollbackToHeight(lh - 1)) {
               RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"entry rollback block,localhost=${lh}"))
               getBlockDatas(lh-1, res.response.height, res.responser)
@@ -113,16 +113,18 @@ class SynchRequesterOfRAFT (moduleName: String) extends ISynchRequester(moduleNa
     rb
   }
 
+
+
   override def receive: Receive = {
     case StartSync(isNoticeModuleMgr: Boolean) =>
       schedulerLink = clearSched()
       var rb = true
       initSystemChainInfo
-      if (ConsensusCondition.CheckWorkConditionOfSystem(pe.getNodeMgr.getStableNodes.size) && !pe.isSynching) {
+      if (consensusCondition.CheckWorkConditionOfSystem(pe.getNodeMgr.getStableNodes.size) && !pe.isSynching) {
         pe.setSynching(true)
         try {
           val ssize = pe.getNodeMgr.getStableNodes.size
-          if(SystemProfile.getVoteNodeList.size() == ssize){
+          if(pe.getRepChainContext.getConfig.getVoteNodeList.length == ssize){
             rb = Handler(isNoticeModuleMgr)
           }
         } catch {
@@ -139,7 +141,7 @@ class SynchRequesterOfRAFT (moduleName: String) extends ISynchRequester(moduleNa
         }
 
       } else {
-        RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"too few node,min=${SystemProfile.getVoteNodeMin} or synching  from actorAddr" + "～" + NodeHelp.getNodePath(sender())))
+        RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"too few node,min=${pe.getRepChainContext.getConfig.getMinVoteNumber} or synching  from actorAddr" + "～" + NodeHelp.getNodePath(sender())))
       }
 
     case SyncRequestOfStorager(responser, maxHeight) =>

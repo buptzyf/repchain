@@ -161,4 +161,5 @@ class ImpFileWriter(fileName:String,isEncrypt:Boolean=false) extends IFileWriter
   override def getFileNo: Int = {
     this.fileName.substring(this.fileName.lastIndexOf("_")+1).toInt
   }
+
 }

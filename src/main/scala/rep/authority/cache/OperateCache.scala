@@ -1,5 +1,6 @@
 package rep.authority.cache
 
+import rep.app.system.RepChainSystemContext
 import rep.proto.rc2.Operate
 import rep.proto.rc2.Operate.OperateType
 import rep.sc.tpl.did.DidTplPrefix
@@ -9,7 +10,7 @@ object OperateCache{
   case class opData(opId:String,opValid:Boolean,isOpen:Boolean,register:String)
 }
 
-class OperateCache(systemName:String) extends ICache(systemName) {
+class OperateCache(ctx : RepChainSystemContext) extends ICache(ctx) {
   import OperateCache._
 
   override protected def dataTypeConvert(any: Option[Any],blockPreload: BlockPreload): Option[Any] = {

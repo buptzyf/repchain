@@ -20,10 +20,11 @@ import akka.actor.Props
 import akka.cluster.pubsub.DistributedPubSubMediator.Publish
 import akka.routing._
 import rep.app.Repchain
-import rep.app.conf.SystemProfile
+import rep.app.conf.RepChainConfig
 import rep.log.RepLogger
 import rep.network.autotransaction.Topic
 import rep.network.base.ModuleBase
+import rep.network.confirmblock.pbft.ConfirmOfBlockOfPBFT
 import rep.network.consensus.pbft.MsgOfPBFT
 import rep.network.consensus.pbft.MsgOfPBFT.{CollectEndorsement, MsgPbftReplyOk, RequesterOfEndorsement}
 import rep.proto.rc2.{Block, Event, Signature}
@@ -45,10 +46,12 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
     RepLogger.info(RepLogger.Consensus_Logger, this.getLogMsgPrefix( "EndorseCollector Start"))
   }
 
+  private val config = pe.getRepChainContext.getConfig
+
   private def createRouter = {
     if (router == null) {
-      var list: Array[Routee] = new Array[Routee](SystemProfile.getVoteNodeList.size()*2)
-      for (i <- 0 to SystemProfile.getVoteNodeList.size()*2 - 1) {
+      var list: Array[Routee] = new Array[Routee](config.getVoteNodeList.length*2)
+      for (i <- 0 to config.getVoteNodeList.length*2 - 1) {
         var ca = context.actorOf(EndorsementRequest4Future.props("endorsementrequester" + i), "endorsementrequester" + i)
         context.watch(ca)
         list(i) = new ActorRefRoutee(ca)
@@ -72,7 +75,7 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
 
   override def receive = {
     case CollectEndorsement(block, blocker) =>
-      RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", CollectEndorsement: " + ", " + Repchain.h4(block.getHeader.hashPresent.toStringUtf8) +","+block.getHeader.height)
+      RepLogger.debug(RepLogger.zLogger,"R: " + ConfirmOfBlockOfPBFT.nn(sender) + "->" + ConfirmOfBlockOfPBFT.nn(pe.getSysTag) + ", CollectEndorsement: " + ", " + ConfirmOfBlockOfPBFT.h4(block.getHeader.hashPresent.toStringUtf8) +","+block.getHeader.height)
       if(!pe.isSynching){
         createRouter
         if (this.block != null && this.block.getHeader.hashPresent.toStringUtf8() == block.getHeader.hashPresent.toStringUtf8()) {
@@ -92,7 +95,7 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
       }
 
     case MsgPbftReplyOk(block, replies) =>
-      RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", MsgPbftReplyOk: " + ", " + Repchain.h4(block.getHeader.hashPresent.toStringUtf8))
+      RepLogger.debug(RepLogger.zLogger,"R: " + ConfirmOfBlockOfPBFT.nn(sender) + "->" + ConfirmOfBlockOfPBFT.nn(pe.getSysTag) + ", MsgPbftReplyOk: " + ", " + ConfirmOfBlockOfPBFT.h4(block.getHeader.hashPresent.toStringUtf8))
       if(!pe.isSynching) {
         //block不空，该块的上一个块等于最后存储的hash，背书结果的块hash跟当前发出的块hash一致
         val hash = pe.getCurrentBlockHash
@@ -110,6 +113,6 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
       }
 
     case _ =>
-      RepLogger.debug(RepLogger.zLogger, "R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", EndorseCollector recv other message")
+      RepLogger.debug(RepLogger.zLogger, "R: " + ConfirmOfBlockOfPBFT.nn(sender) + "->" + ConfirmOfBlockOfPBFT.nn(pe.getSysTag) + ", EndorseCollector recv other message")
   }
 }

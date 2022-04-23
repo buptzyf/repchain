@@ -3,11 +3,8 @@
 package rep.network.module.pbft
 
 import akka.actor.Props
-import rep.app.conf.SystemProfile
 import rep.log.RepLogger
-import rep.network.cache.TransactionOfCollectioner
 import rep.network.cache.pbft.TransactionPoolOfPBFT
-import rep.network.confirmblock.common.ConfirmOfBlock
 import rep.network.confirmblock.pbft.ConfirmOfBlockOfPBFT
 import rep.network.consensus.pbft.block.{BlockerOfPBFT, EndorseCollector}
 import rep.network.module.{IModuleManager, ModuleActorType}
@@ -16,7 +13,6 @@ import rep.network.consensus.pbft.endorse.{PbftCommit, PbftPrePrepare, PbftPrepa
 import rep.network.consensus.pbft.MsgOfPBFT.VoteOfBlocker
 import rep.network.consensus.pbft.endorse.DispatchOfRecvEndorsement
 import rep.network.persistence.StoragerOfPBFT
-import rep.network.consensus.pbft.vote
 import rep.network.consensus.pbft.vote.VoterOfPBFT
 import rep.network.sync.request.pbft.SynchRequesterOfPBFT
 
@@ -25,11 +21,11 @@ import rep.network.sync.request.pbft.SynchRequesterOfPBFT
  * PBFT的模块管理类，继承公共的模块管理类，实现PBFT的自己的模块
  */
 object ModuleManagerOfPBFT{
-  def props(name: String, sysTag: String, enableStatistic: Boolean, enableWebSocket: Boolean, isStartup: Boolean): Props = Props(classOf[ModuleManagerOfPBFT], name, sysTag, enableStatistic: Boolean, enableWebSocket: Boolean, isStartup: Boolean)
+  def props(name: String,  isStartup: Boolean): Props = Props(classOf[ModuleManagerOfPBFT], name,  isStartup: Boolean)
 
 }
 
-class ModuleManagerOfPBFT(moduleName: String, sysTag: String, enableStatistic: Boolean, enableWebSocket: Boolean, isStartup: Boolean) extends IModuleManager(moduleName,sysTag, enableStatistic, enableWebSocket, isStartup){
+class ModuleManagerOfPBFT(moduleName: String,  isStartup: Boolean) extends IModuleManager(moduleName,isStartup){
 
   override def preStart(): Unit = {
     RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix( "ModuleManagerOfPBFT Start"))
@@ -40,7 +36,7 @@ class ModuleManagerOfPBFT(moduleName: String, sysTag: String, enableStatistic: B
   }
 
   override def loadConsensusModule = {
-    if (SystemProfile.getVoteNodeList.contains(this.sysTag)) {
+    if (pe.getRepChainContext.getConfig.getVoteNodeList.contains(pe.getSysTag)) {
       pe.register(ModuleActorType.ActorType.transactionpool, context.actorOf(TransactionPoolOfPBFT.props("transactionpool"), "transactionpool")) //zhj
     }
     //pe.register(ModuleActorType.ActorType.transactioncollectioner, context.actorOf(TransactionOfCollectioner.props("transactioncollectioner"), "transactioncollectioner"))

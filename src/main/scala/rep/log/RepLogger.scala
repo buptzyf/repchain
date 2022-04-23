@@ -17,9 +17,7 @@ package rep.log
 
 import org.slf4j.LoggerFactory
 import org.slf4j.Logger
-import rep.app.conf.SystemProfile
 import rep.log.httplog.{AlertInfo, HttpLogger};
-
 
 /**
  * RepChain统一日志输出工具，外部输出日志统一调用对象
@@ -54,17 +52,11 @@ object RepLogger {
   def Permission_Logger = LoggerFactory.getLogger("Permission_Logger")
 
 
-  private def getHttpLogger: HttpLogger = {
-    HttpLogger.getHttpLogger(SystemProfile.getCoreThreads, SystemProfile.getMaxThreads, SystemProfile.getAliveTime,
-      SystemProfile.getIsOutputAlert, SystemProfile.getPrismaUrl)
-  }
 
-  def sendAlertToDB(info: AlertInfo): Unit = {
-    if (SystemProfile.getIsOutputAlert) {
-      val tmplog = getHttpLogger
-      if (tmplog != null) {
-        tmplog.SendAlert(info)
-      }
+
+  def sendAlertToDB(httpLogger:HttpLogger, info: AlertInfo): Unit = {
+    if (httpLogger.hasOutputAlert) {
+      httpLogger.SendAlert(info)
     }
   }
 

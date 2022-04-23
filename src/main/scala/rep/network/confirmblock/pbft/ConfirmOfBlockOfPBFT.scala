@@ -17,28 +17,49 @@
 package rep.network.confirmblock.pbft
 
 import akka.actor.{ActorRef, Props}
-import akka.util.Timeout
-import rep.app.Repchain
-import rep.app.conf.SystemProfile
 import rep.log.{RepLogger, RepTimeTracer}
 import rep.network.autotransaction.Topic
-import rep.network.base.ModuleBase
 import rep.network.confirmblock.IConfirmOfBlock
 import rep.network.consensus.common.MsgOfConsensus
 import rep.network.consensus.common.MsgOfConsensus.{BatchStore, BlockRestore}
 import rep.network.consensus.pbft.MsgOfPBFT
 import rep.network.consensus.pbft.MsgOfPBFT.{MPbftCommit, MPbftReply}
-import rep.network.consensus.util.BlockVerify
 import rep.network.module.ModuleActorType.ActorType
 import rep.network.persistence.IStorager.SourceOfBlock
 import rep.proto.rc2.{Block, Event, Signature}
 import rep.utils.GlobalUtils.EventType
 import rep.utils.SerializeUtils
-
 import scala.concurrent._
 
 object ConfirmOfBlockOfPBFT {
   def props(name: String): Props = Props(classOf[ConfirmOfBlockOfPBFT], name)
+  def h4(h:String) = {
+    if (h.size >= 4)
+      h.substring(0,4)
+    else
+      h
+  }
+
+  def nn(s:String) = {
+    var r = ""
+    if (s.contains("121000005l35120456.node1")) r = "node1"
+    if (s.contains("12110107bi45jh675g.node2")) r = "node2"
+    if (s.contains("122000002n00123567.node3")) r = "node3"
+    if (s.contains("921000005k36123789.node4")) r = "node4"
+    if (s.contains("921000006e0012v696.node5")) r = "node5"
+    r
+  }
+
+  def nn(sender:ActorRef) = {
+    var r = ""
+    val s = sender.path.toString
+    if (s.contains("22522")) r = "node1"
+    if (s.contains("22523")) r = "node2"
+    if (s.contains("22524")) r = "node3"
+    if (s.contains("22525")) r = "node4"
+    if (s.contains("22526")) r = "node5"
+    r
+  }
 }
 
 class ConfirmOfBlockOfPBFT(moduleName: String) extends IConfirmOfBlock(moduleName) {
@@ -108,7 +129,7 @@ class ConfirmOfBlockOfPBFT(moduleName: String) extends IConfirmOfBlock(moduleNam
   private def handler(block: Block, actRefOfBlock: ActorRef, replies : Seq[MPbftReply]) = {
     RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"confirm verify endorsement start,height=${block.getHeader.height}"))
     var b = true
-    if (SystemProfile.getIsVerifyOfEndorsement)
+    if (pe.getRepChainContext.getConfig.isVerifyOfEndorsement)
         b = asyncVerifyEndorses(block,replies)
     if (b) {
         transCount += block.transactions.size
@@ -148,7 +169,7 @@ class ConfirmOfBlockOfPBFT(moduleName: String) extends IConfirmOfBlock(moduleNam
           pe.setConfirmHeight(block.height)
         }
       } else { */
-        if ( replies.size >= (SystemProfile.getPbftF + 1))
+        if ( replies.size >= (1 + 1))
             handler(block, actRefOfBlock, replies)
       //}
     }
@@ -157,12 +178,12 @@ class ConfirmOfBlockOfPBFT(moduleName: String) extends IConfirmOfBlock(moduleNam
   override def receive = {
     //Endorsement block
     case MsgOfConsensus.ConfirmedBlock(block, actRefOfBlock) =>
-      RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", ConfirmedBlock(2p): " + ", " + Repchain.h4(block.getHeader.hashPresent.toStringUtf8))
+      RepLogger.debug(RepLogger.zLogger,"R: " + ConfirmOfBlockOfPBFT.nn(sender) + "->" + ConfirmOfBlockOfPBFT.nn(pe.getSysTag) + ", ConfirmedBlock(2p): " + ", " + ConfirmOfBlockOfPBFT.h4(block.getHeader.hashPresent.toStringUtf8))
       RepTimeTracer.setStartTime(pe.getSysTag, "blockconfirm", System.currentTimeMillis(), block.getHeader.height, block.transactions.size)
       checkedOfConfirmBlock(block, actRefOfBlock, Seq.empty)
       RepTimeTracer.setEndTime(pe.getSysTag, "blockconfirm", System.currentTimeMillis(), block.getHeader.height, block.transactions.size)
     case MsgOfPBFT.ConfirmedBlock(block, actRefOfBlock, replies) =>
-      RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", ConfirmedBlock: " + ", " + Repchain.h4(block.getHeader.hashPresent.toStringUtf8))
+      RepLogger.debug(RepLogger.zLogger,"R: " + ConfirmOfBlockOfPBFT.nn(sender) + "->" + ConfirmOfBlockOfPBFT.nn(pe.getSysTag) + ", ConfirmedBlock: " + ", " + ConfirmOfBlockOfPBFT.h4(block.getHeader.hashPresent.toStringUtf8))
       RepTimeTracer.setStartTime(pe.getSysTag, "blockconfirm", System.currentTimeMillis(), block.getHeader.height, block.transactions.size)
       checkedOfConfirmBlock(block, actRefOfBlock, replies)
       RepTimeTracer.setEndTime(pe.getSysTag, "blockconfirm", System.currentTimeMillis(), block.getHeader.height, block.transactions.size)

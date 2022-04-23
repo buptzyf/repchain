@@ -17,21 +17,20 @@
 package rep.network.consensus.pbft.block
 
 import akka.util.Timeout
-
-import scala.concurrent.duration._
 import akka.pattern.ask
 import akka.pattern.AskTimeoutException
 
 import scala.concurrent._
-import akka.actor.{ActorRef, Address, Props}
+import akka.actor.Props
 import akka.cluster.pubsub.DistributedPubSubMediator.Publish
-import rep.app.conf.{SystemProfile, TimePolicy}
+import rep.app.conf.TimePolicy
 import rep.network.base.ModuleBase
 import rep.app.Repchain
-import rep.network.consensus.util.{BlockHelp, BlockVerify}
+import rep.network.consensus.util.BlockHelp
 import rep.network.util.NodeHelp
 import rep.log.RepLogger
 import rep.network.autotransaction.Topic
+import rep.network.confirmblock.pbft.ConfirmOfBlockOfPBFT
 import rep.network.consensus.common.MsgOfConsensus.{PreTransBlock, PreTransBlockResult}
 import rep.network.consensus.pbft.MsgOfPBFT
 import rep.network.consensus.pbft.MsgOfPBFT.ConfirmedBlock
@@ -59,7 +58,7 @@ class GenesisBlocker(moduleName: String) extends ModuleBase(moduleName) {
   import context.dispatcher
   import scala.concurrent.duration._
   implicit val timeout = Timeout(TimePolicy.getTimeoutPreload*20.seconds)
-  val searcher = new BlockSearcher(pe.getSysTag)
+  val searcher = pe.getRepChainContext.getBlockSearch
 
   var preblock: Block = null
 
@@ -88,17 +87,17 @@ class GenesisBlocker(moduleName: String) extends ModuleBase(moduleName) {
   override def receive = {
     //创建块请求（给出块人）
     case GenesisBlocker.GenesisBlock =>
-      RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", GenesisBlock: ")
-      if(searcher.getChainInfo.height == 0 && NodeHelp.isSeedNode(pe.getSysTag)  ){
+      RepLogger.debug(RepLogger.zLogger,"R: " + ConfirmOfBlockOfPBFT.nn(sender) + "->" + ConfirmOfBlockOfPBFT.nn(pe.getSysTag) + ", GenesisBlock: ")
+      if(searcher.getChainInfo.height == 0 && NodeHelp.isSeedNode(pe.getSysTag,pe.getRepChainContext.getConfig.getGenesisNodeName)  ){
         if(this.preblock != null){
           mediator ! Publish(Topic.Block, MsgOfPBFT.ConfirmedBlock(preblock, sender, Seq.empty))
         }else{
           RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( "Create genesis block"))
-          preblock = BlockHelp.CreateGenesisBlock
+          preblock = BlockHelp.CreateGenesisBlock(pe.getRepChainContext.getConfig)
           preblock = ExecuteTransactionOfBlock(preblock)
           if (preblock != null) {
-            preblock = BlockHelp.AddBlockHeaderHash(preblock)
-            preblock = preblock.withHeader(BlockHelp.AddHeaderSignToBlock(preblock.getHeader, pe.getSysTag))
+            preblock = BlockHelp.AddBlockHeaderHash(preblock,pe.getRepChainContext.getHashTool)
+            preblock = preblock.withHeader(BlockHelp.AddHeaderSignToBlock(preblock.getHeader, pe.getSysTag,pe.getRepChainContext.getSignTool))
             //sendEvent(EventType.RECEIVE_INFO, mediator, selfAddr, Topic.Block, Event.Action.BLOCK_NEW)
             mediator ! Publish(Topic.Block, ConfirmedBlock(preblock, self, Seq.empty))
             //getActorRef(pe.getSysTag, ActorType.PERSISTENCE_MODULE) ! BlockRestore(blc, SourceOfBlock.CONFIRMED_BLOCK, self)

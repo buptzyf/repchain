@@ -18,9 +18,11 @@ package rep.sc.scalax
 
 
 import java.io._
-import rep.app.conf.SystemProfile
+
+import rep.app.conf.RepChainConfig
 import rep.crypto.Sha256
 import rep.storage.util.pathUtil
+
 import scala.collection.mutable
 import scala.reflect.internal.util.{AbstractFileClassLoader, BatchSourceFile}
 import scala.reflect.io.Path.jfile2path
@@ -35,20 +37,18 @@ import scala.tools.reflect.ToolBox
  * @author c4w
  */
 object Compiler{
-  //建立动态编译工具类实例
-  val contractOperationMode = SystemProfile.getContractOperationMode
-  var isDebug = true
-  contractOperationMode match{
-    case 0 => isDebug = true
-    case 1 => isDebug = false
-  }
-  val cp = new Compiler(None, isDebug)
+
   /** 根据传入的合约代码，以及指定的合约类唯一标识，生成合约类，并动态编译
    * @param pcode 合约代码主体部分
    * @cid 合约类唯一标识
    * @return 类定义实例
    */
-  def compilef(pcode: String, cid: String): Class[_]= {
+  def compilef(pcode: String, cid: String,config:RepChainConfig,sha256: Sha256): Class[_]= {
+    val isDebug = config.getContractRunMode  match {
+      case 0 => true
+      case 1 => false
+    }
+    val cp = new Compiler(None, isDebug,sha256)
     cp.compilef(pcode, cid)
   }
 
@@ -97,7 +97,7 @@ object Compiler{
  *  @param targetDir: 动态编译并加载的class路径
  *  @param bDebug: 是否调试模式
  */
-class Compiler(targetDir: Option[File], bDebug:Boolean) {
+class Compiler(targetDir: Option[File], bDebug:Boolean,sha256: Sha256) {
   //合约类名前缀
   val PRE_CLS_NAME = "SC_"
   //反射工具对象
@@ -209,7 +209,7 @@ class Compiler(targetDir: Option[File], bDebug:Boolean) {
    *  @return 类名字符串
    */
   protected def classNameForCode(code: String): String = {
-    PRE_CLS_NAME + Sha256.hashstr(code)
+    PRE_CLS_NAME + sha256.hashstr(code)
   }
 
 }

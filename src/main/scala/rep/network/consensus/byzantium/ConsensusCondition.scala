@@ -1,7 +1,8 @@
 package rep.network.consensus.byzantium
 
 import java.util.concurrent.atomic.AtomicInteger
-import rep.app.conf.SystemProfile
+
+import rep.app.conf.RepChainConfig
 
 
 /**
@@ -10,10 +11,10 @@ import rep.app.conf.SystemProfile
  * todo:自动部署可以更新
  */
 
-object ConsensusCondition {
-  private var ConsensusNodes : AtomicInteger = new AtomicInteger(SystemProfile.getVoteNodeList.size())
-  private var ConsensusScale : AtomicInteger = new AtomicInteger(SystemProfile.getNumberOfEndorsement)
-  private var LeastNodeNumber: AtomicInteger = new AtomicInteger(SystemProfile.getVoteNodeMin)
+class ConsensusCondition(config:RepChainConfig){
+  private val ConsensusNodes : AtomicInteger = new AtomicInteger(config.getVoteNodeList.length)
+  private val ConsensusScale : AtomicInteger = new AtomicInteger(config.getEndorsementNumberMode)
+  private val LeastNodeNumber: AtomicInteger = new AtomicInteger(config.getMinVoteNumber)
   private def Check(input:Int):Boolean={
     var scaledata = this.ConsensusScale.get()
     if(this.ConsensusScale == 1) {
@@ -33,7 +34,7 @@ object ConsensusCondition {
 
   //提供一致性判断方法
   def ConsensusConditionChecked(inputNumber: Int): Boolean = {
-    if (SystemProfile.getTypeOfConsensus == "PBFT") { //zhj
+    if (config.getConsensustype == "PBFT") { //zhj
       true
     } else {
       this.Check(inputNumber)

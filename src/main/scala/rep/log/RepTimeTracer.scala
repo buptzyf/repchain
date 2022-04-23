@@ -16,7 +16,6 @@
 package rep.log
 
 import java.util.concurrent.ConcurrentHashMap
-//import scala.jdk.CollectionConverters._
 import scala.collection.JavaConverters._
 import java.util.concurrent.atomic._
 

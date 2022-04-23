@@ -1,6 +1,7 @@
 package rep.storage.db.leveldb
 
 import java.io.File
+import java.util.concurrent.ConcurrentHashMap
 
 import org.fusesource.leveldbjni.JniDBFactory
 import org.iq80.leveldb.{DB, Options, WriteBatch}
@@ -54,6 +55,8 @@ class ImpLevelDBAccess private extends IDBAccess{
       if (!b) {
         RepLogger.error(RepLogger.Storager_Logger,  "ImpLevelDBAccess error:db path create failed," +
           s"dbpath=${this.DBPath}")
+      }else{
+        RepLogger.trace(RepLogger.Storager_Logger,s"DB's Dir Exist, dbType=LevelDB,dbPath=${DBPath}")
       }
     }catch {
       case e:Exception =>
@@ -64,6 +67,7 @@ class ImpLevelDBAccess private extends IDBAccess{
       this.opts = new Options().createIfMissing(true)
       this.opts.cacheSize(this.cacheSize);
       this.db = this.levelDBFactory.open(new File(this.DBPath), opts)
+      RepLogger.trace(RepLogger.Storager_Logger,s"DB create success, dbType=LevelDB,dbPath=${DBPath}")
     }catch{
       case e:Exception=>{
         RepLogger.error(RepLogger.Storager_Logger,  "ImpLevelDBAccess error:DB Create error," +
@@ -80,14 +84,17 @@ class ImpLevelDBAccess private extends IDBAccess{
    * @param key String 指定的键
    * @return 返回对应键的值 Array[Byte]
    **/
-  override def getBytes(key: String): Option[Array[Byte]] = {
+  override protected def getBytes(key: String): Option[Array[Byte]] = {
     var r: Option[Array[Byte]] = None
     try {
       if(key != null){
+        RepLogger.trace(RepLogger.Storager_Logger,s"DB operate getBytes, key=${key}")
         var b = this.db.get(key.getBytes())
         if(b != null){
           b = if(this.isEncrypt) this.cipherTool.decrypt(b) else b
           r = Some(b)
+        }else{
+          RepLogger.trace(RepLogger.Storager_Logger,s"DB operate getBytes, data is null key=${key}")
         }
       }else{
         throw new Exception(s"input key is null")
@@ -110,12 +117,13 @@ class ImpLevelDBAccess private extends IDBAccess{
    * @param 	key String 指定的键，bb Array[Byte] 要存储的值
    * @return 返回成功或者失败 Boolean
    **/
-  override def putBytes(key: String, bb: Array[Byte]): Boolean = {
+  override protected def putBytes(key: String, bb: Array[Byte]): Boolean = {
     var r: Boolean = false
     try {
       if(key != null){
         if(bb != null){
           val b = if(this.isEncrypt) this.cipherTool.encrypt(bb) else bb
+          RepLogger.trace(RepLogger.Storager_Logger,s"DB operate putBytes, key=${key}")
           if(this.isTransaction){
             this.batch.put(key.getBytes(), b);
           }else{
@@ -265,7 +273,7 @@ class ImpLevelDBAccess private extends IDBAccess{
  * @category	ImpLevelDBAccess类的伴生对象，用于单实例的生成。
  */
 object ImpLevelDBAccess {
-  private var LevelDBInstances = new mutable.HashMap[String, ImpLevelDBAccess]()
+  private var LevelDBInstances = new ConcurrentHashMap[String, ImpLevelDBAccess]()
 
   /**
    * @author jiangbuyun
@@ -277,14 +285,19 @@ object ImpLevelDBAccess {
    */
   def getDBAccess(DBPath: String,cacheSize:Long,isEncrypt:Boolean=false): ImpLevelDBAccess = {
     var instance: ImpLevelDBAccess = null
-    synchronized {
-      if (LevelDBInstances.contains(DBPath)) {
-        instance = LevelDBInstances(DBPath)
-      } else {
-        instance = new ImpLevelDBAccess(DBPath,cacheSize,isEncrypt)
-        LevelDBInstances.put(DBPath, instance)
+
+    if (LevelDBInstances.containsKey(DBPath)) {
+      RepLogger.trace(RepLogger.Storager_Logger,s"DBInstance exist, dbType=LevelDB,dbPath=${DBPath}")
+      instance = LevelDBInstances.get(DBPath)
+    } else {
+      RepLogger.trace(RepLogger.Storager_Logger,s"DBInstance not exist,create new Instance, dbType=LevelDB,dbPath=${DBPath}")
+      instance = new ImpLevelDBAccess(DBPath,cacheSize,isEncrypt)
+      val old = LevelDBInstances.putIfAbsent(DBPath,instance)
+      if(old != null){
+        instance = old
       }
-      instance
     }
+    instance
+
   }
 }

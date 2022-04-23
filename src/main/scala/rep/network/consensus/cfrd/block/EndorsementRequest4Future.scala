@@ -18,7 +18,6 @@ package rep.network.consensus.cfrd.block
 
 import akka.util.Timeout
 import akka.pattern.ask
-
 import scala.concurrent._
 import akka.actor.{ActorSelection, Address, Props}
 import rep.app.conf.TimePolicy
@@ -32,7 +31,6 @@ import rep.log.RepTimeTracer
 import rep.network.module.cfrd.CFRDActorType
 import rep.network.util.NodeHelp
 import rep.proto.rc2.Block
-import rep.utils.GlobalUtils.BlockerInfo
 
 /**
  * Created by jiangbuyun on 2020/03/19.
@@ -77,7 +75,7 @@ class EndorsementRequest4Future(moduleName: String) extends ModuleBase(moduleNam
 
   private def EndorsementVerify(block: Block, result: ResultOfEndorsed): Boolean = {
     val bb = block.getHeader.clearEndorsements.toByteArray
-    val ev = BlockVerify.VerifyOneEndorseOfBlock(result.endor, bb, pe.getSysTag)
+    val ev = BlockVerify.VerifyOneEndorseOfBlock(result.endor, bb, pe.getRepChainContext.getSignTool)
     ev._1
   }
 

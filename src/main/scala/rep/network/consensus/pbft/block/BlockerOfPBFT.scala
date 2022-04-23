@@ -16,16 +16,16 @@
 //zhj
 package rep.network.consensus.pbft.block
 
-import akka.actor.{ActorRef, Props}
-import rep.app.Repchain
+import akka.actor.Props
 import rep.log.{RepLogger, RepTimeTracer}
 import rep.network.autotransaction.Topic
+import rep.network.confirmblock.pbft.ConfirmOfBlockOfPBFT
 import rep.network.consensus.common.block.IBlocker
 import rep.network.consensus.pbft.MsgOfPBFT
 import rep.network.consensus.pbft.MsgOfPBFT.{CollectEndorsement, VoteOfBlocker}
 import rep.network.module.pbft.PBFTActorType
 import rep.network.util.NodeHelp
-import rep.proto.rc2.{Block, Event, Transaction}
+import rep.proto.rc2.{Block, Event}
 import rep.utils.GlobalUtils.EventType
 
 object BlockerOfPBFT {
@@ -41,10 +41,6 @@ object BlockerOfPBFT {
  * @param moduleName 模块名称
  */
 class BlockerOfPBFT(moduleName: String) extends IBlocker(moduleName) {
-  import scala.collection.mutable.ArrayBuffer
-  import scala.concurrent.duration._
-
-
   var preblock: Block = null
 
   override def preStart(): Unit = {
@@ -61,7 +57,7 @@ class BlockerOfPBFT(moduleName: String) extends IBlocker(moduleName) {
     if (blc != null) {
       RepTimeTracer.setEndTime(pe.getSysTag, "createBlock", System.currentTimeMillis(), blc.getHeader.height, blc.transactions.size)
       this.preblock = blc
-      RepLogger.debug(RepLogger.zLogger, pe.getSysTag + ", preblock= " + preblock.getHeader.height + "," +Repchain.h4(preblock.getHeader.hashPresent.toStringUtf8) )
+      RepLogger.debug(RepLogger.zLogger, pe.getSysTag + ", preblock= " + preblock.getHeader.height + "," +ConfirmOfBlockOfPBFT.h4(preblock.getHeader.hashPresent.toStringUtf8) )
       schedulerLink = clearSched()
 
       // if (SystemProfile.getNumberOfEndorsement == 1) {
@@ -84,7 +80,7 @@ class BlockerOfPBFT(moduleName: String) extends IBlocker(moduleName) {
   override def receive = {
     //创建块请求（给出块人）
     case MsgOfPBFT.CreateBlock =>
-      RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", CreateBlock: " + Repchain.nn(pe.getBlocker.blocker))
+      RepLogger.debug(RepLogger.zLogger,"R: " + ConfirmOfBlockOfPBFT.nn(sender) + "->" + ConfirmOfBlockOfPBFT.nn(pe.getSysTag) + ", CreateBlock: " + ConfirmOfBlockOfPBFT.nn(pe.getBlocker.blocker))
       if (!pe.isSynching) {
           if (NodeHelp.isBlocker(pe.getBlocker.blocker, pe.getSysTag)
             && pe.getBlocker.voteBlockHash == pe.getCurrentBlockHash) {
@@ -92,7 +88,7 @@ class BlockerOfPBFT(moduleName: String) extends IBlocker(moduleName) {
 
             //是出块节点
             if (preblock == null || (preblock.getHeader.hashPrevious.toStringUtf8() != pe.getBlocker.voteBlockHash)) {
-              RepLogger.debug(RepLogger.zLogger, "CreateBlockHandler, " + "Me: "+Repchain.nn(pe.getSysTag))
+              RepLogger.debug(RepLogger.zLogger, "CreateBlockHandler, " + "Me: "+ConfirmOfBlockOfPBFT.nn(pe.getSysTag))
               CreateBlockHandler
             }
           } else {

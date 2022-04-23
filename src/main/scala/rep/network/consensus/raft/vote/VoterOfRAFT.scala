@@ -2,7 +2,7 @@ package rep.network.consensus.raft.vote
 
 import akka.actor.Props
 import akka.cluster.pubsub.DistributedPubSubMediator.Publish
-import rep.app.conf.{SystemCertList, SystemProfile, TimePolicy}
+import rep.app.conf.{RepChainConfig, TimePolicy}
 import rep.log.RepLogger
 import rep.network.autotransaction.Topic
 import rep.network.consensus.cfrd.MsgOfCFRD.{CreateBlock, ForceVoteInfo, TransformBlocker, VoteOfBlocker, VoteOfForce}
@@ -26,6 +26,7 @@ class VoterOfRAFT (moduleName: String) extends IVoter(moduleName: String) {
   import scala.concurrent.duration._
   import context.dispatcher
 
+  private val config = pe.getRepChainContext.getConfig
   private var voteIndex : Int = -1
   private var zeroOfTransNumTimeout : Long = -1
   //private var zeroOfTransNumFlag:Boolean = false
@@ -35,7 +36,7 @@ class VoterOfRAFT (moduleName: String) extends IVoter(moduleName: String) {
 
   override def preStart(): Unit = {
     RepLogger.info(RepLogger.Vote_Logger, this.getLogMsgPrefix("VoterOfRAFT  module start"))
-    if(SystemProfile.getVoteNodeList.contains(pe.getSysTag)){
+    if(config.getVoteNodeList.contains(pe.getSysTag)){
       //共识节点可以订阅交易的广播事件
       SubscribeTopic(mediator, self, selfAddr, Topic.VoteTransform, true)
     }
@@ -106,14 +107,14 @@ class VoterOfRAFT (moduleName: String) extends IVoter(moduleName: String) {
       //检查是否存在迁移出块人消息
       RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},transform,preblocker=${this.transformInfo.preBlocker}," +
         s"prevoteindex=${this.transformInfo.voteIndexOfBlocker},preblockheight=${this.transformInfo.heightOfBlocker},lvoteindex=${this.voteIndex},lheight=${pe.getCurrentHeight}" +
-        s",transpoolcount=${pe.getTransactionPool.getCachePoolSize}" + "~" + selfAddr))
+        s",transpoolcount=${pe.getRepChainContext.getTransactionPool.getCachePoolSize}" + "~" + selfAddr))
       transform
-    }else if(pe.getTransactionPool.getCachePoolSize <= 0){
+    }else if(pe.getRepChainContext.getTransactionPool.getCachePoolSize <= 0){
       if(NodeHelp.isBlocker(this.Blocker.blocker, pe.getSysTag)){
         if(this.zeroOfTransNumTimeout == -1){
           RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},set zero trans time,lblocker=${this.Blocker.blocker}," +
             s"lvoteindex=${this.voteIndex},lblockheight=${pe.getCurrentHeight}" +
-            s",transpoolcount=${pe.getTransactionPool.getCachePoolSize}" + "~" + selfAddr))
+            s",transpoolcount=${pe.getRepChainContext.getTransactionPool.getCachePoolSize}" + "~" + selfAddr))
           this.zeroOfTransNumTimeout = System.currentTimeMillis()
         }else{
           if((System.currentTimeMillis() - this.zeroOfTransNumTimeout) > TimePolicy.getVoteWaitingDelay * 10){
@@ -121,7 +122,7 @@ class VoterOfRAFT (moduleName: String) extends IVoter(moduleName: String) {
             //发出迁移出块人消息
             RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},set zero trans timeout,lblocker=${this.Blocker.blocker}," +
               s"lvoteindex=${this.voteIndex},lblockheight=${pe.getCurrentHeight}" +
-              s",transpoolcount=${pe.getTransactionPool.getCachePoolSize}" + "~" + selfAddr))
+              s",transpoolcount=${pe.getRepChainContext.getTransactionPool.getCachePoolSize}" + "~" + selfAddr))
             pe.setZeroOfTransNumFlag(true)
             this.zeroOfTransNumTimeout = System.currentTimeMillis()
             this.zeroOfTransNumTimeout = -1
@@ -142,24 +143,24 @@ class VoterOfRAFT (moduleName: String) extends IVoter(moduleName: String) {
       if(NodeHelp.isBlocker(this.Blocker.blocker, pe.getSysTag)){
         this.zeroOfTransNumTimeout = -1
       }
-      if((this.Blocker.VoteHeight +SystemProfile.getBlockNumberOfRaft) <= pe.getMaxHeight4SimpleRaft){
+      if((this.Blocker.VoteHeight +config.getBlockNumberOfRaft) <= pe.getMaxHeight4SimpleRaft){
         RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},second voter,prevheight=${this.Blocker.VoteHeight},prevvoteindex=${this.voteIndex},lh=${pe.getCurrentHeight},currentHeight=${pe.getMaxHeight4SimpleRaft}" + "~" + selfAddr))
         //val block = dataaccess.getBlock4ObjectByHeight(this.Blocker.VoteHeight +SystemProfile.getBlockNumberOfRaft)
-        val blockHash = searcher.getBlockHashByHeight(this.Blocker.VoteHeight +SystemProfile.getBlockNumberOfRaft)
+        val blockHash = searcher.getBlockHashByHeight(this.Blocker.VoteHeight +config.getBlockNumberOfRaft)
         //if(block != null){
         if(blockHash != ""){
           //val currentblockhash = block.hashOfBlock.toStringUtf8()
           //val currentheight = block.height
           val currentblockhash = blockHash
-          val currentheight = this.Blocker.VoteHeight +SystemProfile.getBlockNumberOfRaft
+          val currentheight = this.Blocker.VoteHeight +config.getBlockNumberOfRaft
           pe.resetTimeoutOfRaft
           this.blockTimeout = false
           this.cleanVoteInfo
           this.resetCandidator(currentblockhash)
           this.resetBlocker(getVoteIndex, currentblockhash, currentheight)
-          RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},read block voter,currentHeight=${this.Blocker.VoteHeight +SystemProfile.getBlockNumberOfRaft},lh=${pe.getCurrentHeight},currentHash=${currentblockhash}" + "~" + selfAddr))
+          RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},read block voter,currentHeight=${this.Blocker.VoteHeight +config.getBlockNumberOfRaft},lh=${pe.getCurrentHeight},currentHash=${currentblockhash}" + "~" + selfAddr))
         }else{
-          RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},second voter in synch,lh=${pe.getCurrentHeight},currentHeight=${this.Blocker.VoteHeight +SystemProfile.getBlockNumberOfRaft}" + "~" + selfAddr))
+          RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},second voter in synch,lh=${pe.getCurrentHeight},currentHeight=${this.Blocker.VoteHeight +config.getBlockNumberOfRaft}" + "~" + selfAddr))
           pe.getActorRef(CFRDActorType.ActorType.synchrequester) ! StartSync(false)
         }
       }else{
@@ -182,9 +183,9 @@ class VoterOfRAFT (moduleName: String) extends IVoter(moduleName: String) {
       this.cleanVoteInfo
       this.resetCandidator(currentblockhash)
       this.resetBlocker(getVoteIndex, currentblockhash, currentheight)
-      RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},transform read block voter,currentHeight=${this.Blocker.VoteHeight +SystemProfile.getBlockNumberOfRaft},currentHash=${currentblockhash}" + "~" + selfAddr))
+      RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},transform read block voter,currentHeight=${this.Blocker.VoteHeight + config.getBlockNumberOfRaft},currentHash=${currentblockhash}" + "~" + selfAddr))
     }else{
-      RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},transform second voter in synch,currentHeight=${this.Blocker.VoteHeight +SystemProfile.getBlockNumberOfRaft}" + "~" + selfAddr))
+      RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},transform second voter in synch,currentHeight=${this.Blocker.VoteHeight +config.getBlockNumberOfRaft}" + "~" + selfAddr))
       //pe.getActorRef(CFRDActorType.ActorType.synchrequester) ! SyncPreblocker(this.Blocker.blocker)
       pe.getActorRef(CFRDActorType.ActorType.synchrequester) ! StartSync(false)
     }
@@ -199,7 +200,7 @@ class VoterOfRAFT (moduleName: String) extends IVoter(moduleName: String) {
       this.cleanVoteInfo
       this.resetCandidator(currentblockhash)
       this.resetBlocker(getVoteIndex, currentblockhash, currentheight)
-      RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},read block voter,currentHeight=${this.Blocker.VoteHeight +SystemProfile.getBlockNumberOfRaft},currentHash=${currentblockhash}" + "~" + selfAddr))
+      RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},read block voter,currentHeight=${this.Blocker.VoteHeight +config.getBlockNumberOfRaft},currentHash=${currentblockhash}" + "~" + selfAddr))
   }
 
   override protected def vote(isForce: Boolean,forceInfo:ForceVoteInfo): Unit = {
@@ -212,7 +213,7 @@ class VoterOfRAFT (moduleName: String) extends IVoter(moduleName: String) {
 
   override def receive: Receive = {
     case VoteOfBlocker =>
-      if (NodeHelp.isCandidateNow(pe.getSysTag, SystemCertList.getSystemCertList)) {
+      if (NodeHelp.isCandidateNow(pe.getSysTag, pe.getRepChainContext.getSystemCertList.getSystemCertList)) {
         voteMsgHandler(false,null)
       }
     case VoteOfForce=>

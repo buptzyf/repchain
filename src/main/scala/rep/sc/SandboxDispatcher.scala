@@ -1,6 +1,6 @@
 package rep.sc
 
-import akka.actor.{ ActorRef, Props, actorRef2Scala}
+import akka.actor.{ActorRef, Props, actorRef2Scala}
 import rep.sc.Sandbox._
 import scala.concurrent.duration._
 import akka.util.Timeout
@@ -8,11 +8,8 @@ import rep.sc.scalax.SandboxScala
 import rep.network.base.ModuleBase
 import rep.log.RepLogger
 import akka.routing._
-import rep.app.conf.SystemProfile
 import rep.proto.rc2.{ActionResult, ChaincodeDeploy, ChaincodeId, Transaction, TransactionResult}
 import rep.storage.chain.KeyPrefixManager
-import rep.storage.chain.block.BlockSearcher
-import rep.storage.chain.preload.BlockPreload
 
 
 /**
@@ -115,8 +112,8 @@ class SandboxDispatcher(moduleName: String, cid: String) extends ModuleBase(modu
    * @Result 返回cid所在的交易
    */
   private def getTransOfContractFromLevelDB(da:String,oid:String): Option[Transaction] = {
-    val bp = BlockPreload.getBlockPreload(da,pe.getSysTag)
-    val txId = bp.getFromDB[String](KeyPrefixManager.getWorldStateKey(pe.getSysTag,cid,cid,oid))
+    val bp = pe.getRepChainContext.getBlockPreload(da)
+    val txId = bp.getFromDB[String](KeyPrefixManager.getWorldStateKey(pe.getRepChainContext.getConfig,cid,cid,oid))
     txId match {
       case None => None
       case _ => bp.getTransactionByTxId(txId.get)
@@ -129,8 +126,8 @@ class SandboxDispatcher(moduleName: String, cid: String) extends ModuleBase(modu
    * @Result 返回true，表示合约已经存在对应的实例中，否则，没有
    */
   private def IsContractInSnapshot(da: String,oid:String): Boolean = {
-    val preload = BlockPreload.getBlockPreload(da,pe.getSysTag)
-    val txid = preload.get(KeyPrefixManager.getWorldStateKey(pe.getSysTag,cid,cid,oid))
+    val preload = pe.getRepChainContext.getBlockPreload(da)
+    val txid = preload.get(KeyPrefixManager.getWorldStateKey(pe.getRepChainContext.getConfig,cid,cid,oid))
     txid match {
       case None => false
       case _ => true
@@ -178,8 +175,8 @@ class SandboxDispatcher(moduleName: String, cid: String) extends ModuleBase(modu
    */
   private def createParallelRouter(chaincodeid: ChaincodeId, cType: ChaincodeDeploy.CodeType) = {
     if (RouterOfParallelSandboxs == null) {
-      var list: Array[Routee] = new Array[Routee](SystemProfile.getNumberOfTransProcessor)
-      for (i <- 0 to SystemProfile.getNumberOfTransProcessor - 1) {
+      var list: Array[Routee] = new Array[Routee](pe.getRepChainContext.getConfig.getTransactionNumberOfProcessor)
+      for (i <- 0 to pe.getRepChainContext.getConfig.getTransactionNumberOfProcessor - 1) {
         var ca = CreateSandbox(cType, chaincodeid, "sandbox_for_Parallel_of_router_" + cid + "_" + i)
         context.watch(ca)
         list(i) = new ActorRefRoutee(ca)
@@ -201,13 +198,15 @@ class SandboxDispatcher(moduleName: String, cid: String) extends ModuleBase(modu
           CreateSandbox(cType, chaincodeid, "sandbox_for_Serial_" + cid)
           context.watch(SerialSandbox)
         case ChaincodeDeploy.CodeType.CODE_VCL_DLL =>
-
+          null
         case ChaincodeDeploy.CodeType.CODE_VCL_EXE =>
-
+          null
         case ChaincodeDeploy.CodeType.CODE_VCL_WASM =>
-
+          null
         case ChaincodeDeploy.CodeType.CODE_WASM =>
-
+          null
+        case _=>
+          null
       }
     }
   }
@@ -234,6 +233,8 @@ class SandboxDispatcher(moduleName: String, cid: String) extends ModuleBase(modu
       case ChaincodeDeploy.CodeType.CODE_VCL_WASM =>
         null
       case ChaincodeDeploy.CodeType.CODE_WASM =>
+        null
+      case _=>
         null
     }
   }

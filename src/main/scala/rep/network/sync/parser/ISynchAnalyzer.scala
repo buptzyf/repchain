@@ -1,13 +1,13 @@
 package rep.network.sync.parser
 
 import akka.actor.ActorRef
+import rep.app.system.RepChainSystemContext
 import rep.log.RepLogger
 import rep.network.consensus.byzantium.ConsensusCondition
 import rep.network.sync.SyncMsg._
 import rep.network.tools.NodeMgr
 import rep.network.util.NodeHelp
 import rep.proto.rc2.BlockchainInfo
-
 import scala.util.control.Breaks.{break, breakable}
 
 /**
@@ -15,11 +15,13 @@ import scala.util.control.Breaks.{break, breakable}
  * 同步区块信息分析的抽象类
  */
 
-abstract class ISynchAnalyzer(val systemName: String, val lchaininfo: BlockchainInfo, val nodemgr: NodeMgr) {
+abstract class ISynchAnalyzer(val ctx:RepChainSystemContext, val lchaininfo: BlockchainInfo, val nodemgr: NodeMgr) {
   protected var aresult: AnalysisResult = null
   protected var saction: SynchAction = null
   protected var raction: RollbackAction = null
   protected var maxinfo: MaxBlockInfo = null
+  protected val consensusCondition = new ConsensusCondition(ctx.getConfig)
+  protected val systemName = ctx.getSystemName
 
   def getResult: AnalysisResult = {
     this.aresult
@@ -50,7 +52,7 @@ abstract class ISynchAnalyzer(val systemName: String, val lchaininfo: Blockchain
     }
     val tmpgHash = gls.head._1
     val tmpgCount = gls.head._2
-    if (ConsensusCondition.ConsensusConditionChecked(tmpgCount)) {
+    if (consensusCondition.ConsensusConditionChecked(tmpgCount)) {
       (true, tmpgHash)
     } else {
       (false, "")
@@ -124,7 +126,7 @@ abstract class ISynchAnalyzer(val systemName: String, val lchaininfo: Blockchain
       var actorref: ActorRef = null
       breakable(
         resinfo.foreach(f => {
-          if (NodeHelp.isSeedNode(nodemgr.getStableNodeName4Addr(f.responser.path.address))) {
+          if (NodeHelp.isSeedNode(nodemgr.getStableNodeName4Addr(f.responser.path.address),ctx.getConfig.getGenesisNodeName)) {
             r = f.responser
             break
           }
@@ -184,7 +186,7 @@ abstract class ISynchAnalyzer(val systemName: String, val lchaininfo: Blockchain
     if (maxheight == 0) {
       //待同步高度等于0，本地高于待同步高度，说明本节点是种子节点，并且高度必须是1
       if (lh == 1) {
-        if (NodeHelp.isSeedNode(this.systemName)) {
+        if (NodeHelp.isSeedNode(this.systemName,ctx.getConfig.getGenesisNodeName)) {
           //当前系统是种子节点，并且是创世块，完成同步
           this.aresult = AnalysisResult(1, "小于本地高度，当前系统是种子节点，并且是创世块，完成同步")
           RepLogger.info(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"--------info,小于本地高度，当前系统是种子节点，并且是创世块，完成同步,local height=${lh},maxheight=${maxheight}"))
@@ -198,7 +200,7 @@ abstract class ISynchAnalyzer(val systemName: String, val lchaininfo: Blockchain
       }
     } else {
       //大多数节点的高度，hash相同，本地节点高于这些节点，需要回滚，检查回滚信息
-      val da = ImpDataAccess.GetDataAccess(this.systemName)
+      val da = ctx.getBlockSearch
       val block = da.getBlockByHash(AgreementHash)
       if (block != null) {
         //需要回滚

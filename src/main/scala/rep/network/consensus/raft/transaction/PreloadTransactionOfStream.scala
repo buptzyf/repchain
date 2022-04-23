@@ -3,7 +3,6 @@ package rep.network.consensus.raft.transaction
 import akka.actor.Props
 import com.google.protobuf.ByteString
 import rep.app.conf.TimePolicy
-import rep.crypto.Sha256
 import rep.log.{RepLogger, RepTimeTracer}
 import rep.network.base.ModuleBase
 import rep.network.consensus.common.MsgOfConsensus.{PreTransBlockOfStream, preTransBlockResultOfStream}
@@ -13,8 +12,7 @@ import rep.network.module.cfrd.CFRDActorType
 import rep.proto.rc2.{ActionResult, Block, Transaction, TransactionResult}
 import rep.sc.SandboxDispatcher.DoTransactionOfCache
 import rep.sc.TypeOfSender
-import rep.utils.{IdTool, SerializeUtils}
-
+import rep.utils.{IdTool}
 import scala.util.Random
 import scala.util.control.Breaks.{break, breakable}
 
@@ -23,11 +21,6 @@ object PreloadTransactionOfStream {
 }
 
 class PreloadTransactionOfStream(moduleName: String) extends ModuleBase(moduleName) {
-
-  import scala.collection.breakOut
-  import scala.concurrent.duration._
-
-  //implicit val timeout = Timeout((TimePolicy.getTimeoutPreload * 2).seconds)
 
   override def preStart(): Unit = {
     RepLogger.info(RepLogger.Consensus_Logger, this.getLogMsgPrefix("PreloadTransactionOfStream Start"))
@@ -56,7 +49,7 @@ class PreloadTransactionOfStream(moduleName: String) extends ModuleBase(moduleNa
       //rblock = rblock.withStateHash(ByteString.copyFromUtf8(statehashstr))
       if (rBlock.getHeader.hashPresent == _root_.com.google.protobuf.ByteString.EMPTY) {
         //如果没有当前块的hash在这里生成，如果是背书已经有了hash不再进行计算
-        rBlock = BlockHelp.AddBlockHeaderHash(rBlock)
+        rBlock = BlockHelp.AddBlockHeaderHash(rBlock,pe.getRepChainContext.getHashTool)
         //this.DbInstance = new DB_Instance_Type(this.DbInstance.tagName,rblock.hashOfBlock.toStringUtf8)
       }
       Some(rBlock)

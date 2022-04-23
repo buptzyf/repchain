@@ -20,22 +20,14 @@ import akka.actor.ActorSystem
 import akka.testkit.{TestKit, TestProbe}
 import com.google.protobuf.timestamp.Timestamp
 import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, Matchers}
-import rep.app.conf.SystemProfile
 import rep.app.system.ClusterSystem
 import rep.app.system.ClusterSystem.InitType
-import rep.crypto.{CryptoMgr, Sha256}
+import rep.crypto.Sha256
 import rep.crypto.cert.SignTool
 import rep.network.autotransaction.PeerHelper
-import rep.protos.peer.Certificate.CertType
-import rep.protos.peer.ChaincodeDeploy.ContractClassification
-import rep.protos.peer.Operate.OperateType
-import rep.protos.peer._
-import rep.sc.SandboxDispatcher.DoTransaction
 import rep.sc.TransferSpec.{ACTION, SetMap}
-import rep.storage.ImpDataAccess
 import rep.utils.SerializeUtils.toJson
 import scalapb.json4s.JsonFormat
-
 import scala.collection.mutable.Map
 import scala.concurrent.duration._
 
@@ -46,7 +38,7 @@ import scala.concurrent.duration._
   * @param _system
   */
 class TransferSpec_Legal(_system: ActorSystem) extends TestKit(_system) with Matchers with FlatSpecLike with BeforeAndAfterAll {
-
+/*
   case class Transfer(from: String, to: String, amount: Int, remind: String)
 
   def this() = this(ActorSystem("TransferSpec_Legal", new ClusterSystem("121000005l35120456.node1", InitType.MULTI_INIT, false).getConf))
@@ -183,4 +175,6 @@ class TransferSpec_Legal(_system: ActorSystem) extends TestKit(_system) with Mat
     msg_recv(0).getResult.code should be(1)
 
   }
+
+ */
 }

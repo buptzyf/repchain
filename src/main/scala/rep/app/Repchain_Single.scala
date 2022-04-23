@@ -27,25 +27,10 @@ import sun.misc.Signal
  */
 object Repchain_Single {
 
-  def getOSSignalType:String={
-    if (System.getProperties().getProperty("os.name").toLowerCase().startsWith("win")){
-      "INT"
-    } else{
-      "USR2"
-    }
-  }
-
   def main(args: Array[ String ]): Unit = {
     var systemTag = "1"
     if(args!=null && args.length>0) systemTag = args(0)
-    val sig = new Signal(getOSSignalType)
-    Signal.handle(sig, new shutdownHandler(systemTag))
     RepChainMgr.Startup4Single(systemTag)
-    /*val sys1 = new ClusterSystem(systemTag, InitType.SINGLE_INIT,true)
-    sys1.init
-    val joinAddress = sys1.getClusterAddr
-    sys1.joinCluster(joinAddress)
-    sys1.start*/
   }
 }
 

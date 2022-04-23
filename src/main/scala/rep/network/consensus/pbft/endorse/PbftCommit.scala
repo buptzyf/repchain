@@ -8,11 +8,10 @@ import akka.actor.Props
 import akka.util.Timeout
 import com.google.protobuf.ByteString
 import com.google.protobuf.timestamp.Timestamp
-import rep.app.Repchain
-import rep.app.conf.{SystemProfile, TimePolicy}
-import rep.crypto.cert.SignTool
+import rep.app.conf.TimePolicy
 import rep.log.RepLogger
 import rep.network.base.ModuleBase
+import rep.network.confirmblock.pbft.ConfirmOfBlockOfPBFT
 import rep.network.consensus.pbft.MsgOfPBFT.{MPbftCommit, MPbftReply, MsgPbftCommit, MsgPbftReply}
 import rep.proto.rc2.Signature
 import rep.utils.{IdTool, SerializeUtils, TimeUtils}
@@ -40,7 +39,7 @@ class PbftCommit(moduleName: String) extends ModuleBase(moduleName) {
     val certId = IdTool.getCertIdFromName(pe.getSysTag)
     val millis = TimeUtils.getCurrentTime()
     val sig = Signature(Option(certId),Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)),
-      ByteString.copyFrom(SignTool.sign(pe.getSysTag, bytes)))
+      ByteString.copyFrom(pe.getRepChainContext.getSignTool.sign(pe.getSysTag, bytes)))
     var reply : MPbftReply = MPbftReply(commits,Some(sig))
 
     val actor = context.actorSelection(commit.senderPath)
@@ -53,7 +52,7 @@ class PbftCommit(moduleName: String) extends ModuleBase(moduleName) {
   override def receive = {
 
     case MsgPbftCommit(senderPath,block,blocker,commit,chainInfo) =>
-      RepLogger.debug(RepLogger.zLogger,"R: " + Repchain.nn(sender) + "->" + Repchain.nn(pe.getSysTag) + ", PbftCommit commit: " + blocker + ", " + block.getHeader.hashPresent.toStringUtf8)
+      RepLogger.debug(RepLogger.zLogger,"R: " + ConfirmOfBlockOfPBFT.nn(sender) + "->" + ConfirmOfBlockOfPBFT.nn(pe.getSysTag) + ", PbftCommit commit: " + blocker + ", " + block.getHeader.hashPresent.toStringUtf8)
       //already verified
       val hash = block.getHeader.hashPresent
       if ( hash.equals(recvedHash)) {
@@ -63,7 +62,7 @@ class PbftCommit(moduleName: String) extends ModuleBase(moduleName) {
         recvedCommits.clear()
         recvedCommits += commit
       }
-      if ( recvedCommits.size >= (2*SystemProfile.getPbftF+1))
+      if ( recvedCommits.size >= (2*1+1))
         ProcessMsgPbftCommit(MsgPbftCommit(senderPath,block,blocker,commit,chainInfo))
 
     case _ => //ignore

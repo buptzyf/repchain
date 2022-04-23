@@ -19,7 +19,6 @@ package rep.sc.tpl
 
 import org.json4s._
 import org.json4s.jackson.JsonMethods._
-import rep.app.conf.SystemProfile
 import rep.proto.rc2.ActionResult
 import rep.sc.scalax.IContract
 import rep.sc.scalax.ContractContext
@@ -34,13 +33,15 @@ final case class Transfer(from: String, to: String, amount: Int)
 class ContractAssetsTPL extends IContract {
 
   // 需要跨合约读账户
-  val chaincodeName = SystemProfile.getAccountChaincodeName
-  val chaincodeVersion = SystemProfile.getAccountChaincodeVersion
+  var chaincodeName = ""
+  var chaincodeVersion = 0
   //val prefix = IdTool.getCid(ChaincodeId(chaincodeName, chaincodeVersion))
 
   implicit val formats = DefaultFormats
 
   def init(ctx: ContractContext) {
+    chaincodeName = ctx.api.getAccountContractCodeName
+    chaincodeVersion = ctx.api.getAccountContractVersion
     println(s"tid: $ctx.t.id")
   }
 

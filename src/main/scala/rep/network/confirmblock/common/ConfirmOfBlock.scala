@@ -17,18 +17,14 @@
 package rep.network.confirmblock.common
 
 import akka.actor.{ActorRef, Props}
-import akka.util.Timeout
-import rep.app.conf.SystemProfile
-import rep.log.{RepLogger, RepTimeTracer}
+import rep.log.{RepLogger}
 import rep.network.autotransaction.Topic
-import rep.network.base.ModuleBase
 import rep.network.confirmblock.IConfirmOfBlock
 import rep.network.consensus.byzantium.ConsensusCondition
 import rep.network.consensus.common.MsgOfConsensus.{BatchStore, BlockRestore, ConfirmedBlock}
 import rep.network.consensus.util.BlockVerify
 import rep.network.module.ModuleActorType
 import rep.network.persistence.IStorager.SourceOfBlock
-import rep.network.util.NodeHelp
 import rep.proto.rc2.{Block, Event, Signature}
 import rep.utils.GlobalUtils.EventType
 
@@ -51,7 +47,7 @@ class ConfirmOfBlock(moduleName: String) extends IConfirmOfBlock(moduleName) {
 
   override protected def handler(block: Block, actRefOfBlock: ActorRef) = {
     RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"confirm verify endorsement start,height=${block.getHeader.height}"))
-    if (SystemProfile.getIsVerifyOfEndorsement) {
+    if (pe.getRepChainContext.getConfig.isVerifyOfEndorsement) {
       if (asyncVerifyEndorses(block)) {
         RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"confirm verify endorsement end,height=${block.getHeader.height}"))
         //背书人的签名一致
@@ -89,7 +85,7 @@ class ConfirmOfBlock(moduleName: String) extends IConfirmOfBlock(moduleName) {
     } else {
       //与上一个块一致
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"confirm verify blockhash,height=${block.getHeader.height}"))
-        if (ConsensusCondition.ConsensusConditionChecked(block.getHeader.endorsements.size)) {
+        if (new ConsensusCondition(pe.getRepChainContext.getConfig).ConsensusConditionChecked(block.getHeader.endorsements.size)) {
           //符合大多数人背书要求
           handler(block, actRefOfBlock)
         } else {

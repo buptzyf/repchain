@@ -1,5 +1,6 @@
 package rep.authority.cache
 
+import rep.app.system.RepChainSystemContext
 import rep.proto.rc2.Authorize
 import rep.sc.tpl.did.DidTplPrefix
 import rep.storage.chain.preload.BlockPreload
@@ -8,7 +9,7 @@ object AuthenticateCache{
   case class authData(authid:String,authorizeValid:Boolean,ops:List[String])
 }
 
-class AuthenticateCache(systemName:String) extends ICache(systemName) {
+class AuthenticateCache(ctx : RepChainSystemContext) extends ICache(ctx) {
   import AuthenticateCache.authData
 
   override protected def dataTypeConvert(any: Option[Any],blockPreload: BlockPreload): Option[Any] = {

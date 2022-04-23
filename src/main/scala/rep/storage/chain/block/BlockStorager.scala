@@ -1,10 +1,9 @@
 package rep.storage.chain.block
 
-import rep.app.conf.RepChainConfig
-import rep.authority.cache.PermissionCacheManager
+
+import rep.app.system.RepChainSystemContext
 import rep.log.RepLogger
 import rep.proto.rc2.{Block, Transaction}
-import rep.sc.tpl.did.DidTplPrefix
 import rep.storage.chain.KeyPrefixManager
 import rep.storage.db.common.ITransactionCallback
 import rep.storage.encrypt.{EncryptFactory, IEncrypt}
@@ -12,7 +11,6 @@ import rep.storage.filesystem.common.IFileWriter
 import rep.storage.filesystem.factory.FileFactory
 import rep.storage.util.pathUtil
 import rep.utils.IdTool
-
 import scala.collection.mutable
 import scala.util.control.Breaks.{break, breakable}
 
@@ -22,10 +20,10 @@ import scala.util.control.Breaks.{break, breakable}
  * @since	2022-04-13
  * @category	区块存储，继承区块查询器，复用存储器的查询方法。
  * */
-class BlockStorager private(systemName:String,isEncrypt:Boolean=false) extends BlockSearcher(systemName,isEncrypt) {
+class BlockStorager (ctx:RepChainSystemContext, isEncrypt:Boolean=false) extends BlockSearcher(ctx,isEncrypt) {
   //private val db : IDBAccess = DBFactory.getDBAccess(this.systemName)
   private val cipherTool:IEncrypt = EncryptFactory.getEncrypt
-  private val blockFileMaxLength = RepChainConfig.getSystemConfig(this.systemName).getStorageBlockFileMaxLength * 1024 * 1024
+  private val blockFileMaxLength = ctx.getConfig.getStorageBlockFileMaxLength * 1024 * 1024
   private var lastChainInfo : Option[KeyPrefixManager.ChainInfo] = None
   private val lock: Object = new Object()
 
@@ -38,8 +36,8 @@ class BlockStorager private(systemName:String,isEncrypt:Boolean=false) extends B
    * @param
    * @return 返回Option[KeyPrefixManager.ChainInfo]
    * */
-  private def getLastChainInfo:Option[KeyPrefixManager.ChainInfo]={
-    val obj = this.db.getObject(KeyPrefixManager.getBlockInfoKey(systemName))
+  private def getCurrentChainInfo:Option[KeyPrefixManager.ChainInfo]={
+    val obj = this.db.getObject(KeyPrefixManager.getBlockInfoKey(ctx.getConfig))
     obj match {
       case None => Some(KeyPrefixManager.ChainInfo(0,"","",0,0,0,0))
       case _ => obj.asInstanceOf[Option[KeyPrefixManager.ChainInfo]]
@@ -64,8 +62,8 @@ class BlockStorager private(systemName:String,isEncrypt:Boolean=false) extends B
         val t = trs(i)
         //val chainCodeId = IdTool.getCid(t.getCid)
         //val oid = if(t.oid.isEmpty) "_" else t.oid.toString
-        val accountContractName = RepChainConfig.getSystemConfig(systemName).getAccountContractName
-        val certMethod = RepChainConfig.getSystemConfig(systemName).getAccountCertChangeMethod
+        val accountContractName = ctx.getConfig.getAccountContractName
+        val certMethod = ctx.getConfig.getAccountCertChangeMethod
 
         r.statesSet.foreach(f=>{
           val k = f._1
@@ -76,11 +74,11 @@ class BlockStorager private(systemName:String,isEncrypt:Boolean=false) extends B
           if(t.getCid.chaincodeName.equalsIgnoreCase(accountContractName) &&
             t.`type` == Transaction.Type.CHAINCODE_INVOKE && t.para.ipt.get.function.equalsIgnoreCase(certMethod)){
             //证书修改
-            PermissionCacheManager.updateCertCache(this.systemName,k)
+            ctx.getPermissionCacheManager.updateCertCache(k)
           }else if(t.getCid.chaincodeName.equalsIgnoreCase(accountContractName) &&
-            t.`type` == Transaction.Type.CHAINCODE_INVOKE && IdTool.isDidContract(this.systemName)){
+            t.`type` == Transaction.Type.CHAINCODE_INVOKE && IdTool.isDidContract(ctx.getSystemName)){
             //账户修改
-            PermissionCacheManager.updateCache(this.systemName,k)
+            ctx.getPermissionCacheManager.updateCache(k)
           }
         })
       }
@@ -100,10 +98,10 @@ class BlockStorager private(systemName:String,isEncrypt:Boolean=false) extends B
    * @return 返回IFileWriter文件写入器
    * */
   private def getFileNo(currentFileNo:Int,bLength:Int):IFileWriter={
-    val writer:IFileWriter = FileFactory.getWriter(this.systemName,currentFileNo)
+    val writer:IFileWriter = FileFactory.getWriter(this.ctx.getConfig,currentFileNo)
     if(writer.getFileLength + bLength.toLong > this.blockFileMaxLength){
       val fNo = currentFileNo+1
-      FileFactory.getWriter(this.systemName,fNo)
+      FileFactory.getWriter(ctx.getConfig,fNo)
     }else{
       writer
     }
@@ -128,7 +126,7 @@ class BlockStorager private(systemName:String,isEncrypt:Boolean=false) extends B
           case _=>
             lock.synchronized{
               if (this.lastChainInfo == None) {
-                this.lastChainInfo = this.getLastChainInfo
+                this.lastChainInfo = this.getCurrentChainInfo
               }
 
               if (this.lastChainInfo.get.previousHash.equalsIgnoreCase(block.get.header.get.hashPrevious.toStringUtf8)) {
@@ -145,16 +143,16 @@ class BlockStorager private(systemName:String,isEncrypt:Boolean=false) extends B
                       bIndex.setLength(bLength)
                       bIndex.setFilePos(writer.getFileLength + 8)
                       if (writer.getFileLength == 0) {
-                        hm.put(KeyPrefixManager.getBlockFileFirstHeightKey(systemName, bIndex.getFileNo), bIndex.getHeight)
+                        hm.put(KeyPrefixManager.getBlockFileFirstHeightKey(ctx.getConfig, bIndex.getFileNo), bIndex.getHeight)
                       }
                       val lastInfo = Some(KeyPrefixManager.ChainInfo(bIndex.getHeight, bIndex.getHash, bIndex.getPreHash,
                         lastChainInfo.get.txCount + bIndex.getTransactionSize, bIndex.getFileNo, bIndex.getFilePos, bIndex.getLength))
-                      hm.put(KeyPrefixManager.getBlockInfoKey(systemName), lastInfo)
+                      hm.put(KeyPrefixManager.getBlockInfoKey(ctx.getConfig), lastInfo)
 
-                      hm.put(KeyPrefixManager.getBlockIndexKey4Height(systemName, bIndex.getHeight), bIndex)
-                      hm.put(KeyPrefixManager.getBlockHeightKey4Hash(systemName, bIndex.getHash), bIndex.getHeight)
+                      hm.put(KeyPrefixManager.getBlockIndexKey4Height(ctx.getConfig, bIndex.getHeight), bIndex)
+                      hm.put(KeyPrefixManager.getBlockHeightKey4Hash(ctx.getConfig, bIndex.getHash), bIndex.getHeight)
                       bIndex.getTxIds.foreach(id => {
-                        hm.put(KeyPrefixManager.getBlockHeightKey4TxId(systemName, id), bIndex.getHeight)
+                        hm.put(KeyPrefixManager.getBlockHeightKey4TxId(ctx.getConfig, id), bIndex.getHeight)
                       })
 
                       hm.foreach(d => {
@@ -205,21 +203,21 @@ class BlockStorager private(systemName:String,isEncrypt:Boolean=false) extends B
     val preIndex = this.getBlockIndexByHeight(Some(h-1)).get
     val tmpLastChainInfo = Some(KeyPrefixManager.ChainInfo(preIndex.getHeight, preIndex.getHash, preIndex.getPreHash,
       lastChainInfo.get.txCount - bIndexOfRollback.getTransactionSize, preIndex.getFileNo, preIndex.getFilePos, preIndex.getLength))
-    this.db.putObject(KeyPrefixManager.getBlockInfoKey(systemName),tmpLastChainInfo)
-    this.db.delete(KeyPrefixManager.getBlockIndexKey4Height(systemName, bIndexOfRollback.getHeight))
-    this.db.delete(KeyPrefixManager.getBlockHeightKey4Hash(systemName, bIndexOfRollback.getHash))
+    this.db.putObject(KeyPrefixManager.getBlockInfoKey(ctx.getConfig),tmpLastChainInfo)
+    this.db.delete(KeyPrefixManager.getBlockIndexKey4Height(ctx.getConfig, bIndexOfRollback.getHeight))
+    this.db.delete(KeyPrefixManager.getBlockHeightKey4Hash(ctx.getConfig, bIndexOfRollback.getHash))
 
     if(this.getBlockHeightInFileFirstBlockByFileNo(bIndexOfRollback.getFileNo).get == bIndexOfRollback.getHeight){
-      this.db.delete(KeyPrefixManager.getBlockFileFirstHeightKey(systemName, bIndexOfRollback.getFileNo))
+      this.db.delete(KeyPrefixManager.getBlockFileFirstHeightKey(ctx.getConfig, bIndexOfRollback.getFileNo))
     }
 
     bIndexOfRollback.getTxIds.foreach(id => {
-      this.db.delete(KeyPrefixManager.getBlockHeightKey4TxId(systemName, id))
+      this.db.delete(KeyPrefixManager.getBlockHeightKey4TxId(ctx.getConfig, id))
     })
 
     rollbackOperateLog(blockOfRollback)
 
-    val write = FileFactory.getWriter(this.systemName,bIndexOfRollback.getFileNo)
+    val write = FileFactory.getWriter(this.ctx.getConfig,bIndexOfRollback.getFileNo)
     write.deleteBytesFromFileTail(bIndexOfRollback.getLength + 8)
 
     this.lastChainInfo  = tmpLastChainInfo
@@ -241,8 +239,8 @@ class BlockStorager private(systemName:String,isEncrypt:Boolean=false) extends B
       for(i:Int <- 0 to result.size-1){
         val r = result(i)
         val t = trs(i)
-        val accountContractName = RepChainConfig.getSystemConfig(systemName).getAccountContractName
-        val certMethod = RepChainConfig.getSystemConfig(systemName).getAccountCertChangeMethod
+        val accountContractName = ctx.getConfig.getAccountContractName
+        val certMethod = ctx.getConfig.getAccountCertChangeMethod
 
         r.statesSet.foreach(f=>{
           val k = f._1
@@ -259,11 +257,11 @@ class BlockStorager private(systemName:String,isEncrypt:Boolean=false) extends B
           if(t.getCid.chaincodeName.equalsIgnoreCase(accountContractName) &&
             t.`type` == Transaction.Type.CHAINCODE_INVOKE && t.para.ipt.get.function.equalsIgnoreCase(certMethod)){
             //证书修改
-            PermissionCacheManager.updateCertCache(this.systemName,k)
+            ctx.getPermissionCacheManager.updateCertCache(k)
           }else if(t.getCid.chaincodeName.equalsIgnoreCase(accountContractName) &&
             t.`type` == Transaction.Type.CHAINCODE_INVOKE){
             //账户修改
-            PermissionCacheManager.updateCache(this.systemName,k)
+            ctx.getPermissionCacheManager.updateCache(k)
           }
         })
       }
@@ -294,7 +292,7 @@ class BlockStorager private(systemName:String,isEncrypt:Boolean=false) extends B
                   case e:Exception =>
                     RepLogger.error(
                       RepLogger.Storager_Logger,
-                      "system_name=" + systemName + s"\t current rollback block happend error ,happend pos height=${loop},contract administrator!")
+                      "system_name=" + ctx.getSystemName + s"\t current rollback block happend error ,happend pos height=${loop},contract administrator!")
                     false
                 }
               }
@@ -319,10 +317,11 @@ class BlockStorager private(systemName:String,isEncrypt:Boolean=false) extends B
 * @since	2022-04-13
 * @category	区块存储器实例管理
 * */
+
 object BlockStorager{
   case class BlockStoreResult(isSuccess:Boolean,lastHeight:Long,transactionCount:Long,
                               blockHash:String,previousBlockHash:String,reason:String)
-  private val DBStorageInstances = new mutable.HashMap[String, BlockStorager]()
+ /* private val DBStorageInstances = new mutable.HashMap[String, BlockStorager]()
 
   /**
    * @author jiangbuyun
@@ -347,5 +346,7 @@ object BlockStorager{
       }
       instance
     }
-  }
+  } */
 }
+
+

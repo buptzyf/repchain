@@ -3,7 +3,7 @@ package rep.network.sync.request
 import akka.actor.{ActorRef, ActorSelection, Address, Props}
 import akka.pattern.{AskTimeoutException, ask}
 import akka.util.Timeout
-import rep.app.conf.{SystemProfile, TimePolicy}
+import rep.app.conf.TimePolicy
 import rep.log.RepLogger
 import rep.network.base.ModuleBase
 import rep.network.consensus.byzantium.ConsensusCondition
@@ -11,13 +11,13 @@ import rep.network.module.ModuleActorType
 import rep.network.persistence.IStorager.SourceOfBlock
 import rep.network.sync.SyncMsg.{BlockDataOfRequest, BlockDataOfResponse, ChainInfoOfRequest, MaxBlockInfo, ResponseInfo}
 import rep.network.util.NodeHelp
-import rep.protos.peer.Event
 import rep.utils.GlobalUtils.{BlockEvent, EventType}
 import rep.network.consensus.common.MsgOfConsensus.BlockRestore
 
 import scala.collection.{Seq, Set}
 import scala.concurrent.{Await, Future, TimeoutException}
 import rep.network.sync.parser.ISynchAnalyzer
+import rep.proto.rc2.Event
 import rep.storage.chain.block.{BlockSearcher, BlockStorager}
 
 /**
@@ -35,7 +35,7 @@ abstract class ISynchRequester(moduleName: String) extends ModuleBase(moduleName
 
   implicit val timeout = Timeout(TimePolicy.getTimeoutSync.seconds)
   protected val responseActorName = "/user/modulemanager/synchresponser"
-
+  protected val consensusCondition = new ConsensusCondition(pe.getRepChainContext.getConfig)
 
   protected def toAkkaUrl(addr: String, actorName: String): String = {
     return addr + "/" + actorName;
@@ -131,7 +131,7 @@ abstract class ISynchRequester(moduleName: String) extends ModuleBase(moduleName
     }
     val tmpgHash = gls.head._1
     val tmpgCount = gls.head._2
-    if (ConsensusCondition.ConsensusConditionChecked(tmpgCount)) {
+    if (consensusCondition.ConsensusConditionChecked(tmpgCount)) {
       (true, tmpgHash)
     } else {
       (false, "")
@@ -164,12 +164,12 @@ abstract class ISynchRequester(moduleName: String) extends ModuleBase(moduleName
       setStartVoteInfo(analyzerInSynch.getMaxBlockInfo)
 
       if (rresult != null) {
-        val da = BlockStorager.getBlockStorager(pe.getSysTag)
+        val da = pe.getRepChainContext.getBlockStorager
         if (da.rollbackToHeight(rresult.destHeight)) {
           if (sresult != null) {
             getBlockDatas(sresult.start, sresult.end, sresult.server)
           } else {
-            pe.resetSystemCurrentChainStatus(new BlockSearcher(pe.getSysTag).getChainInfo)
+            pe.resetSystemCurrentChainStatus(pe.getRepChainContext.getBlockSearch.getChainInfo)
           }
         } else {
           RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"回滚块失败，failed height=${rresult.destHeight}"))
@@ -189,7 +189,7 @@ abstract class ISynchRequester(moduleName: String) extends ModuleBase(moduleName
 
   protected def initSystemChainInfo = {
     if (pe.getCurrentHeight == 0) {
-      pe.resetSystemCurrentChainStatus(new BlockSearcher(pe.getSysTag).getChainInfo)
+      pe.resetSystemCurrentChainStatus(pe.getRepChainContext.getBlockSearch.getChainInfo)
     }
   }
 

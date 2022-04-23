@@ -19,15 +19,11 @@ package rep.network.consensus.cfrd.endorse
 import akka.util.Timeout
 import akka.pattern.{AskTimeoutException, ask}
 import akka.actor.Props
-import com.google.protobuf.ByteString
 import rep.network.base.ModuleBase
 import rep.network.util.NodeHelp
-import rep.app.conf.{SystemCertList, SystemProfile, TimePolicy}
-import rep.crypto.Sha256
-import rep.utils.GlobalUtils.{BlockerInfo, EventType}
+import rep.app.conf.{TimePolicy}
+import rep.utils.GlobalUtils.{EventType}
 import rep.network.autotransaction.Topic
-
-import scala.util.control.Breaks._
 import rep.network.module.ModuleActorType
 import rep.network.module.cfrd.CFRDActorType
 import rep.network.consensus.common.MsgOfConsensus.{PreTransBlock, PreTransBlockResult}
@@ -37,8 +33,6 @@ import rep.network.sync.SyncMsg.StartSync
 import rep.log.RepLogger
 import rep.log.RepTimeTracer
 import rep.proto.rc2.{Block, Event}
-import rep.storage.chain.preload.BlockPreload
-
 
 /**
  * Created by jiangbuyun on 2020/03/19.
@@ -50,14 +44,10 @@ object Endorser4Future {
 }
 
 class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
-  import context.dispatcher
   import scala.concurrent.duration._
   import scala.concurrent._
 
   implicit val timeout = Timeout((TimePolicy.getTimeoutPreload * 3).seconds)
-
-  //zhjtps
-  /*protected var algorithmInVoted:IAlgorithmOfVote = new IRandomAlgorithmOfVote*/
 
   override def preStart(): Unit = {
     RepLogger.info(RepLogger.Consensus_Logger, this.getLogMsgPrefix("Endorser4Future Start"))
@@ -74,7 +64,7 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
       val future1 = pe.getActorRef(ModuleActorType.ActorType.dispatchofpreload).ask(PreTransBlock(block, "endors_"+block.transactions(0).id))
       val result = Await.result(future1, timeout.duration).asInstanceOf[PreTransBlockResult]
       var tmpblock = result.blc.withHeader(result.blc.getHeader.withHashPresent(block.getHeader.hashPresent))
-      if (BlockVerify.VerifyHashOfBlock(tmpblock)) {
+      if (BlockVerify.VerifyHashOfBlock(tmpblock,pe.getRepChainContext.getHashTool)) {
         b = true
       }
     } catch {
@@ -83,7 +73,7 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
       case te:TimeoutException =>
         RepLogger.error(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry AskPreloadTransactionOfBlock error=TimeoutException"))
     }finally {
-      BlockPreload.freeInstance("endors_"+block.transactions(0).id,pe.getSysTag)
+      pe.getRepChainContext.freeBlockPreloadInstance("endors_"+block.transactions(0).id)
     }
     RepTimeTracer.setEndTime(pe.getSysTag, s"recvendorsement-${moduleName}-AskPreloadTransactionOfBlock", System.currentTimeMillis(),block.getHeader.height,block.transactions.size)
     b
@@ -93,7 +83,7 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
     //println(s"${pe.getSysTag}:entry checkEndorseSign")
     RepTimeTracer.setStartTime(pe.getSysTag, s"recvendorsement-${moduleName}-checkEndorseSign", System.currentTimeMillis(),block.getHeader.height,block.transactions.size)
     var result = false
-    val r = BlockVerify.VerifyAllEndorseOfBlock(block, pe.getSysTag)
+    val r = BlockVerify.VerifyAllEndorseOfBlock(block, pe.getRepChainContext.getSignTool)
     result = r._1
     //println(s"${pe.getSysTag}:entry checkEndorseSign after,checkEndorseSign=${result}")
     RepTimeTracer.setEndTime(pe.getSysTag, s"recvendorsement-${moduleName}-checkEndorseSign", System.currentTimeMillis(),block.getHeader.height,block.transactions.size)
@@ -106,7 +96,7 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
         RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"endorser is itself,do not endorse,recv endorse request,endorse height=${info.blc.getHeader.height},local height=${pe.getCurrentHeight}"))
         1
       } else {
-        if (NodeHelp.isCandidateNow(pe.getSysTag, SystemCertList.getSystemCertList)) {
+        if (NodeHelp.isCandidateNow(pe.getSysTag, pe.getRepChainContext.getSystemCertList.getSystemCertList)) {
           //是候选节点，可以背书
           //if (info.blc.previousBlockHash.toStringUtf8 == pe.getCurrentBlockHash && NodeHelp.isBlocker(info.blocker, pe.getBlocker.blocker)) {
           //if (info.blc.previousBlockHash.toStringUtf8 == pe.getBlocker.voteBlockHash && NodeHelp.isBlocker(info.blocker, pe.getBlocker.blocker)) {
@@ -174,7 +164,7 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
     if (result1) {
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry 7"))
       sendEvent(EventType.RECEIVE_INFO, mediator, pe.getSysTag, Topic.Endorsement,Event.Action.ENDORSEMENT)
-      this.resultOfEndorement =  ResultOfEndorsed(ResultFlagOfEndorse.success, BlockHelp.SignBlock(blc.getHeader, pe.getSysTag),
+      this.resultOfEndorement =  ResultOfEndorsed(ResultFlagOfEndorse.success, BlockHelp.SignBlock(blc.getHeader,pe.getSysTag, pe.getRepChainContext.getSignTool),
         blc.getHeader.hashPresent.toStringUtf8(),pe.getSystemCurrentChainStatus,pe.getBlocker)
       this.blockOfEndorement = blc
       sender ! this.resultOfEndorement
@@ -189,10 +179,11 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
 
 
 
-  private def isRepeatEndoresment(info: EndorsementInfo):Boolean={
+  private def isRepeatEndorsement(info: EndorsementInfo):Boolean={
     var r = false
     if(this.blockOfEndorement != null && this.resultOfEndorement != null) {
-      if( info.blc.getHeader.hashPresent.toStringUtf8 == this.blockOfEndorement.getHeader.hashPresent.toStringUtf8 && info.blocker == this.resultOfEndorement.endorserOfVote.blocker){
+      if( info.blc.getHeader.hashPresent.toStringUtf8 == this.blockOfEndorement.getHeader.hashPresent.toStringUtf8
+        && info.blocker.blocker == this.resultOfEndorement.endorserOfVote.blocker){
         r = true
       }else{
         this.resultOfEndorement = null
@@ -208,8 +199,8 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
       case 0 =>
 
         var result1 = true
-        if (SystemProfile.getIsVerifyOfEndorsement) {
-          if(this.isRepeatEndoresment(info)){
+        if (pe.getRepChainContext.getConfig.isVerifyOfEndorsement) {
+          if(this.isRepeatEndorsement(info)){
             sender ! this.resultOfEndorement
           }else{
             result1 = VerifyInfo(info.blc)

@@ -1,7 +1,7 @@
 package rep.sc.tpl.did.operation
 
 import rep.crypto.Sha256
-import rep.proto.rc2.{ActionResult, Certificate}
+import rep.proto.rc2.{ActionResult, Certificate, Signer}
 import rep.sc.scalax.{ContractContext, ContractException}
 import rep.sc.tpl.did.DidTplPrefix.{certPrefix, hashPrefix, signerPrefix}
 
@@ -66,7 +66,7 @@ object CertOperation extends DidOperation {
     } else if (customCert.certType.isCertAuthentication || customCert.certType.isCertUndefined) {
       // 身份校验证书通过signer注册指定，或通过 signUpAllTypeCertificate
       throw ContractException(toJsonErrMsg(canNotSignUpAuthCertificate))
-    } else if (!Sha256.hashstr(customCert.certificate).equals(customCert.certHash)) {
+    } else if (!ctx.api.getSha256Tool.hashstr(customCert.certificate).equals(customCert.certHash)) {
       throw ContractException(toJsonErrMsg(hashNotMatch))
     } else {
       ctx.api.setVal(certKey, customCert)
@@ -132,7 +132,7 @@ object CertOperation extends DidOperation {
     val certHashKey = hashPrefix + customCert.certHash
     if (ctx.api.getVal(certKey) != null || ctx.api.getVal(certHashKey) != null) {
       throw ContractException(toJsonErrMsg(certExists))
-    } else if (!Sha256.hashstr(customCert.certificate).equals(customCert.certHash)) {
+    } else if (!ctx.api.getSha256Tool.hashstr(customCert.certificate).equals(customCert.certHash)) {
       throw ContractException(toJsonErrMsg(hashNotMatch))
     } else {
       ctx.api.setVal(certKey, customCert)

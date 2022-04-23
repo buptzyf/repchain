@@ -17,9 +17,8 @@ package rep.crypto.cert
 
 import java.security._
 import java.security.cert.Certificate
-import rep.app.conf.SystemProfile
-import rep.crypto.CryptoMgr
 import java.security.cert.X509Certificate
+import rep.app.system.RepChainSystemContext
 import rep.log.RepLogger
 
 /**
@@ -27,12 +26,12 @@ import rep.log.RepLogger
  * @author jiangbuyun
  * @version	1.0
  */
-class ImpECDSASigner extends ISigner {
-
+class ImpECDSASigner(ctx:RepChainSystemContext) extends ISigner {
+  private val cryptoMgr = ctx.getCryptoMgr
   override def sign(privateKey: PrivateKey, message: Array[Byte]): Array[Byte] = {
     if(privateKey == null) throw new RuntimeException("签名时私钥为空！") 
     if(message == null || message.length <= 0 ) throw new RuntimeException("待签名内容为空！")
-    val s1 = CryptoMgr.getSignaturer
+    val s1 = cryptoMgr.getSignaturer
     s1.initSign(privateKey)
     s1.update(message)
     s1.sign()
@@ -42,7 +41,7 @@ class ImpECDSASigner extends ISigner {
     if(publicKey == null) throw new RuntimeException("验证签名时公钥为空！") 
     if(signature == null || signature.length <= 0) throw new RuntimeException("待验证的签名信息为空！") 
     if(message == null || message.length <= 0 ) throw new RuntimeException("待签名内容为空！")
-    val s2 = CryptoMgr.getSignaturer
+    val s2 = cryptoMgr.getSignaturer
     s2.initVerify(publicKey)
     s2.update(message)
     s2.verify(signature)
@@ -55,7 +54,7 @@ class ImpECDSASigner extends ISigner {
           if(cert == null){
             isValid = false
           }else{     
-              if(SystemProfile.getCheckCertValidate == 1){
+              if(ctx.getConfig.isCheckCertValidate){
                 if(cert.isInstanceOf[X509Certificate]){
                     var  x509cert :X509Certificate = cert.asInstanceOf[X509Certificate]
                     x509cert.checkValidity(date)

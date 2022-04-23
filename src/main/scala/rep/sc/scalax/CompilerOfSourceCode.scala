@@ -25,14 +25,15 @@ object CompilerOfSourceCode {
     case 0 => isDebug = true
     case 1 => isDebug = false
   }*/
-  val cp = new CompilerOfSourceCode(None, isDebug)
+
   /**
    * 根据传入的合约代码，以及指定的合约类唯一标识，生成合约类，并动态编译
    * @param pcode 合约代码主体部分
    * @cid 合约类唯一标识
    * @return 类定义实例
    */
-  def compilef(pcode: String, cid: String): Class[_] = {
+  def compilef(pcode: String, cid: String,sha256: Sha256): Class[_] = {
+    val cp = new CompilerOfSourceCode(None, isDebug,sha256)
     cp.compilef(pcode, cid)
   }
 }
@@ -44,7 +45,7 @@ object CompilerOfSourceCode {
  *  @param targetDir: 动态编译并加载的class路径
  *  @param bDebug: 是否调试模式
  */
-class CompilerOfSourceCode(targetDir: Option[File], bDebug: Boolean) {
+class CompilerOfSourceCode(targetDir: Option[File], bDebug: Boolean,sha256: Sha256) {
   val tb = currentMirror.mkToolBox()
   //合约类名前缀
   val PRE_CLS_NAME = "SC_"
@@ -224,7 +225,7 @@ class CompilerOfSourceCode(targetDir: Option[File], bDebug: Boolean) {
    *  @return 类名字符串
    */
   protected def classNameForCode(code: String): String = {
-    PRE_CLS_NAME + Sha256.hashstr(code)
+    PRE_CLS_NAME + sha256.hashstr(code)
   }
 
 }

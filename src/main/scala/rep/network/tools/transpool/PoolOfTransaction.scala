@@ -3,13 +3,11 @@ package rep.network.tools.transpool
 import java.util
 import java.util.concurrent.atomic.LongAdder
 import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedQueue}
-
-import rep.app.conf.RepChainConfig
+import rep.app.system.RepChainSystemContext
 import rep.log.RepLogger
 import rep.proto.rc2.Transaction
 import rep.storage.chain.block.BlockSearcher
 import rep.storage.db.factory.DBFactory
-
 import scala.collection.mutable.ArrayBuffer
 import scala.util.control.Breaks.{break, breakable}
 
@@ -19,19 +17,19 @@ import scala.util.control.Breaks.{break, breakable}
  * @since	2022-04-15
  * @category	交易缓存池。
  * */
-class PoolOfTransaction(systemName:String) {
+class PoolOfTransaction(ctx:RepChainSystemContext) {
   //交易缓存池可以缓存的最大交易数
-  final private val cacheMaxSize : Int = RepChainConfig.getSystemConfig(systemName).getMaxCacheNumberOfTransaction
+  final private val cacheMaxSize : Int = ctx.getConfig.getMaxCacheNumberOfTransaction
   //单个区块最大的交易数
-  final private val maxNumberOfBlock : Int = RepChainConfig.getSystemConfig(systemName).getLimitTransactionNumberOfBlock
+  final private val maxNumberOfBlock : Int = ctx.getConfig.getLimitTransactionNumberOfBlock
   //是否持久化交易缓存池的交易到数据库
-  final private val isPersistenceTxToDB : Boolean = RepChainConfig.getSystemConfig(systemName).isPersistenceTransactionToDB
+  final private val isPersistenceTxToDB : Boolean = ctx.getConfig.isPersistenceTransactionToDB
   final private val txPrefix = "tx-buffer-on-shutdown"
   //交易缓存池的交易计数器
   final private val transactionCount : LongAdder = new LongAdder()
   transactionCount.reset()
   //区块数据查询器，主要在数据存储中根据交易id查找交易是否已经入块
-  final private val searcher : BlockSearcher = new BlockSearcher(systemName)
+  final private val searcher : BlockSearcher = ctx.getBlockSearch
   //交易排序队列，存放内容为交易的id，保证交易进入缓存池的顺序，出块是按照这个顺序打包到预出块中
   final private val transactionOrder : ConcurrentLinkedQueue[String] = new ConcurrentLinkedQueue[String]()
   //被预出块打包的交易排序队列，存放内容为交易的id，在预出块打包失败之后，重新打包预出块是优先从该队列中获取要打包的交易
@@ -216,14 +214,14 @@ class PoolOfTransaction(systemName:String) {
    * */
   def saveCachePoolToDB:Unit={
     if(this.isPersistenceTxToDB){
-      val db = DBFactory.getDBAccess(systemName)
+      val db = DBFactory.getDBAccess(ctx.getConfig)
       var r = new ArrayBuffer[Array[Byte]]()
       this.transactionCaches.values().forEach(t=>{
         r += t.toByteArray
       })
-      db.putObject(this.systemName+"_"+txPrefix,r)
+      db.putObject(ctx.getSystemName+"_"+txPrefix,r)
     }
-    RepLogger.info(RepLogger.TransLifeCycle_Logger, s"systemname=${systemName},save trans to db")
+    RepLogger.info(RepLogger.TransLifeCycle_Logger, s"systemname=${ctx.getSystemName},save trans to db")
   }
 
   /**
@@ -236,23 +234,23 @@ class PoolOfTransaction(systemName:String) {
    * */
   def restoreCachePoolFromDB:Unit={
     if (this.isPersistenceTxToDB) {
-      val db = DBFactory.getDBAccess(systemName)
+      val db = DBFactory.getDBAccess(ctx.getConfig)
       try {
-        val obj = db.getObject(this.systemName+"_"+txPrefix)
+        val obj = db.getObject(ctx.getSystemName+"_"+txPrefix)
         obj match {
           case None =>
-            RepLogger.info(RepLogger.TransLifeCycle_Logger, s"systemname=${systemName},load transaction failed from db,get data is None")
+            RepLogger.info(RepLogger.TransLifeCycle_Logger, s"systemname=${ctx.getSystemName},load transaction failed from db,get data is None")
           case _ =>
             val ls = obj.asInstanceOf[ArrayBuffer[Array[Byte]]]
             ls.foreach(tb=>{
               val tx = Transaction.parseFrom(tb)
               this.addTransactionToCache(tx)
             })
-            RepLogger.info(RepLogger.TransLifeCycle_Logger, s"systemname=${systemName},load trans success from db")
+            RepLogger.info(RepLogger.TransLifeCycle_Logger, s"systemname=${ctx.getSystemName},load trans success from db")
         }
       } catch {
         case e: Exception =>
-          RepLogger.info(RepLogger.TransLifeCycle_Logger, s"systemname=${systemName},load trans except from db,msg=${e.getCause}")
+          RepLogger.info(RepLogger.TransLifeCycle_Logger, s"systemname=${ctx.getSystemName},load trans except from db,msg=${e.getCause}")
       }
     }
   }

@@ -1,8 +1,6 @@
 package rep.network.cache
 
 import akka.actor.Props
-import rep.app.conf.SystemProfile
-import rep.crypto.cert.SignTool
 import rep.log.RepLogger
 import rep.network.autotransaction.Topic
 import rep.network.base.ModuleBase
@@ -24,7 +22,7 @@ class TransactionChecker (moduleName: String) extends ModuleBase(moduleName){
     super.preStart()
   }
 
-  val dataaccess = new BlockSearcher(pe.getSysTag)
+  val dataaccess = pe.getRepChainContext.getBlockSearch
   /**
    * 检查交易是否符合规则
    * @param t
@@ -35,7 +33,7 @@ class TransactionChecker (moduleName: String) extends ModuleBase(moduleName){
     var resultMsg = ""
     var result = false
 
-    if(SystemProfile.getHasPreloadTransOfApi){
+    if(pe.getRepChainContext.getConfig.hasPreloadOfApi){
       val sig = t.getSignature
       val tOutSig = t.clearSignature
       val cert = sig.getCertId
@@ -43,8 +41,8 @@ class TransactionChecker (moduleName: String) extends ModuleBase(moduleName){
       try {
         val siginfo = sig.signature.toByteArray()
 
-        if (SignTool.verify(siginfo, tOutSig.toByteArray, cert, pe.getSysTag)) {
-          if (pe.getTransactionPool.isExist(t.id) || dataAccess.isExistTransactionByTxId(t.id)) {
+        if (pe.getRepChainContext.getSignTool.verify(siginfo, tOutSig.toByteArray, cert)) {
+          if (pe.getRepChainContext.getTransactionPool.isExist(t.id) || dataAccess.isExistTransactionByTxId(t.id)) {
             resultMsg = s"The transaction(${t.id}) is duplicated with txid"
           } else {
             result = true
@@ -63,14 +61,14 @@ class TransactionChecker (moduleName: String) extends ModuleBase(moduleName){
   }
 
   private def addTransToCache(t: Transaction) = {
-    if(!pe.getTransactionPool.isExist(t.id)){
+    if(!pe.getRepChainContext.getTransactionPool.isExist(t.id)){
       //交易池中不存在的交易才检查
       val checkedTransactionResult = checkTransaction(t, dataaccess)
       //签名验证成功
-      val poolIsEmpty = if(pe.getTransactionPool.getCachePoolSize <= 0) true  else false
-      if((checkedTransactionResult.result) && !pe.getTransactionPool.hasOverflowed ){
+      val poolIsEmpty = if(pe.getRepChainContext.getTransactionPool.getCachePoolSize <= 0) true  else false
+      if((checkedTransactionResult.result) && !pe.getRepChainContext.getTransactionPool.hasOverflowed ){
       //if( SystemProfile.getMaxCacheTransNum == 0 || pe.getTransPoolMgr.getTransLength() < SystemProfile.getMaxCacheTransNum ){
-        pe.getTransactionPool.addTransactionToCache(t)
+        pe.getRepChainContext.getTransactionPool.addTransactionToCache(t)
         RepLogger.trace(RepLogger.System_Logger,this.getLogMsgPrefix(s"${pe.getSysTag} trans pool recv,txid=${t.id}"))
 
         if (poolIsEmpty)//加入交易之前交易池为空，发送抽签消息

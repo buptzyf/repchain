@@ -1,8 +1,9 @@
 package rep.authority.cache
 
 import java.util.concurrent.ConcurrentHashMap
+
 import com.googlecode.concurrentlinkedhashmap.{ConcurrentLinkedHashMap, Weighers}
-import rep.app.conf.RepChainConfig
+import rep.app.system.RepChainSystemContext
 import scala.concurrent.ExecutionContext.Implicits.global
 import rep.log.RepLogger
 import rep.proto.rc2.ChaincodeId
@@ -13,14 +14,14 @@ import rep.utils.IdTool
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 
-abstract class ICache(systemName:String) {
+abstract class ICache(ctx : RepChainSystemContext) {
   final protected val splitSign = "_"
-  final private val config = RepChainConfig.getSystemConfig(systemName)
+  final private val config = ctx.getConfig
   final private val cid = ChaincodeId(config.getAccountContractName,config.getAccountContractVersion)
   final val common_prefix : String = KeyPrefixManager.getWorldStateKeyPrefix(
-                                systemName,IdTool.getCid(cid))
-  final private val db  = DBFactory.getDBAccess(systemName)
-  final protected val cacheMaxSize = RepChainConfig.getSystemConfig(systemName).getAccountCacheSize
+                                config,IdTool.getCid(cid))
+  final private val db  = DBFactory.getDBAccess(config)
+  final protected val cacheMaxSize = config.getAccountCacheSize
   final protected implicit val cache = new ConcurrentLinkedHashMap.Builder[String, Option[Any]]()
                                           .maximumWeightedCapacity(cacheMaxSize)
                                           .weigher(Weighers.singleton[Option[Any]]).build

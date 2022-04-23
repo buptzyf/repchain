@@ -23,19 +23,9 @@ import org.json4s.native.Serialization.{write, writePretty}
 import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, FunSuiteLike, Matchers}
 import rep.app.system.ClusterSystem
 import rep.app.system.ClusterSystem.InitType
-import rep.crypto.CryptoMgr
-import rep.crypto.cert.SignTool
+import rep.crypto.cert.{CryptoMgr, SignTool}
 import rep.network.autotransaction.PeerHelper
 import rep.network.module.cfrd.ModuleManagerOfCFRD
-import rep.protos.peer.ChaincodeDeploy.ContractClassification
-import rep.protos.peer._
-import rep.sc.SandboxSpec.{ACTION, SetMap}
-import rep.sc.tpl._
-//.{CertStatus,CertInfo}
-import rep.sc.tpl.Transfer
-import rep.storage.ImpDataAccess
-import rep.utils.SerializeUtils.toJson
-import rep.app.conf.SystemProfile
 
 import scala.concurrent.duration._
 import scala.collection.mutable.Map
@@ -62,7 +52,7 @@ object SandboxSpec {
   * @param _system
   */
 class SandboxSpec(_system: ActorSystem) extends TestKit(_system) with Matchers with FunSuiteLike with BeforeAndAfterAll {
-
+/*
   def this() = this(ActorSystem("TransferSpec", new ClusterSystem("121000005l35120456.node1", InitType.MULTI_INIT, false).getConf))
 
   override def afterAll: Unit = {
@@ -97,4 +87,6 @@ class SandboxSpec(_system: ActorSystem) extends TestKit(_system) with Matchers w
     // 判断合约容器的返回类型
     msg_recv1 shouldBe a[Seq[TransactionResult]]
   }
+
+ */
 }

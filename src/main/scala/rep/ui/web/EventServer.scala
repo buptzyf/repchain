@@ -38,7 +38,7 @@ import rep.api.rest._
 import rep.utils.GlobalUtils
 import rep.sc.Sandbox.SandboxException
 import rep.log.RepLogger
-import rep.app.conf.SystemProfile
+import rep.app.conf.RepChainConfig
 import rep.log.RecvEventActor
 import rep.log.EventActor4Stage
 import akka.stream.Graph
@@ -46,7 +46,7 @@ import akka.stream.SourceShape
 import akka.NotUsed
 import akka.event.Logging
 import akka.remote.artery.tcp.ConfigSSLEngineProvider
-import rep.crypto.{CryptoMgr, GMSSLEngineProvider}
+import rep.crypto.GMSSLEngineProvider
 import rep.network.tools.PeerExtension
 import akka.http.scaladsl.{ConnectionContext, Http, HttpsConnectionContext}
 import rep.proto.rc2.Event
@@ -74,7 +74,7 @@ object EventServer {
  *  @param sys ActorSystem
  *  @param port 指定侦听的端口
  */
-  def start(sys:ActorSystem ,port:Int) {
+  def start(sys:ActorSystem ,port:Int,actorNumber:Int) {
     implicit val system =sys
     implicit val materializer = ActorMaterializer()
     //implicit val executionContext = system.dispatcher
@@ -113,7 +113,7 @@ object EventServer {
       }
 
     //val ra = sys.actorOf(RestActor.props("api"), "api")
-    val ra = new RestRouter(SystemProfile.getHttpServiceActorNumber,sys)
+    val ra = new RestRouter(actorNumber,sys)
 
     //允许跨域访问,以支持在应用中发起请求
     //val httpServer = Http()
@@ -153,7 +153,8 @@ class EventServer extends Actor{
   override def preStart(): Unit = {
     context.system.settings.config
     val pe = PeerExtension(context.system)
-    EventServer.start(context.system, SystemProfile.getHttpServicePort(pe.getSysTag))
+    EventServer.start(context.system, pe.getRepChainContext.getConfig.getHttpServicePort,
+      pe.getRepChainContext.getConfig.getHttpServiceActorNumber)
 }
 
 def receive = {

@@ -16,9 +16,11 @@
 
 package rep.crypto
 
+import java.security.MessageDigest
+
 class ShaSpecification extends HashTest {
 
-  hashCheckString(Sha256,
+  hashCheckString(new Sha256(MessageDigest.getInstance("SHA-256")),
     Map(
       "hello world" -> "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9",
       "" -> "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",

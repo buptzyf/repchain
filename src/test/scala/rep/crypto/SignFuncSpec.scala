@@ -18,7 +18,6 @@ package rep.crypto
 
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import org.scalatest.{Matchers, PropSpec}
-import rep.crypto._
 import java.io._
 
 

@@ -16,11 +16,11 @@
 
 package rep.network.cluster
 
-import akka.actor.{Actor, ActorRef}
+import akka.actor.{ ActorRef}
 import akka.cluster.pubsub.DistributedPubSubMediator.{Publish, Subscribe}
 import rep.utils.GlobalUtils.EventType
-import rep.app.conf.SystemProfile
 import rep.network.autotransaction.Topic
+import rep.network.base.BaseActor
 import rep.proto.rc2.Event
 
 /**
@@ -29,7 +29,7 @@ import rep.proto.rc2.Event
   * @author shidianyue
   * @version 1.0
   **/
- trait ClusterActor extends  Actor{
+ trait ClusterActor extends  BaseActor{
   import akka.cluster.pubsub.DistributedPubSub
 
   val mediator = DistributedPubSub(context.system).mediator
@@ -55,7 +55,7 @@ import rep.proto.rc2.Event
     * @param action
     */
   def sendEvent(eventType: Int, mediator: ActorRef, addr: String, topic: String, action: Event.Action): Unit = {
-    if(SystemProfile.getRealtimeGraph == 1){
+    if(pe.getRepChainContext.getConfig.isStartupRealtimeGraph){
       eventType match {
         case EventType.PUBLISH_INFO =>
           //publish event(send message)
@@ -70,7 +70,8 @@ import rep.proto.rc2.Event
       }
     }
   }
-  
+
+
   
     /**
     * 广播SyncEvent消息

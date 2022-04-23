@@ -19,16 +19,18 @@ package rep.utils
 import java.io.{File, FileFilter, PrintWriter}
 import java.nio.file.Path
 import java.util
+
 import com.google.common.io.Files
 import com.google.protobuf.timestamp.Timestamp
 import org.json4s.jackson.JsonMethods.{pretty, render}
 import org.json4s.{DefaultFormats, jackson}
-import rep.crypto.CryptoMgr
-import rep.crypto.cert.SignTool
+import rep.app.system.RepChainSystemContext
+import rep.crypto.cert.{CryptoMgr, SignTool}
 import rep.network.autotransaction.PeerHelper
 import rep.network.consensus.util.BlockHelp
 import rep.proto.rc2.{CertId, Certificate, ChaincodeDeploy, ChaincodeId, Signer, Transaction}
 import scalapb.json4s.JsonFormat
+
 import scala.collection.mutable
 
 
@@ -38,12 +40,12 @@ import scala.collection.mutable
   * @author zyf
   */
 object GenesisBuilderTool {
-
+  val ctx = new RepChainSystemContext("121000005l35120456.node1")
   implicit val serialization = jackson.Serialization // or native.Serialization
   implicit val formats = DefaultFormats
   private val setMap = new mutable.HashMap[String, Int]()
   private var jksFile = new File("jks")
-  private var certsFile = new File(s"${CryptoMgr.getKeyFileSuffix.substring(1)}/certs")
+  private var certsFile = new File(s"${ctx.getCryptoMgr.getKeyFileSuffix.substring(1)}/certs")
   private var contractFile = new File("src/main/scala/rep/sc/tpl/ContractCert.scala")
   private var adminJksName = ""
   private var node1JksName = ""
@@ -71,9 +73,9 @@ object GenesisBuilderTool {
     println(Path.of(jksFile.getPath, adminJksName).toString)
 
     // 导入管理员的私钥，进行签名操作
-    SignTool.loadPrivateKey(adminJksName.substring(0, adminJksName.length - 4), "super_admin", Path.of(jksFile.getPath, adminJksName).toString)
+    ctx.getSignTool.loadPrivateKey(adminJksName.substring(0, adminJksName.length - 4), "super_admin", Path.of(jksFile.getPath, adminJksName).toString)
     // 导入node1的私钥
-    SignTool.loadPrivateKey(node1JksName.substring(0, node1JksName.length - 4), "123", Path.of(jksFile.getPath, node1JksName).toString)
+    ctx.getSignTool.loadPrivateKey(node1JksName.substring(0, node1JksName.length - 4), "123", Path.of(jksFile.getPath, node1JksName).toString)
 
     val transList = new util.ArrayList[Transaction]
 
@@ -81,17 +83,17 @@ object GenesisBuilderTool {
     val s1 = scala.io.Source.fromFile(contractFile, "UTF-8")
     val l1 = try s1.mkString finally s1.close()
     val cid1 = new ChaincodeId("ContractCert", 1)
-    val dep_trans = PeerHelper.createTransaction4Deploy(adminJksName.substring(0, adminJksName.length - 4), cid1, l1, "", 5000, ChaincodeDeploy.CodeType.CODE_SCALA)
+    val dep_trans = ctx.getTransactionBuilder.createTransaction4Deploy(adminJksName.substring(0, adminJksName.length - 4), cid1, l1, "", 5000, ChaincodeDeploy.CodeType.CODE_SCALA)
     transList.add(dep_trans)
 
     val adminInfo = adminJksName.split("\\.")
     // 注册节点与管理员的账户
     for (i <- signers.indices) {
-      transList.add(PeerHelper.createTransaction4Invoke(adminJksName.substring(0, adminJksName.length - 4), cid1, "SignUpSigner", Seq(JsonFormat.toJsonString(signers(i)))))
+      transList.add(ctx.getTransactionBuilder.createTransaction4Invoke(adminJksName.substring(0, adminJksName.length - 4), cid1, "SignUpSigner", Seq(JsonFormat.toJsonString(signers(i)))))
     }
     // 注册节点与管理员的证书
     for (i <- certs.indices) {
-      transList.add(PeerHelper.createTransaction4Invoke(adminJksName.substring(0, adminJksName.length - 4), cid1, "SignUpCert", Seq(JsonFormat.toJsonString(certs(i)))))
+      transList.add(ctx.getTransactionBuilder.createTransaction4Invoke(adminJksName.substring(0, adminJksName.length - 4), cid1, "SignUpCert", Seq(JsonFormat.toJsonString(certs(i)))))
     }
 
     // 可选的部署业务合约
@@ -101,7 +103,7 @@ object GenesisBuilderTool {
       val l2 = try s2.mkString finally s2.close()
       val tplFileName = tplFile.getName.split("\\.")(0)
       val cid4 = new ChaincodeId(tplFileName, 1)
-      val dep_custom_proof = PeerHelper.createTransaction4Deploy(node1JksName.substring(0, node1JksName.length - 4), cid4, l2, "", 5000, ChaincodeDeploy.CodeType.CODE_SCALA)
+      val dep_custom_proof = ctx.getTransactionBuilder.createTransaction4Deploy(node1JksName.substring(0, node1JksName.length - 4), cid4, l2, "", 5000, ChaincodeDeploy.CodeType.CODE_SCALA)
       transList.add(dep_custom_proof)
     }
 

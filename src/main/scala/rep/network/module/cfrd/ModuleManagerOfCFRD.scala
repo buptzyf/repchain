@@ -1,10 +1,8 @@
 package rep.network.module.cfrd
 
 import akka.actor.Props
-import rep.app.conf.SystemProfile
 import rep.log.RepLogger
 import rep.network.cache.TransactionOfCollectioner
-import rep.network.cache.cfrd.TransactionPoolOfCFRD
 import rep.network.confirmblock.common.ConfirmOfBlock
 import rep.network.consensus.cfrd.block.EndorseCollector
 import rep.network.consensus.cfrd.endorse.DispatchOfRecvEndorsement
@@ -23,11 +21,11 @@ import rep.network.sync.request.raft.SynchRequesterOfRAFT
  * CFRD的模块管理类，继承公共的模块管理类，实现CFRD的自己的模块
  */
 object ModuleManagerOfCFRD{
-  def props(name: String, sysTag: String, enableStatistic: Boolean, enableWebSocket: Boolean, isStartup: Boolean): Props = Props(classOf[ModuleManagerOfCFRD], name, sysTag, enableStatistic: Boolean, enableWebSocket: Boolean, isStartup: Boolean)
+  def props(name: String, isStartup: Boolean): Props = Props(classOf[ModuleManagerOfCFRD], name, isStartup: Boolean)
 
 }
 
-class ModuleManagerOfCFRD(moduleName: String, sysTag: String, enableStatistic: Boolean, enableWebSocket: Boolean, isStartup: Boolean) extends IModuleManager(moduleName,sysTag, enableStatistic, enableWebSocket, isStartup){
+class ModuleManagerOfCFRD(moduleName: String, isStartup: Boolean) extends IModuleManager(moduleName, isStartup){
 
   override def preStart(): Unit = {
     RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix( "ModuleManagerOfCFRD Start"))
@@ -40,7 +38,7 @@ class ModuleManagerOfCFRD(moduleName: String, sysTag: String, enableStatistic: B
 
   override def loadConsensusModule = {
     //pe.register(ModuleActorType.ActorType.transactionpool, context.actorOf(TransactionPoolOfCFRD.props("transactionpool"), "transactionpool"))
-    if (SystemProfile.getVoteNodeList.contains(this.sysTag)) {
+    if (pe.getRepChainContext.getConfig.getVoteNodeList.contains(pe.getSysTag)) {
       pe.register(ModuleActorType.ActorType.transactioncollectioner, context.actorOf(TransactionOfCollectioner.props("transactioncollectioner"), "transactioncollectioner"))
     }
     pe.register(ModuleActorType.ActorType.storager,context.actorOf(StoragerOfCFRD.props("storager"), "storager"))
@@ -50,9 +48,9 @@ class ModuleManagerOfCFRD(moduleName: String, sysTag: String, enableStatistic: B
     pe.register(CFRDActorType.ActorType.dispatchofRecvendorsement,context.actorOf(DispatchOfRecvEndorsement.props("dispatchofRecvendorsement"), "dispatchofRecvendorsement"))
     pe.register(CFRDActorType.ActorType.voter,context.actorOf(VoterOfCFRD.props("voter"), "voter"))
 
-    if(SystemProfile.getSynchType == "CFRD"){
+    if(pe.getRepChainContext.getConfig.getConsensusSynchType == "CFRD"){
       pe.register(CFRDActorType.ActorType.synchrequester,context.actorOf(SynchRequesterOfCFRD.props("synchrequester"), "synchrequester"))
-    }else if(SystemProfile.getSynchType == "RAFT"){
+    }else if(pe.getRepChainContext.getConfig.getConsensusSynchType == "RAFT"){
       pe.register(CFRDActorType.ActorType.synchrequester,context.actorOf(SynchRequesterOfRAFT.props("synchrequester"), "synchrequester"))
     }
 

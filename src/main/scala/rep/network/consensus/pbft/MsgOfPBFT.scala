@@ -3,7 +3,6 @@ package rep.network.consensus.pbft
 import akka.actor.{ActorRef, Address}
 import rep.proto.rc2.{Block, BlockchainInfo, Signature}
 import rep.utils.GlobalUtils.BlockerInfo
-import rep.utils.SerializeUtils
 
 //zhj
 /**

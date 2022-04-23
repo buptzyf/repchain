@@ -19,11 +19,11 @@ package rep.network.consensus.cfrd.block
 import akka.actor.{Address, Props}
 import akka.cluster.pubsub.DistributedPubSubMediator.Publish
 import akka.routing._
-import rep.app.conf.{SystemProfile, TimePolicy}
+import rep.app.conf.{ TimePolicy}
 import rep.network.base.ModuleBase
 import rep.network.consensus.common.MsgOfConsensus.ConfirmedBlock
 import rep.network.consensus.cfrd.MsgOfCFRD.{CollectEndorsement, DelayResendEndorseInfo, ForceVoteInfo, RequesterOfEndorsement, ResendEndorseInfo, ResultOfEndorseRequester}
-import rep.utils.GlobalUtils.{ EventType}
+import rep.utils.GlobalUtils.EventType
 import rep.network.consensus.util.BlockHelp
 import rep.network.consensus.util.BlockVerify
 import rep.log.RepLogger
@@ -56,7 +56,8 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
   private var blocker: ForceVoteInfo = null
   private var recvedEndorse = new HashMap[String, Signature]()
   private var resendEndorsements = new ArrayBuffer[Address]
-
+  private val config = pe.getRepChainContext.getConfig
+  private val consensusCondition = new ConsensusCondition(config)
 
   override def preStart(): Unit = {
     RepLogger.info(RepLogger.Consensus_Logger, this.getLogMsgPrefix( "EndorseCollector Start"))
@@ -64,8 +65,8 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
 
   private def createRouter = {
     if (router == null) {
-      var list: Array[Routee] = new Array[Routee](SystemProfile.getVoteNodeList.size()*2)
-      for (i <- 0 to SystemProfile.getVoteNodeList.size()*2 - 1) {
+      var list: Array[Routee] = new Array[Routee](config.getVoteNodeList.length*2)
+      for (i <- 0 to config.getVoteNodeList.length*2 - 1) {
         var ca = context.actorOf(EndorsementRequest4Future.props("endorsementrequester" + i), "endorsementrequester" + i)
         context.watch(ca)
         list(i) = new ActorRefRoutee(ca)
@@ -100,7 +101,7 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
   private def CheckAndFinishHandler {
     sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Endorsement, Event.Action.ENDORSEMENT)
     RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("entry collectioner check  "))
-    if (ConsensusCondition.ConsensusConditionChecked(this.recvedEndorse.size + 1)) {
+    if (this.consensusCondition.ConsensusConditionChecked(this.recvedEndorse.size + 1)) {
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("collectioner package endorsement to block"))
       this.recvedEndorse.foreach(f => {
         this.block = this.block.withHeader(BlockHelp.AddEndorsementToBlock(this.block.getHeader, f._2))
@@ -121,7 +122,7 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
   override def receive = {
     //case CollectEndorsement(block, blocker,index) =>
     case CollectEndorsement(block, blocker) =>
-      if(!pe.isSynching && ConsensusCondition.CheckWorkConditionOfSystem(pe.getNodeMgr.getStableNodes.size)) {
+      if(!pe.isSynching && this.consensusCondition.CheckWorkConditionOfSystem(pe.getNodeMgr.getStableNodes.size)) {
         createRouter
 
         if (this.block != null && this.block.getHeader.hashPresent.toStringUtf8() == block.getHeader.hashPresent.toStringUtf8()) {
@@ -205,10 +206,10 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
         }
       }
     case ResendEndorseInfo(endorer)=>
-      if(!pe.isSynching && ConsensusCondition.CheckWorkConditionOfSystem(pe.getNodeMgr.getStableNodes.size)){
+      if(!pe.isSynching && this.consensusCondition.CheckWorkConditionOfSystem(pe.getNodeMgr.getStableNodes.size)){
         if (this.block != null && this.block.getHeader.hashPrevious.toStringUtf8() == pe.getCurrentBlockHash ) {
           if(this.router != null){
-            if(this.resendTimes <= SystemProfile.getEndorseResendTimes){
+            if(this.resendTimes <= config.getEndorsementResendTimes){
               if(this.resendEndorsements.isEmpty){
                 this.schedulerLink = clearSched()
                 schedulerLink = scheduler.scheduleOnce(( TimePolicy.getTimeoutEndorse * 2 ).second, self, DelayResendEndorseInfo(this.block.getHeader.hashPresent.toStringUtf8))
@@ -246,10 +247,10 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
       }*/
     case DelayResendEndorseInfo(bHash)=>
       this.schedulerLink = clearSched()
-      if(!pe.isSynching && ConsensusCondition.CheckWorkConditionOfSystem(pe.getNodeMgr.getStableNodes.size)){
+      if(!pe.isSynching && this.consensusCondition.CheckWorkConditionOfSystem(pe.getNodeMgr.getStableNodes.size)){
         if (this.block != null && bHash == this.block.getHeader.hashPresent.toStringUtf8 && this.block.getHeader.hashPrevious.toStringUtf8() == pe.getCurrentBlockHash ) {
           if(this.router != null){
-            if(this.resendTimes <= SystemProfile.getEndorseResendTimes){
+            if(this.resendTimes <= config.getEndorsementResendTimes){
               this.resendTimes += 1
               this.resendEndorsements.foreach(addr=>{
                 //router.route(RequesterOfEndorsement(this.block, this.blocker, addr,pe.getBlocker.VoteIndex), self)

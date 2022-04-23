@@ -16,24 +16,23 @@
 
 package rep.network.consensus.util
 
-
-import rep.crypto.cert.SignTool
 import scala.util.control.Breaks._
 import com.google.protobuf.ByteString
 import rep.crypto.Sha256
+import rep.crypto.cert.SignTool
 import rep.proto.rc2.{Block, Signature, Transaction}
 import rep.utils.IdTool
 
 object BlockVerify {
 /****************************交易验证签名相关的操作开始**********************************************************/
-  def VerifyOneSignOfTrans(t: Transaction, sysName: String): (Boolean, String) = {
+  def VerifyOneSignOfTrans(t: Transaction, signTool: SignTool): (Boolean, String) = {
     var result = false
     var resultMsg = ""
 
     try {
       val sig = t.signature
       val tOutSig = t.clearSignature
-      result = SignTool.verify(sig.get.signature.toByteArray(), tOutSig.toByteArray, sig.get.getCertId, sysName)
+      result = signTool.verify(sig.get.signature.toByteArray(), tOutSig.toByteArray, sig.get.getCertId)
     } catch {
       case e: RuntimeException =>
         result = false
@@ -42,13 +41,13 @@ object BlockVerify {
     (result, resultMsg)
   }
 
-  def VerifySignOfMultiTrans(trans: Seq[Transaction], sysName: String): (Boolean, String) = {
+  def VerifySignOfMultiTrans(trans: Seq[Transaction],signTool: SignTool): (Boolean, String) = {
     var result = true
     var resultMsg = ""
     try {
       breakable(
         trans.foreach(f => {
-          val r = VerifyOneSignOfTrans(f, sysName)
+          val r = VerifyOneSignOfTrans(f, signTool)
           if (!r._1) {
             result = false
             resultMsg = r._2
@@ -63,9 +62,9 @@ object BlockVerify {
     (result, resultMsg)
   }
 
-  def VerifyAllTransSignOfBlock(block: Block, sysName: String): (Boolean, String) = {
+  def VerifyAllTransSignOfBlock(block: Block, sysName: String,signTool: SignTool): (Boolean, String) = {
     try {
-      VerifySignOfMultiTrans(block.transactions.toArray[Transaction], sysName)
+      VerifySignOfMultiTrans(block.transactions.toArray[Transaction], signTool)
     } catch {
       case e: RuntimeException => (false, s"Transaction's sign Error,info=${e.getMessage}")
     }
@@ -73,12 +72,12 @@ object BlockVerify {
 /****************************交易验证签名相关的操作结束**********************************************************/
 
 /****************************区块验证签名相关的操作开始**********************************************************/
-  def VerifyOneEndorseOfBlock(endor: Signature, NonSignDataOfBlock: Array[Byte], sysName: String): (Boolean, String) = {
+  def VerifyOneEndorseOfBlock(endor: Signature, NonSignDataOfBlock: Array[Byte],signTool: SignTool): (Boolean, String) = {
     var result = false
     var resultMsg = ""
     try {
       val certid = endor.getCertId
-      result = SignTool.verify(endor.signature.toByteArray, NonSignDataOfBlock, certid, sysName)
+      result = signTool.verify(endor.signature.toByteArray, NonSignDataOfBlock, certid)
     } catch {
       case e: RuntimeException =>
         result = false
@@ -87,13 +86,13 @@ object BlockVerify {
     (result, resultMsg)
   }
 
-  def VerifyMutliEndorseOfBlock(endorses: Seq[Signature], NonSignDataOfBlock: Array[Byte], sysName: String): (Boolean, String) = {
+  def VerifyMutliEndorseOfBlock(endorses: Seq[Signature], NonSignDataOfBlock: Array[Byte],signTool: SignTool): (Boolean, String) = {
     var result = true
     var resultMsg = ""
     try {
       breakable(
         endorses.foreach(f => {
-          val r = VerifyOneEndorseOfBlock(f, NonSignDataOfBlock, sysName)
+          val r = VerifyOneEndorseOfBlock(f, NonSignDataOfBlock, signTool)
           if (!r._1) {
             result = false
             resultMsg = r._2
@@ -108,11 +107,11 @@ object BlockVerify {
     (result, resultMsg)
   }
 
-  def VerifyAllEndorseOfBlock(block: Block, sysName: String): (Boolean, String) = {
+  def VerifyAllEndorseOfBlock(block: Block,signTool: SignTool): (Boolean, String) = {
     try {
       val endors = block.getHeader.endorsements
       val blkOutEndorse = block.getHeader.clearEndorsements
-      VerifyMutliEndorseOfBlock(endors, blkOutEndorse.toByteArray, sysName)
+      VerifyMutliEndorseOfBlock(endors, blkOutEndorse.toByteArray, signTool)
     } catch {
       case e: RuntimeException => (false, s"Endorsement's sign Error,info=${e.getMessage}")
     }
@@ -120,13 +119,13 @@ object BlockVerify {
 /****************************区块验证签名相关的操作结束**********************************************************/
 
 /****************************验证区块hash相关的操作开始**********************************************************/
-  def VerifyHashOfBlock(block: Block): Boolean = {
+  def VerifyHashOfBlock(block: Block,sha256: Sha256): Boolean = {
     var result = false
     try {
       val oldhash = block.getHeader.hashPresent.toStringUtf8()
       val blkOutEndorse = block.getHeader.clearEndorsements
       val blkOutBlockHash = blkOutEndorse.withHashPresent(ByteString.EMPTY)
-      val hash = Sha256.hashstr(blkOutBlockHash.toByteArray)
+      val hash = sha256.hashstr(blkOutBlockHash.toByteArray)
       if (oldhash.equals(hash)) {
         result = true
       }

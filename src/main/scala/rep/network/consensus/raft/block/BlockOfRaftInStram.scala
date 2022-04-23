@@ -9,8 +9,8 @@ import rep.network.util.NodeHelp
 import rep.utils.GlobalUtils.EventType
 import rep.network.consensus.cfrd.MsgOfCFRD.{CreateBlock, VoteOfBlocker}
 import rep.network.consensus.common.block.IBlocker
-import rep.network.consensus.common.MsgOfConsensus.{ConfirmedBlock, PreTransBlock, PreTransBlockOfCache, PreTransBlockOfStream, PreTransBlockResult, preTransBlockResultOfCache, preTransBlockResultOfStream}
-import rep.app.conf.{SystemProfile, TimePolicy}
+import rep.network.consensus.common.MsgOfConsensus.{ConfirmedBlock, PreTransBlockOfStream,  preTransBlockResultOfStream}
+import rep.app.conf.{ TimePolicy}
 import rep.network.consensus.util.BlockHelp
 import rep.network.module.ModuleActorType
 import rep.proto.rc2.{Block, Event}
@@ -64,14 +64,16 @@ class BlockOfRaftInStram(moduleName: String) extends IBlocker(moduleName) {
     isPublish = false
   }
 
+  private val config = pe.getRepChainContext.getConfig
+
   private def NewBlock={
     val newHeight = pe.getCurrentHeight + 1
     RepTimeTracer.setStartTime(pe.getSysTag, "Block", System.currentTimeMillis(), newHeight, 0)
     RepTimeTracer.setStartTime(pe.getSysTag, "createBlock", System.currentTimeMillis(), newHeight, 0)
     RepTimeTracer.setStartTime(pe.getSysTag, "collectTransToBlock", System.currentTimeMillis(), newHeight, 0)
-    val trans = pe.getTransactionPool.packageTransactionToBlock
+    val trans = pe.getRepChainContext.getTransactionPool.packageTransactionToBlock
     //todo 交易排序
-    if (trans.size >= SystemProfile.getMinBlockTransNum) {
+    if (trans.size >= config.getMinTransactionNumberOfBlock) {
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,CollectedTransOfBlock success,height=${newHeight},local height=${pe.getBlocker.VoteHeight}" + "~" + selfAddr))
       RepTimeTracer.setEndTime(pe.getSysTag, "collectTransToBlock", System.currentTimeMillis(), newHeight, trans.size)
       //此处建立新块必须采用抽签模块的抽签结果来进行出块，否则出现刚抽完签，马上有新块的存储完成，就会出现错误
@@ -101,7 +103,7 @@ class BlockOfRaftInStram(moduleName: String) extends IBlocker(moduleName) {
     RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,prelaod success,height=${this.preblock.getHeader.height},local height=${pe.getBlocker.VoteHeight}" + "~" + selfAddr))
     this.preblock = pe.getBlock(this.blockIdentifier)
     RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,AddBlockHash success,height=${this.preblock.getHeader.height},local height=${pe.getBlocker.VoteHeight}" + "~" + selfAddr))
-    this.preblock = this.preblock.withHeader(BlockHelp.AddHeaderSignToBlock(this.preblock.getHeader, pe.getSysTag))
+    this.preblock = this.preblock.withHeader(BlockHelp.AddHeaderSignToBlock(this.preblock.getHeader, pe.getSysTag,pe.getRepChainContext.getSignTool))
     schedulerLink = clearSched()
     pe.setCreateHeight(preblock.getHeader.height)
     RepTimeTracer.setEndTime(pe.getSysTag, "createBlock", System.currentTimeMillis(), this.preblock.getHeader.height, this.preblock.transactions.size)
@@ -121,7 +123,7 @@ class BlockOfRaftInStram(moduleName: String) extends IBlocker(moduleName) {
         if (NodeHelp.isBlocker(pe.getBlocker.blocker, pe.getSysTag) && !pe.getZeroOfTransNumFlag) {
           sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Block, Event.Action.CANDIDATOR)
           if(this.checkedStatus){
-            if((pe.getMaxHeight4SimpleRaft - pe.getBlocker.VoteHeight ) <= SystemProfile.getBlockNumberOfRaft  && !pe.getZeroOfTransNumFlag) {
+            if((pe.getMaxHeight4SimpleRaft - pe.getBlocker.VoteHeight ) <= config.getBlockNumberOfRaft  && !pe.getZeroOfTransNumFlag) {
               this.NewBlock
             }else{
               RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"do not create new block,height=${pe.getCurrentHeight},voteheight-${pe.getBlocker.VoteHeight}" + "~" + selfAddr))
@@ -144,7 +146,7 @@ class BlockOfRaftInStram(moduleName: String) extends IBlocker(moduleName) {
           this.resetStatus
           RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("new block result error" + "~" + selfAddr))
           //如果缓存还有交易，让抽签模块，立即抽签
-          if(pe.getTransactionPool.getCachePoolSize > SystemProfile.getMinBlockTransNum)
+          if(pe.getRepChainContext.getTransactionPool.getCachePoolSize > config.getMinTransactionNumberOfBlock)
             pe.getActorRef(CFRDActorType.ActorType.voter) ! VoteOfBlocker
         }
       }

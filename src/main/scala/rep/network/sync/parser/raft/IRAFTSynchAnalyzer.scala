@@ -1,5 +1,6 @@
 package rep.network.sync.parser.raft
 
+import rep.app.system.RepChainSystemContext
 import rep.log.RepLogger
 import rep.network.sync.SyncMsg.{AnalysisResult, MaxBlockInfo, RollbackAction, SynchAction}
 import rep.network.sync.SyncMsg
@@ -12,7 +13,7 @@ import rep.proto.rc2.BlockchainInfo
  * 基于RAFT共识协议的同步区块信息分析的实现类
  */
 
-class IRAFTSynchAnalyzer(systemName: String, lchaininfo: BlockchainInfo, nodemgr: NodeMgr) extends ISynchAnalyzer( systemName,  lchaininfo,  nodemgr) {
+class IRAFTSynchAnalyzer(ctx:RepChainSystemContext, lchaininfo: BlockchainInfo, nodemgr: NodeMgr) extends ISynchAnalyzer( ctx,  lchaininfo,  nodemgr) {
   override def Parser(reslist: List[SyncMsg.ResponseInfo], isStartupSynch: Boolean): Unit = {
     val lh = lchaininfo.height
     val lhash = this.lchaininfo.currentBlockHash.toStringUtf8()

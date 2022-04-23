@@ -1,7 +1,7 @@
 package rep.network.consensus.cfrd.vote
 
 import akka.actor.Props
-import rep.app.conf.{SystemCertList, TimePolicy}
+import rep.app.conf.TimePolicy
 import rep.log.RepLogger
 import rep.network.consensus.common.vote.IVoter
 import rep.network.module.cfrd.CFRDActorType
@@ -110,7 +110,7 @@ class VoterOfCFRD(moduleName: String) extends IVoter(moduleName: String) {
 
   override def receive: Receive = {
     case VoteOfBlocker =>
-      if (NodeHelp.isCandidateNow(pe.getSysTag, SystemCertList.getSystemCertList)) {
+      if (NodeHelp.isCandidateNow(pe.getSysTag, pe.getRepChainContext.getSystemCertList.getSystemCertList)) {
         voteMsgHandler(false,null)
       }
     case VoteOfForce=>

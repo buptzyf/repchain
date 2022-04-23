@@ -19,7 +19,7 @@ package rep.network.consensus.util
 import com.google.protobuf.ByteString
 import com.google.protobuf.timestamp.Timestamp
 import scalapb.json4s.JsonFormat
-import rep.app.conf.SystemProfile
+import rep.app.conf.RepChainConfig
 import rep.crypto.{BytesHex, Sha256}
 import rep.utils.TimeUtils
 import rep.crypto.cert.SignTool
@@ -30,31 +30,31 @@ object BlockHelp {
 
   private val  versionOfBlock = 1
 /****************************背书相关的操作开始**********************************************************/
-  def SignDataOfBlock(NonEndorseDataOfBlock: Array[Byte], alise: String): Signature = {
+  def SignDataOfBlock(NonEndorseDataOfBlock: Array[Byte], alise: String,signTool: SignTool): Signature = {
     try {
       val millis = TimeUtils.getCurrentTime()
       val certid = IdTool.getCertIdFromName(alise)
       Signature(
         Option(certid),
         Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)),
-        ByteString.copyFrom(SignTool.sign4CertId(certid, NonEndorseDataOfBlock)))
+        ByteString.copyFrom(signTool.sign4CertId(certid, NonEndorseDataOfBlock)))
     } catch {
       case e: RuntimeException => throw e
     }
   }
 
-  def SignBlock(block: BlockHeader, alise: String): Signature = {
+  def SignBlock(block: BlockHeader, alise: String,signTool: SignTool): Signature = {
     try {
       val tmpblock = block.clearEndorsements
-      SignDataOfBlock(tmpblock.toByteArray, alise)
+      SignDataOfBlock(tmpblock.toByteArray, alise,signTool)
     } catch {
       case e: RuntimeException => throw e
     }
   }
 
-  def AddHeaderSignToBlock(block: BlockHeader, alise: String): BlockHeader = {
+  def AddHeaderSignToBlock(block: BlockHeader, alise: String,signTool: SignTool): BlockHeader = {
     try {
-      var signdata = SignBlock(block, alise)
+      var signdata = SignBlock(block, alise,signTool)
       AddEndorsementToBlock(block, signdata)
     } catch {
       case e: RuntimeException => throw e
@@ -77,9 +77,9 @@ object BlockHelp {
 /****************************背书相关的操作结束**********************************************************/
 
   //该方法在预执行结束之后才能调用
-  def AddBlockHeaderHash(block: Block): Block = {
+  def AddBlockHeaderHash(block: Block,sha256: Sha256): Block = {
     try {
-      val hash = GetBlockHeaderHash(block.getHeader)
+      val hash = GetBlockHeaderHash(block.getHeader,sha256)
       val header = block.getHeader.withHashPresent(ByteString.copyFromUtf8(hash))
       block.withHeader(header)
     } catch {
@@ -87,11 +87,11 @@ object BlockHelp {
     }
   }
 
-  def GetBlockHeaderHash(header: BlockHeader): String = {
+  def GetBlockHeaderHash(header: BlockHeader,sha256: Sha256): String = {
     try {
       val headerOutEndorse = header.clearEndorsements
       val headerOutBlockHash = headerOutEndorse.withHashPresent(ByteString.EMPTY)
-      Sha256.hashstr(headerOutBlockHash.toByteArray)
+      sha256.hashstr(headerOutBlockHash.toByteArray)
     } catch {
       case e: RuntimeException => throw e
     }
@@ -116,9 +116,9 @@ object BlockHelp {
   }
 
 
-  def CreateGenesisBlock:Block={
+  def CreateGenesisBlock(chainConfig: RepChainConfig):Block={
     var genesisFileName = "genesis.json"
-    if(SystemProfile.getIsUseGm){
+    if(chainConfig.isUseGM){
       genesisFileName = "genesis_gm.json"
     }
     val blkJson = scala.io.Source.fromFile("json/"+genesisFileName,"UTF-8")

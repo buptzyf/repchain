@@ -49,7 +49,11 @@ class BlockIndex {
           txs.append(t.id)
         })
       }
-      txs.toArray
+      if(txs == null){
+        new Array[String](0)
+      }else{
+        txs.toArray
+      }
     }
 
     this.createTime = if (header != null && header.endorsements.length >= 1) {

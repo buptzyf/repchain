@@ -1,17 +1,13 @@
-package rep.crypto
+package rep.crypto.cert
 
-import java.io.File
-import java.security.{KeyStore, MessageDigest, Provider, Security, Signature}
 
-import akka.actor.Props
-import com.typesafe.config.ConfigFactory
+import java.security._
 import javax.net.ssl.SSLContext
-import rep.app.conf.SystemProfile
+import rep.app.system.RepChainSystemContext
 import rep.log.RepLogger
-import rep.network.module.ModuleActorType
-import rep.ui.web.EventServer
 
-object CryptoMgr {
+class CryptoMgr(ctx:RepChainSystemContext) {
+  private val config = ctx.getConfig
   private val Alg4SignInGM : String = "SM3withSM2" //SM3withSM2,SHA256withECDSA
   private val Alg4HashInGM : String = "SM3" //SHA-256,SM3
   private val Alg4SignInDefault : String = "SHA256withECDSA" //SM3withSM2,SHA256withECDSA
@@ -28,7 +24,6 @@ object CryptoMgr {
         this.sslContext = Some(ctx)
       }
     )
-
   }
 
   def getSslContext:SSLContext={
@@ -43,7 +38,7 @@ object CryptoMgr {
 
   def getInstance : MessageDigest = {
     checkProvider
-    if(SystemProfile.getIsUseGm){
+    if(config.isUseGM){
       MessageDigest.getInstance(Alg4HashInGM)
     }else{
       MessageDigest.getInstance(Alg4HashInDefault)
@@ -52,7 +47,7 @@ object CryptoMgr {
 
   def getHashAlgType : String = {
     checkProvider
-    if(SystemProfile.getIsUseGm){
+    if(config.isUseGM){
       Alg4HashInGM
     }else{
       Alg4HashInDefault
@@ -61,7 +56,7 @@ object CryptoMgr {
 
   def getSignAlgType : String = {
     checkProvider
-    if(SystemProfile.getIsUseGm){
+    if(config.isUseGM){
       Alg4SignInGM
     }else{
       Alg4SignInDefault
@@ -70,7 +65,7 @@ object CryptoMgr {
 
   def getSignaturer : Signature = {
     checkProvider
-    if(SystemProfile.getIsUseGm){
+    if(config.isUseGM){
       Signature.getInstance(Alg4SignInGM)
     }else{
       Signature.getInstance(Alg4SignInDefault)
@@ -79,8 +74,8 @@ object CryptoMgr {
 
   def getKeyStorer : KeyStore = {
     checkProvider
-    if(SystemProfile.getIsUseGm){
-      KeyStore.getInstance(keyStoreTypeInGM,SystemProfile.getGmJCEProviderName)
+    if(config.isUseGM){
+      KeyStore.getInstance(keyStoreTypeInGM,config.getGMProviderNameOfJCE)
     }else{
       KeyStore.getInstance(KeyStore.getDefaultType)
     }
@@ -88,27 +83,27 @@ object CryptoMgr {
 
   def getKeyFileSuffix : String = {
     var rel = ".jks"
-    if(SystemProfile.getIsUseGm){
+    if(config.isUseGM){
       rel = ".pfx"
     }
     rel
   }
 
-  def loadSystemConfInDebug={
+  /*def loadSystemConfInDebug={
     val userConfFile = new File("conf/system.conf")
     val combined_conf = ConfigFactory.parseFile(userConfFile)
     val final_conf = ConfigFactory.load(combined_conf)
     SystemProfile.initConfigSystem(final_conf,"215159697776981712.node1" )
-  }
+  }*/
 
   private def checkProvider={
     if(!isLoadProvider){
       synchronized {
         try{
-          if(SystemProfile.getIsUseGm){
-            val p = Security.getProvider(SystemProfile.getGmJCEProviderName)
+          if(config.isUseGM){
+            val p = Security.getProvider(config.getGMProviderNameOfJCE)
             if(p == null){
-              loaderProvider(SystemProfile.getGmJCEProvider)
+              loaderProvider(config.getGMProviderOfJCE)
               isLoadProvider = true
             }
           }else{

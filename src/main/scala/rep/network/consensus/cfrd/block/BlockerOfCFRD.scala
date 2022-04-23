@@ -1,17 +1,14 @@
 package rep.network.consensus.cfrd.block
 
 import akka.actor.Props
-import rep.app.conf.SystemProfile
 import rep.log.{RepLogger, RepTimeTracer}
 import rep.network.autotransaction.Topic
 import rep.network.consensus.cfrd.MsgOfCFRD.{CollectEndorsement, CreateBlock, ForceVoteInfo, VoteOfBlocker}
 import rep.network.consensus.common.block.IBlocker
-import rep.network.consensus.util.BlockHelp
 import rep.network.module.cfrd.CFRDActorType
 import rep.network.util.NodeHelp
 import rep.proto.rc2.{Block, Event}
 import rep.utils.GlobalUtils.{BlockerInfo, EventType}
-import rep.utils.SerializeUtils
 
 /**
  * Created by jiangbuyun on 2020/03/17.
@@ -23,12 +20,6 @@ object BlockerOfCFRD {
 }
 
 class BlockerOfCFRD(moduleName: String) extends IBlocker(moduleName){
-
-  //zhjtps
-  /*var blockTPS :Block = null
-  var tsTPS : Seq[Transaction] = null
-  var trsTPS : Seq[TransactionResult] = null*/
-
   var preblock: Block = null
   var blockerInfo : BlockerInfo = null
 
