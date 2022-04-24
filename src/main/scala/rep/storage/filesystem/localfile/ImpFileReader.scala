@@ -34,6 +34,8 @@ class ImpFileReader(fileName:String,isEncrypt:Boolean=false) extends IFileReader
         this.rf = new RandomAccessFile(this.fileName, "r");
         this.channel = rf.getChannel();
         RepLogger.info(RepLogger.System_Logger,s"ImpFileReader createFileChannel succuss,fileName=${this.fileName}")
+      }else{
+        throw new Exception(s"file not exist,file name:${this.fileName}")
       }
     } catch {
       case e: Exception =>

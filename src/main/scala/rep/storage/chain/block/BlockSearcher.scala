@@ -150,10 +150,10 @@ class BlockSearcher(ctx:RepChainSystemContext,isEncrypt:Boolean=false) {
 
   def getLastChainInfo:KeyPrefixManager.ChainInfo={
     val obj = this.getObjectForClass[KeyPrefixManager.ChainInfo](KeyPrefixManager.getBlockInfoKey(ctx.getConfig))
-    (obj match {
-      case None => Some(KeyPrefixManager.ChainInfo(0,"","",0,0,0,0))
-      case _ => obj.asInstanceOf[Option[KeyPrefixManager.ChainInfo]]
-    }).get
+    obj match {
+      case None => KeyPrefixManager.ChainInfo(0,"","",0,0,0,0)
+      case _ => obj.get.asInstanceOf[KeyPrefixManager.ChainInfo]
+    }
   }
   //////////////////////////////////////////////////////
 

@@ -117,14 +117,22 @@ object BlockHelp {
 
 
   def CreateGenesisBlock(chainConfig: RepChainConfig):Block={
+    var gen_blk : Block = null
     var genesisFileName = "genesis.json"
     if(chainConfig.isUseGM){
       genesisFileName = "genesis_gm.json"
     }
-    val blkJson = scala.io.Source.fromFile("json/"+genesisFileName,"UTF-8")
-    val blkStr = try blkJson.mkString finally blkJson.close()
-    val gen_blk = JsonFormat.fromJsonString[Block](blkStr)
+
+    try{
+      val blkJson = scala.io.Source.fromFile("json/"+genesisFileName,"UTF-8")
+      val blkStr = try blkJson.mkString finally blkJson.close()
+      gen_blk = JsonFormat.fromJsonString[Block](blkStr)
+    }catch {
+      case e:Exception=>
+        e.printStackTrace()
+    }
     gen_blk
+
   }
 
   def preTransaction(tr: String): Option[Transaction] = {

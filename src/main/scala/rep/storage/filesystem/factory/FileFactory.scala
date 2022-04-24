@@ -147,7 +147,11 @@ object FileFactory {
     try {
       fileType match {
         case "localFileSystem" =>
-          new ImpFileReader(fileName)
+          try{
+            new ImpFileReader(fileName)
+          }catch {
+            case e:Exception=> null
+          }
         case _ =>
           new ImpFileReader(fileName)
       }

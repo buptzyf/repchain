@@ -147,8 +147,8 @@ class BlockStorager (ctx:RepChainSystemContext, isEncrypt:Boolean=false) extends
                       if (writer.getFileLength == 0) {
                         hm.put(KeyPrefixManager.getBlockFileFirstHeightKey(ctx.getConfig, bIndex.getFileNo), SerializeUtils.serialise(bIndex.getHeight))
                       }
-                      val lastInfo = Some(KeyPrefixManager.ChainInfo(bIndex.getHeight, bIndex.getHash, bIndex.getPreHash,
-                        lastChainInfo.get.txCount + bIndex.getTransactionSize, bIndex.getFileNo, bIndex.getFilePos, bIndex.getLength))
+                      val lastInfo = KeyPrefixManager.ChainInfo(bIndex.getHeight, bIndex.getHash, bIndex.getPreHash,
+                        lastChainInfo.get.txCount + bIndex.getTransactionSize, bIndex.getFileNo, bIndex.getFilePos, bIndex.getLength)
                       hm.put(KeyPrefixManager.getBlockInfoKey(ctx.getConfig), SerializeUtils.serialise(lastInfo))
 
                       hm.put(KeyPrefixManager.getBlockIndexKey4Height(ctx.getConfig, bIndex.getHeight), SerializeUtils.serialise(bIndex))
@@ -161,7 +161,8 @@ class BlockStorager (ctx:RepChainSystemContext, isEncrypt:Boolean=false) extends
                         db.putBytes(d._1, d._2)
                       })
                       writer.writeData(bIndex.getFilePos - 8, pathUtil.longToByte(bLength) ++ bb)
-                      lastChainInfo = lastInfo
+                      lastChainInfo = Some(lastInfo)
+                      r = true
                     } catch {
                       case e: Exception =>
                         RepLogger.error(RepLogger.Storager_Logger,s"saving block's(height=${block.get.getHeader.height}) " +

@@ -96,9 +96,9 @@ class IModuleManager(moduleName: String, isStartup: Boolean) extends ModuleBase(
   }
 
   private def loadTransModule:Any={
-    if (this.isStartup) {
+    //if (this.isStartup) {
       pe.register(ModuleActorType.ActorType.transactiondispatcher, context.actorOf(TransactionDispatcher.props("transactiondispatcher").withDispatcher("contract-dispatcher"), "transactiondispatcher"))
-    }
+    //}
     pe.register(ModuleActorType.ActorType.dispatchofpreload, context.actorOf(DispatchOfPreload.props("dispatchofpreload").withDispatcher("contract-dispatcher"), "dispatchofpreload"))
   }
 
