@@ -43,7 +43,7 @@ object IdTool {
   } 
   
   def getCid(chaincodeid:ChaincodeId):String={
-    chaincodeid.chaincodeName+"-"+chaincodeid.version.toString()
+    chaincodeid.chaincodeName+"_"+chaincodeid.version.toString()
   }
   
   def getSigner4String(certid:CertId):String={

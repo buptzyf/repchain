@@ -2,9 +2,12 @@ package rep.storage.chain.preload
 
 
 import java.util.concurrent.ConcurrentHashMap
+
 import rep.app.system.RepChainSystemContext
 import rep.log.RepLogger
 import rep.storage.chain.block.BlockSearcher
+import rep.utils.SerializeUtils
+
 import scala.collection.mutable
 import scala.reflect.ClassTag
 
@@ -16,8 +19,8 @@ import scala.reflect.ClassTag
  * */
 class BlockPreload(preloadId:String,ctx:RepChainSystemContext,isEncrypt:Boolean=false)
                                       extends BlockSearcher(ctx,isEncrypt){
-  private val update :ConcurrentHashMap[String,Option[Any]] = new ConcurrentHashMap[String,Option[Any]]
-  private val readCache  :ConcurrentHashMap[String,Option[Any]] = new ConcurrentHashMap[String,Option[Any]]
+  private val update :ConcurrentHashMap[String,Array[Byte]] = new ConcurrentHashMap[String,Array[Byte]]
+  private val readCache  :ConcurrentHashMap[String,Array[Byte]] = new ConcurrentHashMap[String,Array[Byte]]
   private val transactionPreloads:ConcurrentHashMap[String,TransactionPreload] = new ConcurrentHashMap[String,TransactionPreload]
 
   /**
@@ -48,8 +51,8 @@ class BlockPreload(preloadId:String,ctx:RepChainSystemContext,isEncrypt:Boolean=
    * @param	key String 指定的键
    * @return	返回对应键的值 Array[Byte]
    * */
-  def getFromCache(key : String):Option[Any]={
-    var ro : Option[Any] = None
+  def getFromCache(key : String):Array[Byte]={
+    var ro : Array[Byte] = null
     try{
       if(this.update.containsKey(key)){
        ro = this.update.get(key)
@@ -58,7 +61,26 @@ class BlockPreload(preloadId:String,ctx:RepChainSystemContext,isEncrypt:Boolean=
       case e:Exception =>{
         RepLogger.error(RepLogger.Storager_Logger,
           s"BlockPreload get data from update Except, systemName=${this.ctx.getSystemName},msg=${e.getCause}")
-        throw e
+      }
+    }
+    ro
+  }
+
+
+  def getObjectFromCache[T](key : String):Option[T]={
+    var ro : Option[T] = None
+    try{
+      val ob = this.getFromCache(key)
+      if(ob != null){
+        val tmp = SerializeUtils.deserialise(ob)
+        if(tmp != null){
+          ro = Some(tmp.asInstanceOf[T])
+        }
+      }
+    }catch{
+      case e:Exception =>{
+        RepLogger.error(RepLogger.Storager_Logger,
+          s"BlockPreload get data from update Except, systemName=${this.ctx.getSystemName},msg=${e.getCause}")
       }
     }
     ro
@@ -72,23 +94,21 @@ class BlockPreload(preloadId:String,ctx:RepChainSystemContext,isEncrypt:Boolean=
    * @param	key String 指定的键
    * @return	返回对应键的值 Option[T]
    * */
-  def getFromDB[T:ClassTag](key : String):Option[T]={
-    var ro : Option[T] = None
+  def getFromDB(key : String):Array[Byte]={
+    var ro : Array[Byte] = null
     try{
-      val tmp = this.getObject(key)
-      if(tmp != None){
-        if(tmp.get.isInstanceOf[T]){
-          ro = Some(ro.get.asInstanceOf[T])
-        }
-      }
+      ro = this.getBytes(key)
     }catch{
       case e:Exception =>{
         RepLogger.error(RepLogger.Storager_Logger,
           s"BlockPreload get data from db Except, systemName=${this.ctx.getSystemName},msg=${e.getCause}")
-        throw e
       }
     }
     ro
+  }
+
+  def getObjectFromDB[T](key : String):Option[T]={
+    this.getObjectForClass[T](key)
   }
 
   /**
@@ -99,26 +119,23 @@ class BlockPreload(preloadId:String,ctx:RepChainSystemContext,isEncrypt:Boolean=
    * @param	key String 指定的键
    * @return	返回对应键的值 Option[Any]
    * */
-  def get(key : String):Option[Any]={
-    var ro : Option[Any] = None
+  def get(key : String):Array[Byte]={
+    var ro : Array[Byte] = null
     try{
       if(this.update.containsKey(key)){
         ro = this.update.get(key)
       }else if(this.readCache.containsKey(key)){
         ro = this.readCache.get(key)
       }else {
-        ro = this.getObject(key)
-        if(ro != None) {
+        ro = this.getBytes(key)
+        if(ro != null) {
           this.readCache.put(key,ro)
-        }else{
-          None
         }
       }
     }catch{
       case e:Exception =>{
         RepLogger.error(RepLogger.Storager_Logger,
           s"BlockPreload get data Except, systemName=${this.ctx},msg=${e.getCause}")
-        throw e
       }
     }
     ro
@@ -132,7 +149,7 @@ class BlockPreload(preloadId:String,ctx:RepChainSystemContext,isEncrypt:Boolean=
    * @param	key String 指定的键，bb Array[Byte] 要存储的值
    * @return	返回成功或者失败 Boolean
    * */
-  def put (key : String,any:Any):Boolean={
+  def put (key : String,value:Array[Byte]):Boolean={
     var b : Boolean = false
     try{
       key match{
@@ -140,15 +157,14 @@ class BlockPreload(preloadId:String,ctx:RepChainSystemContext,isEncrypt:Boolean=
           RepLogger.error(RepLogger.Storager_Logger,
             s"BlockPreload put data Except, systemName=${this.ctx},msg=key is null")
         case _ =>
-          val o = if(any == null) None else Some(any)
-          this.update.put(key,o)
+          if(value == null) throw new Exception("value is null")
+          this.update.put(key,value)
           b = true
       }
     }catch{
       case e:Exception =>{
         RepLogger.error(RepLogger.Storager_Logger,
           s"BlockPreload put data Except, systemName=${this.ctx},msg=${e.getCause}")
-        throw e
       }
     }
     b

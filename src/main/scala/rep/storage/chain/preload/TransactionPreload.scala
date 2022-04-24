@@ -11,7 +11,7 @@ import rep.log.RepLogger
  * @category	交易预执行。
  * */
 class TransactionPreload(txId:String,blockPreload: BlockPreload) {
-  private val update :ConcurrentHashMap[String,Option[Any]] = new ConcurrentHashMap[String,Option[Any]]
+  private val update :ConcurrentHashMap[String,Array[Byte]] = new ConcurrentHashMap[String,Array[Byte]]
 
   /**
    * @author jiangbuyun
@@ -33,8 +33,8 @@ class TransactionPreload(txId:String,blockPreload: BlockPreload) {
    * @param	key String 指定的键
    * @return	返回对应键的值 Option[Any]
    * */
-  def get(key : String):Option[Any]={
-    var ro : Option[Any] = None
+  def get(key : String):Array[Byte]={
+    var ro : Array[Byte] = null
     try{
       if(this.update.contains(key)){
         ro = this.update.get(key)
@@ -59,7 +59,7 @@ class TransactionPreload(txId:String,blockPreload: BlockPreload) {
    * @param	key String 指定的键，any Any 要存储的值
    * @return	返回成功或者失败 Boolean
    * */
-  def put (key : String,any : Any):Boolean={
+  def put (key : String,value : Array[Byte]):Boolean={
     var b : Boolean = false
     try{
       key match{
@@ -67,8 +67,8 @@ class TransactionPreload(txId:String,blockPreload: BlockPreload) {
           RepLogger.error(RepLogger.Storager_Logger,
             s"TransactionPreload put data Except, txid=${this.txId},systemName=${this.blockPreload.getSystemName},msg=key is null")
         case _ =>
-          val o = if(any == null) None else Some(any)
-          this.update.put(key,o)
+          if(value == null) throw new Exception("value is null")
+          this.update.put(key,value)
           b = true
       }
     }catch{

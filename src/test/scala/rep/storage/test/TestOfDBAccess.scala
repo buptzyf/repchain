@@ -5,6 +5,7 @@ import java.util.Date
 import rep.app.conf.RepChainConfig
 import rep.storage.db.common.{IDBAccess, ITransactionCallback}
 import rep.storage.db.factory.DBFactory
+import rep.utils.SerializeUtils
 
 import scala.util.control.Breaks.{break, breakable}
 import scala.collection.immutable.HashMap
@@ -125,7 +126,7 @@ object TestOfDBAccess extends App {
     hm.foreach(f=>{
       val k = f._1
       val v = f._2
-      db.putObject(k,v)
+      db.putBytes(k,SerializeUtils.serialise(v))
     })
 
     //test get object
@@ -179,7 +180,7 @@ object TestOfDBAccess extends App {
           for(i<-0 to 9){
             val k = ks(i)
             val v = hm1(k)
-            db.putObject(k,v)
+            db.putBytes(k,SerializeUtils.serialise(v))
             if(i == 5 && isRollback){
               r = false
               break

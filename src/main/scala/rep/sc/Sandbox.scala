@@ -198,7 +198,8 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
     var r : Option[Boolean] = None
 
     val blockPreload = pe.getRepChainContext.getBlockPreload(da)
-    val state = blockPreload.getFromDB(KeyPrefixManager.getWorldStateKey(pe.getRepChainContext.getConfig,txCid+PRE_STATE,txCid,oid))
+    val state = blockPreload.getObjectFromDB(KeyPrefixManager.getWorldStateKey(pe.getRepChainContext.getConfig,txCid+PRE_STATE,txCid,oid))
+    //val state = shim.getVal(txCid+PRE_STATE)
     if(state != None){
       r = Some(state.get.asInstanceOf[Boolean])
     }
@@ -208,20 +209,22 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
   private def getStatusFromSnapshot(txCid: String,oid:String,da:String,tid:String):Option[Boolean]={
     var r : Option[Boolean] = None
     val srOfTransaction = pe.getRepChainContext.getBlockPreload(da).getTransactionPreload(tid)
-    val state = srOfTransaction.get(KeyPrefixManager.getWorldStateKey(pe.getRepChainContext.getConfig,txCid+ PRE_STATE,txCid,oid))
-    if(state != None){
-      r = Some(state.get.asInstanceOf[Boolean])
+    //val state = srOfTransaction.get(KeyPrefixManager.getWorldStateKey(pe.getRepChainContext.getConfig,txCid+ PRE_STATE,txCid,oid))
+    val state = shim.getVal(txCid+PRE_STATE)
+    if(state != null){
+      r = Some(state.asInstanceOf[Boolean])
     }
     r
   }
 
   private def IsCurrentSigner(dotrans: DoTransactionOfSandboxInSingle) {
     val cn = dotrans.t.cid.get.chaincodeName
-    val srOfTransaction = pe.getRepChainContext.getBlockPreload(dotrans.da)
-    val coder = srOfTransaction.get(KeyPrefixManager.getWorldStateKey(pe.getRepChainContext.getConfig,cn,IdTool.getCid(dotrans.t.getCid),dotrans.t.oid))
-    if (coder != None) {
+    //val srOfTransaction = pe.getRepChainContext.getBlockPreload(dotrans.da)
+    //val coder = srOfTransaction.get(KeyPrefixManager.getWorldStateKey(pe.getRepChainContext.getConfig,cn,IdTool.getCid(dotrans.t.getCid),dotrans.t.oid))
+    val coder = shim.getVal(cn)
+    if (coder != null) {
       //合约已存在且部署,需要重新部署，但是当前提交者不是以前提交者
-      if (!dotrans.t.signature.get.certId.get.creditCode.equals(coder.get.asInstanceOf[String]))
+      if (!dotrans.t.signature.get.certId.get.creditCode.equals(coder.asInstanceOf[String]))
         throw new SandboxException(ERR_CODER)
     }
   }
@@ -235,7 +238,7 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
             throw new SandboxException(ERR_REPEATED_CID)
           case _ =>
             //检查合约部署者以及权限
-            if(IdTool.isDidContract(pe.getSysTag)){
+            if(IdTool.isDidContract(pe.getRepChainContext.getConfig.getAccountContractName)){
               permissioncheck.CheckPermissionOfDeployContract(dotrans)
             }else{
               IsCurrentSigner(dotrans)
@@ -243,7 +246,7 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
         }
       case Transaction.Type.CHAINCODE_SET_STATE =>
         //检查合约部署者以及权限
-        if(IdTool.isDidContract(pe.getSysTag)){
+        if(IdTool.isDidContract(pe.getRepChainContext.getConfig.getAccountContractName)){
           permissioncheck.CheckPermissionOfSetStateContract(dotrans)
         }else{
           IsCurrentSigner(dotrans)
@@ -256,7 +259,7 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
         }else if( !status.get){
           throw new SandboxException(ERR_DISABLE_CID)
         }else{
-          if(IdTool.isDidContract(pe.getSysTag)) {
+          if(IdTool.isDidContract(pe.getRepChainContext.getConfig.getAccountContractName)) {
             permissioncheck.CheckPermissionOfInvokeContract(dotrans)
           }
         }

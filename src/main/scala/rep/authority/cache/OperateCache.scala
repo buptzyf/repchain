@@ -37,7 +37,7 @@ class OperateCache(ctx : RepChainSystemContext) extends ICache(ctx) {
   }
 
   def get(key:String,blockPreload: BlockPreload):Option[opData]={
-    val d = this.getData(key,blockPreload)
+    val d = this.getData(ctx.getHashTool.hashstr(key),blockPreload)
     if(d == None)
       None
     else

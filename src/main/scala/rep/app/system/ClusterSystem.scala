@@ -75,6 +75,10 @@ class ClusterSystem(sysTag: String, isStartupClusterSystem: Boolean) {
   private var clusterOfInner : Cluster = null
 
 
+  def getRepChainContext:RepChainSystemContext={
+    this.ctx
+  }
+
   def hasDiskSpace: Boolean = {
     FileFactory.checkFreeDiskSpace(ctx.getConfig)
   }

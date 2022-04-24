@@ -113,7 +113,7 @@ class SandboxDispatcher(moduleName: String, cid: String) extends ModuleBase(modu
    */
   private def getTransOfContractFromLevelDB(da:String,oid:String): Option[Transaction] = {
     val bp = pe.getRepChainContext.getBlockPreload(da)
-    val txId = bp.getFromDB[String](KeyPrefixManager.getWorldStateKey(pe.getRepChainContext.getConfig,cid,cid,oid))
+    val txId = bp.getObjectFromDB[String](KeyPrefixManager.getWorldStateKey(pe.getRepChainContext.getConfig,cid,cid,oid))
     txId match {
       case None => None
       case _ => bp.getTransactionByTxId(txId.get)
@@ -129,7 +129,7 @@ class SandboxDispatcher(moduleName: String, cid: String) extends ModuleBase(modu
     val preload = pe.getRepChainContext.getBlockPreload(da)
     val txid = preload.get(KeyPrefixManager.getWorldStateKey(pe.getRepChainContext.getConfig,cid,cid,oid))
     txid match {
-      case None => false
+      case null => false
       case _ => true
     }
   }
@@ -177,7 +177,7 @@ class SandboxDispatcher(moduleName: String, cid: String) extends ModuleBase(modu
     if (RouterOfParallelSandboxs == null) {
       var list: Array[Routee] = new Array[Routee](pe.getRepChainContext.getConfig.getTransactionNumberOfProcessor)
       for (i <- 0 to pe.getRepChainContext.getConfig.getTransactionNumberOfProcessor - 1) {
-        var ca = CreateSandbox(cType, chaincodeid, "sandbox_for_Parallel_of_router_" + cid + "_" + i)
+        val ca = CreateSandbox(cType, chaincodeid, "sandbox_for_Parallel_of_router_" + cid + "_" + i)
         context.watch(ca)
         list(i) = new ActorRefRoutee(ca)
       }
@@ -195,7 +195,7 @@ class SandboxDispatcher(moduleName: String, cid: String) extends ModuleBase(modu
       cType match {
         case ChaincodeDeploy.CodeType.CODE_JAVASCRIPT =>
         case ChaincodeDeploy.CodeType.CODE_SCALA =>
-          CreateSandbox(cType, chaincodeid, "sandbox_for_Serial_" + cid)
+          SerialSandbox = CreateSandbox(cType, chaincodeid, "sandbox_for_Serial_" + cid)
           context.watch(SerialSandbox)
         case ChaincodeDeploy.CodeType.CODE_VCL_DLL =>
           null
@@ -310,7 +310,7 @@ class SandboxDispatcher(moduleName: String, cid: String) extends ModuleBase(modu
   def receive = {
     //执行交易请求
     case ti: DoTransaction =>
-      Dispatch(ti.asInstanceOf[Seq[Transaction]] ,ti.da,ti.typeOfSender,null)
+      Dispatch(ti.ts.asInstanceOf[Seq[Transaction]] ,ti.da,ti.typeOfSender,null)
     case tiOfCache:DoTransactionOfCache =>
       val ts = pe.getTrans(tiOfCache.cacheIdentifier)
       if(ts != null){

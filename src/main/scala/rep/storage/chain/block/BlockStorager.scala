@@ -1,6 +1,7 @@
 package rep.storage.chain.block
 
 
+import org.eclipse.jetty.io.ArrayByteBufferPool
 import rep.app.system.RepChainSystemContext
 import rep.log.RepLogger
 import rep.proto.rc2.{Block, Transaction}
@@ -10,7 +11,8 @@ import rep.storage.encrypt.{EncryptFactory, IEncrypt}
 import rep.storage.filesystem.common.IFileWriter
 import rep.storage.filesystem.factory.FileFactory
 import rep.storage.util.pathUtil
-import rep.utils.IdTool
+import rep.utils.{IdTool, SerializeUtils}
+
 import scala.collection.mutable
 import scala.util.control.Breaks.{break, breakable}
 
@@ -52,8 +54,8 @@ class BlockStorager (ctx:RepChainSystemContext, isEncrypt:Boolean=false) extends
    * @param block:Option[Block] 待存储的区块
    * @return 返回mutable.HashMap[String,Any]
    * */
-  private def getOperateLog(block:Option[Block]):mutable.HashMap[String,Any]={
-    val hm = new mutable.HashMap[String,Any]()
+  private def getOperateLog(block:Option[Block]):mutable.HashMap[String,Array[Byte]]={
+    val hm = new mutable.HashMap[String,Array[Byte]]()
     val trs = block.get.transactions
     val result = block.get.transactionResults
     if(!result.isEmpty){
@@ -72,13 +74,13 @@ class BlockStorager (ctx:RepChainSystemContext, isEncrypt:Boolean=false) extends
           //在存储时已经不需要组合key，直接使用
           hm.put(k,v.toByteArray)
           if(t.getCid.chaincodeName.equalsIgnoreCase(accountContractName) &&
+            t.`type` == Transaction.Type.CHAINCODE_INVOKE && IdTool.isDidContract(accountContractName)){
+            //账户修改
+            ctx.getPermissionCacheManager.updateCache(k)
+          }else  if(t.getCid.chaincodeName.equalsIgnoreCase(accountContractName) &&
             t.`type` == Transaction.Type.CHAINCODE_INVOKE && t.para.ipt.get.function.equalsIgnoreCase(certMethod)){
             //证书修改
             ctx.getPermissionCacheManager.updateCertCache(k)
-          }else if(t.getCid.chaincodeName.equalsIgnoreCase(accountContractName) &&
-            t.`type` == Transaction.Type.CHAINCODE_INVOKE && IdTool.isDidContract(ctx.getSystemName)){
-            //账户修改
-            ctx.getPermissionCacheManager.updateCache(k)
           }
         })
       }
@@ -143,20 +145,20 @@ class BlockStorager (ctx:RepChainSystemContext, isEncrypt:Boolean=false) extends
                       bIndex.setLength(bLength)
                       bIndex.setFilePos(writer.getFileLength + 8)
                       if (writer.getFileLength == 0) {
-                        hm.put(KeyPrefixManager.getBlockFileFirstHeightKey(ctx.getConfig, bIndex.getFileNo), bIndex.getHeight)
+                        hm.put(KeyPrefixManager.getBlockFileFirstHeightKey(ctx.getConfig, bIndex.getFileNo), SerializeUtils.serialise(bIndex.getHeight))
                       }
                       val lastInfo = Some(KeyPrefixManager.ChainInfo(bIndex.getHeight, bIndex.getHash, bIndex.getPreHash,
                         lastChainInfo.get.txCount + bIndex.getTransactionSize, bIndex.getFileNo, bIndex.getFilePos, bIndex.getLength))
-                      hm.put(KeyPrefixManager.getBlockInfoKey(ctx.getConfig), lastInfo)
+                      hm.put(KeyPrefixManager.getBlockInfoKey(ctx.getConfig), SerializeUtils.serialise(lastInfo))
 
-                      hm.put(KeyPrefixManager.getBlockIndexKey4Height(ctx.getConfig, bIndex.getHeight), bIndex)
-                      hm.put(KeyPrefixManager.getBlockHeightKey4Hash(ctx.getConfig, bIndex.getHash), bIndex.getHeight)
+                      hm.put(KeyPrefixManager.getBlockIndexKey4Height(ctx.getConfig, bIndex.getHeight), SerializeUtils.serialise(bIndex))
+                      hm.put(KeyPrefixManager.getBlockHeightKey4Hash(ctx.getConfig, bIndex.getHash), SerializeUtils.serialise(bIndex.getHeight))
                       bIndex.getTxIds.foreach(id => {
-                        hm.put(KeyPrefixManager.getBlockHeightKey4TxId(ctx.getConfig, id), bIndex.getHeight)
+                        hm.put(KeyPrefixManager.getBlockHeightKey4TxId(ctx.getConfig, id), SerializeUtils.serialise(bIndex.getHeight))
                       })
 
                       hm.foreach(d => {
-                        db.putObject(d._1, d._2)
+                        db.putBytes(d._1, d._2)
                       })
                       writer.writeData(bIndex.getFilePos - 8, pathUtil.longToByte(bLength) ++ bb)
                       lastChainInfo = lastInfo
@@ -201,9 +203,9 @@ class BlockStorager (ctx:RepChainSystemContext, isEncrypt:Boolean=false) extends
 
     val bIndexOfRollback = this.getBlockIndexByHeight(Some(h)).get
     val preIndex = this.getBlockIndexByHeight(Some(h-1)).get
-    val tmpLastChainInfo = Some(KeyPrefixManager.ChainInfo(preIndex.getHeight, preIndex.getHash, preIndex.getPreHash,
-      lastChainInfo.get.txCount - bIndexOfRollback.getTransactionSize, preIndex.getFileNo, preIndex.getFilePos, preIndex.getLength))
-    this.db.putObject(KeyPrefixManager.getBlockInfoKey(ctx.getConfig),tmpLastChainInfo)
+    val tmpLastChainInfo = KeyPrefixManager.ChainInfo(preIndex.getHeight, preIndex.getHash, preIndex.getPreHash,
+      lastChainInfo.get.txCount - bIndexOfRollback.getTransactionSize, preIndex.getFileNo, preIndex.getFilePos, preIndex.getLength)
+    this.db.putBytes(KeyPrefixManager.getBlockInfoKey(ctx.getConfig),SerializeUtils.serialise(tmpLastChainInfo))
     this.db.delete(KeyPrefixManager.getBlockIndexKey4Height(ctx.getConfig, bIndexOfRollback.getHeight))
     this.db.delete(KeyPrefixManager.getBlockHeightKey4Hash(ctx.getConfig, bIndexOfRollback.getHash))
 
@@ -220,7 +222,7 @@ class BlockStorager (ctx:RepChainSystemContext, isEncrypt:Boolean=false) extends
     val write = FileFactory.getWriter(this.ctx.getConfig,bIndexOfRollback.getFileNo)
     write.deleteBytesFromFileTail(bIndexOfRollback.getLength + 8)
 
-    this.lastChainInfo  = tmpLastChainInfo
+    this.lastChainInfo  = Some(tmpLastChainInfo)
 
   }
 
@@ -251,7 +253,7 @@ class BlockStorager (ctx:RepChainSystemContext, isEncrypt:Boolean=false) extends
           if(old == null){
             this.db.delete(k)
           }else{
-            this.db.putObject(k,old)
+            this.db.putBytes(k,old.toByteArray)
           }
 
           if(t.getCid.chaincodeName.equalsIgnoreCase(accountContractName) &&

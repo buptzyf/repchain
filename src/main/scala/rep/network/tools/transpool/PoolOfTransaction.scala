@@ -3,11 +3,14 @@ package rep.network.tools.transpool
 import java.util
 import java.util.concurrent.atomic.LongAdder
 import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedQueue}
+
 import rep.app.system.RepChainSystemContext
 import rep.log.RepLogger
 import rep.proto.rc2.Transaction
 import rep.storage.chain.block.BlockSearcher
 import rep.storage.db.factory.DBFactory
+import rep.utils.SerializeUtils
+
 import scala.collection.mutable.ArrayBuffer
 import scala.util.control.Breaks.{break, breakable}
 
@@ -219,7 +222,7 @@ class PoolOfTransaction(ctx:RepChainSystemContext) {
       this.transactionCaches.values().forEach(t=>{
         r += t.toByteArray
       })
-      db.putObject(ctx.getSystemName+"_"+txPrefix,r)
+      db.putBytes(ctx.getSystemName+"_"+txPrefix,SerializeUtils.serialise(r))
     }
     RepLogger.info(RepLogger.TransLifeCycle_Logger, s"systemname=${ctx.getSystemName},save trans to db")
   }
@@ -236,12 +239,12 @@ class PoolOfTransaction(ctx:RepChainSystemContext) {
     if (this.isPersistenceTxToDB) {
       val db = DBFactory.getDBAccess(ctx.getConfig)
       try {
-        val obj = db.getObject(ctx.getSystemName+"_"+txPrefix)
+        val obj = db.getBytes(ctx.getSystemName+"_"+txPrefix)
         obj match {
-          case None =>
+          case null =>
             RepLogger.info(RepLogger.TransLifeCycle_Logger, s"systemname=${ctx.getSystemName},load transaction failed from db,get data is None")
           case _ =>
-            val ls = obj.asInstanceOf[ArrayBuffer[Array[Byte]]]
+            val ls = SerializeUtils.deserialise(obj).asInstanceOf[ArrayBuffer[Array[Byte]]]
             ls.foreach(tb=>{
               val tx = Transaction.parseFrom(tb)
               this.addTransactionToCache(tx)

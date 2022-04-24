@@ -25,6 +25,8 @@ import rep.utils.SerializeUtils.serialise
 import _root_.com.google.protobuf.ByteString
 import rep.log.RepLogger
 import org.slf4j.Logger
+import rep.app.conf.RepChainConfig
+import rep.app.system.RepChainSystemContext
 import rep.crypto.Sha256
 import rep.proto.rc2.Transaction
 import rep.storage.chain.KeyPrefixManager
@@ -56,7 +58,19 @@ class Shim {
   private var  system : ActorSystem = null
   private var  t : Transaction = null
   private var identifier : String = null
-  private val pe = PeerExtension(system)
+  private var ctx : RepChainSystemContext = null
+
+  private val PRE_SPLIT = "_"
+  //本chaincode的 key前缀
+  private var pre_key : String = ""
+  //从交易传入, 内存中的worldState快照
+  //不再直接使用区块预执行对象，后面采用交易预执行对象，可以更细粒度到控制交易事务
+  private var srOfTransaction : TransactionPreload = null
+  private var config : RepChainConfig  = null
+
+  //记录状态修改日志
+  private var stateGet : HashMap[String,ByteString] = new HashMap[String,ByteString]()
+  private var stateSet : HashMap[String,ByteString] = new HashMap[String,ByteString]()
 
   /**
    * @constructor 根据actor System和合约的链码id建立shim实例
@@ -69,20 +83,12 @@ class Shim {
     this.system = system
     this.t = t
     this.identifier = identifier
+    this.ctx = PeerExtension(system).getRepChainContext
+    this.pre_key = KeyPrefixManager.getWorldStateKeyPrefix(ctx.getConfig,IdTool.getCid(t.getCid),t.oid)
+    this.srOfTransaction = ctx.getBlockPreload(identifier).getTransactionPreload(t.id)
+    this.config  = ctx.getConfig
   }
 
-
-  private val PRE_SPLIT = "_"
-  //本chaincode的 key前缀
-  private var pre_key : String = KeyPrefixManager.getWorldStateKeyPrefix(pe.getRepChainContext.getConfig,IdTool.getCid(t.getCid),t.oid)
-  //从交易传入, 内存中的worldState快照
-  //不再直接使用区块预执行对象，后面采用交易预执行对象，可以更细粒度到控制交易事务
-  private var srOfTransaction : TransactionPreload = pe.getRepChainContext.getBlockPreload(identifier).getTransactionPreload(t.id)
-  private var config  = pe.getRepChainContext.getConfig
-
-  //记录状态修改日志
-  private var stateGet : HashMap[String,ByteString] = new HashMap[String,ByteString]()
-  private var stateSet : HashMap[String,ByteString] = new HashMap[String,ByteString]()
 
   def getStateGet:HashMap[String,ByteString]={
     this.stateGet
@@ -128,17 +134,16 @@ class Shim {
 
   private def get(key: Key): Array[Byte] = {
     val v = this.srOfTransaction.get(key)
-    if(v == None){
+    if(v == null){
       this.stateGet += key -> ByteString.EMPTY
       null
     }else{
-      val bv = v.get.asInstanceOf[Array[Byte]]
-      if(bv.length == 0){
+      if(v.length == 0){
         this.stateGet += key -> ByteString.EMPTY
         null
       }else{
-        this.stateGet += key -> ByteString.copyFrom(bv)
-        bv
+        this.stateGet += key -> ByteString.copyFrom(v)
+        v
       }
     }
   }
@@ -157,17 +162,18 @@ class Shim {
   
   //判断账号是否节点账号 TODO
   def bNodeCreditCode(credit_code: String) : Boolean ={
-    pe.getRepChainContext.getSignTool.isNode4Credit(credit_code)
+    ctx.getSignTool.isNode4Credit(credit_code)
   }
 
   def getCurrentContractDeployer:String={
-    val key_coder = KeyPrefixManager.getWorldStateKey(config,t.getCid.chaincodeName,IdTool.getCid(t.getCid),t.oid)
-    val coder = this.srOfTransaction.get(key_coder)
-    if(coder == None){
-      ""
-    }else{
-      coder.get.asInstanceOf[String]
-    }
+    val coder = this.getVal(t.getCid.chaincodeName)
+    try{
+      if(coder != null){
+        coder.asInstanceOf[String]
+      }else{
+        ""
+      }
+    }catch{case e:Exception=>""}
   }
 
   def getChainNetId:String={
@@ -183,7 +189,7 @@ class Shim {
   }
 
   def isDidContract:Boolean = {
-    IdTool.isDidContract(pe.getRepChainContext.getConfig.getAccountContractName)
+    IdTool.isDidContract(config.getAccountContractName)
   }
 
   /**
@@ -202,7 +208,7 @@ class Shim {
   }
 
   def getSha256Tool:Sha256={
-    pe.getRepChainContext.getHashTool
+    ctx.getHashTool
   }
 
   //通过该接口获取日志器，合约使用此日志器输出业务日志。

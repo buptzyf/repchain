@@ -2,14 +2,11 @@ package rep.storage.db.leveldb
 
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
-
 import org.fusesource.leveldbjni.JniDBFactory
 import org.iq80.leveldb.{DB, Options, WriteBatch}
 import rep.log.RepLogger
 import rep.storage.db.common.IDBAccess
 import rep.storage.filesystem.FileOperate
-
-import scala.collection.mutable
 
 /**
  * @author jiangbuyun
@@ -84,15 +81,14 @@ class ImpLevelDBAccess private extends IDBAccess{
    * @param key String 指定的键
    * @return 返回对应键的值 Array[Byte]
    **/
-  override protected def getBytes(key: String): Option[Array[Byte]] = {
-    var r: Option[Array[Byte]] = None
+  override def getBytes(key: String): Array[Byte] = {
+    var r: Array[Byte] = null
     try {
       if(key != null){
         RepLogger.trace(RepLogger.Storager_Logger,s"DB operate getBytes, key=${key}")
         var b = this.db.get(key.getBytes())
         if(b != null){
-          b = if(this.isEncrypt) this.cipherTool.decrypt(b) else b
-          r = Some(b)
+          r = if(this.isEncrypt) this.cipherTool.decrypt(b) else b
         }else{
           RepLogger.trace(RepLogger.Storager_Logger,s"DB operate getBytes, data is null key=${key}")
         }
@@ -117,7 +113,7 @@ class ImpLevelDBAccess private extends IDBAccess{
    * @param 	key String 指定的键，bb Array[Byte] 要存储的值
    * @return 返回成功或者失败 Boolean
    **/
-  override protected def putBytes(key: String, bb: Array[Byte]): Boolean = {
+  override def putBytes(key: String, bb: Array[Byte]): Boolean = {
     var r: Boolean = false
     try {
       if(key != null){

@@ -83,14 +83,13 @@ class ImpRocksDBAccess private extends IDBAccess{
    * @param key String 指定的键
    * @return 返回对应键的值 Array[Byte]
    **/
-  override protected def getBytes(key: String): Option[Array[Byte]] = {
-    var r: Option[Array[Byte]] = None
+  override def getBytes(key: String): Array[Byte] = {
+    var r: Array[Byte] = null
     try {
       if(key != null){
         var b = this.db.get(key.getBytes())
         if(b != null){
-          b = if(this.isEncrypt) cipherTool.decrypt(b) else b
-          r = Some(b)
+          r = if(this.isEncrypt) cipherTool.decrypt(b) else b
         }
       }else{
         throw new Exception(s"input key is null")
@@ -113,7 +112,7 @@ class ImpRocksDBAccess private extends IDBAccess{
    * @param 	key String 指定的键，bb Array[Byte] 要存储的值
    * @return 返回成功或者失败 Boolean
    **/
-  override protected def putBytes(key: String, bb: Array[Byte]): Boolean = {
+  override def putBytes(key: String, bb: Array[Byte]): Boolean = {
     var r: Boolean = false
     try {
       if(key != null){

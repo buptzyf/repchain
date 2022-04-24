@@ -81,7 +81,7 @@ abstract class ICache(ctx : RepChainSystemContext) {
   protected def getData(key:String,blockPreload: BlockPreload):Option[Any]={
     if(blockPreload != null){
       //在预执行中获取，如果预执行中没有找到，再到缓存中获取
-      val pd = dataTypeConvert(blockPreload.getFromCache(this.getPrefix+key),blockPreload)
+      val pd = dataTypeConvert(blockPreload.getObjectFromCache(this.getPrefix+key),blockPreload)
       if(pd == None){
         readData(key,blockPreload)
       }else{

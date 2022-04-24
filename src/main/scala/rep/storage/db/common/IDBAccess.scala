@@ -23,7 +23,7 @@ abstract class IDBAccess {
    * @param	key String 指定的键
    * @return	返回对应键的值 Array[Byte]
    * */
-  protected def   getBytes(key : String):Option[Array[Byte]]
+  def   getBytes(key : String):Array[Byte]
 
   /**
    * @author jiangbuyun
@@ -36,17 +36,21 @@ abstract class IDBAccess {
   def   getObject[T](key : String):Option[T]={
     val b = this.getBytes(key)
     RepLogger.trace(RepLogger.Storager_Logger,s"DB operate getObject, key=${key}")
-    if(b == None){
+    if(b == null){
       RepLogger.trace(RepLogger.Storager_Logger,s"DB operate getObject,object==None, key=${key}")
       None
     }else{
-      val o = SerializeUtils.deserialise(b.get)
-      if(o == null){
-        RepLogger.trace(RepLogger.Storager_Logger,s"DB operate getObject,serialize==None, key=${key}")
-        None
-      }else{
-        RepLogger.trace(RepLogger.Storager_Logger,s"DB operate getObject,data!=None, key=${key},o=${o}")
-        Some(o.asInstanceOf[T])
+      try{
+        val o = SerializeUtils.deserialise(b)
+        if(o == null){
+          RepLogger.trace(RepLogger.Storager_Logger,s"DB operate getObject,serialize==None, key=${key}")
+          None
+        }else{
+          RepLogger.trace(RepLogger.Storager_Logger,s"DB operate getObject,data!=None, key=${key},o=${o}")
+          Some(o.asInstanceOf[T])
+        }
+      }catch {
+        case e:Exception=>None
       }
     }
   }
@@ -59,27 +63,7 @@ abstract class IDBAccess {
    * @param	key String 指定的键，bb Array[Byte] 要存储的值
    * @return	返回成功或者失败 Boolean
    * */
-  protected def   putBytes (key : String,bb : Array[Byte]):Boolean
-
-  /**
-   * @author jiangbuyun
-   * @version	2.0
-   * @since	2022-04-07
-   * @category	存储指定的键和值到数据库
-   * @param	key String 指定的键，o Any 要存储的对象
-   * @return	返回成功或者失败 Boolean
-   * */
-  def   putObject (key : String,o : Any):Boolean={
-    var b = false
-    if(o != null){
-      RepLogger.trace(RepLogger.Storager_Logger,s"DB operate putObject, key=${key}")
-      val bb = SerializeUtils.serialise(o)
-      b = putBytes(key,bb)
-    }else{
-      RepLogger.trace(RepLogger.Storager_Logger,s"DB operate putObject,input o is null, key=${key}")
-    }
-    b
-  }
+  def   putBytes (key : String,bb : Array[Byte]):Boolean
 
   /**
    * @author jiangbuyun
