@@ -102,6 +102,11 @@ class ClusterSystem(sysTag: String, isStartupClusterSystem: Boolean) {
       //启动集群
       clusterOfInner = Cluster(sysActor)
       clusterAddress = clusterOfInner.selfAddress
+
+      /*val list = sysConf.getList("akka.cluster.seed-nodes")
+      val address = Address.apply(list.get(0).unwrapped().toString,sysActor.name)
+      System.out.println(s"systemname=${this.sysTag},seednode=${address.toString},clusterOfInner.selfAddress=${clusterOfInner.selfAddress.toString}")
+      clusterOfInner.join(address)*/
     }
 
     RepLogger.trace(RepLogger.System_Logger, sysTag + "~" + "System" + " ~ " + s"System(${sysTag}) init successfully" + " ~ ")

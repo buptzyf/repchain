@@ -20,17 +20,14 @@ import akka.util.Timeout
 
 import scala.concurrent.duration._
 import akka.pattern.{AskTimeoutException, ask}
-
 import scala.concurrent._
 import rep.crypto._
-import rep.network.autotransaction.PeerHelper._
 import rep.app.TestMain
 import org.json4s._
 import org.json4s.jackson.JsonMethods
 import rep.network.module.ModuleActorType
 import akka.actor.Props
 import rep.log.RepLogger
-import rep.network.autotransaction.PeerHelper
 import rep.network.base.ModuleBase
 import rep.network.consensus.byzantium.ConsensusCondition
 import rep.network.consensus.common.MsgOfConsensus.{PreTransBlock, PreTransBlockResult}
@@ -41,7 +38,6 @@ import rep.sc.SandboxDispatcher.DoTransaction
 import rep.sc.Sandbox.DoTransactionResult
 import rep.storage.chain.block.BlockSearcher
 import rep.utils.GlobalUtils.EventType
-
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 import rep.utils.{MessageToJson, SerializeUtils}

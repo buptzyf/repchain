@@ -1,0 +1,381 @@
+/*
+ * Copyright  2019 Blockchain Technology and Application Joint Lab, Linkel Technology Co., Ltd, Beijing, Fintech Research Center of ISCAS.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BA SIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+syntax = "proto3";
+package rep.proto;
+option java_package = "rep.proto";
+import "google/protobuf/timestamp.proto";
+
+/*
+*/
+//Event 用于图形展示的事件
+message Event {
+    //来源addr
+    string from = 1;
+    //发送addr，如果是广播（需要定义一个）
+    string to = 2;
+    //event事件
+    enum Action {
+        SUBSCRIBE_TOPIC = 0;
+        TRANSACTION = 1;
+        BLOCK_NEW = 2;
+        BLOCK_ENDORSEMENT = 3;
+        ENDORSEMENT = 4;
+        MEMBER_UP = 5;
+        MEMBER_DOWN = 6;
+        CANDIDATOR = 7;
+        GENESIS_BLOCK = 8;
+        BLOCK_SYNC = 9;
+        BLOCK_SYNC_DATA = 10;
+        BLOCK_SYNC_SUC = 11;
+    }
+    Action action = 3;
+    Block blk = 4;
+}
+
+//账户
+message Signer{
+    string 	name = 1;//注册者的名称或者昵称
+    string 	credit_code = 2;//社会信用代码（个人或机构）或者DID，推荐使用DID
+    string 	mobile = 3;  // 手机号码,用于接收通知
+    repeated 	string 	cert_names  = 4;//存放用户所有证书的名称，用户具体的证书单独存放，方便证书的操作，用户在增加证书的时候，在这个列表中增加证书的名称，did_certname。
+    repeated 	string 	authorize_ids  = 5;//存放用户所有授权的操作id。
+    repeated 	string 	operate_ids  = 6;//存放用户所有注册的操作id。
+    repeated 	string 	credential_metadata_ids  = 7;//存放用户凭据id。
+    repeated    Certificate authentication_certs = 8;//存放身份验证证书
+    string	signer_info = 9;//存放用户身份的详细信息，采用json格式。通常不用存储，由身份管理者存储
+    google.protobuf.Timestamp 	create_time = 10; //建立时间
+    google.protobuf.Timestamp 	disable_time = 11; //禁用时间
+    bool    signer_valid = 12;//是否有效，默认有效，否则为禁用，值=false
+    string	version=13 ;//默认1.0
+}
+
+//账户证书标示
+message CertId {
+    string 	credit_code = 1;//社会信用代码（个人或机构）或者DID，推荐使用DID
+    string 	cert_name = 2;//当前用户注册证书的名称
+    string	version=3;//默认1.0
+}
+
+//账户证书标示
+message Certificate {
+    string 	certificate = 1; //内含签发机构
+    string 	alg_type = 2;//直接填写具体算法，如:ECDSA下的SHA1withECDSA,SHA512withECDSA等
+    bool   	cert_valid = 3;//证书是否有效，true 有效；false 无效；protobuf默认该值为false
+    google.protobuf.Timestamp 	reg_Time = 4; //注册时间
+    google.protobuf.Timestamp 	unreg_Time = 5; //注销时间
+    enum CertType {
+        CERT_UNDEFINED = 0;
+        CERT_AUTHENTICATION = 1;
+        CERT_CUSTOM = 2;
+    }
+    CertType 	cert_type = 6; //1=普通证书，2=身份验证证书，
+    CertId 	id = 7; //证书名称
+    string 	cert_hash = 8;//证书的SHA256
+    string	version=9;//默认1.0
+}
+
+message	Operate{
+    string 	op_id = 1;//操作的id，通过uuid自动生成，合约需要查重
+    string	description = 2;//操作的描述，用于显示
+    string	register = 3;//操作的注册者，使用credit code或者rdid
+    bool	is_publish = 4;//操作是否属于公开，公开表示不需要授权，只要拥有rdid就可以调用；不公开，需要授权；默认false
+    enum OperateType {
+        OPERATE_UNDEFINED = 0;
+        OPERATE_CONTRACT = 1;
+        OPERATE_SERVICE = 2;
+    }
+    OperateType operate_type = 5;//操作类型表示是否属于服务类型，服务类型只需要提供服务器和服务名就可以；如果是合约方式，需要提供合约方法的访问；
+    repeated    string	operate_service_name = 6;//服务名称
+    string	operate_endpoint = 7;//服务器地址
+    string	auth_full_name = 8;//限制内容，具体操作限制，如访问的链的合约的方法
+    google.protobuf.Timestamp 	create_time = 9; //建立时间
+    google.protobuf.Timestamp 	disable_time = 10; //禁用时间
+    bool    op_valid = 11;//是否有效，默认有效，否则为禁用，值=false
+    string	version=12;//默认1.0
+}
+
+message Authorize{
+    string 	id = 1;//权限id
+    string	grant = 2;//授权者，credit code或者rdid
+    repeated    string 	granted = 3;//操作权限的被授予者,credit code或者rdid
+    repeated    string	op_id = 4;//操作id
+    enum TransferType {
+        TRANSFER_DISABLE = 0;
+        TRANSFER_ONCE = 1;
+        TRANSFER_REPEATEDLY = 2;
+    }
+    TransferType 	is_transfer = 5;//TRANSFER_DISABLE 不能让渡；TRANSFER_ONCE 让渡一次；TRANSFER_REPEATEDLY 可以无限让渡
+    google.protobuf.Timestamp 	create_time = 6; //建立时间
+    google.protobuf.Timestamp 	disable_time = 7; //禁用时间
+    bool    authorize_valid = 8;//是否有效，默认有效，否则为禁用，值=false
+    string	version=9;//默认1.0
+}
+
+message BindCertToAuthorize{
+    string authorize_id = 1 ;//权限id
+    CertId granted = 2;//
+    string	version=3;//默认1.0
+}
+
+message Credential{
+    string	id=1;//凭据id，用于查询方便
+    string	credential_type = 2;//凭据数据的类型
+    string	credential_type_version=3 ;//凭据数据的类型的版本
+    CertId 	granter = 4;//凭据的授予人
+    google.protobuf.Timestamp	grant_time = 5;//凭据的发放授予时间
+    string		credential_holder = 6;//凭据的持有人，使用did
+    string		credential_content = 7;//凭据的内容
+    string		credential_content_hash  = 8;//凭据内容的hash，算法为SHA256
+    string		signature_alg_type  = 9;//签名算法
+    string		signature_value  = 10;//签名值
+    bool		credential_valid = 11;//凭据是否有效
+    string		version=12;//默认1.0
+}
+
+message  MetadataDefine{
+    string	key = 1;
+    bool  is_open = 2;
+    repeated    MetadataDefine  childs = 3;
+}
+
+message CredentialContentMetadata{
+    string	id=1;//ccm id 凭据内容元数据id
+    string	 	publisher = 2;//凭据元数据的发布者的did
+    repeated	MetadataDefine  metadata = 3;
+    string	meta_version = 4;
+    google.protobuf.Timestamp update_time = 5; //建立时间
+    string	version = 6;
+}
+
+
+//背书，可用于Transaction和Block
+message Signature {
+    //证书标识
+    CertId cert_id = 1;
+    google.protobuf.Timestamp tm_local = 2; //签名时间
+    //签名
+    bytes signature = 3;
+}
+
+//合约方法调用及实际参数
+message ChaincodeInput {
+    string function = 1;
+    repeated string args  = 2;
+}
+//指定合约名称和版本,确定唯一的合约代码
+message ChaincodeId {
+    string chaincodeName = 1;
+    int32 version = 2;
+}
+message Block {
+    //区块头
+    BlockHeader header=1;
+    //顺序排列的交易
+    repeated Transaction transactions = 3;
+    //错误交易类型及原因
+    repeated TransactionResult transaction_results = 4;
+    //轻节点验证：区块读取状态集合，参与hashOfBlock
+    //map<string, bytes> states_get = 13;
+    //轻节点验证：区块写入/迁移状态集合，参与hashOfBlock
+    //map<string, bytes> states_set = 14;
+    //内容监管：监管结论交易，带区块高度参数，配置为是否强制，
+    //可以是针对本区块的监管结论，也可以是针对历史区块的监管结论
+    Transaction reg_tx = 15;
+}
+
+message BlockHeader {
+    // version - 区块数据版本,以便数据格式升级
+    uint32 version = 1;
+    // 区块高度, 从1开始
+    uint64 height = 2;
+    //区块内交易存在性承诺，root value
+    bytes commit_tx = 3;
+    // 出错交易非成员承诺，由于出错交易也会打入区块，
+    //所以在出具交易存在性证明同时，需要出具该交易不在出错交易集合中的证明
+    //区块内错误交易存在性承诺
+    //bytes commit_tx_err = 4;
+    bytes commit_tx_result = 4;
+    //当前区块Hash
+    bytes hash_present = 5;
+    //前一区块Hash
+    bytes hash_previous = 6;
+    //状态在区块内的存在性承诺
+    bytes commit_state = 7;
+    //全局非过期状态不存在承诺，证明某个状态当前没有更新的值。
+    //将更新的状态复合名（状态名+版本号）写入到该承诺
+    bytes commit_state_global = 8;
+    //过期区块高度
+    uint64 height_expired = 9;
+    //背书签名集合,必须包含出块人签名,不参与hashOfBlock
+    repeated Signature endorsements=10;
+}
+
+//异常交易出错描述
+message TransactionError {
+    //唯一标识一个Transaction
+    string txId = 1;
+    //异常代码
+    int32 code = 2;
+    //异常原因描述
+    string reason = 3;
+}
+//交易执行结果
+message TransactionResult {
+    //唯一标识一个Transaction
+    string txId = 1;
+    //交易读取状态集合
+    map<string, bytes> states_get = 2;
+    //交易写入/迁移状态集合
+    map<string, bytes> states_set = 3;
+    ActionResult err = 4;
+}
+
+//签名交易
+message Transaction {
+    string id = 1;
+    enum Type {
+        UNDEFINED = 0;
+        // 用于部署合约的签名交易
+        CHAINCODE_DEPLOY = 1;
+        // 用于调用合约方法的签名交易
+        CHAINCODE_INVOKE = 2;
+        // 用于启用/禁用合约的签名交易
+        CHAINCODE_SET_STATE = 3;
+    }
+    Type type = 2;
+    //store ChaincodeID as bytes so its encrypted value can be stored
+    ChaincodeId cid = 3;
+    oneof para {
+        ChaincodeDeploy spec = 4;
+        ChaincodeInput ipt = 5;
+        bool state = 6;
+    }
+    //可选，如果有设置按照预设的资源消耗,超出则终止执行；否则不限制。
+    uint32 gas_limit = 7;
+    //重放举证：交易实例Id，可选, 导出实例时，要求提供同一区块内部，
+    //同一合约实例的交易顺序及证明
+    //默认空为全局的实例id，
+    string oid = 8;
+    //交易签发者签名
+    Signature signature = 9;
+}
+
+
+// 合约定义,部署/升级
+message ChaincodeDeploy {
+    //部署超时
+    int32 timeout = 1;
+    //完整的代码内容
+    string code_package = 2;
+    //合约规则的法律描述文本
+    string legal_prose =3;
+    //合约类型
+    enum CodeType {
+        CODE_UNDEFINED = 0;
+        CODE_JAVASCRIPT = 1;
+        CODE_SCALA = 2;
+        //合约多语言：vcl合约
+        //VCL 以动态库加载执行
+        CODE_VCL_DLL = 3;
+        //VCL 以可执行代码加载执行
+        CODE_VCL_EXE = 4;
+        //VCL 以WASM加载执行
+        CODE_VCL_WASM = 5;
+        //WASM字节码合约
+        CODE_WASM = 6;
+    }
+    CodeType c_type = 4;
+    //指定串行并行执行
+    enum RunType {
+        RUN_UNDEFINED = 0;
+        //指定串行执行
+        RUN_SERIAL = 1;
+        //指定并行执行
+        RUN_PARALLEL= 2;
+        //由调度模块决定
+        RUN_OPTIONAL = 3;
+    }
+    RunType r_type = 5;
+    //轻节点证明：合约可决定是否需要在全局状态中维护存在性证明
+    //例如:存证类合约，由于状态值不会反复修改，无需全局存在性证明
+    enum StateType {
+        STATE_UNDEFINED = 0;
+        STATE_BLOCK = 1;
+        STATE_GLOBAL= 2;
+    }
+    StateType s_type = 6;
+    string init_parameter=7;
+    //合约分级 系统合约 用户合约
+    enum ContractClassification {
+        CONTRACT_UNDEFINED = 0;
+        CONTRACT_SYSTEM = 1;
+        CONTRACT_CUSTOM = 2;
+    }
+    ContractClassification  cclassification = 8;
+}
+//合约方法返回
+message ActionResult{
+    //异常编号
+    int32 code = 1;
+    //异常原因
+    string reason = 2;
+}
+
+// 状态存在性证明
+message StateProof{
+    string key=1;
+    bytes value=2;
+    bytes proof=3;
+}
+
+message BlockchainInfo {
+    uint64 height = 1;
+    uint64 totalTransactions = 2;
+    bytes  currentBlockHash = 3;
+    bytes  previousBlockHash = 4;
+    bytes  currentStateHash = 5;
+}
+
+
+//zhj
+//message MPbftPrepare {
+//    Signature signature = 1;
+//}
+
+//zhj
+//message MPbftCommit {
+//    repeated MPbftPrepare prepares = 1;
+//    Signature signature = 2;
+//}
+
+//zhj
+//message MPbftReply {
+//    repeated MPbftCommit commits = 1;
+//    Signature signature = 2;
+//}
+
+ //交易执行日志及输出指令，只保存出错的交易结果，并且忽略OperLog
+  //  repeated TransactionResult transactionResults = 4;
+
+//状态存在于区块证明：可用于存证类合约，只写入一次，无需在全局State树中维护
+//交易存在于区块及正确执行证明：用于跨链互操作下，条件满足验证
+
+//插入更新速度较快，证明生成较慢，轻节点验证采用挑战机制，收到挑战时生成状态的多值证明。
+
+//在创世区块中一次性调用chainInfo合约，将链信息：链Id、平台Id、平台版本、共识算法等信息写入状态，
+//跨链互操作需要确认链Id、区块合法性、交易存在性、交易执行正常、
+

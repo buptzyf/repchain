@@ -16,11 +16,6 @@
 
 package rep.app
 
-import akka.actor.ActorRef
-import akka.remote.transport.Transport.InvalidAssociationException
-import rep.app.system.ClusterSystem
-import rep.app.system.ClusterSystem.InitType
-
 /**
  * Repchain app start
  * @author c4w 2017/9/24.

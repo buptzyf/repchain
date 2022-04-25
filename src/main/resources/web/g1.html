@@ -251,12 +251,12 @@
     function subEvents() {
         //load Protobuf Message format
 
-        protobuf.load("peer.proto", function(err, root) {
+        protobuf.load("rc2.proto", function(err, root) {
             if (err)
                 throw err;
             // Obtain a message type
-            Message = root.lookupType("rep.protos.Event");
-            Block = root.lookupType("rep.protos.Block");
+            Message = root.lookupType("rep.proto.Event");
+            Block = root.lookupType("rep.proto.Block");
             //buildWS();
             connect();
         });
@@ -361,8 +361,8 @@
                     	}
                         graph.cout_blocks++;
                         var blk = msg.blk;
-                        var dt = new Date(blk.endorsements[0].tmLocal.seconds * 1000 - 8 * 3600 * 1000);
-                        var blk_hash = bufferToBase64(blk.previousBlockHash);
+                        var dt = new Date(blk.header.endorsements[0].tmLocal.seconds * 1000 - 8 * 3600 * 1000);
+                        var blk_hash = bufferToBase64(blk.header.hashPrevious);
                         var ts = blk.transactions;
                         var tstr = "<li>本块交易数: " + ts.length + "<ul>";
                         for (var i = 0; i < ts.length; i++) {

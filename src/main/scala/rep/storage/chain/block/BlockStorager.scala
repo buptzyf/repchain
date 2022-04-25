@@ -131,7 +131,7 @@ class BlockStorager (ctx:RepChainSystemContext, isEncrypt:Boolean=false) extends
                 this.lastChainInfo = this.getCurrentChainInfo
               }
 
-              if (this.lastChainInfo.get.previousHash.equalsIgnoreCase(block.get.header.get.hashPrevious.toStringUtf8)) {
+              if (this.lastChainInfo.get.bHash.equalsIgnoreCase(block.get.header.get.hashPrevious.toStringUtf8)) {
                 if(this.db.transactionOperate(new ITransactionCallback {
                   override def callback: Boolean = {
                     var r = false

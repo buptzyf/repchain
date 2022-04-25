@@ -73,7 +73,9 @@ class RecvEventActor extends Actor {
 
     case evt: Event => {
       //if(this.stageActor != null) this.stageActor ! evt
-      this.stageActors.foreach(f => f ! evt)
+      this.stageActors.foreach(f => {
+        f ! evt
+      })
     }
   }
 }

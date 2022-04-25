@@ -33,7 +33,7 @@ class TransactionChecker (moduleName: String) extends ModuleBase(moduleName){
     var resultMsg = ""
     var result = false
 
-    if(pe.getRepChainContext.getConfig.hasPreloadOfApi){
+    //if(pe.getRepChainContext.getConfig.hasPreloadOfApi){
       val sig = t.getSignature
       val tOutSig = t.clearSignature
       val cert = sig.getCertId
@@ -53,9 +53,9 @@ class TransactionChecker (moduleName: String) extends ModuleBase(moduleName){
       } catch {
         case e: RuntimeException => throw e
       }
-    }else{
+    /*}else{
       result = true
-    }
+    }*/
 
     TransactionChecker.CheckedTransactionResult(result, resultMsg)
   }

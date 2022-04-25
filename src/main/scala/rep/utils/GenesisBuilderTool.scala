@@ -25,12 +25,9 @@ import com.google.protobuf.timestamp.Timestamp
 import org.json4s.jackson.JsonMethods.{pretty, render}
 import org.json4s.{DefaultFormats, jackson}
 import rep.app.system.RepChainSystemContext
-import rep.crypto.cert.{CryptoMgr, SignTool}
-import rep.network.autotransaction.PeerHelper
 import rep.network.consensus.util.BlockHelp
 import rep.proto.rc2.{CertId, Certificate, ChaincodeDeploy, ChaincodeId, Signer, Transaction}
 import scalapb.json4s.JsonFormat
-
 import scala.collection.mutable
 
 
