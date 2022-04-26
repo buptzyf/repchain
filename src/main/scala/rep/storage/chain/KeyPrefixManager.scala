@@ -107,18 +107,18 @@ object KeyPrefixManager {
    * @param config:RepChainConfig,key:String worldstate,contractId:String 合约id,oid:String="_" 实例id
    * @return 返回String生成worldstate完整关键字
    * */
-  def getWorldStateKey(config:RepChainConfig,key:String,contractId:String,oid:String="_"):String={
+  def getWorldStateKey(config:RepChainConfig,key:String,chainCodeName:String,oid:String="_"):String={
     if(oid==null ||  oid.equalsIgnoreCase(""))
-      getChainId(config)+"_"+contractId+"_"+"_"+"_"+key
+      getChainId(config)+"_"+chainCodeName+"_"+"_"+"_"+key
     else
-      getChainId(config)+"_"+contractId+"_"+oid+"_"+key
+      getChainId(config)+"_"+chainCodeName+"_"+oid+"_"+key
   }
 
-  def getWorldStateKeyPrefix(config:RepChainConfig,contractId:String,oid:String="_"):String={
+  def getWorldStateKeyPrefix(config:RepChainConfig,chainCodeName:String,oid:String="_"):String={
     if(oid==null ||  oid.equalsIgnoreCase(""))
-      getChainId(config)+"_"+contractId+"_"+"_"
+      getChainId(config)+"_"+chainCodeName+"_"+"_"
     else
-      getChainId(config)+"_"+contractId+"_"+oid
+      getChainId(config)+"_"+chainCodeName+"_"+oid
   }
 
   /*def getContractStateKey(systemName:String,key:String):String={

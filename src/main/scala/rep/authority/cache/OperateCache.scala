@@ -4,6 +4,7 @@ import rep.app.system.RepChainSystemContext
 import rep.proto.rc2.Operate
 import rep.proto.rc2.Operate.OperateType
 import rep.sc.tpl.did.DidTplPrefix
+import rep.storage.chain.KeyPrefixManager
 import rep.storage.chain.preload.BlockPreload
 
 object OperateCache{

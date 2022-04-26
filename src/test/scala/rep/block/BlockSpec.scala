@@ -2,12 +2,14 @@ package rep.block
 
 import akka.actor.ActorSystem
 import akka.testkit.{TestKit, TestProbe}
+import org.json4s.jackson.JsonMethods.{pretty, render}
 import org.scalatest.{BeforeAndAfterAll, FunSuiteLike, Matchers}
 import rep.app.conf.RepChainConfig
 import rep.app.system.RepChainSystemContext
 import rep.network.consensus.common.MsgOfConsensus.GenesisBlock
 import rep.network.module.cfrd.{CFRDActorType, ModuleManagerOfCFRD}
 import rep.network.tools.PeerExtension
+import scalapb.json4s.JsonFormat
 
 class BlockSpec(_system: ActorSystem) extends TestKit(_system) with Matchers with FunSuiteLike with BeforeAndAfterAll {
   def this() = this(
@@ -31,6 +33,10 @@ class BlockSpec(_system: ActorSystem) extends TestKit(_system) with Matchers wit
     Thread.sleep(5000)
     val search = ctx.getBlockSearch
     val chain = search.getChainInfo
+    val blk = search.getBlockByHeight(1l).get
+    val r = JsonFormat.toJson(blk)
+    val rStr = pretty(render(r))
+    println(rStr)
     chain.height should be (1)
   }
 

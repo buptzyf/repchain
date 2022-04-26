@@ -84,7 +84,7 @@ class Shim {
     this.t = t
     this.identifier = identifier
     this.ctx = PeerExtension(system).getRepChainContext
-    this.pre_key = KeyPrefixManager.getWorldStateKeyPrefix(ctx.getConfig,IdTool.getCid(t.getCid),t.oid)
+    this.pre_key = KeyPrefixManager.getWorldStateKeyPrefix(ctx.getConfig, t.getCid.chaincodeName,t.oid)
     this.srOfTransaction = ctx.getBlockPreload(identifier).getTransactionPreload(t.id)
     this.config  = ctx.getConfig
   }
@@ -152,12 +152,20 @@ class Shim {
     get(pre_key + PRE_SPLIT + key)
   }
 
-  def getStateEx(chainId:String,contractId:String,contractInstanceId:String, key: Key): Array[Byte] = {
-    get(chainId + PRE_SPLIT + contractId + PRE_SPLIT + contractInstanceId + PRE_SPLIT + key)
+  def getStateEx(chainId:String,chainCodeName:String,contractInstanceId:String, key: Key): Any = {
+    val v = get(chainId + PRE_SPLIT + chainCodeName + PRE_SPLIT + contractInstanceId + PRE_SPLIT + key)
+    if(v == null)
+      null
+    else
+      deserialise(v)
   }
 
-  def getStateEx(chainId:String,contractId:String, key: Key): Array[Byte] = {
-    get(chainId + PRE_SPLIT + contractId + PRE_SPLIT + PRE_SPLIT + PRE_SPLIT + key)
+  def getStateEx(chainId:String,chainCodeName:String, key: Key): Any = {
+    val v = get(chainId + PRE_SPLIT + chainCodeName + PRE_SPLIT + PRE_SPLIT + PRE_SPLIT + key)
+    if(v == null)
+      null
+    else
+      deserialise(v)
   }
   
   //判断账号是否节点账号 TODO

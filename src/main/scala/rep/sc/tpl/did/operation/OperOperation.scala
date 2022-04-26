@@ -38,14 +38,21 @@ object OperOperation extends DidOperation {
     var res = false
     // 查看合约开发者
     //todo
-    //val key_coder = WorldStateKeyPreFix + operate.authFullName.split("\\.")(0)
-    val creditCode = ctx.api.getCurrentContractDeployer
+    val key_coder = operate.authFullName.split("\\.")(0)
+    var creditCode : Any = null
+      if(ctx.api.getAccountContractCodeName != key_coder){
+      //跨合约访问
+      creditCode = ctx.api.getStateEx(ctx.api.getChainNetId,key_coder,key_coder)
+    }else{
+      creditCode = ctx.api.getVal(key_coder)
+    }
     if (creditCode == null) {
       throw ContractException(toJsonErrMsg(contractOwnerNotExists))
     } else {
-      res = creditCode.equals(ctx.t.getSignature.getCertId.creditCode)
+      res = creditCode.toString.equals(ctx.t.getSignature.getCertId.creditCode)
       res
     }
+
   }
 
   /**
@@ -71,6 +78,9 @@ object OperOperation extends DidOperation {
     * @return
     */
   def signUpOperate(ctx: ContractContext, operate: Operate): ActionResult = {
+    /*if(operate.authFullName == "ContractAssetsTPL.transfer"){
+      System.out.println("ContractAssetsTPL.transfer")
+    }*/
     val isAdmin = ctx.api.isAdminCert(ctx.t.getSignature.getCertId.creditCode)
     // 检查是否为链密钥对，检查是否为合约部署者
     operate.operateType match {

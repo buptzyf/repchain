@@ -19,7 +19,7 @@ abstract class ICache(ctx : RepChainSystemContext) {
   final private val config = ctx.getConfig
   final private val cid = ChaincodeId(config.getAccountContractName,config.getAccountContractVersion)
   final val common_prefix : String = KeyPrefixManager.getWorldStateKeyPrefix(
-                                config,IdTool.getCid(cid))
+                                config,cid.chaincodeName)
   final private val db  = DBFactory.getDBAccess(config)
   final protected val cacheMaxSize = config.getAccountCacheSize
   final protected implicit val cache = new ConcurrentLinkedHashMap.Builder[String, Option[Any]]()

@@ -135,6 +135,9 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
 
   private def onTransaction(dotrans: DoTransactionOfSandboxInSingle): TransactionResult = {
     try {
+      /*if(dotrans.t.`type` == Transaction.Type.CHAINCODE_DEPLOY){
+        System.out.println("sss")
+      }*/
       shim = new Shim(context.system,dotrans.t,dotrans.da)
       checkTransaction(dotrans)
       doTransaction(dotrans)
@@ -197,8 +200,11 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
   private def getStatusFromDB(txCid: String,oid:String,da:String):Option[Boolean]={
     var r : Option[Boolean] = None
 
+    val chainCodeName : String = if(txCid.indexOf("_")>0){
+      txCid.substring(0,txCid.indexOf("_"))
+    } else txCid
     val blockPreload = pe.getRepChainContext.getBlockPreload(da)
-    val state = blockPreload.getObjectFromDB(KeyPrefixManager.getWorldStateKey(pe.getRepChainContext.getConfig,txCid+PRE_STATE,txCid,oid))
+    val state = blockPreload.getObjectFromDB(KeyPrefixManager.getWorldStateKey(pe.getRepChainContext.getConfig,txCid+PRE_STATE,chainCodeName,oid))
     //val state = shim.getVal(txCid+PRE_STATE)
     if(state != None){
       r = Some(state.get.asInstanceOf[Boolean])

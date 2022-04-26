@@ -156,9 +156,9 @@ class PermissionVerify(ctx : RepChainSystemContext) {
     val cid = doTrans.t.cid.get
 
     val dbInstance = ctx.getBlockPreload(doTrans.da)
-    if(doTrans.t.`type` == Type.CHAINCODE_DEPLOY && doTrans.t.cid.get.chaincodeName == "ContractAssetsTPL"){
+    /*if(doTrans.t.`type` == Type.CHAINCODE_DEPLOY && doTrans.t.cid.get.chaincodeName == "ContractAssetsTPL"){
       System.out.println("")
-    }
+    }*/
     try {
       if (!CheckPermissionOfCertId(doTrans.t.signature.get.certId.get, opName = "*.deploy", dbInstance)) {
         r = CheckPermissionOfCertId(doTrans.t.signature.get.certId.get, cid.chaincodeName + ".deploy", dbInstance)

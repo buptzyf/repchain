@@ -98,11 +98,13 @@ class SandboxScala(cid: ChaincodeId) extends Sandbox(cid) {
         //TODO case  Transaction.Type.CHAINCODE_DESC 增加对合约描述的处理
         case Transaction.Type.CHAINCODE_INVOKE =>
           if (this.cobj == null) {
-            //val blockPreload = pe.getRepChainContext.getBlockPreload(dotrans.da) //shim.srOfTransaction.getBlockPreload
-            //val tds = blockPreload.getTransactionByTxId(blockPreload.get(KeyPrefixManager.getWorldStateKey(pe.getRepChainContext.getConfig,tx_cid,tx_cid,t.oid)).get.asInstanceOf[String])
             val tds = shim.getVal(tx_cid)
-            if (tds == null) throw new SandboxException(ERR_INVOKE_CHAINCODE_NOT_EXIST)
-            this.LoadClass(ctx, tx_cid, tds.asInstanceOf[Transaction])
+            if (tds == null)
+              throw new SandboxException(ERR_INVOKE_CHAINCODE_NOT_EXIST)
+            val deployTransaction = pe.getRepChainContext.getBlockSearch.getTransactionByTxId(tds.toString)
+            if(deployTransaction == None)
+              throw new SandboxException(ERR_INVOKE_CHAINCODE_NOT_EXIST)
+            this.LoadClass(ctx, tx_cid, deployTransaction.get)
           }
           val ipt = t.para.ipt.get
           val action = ipt.function
@@ -110,7 +112,7 @@ class SandboxScala(cid: ChaincodeId) extends Sandbox(cid) {
           val data = ipt.args
           cobj.onAction(ctx, action, data.head)
         case Transaction.Type.CHAINCODE_SET_STATE =>
-          val key_tx_state = KeyPrefixManager.getWorldStateKey(pe.getRepChainContext.getConfig,tx_cid+PRE_STATE,tx_cid,t.oid)
+          val key_tx_state = KeyPrefixManager.getWorldStateKey(pe.getRepChainContext.getConfig,tx_cid+PRE_STATE,t.getCid.chaincodeName,t.oid)
           shim.setVal(key_tx_state,t.para.state.get)
           //val state_bytes = serialise(t.para.state.get)
           //val oldState = shim.srOfTransaction.get(key_tx_state)

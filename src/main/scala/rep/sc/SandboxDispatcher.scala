@@ -113,7 +113,10 @@ class SandboxDispatcher(moduleName: String, cid: String) extends ModuleBase(modu
    */
   private def getTransOfContractFromLevelDB(da:String,oid:String): Option[Transaction] = {
     val bp = pe.getRepChainContext.getBlockPreload(da)
-    val txId = bp.getObjectFromDB[String](KeyPrefixManager.getWorldStateKey(pe.getRepChainContext.getConfig,cid,cid,oid))
+    val chainCodeName : String = if(cid.indexOf("_")>0){
+      cid.substring(0,cid.indexOf("_"))
+    } else cid
+    val txId = bp.getObjectFromDB[String](KeyPrefixManager.getWorldStateKey(pe.getRepChainContext.getConfig,cid,chainCodeName,oid))
     txId match {
       case None => None
       case _ => bp.getTransactionByTxId(txId.get)
@@ -127,8 +130,11 @@ class SandboxDispatcher(moduleName: String, cid: String) extends ModuleBase(modu
    */
   private def IsContractInSnapshot(da: String,oid:String): Boolean = {
     val preload = pe.getRepChainContext.getBlockPreload(da)
-    val txid = preload.get(KeyPrefixManager.getWorldStateKey(pe.getRepChainContext.getConfig,cid,cid,oid))
-    txid match {
+    val chainCodeName : String = if(cid.indexOf("_")>0){
+      cid.substring(0,cid.indexOf("_"))
+    } else cid
+    val txId = preload.get(KeyPrefixManager.getWorldStateKey(pe.getRepChainContext.getConfig,cid,chainCodeName,oid))
+    txId match {
       case null => false
       case _ => true
     }
