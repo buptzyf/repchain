@@ -37,7 +37,6 @@ object OperOperation extends DidOperation {
   def isContractDeployer(ctx: ContractContext, operate: Operate): Boolean = {
     var res = false
     // 查看合约开发者
-    //todo
     val key_coder = operate.authFullName.split("\\.")(0)
     var creditCode : Any = null
       if(ctx.api.getAccountContractCodeName != key_coder){

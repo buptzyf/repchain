@@ -14,6 +14,7 @@ import rep.proto.rc2.Certificate.CertType
 import rep.proto.rc2.ChaincodeDeploy.{CodeType, RunType, StateType}
 import rep.proto.rc2.Operate.OperateType
 import rep.proto.rc2.{Authorize, Block, Certificate, ChaincodeDeploy, ChaincodeId, Operate, Signer, Transaction}
+import rep.sc.tpl.did.RVerifiableCredentialTPL
 import scalapb.json4s.JsonFormat
 
 import scala.collection.mutable.ArrayBuffer
@@ -159,7 +160,7 @@ object CreateGenesisInfo {
     var als: List[String] = List(JsonFormat.toJsonString(at))
     translist += ctx.getTransactionBuilder.createTransaction4Invoke(superAdmin, cid1, "grantOperate", Seq(SerializeUtils.compactJson(als)))
 
-    //部署应用合约--分账合约
+       //部署应用合约--分账合约
     val s2 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/ContractAssetsTPL.scala", "UTF-8")
     val c2 = try s2.mkString finally s2.close()
     val cid2 = new ChaincodeId("ContractAssetsTPL", 1)
@@ -199,6 +200,53 @@ object CreateGenesisInfo {
     val ct1 = try s3.mkString finally s3.close()
     translist += ctx.getTransactionBuilder.createTransaction4Invoke("951002007l78123233.super_admin", cid2, "set", Seq(ct1))
 
+
+    //部署应用合约--凭据管理合约
+    val s5 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/did/RVerifiableCredentialTPL.scala", "UTF-8")
+    val c5 = try s5.mkString finally s5.close()
+    val cid5 = new ChaincodeId("RVerifiableCredentialTPL", 1)
+    val dep_credential_trans = ctx.getTransactionBuilder.createTransaction4Deploy(sysName, cid5, c5, "", 5000,
+      CodeType.CODE_SCALA,RunType.RUN_SERIAL,StateType.STATE_BLOCK,
+      ChaincodeDeploy.ContractClassification.CONTRACT_SYSTEM,0)
+    translist += dep_credential_trans
+
+    //建立凭据管理合约的操作
+    val opsOfCustomContract1: Array[(String, String, String)] = new Array[(String, String, String)](5)
+    opsOfCustomContract1(0) = (ctx.getHashTool.hashstr("RVerifiableCredentialTPL." + RVerifiableCredentialTPL.Action.SignupCCS), "注册可验证凭据属性结构", "RVerifiableCredentialTPL." + RVerifiableCredentialTPL.Action.SignupCCS)
+    opsOfCustomContract1(1) = (ctx.getHashTool.hashstr("RVerifiableCredentialTPL." + RVerifiableCredentialTPL.Action.UpdateCCSStatus), "更新可验证凭据属性结构有效状态", "RVerifiableCredentialTPL." + RVerifiableCredentialTPL.Action.UpdateCCSStatus)
+    opsOfCustomContract1(2) = (ctx.getHashTool.hashstr("RVerifiableCredentialTPL." + RVerifiableCredentialTPL.Action.SignupVCStatus), "注册可验证凭据状态", "RVerifiableCredentialTPL." + RVerifiableCredentialTPL.Action.SignupVCStatus)
+    opsOfCustomContract1(3) = (ctx.getHashTool.hashstr("RVerifiableCredentialTPL." + RVerifiableCredentialTPL.Action.UpdateVCStatus), "更新可验证凭据状态", "RVerifiableCredentialTPL." + RVerifiableCredentialTPL.Action.UpdateVCStatus)
+    opsOfCustomContract1(4) = (ctx.getHashTool.hashstr("RVerifiableCredentialTPL." + RVerifiableCredentialTPL.Action.RevokeVCClaims), "撤销可验证凭据属性状态", "RVerifiableCredentialTPL." + RVerifiableCredentialTPL.Action.RevokeVCClaims)
+
+    //生成Operate 目前这些操作都是公开的，都可以调用
+    val op11 = Operate(opsOfCustomContract1(0)._1, opsOfCustomContract1(0)._2, sys_credit, true, OperateType.OPERATE_CONTRACT,
+      snls, "*", opsOfCustomContract1(0)._3, Option(Timestamp(tmillis / 1000, ((tmillis % 1000) * 1000000).toInt)),
+      _root_.scala.None, true, "1.0")
+    translist += ctx.getTransactionBuilder.createTransaction4Invoke(sysName, cid1, "signUpOperate", Seq(JsonFormat.toJsonString(op11)))
+
+    //生成Operate 目前这些操作都是公开的，都可以调用
+    val op12 = Operate(opsOfCustomContract1(1)._1, opsOfCustomContract1(1)._2, sys_credit, false, OperateType.OPERATE_CONTRACT,
+      snls, "*", opsOfCustomContract1(1)._3, Option(Timestamp(tmillis / 1000, ((tmillis % 1000) * 1000000).toInt)),
+      _root_.scala.None, true, "1.0")
+    translist += ctx.getTransactionBuilder.createTransaction4Invoke(sysName, cid1, "signUpOperate", Seq(JsonFormat.toJsonString(op12)))
+
+    //生成Operate 目前这些操作都是公开的，都可以调用
+    val op13 = Operate(opsOfCustomContract1(2)._1, opsOfCustomContract1(2)._2, sys_credit, true, OperateType.OPERATE_CONTRACT,
+      snls, "*", opsOfCustomContract1(2)._3, Option(Timestamp(tmillis / 1000, ((tmillis % 1000) * 1000000).toInt)),
+      _root_.scala.None, true, "1.0")
+    translist += ctx.getTransactionBuilder.createTransaction4Invoke(sysName, cid1, "signUpOperate", Seq(JsonFormat.toJsonString(op13)))
+
+    //生成Operate 目前这些操作都是公开的，都可以调用
+    val op14 = Operate(opsOfCustomContract1(3)._1, opsOfCustomContract1(3)._2, sys_credit, true, OperateType.OPERATE_CONTRACT,
+      snls, "*", opsOfCustomContract1(3)._3, Option(Timestamp(tmillis / 1000, ((tmillis % 1000) * 1000000).toInt)),
+      _root_.scala.None, true, "1.0")
+    translist += ctx.getTransactionBuilder.createTransaction4Invoke(sysName, cid1, "signUpOperate", Seq(JsonFormat.toJsonString(op14)))
+
+    //生成Operate 目前这些操作都是公开的，都可以调用
+    val op15 = Operate(opsOfCustomContract1(4)._1, opsOfCustomContract1(4)._2, sys_credit, true, OperateType.OPERATE_CONTRACT,
+      snls, "*", opsOfCustomContract1(4)._3, Option(Timestamp(tmillis / 1000, ((tmillis % 1000) * 1000000).toInt)),
+      _root_.scala.None, true, "1.0")
+    translist += ctx.getTransactionBuilder.createTransaction4Invoke(sysName, cid1, "signUpOperate", Seq(JsonFormat.toJsonString(op15)))
 
 
     //create gensis block

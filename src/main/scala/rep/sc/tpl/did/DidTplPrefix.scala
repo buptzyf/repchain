@@ -11,5 +11,6 @@ object DidTplPrefix {
   val metaPrefix = "meta_"
   val ccmdPrefix = "ccmd_"
   val hashPrefix = "hash_"
-
+  val ccsPrefix  = "ccs_"
+  val vcsPrefix  = "vcs_"
 }

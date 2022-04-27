@@ -223,4 +223,12 @@ class Shim {
   def getLogger:Logger={
     RepLogger.Business_Logger
   }
+
+  def getDIDURIPrefix:String={
+    if(isDidContract){
+      s"did:rep:${this.getChainNetId}:"
+    }else{
+      ""
+    }
+  }
 }

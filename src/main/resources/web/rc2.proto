@@ -131,34 +131,33 @@ message BindCertToAuthorize{
     string	version=3;//默认1.0
 }
 
-message Credential{
-    string	id=1;//凭据id，用于查询方便
-    string	credential_type = 2;//凭据数据的类型
-    string	credential_type_version=3 ;//凭据数据的类型的版本
-    CertId 	granter = 4;//凭据的授予人
-    google.protobuf.Timestamp	grant_time = 5;//凭据的发放授予时间
-    string		credential_holder = 6;//凭据的持有人，使用did
-    string		credential_content = 7;//凭据的内容
-    string		credential_content_hash  = 8;//凭据内容的hash，算法为SHA256
-    string		signature_alg_type  = 9;//签名算法
-    string		signature_value  = 10;//签名值
-    bool		credential_valid = 11;//凭据是否有效
-    string		version=12;//默认1.0
+// 可验证凭据属性结构(CCS, Credential Claim Struct)
+message CreClaStruct {
+  string version = 1; // 本数据结构的版本
+  string id = 2; // CCS唯一标识
+  string name = 3; // CCS名称
+  string ccs_version = 4; // CCS版本
+  string description = 5; // CCS描述信息
+  string creator = 6; // CCS创建者did标识
+  string created = 7; // CCS创建时间
+  bool valid = 8; // CCS有效性状态
+  repeated CreAttr attributes = 9; // CCS属性
 }
 
-message  MetadataDefine{
-    string	key = 1;
-    bool  is_open = 2;
-    repeated    MetadataDefine  childs = 3;
+message CreAttr {
+  string name = 1; // 凭据属性名称
+  string type = 2; // 凭据属性值类型
+  bool required = 3; // 凭据是否必需包含该属性
+  string description = 4; // 凭据属性描述
 }
 
-message CredentialContentMetadata{
-    string	id=1;//ccm id 凭据内容元数据id
-    string	 	publisher = 2;//凭据元数据的发布者的did
-    repeated	MetadataDefine  metadata = 3;
-    string	meta_version = 4;
-    google.protobuf.Timestamp update_time = 5; //建立时间
-    string	version = 6;
+// 可验证凭据状态(Verifiable Credential, VC)
+message VerCreStatus  {
+  string version = 1; // 本数据结构的版本
+  string id = 2; // VC唯一标识
+  string status = 3; // VC所处状态，使用者自行定义
+  repeated string revokedClaimIndex = 4; // VC中已被撤销的凭据属性编号
+  string creator = 5; // VC签发者的did标识，用于更新操作的权限控制
 }
 
 

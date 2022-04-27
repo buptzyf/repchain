@@ -85,7 +85,8 @@ libraryDependencies ++= Seq(
   "ch.megard" %% "akka-http-cors" % "0.4.0",
   "de.heikoseeberger" % "akka-http-json4s_2.12" % "1.26.0",
   "com.twitter" %% "chill-akka" % "0.9.4",
-  "com.twitter" % "chill-bijection_2.12" % "0.9.4"
+  "com.twitter" % "chill-bijection_2.12" % "0.9.4",
+  "joda-time" % "joda-time" % "2.10.14"
 )
 
 
