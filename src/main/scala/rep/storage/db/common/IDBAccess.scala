@@ -24,6 +24,7 @@ abstract class IDBAccess {
    * @return	返回对应键的值 Array[Byte]
    * */
   def   getBytes(key : String):Array[Byte]
+  def   getDBName:String
 
   /**
    * @author jiangbuyun
@@ -35,18 +36,18 @@ abstract class IDBAccess {
    * */
   def   getObject[T](key : String):Option[T]={
     val b = this.getBytes(key)
-    RepLogger.trace(RepLogger.Storager_Logger,s"DB operate getObject, key=${key}")
+    RepLogger.trace(RepLogger.Storager_Logger,s"DB operate getObject, key=${key},dbName=${this.getDBName}")
     if(b == null){
-      RepLogger.trace(RepLogger.Storager_Logger,s"DB operate getObject,object==None, key=${key}")
+      RepLogger.trace(RepLogger.Storager_Logger,s"DB operate getObject,object==None, key=${key},dbName=${this.getDBName}")
       None
     }else{
       try{
         val o = SerializeUtils.deserialise(b)
         if(o == null){
-          RepLogger.trace(RepLogger.Storager_Logger,s"DB operate getObject,serialize==None, key=${key}")
+          RepLogger.trace(RepLogger.Storager_Logger,s"DB operate getObject,serialize==None, key=${key},dbName=${this.getDBName}")
           None
         }else{
-          RepLogger.trace(RepLogger.Storager_Logger,s"DB operate getObject,data!=None, key=${key},o=${o}")
+          RepLogger.trace(RepLogger.Storager_Logger,s"DB operate getObject,data!=None, key=${key},o=${o},dbName=${this.getDBName}")
           Some(o.asInstanceOf[T])
         }
       }catch {
@@ -124,7 +125,7 @@ abstract class IDBAccess {
           case e:Exception=>{
             this.rollback
             RepLogger.error(RepLogger.Storager_Logger,  "IDBAccess error:transactionOperate error," +
-              s"msg=${e.getCause}")
+              s"msg=${e.getCause},dbName=${this.getDBName}")
           }
         }finally {
           this.isTransaction = false

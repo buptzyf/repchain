@@ -31,7 +31,7 @@ class ImpLevelDBAccess private extends IDBAccess{
    * @param DBPath 数据库存放路径,cacheSize 设置数据库的缓存,isEncrypt 是否加密
    * @return
    **/
-  def this(DBPath:String,cacheSize:Long,isEncrypt:Boolean=false){
+  private def this(DBPath:String,cacheSize:Long,isEncrypt:Boolean=false){
     this()
     this.isEncrypt = isEncrypt
     this.DBPath = DBPath
@@ -85,12 +85,12 @@ class ImpLevelDBAccess private extends IDBAccess{
     var r: Array[Byte] = null
     try {
       if(key != null){
-        RepLogger.trace(RepLogger.Storager_Logger,s"DB operate getBytes, key=${key}")
+        RepLogger.trace(RepLogger.Storager_Logger,s"DB operate getBytes, key=${key},dbName=${this.getDBName}")
         var b = this.db.get(key.getBytes())
         if(b != null){
           r = if(this.isEncrypt) this.cipherTool.decrypt(b) else b
         }else{
-          RepLogger.trace(RepLogger.Storager_Logger,s"DB operate getBytes, data is null key=${key}")
+          RepLogger.trace(RepLogger.Storager_Logger,s"DB operate getBytes, data is null key=${key},dbName=${this.getDBName}")
         }
       }else{
         throw new Exception(s"input key is null")
@@ -127,7 +127,7 @@ class ImpLevelDBAccess private extends IDBAccess{
           }
           r = true
         }else{
-          throw new Exception(s"input value is null,key=${key}")
+          throw new Exception(s"input value is null,key=${key},dbName=${this.getDBName}")
         }
       }else{
         throw new Exception(s"input key is null")
@@ -260,6 +260,10 @@ class ImpLevelDBAccess private extends IDBAccess{
       this.batch = null
     }
   }
+
+  override def getDBName: String = {
+    this.DBPath
+  }
 }
 
 /**
@@ -269,7 +273,7 @@ class ImpLevelDBAccess private extends IDBAccess{
  * @category	ImpLevelDBAccess类的伴生对象，用于单实例的生成。
  */
 object ImpLevelDBAccess {
-  private var LevelDBInstances = new ConcurrentHashMap[String, ImpLevelDBAccess]()
+  private val LevelDBInstances = new ConcurrentHashMap[String, ImpLevelDBAccess]()
 
   /**
    * @author jiangbuyun

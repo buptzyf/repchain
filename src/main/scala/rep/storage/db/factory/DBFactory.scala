@@ -20,13 +20,13 @@ object DBFactory {
       val dbPath = FileOperate.mergeFilePath(Array[String](config.getStorageDBPath,config.getStorageDBName))
       config.getStorageDBType match{
         case "LevelDB"=>
-          RepLogger.trace(RepLogger.Storager_Logger,s"system=${config.getSystemConf},dbType=LevelDB,dbPath=${dbPath}")
+          RepLogger.trace(RepLogger.Storager_Logger,s"system=${config.getSystemName},dbType=LevelDB,dbPath=${dbPath}")
           ImpLevelDBAccess.getDBAccess(dbPath,cacheSize)
         case "RocksDB"=>
-          RepLogger.trace(RepLogger.Storager_Logger,s"system=${config.getSystemConf},dbType=LevelDB,dbPath=${dbPath}")
+          RepLogger.trace(RepLogger.Storager_Logger,s"system=${config.getSystemName},dbType=LevelDB,dbPath=${dbPath}")
           ImpRocksDBAccess.getDBAccess(dbPath,cacheSize)
         case _ =>
-          RepLogger.trace(RepLogger.Storager_Logger,s"system=${config.getSystemConf},dbType=LevelDB,dbPath=${dbPath}")
+          RepLogger.trace(RepLogger.Storager_Logger,s"system=${config.getSystemName},dbType=LevelDB,dbPath=${dbPath}")
           ImpLevelDBAccess.getDBAccess(dbPath,cacheSize)
       }
   }

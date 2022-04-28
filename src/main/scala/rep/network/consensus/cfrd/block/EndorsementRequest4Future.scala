@@ -111,6 +111,8 @@ class EndorsementRequest4Future(moduleName: String) extends ModuleBase(moduleNam
             RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"--------endorsement node is synching, must resend endorsement,height=${reqinfo.blc.getHeader.height},local height=${pe.getCurrentHeight} "))
           }else if(result.result == ResultFlagOfEndorse.VoteIndexError){
             pe.getActorRef(CFRDActorType.ActorType.voter) ! VoteOfReset
+          }else if(result.result == ResultFlagOfEndorse.EndorseNodeUnkonwReason){
+            context.parent ! ResendEndorseInfo(reqinfo.endorer)
           }
         }
       } else {

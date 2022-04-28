@@ -32,7 +32,7 @@ class ImpRocksDBAccess private extends IDBAccess{
    * @param DBPath 数据库存放路径,cacheSize 设置数据库的缓存,isEncrypt 是否加密数据u
    * @return
    **/
-  def this(DBPath:String,cacheSize:Long,isEncrypt:Boolean=false){
+  private def this(DBPath:String,cacheSize:Long,isEncrypt:Boolean=false){
     this()
     this.isEncrypt = isEncrypt
     this.DBPath = DBPath
@@ -258,6 +258,10 @@ class ImpRocksDBAccess private extends IDBAccess{
       this.batch = null
     }
   }
+
+  override def getDBName: String = {
+    this.DBPath
+  }
 }
 
 /**
@@ -267,7 +271,7 @@ class ImpRocksDBAccess private extends IDBAccess{
  * @category	ImpRocksDBAccess类的伴生对象，用于单实例的生成。
  */
 object ImpRocksDBAccess{
-  private var RocksDBInstances = new ConcurrentHashMap[String, ImpRocksDBAccess]()
+  private val RocksDBInstances = new ConcurrentHashMap[String, ImpRocksDBAccess]()
   /**
    * @author jiangbuyun
    * @version	2.0

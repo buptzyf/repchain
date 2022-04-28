@@ -23,7 +23,7 @@ object KeyPrefixManager {
   //通过交易id获取区块高度前缀
   private val BlockHeightKeyByTxIdPrefix:String = "ht"
   //通过cid获取部署交易前缀
-  private val ContractDeployKeyByCIdPrefix:String = "c"
+  //private val ContractDeployKeyByCIdPrefix:String = "c"
 
   private implicit var chainIds = new ConcurrentHashMap[String,String]() asScala
 
