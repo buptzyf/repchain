@@ -194,7 +194,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
 
         //pe.getTransPoolMgr.putTran(t,pe.getSysTag)
 
-        if(config.isBroadcastTransaction== 1) {
+        if(config.isBroadcastTransaction) {
           mediator ! Publish(Topic.Transaction, t)
         }
         sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)
