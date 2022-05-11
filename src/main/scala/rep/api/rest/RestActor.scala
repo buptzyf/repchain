@@ -20,6 +20,7 @@ import akka.util.Timeout
 
 import scala.concurrent.duration._
 import akka.pattern.{AskTimeoutException, ask}
+
 import scala.concurrent._
 import rep.crypto._
 import rep.app.TestMain
@@ -37,7 +38,9 @@ import rep.sc.TypeOfSender
 import rep.sc.SandboxDispatcher.DoTransaction
 import rep.sc.Sandbox.DoTransactionResult
 import rep.storage.chain.block.BlockSearcher
+import rep.storage.db.factory.DBFactory
 import rep.utils.GlobalUtils.EventType
+
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 import rep.utils.{MessageToJson, SerializeUtils}
@@ -71,6 +74,7 @@ object RestActor {
   case class TranInfoAndHeightId(txid: String)
   case class TranInfoHeight(tranInfo: JValue, height: Long)
   case class TransNumberOfBlock(height: Long)
+  case class QueryDB(netId: String, chainCodeName: String, oid: String, key: String)
   case object LoadBlockInfo
   case object IsLoadBlockInfo
 
@@ -277,7 +281,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
     case BlockTimeForHeight(h) =>
       val bb = sr.getBlockCreateTimeByHeight(h)
       val r = bb match {
-        case  None => QueryResult(None)
+        case None => QueryResult(None)
         case _ =>
           QueryResult(Option(JsonMethods.parse(SerializeUtils.toJson(bb.get))))
       }
@@ -383,6 +387,17 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
       val num = sr.isFinish
       val rs = "{\"isfinish\":\"" + num + "\"}"
       sender ! QueryResult(Option(JsonMethods.parse(string2JsonInput(rs))))
+
+    case QueryDB(netId, cName, oid, key) =>
+      val dataAccess = DBFactory.getDBAccess(config)
+      val tran_oid = oid match {
+        case "" => "_"
+        case _ => oid
+      }
+      val pkey = netId + "_" + cName + "_" + tran_oid + "_" + key
+      val pvalue = dataAccess.getBytes(pkey)
+      val jsonString = SerializeUtils.compactJson(SerializeUtils.deserialise(pvalue))
+      sender ! QueryResult(Option(JsonMethods.parse(string2JsonInput(jsonString))))
   }
 
   //test contract speed

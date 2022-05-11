@@ -140,6 +140,7 @@ object EventServer {
       new BlockService(ra).route ~
         new ChainService(ra).route ~
         new TransactionService(ra).route ~
+        new DbService(ra).route ~
         SwaggerDocService.routes))
     System.out.println("^^^^^^^^^^^^^^^^")
     RepLogger.info(RepLogger.System_Logger, s"Event Server online at http://localhost:$port")

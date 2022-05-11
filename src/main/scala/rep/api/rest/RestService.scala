@@ -559,3 +559,42 @@ class TransactionService(ra: RestRouter)(implicit executionContext: ExecutionCon
       }
     }
 }
+
+/**
+ * DB相关操作
+ *
+ * @author zyf
+ */
+@Tag(name = "db", description = "查询合约存储在DB中的数据")
+@Path("/db")
+class DbService(ra: RestRouter)(implicit executionContext: ExecutionContext)
+  extends Directives {
+
+  import akka.pattern.ask
+  import scala.concurrent.duration._
+  import Json4sSupport._
+
+  implicit val serialization = jackson.Serialization // or native.Serialization
+  implicit val formats = DefaultFormats
+  implicit val timeout = Timeout(20.seconds)
+
+  val route = queryDB
+
+  @POST
+  @Path("/query")
+  @Operation(tags = Array("db"), summary = "查询合约存储在DB中的数据", description = "queryDB", method = "POST",
+    requestBody = new RequestBody(description = "合约名，以及对应的key", required = true,
+      content = Array(new Content(mediaType = MediaType.APPLICATION_JSON, schema = new Schema(implementation = classOf[QueryDB])))))
+  @ApiResponse(responseCode = "200", description = "返回对应于某个key的value", content = Array(new Content(mediaType = "application/json", schema = new Schema(implementation = classOf[QueryResult]))))
+  def queryDB =
+    path("db" / "query") {
+      post {
+        extractClientIP { ip =>
+          RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} query levelDB or rocksDB")
+          entity(as[QueryDB]) { query: QueryDB =>
+            complete { (ra.getRestActor ? query).mapTo[QueryResult] }
+          }
+        }
+      }
+    }
+}
