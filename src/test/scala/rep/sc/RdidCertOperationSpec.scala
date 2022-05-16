@@ -127,7 +127,7 @@ class RdidCertOperationSpec(_system: ActorSystem) extends TestKit(_system) with 
 
     val msg_send = DoTransaction(Seq(t), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
-    val msg_recv = probe.expectMsgType[Seq[TransactionResult]](600000.seconds)
+    val msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
     assert(msg_recv.head.err.get.reason.isEmpty)
   }
 

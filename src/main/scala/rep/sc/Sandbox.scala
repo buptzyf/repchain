@@ -36,7 +36,7 @@ object Sandbox {
   val ERR_UNKNOWN_TRANSACTION_TYPE = "无效的交易类型"
   val ERR_UNKNOWN_CONTRACT_STATUS = "未知的合约状态"
 
-  //val SplitChainCodeId = "_"
+  val SplitChainCodeId = "_"
   //日志前缀
   //t:中含txid可以找到原始交易; r:执行结果; merkle:执行完worldstate的hash; err:执行异常
   /**
@@ -200,8 +200,8 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
   private def getStatusFromDB(txCid: String,oid:String,da:String):Option[Boolean]={
     var r : Option[Boolean] = None
 
-    val chainCodeName : String = if(txCid.indexOf("-")>0){
-      txCid.substring(0,txCid.indexOf("-"))
+    val chainCodeName : String = if(txCid.indexOf(SplitChainCodeId)>0){
+      txCid.substring(0,txCid.indexOf(SplitChainCodeId))
     } else txCid
     val blockPreload = pe.getRepChainContext.getBlockPreload(da)
     val state = blockPreload.getObjectFromDB(KeyPrefixManager.getWorldStateKey(pe.getRepChainContext.getConfig,txCid+PRE_STATE,chainCodeName,oid))
