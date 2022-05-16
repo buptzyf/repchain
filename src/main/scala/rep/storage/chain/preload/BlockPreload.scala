@@ -20,6 +20,7 @@ import scala.reflect.ClassTag
 class BlockPreload(preloadId:String,ctx:RepChainSystemContext,isEncrypt:Boolean=false)
                                       extends BlockSearcher(ctx,isEncrypt){
   private val update :ConcurrentHashMap[String,Array[Byte]] = new ConcurrentHashMap[String,Array[Byte]]
+  private val delete :ConcurrentHashMap[String,Array[Byte]] = new ConcurrentHashMap[String,Array[Byte]]
   private val readCache  :ConcurrentHashMap[String,Array[Byte]] = new ConcurrentHashMap[String,Array[Byte]]
   private val transactionPreloads:ConcurrentHashMap[String,TransactionPreload] = new ConcurrentHashMap[String,TransactionPreload]
 
@@ -54,7 +55,9 @@ class BlockPreload(preloadId:String,ctx:RepChainSystemContext,isEncrypt:Boolean=
   def getFromCache(key : String):Array[Byte]={
     var ro : Array[Byte] = null
     try{
-      if(this.update.containsKey(key)){
+      if(this.delete.containsKey(key)){
+        ro = null
+      }else if(this.update.containsKey(key)){
        ro = this.update.get(key)
       }
     }catch{
@@ -122,7 +125,9 @@ class BlockPreload(preloadId:String,ctx:RepChainSystemContext,isEncrypt:Boolean=
   def get(key : String):Array[Byte]={
     var ro : Array[Byte] = null
     try{
-      if(this.update.containsKey(key)){
+      if(this.delete.containsKey(key)){
+        ro = null
+      }else if(this.update.containsKey(key)){
         ro = this.update.get(key)
       }else if(this.readCache.containsKey(key)){
         ro = this.readCache.get(key)
@@ -159,12 +164,43 @@ class BlockPreload(preloadId:String,ctx:RepChainSystemContext,isEncrypt:Boolean=
         case _ =>
           if(value == null) throw new Exception("value is null")
           this.update.put(key,value)
+          if(this.delete.containsKey(key)) this.delete.remove(key)
           b = true
       }
     }catch{
       case e:Exception =>{
         RepLogger.error(RepLogger.Storager_Logger,
           s"BlockPreload put data Except, systemName=${this.ctx},msg=${e.getCause}")
+      }
+    }
+    b
+  }
+
+  /**
+   * @author jiangbuyun
+   * @version	2.0
+   * @since	2022-04-13
+   * @category	删除指定的键和值到数据库
+   * @param	key String 指定的键，bb Array[Byte] 要存储的值
+   * @return	返回成功或者失败 Boolean
+   * */
+  def del (key : String,value:Array[Byte]):Boolean={
+    var b : Boolean = false
+    try{
+      key match{
+        case null =>
+          RepLogger.error(RepLogger.Storager_Logger,
+            s"BlockPreload del data Except, systemName=${this.ctx},msg=key is null")
+        case _ =>
+          if(value == null) throw new Exception("value is null")
+          this.delete.put(key,value)
+          if(this.update.containsKey(key)) this.update.remove(key)
+          b = true
+      }
+    }catch{
+      case e:Exception =>{
+        RepLogger.error(RepLogger.Storager_Logger,
+          s"BlockPreload del data Except, systemName=${this.ctx},msg=${e.getCause}")
       }
     }
     b
@@ -181,6 +217,7 @@ class BlockPreload(preloadId:String,ctx:RepChainSystemContext,isEncrypt:Boolean=
   def free:Unit={
     this.transactionPreloads.clear()
     this.update.clear()
+    this.delete.clear()
     this.readCache.clear()
   }
 }

@@ -1,5 +1,6 @@
 package rep.storage.chain.block
 
+import com.google.protobuf.ByteString
 import rep.app.system.RepChainSystemContext
 import rep.log.RepLogger
 import rep.proto.rc2.{Block, Transaction}
@@ -11,6 +12,7 @@ import rep.storage.filesystem.factory.FileFactory
 import rep.storage.util.pathUtil
 import rep.utils.{IdTool, SerializeUtils}
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 import scala.util.control.Breaks.{break, breakable}
 
 /**
@@ -51,8 +53,10 @@ class BlockStorager(ctx: RepChainSystemContext, isEncrypt: Boolean = false) exte
    * @param block :Option[Block] 待存储的区块
    * @return 返回mutable.HashMap[String,Any]
    **/
-  private def getOperateLog(block: Option[Block]): mutable.HashMap[String, Array[Byte]] = {
+  private def getOperateLog(block: Option[Block]):
+                          (mutable.HashMap[String, Array[Byte]],Array[String]) = {
     val hm = new mutable.HashMap[String, Array[Byte]]()
+    val delKeys = new ArrayBuffer[String]()
     val trs = block.get.transactions
     val result = block.get.transactionResults
     if (!result.isEmpty) {
@@ -80,10 +84,25 @@ class BlockStorager(ctx: RepChainSystemContext, isEncrypt: Boolean = false) exte
             ctx.getPermissionCacheManager.updateCertCache(k)
           }
         })
+
+        r.statesDel.foreach(f => {
+          val k = f._1
+          //在存储时已经不需要组合key，直接使用
+          delKeys += k
+          if (t.getCid.chaincodeName.equalsIgnoreCase(accountContractName) &&
+            t.`type` == Transaction.Type.CHAINCODE_INVOKE && IdTool.isDidContract(accountContractName)) {
+            //账户修改
+            ctx.getPermissionCacheManager.updateCache(k)
+          } else if (t.getCid.chaincodeName.equalsIgnoreCase(accountContractName) &&
+            t.`type` == Transaction.Type.CHAINCODE_INVOKE && t.para.ipt.get.function.equalsIgnoreCase(certMethod)) {
+            //证书修改
+            ctx.getPermissionCacheManager.updateCertCache(k)
+          }
+        })
       }
     }
 
-    hm
+    (hm,delKeys.toArray)
   }
 
 
@@ -132,7 +151,9 @@ class BlockStorager(ctx: RepChainSystemContext, isEncrypt: Boolean = false) exte
                     block.get.getHeader.hashPrevious.toStringUtf8 == lastChainInfo.get.previousHash) {
                     r = true
                   } else if (lastChainInfo.get.bHash.equalsIgnoreCase(block.get.header.get.hashPrevious.toStringUtf8)) {
-                    val hm = getOperateLog(block)
+                    val opLog = getOperateLog(block)
+                    val setHm = opLog._1
+                    val delKeys = opLog._2
                     val bIndex = new BlockIndex(block.get)
                     val bb = if (isEncrypt) cipherTool.encrypt(block.get.toByteArray) else block.get.toByteArray
                     val bLength = bb.length
@@ -141,21 +162,24 @@ class BlockStorager(ctx: RepChainSystemContext, isEncrypt: Boolean = false) exte
                     bIndex.setLength(bLength)
                     bIndex.setFilePos(writer.getFileLength + 8)
                     if (writer.getFileLength == 0) {
-                      hm.put(KeyPrefixManager.getBlockFileFirstHeightKey(ctx.getConfig, bIndex.getFileNo), SerializeUtils.serialise(bIndex.getHeight))
+                      setHm.put(KeyPrefixManager.getBlockFileFirstHeightKey(ctx.getConfig, bIndex.getFileNo), SerializeUtils.serialise(bIndex.getHeight))
                     }
                     val lastInfo = KeyPrefixManager.ChainInfo(bIndex.getHeight, bIndex.getHash, bIndex.getPreHash,
                       lastChainInfo.get.txCount + bIndex.getTransactionSize, bIndex.getFileNo, bIndex.getFilePos, bIndex.getLength)
-                    hm.put(KeyPrefixManager.getBlockInfoKey(ctx.getConfig), SerializeUtils.serialise(lastInfo))
+                    setHm.put(KeyPrefixManager.getBlockInfoKey(ctx.getConfig), SerializeUtils.serialise(lastInfo))
 
-                    hm.put(KeyPrefixManager.getBlockIndexKey4Height(ctx.getConfig, bIndex.getHeight), SerializeUtils.serialise(bIndex))
-                    hm.put(KeyPrefixManager.getBlockHeightKey4Hash(ctx.getConfig, bIndex.getHash), SerializeUtils.serialise(bIndex.getHeight))
+                    setHm.put(KeyPrefixManager.getBlockIndexKey4Height(ctx.getConfig, bIndex.getHeight), SerializeUtils.serialise(bIndex))
+                    setHm.put(KeyPrefixManager.getBlockHeightKey4Hash(ctx.getConfig, bIndex.getHash), SerializeUtils.serialise(bIndex.getHeight))
                     bIndex.getTxIds.foreach(id => {
                       RepLogger.trace(RepLogger.Storager_Logger,s"transaction index saved, key=${id},dbName=${ctx.getSystemName}")
-                      hm.put(KeyPrefixManager.getBlockHeightKey4TxId(ctx.getConfig, id), SerializeUtils.serialise(bIndex.getHeight))
+                      setHm.put(KeyPrefixManager.getBlockHeightKey4TxId(ctx.getConfig, id), SerializeUtils.serialise(bIndex.getHeight))
                     })
 
-                    hm.foreach(d => {
+                    setHm.foreach(d => {
                       db.putBytes(d._1, d._2)
+                    })
+                    delKeys.foreach(k=>{
+                      db.delete(k)
                     })
                     writer.writeData(bIndex.getFilePos - 8, pathUtil.longToByte(bLength) ++ bb)
                     r = true
@@ -242,11 +266,34 @@ class BlockStorager(ctx: RepChainSystemContext, isEncrypt: Boolean = false) exte
           val v = f._2
           //hm.put(KeyPrefixManager.getWorldStateKey(this.systemName,k,chainCodeId,oid),v.toByteArray)
           //在存储时已经不需要组合key，直接使用
-          val old = r.statesGet.getOrElse(k, null)
-          if (old == null) {
+          val old = r.statesGet.get(k)
+          if (old == None || old.get == ByteString.EMPTY) {
             this.db.delete(k)
           } else {
-            this.db.putBytes(k, old.toByteArray)
+            this.db.putBytes(k, old.get.toByteArray)
+          }
+
+          if (t.getCid.chaincodeName.equalsIgnoreCase(accountContractName) &&
+            t.`type` == Transaction.Type.CHAINCODE_INVOKE && t.para.ipt.get.function.equalsIgnoreCase(certMethod)) {
+            //证书修改
+            ctx.getPermissionCacheManager.updateCertCache(k)
+          } else if (t.getCid.chaincodeName.equalsIgnoreCase(accountContractName) &&
+            t.`type` == Transaction.Type.CHAINCODE_INVOKE) {
+            //账户修改
+            ctx.getPermissionCacheManager.updateCache(k)
+          }
+        })
+
+        //恢复被删除的内容
+        r.statesDel.foreach(f => {
+          val k = f._1
+          val v = f._2
+          //hm.put(KeyPrefixManager.getWorldStateKey(this.systemName,k,chainCodeId,oid),v.toByteArray)
+          //在存储时已经不需要组合key，直接使用
+          if(v == ByteString.EMPTY){
+            this.db.delete(k)
+          }else{
+            this.db.putBytes(k, v.toByteArray)
           }
 
           if (t.getCid.chaincodeName.equalsIgnoreCase(accountContractName) &&

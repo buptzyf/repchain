@@ -91,7 +91,7 @@ class PreloaderForTransaction(moduleName: String) extends ModuleBase(moduleName)
   private def createErrorData(ts: scala.collection.Seq[Transaction], err: Option[akka.actor.Status.Failure]): Array[TransactionResult] = {
     var rs = scala.collection.mutable.ArrayBuffer[TransactionResult]()
     ts.foreach(t => {
-      rs += new TransactionResult(t.id, Map.empty,Map.empty, Option(ActionResult(103, err.get.cause.getMessage)))
+      rs += new TransactionResult(t.id, Map.empty,Map.empty,Map.empty, Option(ActionResult(103, err.get.cause.getMessage)))
     })
     rs.toArray
   }

@@ -129,9 +129,9 @@ class SandboxScala(cid: ChaincodeId) extends Sandbox(cid) {
       pe.getRepChainContext.getBlockPreload(dotrans.da).getTransactionPreload(dotrans.t.id).commit
       //shim.srOfTransaction.commit
       if(r == null){
-        new TransactionResult(t.id, shim.getStateGet,shim.getStateSet,Option(new ActionResult(0,"")))
+        new TransactionResult(t.id, shim.getStateGet,shim.getStateSet,shim.getStateDel,Option(new ActionResult(0,"")))
       }else{
-        new TransactionResult(t.id, shim.getStateGet,shim.getStateSet,Option(r))
+        new TransactionResult(t.id, shim.getStateGet,shim.getStateSet,shim.getStateDel,Option(r))
       }
 
     } catch {
@@ -142,7 +142,7 @@ class SandboxScala(cid: ChaincodeId) extends Sandbox(cid) {
         RepLogger.sendAlertToDB(pe.getRepChainContext.getHttpLogger(),new AlertInfo("CONTRACT",4,s"Node Name=${pe.getSysTag},txid=${t.id},erroInfo=${e.getMessage},Transaction Exception."))
         //shim.srOfTransaction.rollback
         pe.getRepChainContext.getBlockPreload(dotrans.da).getTransactionPreload(dotrans.t.id).rollback
-        new TransactionResult(t.id, Map.empty,Map.empty,Option(ActionResult(102,e1.getMessage)))
+        new TransactionResult(t.id, Map.empty,Map.empty,Map.empty,Option(ActionResult(102,e1.getMessage)))
     }
   }
 }

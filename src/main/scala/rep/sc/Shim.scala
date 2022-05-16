@@ -36,12 +36,13 @@ import scala.collection.immutable.HashMap
 
 
 /** Shim伴生对象
- *  @author c4w
- * 
+ *
+ * @author c4w
+ *
  */
 object Shim {
-  
-  type Key = String  
+
+  type Key = String
   type Value = Array[Byte]
 
   val ERR_CERT_EXIST = "证书已存在"
@@ -51,108 +52,142 @@ object Shim {
 }
 
 /** 为合约容器提供底层API的类
- *  @author c4w
+ *
+ * @author c4w
  */
 class Shim {
+
   import Shim._
-  private var  system : ActorSystem = null
-  private var  t : Transaction = null
-  private var identifier : String = null
-  private var ctx : RepChainSystemContext = null
+
+  private var system: ActorSystem = null
+  private var t: Transaction = null
+  private var identifier: String = null
+  private var ctx: RepChainSystemContext = null
 
   private val PRE_SPLIT = "_"
   //本chaincode的 key前缀
-  private var pre_key : String = ""
+  private var pre_key: String = ""
   //从交易传入, 内存中的worldState快照
   //不再直接使用区块预执行对象，后面采用交易预执行对象，可以更细粒度到控制交易事务
-  private var srOfTransaction : TransactionPreload = null
-  private var config : RepChainConfig  = null
+  private var srOfTransaction: TransactionPreload = null
+  private var config: RepChainConfig = null
 
   //记录状态修改日志
-  private var stateGet : HashMap[String,ByteString] = new HashMap[String,ByteString]()
-  private var stateSet : HashMap[String,ByteString] = new HashMap[String,ByteString]()
+  private var stateGet: HashMap[String, ByteString] = new HashMap[String, ByteString]()
+  private var stateSet: HashMap[String, ByteString] = new HashMap[String, ByteString]()
+  private var stateDel: HashMap[String, ByteString] = new HashMap[String, ByteString]()
 
   /**
    * @constructor 根据actor System和合约的链码id建立shim实例
-   * @param system 所属的actorSystem
-   * @param t 合约执行的交易
+   * @param system     所属的actorSystem
+   * @param t          合约执行的交易
    * @param identifier 合约执行的交易
    */
-  def this(system: ActorSystem,t:Transaction,identifier:String){
+  def this(system: ActorSystem, t: Transaction, identifier: String) {
     this()
     this.system = system
     this.t = t
     this.identifier = identifier
     this.ctx = PeerExtension(system).getRepChainContext
-    this.pre_key = KeyPrefixManager.getWorldStateKeyPrefix(ctx.getConfig, t.getCid.chaincodeName,t.oid)
+    this.pre_key = KeyPrefixManager.getWorldStateKeyPrefix(ctx.getConfig, t.getCid.chaincodeName, t.oid)
     this.srOfTransaction = ctx.getBlockPreload(identifier).getTransactionPreload(t.id)
-    this.config  = ctx.getConfig
+    this.config = ctx.getConfig
   }
 
 
-  def getStateGet:HashMap[String,ByteString]={
+  def getStateGet: HashMap[String, ByteString] = {
     this.stateGet
   }
 
-  def getStateSet:HashMap[String,ByteString]={
+  def getStateSet: HashMap[String, ByteString] = {
     this.stateSet
   }
 
-  private def checkKeyName(key:Key):Unit={
-    if(key.indexOf("_") >= 0){
-      if(!key.equalsIgnoreCase(IdTool.getCid(t.getCid))
-        && !key.equalsIgnoreCase(IdTool.getCid(t.getCid)+SandboxDispatcher.PRE_STATE)
-        && key.lastIndexOf("super_admin")<0)
-      throw new Exception(SandboxDispatcher.ERR_WORLDSTATE_CANNOT_CONTAIN_UNDERSCORES)
+  def getStateDel: HashMap[String, ByteString] = {
+    this.stateDel
+  }
+
+  private def checkKeyName(key: Key): Unit = {
+    if (key.indexOf("_") >= 0) {
+      if (!key.equalsIgnoreCase(IdTool.getCid(t.getCid))
+        && !key.equalsIgnoreCase(IdTool.getCid(t.getCid) + SandboxDispatcher.PRE_STATE)
+        && key.lastIndexOf("super_admin") < 0)
+        throw new Exception(SandboxDispatcher.ERR_WORLDSTATE_CANNOT_CONTAIN_UNDERSCORES)
     }
   }
 
-  def setVal(key: Key, value: Any):Unit ={
+  def setVal(key: Key, value: Any): Unit = {
     checkKeyName(key)
     setState(key, serialise(value))
   }
-   def getVal(key: Key):Any ={
-     checkKeyName(key)
-     val v = getState(key)
-     if(v == null)
-       null
-     else
+
+  def delVal(key:Key):Unit={
+    checkKeyName(key)
+    delState(key)
+  }
+
+  def getVal(key: Key): Any = {
+    checkKeyName(key)
+    val v = getState(key)
+    if (v == null)
+      null
+    else
       deserialise(v)
   }
- 
-  private def setState(key: Key, value: Array[Byte]): Unit = {
+
+  private def delState(key:Key):Unit={
     val pkey = pre_key + PRE_SPLIT + key
-    if(!this.stateGet.contains(pkey)){
+    var bs = ByteString.EMPTY
+    if (this.stateSet.contains(pkey)) {
+      //该状态字被删除之前已经发生更新并且是最后的更新，需要删除这个更新
+      this.stateSet -= pkey
+    }else{
+      checkStateGet(pkey)
+    }
+    bs = this.stateGet(pkey)
+    this.stateDel += pkey->bs
+    //执行删除操作
+    this.srOfTransaction.del(pkey,bs.toByteArray)
+  }
+
+  private def checkStateGet(pkey:Key):Unit={
+    if (!this.stateGet.contains(pkey)) {
       //如果该键从来没有read，从DB获取read，并写入到read日志
       val oldValue = get(pkey)
-      if(oldValue == null){
+      if (oldValue == null) {
         //如果没有读到，写入None的字节数组
-        this.stateGet += pkey->ByteString.EMPTY
-      }else{
-        this.stateGet += pkey->ByteString.copyFrom(oldValue)
+        this.stateGet += pkey -> ByteString.EMPTY
+      } else {
+        this.stateGet += pkey -> ByteString.copyFrom(oldValue)
       }
     }
-    if(value != null){
-      this.srOfTransaction.put(pkey,value)
+  }
+
+  private def setState(key: Key, value: Array[Byte]): Unit = {
+    val pkey = pre_key + PRE_SPLIT + key
+    checkStateGet(pkey)
+    if (value != null) {
+      this.srOfTransaction.put(pkey, value)
       this.stateSet += pkey -> ByteString.copyFrom(value)
-    }else{
+    } else {
       //如果待写入的值是null，采用None替代，并转字节数组
       val nv = ByteString.EMPTY
-      this.srOfTransaction.put(pkey,nv.toByteArray)
+      this.srOfTransaction.put(pkey, nv.toByteArray)
       this.stateSet += pkey -> nv
     }
+    if(this.stateDel.contains(pkey)) this.stateDel -= pkey
   }
 
   private def get(key: Key): Array[Byte] = {
     val v = this.srOfTransaction.get(key)
-    if(v == null){
+    if (v == null) {
       this.stateGet += key -> ByteString.EMPTY
       null
-    }else{
-      if(v.length == 0){
+    } else {
+      if (v.length == 0) {
         this.stateGet += key -> ByteString.EMPTY
         null
-      }else{
+      } else {
         this.stateGet += key -> ByteString.copyFrom(v)
         v
       }
@@ -163,62 +198,64 @@ class Shim {
     get(pre_key + PRE_SPLIT + key)
   }
 
-  def getStateEx(chainId:String,chainCodeName:String,contractInstanceId:String, key: Key): Any = {
+  def getStateEx(chainId: String, chainCodeName: String, contractInstanceId: String, key: Key): Any = {
     checkKeyName(key)
     val v = get(chainId + PRE_SPLIT + chainCodeName + PRE_SPLIT + contractInstanceId + PRE_SPLIT + key)
-    if(v == null)
+    if (v == null)
       null
     else
       deserialise(v)
   }
 
-  def getStateEx(chainId:String,chainCodeName:String, key: Key): Any = {
+  def getStateEx(chainId: String, chainCodeName: String, key: Key): Any = {
     checkKeyName(key)
     val v = get(chainId + PRE_SPLIT + chainCodeName + PRE_SPLIT + PRE_SPLIT + PRE_SPLIT + key)
-    if(v == null)
+    if (v == null)
       null
     else
       deserialise(v)
   }
-  
+
   //判断账号是否节点账号 TODO
-  def bNodeCreditCode(credit_code: String) : Boolean ={
+  def bNodeCreditCode(credit_code: String): Boolean = {
     ctx.getSignTool.isNode4Credit(credit_code)
   }
 
-  def getCurrentContractDeployer:String={
+  def getCurrentContractDeployer: String = {
     val coder = this.getVal(t.getCid.chaincodeName)
-    try{
-      if(coder != null){
+    try {
+      if (coder != null) {
         coder.asInstanceOf[String]
-      }else{
+      } else {
         ""
       }
-    }catch{case e:Exception=>""}
+    } catch {
+      case e: Exception => ""
+    }
   }
 
-  def getChainNetId:String={
+  def getChainNetId: String = {
     config.getChainNetworkId
   }
 
-  def getAccountContractCodeName:String={
+  def getAccountContractCodeName: String = {
     config.getAccountContractName
   }
 
-  def getAccountContractVersion:Int={
+  def getAccountContractVersion: Int = {
     config.getAccountContractVersion
   }
 
-  def isDidContract:Boolean = {
+  def isDidContract: Boolean = {
     IdTool.isDidContract(config.getAccountContractName)
   }
 
   /**
-    * 判断是否为超级管理员
-    *
-    * @param credit_code
-    * @return
-    */
+   * 判断是否为超级管理员
+   *
+   * @param credit_code
+   * @return
+   */
   def isAdminCert(credit_code: String): Boolean = {
     var r = true
     val certId = IdTool.getCertIdFromName(config.getChainCertName)
@@ -228,19 +265,19 @@ class Shim {
     r
   }
 
-  def getSha256Tool:Sha256={
+  def getSha256Tool: Sha256 = {
     ctx.getHashTool
   }
 
   //通过该接口获取日志器，合约使用此日志器输出业务日志。
-  def getLogger:Logger={
+  def getLogger: Logger = {
     RepLogger.Business_Logger
   }
 
-  def getDIDURIPrefix:String={
-    if(isDidContract){
+  def getDIDURIPrefix: String = {
+    if (isDidContract) {
       s"did:rep:${this.getChainNetId}:"
-    }else{
+    } else {
       ""
     }
   }

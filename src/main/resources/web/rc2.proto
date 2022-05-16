@@ -240,7 +240,9 @@ message TransactionResult {
     map<string, bytes> states_get = 2;
     //交易写入/迁移状态集合
     map<string, bytes> states_set = 3;
-    ActionResult err = 4;
+    //交易删除状态集合
+    map<string, bytes> states_del = 4;
+    ActionResult err = 5;
 }
 
 //签名交易
