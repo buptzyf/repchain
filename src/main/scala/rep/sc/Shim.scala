@@ -100,6 +100,9 @@ class Shim {
 
   private def checkKeyName(key:Key):Unit={
     if(key.indexOf("_") >= 0){
+      if(!key.equalsIgnoreCase(IdTool.getCid(t.getCid))
+        && !key.equalsIgnoreCase(IdTool.getCid(t.getCid)+SandboxDispatcher.PRE_STATE)
+        && key.lastIndexOf(".super_admin")<0)
       throw new Exception(SandboxDispatcher.ERR_WORLDSTATE_CANNOT_CONTAIN_UNDERSCORES)
     }
   }

@@ -132,7 +132,7 @@ object AuthOperation extends DidOperation {
           if (cert == null) {
             throw ContractException(toJsonErrMsg(bindCertNotExists))
           } else if (cert.asInstanceOf[Certificate].certValid) {
-            ctx.api.setVal(bindPrefix + authId + "_" + bindCertToAuthorize.getGranted.creditCode + "." + bindCertToAuthorize.getGranted.certName, bindCertToAuthorize)
+            ctx.api.setVal(bindPrefix + authId + "-" + bindCertToAuthorize.getGranted.creditCode + "." + bindCertToAuthorize.getGranted.certName, bindCertToAuthorize)
           } else {
             throw ContractException(toJsonErrMsg(bindCertNotValid))
           }

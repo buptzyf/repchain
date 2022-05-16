@@ -2,15 +2,15 @@ package rep.sc.tpl.did
 
 object DidTplPrefix {
 
-  val signerPrefix = "signer_"
-  val certPrefix = "cert_"
-  val operPrefix = "oper_"
-  val authPrefix = "auth_"
-  val bindPrefix = "bind_"
-  val credPrefix = "cred_"
-  val metaPrefix = "meta_"
-  val ccmdPrefix = "ccmd_"
-  val hashPrefix = "hash_"
-  val ccsPrefix  = "ccs_"
-  val vcsPrefix  = "vcs_"
+  val signerPrefix = "signer-"
+  val certPrefix = "cert-"
+  val operPrefix = "oper-"
+  val authPrefix = "auth-"
+  val bindPrefix = "bind-"
+  val credPrefix = "cred-"
+  val metaPrefix = "meta-"
+  val ccmdPrefix = "ccmd-"
+  val hashPrefix = "hash-"
+  val ccsPrefix  = "ccs-"
+  val vcsPrefix  = "vcs-"
 }

@@ -71,7 +71,7 @@ abstract class ICache(ctx : RepChainSystemContext) {
   }
 
   def updateCache(key:String): Unit={
-    val idx = key.lastIndexOf("_")
+    val idx = key.lastIndexOf("-")
     if(idx > 0){
       this.cache.remove(key.substring(idx+1))
       RepLogger.Permission_Logger.trace(s"ICache.updateCache update cache data,key=${key}")

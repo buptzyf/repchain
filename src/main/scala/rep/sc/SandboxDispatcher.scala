@@ -46,7 +46,6 @@ object SandboxDispatcher {
   val ERR_WORLDSTATE_CANNOT_CONTAIN_UNDERSCORES = "Key不能包含下划线"
 
   //下属actor的命名前缀
-  val PRE_SUB_ACTOR = "sb_"
   val PRE_STATE = "_STATE"
 
   /**

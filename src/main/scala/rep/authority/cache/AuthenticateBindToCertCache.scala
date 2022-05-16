@@ -18,7 +18,7 @@ class AuthenticateBindToCertCache(ctx : RepChainSystemContext) extends ICache(ct
   }
 
   def get(authid:String,certid:String,blockPreload: BlockPreload):Option[Boolean]={
-    get(authid+"_"+certid,blockPreload)
+    get(authid+"-"+certid,blockPreload)
   }
 
   def get(key:String,blockPreload: BlockPreload):Option[Boolean]={
