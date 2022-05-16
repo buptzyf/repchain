@@ -58,6 +58,21 @@ object AuthOperation extends DidOperation {
             // 检查被授权账户的有效性
             val grantedSigner = checkSignerValid(ctx, grantedId)
             if (!grantedSigner.authorizeIds.contains(authorize.id)) {
+              grantedSigner.authorizeIds.foreach(authId => {
+                var oldAuth = ctx.api.getVal(authPrefix + authId).asInstanceOf[Authorize]
+                // 检查被授权账户是否已经授权了该操作
+                val oldOpId = oldAuth.opId.filterNot(oldOpId => {
+                  authorize.opId.contains(oldOpId)
+                })
+                // 更新被授权账户的历史Authorize的操作列表
+                if (oldOpId.nonEmpty) {
+                  oldAuth = oldAuth.withOpId(oldOpId)
+                  ctx.api.setVal(authPrefix + authId, oldAuth)
+                } else {
+                  ctx.api.setVal(authPrefix + authId, null)
+                  //TODO 在grantedSigner中删除该authId？
+                }
+              })
               val newAuthIds = grantedSigner.authorizeIds.+:(authorize.id)
               val newGrantedSigner = grantedSigner.withAuthorizeIds(newAuthIds)
               // 更新signer
