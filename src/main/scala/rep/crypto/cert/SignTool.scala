@@ -72,7 +72,11 @@ class SignTool(ctx:RepChainSystemContext) {
       val cache = ctx.getPermissionCacheManager.getCache(DidTplPrefix.certPrefix).asInstanceOf[CertificateCache]
       val cert = cache.get(pubkeyname,null)
       if(cert != None){
-        pkcert = cert.get.certificate
+        if(cert.get.cert_valid){
+          pkcert = cert.get.certificate
+        }else{
+          throw new RuntimeException("验证签名时证书已经失效！")
+        }
       }
     }
 

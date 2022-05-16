@@ -73,6 +73,8 @@ class TransactionChecker (moduleName: String) extends ModuleBase(moduleName){
 
         if (poolIsEmpty)//加入交易之前交易池为空，发送抽签消息
         pe.getActorRef(CFRDActorType.ActorType.voter) ! VoteOfBlocker
+      }else if(!checkedTransactionResult.result){
+        RepLogger.error(RepLogger.System_Logger,this.getLogMsgPrefix(s"${pe.getSysTag} check Transaction error,txid=${t.id}"))
       }
     }
   }

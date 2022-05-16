@@ -98,10 +98,18 @@ class Shim {
     this.stateSet
   }
 
+  private def checkKeyName(key:Key):Unit={
+    if(key.indexOf("_") >= 0){
+      throw new Exception(SandboxDispatcher.ERR_WORLDSTATE_CANNOT_CONTAIN_UNDERSCORES)
+    }
+  }
+
   def setVal(key: Key, value: Any):Unit ={
+    checkKeyName(key)
     setState(key, serialise(value))
   }
    def getVal(key: Key):Any ={
+     checkKeyName(key)
      val v = getState(key)
      if(v == null)
        null
@@ -153,6 +161,7 @@ class Shim {
   }
 
   def getStateEx(chainId:String,chainCodeName:String,contractInstanceId:String, key: Key): Any = {
+    checkKeyName(key)
     val v = get(chainId + PRE_SPLIT + chainCodeName + PRE_SPLIT + contractInstanceId + PRE_SPLIT + key)
     if(v == null)
       null
@@ -161,6 +170,7 @@ class Shim {
   }
 
   def getStateEx(chainId:String,chainCodeName:String, key: Key): Any = {
+    checkKeyName(key)
     val v = get(chainId + PRE_SPLIT + chainCodeName + PRE_SPLIT + PRE_SPLIT + PRE_SPLIT + key)
     if(v == null)
       null

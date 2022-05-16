@@ -43,6 +43,7 @@ object SandboxDispatcher {
   val ERR_NO_AUTHORIZE = "授权已经不存在"
   val ERR_INVALID_AUTHORIZE = "授权已经失效"
 
+  val ERR_WORLDSTATE_CANNOT_CONTAIN_UNDERSCORES = "Key不能包含下划线"
 
   //下属actor的命名前缀
   val PRE_SUB_ACTOR = "sb_"
