@@ -27,6 +27,7 @@ abstract class ICache(ctx : RepChainSystemContext) {
                                           .weigher(Weighers.singleton[Option[Any]]).build
   final protected implicit val reader = new ConcurrentHashMap[String,Future[Option[Any]]]()
 
+
   //负责数据格式转换
   protected def dataTypeConvert(any:Option[Any],blockPreload: BlockPreload):Option[Any]
   protected def getPrefix:String
@@ -37,6 +38,8 @@ abstract class ICache(ctx : RepChainSystemContext) {
       RepLogger.Permission_Logger.trace(s"ICache.readData asynchronous read,key=${key}")
       asynchronousReadData(key,blockPreload)
     }else{
+      System.err.println(s"t=${System.currentTimeMillis()},get data in cache #######updateCertCache,key=${key}," +
+        s"node=${this.ctx.getSystemName}")
       RepLogger.Permission_Logger.trace(s"ICache.readData cache read,key=${key},data=${r}")
       r
     }
@@ -53,6 +56,8 @@ abstract class ICache(ctx : RepChainSystemContext) {
       }
       //线程等待获取数据
       r = Await.result(dr, 5.seconds).asInstanceOf[Option[Any]]
+      System.err.println(s"t=${System.currentTimeMillis()},get data in storage ,key=${key}," +
+        s"node=${this.ctx.getSystemName}")
       RepLogger.Permission_Logger.trace(s"ICache.asynchronousReadData,key=${key},data=${r}")
     }finally {
       this.reader.remove(key)
@@ -65,16 +70,35 @@ abstract class ICache(ctx : RepChainSystemContext) {
     if(r != None){
       //将读取的数据写入缓存
       this.cache.put(key,r)
+
     }
     RepLogger.Permission_Logger.trace(s"ICache.asynchronousHandleData,key=${key},data=${r}")
     r
   }
 
   def updateCache(key:String): Unit={
+    System.err.println(s"t=${System.currentTimeMillis()},start#######update did info cache,key=${key}," +
+      s"current class name=${this.getClass.getName},node=${this.ctx.getSystemName}")
     val idx = key.lastIndexOf("-")
     if(idx > 0){
+      System.err.println(s"t=${System.currentTimeMillis()},get real key#######update did info cache,key=${key.substring(idx+1)}," +
+        s"isExist=${this.cache.containsKey(key.substring(idx+1))}," +
+        s"current class name=${this.getClass.getName},node=${this.ctx.getSystemName}")
       this.cache.remove(key.substring(idx+1))
       RepLogger.Permission_Logger.trace(s"ICache.updateCache update cache data,key=${key}")
+    }
+  }
+
+  protected def readDataOfRealtime(key:String,blockPreload: BlockPreload): Option[Any] ={
+    synchronized{
+      val r = this.dataTypeConvert(this.db.getObject(this.getPrefix+key),blockPreload)
+      if(r != None){
+        //将读取的数据写入缓存
+        this.cache.put(key,r)
+
+      }
+      RepLogger.Permission_Logger.trace(s"ICache.asynchronousHandleData,key=${key},data=${r}")
+      r
     }
   }
 
@@ -83,14 +107,16 @@ abstract class ICache(ctx : RepChainSystemContext) {
       //在预执行中获取，如果预执行中没有找到，再到缓存中获取
       val pd = dataTypeConvert(blockPreload.getObjectFromCache(this.getPrefix+key),blockPreload)
       if(pd == None){
-        readData(key,blockPreload)
+        //readData(key,blockPreload)
+        readDataOfRealtime(key:String,blockPreload: BlockPreload)
       }else{
         RepLogger.Permission_Logger.trace(s"ICache.getData preload read,key=${key},data=${pd}")
         pd
       }
     }else{
       //直接在缓存中获取
-      readData(key,blockPreload)
+      //readData(key,blockPreload)
+      readDataOfRealtime(key:String,blockPreload: BlockPreload)
     }
   }
 }

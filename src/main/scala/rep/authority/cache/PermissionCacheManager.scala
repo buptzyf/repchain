@@ -47,6 +47,8 @@ class PermissionCacheManager(ctx : RepChainSystemContext) {
    * @return
    * */
   def updateCertCache(key:String):Unit={
+    System.err.println(s"t=${System.currentTimeMillis()},entry PermissionCacheManager#######updateCertCache,key=${key}," +
+      s"node=${this.ctx.getSystemName}")
     this.certificateCache.updateCache(key)
   }
   /**
@@ -58,6 +60,8 @@ class PermissionCacheManager(ctx : RepChainSystemContext) {
    * @return
    * */
   def updateCache(key:String):Unit={
+    System.err.println(s"t=${System.currentTimeMillis()},entry PermissionCacheManager#######updateCache,key=${key}," +
+      s"node=${this.ctx.getSystemName}")
     if(key.indexOf("_"+DidTplPrefix.operPrefix)>0){
         this.operateCache.updateCache(key)
     }else if(key.indexOf("_"+DidTplPrefix.authPrefix)>0){
