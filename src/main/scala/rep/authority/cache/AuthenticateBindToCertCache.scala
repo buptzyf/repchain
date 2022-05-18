@@ -28,4 +28,8 @@ class AuthenticateBindToCertCache(ctx : RepChainSystemContext) extends ICache(ct
     else
       Some(d.get.asInstanceOf[Boolean])
   }
+
+  override protected def getCacheType: String = {
+    this.splitSign + DidTplPrefix.bindPrefix
+  }
 }

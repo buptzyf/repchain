@@ -25,4 +25,7 @@ class CertificateHashCache(ctx : RepChainSystemContext) extends ICache(ctx) {
       Some(d.get.asInstanceOf[String])
   }
 
+  override protected def getCacheType: String = {
+    this.splitSign + DidTplPrefix.hashPrefix
+  }
 }

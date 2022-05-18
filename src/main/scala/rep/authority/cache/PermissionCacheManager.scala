@@ -1,7 +1,11 @@
 package rep.authority.cache
 
+import java.util.concurrent.ConcurrentHashMap
 import rep.app.system.RepChainSystemContext
+import rep.log.RepLogger
 import rep.sc.tpl.did.DidTplPrefix
+import rep.storage.filesystem.FileOperate
+
 
 /**
  * @author jiangbuyun
@@ -9,7 +13,7 @@ import rep.sc.tpl.did.DidTplPrefix
  * @since	2022-04-19
  * @category	根据系统名称获取账户权限相关的缓存实例
  */
-class PermissionCacheManager(ctx : RepChainSystemContext) {
+class PermissionCacheManager private(ctx : RepChainSystemContext) {
   private val signerCache = new SignerCache(ctx)
   private val authenticateBindToCertCache = new AuthenticateBindToCertCache(ctx)
   private val authenticateCache = new AuthenticateCache(ctx)
@@ -60,8 +64,6 @@ class PermissionCacheManager(ctx : RepChainSystemContext) {
    * @return
    * */
   def updateCache(key:String):Unit={
-    System.err.println(s"t=${System.currentTimeMillis()},entry PermissionCacheManager#######updateCache,key=${key}," +
-      s"node=${this.ctx.getSystemName}")
     if(key.indexOf("_"+DidTplPrefix.operPrefix)>0){
         this.operateCache.updateCache(key)
     }else if(key.indexOf("_"+DidTplPrefix.authPrefix)>0){
@@ -75,5 +77,34 @@ class PermissionCacheManager(ctx : RepChainSystemContext) {
     }else if(key.indexOf("_"+DidTplPrefix.hashPrefix)>0) {
         this.certificateHashCache.updateCache(key)
     }
+  }
+}
+
+object PermissionCacheManager {
+  private val cacheInstances = new ConcurrentHashMap[String, PermissionCacheManager]()
+
+  /**
+   * @author jiangbuyun
+   * @version	2.0
+   * @since	2022-05-18
+   * @category	根据数据库路径缓存实例
+   * @param ctx : RepChainSystemContext
+   * @return	如果成功返回PermissionCacheManager实例，否则为null
+   */
+  def getCacheInstance(ctx : RepChainSystemContext): PermissionCacheManager = {
+    var instance: PermissionCacheManager = null
+    val key = FileOperate.mergeFilePath(Array[String](ctx.getConfig.getStorageDBPath,ctx.getConfig.getStorageDBName))
+    if (cacheInstances.containsKey(key)) {
+      RepLogger.trace(RepLogger.Storager_Logger,s"CacheInstance exist, key=${key}")
+      instance = cacheInstances.get(key)
+    } else {
+      RepLogger.trace(RepLogger.Storager_Logger,s"CacheInstance not exist,create new Instance, key=${key}")
+      instance = new PermissionCacheManager(ctx)
+      val old = cacheInstances.putIfAbsent(key,instance)
+      if(old != null){
+        instance = old
+      }
+    }
+    instance
   }
 }

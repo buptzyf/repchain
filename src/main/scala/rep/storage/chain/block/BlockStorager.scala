@@ -54,7 +54,7 @@ class BlockStorager(ctx: RepChainSystemContext, isEncrypt: Boolean = false) exte
    * @return 返回mutable.HashMap[String,Any]
    **/
   private def getOperateLog(block: Option[Block]):
-                          (mutable.HashMap[String, Array[Byte]],Array[String]) = {
+  (mutable.HashMap[String, Array[Byte]], Array[String]) = {
     val hm = new mutable.HashMap[String, Array[Byte]]()
     val delKeys = new ArrayBuffer[String]()
     val trs = block.get.transactions
@@ -102,7 +102,7 @@ class BlockStorager(ctx: RepChainSystemContext, isEncrypt: Boolean = false) exte
       }
     }
 
-    (hm,delKeys.toArray)
+    (hm, delKeys.toArray)
   }
 
 
@@ -171,14 +171,14 @@ class BlockStorager(ctx: RepChainSystemContext, isEncrypt: Boolean = false) exte
                     setHm.put(KeyPrefixManager.getBlockIndexKey4Height(ctx.getConfig, bIndex.getHeight), SerializeUtils.serialise(bIndex))
                     setHm.put(KeyPrefixManager.getBlockHeightKey4Hash(ctx.getConfig, bIndex.getHash), SerializeUtils.serialise(bIndex.getHeight))
                     bIndex.getTxIds.foreach(id => {
-                      RepLogger.trace(RepLogger.Storager_Logger,s"transaction index saved, key=${id},dbName=${ctx.getSystemName}")
+                      RepLogger.trace(RepLogger.Storager_Logger, s"transaction index saved, key=${id},dbName=${ctx.getSystemName}")
                       setHm.put(KeyPrefixManager.getBlockHeightKey4TxId(ctx.getConfig, id), SerializeUtils.serialise(bIndex.getHeight))
                     })
 
                     setHm.foreach(d => {
                       db.putBytes(d._1, d._2)
                     })
-                    delKeys.foreach(k=>{
+                    delKeys.foreach(k => {
                       db.delete(k)
                     })
                     writer.writeData(bIndex.getFilePos - 8, pathUtil.longToByte(bLength) ++ bb)
@@ -290,9 +290,9 @@ class BlockStorager(ctx: RepChainSystemContext, isEncrypt: Boolean = false) exte
           val v = f._2
           //hm.put(KeyPrefixManager.getWorldStateKey(this.systemName,k,chainCodeId,oid),v.toByteArray)
           //在存储时已经不需要组合key，直接使用
-          if(v == ByteString.EMPTY){
+          if (v == ByteString.EMPTY) {
             this.db.delete(k)
-          }else{
+          } else {
             this.db.putBytes(k, v.toByteArray)
           }
 
@@ -364,38 +364,7 @@ object BlockStorager {
 
   case class BlockStoreResult(isSuccess: Boolean, lastHeight: Long, transactionCount: Long,
                               blockHash: String, previousBlockHash: String, reason: String)
-/*
-  private val DBStorageInstances = new ConcurrentHashMap[String, BlockStorager]()
 
-  /**
-   * @author jiangbuyun
-   * @version 2.0
-   * @since 2022-04-10
-   * @category 设置相同的存储只能装载一个存储器实例
-   * @param 	ctx RepChainSystemContext 系统上下文
-   * @return 如果成功返回BlockStorager实例，否则为null
-   */
-  def getBlockStorager(ctx: RepChainSystemContext): BlockStorager = {
-    var instance: BlockStorager = null
-    synchronized {
-      val config = ctx.getConfig
-      val key = (config.getStorageDBPath + config.getStorageDBName +
-        config.getStorageBlockFilePath + config.getStorageBlockFileName
-        )
-      if (DBStorageInstances.containsKey(key)) {
-        instance = DBStorageInstances.get(key)
-      } else {
-        instance = new BlockStorager(ctx)
-        val old = DBStorageInstances.putIfAbsent(key, instance)
-        if (old != null) {
-          instance = old
-        }
-      }
-      instance
-    }
-  }
-
- */
 }
 
 

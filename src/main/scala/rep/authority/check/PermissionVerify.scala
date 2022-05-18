@@ -6,7 +6,6 @@ import rep.authority.cache.SignerCache.signerData
 import rep.authority.cache.{AuthenticateBindToCertCache, AuthenticateCache, CertificateCache, CertificateHashCache, OperateCache, PermissionCacheManager, SignerCache}
 import rep.log.RepLogger
 import rep.proto.rc2.CertId
-import rep.proto.rc2.Transaction.Type
 import rep.sc.Sandbox.SandboxException
 import rep.sc.SandboxDispatcher._
 import rep.sc.tpl.did.DidTplPrefix
@@ -220,32 +219,4 @@ class PermissionVerify(ctx : RepChainSystemContext) {
     }
     r
   }
-
 }
-/*
-object PermissionVerify {
-  import scala.collection.JavaConverters._
-  private implicit var singleObjs = new ConcurrentHashMap[String, PermissionVerify]() asScala
-  /**
-   * @author jiangbuyun
-   * @version	1.1
-   * @since	2020-06-25
-   * @category	根据系统名称获取权限验证类
-   * @param	SystemName String 系统名称
-   * @return	如果成功返回PermissionVerify实例，否则为null
-   */
-  def GetPermissionVerify(SystemName: String): PermissionVerify = {
-    var singleobj: PermissionVerify = null
-    synchronized {
-      if (singleObjs.contains(SystemName)) {
-        singleobj = singleObjs.get(SystemName).getOrElse(null)
-      } else {
-        singleobj = new PermissionVerify(SystemName)
-        singleObjs.put(SystemName, singleobj)
-      }
-      singleobj
-    }
-  }
-}
-
- */

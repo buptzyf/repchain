@@ -44,4 +44,8 @@ class OperateCache(ctx : RepChainSystemContext) extends ICache(ctx) {
     else
       Some(d.get.asInstanceOf[opData])
   }
+
+  override protected def getCacheType: String = {
+    this.splitSign + DidTplPrefix.operPrefix
+  }
 }

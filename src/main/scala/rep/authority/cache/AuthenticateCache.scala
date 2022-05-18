@@ -36,4 +36,8 @@ class AuthenticateCache(ctx : RepChainSystemContext) extends ICache(ctx) {
     else
       Some(d.get.asInstanceOf[authData])
   }
+
+  override protected def getCacheType: String = {
+    this.splitSign + DidTplPrefix.authPrefix
+  }
 }
