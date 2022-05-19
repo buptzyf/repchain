@@ -46,8 +46,8 @@ object AuthOperation extends DidOperation {
           val operateIdsCheck: Boolean = operateIds.contains(opId)
           val authorizeIdsCheck: Boolean = authorizeIds.exists(authorizeId => {
             val authorize = ctx.api.getVal(authPrefix + authorizeId).asInstanceOf[Authorize]
-            // 拥有，同时可被无限让渡
-            authorize.opId.contains(opId) && authorize.isTransfer.isTransferRepeatedly
+            // 拥有，有效，同时可被无限让渡
+            authorize.opId.contains(opId) && authorize.authorizeValid && authorize.isTransfer.isTransferRepeatedly
           })
           // 拥有操作，或者被授权了操作，在满足二者的前提下，操作还需要满足valid==true
           (operateIdsCheck || authorizeIdsCheck) && ctx.api.getVal(operPrefix + opId).asInstanceOf[Operate].opValid
