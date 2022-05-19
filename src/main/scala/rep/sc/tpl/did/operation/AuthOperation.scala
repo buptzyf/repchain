@@ -12,7 +12,7 @@ object AuthOperation extends DidOperation {
 
   val someOperateNotExistsOrNotValid = ActionResult(15001, "部分操作不存在或者无效")
   val authorizeExistsCode = 15002
-  val authorizeExists = "grantedId为%s,已包含为%s的authId"
+  val authorizeExists = "authId为%s的Authorize已经存在"
   val authorizeNotExistsCode = 15003
   val authorizeNotExists = "authId为%s的Authorize不存在"
   val authorizeNotValidCode = 15004
@@ -57,7 +57,7 @@ object AuthOperation extends DidOperation {
           authorize.granted.foreach(grantedId => {
             // 检查被授权账户的有效性
             val grantedSigner = checkSignerValid(ctx, grantedId)
-            if (!grantedSigner.authorizeIds.contains(authorize.id)) {
+            if (!grantedSigner.authorizeIds.contains(authorize.id) && ctx.api.getVal(authPrefix + authorize.id) == null) {
               grantedSigner.authorizeIds.foreach(authId => {
                 var oldAuth = ctx.api.getVal(authPrefix + authId).asInstanceOf[Authorize]
                 // 检查被授权账户是否已经授权了该操作
@@ -80,7 +80,7 @@ object AuthOperation extends DidOperation {
               // 保存授权权限
               ctx.api.setVal(authPrefix + authorize.id, authorize)
             } else {
-              throw ContractException(toJsonErrMsg(authorizeExistsCode, authorizeExists.format(grantedId, authorize.id)))
+              throw ContractException(toJsonErrMsg(authorizeExistsCode, authorizeExists.format(authorize.id)))
             }
           })
         } else {
