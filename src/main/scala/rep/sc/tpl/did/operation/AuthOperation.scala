@@ -52,12 +52,13 @@ object AuthOperation extends DidOperation {
           // 拥有操作，或者被授权了操作，在满足二者的前提下，操作还需要满足valid==true
           (operateIdsCheck || authorizeIdsCheck) && ctx.api.getVal(operPrefix + opId).asInstanceOf[Operate].opValid
         }
-        // granter 拥有 operateId 且 有效
-        if (authorize.opId.forall(opId => checkOpIdValid(opId))) {
-          authorize.granted.foreach(grantedId => {
-            // 检查被授权账户的有效性
-            val grantedSigner = checkSignerValid(ctx, grantedId)
-            if (!grantedSigner.authorizeIds.contains(authorize.id) && ctx.api.getVal(authPrefix + authorize.id) == null) {
+        if (ctx.api.getVal(authPrefix + authorize.id) == null) {
+          // granter 拥有 operateId 且 有效
+          if (authorize.opId.forall(opId => checkOpIdValid(opId))) {
+            authorize.granted.foreach(grantedId => {
+              // 检查被授权账户的有效性
+              val grantedSigner = checkSignerValid(ctx, grantedId)
+              var newAuthIds = Seq.empty[String]
               grantedSigner.authorizeIds.foreach(authId => {
                 var oldAuth = ctx.api.getVal(authPrefix + authId).asInstanceOf[Authorize]
                 // 检查被授权账户是否已经授权了该操作
@@ -66,25 +67,24 @@ object AuthOperation extends DidOperation {
                 })
                 // 更新被授权账户的历史Authorize的操作列表
                 if (oldOpId.nonEmpty) {
+                  newAuthIds = newAuthIds :+ authId
                   oldAuth = oldAuth.withOpId(oldOpId)
                   ctx.api.setVal(authPrefix + authId, oldAuth)
                 } else {
-                  ctx.api.setVal(authPrefix + authId, null)
-                  //TODO 在grantedSigner中删除该authId？
+                  ctx.api.delVal(authPrefix + authId)
                 }
               })
-              val newAuthIds = grantedSigner.authorizeIds.+:(authorize.id)
-              val newGrantedSigner = grantedSigner.withAuthorizeIds(newAuthIds)
+              val newGrantedSigner = grantedSigner.withAuthorizeIds(newAuthIds :+ authorize.id)
               // 更新signer
               ctx.api.setVal(signerPrefix + grantedId, newGrantedSigner)
               // 保存授权权限
               ctx.api.setVal(authPrefix + authorize.id, authorize)
-            } else {
-              throw ContractException(toJsonErrMsg(authorizeExistsCode, authorizeExists.format(authorize.id)))
-            }
-          })
+            })
+          } else {
+            throw ContractException(toJsonErrMsg(someOperateNotExistsOrNotValid))
+          }
         } else {
-          throw ContractException(toJsonErrMsg(someOperateNotExistsOrNotValid))
+          throw ContractException(toJsonErrMsg(authorizeExistsCode, authorizeExists.format(authorize.id)))
         }
       } else {
         throw ContractException(toJsonErrMsg(signerNotGranter))
