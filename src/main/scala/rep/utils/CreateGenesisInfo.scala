@@ -43,8 +43,8 @@ object CreateGenesisInfo {
     val cid1 = new ChaincodeId("RdidOperateAuthorizeTPL", 1)
 
     val deploy_trans = ctx.getTransactionBuilder.createTransaction4Deploy(superAdmin, cid1, l1, "", 5000,
-                                                  CodeType.CODE_SCALA,RunType.RUN_SERIAL,StateType.STATE_BLOCK,
-                                                  ChaincodeDeploy.ContractClassification.CONTRACT_SYSTEM,0)
+      CodeType.CODE_SCALA,RunType.RUN_SERIAL,StateType.STATE_BLOCK,
+      ChaincodeDeploy.ContractClassification.CONTRACT_SYSTEM,0)
     translist += deploy_trans
 
     //注册合约的管理者，默认注册某个节点的DiD，并授予角色管理权限
@@ -160,7 +160,7 @@ object CreateGenesisInfo {
     var als: List[String] = List(JsonFormat.toJsonString(at))
     translist += ctx.getTransactionBuilder.createTransaction4Invoke(superAdmin, cid1, "grantOperate", Seq(SerializeUtils.compactJson(als)))
 
-       //部署应用合约--分账合约
+    //部署应用合约--分账合约
     val s2 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/ContractAssetsTPL.scala", "UTF-8")
     val c2 = try s2.mkString finally s2.close()
     val cid2 = new ChaincodeId("ContractAssetsTPL", 1)
@@ -248,6 +248,30 @@ object CreateGenesisInfo {
       _root_.scala.None, true, "1.0")
     translist += ctx.getTransactionBuilder.createTransaction4Invoke(sysName, cid1, "signUpOperate", Seq(JsonFormat.toJsonString(op15)))
 
+    //部署应用合约--接口协同
+    val s6 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/cooper/InterfaceCooperation.scala", "UTF-8")
+    val c6 = try s6.mkString finally s6.close()
+    val cid6 = new ChaincodeId("InterfaceCooperation", 1)
+    val dep_coop_trans = ctx.getTransactionBuilder.createTransaction4Deploy(sysName, cid6, c6, "", 5000,
+      CodeType.CODE_SCALA,RunType.RUN_SERIAL,StateType.STATE_BLOCK,
+      ChaincodeDeploy.ContractClassification.CONTRACT_SYSTEM,0)
+    translist += dep_coop_trans
+
+    //建立应用合约的操作
+    val opsOfCoopContract: Array[(String, String, String)] = new Array[(String, String, String)](4)
+    opsOfCoopContract(0) = (ctx.getHashTool.hashstr("InterfaceCooperation.registerApiDefinition"), "注册接口定义", "InterfaceCooperation.registerApiDefinition")
+    opsOfCoopContract(1) = (ctx.getHashTool.hashstr("InterfaceCooperation.registerApiService"), "注册接口服务", "InterfaceCooperation.registerApiService")
+    opsOfCoopContract(2) = (ctx.getHashTool.hashstr("InterfaceCooperation.registerApiAckReceive"), "注册接口应答", "InterfaceCooperation.registerApiAckReceive")
+    opsOfCoopContract(3) = (ctx.getHashTool.hashstr("InterfaceCooperation.reqAckProof"), "请求应答存证", "InterfaceCooperation.reqAckProof")
+
+    val coop_millis = System.currentTimeMillis()
+    val coop_snls = List("transaction.stream", "transaction.postTranByString", "transaction.postTranStream", "transaction.postTran")
+    for (i <- 0 to 3) {
+      val coop_op = Operate(opsOfCoopContract(i)._1, opsOfCoopContract(i)._2, sys_credit, true, OperateType.OPERATE_CONTRACT,
+        coop_snls, "*", opsOfCoopContract(i)._3, Option(Timestamp(coop_millis / 1000, ((coop_millis % 1000) * 1000000).toInt)),
+        _root_.scala.None, true, "1.0")
+      translist += ctx.getTransactionBuilder.createTransaction4Invoke(sysName, cid1, "signUpOperate", Seq(JsonFormat.toJsonString(coop_op)))
+    }
 
     //create gensis block
     val millis = ConfigFactory.load().getLong("akka.genesisblock.creationBlockTime")
