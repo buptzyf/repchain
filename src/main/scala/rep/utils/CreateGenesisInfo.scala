@@ -193,7 +193,29 @@ object CreateGenesisInfo {
     val ct1 = try s3.mkString finally s3.close()
     translist += PeerHelper.createTransaction4Invoke("951002007l78123233.super_admin", cid2, "set", Seq(ct1))
 
+    //部署应用合约--接口协同
+    val s4 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/cooper/InterfaceCooperation.scala", "UTF-8")
+    val c4 = try s4.mkString finally s4.close()
+    val cid4 = new ChaincodeId("InterfaceCooperation", 1)
+    val dep_coop_trans = PeerHelper.createTransaction4Deploy(superAdmin, cid4, c4, "", 5000, rep.protos.peer.ChaincodeDeploy.CodeType.CODE_SCALA,
+      rep.protos.peer.ChaincodeDeploy.ContractClassification.CONTRACT_CUSTOM)
+    translist += dep_coop_trans
 
+    //建立应用合约的操作
+    val opsOfCoopContract: Array[(String, String, String)] = new Array[(String, String, String)](4)
+    opsOfCoopContract(0) = (Sha256.hashstr("InterfaceCooperation.registerApiDefinition"), "注册接口定义", "InterfaceCooperation.registerApiDefinition")
+    opsOfCoopContract(1) = (Sha256.hashstr("InterfaceCooperation.registerApiService"), "注册接口服务", "InterfaceCooperation.registerApiService")
+    opsOfCoopContract(2) = (Sha256.hashstr("InterfaceCooperation.registerApiAckReceive"), "注册接口应答", "InterfaceCooperation.registerApiAckReceive")
+    opsOfCoopContract(3) = (Sha256.hashstr("InterfaceCooperation.reqAckProof"), "请求应答存证", "InterfaceCooperation.reqAckProof")
+
+    val coop_millis = System.currentTimeMillis()
+    val coop_snls = List("transaction.stream", "transaction.postTranByString", "transaction.postTranStream", "transaction.postTran")
+    for (i <- 0 to 3) {
+      val coop_op = rep.protos.peer.Operate(opsOfCoopContract(i)._1, opsOfCoopContract(i)._2, super_credit, true, OperateType.OPERATE_CONTRACT,
+        coop_snls, "*", opsOfCoopContract(i)._3, Option(Timestamp(coop_millis / 1000, ((coop_millis % 1000) * 1000000).toInt)),
+        _root_.scala.None, true, "1.0")
+      translist += PeerHelper.createTransaction4Invoke(superAdmin, cid1, "signUpOperate", Seq(JsonFormat.toJsonString(coop_op)))
+    }
 
     //create gensis block
     val millis = ConfigFactory.load().getLong("akka.genesisblock.creationBlockTime")
