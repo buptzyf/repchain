@@ -71,6 +71,9 @@ class RdidOperateAuthorizeTPL extends IContract {
       case ACTION.Signer.signUpSigner =>
         SignerOperation.signUpSigner(ctx, parser.fromJsonString(sdata)(Signer))
 
+      case ACTION.Signer.updateSigner =>
+        SignerOperation.updateSigner(ctx, parser.fromJsonString(sdata)(Signer))
+
       case ACTION.Signer.updateSignerStatus =>
         SignerOperation.updateSignerStatus(ctx, param.extract[SignerStatus])
 

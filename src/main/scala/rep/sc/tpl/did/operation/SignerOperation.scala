@@ -23,7 +23,7 @@ object SignerOperation extends DidOperation {
   val customCertExists = ActionResult(12008, "存在普通用户证书或undefinedType证书")
   val SignerCertificateNotMatch = ActionResult(12009, "Signer的creditCode与Certificate中的creditCode不一致")
   val hashNotMatch = ActionResult(12010, "Certificate中hash字段与certificate字段计算得到的Hash不相等")
-  val notAdmin = ActionResult(12011, "非super_admin不能修改super_admin的signer的状态")
+  val notAdmin = ActionResult(12011, "非super_admin不能修改super_admin的signer的信息或状态")
 
   case class SignerStatus(creditCode: String, state: Boolean)
 
@@ -88,13 +88,26 @@ object SignerOperation extends DidOperation {
 
   /**
     * 更新Signer
+    * 不公开，权限比较高，一般不授予出去
     *
     * @param ctx
     * @param signer
     * @return
     */
   def updateSigner(ctx: ContractContext, signer: Signer): ActionResult = {
-    // TODO
+    // 非管理员不能修改管理员的账户，即普通用户不能修改super_admin
+    if (ctx.api.isAdminCert(signer.creditCode) && ctx.t.getSignature.getCertId.creditCode != signer.creditCode) {
+      throw ContractException(toJsonErrMsg(notAdmin))
+    }
+    val oldSigner = ctx.api.getVal(signerPrefix + signer.creditCode)
+    // 判断是否有值
+    if (oldSigner != null) {
+      val signer_tmp = oldSigner.asInstanceOf[Signer]
+      val newSigner = signer_tmp.withMobile(signer.mobile).withSignerInfo(signer.signerInfo)
+      ctx.api.setVal(signerPrefix + signer.creditCode, newSigner)
+    } else {
+      throw ContractException(toJsonErrMsg(signerNotExists))
+    }
     null
   }
 
