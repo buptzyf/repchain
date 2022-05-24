@@ -104,6 +104,10 @@ libraryDependencies += "com.thesamet.scalapb" %% "scalapb-runtime" % scalapb.com
 //scapegoatDisabledInspections := Seq("OptionGet", "AsInstanceOf","MethodReturningAny")
 libraryDependencies += "com.googlecode.concurrentlinkedhashmap" % "concurrentlinkedhashmap-lru" % "1.4.2"
 
+excludeDependencies ++= Seq(
+  ExclusionRule("org.slf4j", "slf4j-log4j12")
+)
+
 assemblyMergeStrategy in assembly := {
   case PathList("org", "iq80", "leveldb", xs @ _*) => MergeStrategy.first
   case PathList("javax", "ws", "rs", xs @ _*) => MergeStrategy.first
