@@ -3,19 +3,14 @@ package rep.crypto
 import java.io.{FileNotFoundException, IOException}
 import java.nio.file.{Files, Paths}
 import java.security.{GeneralSecurityException, KeyStore, Provider, SecureRandom, Security}
-
-import akka.actor.{ActorSystem, Props}
+import akka.actor.{ActorSystem}
 import akka.event.{Logging, MarkerLoggingAdapter}
 import akka.japi.Util.immutableSeq
 import akka.remote.artery.tcp.{SSLEngineProvider, SslTransportException}
 import akka.stream.TLSRole
 import com.typesafe.config.Config
 import javax.net.ssl.{KeyManager, KeyManagerFactory, SSLContext, SSLEngine, SSLSession, TrustManager}
-import rep.app.system.RepChainSystemContext
-import rep.network.module.ModuleActorType
 import rep.network.tools.PeerExtension
-import rep.ui.web.EventServer
-
 import scala.util.Try
 import scala.util.control.Breaks.{break, breakable}
 
@@ -147,7 +142,7 @@ class BCGMSSLEngineProvider (protected val config: Config, protected val log: Ma
   }
 
   def createSecureRandom(): SecureRandom = {
-    SecureRandomFactoryInGM.createSecureRandom(SSLRandomNumberGenerator, log)
+    SecureRandomFactoryInBCGM.createSecureRandom(SSLRandomNumberGenerator, log)
   }
 
   override def createServerSSLEngine(hostname: String, port: Int): SSLEngine =
@@ -191,7 +186,7 @@ class BCGMSSLEngineProvider (protected val config: Config, protected val log: Ma
 
 }
 
-private object SecureRandomFactoryInGM {
+private object SecureRandomFactoryInBCGM {
   def createSecureRandom(randomNumberGenerator: String, log: MarkerLoggingAdapter): SecureRandom = {
     val rng = randomNumberGenerator match {
       case s @ ("SHA1PRNG" | "NativePRNG") =>
