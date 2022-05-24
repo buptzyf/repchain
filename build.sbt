@@ -117,6 +117,7 @@ assemblyMergeStrategy in assembly := {
   case PathList(ps @ _*) if ps.last endsWith "StaticLoggerBinder.class" => MergeStrategy.first
   case PathList(ps @ _*) if ps.last endsWith "StaticMDCBinder.class" => MergeStrategy.first
   case PathList(ps @ _*) if ps.last endsWith "StaticMarkerBinder.class" => MergeStrategy.first
+  case PathList(ps @ _*) if ps.last endsWith "module-info.class" => MergeStrategy.discard
 
   case x =>
     val oldStrategy = (assemblyMergeStrategy in assembly).value
