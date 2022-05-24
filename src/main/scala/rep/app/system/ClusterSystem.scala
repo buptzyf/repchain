@@ -16,16 +16,18 @@
 
 package rep.app.system
 
-import akka.actor.{ActorRef, ActorSystem, Address}
+import akka.actor.{ActorRef, ActorSystem, Address, ExtensionIdProvider}
 import akka.cluster.Cluster
-import com.typesafe.config.{Config}
+import com.typesafe.config.Config
 import rep.network.module.cfrd.ModuleManagerOfCFRD
 import com.typesafe.config.ConfigValueFactory
 import java.util.List
 import java.util.ArrayList
+
 import akka.util.Timeout
 import org.slf4j.LoggerFactory
 import rep.log.RepLogger
+
 import scala.concurrent.Await
 import scala.concurrent.duration._
 import rep.log.httplog.AlertInfo
@@ -67,7 +69,7 @@ class ClusterSystem(sysTag: String, isStartupClusterSystem: Boolean) {
   //private var statistics: ActorRef = null
 
   val SYSTEM_NAME = "Repchain"
-  private val ctx : RepChainSystemContext = new RepChainSystemContext(sysTag)
+  private var ctx : RepChainSystemContext = new RepChainSystemContext(sysTag)
   private var moduleManager: ActorRef = null
   private var sysConf: Config = ctx.getConfig.getSystemConf
   private var sysActor: ActorSystem = null

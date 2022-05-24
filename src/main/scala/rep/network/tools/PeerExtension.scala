@@ -24,6 +24,7 @@ import rep.network.persistence.BlockCache
 import rep.network.tools.transpool.PoolOfTransaction
 import java.util.concurrent.ConcurrentHashMap
 
+import javax.net.ssl.SSLContext
 import rep.app.system.RepChainSystemContext
 import rep.network.consensus.cfrd.endorse.RecvEndorsInfo
 
@@ -224,6 +225,15 @@ private var timeoutOfRaft:AtomicLong = new AtomicLong(0)
 
   def removeBlock(identifierOfBlock: String): Unit ={
     this.preloadBlockOfWaiting.remove(identifierOfBlock)
+  }
+
+  private var sslContext : SSLContext = null
+  def getSSLContext:SSLContext={
+    sslContext
+  }
+
+  def setSSLContext(value: SSLContext)={
+    sslContext = value
   }
 }
 

@@ -2,6 +2,7 @@ package rep.app.system
 
 import java.util.concurrent.ConcurrentHashMap
 
+import javax.net.ssl.SSLContext
 import rep.app.conf.{RepChainConfig, SystemCertList}
 import rep.authority.cache.PermissionCacheManager
 import rep.authority.check.PermissionVerify

@@ -97,6 +97,20 @@ class RepChainConfig {
    * @author jiangbuyun
    * @version	2.0
    * @since	2022-04-08
+   * @category	是否开启https
+   * @return	开启返回true，否则false
+   */
+  def isUseHttps:Boolean={
+    this.sysConf.getInt("system.http_mode") match {
+      case 0 => false
+      case 1 => true
+    }
+  }
+
+  /**
+   * @author jiangbuyun
+   * @version	2.0
+   * @since	2022-04-08
    * @category	是否开启出块相关的时间统计
    * @return	开启返回true，否则false
    */

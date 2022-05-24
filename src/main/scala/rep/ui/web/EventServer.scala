@@ -35,20 +35,16 @@ import ch.megard.akka.http.cors.scaladsl.CorsDirectives._
 import akka.util.ByteString
 import rep.api.SwaggerDocService
 import rep.api.rest._
-import rep.utils.GlobalUtils
 import rep.sc.Sandbox.SandboxException
 import rep.log.RepLogger
-import rep.app.conf.RepChainConfig
 import rep.log.RecvEventActor
 import rep.log.EventActor4Stage
 import akka.stream.Graph
 import akka.stream.SourceShape
 import akka.NotUsed
-import akka.event.Logging
-import akka.remote.artery.tcp.ConfigSSLEngineProvider
-import rep.crypto.GMSSLEngineProvider
 import rep.network.tools.PeerExtension
 import akka.http.scaladsl.{ConnectionContext, Http, HttpsConnectionContext}
+import rep.app.system.RepChainSystemContext
 import rep.proto.rc2.Event
 
 /** Event服务伴生对象
@@ -72,9 +68,9 @@ object EventServer {
  * 传入publish Actor
  * 必须确保ActorSystem 与其他actor处于同一system，context.actorSelection方可正常工作
  *  @param sys ActorSystem
- *  @param port 指定侦听的端口
+ *  @param repContext RepChainSystemContext
  */
-  def start(sys:ActorSystem ,port:Int,actorNumber:Int) {
+  def start(sys:ActorSystem ,repContext: RepChainSystemContext) {
     implicit val system =sys
     implicit val materializer = ActorMaterializer()
     //implicit val executionContext = system.dispatcher
@@ -82,8 +78,9 @@ object EventServer {
     implicit val executionContext = system.dispatchers.lookup("http-dispatcher")
     
     val evtactor = system.actorOf(Props[RecvEventActor].withDispatcher("http-dispatcher"),"RecvEventActor")
-    
 
+    val port = repContext.getConfig.getHttpServicePort
+    val actorNumber = repContext.getConfig.getHttpServiceActorNumber
     
     //提供静态文件的web访问服务
     val route_evt =
@@ -119,30 +116,64 @@ object EventServer {
     //val httpServer = Http()
     System.out.println("^^^^^^^^^^^^^^^^")
 
-    /*
-    val https: HttpsConnectionContext = ConnectionContext.httpsServer(() => {
-      val engine = CryptoMgr.getSslContext.createSSLEngine()
-      engine.setUseClientMode(false)
-      //engine.setNeedClientAuth(true)
+    if(repContext.getConfig.isUseHttps) {
+      var https : HttpsConnectionContext = null
+      if (repContext.getConfig.isUseGM) {
+        https = ConnectionContext.httpsServer(() => {
+          //val engine = repContext.getSSLContext.getSSLcontext.createSSLEngine()
+          val engine = repContext.getSSLContext.createSSLEngine()
+          engine.setUseClientMode(false)
+          engine.setEnabledCipherSuites(Array("GMSSL_ECC_SM4_SM3"))
+          engine.setEnabledProtocols(Array("GMSSLv1.1"))
 
-      engine.setEnabledCipherSuites(engine.getSupportedCipherSuites)
-      //engine.setEnabledCipherSuites(Array("ECDHE_SM4_GCM_SM3"))
-      engine.setEnabledProtocols(Array("GMSSLv1.1"))
+          engine
+        })
+        Http().newServerAt("0.0.0.0", port)
+          .enableHttps(https)
+          .bindFlow(route_evt
+            ~ cors() (
+            new BlockService(ra).route ~
+              new ChainService(ra).route ~
+              new TransactionService(ra).route ~
+              new DbService(ra).route ~
+              SwaggerDocService.routes))
+        System.out.println(s"^^^^^^^^https GM Service:${repContext.getSystemName}^^^^^^^^")
+      } else {
+        /*https = ConnectionContext.httpsServer(() => {
+          val engine = repContext.getSSLContext.getSSLcontext.createSSLEngine()
+          engine.setUseClientMode(false)
+          engine.setEnabledCipherSuites(Array("TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256"))
+          engine.setEnabledProtocols(Array("TLSv1.2"))
 
-      engine
-    })
-    */
+          engine
+        })*/
 
-    Http().newServerAt("0.0.0.0", port)
-     // .enableHttps(https)
-      .bindFlow(route_evt
-      ~ cors() (
-      new BlockService(ra).route ~
-        new ChainService(ra).route ~
-        new TransactionService(ra).route ~
-        new DbService(ra).route ~
-        SwaggerDocService.routes))
-    System.out.println("^^^^^^^^^^^^^^^^")
+        Http().newServerAt("0.0.0.0", port)
+          //.enableHttps(https)
+          .bindFlow(route_evt
+            ~ cors() (
+            new BlockService(ra).route ~
+              new ChainService(ra).route ~
+              new TransactionService(ra).route ~
+              new DbService(ra).route ~
+              SwaggerDocService.routes))
+        System.out.println(s"^^^^^^^^https TLS Service:${repContext.getSystemName}^^^^^^^^")
+      }
+
+    }else{
+      Http().newServerAt("0.0.0.0", port)
+        // .enableHttps(https)
+        .bindFlow(route_evt
+          ~ cors() (
+          new BlockService(ra).route ~
+            new ChainService(ra).route ~
+            new TransactionService(ra).route ~
+            new DbService(ra).route ~
+            SwaggerDocService.routes))
+      System.out.println(s"^^^^^^^^http Service:${repContext.getSystemName}^^^^^^^^")
+    }
+
+
     RepLogger.info(RepLogger.System_Logger, s"Event Server online at http://localhost:$port")
   }
 }
@@ -154,8 +185,10 @@ class EventServer extends Actor{
   override def preStart(): Unit = {
     context.system.settings.config
     val pe = PeerExtension(context.system)
-    EventServer.start(context.system, pe.getRepChainContext.getConfig.getHttpServicePort,
-      pe.getRepChainContext.getConfig.getHttpServiceActorNumber)
+    if(pe.getSSLContext == null){
+      Thread.sleep(2000)
+    }
+    EventServer.start(context.system, pe.getRepChainContext)
 }
 
 def receive = {
