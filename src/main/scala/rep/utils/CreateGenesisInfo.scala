@@ -251,7 +251,7 @@ object CreateGenesisInfo {
     val s6 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/cooper/InterfaceCooperation.scala", "UTF-8")
     val c6 = try s6.mkString finally s6.close()
     val cid6 = new ChaincodeId("InterfaceCooperation", 1)
-    val dep_coop_trans = ctx.getTransactionBuilder.createTransaction4Deploy(sysName, cid6, c6, "", 5000,
+    val dep_coop_trans = ctx.getTransactionBuilder.createTransaction4Deploy(superAdmin, cid6, c6, "", 5000,
       CodeType.CODE_SCALA,RunType.RUN_SERIAL,StateType.STATE_BLOCK,
       ChaincodeDeploy.ContractClassification.CONTRACT_SYSTEM,0)
     translist += dep_coop_trans
@@ -266,10 +266,10 @@ object CreateGenesisInfo {
     val coop_millis = System.currentTimeMillis()
     val coop_snls = List("transaction.stream", "transaction.postTranByString", "transaction.postTranStream", "transaction.postTran")
     for (i <- 0 to 3) {
-      val coop_op = Operate(opsOfCoopContract(i)._1, opsOfCoopContract(i)._2, sys_credit, true, OperateType.OPERATE_CONTRACT,
+      val coop_op = Operate(opsOfCoopContract(i)._1, opsOfCoopContract(i)._2, super_credit, false, OperateType.OPERATE_CONTRACT,
         coop_snls, "*", opsOfCoopContract(i)._3, Option(Timestamp(coop_millis / 1000, ((coop_millis % 1000) * 1000000).toInt)),
         _root_.scala.None, true, "1.0")
-      translist += ctx.getTransactionBuilder.createTransaction4Invoke(sysName, cid1, "signUpOperate", Seq(JsonFormat.toJsonString(coop_op)))
+      translist += ctx.getTransactionBuilder.createTransaction4Invoke(superAdmin, cid1, "signUpOperate", Seq(JsonFormat.toJsonString(coop_op)))
     }
 
     //create gensis block
