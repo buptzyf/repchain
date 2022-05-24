@@ -115,13 +115,17 @@ object EventServer {
     //允许跨域访问,以支持在应用中发起请求
     //val httpServer = Http()
     System.out.println("^^^^^^^^^^^^^^^^")
+    val pe = PeerExtension(sys)
+    if(pe.getSSLContext == null){
+      Thread.sleep(2000)
+    }
 
     if(repContext.getConfig.isUseHttps) {
       var https : HttpsConnectionContext = null
       if (repContext.getConfig.isUseGM) {
         https = ConnectionContext.httpsServer(() => {
           //val engine = repContext.getSSLContext.getSSLcontext.createSSLEngine()
-          val engine = repContext.getSSLContext.createSSLEngine()
+          val engine = pe.getSSLContext.createSSLEngine()
           engine.setUseClientMode(false)
           engine.setEnabledCipherSuites(Array("GMSSL_ECC_SM4_SM3"))
           engine.setEnabledProtocols(Array("GMSSLv1.1"))
