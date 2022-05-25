@@ -58,7 +58,7 @@ class IModuleManager(moduleName: String, isStartup: Boolean) extends ModuleBase(
   def loadSecurityInfo(conf:Config):Unit={
     val cryptoMgr = pe.getRepChainContext.getCryptoMgr
     val mykeyPath = cryptoMgr.getKeyFileSuffix.substring(1)+ java.io.File.separatorChar + pe.getSysTag + cryptoMgr.getKeyFileSuffix
-    val psw = "123" //conf.getString("akka.remote.artery.ssl.config-ssl-engine.key-store-password")
+    val psw = conf.getString("akka.remote.artery.ssl.config-ssl-engine.key-store-password")
     //val trustPath = conf.getString("akka.remote.artery.ssl.config-ssl-engine.trust-store-mm")
     val trustPath = cryptoMgr.getKeyFileSuffix.substring(1)+ java.io.File.separatorChar+pe.getRepChainContext.getConfig.getGMTrustStoreName + cryptoMgr.getKeyFileSuffix
     val trustPwd = conf.getString("akka.remote.artery.ssl.config-ssl-engine.trust-store-password-mm")
@@ -68,7 +68,7 @@ class IModuleManager(moduleName: String, isStartup: Boolean) extends ModuleBase(
 
   //初始化系统actor，完成公共actor的装载，包括证书、配置信息的装载，也包括存储的检查
   private def init: Unit = {
-    val conf = context.system.settings.config
+    val conf = this.pe.getRepChainContext.getConfig.getSystemConf//context.system.settings.config
     pe.register(ModuleActorType.ActorType.modulemanager,self)
     loadSecurityInfo(conf)
     TimePolicy.initTimePolicy(conf)

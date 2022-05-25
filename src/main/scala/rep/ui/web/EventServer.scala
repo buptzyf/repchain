@@ -16,6 +16,9 @@
 
 package rep.ui.web
 
+import java.nio.file.{Files, Paths}
+import java.security.{KeyStore, SecureRandom}
+
 import akka.actor.ActorSystem
 import akka.http.scaladsl.{ConnectionContext, Http}
 import akka.http.scaladsl.server.Directives._
@@ -44,8 +47,12 @@ import akka.stream.SourceShape
 import akka.NotUsed
 import rep.network.tools.PeerExtension
 import akka.http.scaladsl.{ConnectionContext, Http, HttpsConnectionContext}
+import akka.japi.Util.immutableSeq
+import javax.net.ssl.{KeyManager, KeyManagerFactory, SSLContext, TrustManager, TrustManagerFactory}
 import rep.app.system.RepChainSystemContext
 import rep.proto.rc2.Event
+
+import scala.util.Try
 
 /** Event服务伴生对象
  *  @author c4w
@@ -62,7 +69,65 @@ object EventServer {
             s"""{"err": "${e.getMessage}"}"""))
         )
       }
-}  
+  }
+
+  def createJsseContext(repContext: RepChainSystemContext):SSLContext={
+    val config = repContext.getConfig.getSystemConf
+    val prefix = "akka.remote.artery.ssl.config-ssl-engine."
+    val SSLKeyStore: String = config.getString(prefix+"key-store")
+    val SSLTrustStore: String = config.getString(prefix+"trust-store")
+    val SSLKeyStorePassword: String = config.getString(prefix+"key-store-password")
+    val SSLKeyPassword: String = config.getString(prefix+"key-password")
+    val SSLTrustStorePassword: String = config.getString(prefix+"trust-store-password")
+    //val SSLEnabledAlgorithms: Set[String] = immutableSeq(config.getStringList(prefix+"enabled-algorithms")).toSet
+    val SSLProtocol: String = config.getString(prefix+"protocol")
+    val SSLRandomNumberGenerator: String = config.getString(prefix+"random-number-generator")
+    //val SSLRequireMutualAuthentication: Boolean = config.getBoolean(prefix+"require-mutual-authentication")
+    //val HostnameVerification: Boolean = config.getBoolean(prefix+"hostname-verification")
+
+    try {
+      val rng = createSecureRandom(SSLRandomNumberGenerator)
+      val ctx = SSLContext.getInstance(SSLProtocol)
+      ctx.init(keyManagers(SSLKeyStore, SSLKeyStorePassword,SSLKeyPassword),
+        trustManagers(SSLTrustStore, SSLTrustStorePassword), rng)
+      ctx
+    } catch {
+      case e: Exception => null
+    }
+  }
+
+  private def trustManagers(SSLTrustStore:String, SSLTrustStorePassword:String): Array[TrustManager] = {
+    val trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm)
+    trustManagerFactory.init(loadKeystore(SSLTrustStore, SSLTrustStorePassword))
+    trustManagerFactory.getTrustManagers
+  }
+
+  private def keyManagers(SSLKeyStore: String, SSLKeyStorePassword: String,SSLKeyPassword:String): Array[KeyManager] = {
+    val factory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm)
+    factory.init(loadKeystore(SSLKeyStore, SSLKeyStorePassword), SSLKeyPassword.toCharArray)
+    factory.getKeyManagers
+  }
+
+  private def loadKeystore(filename: String, password: String): KeyStore = {
+    val keyStore = KeyStore.getInstance(KeyStore.getDefaultType)
+    val fin = Files.newInputStream(Paths.get(filename))
+    try keyStore.load(fin, password.toCharArray)
+    finally Try(fin.close())
+    keyStore
+  }
+
+  private def createSecureRandom(randomNumberGenerator: String): SecureRandom = {
+    val rng = randomNumberGenerator match {
+      case s @ ("SHA1PRNG" | "NativePRNG") =>
+        SecureRandom.getInstance(s)
+      case "" | "SecureRandom" =>
+        new SecureRandom
+      case unknown =>
+        new SecureRandom
+    }
+    rng.nextInt()
+    rng
+  }
 
 /** 启动Event服务
  * 传入publish Actor
@@ -116,7 +181,7 @@ object EventServer {
     //val httpServer = Http()
     System.out.println("^^^^^^^^^^^^^^^^")
     val pe = PeerExtension(sys)
-    if(pe.getSSLContext == null){
+    if(pe.getSSLContext == null && pe.getRepChainContext.getConfig.isUseGM){
       Thread.sleep(2000)
     }
 
@@ -143,17 +208,21 @@ object EventServer {
               SwaggerDocService.routes))
         System.out.println(s"^^^^^^^^https GM Service:${repContext.getSystemName}^^^^^^^^")
       } else {
-        /*https = ConnectionContext.httpsServer(() => {
-          val engine = repContext.getSSLContext.getSSLcontext.createSSLEngine()
+        https = ConnectionContext.httpsServer(() => {
+          val sslCtx = EventServer.createJsseContext(repContext)
+          val engine = sslCtx.createSSLEngine()
           engine.setUseClientMode(false)
-          engine.setEnabledCipherSuites(Array("TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256"))
-          engine.setEnabledProtocols(Array("TLSv1.2"))
+          //engine.setEnabledCipherSuites(immutableSeq(repContext.getConfig.getSystemConf.getStringList("TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256")).toSet.toArray)
+          engine.setEnabledProtocols(Array(
+            repContext.getConfig.getSystemConf.getString("akka.remote.artery.ssl.config-ssl-engine.protocol")))
+          engine.setNeedClientAuth(false)
+          engine.setWantClientAuth(false)
+
 
           engine
-        })*/
-
+        })
         Http().newServerAt("0.0.0.0", port)
-          //.enableHttps(https)
+          .enableHttps(https)
           .bindFlow(route_evt
             ~ cors() (
             new BlockService(ra).route ~
@@ -189,7 +258,7 @@ class EventServer extends Actor{
   override def preStart(): Unit = {
     context.system.settings.config
     val pe = PeerExtension(context.system)
-    if(pe.getSSLContext == null){
+    if(pe.getSSLContext == null && pe.getRepChainContext.getConfig.isUseGM){
       Thread.sleep(2000)
     }
     EventServer.start(context.system, pe.getRepChainContext)
