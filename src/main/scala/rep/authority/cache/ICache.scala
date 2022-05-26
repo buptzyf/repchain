@@ -18,7 +18,7 @@ abstract class ICache(ctx: RepChainSystemContext) {
   final protected val splitSign = "_"
   final private val config = ctx.getConfig
   final private val cid = ChaincodeId(config.getAccountContractName, config.getAccountContractVersion)
-  final val common_prefix: String = KeyPrefixManager.getWorldStateKeyPrefix(
+  final val common_prefix: String = KeyPrefixManager.getIdentityNetKeyPrefix(
     config, cid.chaincodeName)
   final private val db = DBFactory.getDBAccess(config)
   final protected val cacheMaxSize = config.getAccountCacheSize

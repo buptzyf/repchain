@@ -124,7 +124,7 @@ object BlockHelp {
     }
 
     try{
-      val blkJson = scala.io.Source.fromFile("json/"+genesisFileName,"UTF-8")
+      val blkJson = scala.io.Source.fromFile(s"json/${chainConfig.getChainNetworkId}/"+genesisFileName,"UTF-8")
       val blkStr = try blkJson.mkString finally blkJson.close()
       gen_blk = JsonFormat.fromJsonString[Block](blkStr)
     }catch {

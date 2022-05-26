@@ -39,6 +39,9 @@ object KeyPrefixManager {
     config.getChainNetworkId
   }
 
+  private def getIdentityNetId(config: RepChainConfig):String={
+    config.getIdentityNetName
+  }
   /**
    * @author jiangbuyun
    * @version	2.0
@@ -119,6 +122,13 @@ object KeyPrefixManager {
       getChainId(config)+"_"+chainCodeName+"_"+"_"
     else
       getChainId(config)+"_"+chainCodeName+"_"+oid
+  }
+
+  def getIdentityNetKeyPrefix(config:RepChainConfig,chainCodeName:String,oid:String="_"):String={
+    if(oid==null ||  oid.equalsIgnoreCase(""))
+      getIdentityNetId(config)+"_"+chainCodeName+"_"+"_"
+    else
+      getIdentityNetId(config)+"_"+chainCodeName+"_"+oid
   }
 
   /*def getContractStateKey(systemName:String,key:String):String={

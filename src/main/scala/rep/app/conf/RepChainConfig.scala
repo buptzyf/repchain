@@ -218,6 +218,10 @@ class RepChainConfig {
     this.sysConf.getString("system.chain_network_id")
   }
 
+  def getIdentityNetName:String={
+    this.sysConf.getString("system.basic_chain_id")
+  }
+
   def getTransactionNumberOfProcessor:Int={
     this.sysConf.getInt("system.number_of_transProcessor")
   }

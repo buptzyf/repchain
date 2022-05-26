@@ -14,6 +14,7 @@ import rep.proto.rc2.ChaincodeDeploy.{CodeType, RunType, StateType}
 import rep.proto.rc2.Operate.OperateType
 import rep.proto.rc2.{Block, ChaincodeDeploy, ChaincodeId, Operate, Transaction}
 import rep.sc.tpl.did.RVerifiableCredentialTPL
+import rep.storage.util.pathUtil
 import scalapb.json4s.JsonFormat
 
 import scala.collection.mutable.ArrayBuffer
@@ -292,8 +293,8 @@ object CreateGenesisInfoInGM {
     val r = JsonFormat.toJson(blk)
     val rstr = pretty(render(r))
     println(rstr)
-
-    val pw = new PrintWriter("json/genesis_gm.json", "UTF-8")
+    pathUtil.MkdirAll(s"json/${ctx.getConfig.getChainNetworkId}")
+    val pw = new PrintWriter("json/${ctx.getConfig.getChainNetworkId}/genesis_gm.json", "UTF-8")
     pw.write(rstr)
     pw.flush()
     pw.close()
