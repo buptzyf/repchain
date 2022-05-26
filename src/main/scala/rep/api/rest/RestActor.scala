@@ -17,13 +17,11 @@
 package rep.api.rest
 
 import akka.util.Timeout
-
 import scala.concurrent.duration._
 import akka.pattern.{AskTimeoutException, ask}
-
 import scala.concurrent._
 import rep.crypto._
-import rep.app.TestMain
+import rep.app.{RepChainMgr}
 import org.json4s._
 import org.json4s.jackson.JsonMethods
 import rep.network.module.ModuleActorType
@@ -40,7 +38,6 @@ import rep.sc.Sandbox.DoTransactionResult
 import rep.storage.chain.block.BlockSearcher
 import rep.storage.db.factory.DBFactory
 import rep.utils.GlobalUtils.EventType
-
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 import rep.utils.{MessageToJson, SerializeUtils}
@@ -60,8 +57,8 @@ object RestActor {
   case object TransNumber
   case object AcceptedTransNumber
 
-  case class SystemStart(cout: Int)
-  case class SystemStop(from: Int, to: Int)
+  case class SystemStart(nodeName: String)
+  case class SystemStop(nodeName:String)
 
   case class BlockId(bid: String)
   case class BlockHeight(h: Int)
@@ -249,8 +246,9 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
     case t: Transaction =>
       preTransaction(t)
 
-    case SystemStart(cout) =>
-      val rs = TestMain.startSystem(cout)
+    case SystemStart(nodeName) =>
+      RepChainMgr.Startup4Single(nodeName)
+      val rs = if(RepChainMgr.isStartupFinish(nodeName)) "{\"status\":\"success\"}" else "{\"status\":\"failed\"}"
       val r = rs match {
         case null => QueryResult(None)
         case _ =>
@@ -258,8 +256,9 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
       }
       sender ! r
 
-    case SystemStop(from, to) =>
-      val rs = TestMain.stopSystem(from, to)
+    case SystemStop(nodeName) =>
+      val resulst = RepChainMgr.shutdown(nodeName)
+      val rs = if(resulst) "{\"status\":\"success\"}" else "{\"status\":\"failed\"}"
       val r = rs match {
         case null => QueryResult(None)
         case _ =>

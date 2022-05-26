@@ -80,7 +80,7 @@ class ChainService(ra: RestRouter)(implicit executionContext: ExecutionContext)
 
 
 
-  val route = getBlockChainInfo ~ getNodeNumber ~ getCacheTransNumber ~ getAcceptedTransNumber ~ loadBlockInfoToCache ~ IsLoadBlockInfoToCache
+  val route = getBlockChainInfo ~ getNodeNumber ~ SystemStartup ~ SystemShutdown ~ getCacheTransNumber ~ getAcceptedTransNumber ~ loadBlockInfoToCache ~ IsLoadBlockInfoToCache
 
   @GET
   @Operation(tags = Array("chaininfo"), summary = "返回块链信息", description = "getChainInfo", method = "GET")
@@ -110,6 +110,48 @@ class ChainService(ra: RestRouter)(implicit executionContext: ExecutionContext)
         }
       }
     }
+
+  @GET
+  @Path("/SystemStartup/{nodeName}")
+  @Operation(tags = Array("chaininfo"), summary  = "启动指定名称的节点", description = "SystemStartup", method = "GET")
+  @Parameters(Array(
+    new Parameter(name = "nodeName", description = "节点名称", required = true, schema = new Schema(implementation = classOf[String]), in = ParameterIn.PATH, example = "nodeName")))
+  @ApiResponses(Array(
+    new ApiResponse(responseCode = "200", description = "返回节点启动的结果", content =  Array(new Content(mediaType = "application/json",schema = new Schema(implementation = classOf[QueryResult])))))
+  )
+  def SystemStartup =
+    path("chaininfo" / "SystemStartup" / Segment) { nodeName =>
+      get {
+        extractClientIP { ip =>
+          RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} System startup,nodeName=${nodeName}")
+          complete { (ra.getRestActor ? SystemStart(nodeName)).mapTo[QueryResult] }
+        }
+
+        //complete { (ra ? BlockHeight(blockHeight.toInt)).mapTo[QueryResult] }
+      }
+    }
+
+
+  @GET
+  @Path("/SystemStop/{nodeName}")
+  @Operation(tags = Array("chaininfo"), summary  = "停止指定名称的节点", description = "SystemStop", method = "GET")
+  @Parameters(Array(
+    new Parameter(name = "nodeName", description = "节点名称", required = true, schema = new Schema(implementation = classOf[String]), in = ParameterIn.PATH, example = "nodeName")))
+  @ApiResponses(Array(
+    new ApiResponse(responseCode = "200", description = "返回节点停止的结果", content =  Array(new Content(mediaType = "application/json",schema = new Schema(implementation = classOf[QueryResult])))))
+  )
+  def SystemShutdown =
+    path("chaininfo" / "SystemStop" / Segment) { nodeName =>
+      get {
+        extractClientIP { ip =>
+          RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} System stop,nodeName=${nodeName}")
+          complete { (ra.getRestActor ? SystemStop(nodeName)).mapTo[QueryResult] }
+        }
+
+        //complete { (ra ? BlockHeight(blockHeight.toInt)).mapTo[QueryResult] }
+      }
+    }
+
 
   @GET
   @Path("/loadBlockInfoToCache")
