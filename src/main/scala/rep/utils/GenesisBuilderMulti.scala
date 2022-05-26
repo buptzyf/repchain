@@ -108,7 +108,7 @@ object GenesisBuilderMulti {
     val rStr = pretty(render(r))
     println(rStr)
 
-    val pw = new PrintWriter("json/genesis.json", "UTF-8")
+    val pw = new PrintWriter(s"json/${ctx.getConfig.getChainNetworkId}/genesis.json", "UTF-8")
     pw.write(rStr)
     pw.flush()
     pw.close()
