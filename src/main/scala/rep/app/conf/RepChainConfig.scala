@@ -34,7 +34,11 @@ class RepChainConfig {
     val userConfigFile = new File(ConfigFileDir+this.systemName+ File.separator+"system.conf")
     this.sysConf = ConfigFactory.load()
     if (userConfigFile.exists()) {
-      val combined_conf = ConfigFactory.parseFile(userConfigFile).withFallback(this.sysConf)
+      val myConfig =
+        ConfigFactory.parseString("akka.remote.artery.ssl.config-ssl-engine.key-store = \"jks/" + this.systemName +
+          ".jks\"")
+      var combined_conf = ConfigFactory.parseFile(userConfigFile).withFallback(this.sysConf)
+      combined_conf = myConfig.withFallback(combined_conf)
       this.sysConf = ConfigFactory.load(combined_conf)
     } else{
       RepLogger.trace(RepLogger.System_Logger, this.systemName + " ~ " + "ClusterSystem" + "~" + " custom configuration file not exist")
