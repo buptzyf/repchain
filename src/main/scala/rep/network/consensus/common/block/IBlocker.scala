@@ -65,7 +65,7 @@ abstract class IBlocker(moduleName: String) extends ModuleBase(moduleName) {
     RepTimeTracer.setStartTime(pe.getSysTag, "Block", System.currentTimeMillis(), pe.getBlocker.VoteHeight + 1, 0)
     RepTimeTracer.setStartTime(pe.getSysTag, "createBlock", System.currentTimeMillis(), pe.getBlocker.VoteHeight + 1, 0)
     RepTimeTracer.setStartTime(pe.getSysTag, "collectTransToBlock", System.currentTimeMillis(), pe.getBlocker.VoteHeight + 1, 0)
-    val trans = pe.getRepChainContext.getTransactionPool.packageTransactionToBlock.reverse
+    val trans = pe.getRepChainContext.getTransactionPool.packageTransactionToBlock
     //todo 交易排序
     if (trans.size >= config.getMinTransactionNumberOfBlock) {
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,CollectedTransOfBlock success,height=${pe.getBlocker.VoteHeight + 1},local height=${pe.getBlocker.VoteHeight}" + "~" + selfAddr))
