@@ -56,6 +56,7 @@ class ModuleManagerOfCFRD(moduleName: String, isStartup: Boolean) extends IModul
 
     //pe.register(CFRDActorType.ActorType.synchrequester,context.actorOf(SynchRequesterOfCFRD.props("synchrequester"), "synchrequester"))
     pe.register(CFRDActorType.ActorType.synchresponser,context.actorOf(SynchronizeResponser.props("synchresponser"), "synchresponser"))
+    RepLogger.info(RepLogger.System_Logger,  "CFRD共识模块装载完成...")
   }
 
 

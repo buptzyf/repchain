@@ -95,6 +95,7 @@ class ClusterSystem(sysTag: String, isStartupClusterSystem: Boolean) {
   def createClusterSystem = {
     initConsensusNodeOfConfig
     //建立ActorSystem
+    RepLogger.info(RepLogger.System_Logger,  "建立ActorSystem...")
     sysActor = ActorSystem(SYSTEM_NAME, sysConf)
     val pe = PeerExtension(sysActor)
     pe.setRepChainContext(ctx)
@@ -104,7 +105,7 @@ class ClusterSystem(sysTag: String, isStartupClusterSystem: Boolean) {
       //启动集群
       clusterOfInner = Cluster(sysActor)
       clusterAddress = clusterOfInner.selfAddress
-
+      RepLogger.info(RepLogger.System_Logger,  "集群已经启动...")
       /*val list = sysConf.getList("akka.cluster.seed-nodes")
       val address = Address.apply(list.get(0).unwrapped().toString,sysActor.name)
       System.out.println(s"systemname=${this.sysTag},seednode=${address.toString},clusterOfInner.selfAddress=${clusterOfInner.selfAddress.toString}")
@@ -146,6 +147,7 @@ class ClusterSystem(sysTag: String, isStartupClusterSystem: Boolean) {
       roles.add("CRFD-Node:" + this.sysTag)
       sysConf = sysConf.withValue("akka.cluster.roles", ConfigValueFactory.fromAnyRef(roles))
     }
+    RepLogger.info(RepLogger.System_Logger,  "检查系统组网角色...")
   }
 
   /**
@@ -153,9 +155,11 @@ class ClusterSystem(sysTag: String, isStartupClusterSystem: Boolean) {
    */
   def startupRepChain = {
     //检查磁盘空间
+    RepLogger.info(RepLogger.System_Logger,  "开始检查磁盘剩余空间...")
     if (!hasDiskSpace) {
       RepLogger.sendAlertToDB(ctx.getHttpLogger(),new AlertInfo("STORAGE",1,s"Node Name=${this.sysTag},Insufficient disk space."))
       //this.clusterOfInner.down(clusterAddress)
+      RepLogger.info(RepLogger.System_Logger,  "系统剩余磁盘空间不够，系统自动终止...")
       terminateOfSystem
       throw new Exception("not enough disk space")
     }

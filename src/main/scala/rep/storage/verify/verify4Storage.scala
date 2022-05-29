@@ -99,11 +99,9 @@ class verify4Storage(ctx:RepChainSystemContext) {
   
   def verify(sysName:String):Boolean={
     var b = true
-    RepLogger.info(RepLogger.System_Logger,   "系统开始自检区块文件")
+    RepLogger.info(RepLogger.System_Logger,   "系统开始自检区块文件...")
     var errorInfo = "未知问题"
-    if(sysName == "921000006e0012v696.node5"){
-      println("921000006e0012v696.node5")
-    }
+
     try{
       val sr: BlockSearcher = ctx.getBlockSearch
       val bcinfo = sr.getChainInfo
@@ -134,7 +132,7 @@ class verify4Storage(ctx:RepChainSystemContext) {
       }
     }
     if(b){
-      RepLogger.info(RepLogger.System_Logger,  "系统自检区块文件完成,")
+      RepLogger.info(RepLogger.System_Logger,  "系统自检区块文件完成...")
     }else{
       RepLogger.info(RepLogger.System_Logger,  s"系统自检区块文件完成,出现错误，错误信息=${errorInfo}")
     }

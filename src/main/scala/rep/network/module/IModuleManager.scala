@@ -64,6 +64,7 @@ class IModuleManager(moduleName: String, isStartup: Boolean) extends ModuleBase(
     val trustPwd = conf.getString("akka.remote.artery.ssl.config-ssl-engine.trust-store-password-mm")
     pe.getRepChainContext.getSignTool.loadPrivateKey(pe.getSysTag, psw, mykeyPath)
     pe.getRepChainContext.getSignTool.loadNodeCertList(trustPwd, trustPath)
+    RepLogger.info(RepLogger.System_Logger,  "密钥初始化装载完成...")
   }
 
   //初始化系统actor，完成公共actor的装载，包括证书、配置信息的装载，也包括存储的检查
@@ -73,6 +74,7 @@ class IModuleManager(moduleName: String, isStartup: Boolean) extends ModuleBase(
     loadSecurityInfo(conf)
     TimePolicy.initTimePolicy(conf)
     pe.getRepChainContext.getTransactionPool.restoreCachePoolFromDB
+    RepLogger.info(RepLogger.System_Logger,  "模块管理者初始化完成...")
   }
 
   private def loadCommonActor:Unit = {
@@ -80,6 +82,7 @@ class IModuleManager(moduleName: String, isStartup: Boolean) extends ModuleBase(
     loadTransModule
     loadGensisModule
     loadClusterModule
+    RepLogger.info(RepLogger.System_Logger,  "公共模块装载完成...")
   }
 
   private def loadApiModule = {

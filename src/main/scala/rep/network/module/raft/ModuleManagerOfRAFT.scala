@@ -53,5 +53,6 @@ class ModuleManagerOfRAFT(moduleName: String,  isStartup: Boolean) extends IModu
 
     pe.register(CFRDActorType.ActorType.synchrequester,context.actorOf(SynchRequesterOfRAFT.props("synchrequester"), "synchrequester"))
     pe.register(CFRDActorType.ActorType.synchresponser,context.actorOf(SynchronizeResponser.props("synchresponser"), "synchresponser"))
+    RepLogger.info(RepLogger.System_Logger,  "RAFT共识模块装载完成...")
   }
 }

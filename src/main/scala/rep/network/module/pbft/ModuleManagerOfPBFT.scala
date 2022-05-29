@@ -54,7 +54,7 @@ class ModuleManagerOfPBFT(moduleName: String,  isStartup: Boolean) extends IModu
     pe.register(PBFTActorType.ActorType.pbftpreprepare, context.actorOf(PbftPrePrepare.props("pbftpreprepare"), "pbftpreprepare"))
     pe.register(PBFTActorType.ActorType.pbftprepare, context.actorOf(PbftPrepare.props("pbftprepare"), "pbftprepare"))
     pe.register(PBFTActorType.ActorType.pbftcommit, context.actorOf(PbftCommit.props("pbftcommit"), "pbftcommit"))
-
+    RepLogger.info(RepLogger.System_Logger,  "PBFT共识模块装载完成...")
   }
 
 }
