@@ -39,7 +39,7 @@ object OperOperation extends DidOperation {
     // 查看合约开发者
     val key_coder = operate.authFullName.split("\\.")(0)
     var creditCode : Any = null
-      if(ctx.api.getAccountContractCodeName != key_coder){
+    if(ctx.api.getAccountContractCodeName != key_coder){
       //跨合约访问
       creditCode = ctx.api.getStateEx(ctx.api.getChainNetId,key_coder,key_coder)
     }else{
@@ -95,9 +95,14 @@ object OperOperation extends DidOperation {
           }
         } else {
           // 非deploy与setState以及"RdidOperateAuthorizeTPL.function"的，则必须是合约部署者
-          if (!isContractDeployer(ctx, operate)) {
+          val cert = ctx.t.getSignature.certId.get
+          val contractName = operate.authFullName.split("\\.")(0)
+          if(!ctx.api.permissionCheck(cert.creditCode,cert.certName,contractName+".deploy")){
             throw ContractException(toJsonErrMsg(notContractDeployer))
           }
+          /*if (!isContractDeployer(ctx, operate)) {
+            throw ContractException(toJsonErrMsg(notContractDeployer))
+          }*/
         }
         if (ctx.api.getSha256Tool.hashstr(operate.authFullName) != operate.opId) {
           throw ContractException(toJsonErrMsg(hashNotMatch))

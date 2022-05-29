@@ -281,4 +281,8 @@ class Shim {
       ""
     }
   }
+
+  def permissionCheck(did:String,certName:String,op:String):Boolean={
+    this.ctx.getPermissionVerify.CheckPermission(did,certName,op,this.srOfTransaction.getBlockPreload)
+  }
 }
