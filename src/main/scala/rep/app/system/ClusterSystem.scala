@@ -35,6 +35,7 @@ import rep.network.module.pbft.ModuleManagerOfPBFT
 import rep.network.module.raft.ModuleManagerOfRAFT
 import rep.network.tools.PeerExtension
 import rep.storage.filesystem.factory.FileFactory
+import rep.storage.verify.verify4Storage
 
 /**
  * System创建伴生对象
@@ -161,7 +162,12 @@ class ClusterSystem(sysTag: String, isStartupClusterSystem: Boolean) {
       //this.clusterOfInner.down(clusterAddress)
       RepLogger.info(RepLogger.System_Logger,  "系统剩余磁盘空间不够，系统自动终止...")
       terminateOfSystem
-      throw new Exception("not enough disk space")
+      throw new Exception("没有足够的磁盘空间")
+    }
+
+    if (!checkSystemStorage) {
+      terminateOfSystem
+      throw new Exception("系统自检失败")
     }
 
     val typeConsensus = ctx.getConfig.getConsensustype
@@ -175,10 +181,23 @@ class ClusterSystem(sysTag: String, isStartupClusterSystem: Boolean) {
       RepLogger.error(RepLogger.System_Logger, sysTag + "~" + "System" + " ~ " + s"ClusterSystem ${sysTag} not startup,unknow consensus" + " ~ ")
     }
 
-
-
-
     RepLogger.trace(RepLogger.System_Logger, sysTag + "~" + "System" + " ~ " + s"ClusterSystem ${sysTag} start" + " ~ ")
+  }
+
+  private def checkSystemStorage: Boolean = {
+    var r = true
+    try {
+      if (!new verify4Storage(this.ctx).verify(this.ctx.getSystemName)) {
+        RepLogger.sendAlertToDB(ctx.getHttpLogger(),new AlertInfo("SYSTEM",1,s"Node Name=${ctx.getSystemName},BlockChain file error."))
+        r = false
+      }
+    } catch {
+      case e: Exception => {
+        r = false
+        //throw new Exception("Storager Verify Error,info:" + e.getMessage)
+      }
+    }
+    r
   }
 
 }

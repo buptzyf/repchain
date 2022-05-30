@@ -57,6 +57,8 @@ class verify4Storage(ctx:RepChainSystemContext) {
        if(!verfiyBlockOfFile(h,sr)){
          r = false
          break
+       }else{
+         RepLogger.info(RepLogger.System_Logger,  s"自检：verfiyBlockOfFile成功，检查高度=${h}")
        }
      })
      r
@@ -105,13 +107,17 @@ class verify4Storage(ctx:RepChainSystemContext) {
     try{
       val sr: BlockSearcher = ctx.getBlockSearch
       val bcinfo = sr.getChainInfo
+
       if(bcinfo != null){
+        RepLogger.info(RepLogger.System_Logger,  s"自检：chaninfo=${bcinfo.toString}")
         if(bcinfo.height > 1){
           val flist = getFileInfo(sr,bcinfo.height)
+          RepLogger.info(RepLogger.System_Logger,  s"自检：获取所有的文件信息=${flist.mkString(",")}")
           breakable(
           flist.foreach(f=>{
             if(!verfiyFileForFileInfo(f._2,f._3,sr)){
               errorInfo = "系统自检错误：存储检查失败，LevelDB或者Block文件损坏，请与管理员联系!"
+              RepLogger.info(RepLogger.System_Logger,  s"自检：验证失败 info=${errorInfo}")
               b = false
               break
             }
@@ -119,10 +125,12 @@ class verify4Storage(ctx:RepChainSystemContext) {
           )
         }else if(bcinfo.height == 1 && !VerfiyBlock(sr.getBlockByHeight(1).get,sysName)){
             errorInfo = "系统自检错误：存储检查失败，LevelDB或者Block文件损坏，请与管理员联系!"
+          RepLogger.info(RepLogger.System_Logger,  s"自检：error info=${errorInfo}")
             b = false
         }
       }else{
         errorInfo = "无法获取链信息，LevelDB可能损坏。"
+        RepLogger.info(RepLogger.System_Logger,  s"自检：error=${errorInfo}")
         b = false
       }
     }catch{

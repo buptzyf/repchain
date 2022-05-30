@@ -3,7 +3,6 @@ package rep.network.module
 import akka.actor.Props
 import com.typesafe.config.Config
 import rep.app.conf.{ TimePolicy}
-import rep.log.httplog.AlertInfo
 import rep.log.{RepLogger, RepTimeTracer}
 import rep.network.autotransaction.PeerHelper
 import rep.network.base.ModuleBase
@@ -11,10 +10,8 @@ import rep.network.cluster.MemberListener
 import rep.network.module.cfrd.CFRDActorType
 import rep.network.transaction.DispatchOfPreload
 import rep.sc.TransactionDispatcher
-import rep.storage.verify.verify4Storage
 import rep.ui.web.EventServer
 import rep.network.genesis.GenesisBlocker
-
 
 /**
  * Created by jiangbuyun on 2020/03/15.
@@ -31,29 +28,10 @@ object IModuleManager {
 class IModuleManager(moduleName: String, isStartup: Boolean) extends ModuleBase(moduleName) with IModule{
   init
 
-  if (!checkSystemStorage) {
-    context.system.terminate()
-  }
-
-
   loadCommonActor
   loadConsensusModule
 
-  private def checkSystemStorage: Boolean = {
-    var r = true
-    try {
-      if (!new verify4Storage(pe.getRepChainContext).verify(pe.getSysTag)) {
-        RepLogger.sendAlertToDB(pe.getRepChainContext.getHttpLogger(),new AlertInfo("SYSTEM",1,s"Node Name=${pe.getSysTag},BlockChain file error."))
-        r = false
-      }
-    } catch {
-      case e: Exception => {
-        r = false
-        //throw new Exception("Storager Verify Error,info:" + e.getMessage)
-      }
-    }
-    r
-  }
+
 
   def loadSecurityInfo(conf:Config):Unit={
     val cryptoMgr = pe.getRepChainContext.getCryptoMgr
