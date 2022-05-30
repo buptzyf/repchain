@@ -33,7 +33,7 @@ class IModuleManager(moduleName: String, isStartup: Boolean) extends ModuleBase(
 
 
 
-  def loadSecurityInfo(conf:Config):Unit={
+  /*def loadSecurityInfo(conf:Config):Unit={
     val cryptoMgr = pe.getRepChainContext.getCryptoMgr
     val mykeyPath = cryptoMgr.getKeyFileSuffix.substring(1)+ java.io.File.separatorChar + pe.getSysTag + cryptoMgr.getKeyFileSuffix
     val psw = conf.getString("akka.remote.artery.ssl.config-ssl-engine.key-store-password")
@@ -43,13 +43,13 @@ class IModuleManager(moduleName: String, isStartup: Boolean) extends ModuleBase(
     pe.getRepChainContext.getSignTool.loadPrivateKey(pe.getSysTag, psw, mykeyPath)
     pe.getRepChainContext.getSignTool.loadNodeCertList(trustPwd, trustPath)
     RepLogger.info(RepLogger.System_Logger,  "密钥初始化装载完成...")
-  }
+  }*/
 
   //初始化系统actor，完成公共actor的装载，包括证书、配置信息的装载，也包括存储的检查
   private def init: Unit = {
     val conf = this.pe.getRepChainContext.getConfig.getSystemConf//context.system.settings.config
     pe.register(ModuleActorType.ActorType.modulemanager,self)
-    loadSecurityInfo(conf)
+    //loadSecurityInfo(conf)
     TimePolicy.initTimePolicy(conf)
     pe.getRepChainContext.getTransactionPool.restoreCachePoolFromDB
     RepLogger.info(RepLogger.System_Logger,  "模块管理者初始化完成...")
