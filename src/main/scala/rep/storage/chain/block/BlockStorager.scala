@@ -164,9 +164,13 @@ class BlockStorager(ctx: RepChainSystemContext, isEncrypt: Boolean = false) exte
                     if (writer.getFileLength == 0) {
                       setHm.put(KeyPrefixManager.getBlockFileFirstHeightKey(ctx.getConfig, bIndex.getFileNo), SerializeUtils.serialise(bIndex.getHeight))
                     }else{
-                      val preBlockIdx = getBlockIndexByHeight(Option(bIndex.getHeight-1))
-                      if(bIndex.getFileNo > preBlockIdx.get.getFileNo){
+                      if(bIndex.getHeight == 1){
                         setHm.put(KeyPrefixManager.getBlockFileFirstHeightKey(ctx.getConfig, bIndex.getFileNo), SerializeUtils.serialise(bIndex.getHeight))
+                      }else{
+                        val preBlockIdx = getBlockIndexByHeight(Option(bIndex.getHeight-1))
+                        if(bIndex.getFileNo > preBlockIdx.get.getFileNo){
+                          setHm.put(KeyPrefixManager.getBlockFileFirstHeightKey(ctx.getConfig, bIndex.getFileNo), SerializeUtils.serialise(bIndex.getHeight))
+                        }
                       }
                     }
                     val lastInfo = KeyPrefixManager.ChainInfo(bIndex.getHeight, bIndex.getHash, bIndex.getPreHash,
