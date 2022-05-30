@@ -24,15 +24,16 @@ object CreateGenesisInfo4NoTransaction {
   implicit val formats = DefaultFormats
 
   def main(args: Array[String]): Unit = {
-    val ctx = new RepChainSystemContext("121000005l35120456.node1")
 
-    ctx.getSignTool.loadPrivateKey("121000005l35120456.node1", "123", s"${ctx.getCryptoMgr.getKeyFileSuffix.substring(1)}/121000005l35120456.node1${ctx.getCryptoMgr.getKeyFileSuffix}")
-    ctx.getSignTool.loadNodeCertList("changeme", s"${ctx.getCryptoMgr.getKeyFileSuffix.substring(1)}/mytruststore${ctx.getCryptoMgr.getKeyFileSuffix}")
-    ctx.getSignTool.loadPrivateKey("951002007l78123233.super_admin", "super_admin", s"${ctx.getCryptoMgr.getKeyFileSuffix.substring(1)}/951002007l78123233.super_admin${ctx.getCryptoMgr.getKeyFileSuffix}")
-    val sysName = "121000005l35120456.node1"
+    val sysName = "330597659476689954.node6"
+    val sys_credit = "121000005l35120456"
     val superAdmin = "951002007l78123233.super_admin"
     val super_credit = "951002007l78123233"
-    val sys_credit = "121000005l35120456"
+
+    val ctx = new RepChainSystemContext(sysName)
+    ctx.getSignTool.loadPrivateKey(sysName, "123", s"${ctx.getCryptoMgr.getKeyFileSuffix.substring(1)}/$sysName${ctx.getCryptoMgr.getKeyFileSuffix}")
+    ctx.getSignTool.loadNodeCertList("changeme", s"${ctx.getCryptoMgr.getKeyFileSuffix.substring(1)}/mytruststore${ctx.getCryptoMgr.getKeyFileSuffix}")
+    ctx.getSignTool.loadPrivateKey(superAdmin, "super_admin", s"${ctx.getCryptoMgr.getKeyFileSuffix.substring(1)}/$superAdmin${ctx.getCryptoMgr.getKeyFileSuffix}")
 
     val translist: ArrayBuffer[Transaction] = new ArrayBuffer[Transaction]
 
