@@ -32,7 +32,6 @@ class BlockSearcher(ctx:RepChainSystemContext,isEncrypt:Boolean=false) {
    * @return 返回Option[Any]任意对象
    * */
   protected def getObjectForClass[T](key:String):Option[T]={
-    RepLogger.info(RepLogger.System_Logger,  s"自检：getObjectForClass，key=${key}")
     this.db.getObject[T](key)
   }
 
