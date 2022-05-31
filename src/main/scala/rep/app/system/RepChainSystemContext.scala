@@ -3,7 +3,7 @@ package rep.app.system
 import java.util.concurrent.ConcurrentHashMap
 
 import javax.net.ssl.SSLContext
-import rep.app.conf.{RepChainConfig, SystemCertList}
+import rep.app.conf.{RepChainConfig, SystemCertList, TimePolicy}
 import rep.authority.cache.PermissionCacheManager
 import rep.authority.check.PermissionVerify
 import rep.crypto.Sha256
@@ -17,6 +17,7 @@ import rep.storage.chain.preload.BlockPreload
 
 class RepChainSystemContext(systemName:String) {
   private val config : RepChainConfig = new RepChainConfig(systemName)
+  private val timePolicy : TimePolicy = new TimePolicy(config.getSystemConf)
   private val poolOfTransaction : PoolOfTransaction =  new PoolOfTransaction(this)
   private val cryptoManager : CryptoMgr = new  CryptoMgr(this)
   private val signer : ISigner = new ImpECDSASigner(this)
@@ -103,6 +104,10 @@ class RepChainSystemContext(systemName:String) {
 
   def getConfig:RepChainConfig={
     this.config
+  }
+
+  def getTimePolicy:TimePolicy={
+    this.timePolicy
   }
 
   def getCryptoMgr:CryptoMgr={

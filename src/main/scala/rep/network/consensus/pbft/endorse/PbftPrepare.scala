@@ -24,8 +24,6 @@ import akka.actor.{ActorSelection, Props}
 import akka.util.Timeout
 import com.google.protobuf.ByteString
 import com.google.protobuf.timestamp.Timestamp
-import rep.app.Repchain
-import rep.app.conf.TimePolicy
 import rep.log.RepLogger
 import rep.network.base.ModuleBase
 import rep.network.confirmblock.pbft.ConfirmOfBlockOfPBFT
@@ -43,7 +41,7 @@ class PbftPrepare(moduleName: String) extends ModuleBase(moduleName) {
   private var recvedHash : ByteString = null
   private var recvedPrepares = scala.collection.mutable.Buffer[MPbftPrepare]()
 
-  implicit val timeout = Timeout(TimePolicy.getTimeoutPreload.seconds)
+  implicit val timeout = Timeout(pe.getRepChainContext.getTimePolicy.getTimeoutPreload.seconds)
 
   override def preStart(): Unit = {
     RepLogger.info(RepLogger.Consensus_Logger, this.getLogMsgPrefix("PbftPrepare Start"))

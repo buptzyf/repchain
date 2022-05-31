@@ -19,7 +19,6 @@ package rep.network.cluster
 import akka.actor.{ Address, Props}
 import akka.cluster.ClusterEvent._
 import akka.cluster.{Cluster, Member, MemberStatus}
-import rep.app.conf.{TimePolicy}
 import rep.network.cluster.MemberListener.Recollection
 import rep.network.module.cfrd.CFRDActorType
 import rep.utils.GlobalUtils.EventType
@@ -153,14 +152,14 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
         RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"Member is Up:  nodes is not condidator,node address=${member.address.toString}"))
       }
       schedulerLink = scheduler.scheduleOnce((
-        //TimePolicy.getSysNodeStableDelay +
-          TimePolicy.getStableTimeDur).millis, self, Recollection)
+
+        pe.getRepChainContext.getTimePolicy.getStableTimeDur).millis, self, Recollection)
     //稳定节点收集
     case Recollection =>
       schedulerLink = clearSched()
       RepLogger.trace(RepLogger.System_Logger, this.getLogMsgPrefix(" MemberListening recollection"))
       preloadNodesMap.foreach(node => {
-        if (isStableNode(node._2._1, TimePolicy.getSysNodeStableDelay)) {
+        if (isStableNode(node._2._1, pe.getRepChainContext.getTimePolicy.getSysNodeStableDelay)) {
           RepLogger.sendAlertToDB(pe.getRepChainContext.getHttpLogger(),new AlertInfo("NETWORK",4,s"Node Name=${node._2._2},Node Address=${node._2._1},is stable node."))
           pe.getNodeMgr.putStableNode(node._1, node._2._2)
         } else {
@@ -193,7 +192,7 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
       if (preloadNodesMap.size > 0) {
         //self ! Recollection
         schedulerLink = scheduler.scheduleOnce((
-          TimePolicy.getStableTimeDur/5).millis, self, Recollection)
+          pe.getRepChainContext.getTimePolicy.getStableTimeDur/5).millis, self, Recollection)
       }
 
     //成员离网

@@ -20,8 +20,6 @@ import akka.actor.{ActorSelection, Address, Props}
 import akka.pattern.AskTimeoutException
 import akka.util.Timeout
 import com.google.protobuf.ByteString
-import rep.app.Repchain
-import rep.app.conf.TimePolicy
 import rep.log.RepLogger
 import rep.network.base.ModuleBase
 import rep.network.confirmblock.pbft.ConfirmOfBlockOfPBFT
@@ -43,7 +41,7 @@ class EndorsementRequest4Future(moduleName: String) extends ModuleBase(moduleNam
   private var recvedReplies = scala.collection.mutable.Buffer[MPbftReply]()
   //private var recvedRepliesCount = scala.collection.mutable.HashMap[ByteString, Int]()
 
-  implicit val timeout = Timeout(TimePolicy.getTimeoutEndorse.seconds)
+  implicit val timeout = Timeout(pe.getRepChainContext.getTimePolicy.getTimeoutEndorse.seconds)
   //private val endorsementActorName = "/user/modulemanager/endorser"
   private val endorsementActorName = "/user/modulemanager/dispatchofRecvendorsement"
 

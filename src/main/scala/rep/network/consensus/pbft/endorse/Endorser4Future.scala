@@ -21,7 +21,6 @@ package rep.network.consensus.pbft.endorse
 import akka.actor.Props
 import akka.pattern.ask
 import akka.util.Timeout
-import rep.app.conf.{ TimePolicy}
 import rep.log.RepTimeTracer
 import rep.network.base.ModuleBase
 import rep.network.consensus.common.MsgOfConsensus.{PreTransBlock, PreTransBlockResult}
@@ -48,7 +47,7 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
   import scala.concurrent._
   import scala.concurrent.duration._
 
-  implicit val timeout = Timeout(TimePolicy.getTimeoutPreload.seconds)
+  implicit val timeout = Timeout(pe.getRepChainContext.getTimePolicy.getTimeoutPreload.seconds)
 
   override def preStart(): Unit = {
     RepLogger.info(RepLogger.Consensus_Logger, this.getLogMsgPrefix("Endorser4Future Start"))

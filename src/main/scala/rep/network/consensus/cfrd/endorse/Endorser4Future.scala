@@ -21,7 +21,6 @@ import akka.pattern.{AskTimeoutException, ask}
 import akka.actor.Props
 import rep.network.base.ModuleBase
 import rep.network.util.NodeHelp
-import rep.app.conf.{TimePolicy}
 import rep.utils.GlobalUtils.{EventType}
 import rep.network.autotransaction.Topic
 import rep.network.module.ModuleActorType
@@ -47,7 +46,7 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
   import scala.concurrent.duration._
   import scala.concurrent._
 
-  implicit val timeout = Timeout((TimePolicy.getTimeoutPreload * 3).seconds)
+  implicit val timeout = Timeout((pe.getRepChainContext.getTimePolicy.getTimeoutPreload * 3).seconds)
 
   override def preStart(): Unit = {
     RepLogger.info(RepLogger.Consensus_Logger, this.getLogMsgPrefix("Endorser4Future Start"))

@@ -20,7 +20,6 @@ import akka.util.Timeout
 import akka.pattern.ask
 import scala.concurrent._
 import akka.actor.{ActorSelection, Address, Props}
-import rep.app.conf.TimePolicy
 import rep.network.base.ModuleBase
 import akka.pattern.AskTimeoutException
 import rep.network.consensus.util.BlockVerify
@@ -45,7 +44,7 @@ class EndorsementRequest4Future(moduleName: String) extends ModuleBase(moduleNam
   import context.dispatcher
   import scala.concurrent.duration._
 
-  implicit val timeout = Timeout((TimePolicy.getTimeoutEndorse* 4).seconds)
+  implicit val timeout = Timeout((pe.getRepChainContext.getTimePolicy.getTimeoutEndorse* 4).seconds)
   //private val endorsementActorName = "/user/modulemanager/endorser"
   private val endorsementActorName = "/user/modulemanager/dispatchofRecvendorsement"
 

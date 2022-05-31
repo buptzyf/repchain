@@ -24,6 +24,7 @@ class TransactionOfCollectioner  (moduleName: String) extends ModuleBase(moduleN
       //共识节点可以订阅交易的广播事件
       SubscribeTopic(mediator, self, selfAddr, Topic.Transaction, true)
     }
+    createRouter
     RepLogger.info(RepLogger.Consensus_Logger, this.getLogMsgPrefix("TransactionOfCollectioner module start"))
     super.preStart()
   }
@@ -44,8 +45,7 @@ class TransactionOfCollectioner  (moduleName: String) extends ModuleBase(moduleN
   override def receive = {
     //处理接收的交易
     case t: Transaction =>
-      createRouter
-      router.route(t,self)
+      if(router != null ) router.route(t,self) else RepLogger.info(RepLogger.System_Logger,  "交易检查Actor为null")
     case _ => //ignore
   }
 }

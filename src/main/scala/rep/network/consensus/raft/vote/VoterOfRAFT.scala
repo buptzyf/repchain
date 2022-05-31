@@ -2,7 +2,6 @@ package rep.network.consensus.raft.vote
 
 import akka.actor.Props
 import akka.cluster.pubsub.DistributedPubSubMediator.Publish
-import rep.app.conf.{RepChainConfig, TimePolicy}
 import rep.log.RepLogger
 import rep.network.autotransaction.Topic
 import rep.network.consensus.cfrd.MsgOfCFRD.{CreateBlock, ForceVoteInfo, TransformBlocker, VoteOfBlocker, VoteOfForce}
@@ -69,9 +68,9 @@ class VoterOfRAFT (moduleName: String) extends IVoter(moduleName: String) {
 
   override protected def DelayVote: Unit = {
     this.voteCount += 1
-    var time = this.voteCount * TimePolicy.getVoteRetryDelay
+    var time = this.voteCount * pe.getRepChainContext.getTimePolicy.getVoteRetryDelay
     schedulerLink = clearSched()
-    schedulerLink = scheduler.scheduleOnce(TimePolicy.getVoteRetryDelay.millis, self, VoteOfBlocker)
+    schedulerLink = scheduler.scheduleOnce(pe.getRepChainContext.getTimePolicy.getVoteRetryDelay.millis, self, VoteOfBlocker)
     }
 
   private def getVoteIndex:Int={
@@ -117,7 +116,7 @@ class VoterOfRAFT (moduleName: String) extends IVoter(moduleName: String) {
             s",transpoolcount=${pe.getRepChainContext.getTransactionPool.getCachePoolSize}" + "~" + selfAddr))
           this.zeroOfTransNumTimeout = System.currentTimeMillis()
         }else{
-          if((System.currentTimeMillis() - this.zeroOfTransNumTimeout) > TimePolicy.getVoteWaitingDelay * 10){
+          if((System.currentTimeMillis() - this.zeroOfTransNumTimeout) > pe.getRepChainContext.getTimePolicy.getVoteWaitingDelay * 10){
             //已经超时
             //发出迁移出块人消息
             RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},set zero trans timeout,lblocker=${this.Blocker.blocker}," +
