@@ -39,7 +39,7 @@ class verify4Storage(ctx:RepChainSystemContext) {
       val first = sr.getBlockHeightInFileFirstBlockByFileNo(i).get
       var last = blockHeight
       if(i < fno){
-        last = sr.getBlockHeightInFileFirstBlockByFileNo(i+1).get
+        last = sr.getBlockHeightInFileFirstBlockByFileNo(i+1).get - 1
       }
       fls(i) = (i,first,last)
       i += 1
@@ -49,19 +49,27 @@ class verify4Storage(ctx:RepChainSystemContext) {
   
   private def verfiyFileForFileInfo(firstHeigh:Long,lastHeight:Long,sr: BlockSearcher):Boolean={
      var r = true
-     val seed = lastHeight-firstHeigh
-     breakable(
-     for(i<-0 to 9){
-       val rseed = Random.nextLong()
-       var h = Math.abs(rseed) % seed + firstHeigh
-       if(!verfiyBlockOfFile(h,sr)){
-         r = false
-         break
-       }else{
-         RepLogger.info(RepLogger.System_Logger,  s"自检：verfiyBlockOfFile成功，检查高度=${h}")
-       }
-     })
-     r
+    if(lastHeight == firstHeigh){
+      if(!verfiyBlockOfFile(firstHeigh,sr)){
+        r = false
+      }else{
+        RepLogger.info(RepLogger.System_Logger,  s"自检：verfiyBlockOfFile成功，检查高度=${firstHeigh}")
+      }
+    }else{
+      val seed = lastHeight-firstHeigh
+      breakable(
+        for(i<-0 to 9){
+          val rseed = Random.nextLong()
+          var h = Math.abs(rseed) % seed + firstHeigh
+          if(!verfiyBlockOfFile(h,sr)){
+            r = false
+            break
+          }else{
+            RepLogger.info(RepLogger.System_Logger,  s"自检：verfiyBlockOfFile成功，检查高度=${h}")
+          }
+        })
+    }
+    r
   }
   
   private def verfiyBlockOfFile(height:Long,sr: BlockSearcher):Boolean={
