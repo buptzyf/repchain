@@ -22,8 +22,6 @@ package rep.network.consensus.pbft.endorse
 
 import akka.actor.{ActorSelection, Props}
 import akka.util.Timeout
-import rep.app.Repchain
-import rep.app.conf.TimePolicy
 import rep.network.base.ModuleBase
 import rep.log.RepLogger
 import rep.network.confirmblock.pbft.ConfirmOfBlockOfPBFT
@@ -37,7 +35,7 @@ case object PbftPrePrepare {
 class PbftPrePrepare(moduleName: String) extends ModuleBase(moduleName) {
   import scala.concurrent.duration._
 
-  implicit val timeout = Timeout(TimePolicy.getTimeoutPreload.seconds)
+  implicit val timeout = Timeout(pe.getRepChainContext.getTimePolicy.getTimeoutPreload.seconds)
 
   override def preStart(): Unit = {
     RepLogger.info(RepLogger.Consensus_Logger, this.getLogMsgPrefix("PbftPrePrepare Start"))

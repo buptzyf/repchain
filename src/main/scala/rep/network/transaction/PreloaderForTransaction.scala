@@ -20,7 +20,6 @@ import akka.actor.Props
 import akka.pattern.{AskTimeoutException, ask}
 import akka.util.Timeout
 import com.google.protobuf.ByteString
-import rep.app.conf.TimePolicy
 import rep.log.{RepLogger, RepTimeTracer}
 import rep.network.base.ModuleBase
 import rep.network.consensus.common.MsgOfConsensus.{PreTransBlock, PreTransBlockOfCache, PreTransBlockResult, preTransBlockResultOfCache}
@@ -48,7 +47,7 @@ object PreloaderForTransaction {
 class PreloaderForTransaction(moduleName: String) extends ModuleBase(moduleName) {
   import scala.concurrent.duration._
 
-  implicit val timeout = Timeout((TimePolicy.getTimeoutPreload * 2).seconds)
+  implicit val timeout = Timeout((pe.getRepChainContext.getTimePolicy.getTimeoutPreload * 2).seconds)
 
   override def preStart(): Unit = {
     RepLogger.info(RepLogger.Consensus_Logger, this.getLogMsgPrefix("PreloaderForTransaction Start"))

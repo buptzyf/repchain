@@ -3,7 +3,6 @@ package rep.network.sync.request
 import akka.actor.{ActorRef, ActorSelection, Address, Props}
 import akka.pattern.{AskTimeoutException, ask}
 import akka.util.Timeout
-import rep.app.conf.TimePolicy
 import rep.log.RepLogger
 import rep.network.base.ModuleBase
 import rep.network.consensus.byzantium.ConsensusCondition
@@ -13,12 +12,10 @@ import rep.network.sync.SyncMsg.{BlockDataOfRequest, BlockDataOfResponse, ChainI
 import rep.network.util.NodeHelp
 import rep.utils.GlobalUtils.{BlockEvent, EventType}
 import rep.network.consensus.common.MsgOfConsensus.BlockRestore
-
 import scala.collection.{Seq, Set}
 import scala.concurrent.{Await, Future, TimeoutException}
 import rep.network.sync.parser.ISynchAnalyzer
 import rep.proto.rc2.Event
-import rep.storage.chain.block.{BlockSearcher, BlockStorager}
 
 /**
  * Created by jiangbuyun on 2020/03/18.
@@ -33,7 +30,7 @@ abstract class ISynchRequester(moduleName: String) extends ModuleBase(moduleName
   import context.dispatcher
   import scala.concurrent.duration._
 
-  implicit val timeout = Timeout(TimePolicy.getTimeoutSync.seconds)
+  implicit val timeout = Timeout(pe.getRepChainContext.getTimePolicy.getTimeoutSync.seconds)
   protected val responseActorName = "/user/modulemanager/synchresponser"
   protected val consensusCondition = new ConsensusCondition(pe.getRepChainContext.getConfig)
 

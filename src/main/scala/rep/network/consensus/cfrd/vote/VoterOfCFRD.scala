@@ -1,7 +1,6 @@
 package rep.network.consensus.cfrd.vote
 
 import akka.actor.Props
-import rep.app.conf.TimePolicy
 import rep.log.RepLogger
 import rep.network.consensus.common.vote.IVoter
 import rep.network.module.cfrd.CFRDActorType
@@ -40,7 +39,7 @@ class VoterOfCFRD(moduleName: String) extends IVoter(moduleName: String) {
       this.voteCount = 1
     else
       this.voteCount += 1
-    val time = this.voteCount * TimePolicy.getVoteRetryDelay
+    val time = this.voteCount * pe.getRepChainContext.getTimePolicy.getVoteRetryDelay
     schedulerLink = clearSched()
     schedulerLink = scheduler.scheduleOnce(time.millis, self, VoteOfBlocker)
   }
@@ -91,7 +90,7 @@ class VoterOfCFRD(moduleName: String) extends IVoter(moduleName: String) {
                   s"SpecifyVoteHeight=${forceInfo.voteIndex}" + "~" + selfAddr))
               }
             } else {
-              if ((System.currentTimeMillis() - this.Blocker.voteTime) / 1000 > TimePolicy.getTimeOutBlock) {
+              if ((System.currentTimeMillis() - this.Blocker.voteTime) / 1000 > pe.getRepChainContext.getTimePolicy.getTimeOutBlock) {
                 //说明出块超时
                 this.voteCount = 0
                 this.resetBlocker(this.Blocker.VoteIndex + 1, currentblockhash, currentheight)

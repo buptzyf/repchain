@@ -3,7 +3,6 @@
 package rep.network.consensus.pbft.vote
 
 import akka.actor.Props
-import rep.app.conf.TimePolicy
 import rep.log.RepLogger
 import rep.network.confirmblock.pbft.ConfirmOfBlockOfPBFT
 import rep.network.consensus.cfrd.MsgOfCFRD.ForceVoteInfo
@@ -37,9 +36,9 @@ class VoterOfPBFT(moduleName: String) extends IVoter(moduleName: String) {
 
   override protected def DelayVote: Unit = {
     this.voteCount += 1
-    var time = this.voteCount * TimePolicy.getVoteRetryDelay
+    var time = this.voteCount * pe.getRepChainContext.getTimePolicy.getVoteRetryDelay
     schedulerLink = clearSched()
-    schedulerLink = scheduler.scheduleOnce(TimePolicy.getVoteRetryDelay.millis, self, VoteOfBlocker("voter"))
+    schedulerLink = scheduler.scheduleOnce(pe.getRepChainContext.getTimePolicy.getVoteRetryDelay.millis, self, VoteOfBlocker("voter"))
   }
 
   override protected def vote(isForce: Boolean,forceInfo:ForceVoteInfo): Unit = {
@@ -65,7 +64,7 @@ class VoterOfPBFT(moduleName: String) extends IVoter(moduleName: String) {
             this.resetBlocker(0, currentblockhash, currentheight)
             RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},blocker=null,reset voter,height=${currentheight},blocker=${this.Blocker.blocker},voteidx=${this.Blocker.VoteIndex}" + "~" + selfAddr))
           } else {
-            if (((System.currentTimeMillis() - this.Blocker.voteTime) / 1000 > TimePolicy.getTimeOutBlock)
+            if (((System.currentTimeMillis() - this.Blocker.voteTime) / 1000 > pe.getRepChainContext.getTimePolicy.getTimeOutBlock)
               ||(!pe.getNodeMgr.getStableNodeNames.contains(this.Blocker.blocker))) { //zhj
               //说明出块超时
               this.voteCount = 0

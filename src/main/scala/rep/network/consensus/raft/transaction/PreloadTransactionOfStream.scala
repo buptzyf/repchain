@@ -2,7 +2,6 @@ package rep.network.consensus.raft.transaction
 
 import akka.actor.Props
 import com.google.protobuf.ByteString
-import rep.app.conf.TimePolicy
 import rep.log.{RepLogger, RepTimeTracer}
 import rep.network.base.ModuleBase
 import rep.network.consensus.common.MsgOfConsensus.{PreTransBlockOfStream, preTransBlockResultOfStream}
@@ -32,7 +31,7 @@ class PreloadTransactionOfStream(moduleName: String) extends ModuleBase(moduleNa
   private var blockIdentifier: String = null
   private var transactionCacheIdentifier: String = null
   private var preloadStartTime: Long = Long.MaxValue
-  private val timeout = TimePolicy.getTimeoutPreload //单位为秒
+  private val timeout = pe.getRepChainContext.getTimePolicy.getTimeoutPreload //单位为秒
 
   private def createErrorData(ts: scala.collection.Seq[Transaction], err: Option[akka.actor.Status.Failure]): Array[TransactionResult] = {
     var rs = scala.collection.mutable.ArrayBuffer[TransactionResult]()

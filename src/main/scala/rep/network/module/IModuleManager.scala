@@ -1,8 +1,6 @@
 package rep.network.module
 
 import akka.actor.Props
-import com.typesafe.config.Config
-import rep.app.conf.{ TimePolicy}
 import rep.log.{RepLogger, RepTimeTracer}
 import rep.network.autotransaction.PeerHelper
 import rep.network.base.ModuleBase
@@ -50,7 +48,7 @@ class IModuleManager(moduleName: String, isStartup: Boolean) extends ModuleBase(
     val conf = this.pe.getRepChainContext.getConfig.getSystemConf//context.system.settings.config
     pe.register(ModuleActorType.ActorType.modulemanager,self)
     //loadSecurityInfo(conf)
-    TimePolicy.initTimePolicy(conf)
+    //pe.getRepChainContext.getTimePolicy.initTimePolicy(conf)
     pe.getRepChainContext.getTransactionPool.restoreCachePoolFromDB
     RepLogger.info(RepLogger.System_Logger,  "模块管理者初始化完成...")
   }

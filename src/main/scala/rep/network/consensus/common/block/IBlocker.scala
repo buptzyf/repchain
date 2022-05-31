@@ -3,7 +3,6 @@ package rep.network.consensus.common.block
 import akka.actor.Props
 import akka.pattern.{AskTimeoutException, ask}
 import akka.util.Timeout
-import rep.app.conf.{ TimePolicy}
 import rep.log.{RepLogger, RepTimeTracer}
 import rep.network.base.ModuleBase
 import rep.network.consensus.common.MsgOfConsensus.{PreTransBlock, PreTransBlockResult}
@@ -26,7 +25,7 @@ abstract class IBlocker(moduleName: String) extends ModuleBase(moduleName) {
   import scala.concurrent.duration._
 
   protected val blockSearch: BlockSearcher = pe.getRepChainContext.getBlockSearch
-  implicit val timeout = Timeout((TimePolicy.getTimeoutPreload * 6).seconds)
+  implicit val timeout = Timeout((pe.getRepChainContext.getTimePolicy.getTimeoutPreload * 6).seconds)
 
 
   protected def ExecuteTransactionOfBlock(block: Block): Block = {

@@ -19,7 +19,6 @@ package rep.network.consensus.cfrd.block
 import akka.actor.{Address, Props}
 import akka.cluster.pubsub.DistributedPubSubMediator.Publish
 import akka.routing._
-import rep.app.conf.{ TimePolicy}
 import rep.network.base.ModuleBase
 import rep.network.consensus.common.MsgOfConsensus.ConfirmedBlock
 import rep.network.consensus.cfrd.MsgOfCFRD.{CollectEndorsement, DelayResendEndorseInfo, ForceVoteInfo, RequesterOfEndorsement, ResendEndorseInfo, ResultOfEndorseRequester}
@@ -208,11 +207,13 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
     case ResendEndorseInfo(endorer)=>
       if(!pe.isSynching && this.consensusCondition.CheckWorkConditionOfSystem(pe.getNodeMgr.getStableNodes.size)){
         if (this.block != null && this.block.getHeader.hashPrevious.toStringUtf8() == pe.getCurrentBlockHash ) {
+          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"recv ResendEndorseInfo endorse info,resend times eq ${this.resendTimes} ," +
+            s"height=${block.getHeader.height},local height=${pe.getCurrentHeight}"))
           if(this.router != null){
             if(this.resendTimes <= config.getEndorsementResendTimes){
               if(this.resendEndorsements.isEmpty){
                 this.schedulerLink = clearSched()
-                schedulerLink = scheduler.scheduleOnce(( TimePolicy.getTimeoutEndorse * 2 ).second, self, DelayResendEndorseInfo(this.block.getHeader.hashPresent.toStringUtf8))
+                schedulerLink = scheduler.scheduleOnce(( pe.getRepChainContext.getTimePolicy.getTimeoutEndorse / 2 ).second, self, DelayResendEndorseInfo(this.block.getHeader.hashPresent.toStringUtf8))
               }
               this.resendEndorsements += endorer
             }else{

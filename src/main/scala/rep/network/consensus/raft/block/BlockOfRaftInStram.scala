@@ -10,7 +10,6 @@ import rep.utils.GlobalUtils.EventType
 import rep.network.consensus.cfrd.MsgOfCFRD.{CreateBlock, VoteOfBlocker}
 import rep.network.consensus.common.block.IBlocker
 import rep.network.consensus.common.MsgOfConsensus.{ConfirmedBlock, PreTransBlockOfStream,  preTransBlockResultOfStream}
-import rep.app.conf.{ TimePolicy}
 import rep.network.consensus.util.BlockHelp
 import rep.network.module.ModuleActorType
 import rep.proto.rc2.{Block, Event}
@@ -28,7 +27,7 @@ class BlockOfRaftInStram(moduleName: String) extends IBlocker(moduleName) {
   var dbIdentifier: String = null
   var blockStartTime : Long = Long.MaxValue
   var isPublish : Boolean = false
-  val timeoutOfRaft = TimePolicy.getTimeoutPreload + 2
+  val timeoutOfRaft = pe.getRepChainContext.getTimePolicy.getTimeoutPreload + 2
 
   override def preStart(): Unit = {
     RepLogger.info(RepLogger.Consensus_Logger, this.getLogMsgPrefix("BlockOfRaftInStram module start"))

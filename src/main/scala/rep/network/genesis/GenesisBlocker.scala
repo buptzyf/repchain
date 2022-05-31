@@ -20,7 +20,6 @@ import akka.actor.Props
 import akka.cluster.pubsub.DistributedPubSubMediator.Publish
 import akka.pattern.{AskTimeoutException, ask}
 import akka.util.Timeout
-import rep.app.conf.TimePolicy
 import rep.log.RepLogger
 import rep.network.autotransaction.Topic
 import rep.network.base.ModuleBase
@@ -30,8 +29,6 @@ import rep.network.util.NodeHelp
 import rep.network.consensus.common.MsgOfConsensus.{ConfirmedBlock, GenesisBlock, PreTransBlock, PreTransBlockResult}
 import rep.proto.rc2.Block
 import rep.storage.chain.block.BlockSearcher
-import rep.storage.chain.preload.BlockPreload
-
 import scala.concurrent._
 
 /**
@@ -47,7 +44,7 @@ class GenesisBlocker(moduleName: String) extends ModuleBase(moduleName) {
   import scala.concurrent.duration._
 
   val searcher: BlockSearcher = pe.getRepChainContext.getBlockSearch
-  implicit val timeout = Timeout(TimePolicy.getTimeoutPreload*20.seconds)
+  implicit val timeout = Timeout(pe.getRepChainContext.getTimePolicy.getTimeoutPreload*20.seconds)
 
   var preblock: Block = null
 

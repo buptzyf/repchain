@@ -23,9 +23,7 @@ import akka.pattern.AskTimeoutException
 import scala.concurrent._
 import akka.actor.Props
 import akka.cluster.pubsub.DistributedPubSubMediator.Publish
-import rep.app.conf.TimePolicy
 import rep.network.base.ModuleBase
-import rep.app.Repchain
 import rep.network.consensus.util.BlockHelp
 import rep.network.util.NodeHelp
 import rep.log.RepLogger
@@ -57,7 +55,7 @@ class GenesisBlocker(moduleName: String) extends ModuleBase(moduleName) {
 
   import context.dispatcher
   import scala.concurrent.duration._
-  implicit val timeout = Timeout(TimePolicy.getTimeoutPreload*20.seconds)
+  implicit val timeout = Timeout(pe.getRepChainContext.getTimePolicy.getTimeoutPreload*20.seconds)
   val searcher = pe.getRepChainContext.getBlockSearch
 
   var preblock: Block = null
