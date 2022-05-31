@@ -35,7 +35,7 @@ object verify4Storage {
       val first = sr.getFileFirstHeight(i)
       var last = blockHeight
       if(i < fno){
-        last = sr.getFileFirstHeight(i+1)
+        last = sr.getFileFirstHeight(i+1)-1
       }
       fls(i) = (i,first,last)
       i += 1
@@ -45,16 +45,22 @@ object verify4Storage {
   
   private def verfiyFileForFileInfo(firstHeigh:Long,lastHeight:Long,sr: ImpDataAccess):Boolean={
      var r = true
-     val seed = lastHeight-firstHeigh
-     breakable(
-     for(i<-0 to 9){
-       val rseed = Random.nextLong()
-       var h = Math.abs(rseed) % seed + firstHeigh
-       if(!verfiyBlockOfFile(h,sr)){
-         r = false
-         break
-       }
-     })
+     if(firstHeigh == lastHeight){
+        if(!verfiyBlockOfFile(firstHeigh,sr)){
+          r = false
+         }
+     }else{
+        val seed = lastHeight-firstHeigh
+        breakable(
+        for(i<-0 to 9){
+        val rseed = Random.nextLong()
+        var h = Math.abs(rseed) % seed + firstHeigh
+        if(!verfiyBlockOfFile(h,sr)){
+          r = false
+           break
+         }
+        })
+     }
      r
   }
   
