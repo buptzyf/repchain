@@ -17,11 +17,13 @@
 package rep.api.rest
 
 import akka.util.Timeout
+
 import scala.concurrent.duration._
 import akka.pattern.{AskTimeoutException, ask}
+
 import scala.concurrent._
 import rep.crypto._
-import rep.app.{RepChainMgr}
+import rep.app.{ReasonOfStartup, ReasonOfStop, RepChainMgr}
 import org.json4s._
 import org.json4s.jackson.JsonMethods
 import rep.network.module.ModuleActorType
@@ -38,6 +40,7 @@ import rep.sc.Sandbox.DoTransactionResult
 import rep.storage.chain.block.BlockSearcher
 import rep.storage.db.factory.DBFactory
 import rep.utils.GlobalUtils.EventType
+
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 import rep.utils.{MessageToJson, SerializeUtils}
@@ -59,6 +62,7 @@ object RestActor {
 
   case class SystemStart(nodeName: String)
   case class SystemStop(nodeName:String)
+  case class SystemStatus(nodeName:String)
 
   case class BlockId(bid: String)
   case class BlockHeight(h: Int)
@@ -247,8 +251,18 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
       preTransaction(t)
 
     case SystemStart(nodeName) =>
-      RepChainMgr.Startup4Single(nodeName)
-      val rs = if(RepChainMgr.isStartupFinish(nodeName)) "{\"status\":\"success\"}" else "{\"status\":\"failed\"}"
+      val result = RepChainMgr.Startup4Single(nodeName,ReasonOfStartup.Manual)
+      val rs = "{\"status\":\""+result+"\"}"
+      val r = rs match {
+        case null => QueryResult(None)
+        case _ =>
+          QueryResult(Option(JsonMethods.parse(string2JsonInput(rs))))
+      }
+      sender ! r
+
+    case  SystemStatus(nodeName:String) =>
+      val result = RepChainMgr.systemStatus(nodeName)
+      val rs = "{\"status\":\""+result+"\"}"
       val r = rs match {
         case null => QueryResult(None)
         case _ =>
@@ -257,8 +271,8 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
       sender ! r
 
     case SystemStop(nodeName) =>
-      val resulst = RepChainMgr.shutdown(nodeName)
-      val rs = if(resulst) "{\"status\":\"success\"}" else "{\"status\":\"failed\"}"
+      val result = RepChainMgr.shutdown(nodeName,ReasonOfStop.Manual)
+      val rs = "{\"status\":\""+result+"\"}"
       val r = rs match {
         case null => QueryResult(None)
         case _ =>

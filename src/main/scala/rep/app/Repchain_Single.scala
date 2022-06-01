@@ -31,13 +31,9 @@ object Repchain_Single {
     if(args!=null && args.length>0){
       args.foreach(name=>{
         System.out.println(s"Start start node(${name})...")
-        RepChainMgr.Startup4Single(name)
+        RepChainMgr.Startup4Single(name,ReasonOfStartup.Manual)
         System.out.println(s"Now start to check whether the node(${name}) is started successfully...")
-        if(RepChainMgr.isStartupFinish(name)){
-          System.out.println(s"Node(${name}) started successfully")
-        }else{
-          System.out.println(s"Node(${name}) started failed")
-        }
+        System.out.println(s"Node(${name}) , startup result=${RepChainMgr.systemStatus(name)}")
       })
     } else{
       System.out.println("Please enter the node name to start, for example：Repchain_Single 121000005l35120456.node1 330597659476689954.node6")
