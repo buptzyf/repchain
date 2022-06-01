@@ -28,9 +28,20 @@ import sun.misc.Signal
 object Repchain_Single {
 
   def main(args: Array[ String ]): Unit = {
-    var systemTag = "1"
-    if(args!=null && args.length>0) systemTag = args(0)
-    RepChainMgr.Startup4Single(systemTag)
+    if(args!=null && args.length>0){
+      args.foreach(name=>{
+        System.out.println(s"Start start node(${name})...")
+        RepChainMgr.Startup4Single(name)
+        System.out.println(s"Now start to check whether the node(${name}) is started successfully...")
+        if(RepChainMgr.isStartupFinish(name)){
+          System.out.println(s"Node(${name}) started successfully")
+        }else{
+          System.out.println(s"Node(${name}) started failed")
+        }
+      })
+    } else{
+      System.out.println("Please enter the node name to start, for example：Repchain_Single 121000005l35120456.node1 330597659476689954.node6")
+    }
   }
 }
 
