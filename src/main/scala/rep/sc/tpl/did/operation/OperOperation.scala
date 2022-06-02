@@ -3,6 +3,7 @@ package rep.sc.tpl.did.operation
 import rep.crypto.Sha256
 import rep.proto.rc2.Operate.OperateType
 import rep.proto.rc2.{ActionResult, Operate}
+import rep.sc.Sandbox.SandboxException
 import rep.sc.scalax.{ContractContext, ContractException}
 import rep.sc.tpl.did.DidTplPrefix.{operPrefix, signerPrefix}
 
@@ -77,9 +78,6 @@ object OperOperation extends DidOperation {
     * @return
     */
   def signUpOperate(ctx: ContractContext, operate: Operate): ActionResult = {
-    /*if(operate.authFullName == "ContractAssetsTPL.transfer"){
-      System.out.println("ContractAssetsTPL.transfer")
-    }*/
     val isAdmin = ctx.api.isAdminCert(ctx.t.getSignature.getCertId.creditCode)
     // 检查是否为链密钥对，检查是否为合约部署者
     operate.operateType match {
@@ -97,14 +95,17 @@ object OperOperation extends DidOperation {
           // 非deploy与setState以及"RdidOperateAuthorizeTPL.function"的，则必须是合约部署者
           val cert = ctx.t.getSignature.certId.get
           val contractName = operate.authFullName.split("\\.")(0)
-          if(!ctx.api.permissionCheck(cert.creditCode,cert.certName,contractName+".deploy")){
-            if(!ctx.api.permissionCheck(cert.creditCode,cert.certName,"*.deploy")) {
-              throw ContractException(toJsonErrMsg(notContractDeployer))
-            }
+          try {
+            ctx.api.permissionCheck(cert.creditCode, cert.certName, contractName + ".deploy")
+          } catch {
+            case _: SandboxException =>
+              try {
+                ctx.api.permissionCheck(cert.creditCode, cert.certName, "*.deploy")
+              } catch {
+                case se: SandboxException =>
+                  throw ContractException(toJsonErrMsg(notContractDeployer), se)
+              }
           }
-          /*if (!isContractDeployer(ctx, operate)) {
-            throw ContractException(toJsonErrMsg(notContractDeployer))
-          }*/
         }
         if (ctx.api.getSha256Tool.hashstr(operate.authFullName) != operate.opId) {
           throw ContractException(toJsonErrMsg(hashNotMatch))
