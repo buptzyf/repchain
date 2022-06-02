@@ -282,10 +282,10 @@
             	addNodes();
                 graph.cout_blocks = parseInt(data.result.height);
                 var tmp_cout_trans = parseInt(data.result.totalTransactions);
-                if(isNaN(tmp_cout_trans)){
-                    graph.cout_trans = tmp_cout_trans;
-                }else{
+                if (isNaN(tmp_cout_trans)) {
                     graph.cout_trans = 0;
+                } else {
+                    graph.cout_trans = tmp_cout_trans;
                 }
                 graph.updateNodeSta('Block', graph.cout_blocks);
                 graph.updateNodeSta('Transaction', graph.cout_trans);
