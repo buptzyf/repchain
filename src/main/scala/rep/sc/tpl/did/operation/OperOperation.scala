@@ -98,7 +98,9 @@ object OperOperation extends DidOperation {
           val cert = ctx.t.getSignature.certId.get
           val contractName = operate.authFullName.split("\\.")(0)
           if(!ctx.api.permissionCheck(cert.creditCode,cert.certName,contractName+".deploy")){
-            throw ContractException(toJsonErrMsg(notContractDeployer))
+            if(!ctx.api.permissionCheck(cert.creditCode,cert.certName,"*.deploy")) {
+              throw ContractException(toJsonErrMsg(notContractDeployer))
+            }
           }
           /*if (!isContractDeployer(ctx, operate)) {
             throw ContractException(toJsonErrMsg(notContractDeployer))
