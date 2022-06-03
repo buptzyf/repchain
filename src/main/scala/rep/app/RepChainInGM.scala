@@ -1,6 +1,7 @@
 package rep.app
 
 import akka.actor.ActorRef
+import rep.app.management.{ReasonOfStartup, RepChainMgr}
 
 object RepChainInGM {
   def main(args: Array[String]): Unit = {

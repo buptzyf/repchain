@@ -17,6 +17,7 @@
 package rep.app
 
 import akka.remote.transport.Transport.InvalidAssociationException
+import rep.app.management.{ReasonOfStartup, RepChainMgr}
 import rep.app.system.ClusterSystem
 import rep.app.system.ClusterSystem.InitType
 import sun.misc.Signal

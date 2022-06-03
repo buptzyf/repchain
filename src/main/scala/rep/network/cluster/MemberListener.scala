@@ -16,7 +16,7 @@
 
 package rep.network.cluster
 
-import akka.actor.{ Address, Props}
+import akka.actor.{Address, Props}
 import akka.cluster.ClusterEvent._
 import akka.cluster.{Cluster, Member, MemberStatus}
 import rep.network.cluster.MemberListener.Recollection
@@ -24,13 +24,15 @@ import rep.network.module.cfrd.CFRDActorType
 import rep.utils.GlobalUtils.EventType
 import rep.utils.TimeUtils
 import org.slf4j.LoggerFactory
+import rep.app.management.RepChainMgr
+
 import scala.collection.mutable.HashMap
 import rep.network.base.ModuleBase
 import rep.network.sync.SyncMsg.StartSync
+
 import scala.collection.mutable.ArrayBuffer
 import rep.log.RepLogger
 import rep.network.util.NodeHelp
-import rep.app.RepChainMgr
 import rep.log.httplog.AlertInfo
 import rep.network.autotransaction.Topic
 import rep.network.consensus.byzantium.ConsensusCondition
