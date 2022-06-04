@@ -18,36 +18,60 @@ class ManagementActor extends Actor{
   import rep.app.management.ManagementActor.{QueryResult, SystemStart, SystemStatusQuery, SystemStop}
   override def receive: Receive = {
     case SystemStart(nodeName) =>
-      //s"recv start ${nodeName}"//
-      val result = RepChainMgr.Startup4Single(nodeName,ReasonOfStartup.Manual)
-      val rs = "{\"status\":\""+result+"\"}"
-      val r = rs match {
-        case null => QueryResult(None)
-        case _ =>
-          QueryResult(Option(JsonMethods.parse(string2JsonInput(rs))))
+      val rsBuf = new StringBuffer()
+      rsBuf.append("{")
+      if(nodeName.indexOf(",")>0){
+        val nodes = nodeName.split(",")
+        for(i<-0 to nodes.length-1){
+          val result = RepChainMgr.Startup4Single(nodes(i).trim,ReasonOfStartup.Manual)
+          if(i > 0){
+            rsBuf.append(",")
+          }
+          rsBuf.append("\""+nodes(i).trim+"\":\""+result+"\"")
+        }
+      }else{
+        val result = RepChainMgr.Startup4Single(nodeName.trim,ReasonOfStartup.Manual)
+        rsBuf.append("\""+nodeName.trim+"\":\""+result+"\"")
       }
-      sender ! rs
+      rsBuf.append("}")
+      sender ! rsBuf.toString
 
     case  SystemStatusQuery(nodeName:String) =>
-      //s"recv status ${nodeName}"//
-      val result = RepChainMgr.systemStatus(nodeName)
-      val rs = "{\"status\":\""+result+"\"}"
-      val r = rs match {
-        case null => QueryResult(None)
-        case _ =>
-          QueryResult(Option(JsonMethods.parse(string2JsonInput(rs))))
+      val rsBuf = new StringBuffer()
+      rsBuf.append("{")
+      if(nodeName.indexOf(",")>0){
+        val nodes = nodeName.split(",")
+        for(i<-0 to nodes.length-1){
+          val result = RepChainMgr.systemStatus(nodes(i).trim)
+          if(i > 0){
+            rsBuf.append(",")
+          }
+          rsBuf.append("\""+nodes(i).trim+"\":\""+result+"\"")
+        }
+      }else{
+        val result = RepChainMgr.systemStatus(nodeName.trim)
+        rsBuf.append("\""+nodeName.trim+"\":\""+result+"\"")
       }
-      sender ! rs
+      rsBuf.append("}")
+      sender ! rsBuf.toString
 
     case SystemStop(nodeName) =>
-      //s"recv stop ${nodeName}"
-      val result = RepChainMgr.shutdown(nodeName,ReasonOfStop.Manual)
-      val rs = "{\"status\":\""+result+"\"}"
-      val r = rs match {
-        case null => QueryResult(None)
-        case _ =>
-          QueryResult(Option(JsonMethods.parse(string2JsonInput(rs))))
+      val rsBuf = new StringBuffer()
+      rsBuf.append("{")
+      if(nodeName.indexOf(",")>0){
+        val nodes = nodeName.split(",")
+        for(i<-0 to nodes.length-1){
+          val result = RepChainMgr.shutdown(nodes(i).trim,ReasonOfStartup.Manual)
+          if(i > 0){
+            rsBuf.append(",")
+          }
+          rsBuf.append("\""+nodes(i).trim+"\":\""+result+"\"")
+        }
+      }else{
+        val result = RepChainMgr.shutdown(nodeName.trim,ReasonOfStartup.Manual)
+        rsBuf.append("\""+nodeName.trim+"\":\""+result+"\"")
       }
-      sender ! rs
+      rsBuf.append("}")
+      sender ! rsBuf.toString
   }
 }

@@ -38,11 +38,14 @@ class ManagementService(handler:ActorRef)(implicit executionContext: ExecutionCo
         //  RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} System startup,nodeName=${nodeName}")
           //complete { (handler ? rep.app.management.ManagementActor.SystemStart(nodeName)).mapTo[rep.app.management.ManagementActor.QueryResult] }
         //}
-        rejectEmptyResponse {
-          onSuccess((handler ? SystemStart(nodeName))) { response =>
-            complete(response.toString)
+        withRequestTimeout(300.seconds){
+          rejectEmptyResponse {
+            onSuccess((handler ? SystemStart(nodeName))) { response =>
+              complete(response.toString)
+            }
           }
         }
+
         //complete { (ra ? BlockHeight(blockHeight.toInt)).mapTo[QueryResult] }
       }
     }
@@ -56,9 +59,11 @@ class ManagementService(handler:ActorRef)(implicit executionContext: ExecutionCo
         //  RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} System startup,nodeName=${nodeName}")
           //complete { (handler ? rep.app.management.ManagementActor.SystemStatus(nodeName)).mapTo[rep.app.management.ManagementActor.QueryResult] }
         //}
-        rejectEmptyResponse {
-          onSuccess((handler ? SystemStatusQuery(nodeName))) { response =>
-            complete(response.toString)
+        withRequestTimeout(300.seconds) {
+          rejectEmptyResponse {
+            onSuccess((handler ? SystemStatusQuery(nodeName))) { response =>
+              complete(response.toString)
+            }
           }
         }
         //complete { (ra ? BlockHeight(blockHeight.toInt)).mapTo[QueryResult] }
@@ -75,9 +80,11 @@ class ManagementService(handler:ActorRef)(implicit executionContext: ExecutionCo
         //  complete { (handler ? rep.app.management.ManagementActor.SystemStop(nodeName)).mapTo[rep.app.management.ManagementActor.QueryResult] }
         //}.mapTo[QueryResult]
         //complete { (handler ? rep.app.management.ManagementActor.SystemStop(nodeName)).mapTo[rep.app.management.ManagementActor.QueryResult] }
-        rejectEmptyResponse {
-          onSuccess((handler ? SystemStop(nodeName))) { response =>
-            complete(response.toString)
+        withRequestTimeout(300.seconds) {
+          rejectEmptyResponse {
+            onSuccess((handler ? SystemStop(nodeName))) { response =>
+              complete(response.toString)
+            }
           }
         }
       }
