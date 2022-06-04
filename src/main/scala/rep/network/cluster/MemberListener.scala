@@ -135,11 +135,12 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
         }
         System.err.println(m.address.toString +"\t" +m.status.toString())
       })
-
-
-
       pe.getNodeMgr.resetNodes(nodes)
       pe.getNodeMgr.resetStableNodes(snodes.toSet)
+      if (this.consensusCondition.CheckWorkConditionOfSystem(pe.getNodeMgr.getStableNodes.size)) {
+        schedulerLink = scheduler.scheduleOnce((
+          pe.getRepChainContext.getTimePolicy.getStableTimeDur).millis, self, Recollection)
+      }
 
     //成员入网
     case MemberUp(member) =>
@@ -154,7 +155,6 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
         RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"Member is Up:  nodes is not condidator,node address=${member.address.toString}"))
       }
       schedulerLink = scheduler.scheduleOnce((
-
         pe.getRepChainContext.getTimePolicy.getStableTimeDur).millis, self, Recollection)
     //稳定节点收集
     case Recollection =>

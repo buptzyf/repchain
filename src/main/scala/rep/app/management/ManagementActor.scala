@@ -1,8 +1,7 @@
 package rep.app.management
 
-import akka.actor.{Actor, Props}
-import org.json4s.{JValue, string2JsonInput}
-import org.json4s.jackson.JsonMethods
+import akka.actor.{Actor}
+import org.json4s.{JValue}
 
 
 object ManagementActor{
@@ -11,11 +10,10 @@ object ManagementActor{
   case class SystemStop(nodeName:String)
   case class SystemStatusQuery(nodeName:String)
 
-  case class QueryResult(result: Option[JValue])
 }
 
 class ManagementActor extends Actor{
-  import rep.app.management.ManagementActor.{QueryResult, SystemStart, SystemStatusQuery, SystemStop}
+  import rep.app.management.ManagementActor.{ SystemStart, SystemStatusQuery, SystemStop}
   override def receive: Receive = {
     case SystemStart(nodeName) =>
       val rsBuf = new StringBuffer()
