@@ -8,6 +8,13 @@ import javax.ws.rs._
 import javax.ws.rs.Path
 import org.json4s.{DefaultFormats, jackson}
 import akka.http.scaladsl.server.Directives
+import akka.stream.scaladsl.FileIO
+import java.nio.file.{Files, OpenOption, Paths}
+
+import scala.util.{Failure, Success}
+
+
+
 
 @Path("/management")
 class ManagementService(handler: ActorRef)(implicit executionContext: ExecutionContext)
@@ -22,7 +29,7 @@ class ManagementService(handler: ActorRef)(implicit executionContext: ExecutionC
   implicit val timeout = Timeout(20.seconds)
 
 
-  val route = SystemStartup ~ QuerySystemStatus ~ SystemShutdown ~ QuerySystemNetwork
+  val route = SystemStartup ~ QuerySystemStatus ~ SystemShutdown ~ QuerySystemNetwork ~ postConfigOfNode
 
   @GET
   @Path("/SystemStartup/{nodeName}")
@@ -80,6 +87,42 @@ class ManagementService(handler: ActorRef)(implicit executionContext: ExecutionC
               complete(response.toString)
             }
           }
+        }
+      }
+    }
+
+  //以字节流提交签名交易
+  @POST
+  @Path("/postConfigFile")
+  def postConfigOfNode =
+    path("management" / "system" / "postConfigFile") {
+      post {
+        extractRequestContext { ctx =>
+          implicit val materializer = ctx.materializer
+
+          formFields("node_name", 'file_type, 'network_name ) { (node_name, file_type,network_name) =>
+            System.out.println(file_type)
+            System.out.println(node_name)
+            fileUpload("upload_file") {
+              case (fileInfo, fileStream) =>
+                val path = RepChainConfigFilePathMgr.getSavePath(network_name,node_name,file_type,fileInfo.fileName)
+                //val sink = FileIO.toPath(Paths.get("conf") resolve fileInfo.fileName)
+                val sink = FileIO.toPath(path)
+                val writeResult = fileStream.runWith(sink)
+
+                onSuccess(writeResult) { result =>
+                  result.status match {
+                    case Success(_) => complete(s"Successfully submited ${result.count} bytes，file name=${fileInfo.fieldName}")
+                    case Failure(e) => throw e
+                  }
+                }
+            }
+          }
+
+          //parameters('key.as[String], 'value.as[String]) { (key, value) =>
+
+          //}
+
         }
       }
     }
