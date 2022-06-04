@@ -15,14 +15,14 @@ class ManagementService(handler: ActorRef)(implicit executionContext: ExecutionC
 
   import scala.concurrent.duration._
   import akka.pattern.{ask}
-  import rep.app.management.ManagementActor.{SystemStatusQuery, SystemStart, SystemStop}
+  import rep.app.management.ManagementActor.{SystemStatusQuery, SystemStart, SystemStop, SystemNetworkQuery}
 
   implicit val serialization = jackson.Serialization
   implicit val formats = DefaultFormats
   implicit val timeout = Timeout(20.seconds)
 
 
-  val route = SystemStartup ~ QuerySystemStatus ~ SystemShutdown
+  val route = SystemStartup ~ QuerySystemStatus ~ SystemShutdown ~ QuerySystemNetwork
 
   @GET
   @Path("/SystemStartup/{nodeName}")
@@ -69,4 +69,18 @@ class ManagementService(handler: ActorRef)(implicit executionContext: ExecutionC
       }
     }
 
+  @GET
+  @Path("/SystemNetworking/{nodeName}")
+  def QuerySystemNetwork =
+    path("management" / "system" / "SystemNetwork" / Segment) { nodeName =>
+      get {
+        withRequestTimeout(300.seconds) {
+          rejectEmptyResponse {
+            onSuccess((handler ? SystemNetworkQuery(nodeName))) { response =>
+              complete(response.toString)
+            }
+          }
+        }
+      }
+    }
 }

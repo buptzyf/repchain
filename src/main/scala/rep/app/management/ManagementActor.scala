@@ -1,7 +1,8 @@
 package rep.app.management
 
-import akka.actor.{Actor}
-import org.json4s.{JValue}
+import akka.actor.Actor
+import org.json4s.JValue
+import rep.app.conf.RepChainConfig
 
 
 object ManagementActor{
@@ -9,11 +10,12 @@ object ManagementActor{
   case class SystemStart(nodeName: String)
   case class SystemStop(nodeName:String)
   case class SystemStatusQuery(nodeName:String)
+  case class SystemNetworkQuery(nodeName:String)
 
 }
 
 class ManagementActor extends Actor{
-  import rep.app.management.ManagementActor.{ SystemStart, SystemStatusQuery, SystemStop}
+  import rep.app.management.ManagementActor.{ SystemStart, SystemStatusQuery, SystemStop,SystemNetworkQuery}
   override def receive: Receive = {
     case SystemStart(nodeName) =>
       val rsBuf = new StringBuffer()
@@ -71,5 +73,26 @@ class ManagementActor extends Actor{
       }
       rsBuf.append("}")
       sender ! rsBuf.toString
+
+      case SystemNetworkQuery(nodeName) =>
+        val rsBuf = new StringBuffer()
+        rsBuf.append("{")
+        if(nodeName.indexOf(",")>0){
+          val nodes = nodeName.split(",")
+          for(i<-0 to nodes.length-1){
+            val config = new RepChainConfig(nodes(i).trim)
+            val result = config.getChainNetworkId
+            if(i > 0){
+              rsBuf.append(",")
+            }
+            rsBuf.append("\""+nodes(i).trim+"\":\""+result+"\"")
+          }
+        }else{
+          val config = new RepChainConfig(nodeName.trim)
+          val result = config.getChainNetworkId
+          rsBuf.append("\""+nodeName.trim+"\":\""+result+"\"")
+        }
+        rsBuf.append("}")
+        sender ! rsBuf.toString
   }
 }
