@@ -10,14 +10,14 @@ import rep.log.RepLogger
 import rep.proto.rc2.Event
 
 object ManagementServer {
-  def props(port: Int,ssl_mode: Int): Props = Props(classOf[ManagementServer], port,ssl_mode)
+  def props(port: Int,ssl_mode: Int,useClientAuth:Boolean): Props = Props(classOf[ManagementServer], port,ssl_mode,useClientAuth:Boolean)
 
   /** 启动管理服务
    *
    * @param sys ActorSystem
    * @param
    */
-  def start(sys: ActorSystem, port: Int,sslMode:Int) {
+  def start(sys: ActorSystem, port: Int,sslMode:Int,useClientAuth:Boolean) {
     implicit val system = sys
     implicit val executionContext = system.dispatcher
 
@@ -44,8 +44,8 @@ object ManagementServer {
           engine.setEnabledCipherSuites(cipherSuite.toArray)
           engine.setEnabledProtocols(Array(
             sys.settings.config.getString("akka.remote.artery.ssl.config-ssl-engine.protocol")))
-          engine.setNeedClientAuth(false)
-          engine.setWantClientAuth(false)
+          engine.setNeedClientAuth(useClientAuth)
+          //engine.setWantClientAuth(true)
 
           engine
         })
@@ -70,9 +70,9 @@ object ManagementServer {
   }
 }
 
-class ManagementServer(port: Int,sslMode:Int) extends Actor {
+class ManagementServer(port: Int,sslMode:Int,useClientAuth:Boolean) extends Actor {
   override def preStart(): Unit = {
-    ManagementServer.start(context.system, port,sslMode)
+    ManagementServer.start(context.system, port,sslMode,useClientAuth)
   }
 
   def receive = {
