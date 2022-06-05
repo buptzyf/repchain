@@ -24,7 +24,9 @@ import scala.concurrent.{ExecutionContext, Future}
 import akka.actor.{ActorRef, ActorSelection}
 import akka.util.Timeout
 import akka.http.scaladsl.model.Uri.Path.Segment
-import akka.http.scaladsl.server.Directives
+//import akka.http.scaladsl.server.Directives
+//import akka.http.scaladsl.server.Directives
+//import Directives._
 import io.swagger.v3.core.util.PrimitiveType
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.enums.{ParameterIn, ParameterStyle}
@@ -42,7 +44,7 @@ import rep.proto.rc2.{Block, Transaction}
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server._
 import StatusCodes._
-import Directives._
+
 import rep.sc.Sandbox.SandboxException
 import rep.sc.Sandbox._
 import rep.sc.Shim._
@@ -50,7 +52,7 @@ import de.heikoseeberger.akkahttpjson4s.Json4sSupport
 import rep.api.rest.RestActor._
 import spray.json.DefaultJsonProtocol._
 import org.json4s.{DefaultFormats, Formats, jackson}
-import akka.http.scaladsl.server.Directives
+
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import spray.json._
 import akka.http.scaladsl.marshallers.xml.ScalaXmlSupport
@@ -80,7 +82,7 @@ class ChainService(ra: RestRouter)(implicit executionContext: ExecutionContext)
 
 
 
-  val route = getBlockChainInfo ~ getNodeNumber ~ SystemStartup ~ QuerySystemStatus ~ SystemShutdown ~ getCacheTransNumber ~ getAcceptedTransNumber ~ loadBlockInfoToCache ~ IsLoadBlockInfoToCache
+  val route = getBlockChainInfo ~ getNodeNumber ~/* SystemStartup ~ QuerySystemStatus ~ SystemShutdown ~*/ getCacheTransNumber ~ getAcceptedTransNumber ~ loadBlockInfoToCache ~ IsLoadBlockInfoToCache
 
   @GET
   @Operation(tags = Array("chaininfo"), summary = "返回块链信息", description = "getChainInfo", method = "GET")
@@ -111,7 +113,7 @@ class ChainService(ra: RestRouter)(implicit executionContext: ExecutionContext)
       }
     }
 
-  @GET
+ /* @GET
   @Path("/SystemStartup/{nodeName}")
   @Operation(tags = Array("chaininfo"), summary  = "启动指定名称的节点", description = "SystemStartup", method = "GET")
   @Parameters(Array(
@@ -170,7 +172,7 @@ class ChainService(ra: RestRouter)(implicit executionContext: ExecutionContext)
         //complete { (ra ? BlockHeight(blockHeight.toInt)).mapTo[QueryResult] }
       }
     }
-
+*/
 
   @GET
   @Path("/loadBlockInfoToCache")

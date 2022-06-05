@@ -1,17 +1,15 @@
-package rep.app
+package rep.app.management
 
 import java.util.concurrent._
-import java.util.concurrent.atomic.AtomicBoolean
 
-import rep.app.system.ClusterSystem
 import akka.cluster.{Cluster, MemberStatus}
 import akka.util.Timeout
+import rep.app.system.ClusterSystem
 import rep.log.RepLogger
 import rep.log.httplog.AlertInfo
 
-import scala.collection.mutable.ArrayBuffer
-import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
+import scala.concurrent.{Await, Future}
 import scala.util.control.Breaks.{break, breakable}
 
 case object SystemStatus {

@@ -23,11 +23,11 @@ import akka.pattern.{AskTimeoutException, ask}
 
 import scala.concurrent._
 import rep.crypto._
-import rep.app.{ReasonOfStartup, ReasonOfStop, RepChainMgr}
 import org.json4s._
 import org.json4s.jackson.JsonMethods
 import rep.network.module.ModuleActorType
 import akka.actor.Props
+import rep.app.management.{ReasonOfStartup, ReasonOfStop, RepChainMgr}
 import rep.log.RepLogger
 import rep.network.base.ModuleBase
 import rep.network.consensus.byzantium.ConsensusCondition
@@ -60,9 +60,9 @@ object RestActor {
   case object TransNumber
   case object AcceptedTransNumber
 
-  case class SystemStart(nodeName: String)
+  /*case class SystemStart(nodeName: String)
   case class SystemStop(nodeName:String)
-  case class SystemStatus(nodeName:String)
+  case class SystemStatus(nodeName:String)*/
 
   case class BlockId(bid: String)
   case class BlockHeight(h: Int)
@@ -249,7 +249,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
     // 流式提交交易
     case t: Transaction =>
       preTransaction(t)
-
+/*
     case SystemStart(nodeName) =>
       val result = RepChainMgr.Startup4Single(nodeName,ReasonOfStartup.Manual)
       val rs = "{\"status\":\""+result+"\"}"
@@ -279,7 +279,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
           QueryResult(Option(JsonMethods.parse(string2JsonInput(rs))))
       }
       sender ! r
-
+*/
     // 根据高度检索块
     case BlockHeight(h) =>
       val bb = sr.getBlockByHeight(h)

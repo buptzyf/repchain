@@ -16,8 +16,11 @@
 
 package rep.app
 
+import rep.app.management.{ReasonOfStartup, RepChainMgr}
+
 /**
  * Repchain app start
+ *
  * @author c4w 2017/9/24.
  *         -Djavax.net.debug=ssl:handshake:verbose
  */
