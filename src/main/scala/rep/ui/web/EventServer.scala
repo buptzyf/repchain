@@ -50,8 +50,9 @@ import akka.http.scaladsl.{ConnectionContext, Http, HttpsConnectionContext}
 import akka.japi.Util.immutableSeq
 import javax.net.ssl.{KeyManager, KeyManagerFactory, SSLContext, TrustManager, TrustManagerFactory}
 import rep.app.system.RepChainSystemContext
+import rep.crypto.JsseContextHelper
 import rep.proto.rc2.Event
-
+import akka.japi.Util._
 import scala.util.Try
 
 /** Event服务伴生对象
@@ -71,7 +72,7 @@ object EventServer {
       }
   }
 
-  def createJsseContext(repContext: RepChainSystemContext):SSLContext={
+ /* def createJsseContext(repContext: RepChainSystemContext):SSLContext={
     val config = repContext.getConfig.getSystemConf
     val prefix = "akka.remote.artery.ssl.config-ssl-engine."
     val SSLKeyStore: String = config.getString(prefix+"key-store")
@@ -127,7 +128,7 @@ object EventServer {
     }
     rng.nextInt()
     rng
-  }
+  }*/
 
 /** 启动Event服务
  * 传入publish Actor
@@ -209,15 +210,15 @@ object EventServer {
         System.out.println(s"^^^^^^^^https GM Service:${repContext.getSystemName}^^^^^^^^")
       } else {
         https = ConnectionContext.httpsServer(() => {
-          val sslCtx = EventServer.createJsseContext(repContext)
+          val sslCtx = JsseContextHelper.createJsseContext(repContext.getConfig.getSystemConf)//EventServer.createJsseContext(repContext)
           val engine = sslCtx.createSSLEngine()
           engine.setUseClientMode(false)
-          //engine.setEnabledCipherSuites(immutableSeq(repContext.getConfig.getSystemConf.getStringList("TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256")).toSet.toArray)
+          val cipherSuite = immutableSeq(repContext.getConfig.getSystemConf.getStringList("akka.remote.artery.ssl.config-ssl-engine.enabled-algorithms")).toSet
+          engine.setEnabledCipherSuites(cipherSuite.toArray)
           engine.setEnabledProtocols(Array(
             repContext.getConfig.getSystemConf.getString("akka.remote.artery.ssl.config-ssl-engine.protocol")))
           engine.setNeedClientAuth(false)
           engine.setWantClientAuth(false)
-
 
           engine
         })
