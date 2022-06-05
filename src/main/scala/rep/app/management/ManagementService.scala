@@ -9,15 +9,16 @@ import javax.ws.rs.Path
 import org.json4s.{DefaultFormats, jackson}
 import akka.http.scaladsl.server.Directives
 import akka.stream.scaladsl.FileIO
-import java.nio.file.{Files, OpenOption, Paths}
-
+import java.security.cert.X509Certificate
+import akka.http.scaladsl.model.headers.`Tls-Session-Info`
+import javax.net.ssl.SSLPeerUnverifiedException
 import scala.util.{Failure, Success}
 
 
 
 
 @Path("/management")
-class ManagementService(handler: ActorRef)(implicit executionContext: ExecutionContext)
+class ManagementService(handler: ActorRef,isCheckPeerCertificate:Boolean)(implicit executionContext: ExecutionContext)
   extends Directives {
 
   import scala.concurrent.duration._
@@ -37,9 +38,29 @@ class ManagementService(handler: ActorRef)(implicit executionContext: ExecutionC
     path("management" / "system" / "SystemStartup" / Segment) { nodeName =>
       get {
         withRequestTimeout(300.seconds) {
-          rejectEmptyResponse {
-            onSuccess((handler ? SystemStart(nodeName))) { response =>
-              complete(response.toString)
+          if(isCheckPeerCertificate){
+            headerValueByType[`Tls-Session-Info`]() { sessionInfo =>
+              val sslSession = sessionInfo.getSession()
+              try{
+                val client_cert = sslSession.getPeerCertificates
+                val cert = client_cert(0).asInstanceOf[X509Certificate]
+                System.err.println(cert)
+                //todo verify cert
+                rejectEmptyResponse {
+                  onSuccess((handler ? SystemStart(nodeName))) { response =>
+                    complete(response.toString)
+                  }
+                }
+              }catch {
+                case e: SSLPeerUnverifiedException =>
+                  complete("Failed to get client certificate")
+              }
+            }
+          }else {
+            rejectEmptyResponse {
+              onSuccess((handler ? SystemStart(nodeName))) { response =>
+                complete(response.toString)
+              }
             }
           }
         }
@@ -52,9 +73,29 @@ class ManagementService(handler: ActorRef)(implicit executionContext: ExecutionC
     path("management" / "system" / "SystemStatus" / Segment) { nodeName =>
       get {
         withRequestTimeout(300.seconds) {
-          rejectEmptyResponse {
-            onSuccess((handler ? SystemStatusQuery(nodeName))) { response =>
-              complete(response.toString)
+          if(isCheckPeerCertificate){
+            headerValueByType[`Tls-Session-Info`]() { sessionInfo =>
+              val sslSession = sessionInfo.getSession()
+              try{
+                val client_cert = sslSession.getPeerCertificates
+                val cert = client_cert(0).asInstanceOf[X509Certificate]
+                System.err.println(cert)
+                //todo verify cert
+                rejectEmptyResponse {
+                  onSuccess((handler ? SystemStatusQuery(nodeName))) { response =>
+                    complete(response.toString)
+                  }
+                }
+              }catch {
+                case e: SSLPeerUnverifiedException =>
+                  complete("Failed to get client certificate")
+              }
+            }
+          }else {
+            rejectEmptyResponse {
+              onSuccess((handler ? SystemStatusQuery(nodeName))) { response =>
+                complete(response.toString)
+              }
             }
           }
         }
@@ -67,9 +108,29 @@ class ManagementService(handler: ActorRef)(implicit executionContext: ExecutionC
     path("management" / "system" / "SystemStop" / Segment) { nodeName =>
       get {
         withRequestTimeout(300.seconds) {
-          rejectEmptyResponse {
-            onSuccess((handler ? SystemStop(nodeName))) { response =>
-              complete(response.toString)
+          if(isCheckPeerCertificate){
+            headerValueByType[`Tls-Session-Info`]() { sessionInfo =>
+              val sslSession = sessionInfo.getSession()
+              try{
+                val client_cert = sslSession.getPeerCertificates
+                val cert = client_cert(0).asInstanceOf[X509Certificate]
+                System.err.println(cert)
+                //todo verify cert
+                rejectEmptyResponse {
+                  onSuccess((handler ? SystemStop(nodeName))) { response =>
+                    complete(response.toString)
+                  }
+                }
+              }catch {
+                case e: SSLPeerUnverifiedException =>
+                  complete("Failed to get client certificate")
+              }
+            }
+          }else {
+            rejectEmptyResponse {
+              onSuccess((handler ? SystemStop(nodeName))) { response =>
+                complete(response.toString)
+              }
             }
           }
         }
@@ -77,14 +138,34 @@ class ManagementService(handler: ActorRef)(implicit executionContext: ExecutionC
     }
 
   @GET
-  @Path("/SystemNetworking/{nodeName}")
+  @Path("/SystemNetwork/{nodeName}")
   def QuerySystemNetwork =
     path("management" / "system" / "SystemNetwork" / Segment) { nodeName =>
       get {
         withRequestTimeout(300.seconds) {
-          rejectEmptyResponse {
-            onSuccess((handler ? SystemNetworkQuery(nodeName))) { response =>
-              complete(response.toString)
+          if(isCheckPeerCertificate){
+            headerValueByType[`Tls-Session-Info`]() { sessionInfo =>
+              val sslSession = sessionInfo.getSession()
+              try{
+                val client_cert = sslSession.getPeerCertificates
+                val cert = client_cert(0).asInstanceOf[X509Certificate]
+                System.err.println(cert)
+                //todo verify cert
+                rejectEmptyResponse {
+                  onSuccess((handler ? SystemNetworkQuery(nodeName))) { response =>
+                    complete(response.toString)
+                  }
+                }
+              }catch {
+                case e: SSLPeerUnverifiedException =>
+                  complete("Failed to get client certificate")
+              }
+            }
+          }else {
+            rejectEmptyResponse {
+              onSuccess((handler ? SystemNetworkQuery(nodeName))) { response =>
+                complete(response.toString)
+              }
             }
           }
         }
@@ -97,33 +178,68 @@ class ManagementService(handler: ActorRef)(implicit executionContext: ExecutionC
   def postConfigOfNode =
     path("management" / "system" / "postConfigFile") {
       post {
-        extractRequestContext { ctx =>
-          implicit val materializer = ctx.materializer
+        if(isCheckPeerCertificate){
+          headerValueByType[`Tls-Session-Info`]() { sessionInfo =>
+            val sslSession = sessionInfo.getSession()
+            try{
+              val client_cert = sslSession.getPeerCertificates
+              val cert = client_cert(0).asInstanceOf[X509Certificate]
+              System.err.println(cert)
+              //todo verify cert
+              extractRequestContext { ctx =>
+                implicit val materializer = ctx.materializer
 
-          formFields("node_name", 'file_type, 'network_name ) { (node_name, file_type,network_name) =>
-            System.out.println(file_type)
-            System.out.println(node_name)
-            fileUpload("upload_file") {
-              case (fileInfo, fileStream) =>
-                val path = RepChainConfigFilePathMgr.getSavePath(network_name,node_name,file_type,fileInfo.fileName)
-                //val sink = FileIO.toPath(Paths.get("conf") resolve fileInfo.fileName)
-                val sink = FileIO.toPath(path)
-                val writeResult = fileStream.runWith(sink)
+                formFields("node_name", 'file_type, 'network_name ) { (node_name, file_type,network_name) =>
+                  System.out.println(file_type)
+                  System.out.println(node_name)
+                  fileUpload("upload_file") {
+                    case (fileInfo, fileStream) =>
+                      val path = RepChainConfigFilePathMgr.getSavePath(network_name,node_name,file_type,fileInfo.fileName)
+                      //val sink = FileIO.toPath(Paths.get("conf") resolve fileInfo.fileName)
+                      val sink = FileIO.toPath(path)
+                      val writeResult = fileStream.runWith(sink)
 
-                onSuccess(writeResult) { result =>
-                  result.status match {
-                    case Success(_) => complete(s"Successfully submited ${result.count} bytes，file name=${fileInfo.fieldName}")
-                    case Failure(e) => throw e
+                      onSuccess(writeResult) { result =>
+                        result.status match {
+                          case Success(_) => complete(s"Successfully submited ${result.count} bytes，file name=${fileInfo.fieldName}")
+                          case Failure(e) => throw e
+                        }
+                      }
                   }
                 }
+              }
+            }catch {
+              case e: SSLPeerUnverifiedException =>
+                complete("Failed to get client certificate")
             }
           }
+        }else {
+          extractRequestContext { ctx =>
+            implicit val materializer = ctx.materializer
 
-          //parameters('key.as[String], 'value.as[String]) { (key, value) =>
+            formFields("node_name", 'file_type, 'network_name ) { (node_name, file_type,network_name) =>
+              System.out.println(file_type)
+              System.out.println(node_name)
+              fileUpload("upload_file") {
+                case (fileInfo, fileStream) =>
+                  val path = RepChainConfigFilePathMgr.getSavePath(network_name,node_name,file_type,fileInfo.fileName)
+                  //val sink = FileIO.toPath(Paths.get("conf") resolve fileInfo.fileName)
+                  val sink = FileIO.toPath(path)
+                  val writeResult = fileStream.runWith(sink)
 
-          //}
-
+                  onSuccess(writeResult) { result =>
+                    result.status match {
+                      case Success(_) => complete(s"Successfully submited ${result.count} bytes，file name=${fileInfo.fieldName}")
+                      case Failure(e) => throw e
+                    }
+                  }
+              }
+            }
+          }
         }
+
+
+
       }
     }
 }

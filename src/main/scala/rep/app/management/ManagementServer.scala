@@ -29,7 +29,7 @@ object ManagementServer {
         System.out.println(s"^^^^^^^^begin：http management Service:http://localhost:$port^^^^^^^^")
         Http().newServerAt("0.0.0.0", port)
           .bindFlow(cors()(
-            new ManagementService(requestHandler).route
+            new ManagementService(requestHandler,false).route
           ))
         System.out.println(s"^^^^^^^^end：http management Service:http://localhost:$port^^^^^^^^")
         RepLogger.info(RepLogger.System_Logger, s"http management Service online at http://localhost:$port")
@@ -52,7 +52,7 @@ object ManagementServer {
         Http().newServerAt("0.0.0.0", port)
           .enableHttps(https)
           .bindFlow(cors()(
-            new ManagementService(requestHandler).route
+            new ManagementService(requestHandler,useClientAuth).route
           ))
         System.out.println(s"^^^^^^^^end ssl：https management Service:https://localhost:$port^^^^^^^^")
         RepLogger.info(RepLogger.System_Logger, s"https(ssl) management Service online at https://localhost:$port")
@@ -63,10 +63,6 @@ object ManagementServer {
         System.out.println(s"^^^^^^^^end gmssl：https management Service:https://localhost:$port^^^^^^^^")
         RepLogger.info(RepLogger.System_Logger, s"https(gmssl) management Service online at https://localhost:$port")
     }
-
-
-
-
   }
 }
 
