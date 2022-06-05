@@ -16,56 +16,14 @@ object OperOperation extends DidOperation {
 
   val operateExists = ActionResult(14001, "operate已存在")
   val operateNotExists = ActionResult(14002, "operate不存在")
-  val notContractDeployer = ActionResult(14003, "非合约部署者，不能注册或禁用相应操作")
+  val canNotDeployContract = ActionResult(14003, "不具有该合约部署部署权限者，不能注册或禁用相应操作")
   val registerNotTranPoster = ActionResult(14004, "register(操作注册者)非交易提交者")
   val onlyAdminCanManageServiceOperate = ActionResult(14005, "非管理员，不具有管理Service的权限")
   val onlyAdminCanRegisterOperate = ActionResult(14005, "非管理员，不能注册管理员相关的操作，如：setState与deploy")
-  val contractOwnerNotExists = ActionResult(14006, "注册的合约不存在")
-  val operateTypeUndefined = ActionResult(14007, "操作类型未定义")
-  val hashNotMatch = ActionResult(14008, "Operate中opId字段与计算得到的Hash不相等")
+  val operateTypeUndefined = ActionResult(14006, "操作类型未定义")
+  val hashNotMatch = ActionResult(14007, "Operate中opId字段与计算得到的Hash不相等")
 
   case class OperateStatus(opId: String, state: Boolean)
-
-
-  /**
-    * 判断交易提交者是否为合约部署者
-    * 判断是否具有该合约（从Operate中的合约.方法解析其中的合约名）的deploy操作权限
-    *
-    * @param ctx
-    * @param operate
-    * @return
-    */
-  def isContractDeployer(ctx: ContractContext, operate: Operate): Boolean = {
-    var res = false
-    // 查看合约开发者
-    val key_coder = operate.authFullName.split("\\.")(0)
-    var creditCode : Any = null
-    if(ctx.api.getAccountContractCodeName != key_coder){
-      //跨合约访问
-      creditCode = ctx.api.getStateEx(ctx.api.getChainNetId,key_coder,key_coder)
-    }else{
-      creditCode = ctx.api.getVal(key_coder)
-    }
-    if (creditCode == null) {
-      throw ContractException(toJsonErrMsg(contractOwnerNotExists))
-    } else {
-      res = creditCode.toString.equals(ctx.t.getSignature.getCertId.creditCode)
-      res
-    }
-
-  }
-
-  /**
-    * 判断交易提交者是否为合约部署者
-    *
-    * @param ctx
-    * @param opId
-    * @return
-    */
-  def isContractDeployer(ctx: ContractContext, opId: String): Boolean = {
-    val operate = ctx.api.getVal(operPrefix + opId).asInstanceOf[Operate]
-    isContractDeployer(ctx, operate)
-  }
 
 
   /**
@@ -103,7 +61,7 @@ object OperOperation extends DidOperation {
                 ctx.api.permissionCheck(cert.creditCode, cert.certName, "*.deploy")
               } catch {
                 case se: SandboxException =>
-                  throw ContractException(toJsonErrMsg(notContractDeployer), se)
+                  throw ContractException(toJsonErrMsg(canNotDeployContract), se)
               }
           }
         }
