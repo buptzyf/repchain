@@ -1,6 +1,8 @@
 package rep.app.management
 
 
+import java.io.StringWriter
+
 import scala.concurrent.ExecutionContext
 import akka.actor.ActorRef
 import akka.util.Timeout
@@ -13,9 +15,6 @@ import java.security.cert.X509Certificate
 import akka.http.scaladsl.model.headers.`Tls-Session-Info`
 import javax.net.ssl.SSLPeerUnverifiedException
 import scala.util.{Failure, Success}
-
-
-
 
 @Path("/management")
 class ManagementService(handler: ActorRef,isCheckPeerCertificate:Boolean)(implicit executionContext: ExecutionContext)
@@ -44,12 +43,15 @@ class ManagementService(handler: ActorRef,isCheckPeerCertificate:Boolean)(implic
               try{
                 val client_cert = sslSession.getPeerCertificates
                 val cert = client_cert(0).asInstanceOf[X509Certificate]
-                System.err.println(cert)
-                //todo verify cert
-                rejectEmptyResponse {
-                  onSuccess((handler ? SystemStart(nodeName))) { response =>
-                    complete(response.toString)
+                if(cert != null){
+                  //System.err.println(cert)
+                  rejectEmptyResponse {
+                    onSuccess((handler ? SystemStart(nodeName))) { response =>
+                      complete(response.toString)
+                    }
                   }
+                }else{
+                  complete("Failed to get client certificate")
                 }
               }catch {
                 case e: SSLPeerUnverifiedException =>
@@ -79,8 +81,7 @@ class ManagementService(handler: ActorRef,isCheckPeerCertificate:Boolean)(implic
               try{
                 val client_cert = sslSession.getPeerCertificates
                 val cert = client_cert(0).asInstanceOf[X509Certificate]
-                System.err.println(cert)
-                //todo verify cert
+                if(cert != null)
                 rejectEmptyResponse {
                   onSuccess((handler ? SystemStatusQuery(nodeName))) { response =>
                     complete(response.toString)
@@ -237,9 +238,6 @@ class ManagementService(handler: ActorRef,isCheckPeerCertificate:Boolean)(implic
             }
           }
         }
-
-
-
       }
     }
 }

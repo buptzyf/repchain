@@ -2,6 +2,7 @@ package rep.network.cache
 
 import akka.actor.Props
 import rep.log.RepLogger
+import rep.log.httplog.AlertInfo
 import rep.network.autotransaction.Topic
 import rep.network.base.ModuleBase
 import rep.network.module.cfrd.CFRDActorType
@@ -48,14 +49,17 @@ class TransactionChecker (moduleName: String) extends ModuleBase(moduleName){
             result = true
           }
         } else {
-          resultMsg = s"The transaction(${t.id}) is not completed"
+          RepLogger.sendAlertToDB(pe.getRepChainContext.getHttpLogger(),
+            new AlertInfo("API", 5, s"txid=${t.id},msg=签名验证失败."))
+          //失败处理
+          resultMsg = s"${t.id} 交易签名验证失败"
         }
       } catch {
-        case e: RuntimeException => throw e
+        case e: RuntimeException =>
+          RepLogger.sendAlertToDB(pe.getRepChainContext.getHttpLogger(),
+            new AlertInfo("API", 5, s"txid=${t.id},msg=签名验证异常，error=${e.getMessage}."))
+          throw e
       }
-    /*}else{
-      result = true
-    }*/
 
     TransactionChecker.CheckedTransactionResult(result, resultMsg)
   }
