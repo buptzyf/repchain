@@ -11,6 +11,7 @@ import rep.sc.SandboxDispatcher._
 import rep.sc.tpl.did.DidTplPrefix
 import rep.storage.chain.preload.BlockPreload
 import rep.utils.IdTool
+
 import scala.util.control.Breaks.{break, breakable}
 
 /**
@@ -18,7 +19,7 @@ import scala.util.control.Breaks.{break, breakable}
  * 实现权限校验
  */
 
-class PermissionVerify(ctx : RepChainSystemContext) {
+class PermissionVerify(ctx: RepChainSystemContext) {
   val opCache = ctx.getPermissionCacheManager.getCache(DidTplPrefix.operPrefix).asInstanceOf[OperateCache]
   val authCache = ctx.getPermissionCacheManager.getCache(DidTplPrefix.authPrefix).asInstanceOf[AuthenticateCache]
   val sigCache = ctx.getPermissionCacheManager.getCache(DidTplPrefix.signerPrefix).asInstanceOf[SignerCache]
@@ -29,20 +30,20 @@ class PermissionVerify(ctx : RepChainSystemContext) {
   //合约权限校验
   //dbinstance没有的情况，参数的值为null
   //did，opname必填
-  def CheckPermission(did:String,certName:String,opname:String,dbinstance: BlockPreload): Boolean ={
+  def CheckPermission(did: String, certName: String, opname: String, dbinstance: BlockPreload): Boolean = {
     var r = false
     RepLogger.Permission_Logger.trace(s"System=${ctx.getSystemName},PermissionVerify.CheckPermission entry check,did=${did},opname=${opname}")
-    if(!IsChainCert(did)) {
+    if (!IsChainCert(did)) {
       RepLogger.Permission_Logger.trace(s"System=${ctx.getSystemName},PermissionVerify.CheckPermission is not chain cert,did=${did},opname=${opname}")
       //不是链证书，检查是否有合约部署权限
       //获取Signer信息
       val od = opCache.get(opname, dbinstance)
-      val sd = sigCache.get(did,dbinstance)
-      if(sd == None){
+      val sd = sigCache.get(did, dbinstance)
+      if (sd == None) {
         //实体账户不存在
         RepLogger.Permission_Logger.trace(s"System=${ctx.getSystemName},PermissionVerify.CheckPermission signer is not exist,did=${did},opname=${opname}")
         throw new SandboxException(ERR_NO_OPERATE)
-      }else if(sd.get.signer_valid){
+      } else if (sd.get.signer_valid) {
         //实体账户有效
         RepLogger.Permission_Logger.trace(s"System=${ctx.getSystemName},PermissionVerify.CheckPermission signer valid,did=${did},opname=${opname}")
         if (od == None) {
@@ -65,46 +66,46 @@ class PermissionVerify(ctx : RepChainSystemContext) {
             } else {
               //不属于自己的操作，检查是否有授权
               RepLogger.Permission_Logger.trace(s"System=${ctx.getSystemName},PermissionVerify.CheckPermission check auth,did=${did},opname=${opname}")
-              if(sd.get.opIds.containsKey(od.get.opId)){
+              if (sd.get.opIds.containsKey(od.get.opId)) {
                 val opid = sd.get.opIds.get(od.get.opId)
-                if(opid != null){
-                  if(opid.length > 0){
-                    breakable(opid.foreach(f=>{
-                      val ad = authCache.get(f,dbinstance)
-                      if(ad != None){
-                        if(ad.get.authorizeValid){
-                          val b = IsBindCert(ad.get.authid,sd.get,dbinstance)
-                          if(b._1){
-                            if(b._2.equals(did+"."+certName)){
+                if (opid != null) {
+                  if (opid.length > 0) {
+                    breakable(opid.foreach(f => {
+                      val ad = authCache.get(f, dbinstance)
+                      if (ad != None) {
+                        if (ad.get.authorizeValid) {
+                          val b = IsBindCert(ad.get.authid, sd.get, dbinstance)
+                          if (b._1) {
+                            if (b._2.equals(did + "." + certName)) {
                               r = true
                               break
                             }
-                          }else{
+                          } else {
                             r = true
                             break
                           }
                         }
-                      }else{
+                      } else {
                         //授权已经不存在
                         RepLogger.Permission_Logger.trace(s"System=${ctx.getSystemName},PermissionVerify.CheckPermission auth is not exist,did=${did},opname=${opname}")
                         throw new SandboxException(ERR_NO_AUTHORIZE)
                       }
                     }))
-                    if(!r){
+                    if (!r) {
                       RepLogger.Permission_Logger.trace(s"System=${ctx.getSystemName},PermissionVerify.CheckPermission auth invalid,did=${did},opname=${opname}")
                       throw new SandboxException(ERR_INVALID_AUTHORIZE)
                     }
-                  }else{
+                  } else {
                     //没有找到授权的操作
                     RepLogger.Permission_Logger.trace(s"System=${ctx.getSystemName},PermissionVerify.CheckPermission not found auth,did=${did},opname=${opname}")
                     throw new SandboxException(ERR_NO_OP_IN_AUTHORIZE)
                   }
-                }else{
+                } else {
                   //没有找到授权的操作
                   RepLogger.Permission_Logger.trace(s"System=${ctx.getSystemName},PermissionVerify.CheckPermission not found auth,did=${did},opname=${opname}")
                   throw new SandboxException(ERR_NO_OP_IN_AUTHORIZE)
                 }
-              }else{
+              } else {
                 //没有该操作的授权
                 RepLogger.Permission_Logger.trace(s"System=${ctx.getSystemName},PermissionVerify.CheckPermission not found auth,did=${did},opname=${opname}")
                 throw new SandboxException(ERR_NO_OP_IN_AUTHORIZE)
@@ -116,12 +117,12 @@ class PermissionVerify(ctx : RepChainSystemContext) {
           RepLogger.Permission_Logger.trace(s"System=${ctx.getSystemName},PermissionVerify.CheckPermission op invalid,did=${did},opname=${opname}")
           throw new SandboxException(ERR_INVALID_OPERATE)
         }
-      }else{
+      } else {
         //实体账户无效
         RepLogger.Permission_Logger.trace(s"System=${ctx.getSystemName},PermissionVerify.CheckPermission signer invalid,did=${did},opname=${opname}")
         throw new SandboxException(ERR_INVALID_SIGNER)
       }
-    }else{
+    } else {
       r = true
       RepLogger.Permission_Logger.trace(s"System=${ctx.getSystemName},PermissionVerify.CheckPermission is chain cert,did=${did},opname=${opname}")
     }
@@ -129,28 +130,27 @@ class PermissionVerify(ctx : RepChainSystemContext) {
   }
 
   //通过证书的Id对象来校验权限
-  def CheckPermissionOfCertId(certId:CertId, opName:String, dbInstance:BlockPreload): Boolean ={
-    CheckPermission(certId.creditCode,certId.certName,opName,dbInstance)
+  def CheckPermissionOfCertId(certId: CertId, opName: String, dbInstance: BlockPreload): Boolean = {
+    CheckPermission(certId.creditCode, certId.certName, opName, dbInstance)
   }
 
   //通过证书Id的字符串来校验权限
-  def CheckPermissionOfCertIdStr(certId:String, opName:String, dbInstance:BlockPreload): Boolean ={
+  def CheckPermissionOfCertIdStr(certId: String, opName: String, dbInstance: BlockPreload): Boolean = {
     CheckPermissionOfCertId(IdTool.getCertIdFromName(certId), opName, dbInstance)
   }
 
   //通过证书的hash来校验权限
-  def CheckPermissionOfCertHash(certHash:String, opName:String, dbInstance:BlockPreload): Boolean ={
-    val certId = certHashCache.get(certHash,dbInstance)
-    if(certId == None){
+  def CheckPermissionOfCertHash(certHash: String, opName: String, dbInstance: BlockPreload): Boolean = {
+    val certId = certHashCache.get(certHash, dbInstance)
+    if (certId == None) {
       RepLogger.Permission_Logger.trace(s"System=${ctx.getSystemName},PermissionVerify.CheckPermission certHash not exist,certHash=${certHash},opName=${opName}")
       false
-    }else{
+    } else {
       CheckPermissionOfCertIdStr(certId.get, opName, dbInstance)
     }
-
   }
 
-  def CheckPermissionOfDeployContract(doTrans: DoTransactionOfSandboxInSingle):Boolean={
+  def CheckPermissionOfDeployContract(doTrans: DoTransactionOfSandboxInSingle): Boolean = {
     var r = true
     val cid = doTrans.t.cid.get
 
@@ -170,7 +170,7 @@ class PermissionVerify(ctx : RepChainSystemContext) {
     r
   }
 
-  def CheckPermissionOfSetStateContract(doTrans: DoTransactionOfSandboxInSingle)={
+  def CheckPermissionOfSetStateContract(doTrans: DoTransactionOfSandboxInSingle) = {
     var r = true
     val cid = doTrans.t.cid.get
     val dbInstance = ctx.getBlockPreload(doTrans.da)
@@ -186,33 +186,33 @@ class PermissionVerify(ctx : RepChainSystemContext) {
     r
   }
 
-  def CheckPermissionOfInvokeContract(doTrans: DoTransactionOfSandboxInSingle)={
+  def CheckPermissionOfInvokeContract(doTrans: DoTransactionOfSandboxInSingle) = {
     val cid = doTrans.t.cid.get
-    if( doTrans.t.getIpt.function == "grantOperate"){
+    if (doTrans.t.getIpt.function == "grantOperate") {
       System.out.println("")
     }
     val dbInstance = ctx.getBlockPreload(doTrans.da)
     CheckPermissionOfCertId(doTrans.t.signature.get.certId.get,
-                                cid.chaincodeName+"."+doTrans.t.getIpt.function,
-                                dbInstance)
+      cid.chaincodeName + "." + doTrans.t.getIpt.function,
+      dbInstance)
   }
 
-  private def IsChainCert(did:String):Boolean={
+  private def IsChainCert(did: String): Boolean = {
     var r = true
     val cid = IdTool.getCertIdFromName(ctx.getConfig.getChainCertName)
-    if(!cid.creditCode.equals(did)){
+    if (!cid.creditCode.equals(did)) {
       r = false
     }
     r
   }
 
-  private def IsBindCert(authid:String,sd:signerData,dbInstance:BlockPreload):(Boolean,String)={
-    var r = (false,"")
-    if(sd != null && !sd.certNames.isEmpty){
-      breakable(sd.certNames.foreach(f=>{
-        val b = bind.get(authid,f,dbInstance)
-        if(b != None && b.get){
-          r = (true,f)
+  private def IsBindCert(authid: String, sd: signerData, dbInstance: BlockPreload): (Boolean, String) = {
+    var r = (false, "")
+    if (sd != null && !sd.certNames.isEmpty) {
+      breakable(sd.certNames.foreach(f => {
+        val b = bind.get(authid, f, dbInstance)
+        if (b != None && b.get) {
+          r = (true, f)
           break
         }
       }))
