@@ -2,6 +2,8 @@ package rep.app.management
 
 
 import akka.actor.{Actor, ActorSystem, Props}
+import akka.http.scaladsl.server.Directives.{get, getFromResourceDirectory, pathPrefix}
+import akka.http.scaladsl.server.RouteConcatenation._
 import akka.http.scaladsl.{ConnectionContext, Http}
 import akka.japi.Util.immutableSeq
 import ch.megard.akka.http.cors.scaladsl.CorsDirectives.cors
@@ -23,14 +25,24 @@ object ManagementServer {
 
     val requestHandler = sys.actorOf(Props[ManagementActor], "ManagementActor")
 
+    //提供静态文件的web访问服务
+    val route_evt =
+      //提供swagger UI服务
+      (get & pathPrefix("swagger")) {
+        getFromResourceDirectory("swagger")
+      }
+
     sslMode match {
       case 0 =>
         //不使用ssl协议
         System.out.println(s"^^^^^^^^begin：http management Service:http://localhost:$port^^^^^^^^")
         Http().newServerAt("0.0.0.0", port)
-          .bindFlow(cors()(
-            new ManagementService(requestHandler,false).route
-          ))
+          .bindFlow(
+            route_evt
+              ~ cors()(
+              new ManagementService(requestHandler, false).route
+                ~ ManagementSwagger.routes
+            ))
         System.out.println(s"^^^^^^^^end：http management Service:http://localhost:$port^^^^^^^^")
         RepLogger.info(RepLogger.System_Logger, s"http management Service online at http://localhost:$port")
       case 1 =>
@@ -51,9 +63,12 @@ object ManagementServer {
         })
         Http().newServerAt("0.0.0.0", port)
           .enableHttps(https)
-          .bindFlow(cors()(
-            new ManagementService(requestHandler,useClientAuth).route
-          ))
+          .bindFlow(
+            route_evt
+              ~ cors()(
+              new ManagementService(requestHandler, useClientAuth).route
+                ~ ManagementSwagger.routes
+            ))
         System.out.println(s"^^^^^^^^end ssl：https management Service:https://localhost:$port^^^^^^^^")
         RepLogger.info(RepLogger.System_Logger, s"https(ssl) management Service online at https://localhost:$port")
       case 2 =>
