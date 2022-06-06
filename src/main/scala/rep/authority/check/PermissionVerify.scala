@@ -1,6 +1,10 @@
 package rep.authority.check
 
 
+import java.io.{StringWriter, Writer}
+import java.security.cert.X509Certificate
+
+import org.bouncycastle.openssl.jcajce.JcaPEMWriter
 import rep.app.system.RepChainSystemContext
 import rep.authority.cache.SignerCache.signerData
 import rep.authority.cache.{AuthenticateBindToCertCache, AuthenticateCache, CertificateCache, CertificateHashCache, OperateCache, PermissionCacheManager, SignerCache}
@@ -150,6 +154,10 @@ class PermissionVerify(ctx: RepChainSystemContext) {
     }
   }
 
+  def CheckPermissionOfX509Certificate(cert: X509Certificate, opName: String, dbInstance: BlockPreload): Boolean = {
+    CheckPermissionOfCertHash(this.ctx.getHashTool.hashstr(toPemString(cert)), opName, dbInstance)
+  }
+
   def CheckPermissionOfDeployContract(doTrans: DoTransactionOfSandboxInSingle): Boolean = {
     var r = true
     val cid = doTrans.t.cid.get
@@ -218,5 +226,20 @@ class PermissionVerify(ctx: RepChainSystemContext) {
       }))
     }
     r
+  }
+
+  private def toPemString(x509: X509Certificate): String = {
+    val writer = new StringWriter
+    val pemWriter = new JcaPEMWriter(writer)
+    try{
+      pemWriter.writeObject(x509)
+      writer.toString
+    }catch{
+      case e:Exception=>
+        ""
+    }finally {
+      try{pemWriter.close()}catch {case e:Exception=>e.printStackTrace()}
+      try{writer.close()}catch {case e:Exception=>e.printStackTrace()}
+    }
   }
 }
