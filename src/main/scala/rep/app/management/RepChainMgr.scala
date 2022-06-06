@@ -1,5 +1,6 @@
 package rep.app.management
 
+import java.nio.file.Paths
 import java.util.concurrent._
 
 import akka.cluster.{Cluster, MemberStatus}
@@ -202,41 +203,59 @@ object RepChainMgr {
 
   private var instanceOfCluster = new ConcurrentHashMap[String, SystemInfo]()
 
+  def isExistSystem(SystemName:String):Boolean={
+    val path = Paths.get("conf",SystemName,"system.conf")
+    val file = path.toFile
+    file.exists()
+  }
+
   def Startup4Single(SystemName: String, mode: Int): String = {
     this.synchronized({
-      var info : SystemInfo = null
-      if (this.instanceOfCluster.containsKey(SystemName))
-        info = this.instanceOfCluster.get(SystemName)
-      else {
-        info = new SystemInfo(SystemName)
-        this.instanceOfCluster.put(SystemName,info)
+      if(this.isExistSystem(SystemName)){
+        var info : SystemInfo = null
+        if (this.instanceOfCluster.containsKey(SystemName))
+          info = this.instanceOfCluster.get(SystemName)
+        else {
+          info = new SystemInfo(SystemName)
+          this.instanceOfCluster.put(SystemName,info)
+        }
+        info.startup(mode)
+      }else{
+        s"节点${SystemName}不存在"
       }
-      info.startup(mode)
     })
   }
 
   def shutdown(SystemName: String, mode: Int): String = {
     this.synchronized({
-      var info : SystemInfo = null
+      if(this.isExistSystem(SystemName)){
+        var info : SystemInfo = null
         if (this.instanceOfCluster.containsKey(SystemName)){
           info = this.instanceOfCluster.get(SystemName)
           info.shutdown(mode)
         }else{
-          s"没有找到${SystemName}系统"
+          s"节点${SystemName}处于初始状态"
         }
+      }else{
+        s"节点${SystemName}不存在"
+      }
     })
   }
 
   def systemStatus(SystemName: String): String = {
     this.synchronized({
-      val info = if (this.instanceOfCluster.containsKey(SystemName))
-        this.instanceOfCluster.get(SystemName) else new SystemInfo(SystemName)
-      info.getSystemStatus match {
-        case SystemStatus.None => "系统处于初始化状态"
-        case SystemStatus.Starting => "系统处于正在启动状态"
-        case SystemStatus.Running => "系统处于运行状态"
-        case SystemStatus.Stopping => "系统处于正在停止状态"
-        case SystemStatus.Stopped => "系统处于已经停止状态"
+      if(this.isExistSystem(SystemName)){
+        val info = if (this.instanceOfCluster.containsKey(SystemName))
+          this.instanceOfCluster.get(SystemName) else new SystemInfo(SystemName)
+        info.getSystemStatus match {
+          case SystemStatus.None => "系统处于初始化状态"
+          case SystemStatus.Starting => "系统处于正在启动状态"
+          case SystemStatus.Running => "系统处于运行状态"
+          case SystemStatus.Stopping => "系统处于正在停止状态"
+          case SystemStatus.Stopped => "系统处于已经停止状态"
+        }
+      }else{
+        s"节点${SystemName}不存在"
       }
     })
   }
@@ -287,7 +306,6 @@ object RepChainMgr {
         t.start()
       }
     }
-
   }
 
 

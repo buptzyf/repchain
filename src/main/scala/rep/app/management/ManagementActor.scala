@@ -80,17 +80,28 @@ class ManagementActor extends Actor{
         if(nodeName.indexOf(",")>0){
           val nodes = nodeName.split(",")
           for(i<-0 to nodes.length-1){
-            val config = new RepChainConfig(nodes(i).trim)
-            val result = config.getChainNetworkId
-            if(i > 0){
-              rsBuf.append(",")
+            if(RepChainMgr.isExistSystem(nodes(i).trim)){
+              val config = new RepChainConfig(nodes(i).trim)
+              val result = config.getChainNetworkId
+              if(i > 0){
+                rsBuf.append(",")
+              }
+              rsBuf.append("\""+nodes(i).trim+"\":\""+result+"\"")
+            }else{
+              if(i > 0){
+                rsBuf.append(",")
+              }
+              rsBuf.append("\""+nodes(i).trim+"\":\"节点不存在\"")
             }
-            rsBuf.append("\""+nodes(i).trim+"\":\""+result+"\"")
           }
         }else{
-          val config = new RepChainConfig(nodeName.trim)
-          val result = config.getChainNetworkId
-          rsBuf.append("\""+nodeName.trim+"\":\""+result+"\"")
+          if(RepChainMgr.isExistSystem(nodeName.trim)) {
+            val config = new RepChainConfig(nodeName.trim)
+            val result = config.getChainNetworkId
+            rsBuf.append("\"" + nodeName.trim + "\":\"" + result + "\"")
+          }else{
+            rsBuf.append("\""+nodeName.trim+"\":\"节点不存在\"")
+          }
         }
         rsBuf.append("}")
         sender ! rsBuf.toString

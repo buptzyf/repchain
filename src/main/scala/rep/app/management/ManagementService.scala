@@ -103,11 +103,14 @@ class ManagementService(handler: ActorRef,isCheckPeerCertificate:Boolean)(implic
                 val cert = client_cert(0).asInstanceOf[X509Certificate]
                 System.err.println(cert)
                 //todo verify cert
-                if(cert != null)
-                rejectEmptyResponse {
-                  onSuccess((handler ? SystemStatusQuery(nodeName))) { response =>
-                    complete(response.toString)
+                if(cert != null){
+                  rejectEmptyResponse {
+                    onSuccess((handler ? SystemStatusQuery(nodeName))) { response =>
+                      complete(response.toString)
+                    }
                   }
+                }else{
+                  complete("Failed to get client certificate")
                 }
               }catch {
                 case e: SSLPeerUnverifiedException =>
