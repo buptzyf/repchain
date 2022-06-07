@@ -111,6 +111,13 @@ class RepChainConfig {
     }
   }
 
+  def isNeedClientAuth:Boolean={
+    this.sysConf.getInt("system.is_need_client_auth") match {
+      case 0 => false
+      case 1 => true
+    }
+  }
+
   /**
    * @author jiangbuyun
    * @version	2.0

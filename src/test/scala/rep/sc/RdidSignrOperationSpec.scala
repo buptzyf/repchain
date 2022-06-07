@@ -16,20 +16,22 @@
 
 package rep.sc
 
-import akka.actor.{ ActorSystem}
+import akka.actor.ActorSystem
 import akka.testkit.{TestKit, TestProbe}
 import org.json4s.jackson.Serialization
 import org.json4s.native.Serialization.write
 import org.json4s.{DefaultFormats, jackson}
 import org.scalatest._
 import rep.app.conf.RepChainConfig
-import rep.app.system.{ RepChainSystemContext}
+import rep.app.system.RepChainSystemContext
 import rep.network.tools.PeerExtension
 import rep.proto.rc2.{ActionResult, CertId, Certificate, ChaincodeDeploy, ChaincodeId, Signer, TransactionResult}
 import rep.sc.tpl.did.operation.SignerOperation
 import rep.sc.tpl.did.operation.SignerOperation.SignerStatus
 import scalapb.json4s.JsonFormat
 import rep.sc.SandboxDispatcher.DoTransaction
+import rep.utils.IdTool
+
 import scala.collection.mutable
 import scala.concurrent.duration._
 import scala.io.BufferedSource
@@ -83,11 +85,11 @@ class RdidSignrOperationSpec(_system: ActorSystem) extends TestKit(_system) with
   val certStr5: String = try certNode5.mkString finally certNode5.close()
   val certs: mutable.Map[String, String] = mutable.Map("node1" -> certStr1, "node2" -> certStr2, "node3" -> certStr3, "node4" -> certStr4, "node5" -> certStr5)
 
-  val node1Cert1 = Certificate(certStr1, "SHA256withECDSA", certValid = true, None, None, certType = Certificate.CertType.CERT_AUTHENTICATION, Some(CertId("121000005l35120456", "node1Cert1", "1")), ctx.getHashTool.hashstr(certStr1), "1")
-  val node1Cert2 = Certificate(certStr2, "SHA256withECDSA", certValid = true, None, None, Certificate.CertType.CERT_CUSTOM, Some(CertId("121000005l35120456", "node1Cert1", "1")), ctx.getHashTool.hashstr(certStr1), "1")
-  val node1Cert3 = Certificate(certStr2, "SHA256withECDSA", certValid = true, None, None, certType = Certificate.CertType.CERT_AUTHENTICATION, Some(CertId("121000005l35120456", "node1Cert1", "1")), ctx.getHashTool.hashstr(certStr1), "1")
-  val node1Cert4 = Certificate(certStr2, "SHA256withECDSA", certValid = true, None, None, certType = Certificate.CertType.CERT_AUTHENTICATION, Some(CertId("121000005l3512v587", "node1Cert1", "1")), ctx.getHashTool.hashstr(certStr2), "1")
-  val node1Cert5 = Certificate(certStr2, "SHA256withECDSA", certValid = true, None, None, certType = Certificate.CertType.CERT_AUTHENTICATION, Some(CertId("121000005l3512v123", "node1Cert1", "1")), ctx.getHashTool.hashstr(certStr2), "1")
+  val node1Cert1 = Certificate(certStr1, "SHA256withECDSA", certValid = true, None, None, certType = Certificate.CertType.CERT_AUTHENTICATION, Some(CertId("121000005l35120456", "node1Cert1", "1")), ctx.getHashTool.hashstr(IdTool.deleteLine(certStr1)), "1")
+  val node1Cert2 = Certificate(certStr2, "SHA256withECDSA", certValid = true, None, None, Certificate.CertType.CERT_CUSTOM, Some(CertId("121000005l35120456", "node1Cert1", "1")), ctx.getHashTool.hashstr(IdTool.deleteLine(certStr1)), "1")
+  val node1Cert3 = Certificate(certStr2, "SHA256withECDSA", certValid = true, None, None, certType = Certificate.CertType.CERT_AUTHENTICATION, Some(CertId("121000005l35120456", "node1Cert1", "1")), ctx.getHashTool.hashstr(IdTool.deleteLine(certStr1)), "1")
+  val node1Cert4 = Certificate(certStr2, "SHA256withECDSA", certValid = true, None, None, certType = Certificate.CertType.CERT_AUTHENTICATION, Some(CertId("121000005l3512v587", "node1Cert1", "1")), ctx.getHashTool.hashstr(IdTool.deleteLine(certStr2)), "1")
+  val node1Cert5 = Certificate(certStr2, "SHA256withECDSA", certValid = true, None, None, certType = Certificate.CertType.CERT_AUTHENTICATION, Some(CertId("121000005l3512v123", "node1Cert1", "1")), ctx.getHashTool.hashstr(IdTool.deleteLine(certStr2)), "1")
 
   // 只有AuthCert
   val node1AuthCerts1 = List(node1Cert1)

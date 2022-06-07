@@ -186,65 +186,65 @@ object EventServer {
       Thread.sleep(2000)
     }
 
-    if(repContext.getConfig.isUseHttps) {
-      var https : HttpsConnectionContext = null
-      if (repContext.getConfig.isUseGM) {
-        https = ConnectionContext.httpsServer(() => {
-          //val engine = repContext.getSSLContext.getSSLcontext.createSSLEngine()
-          val engine = pe.getSSLContext.createSSLEngine()
-          engine.setUseClientMode(false)
-          engine.setEnabledCipherSuites(Array("GMSSL_ECC_SM4_SM3"))
-          engine.setEnabledProtocols(Array("GMSSLv1.1"))
+    repContext.getConfig.isUseHttps match{
+      case true=>
+        var https : HttpsConnectionContext = null
+        repContext.getConfig.isUseGM match {
+          case true=>
+            https = ConnectionContext.httpsServer(() => {
+              //val engine = repContext.getSSLContext.getSSLcontext.createSSLEngine()
+              val engine = pe.getSSLContext.createSSLEngine()
+              engine.setUseClientMode(false)
+              engine.setEnabledCipherSuites(Array("GMSSL_ECC_SM4_SM3"))
+              engine.setEnabledProtocols(Array("GMSSLv1.1"))
+              engine.setNeedClientAuth(repContext.getConfig.isNeedClientAuth)
+              engine
+            })
+            Http().newServerAt("0.0.0.0", port)
+              .enableHttps(https)
+              .bindFlow(route_evt
+                ~ cors() (
+                new BlockService(ra,repContext,repContext.getConfig.isNeedClientAuth).route ~
+                  new ChainService(ra).route ~
+                  new TransactionService(ra,repContext,repContext.getConfig.isNeedClientAuth).route ~
+                  new DbService(ra,repContext,repContext.getConfig.isNeedClientAuth).route ~
+                  SwaggerDocService.routes))
+            System.out.println(s"^^^^^^^^https GM Service:${repContext.getSystemName}^^^^^^^^")
+          case false=>
+            https = ConnectionContext.httpsServer(() => {
+              val sslCtx = JsseContextHelper.createJsseContext(repContext.getConfig.getSystemConf)//EventServer.createJsseContext(repContext)
+              val engine = sslCtx.createSSLEngine()
+              engine.setUseClientMode(false)
+              val cipherSuite = immutableSeq(repContext.getConfig.getSystemConf.getStringList("akka.remote.artery.ssl.config-ssl-engine.enabled-algorithms")).toSet
+              engine.setEnabledCipherSuites(cipherSuite.toArray)
+              engine.setEnabledProtocols(Array(
+                repContext.getConfig.getSystemConf.getString("akka.remote.artery.ssl.config-ssl-engine.protocol")))
+              engine.setNeedClientAuth(repContext.getConfig.isNeedClientAuth)
 
-          engine
-        })
+              engine
+            })
+            Http().newServerAt("0.0.0.0", port)
+              .enableHttps(https)
+              .bindFlow(route_evt
+                ~ cors() (
+                new BlockService(ra,repContext,repContext.getConfig.isNeedClientAuth).route ~
+                  new ChainService(ra).route ~
+                  new TransactionService(ra,repContext,repContext.getConfig.isNeedClientAuth).route ~
+                  new DbService(ra,repContext,repContext.getConfig.isNeedClientAuth).route ~
+                  SwaggerDocService.routes))
+            System.out.println(s"^^^^^^^^https TLS Service:${repContext.getSystemName}^^^^^^^^")
+        }
+      case false=>
         Http().newServerAt("0.0.0.0", port)
-          .enableHttps(https)
+          // .enableHttps(https)
           .bindFlow(route_evt
             ~ cors() (
-            new BlockService(ra).route ~
+            new BlockService(ra,repContext,false).route ~
               new ChainService(ra).route ~
-              new TransactionService(ra).route ~
-              new DbService(ra).route ~
+              new TransactionService(ra,repContext,false).route ~
+              new DbService(ra,repContext,false).route ~
               SwaggerDocService.routes))
-        System.out.println(s"^^^^^^^^https GM Service:${repContext.getSystemName}^^^^^^^^")
-      } else {
-        https = ConnectionContext.httpsServer(() => {
-          val sslCtx = JsseContextHelper.createJsseContext(repContext.getConfig.getSystemConf)//EventServer.createJsseContext(repContext)
-          val engine = sslCtx.createSSLEngine()
-          engine.setUseClientMode(false)
-          val cipherSuite = immutableSeq(repContext.getConfig.getSystemConf.getStringList("akka.remote.artery.ssl.config-ssl-engine.enabled-algorithms")).toSet
-          engine.setEnabledCipherSuites(cipherSuite.toArray)
-          engine.setEnabledProtocols(Array(
-            repContext.getConfig.getSystemConf.getString("akka.remote.artery.ssl.config-ssl-engine.protocol")))
-          engine.setNeedClientAuth(false)
-          engine.setWantClientAuth(false)
-
-          engine
-        })
-        Http().newServerAt("0.0.0.0", port)
-          .enableHttps(https)
-          .bindFlow(route_evt
-            ~ cors() (
-            new BlockService(ra).route ~
-              new ChainService(ra).route ~
-              new TransactionService(ra).route ~
-              new DbService(ra).route ~
-              SwaggerDocService.routes))
-        System.out.println(s"^^^^^^^^https TLS Service:${repContext.getSystemName}^^^^^^^^")
-      }
-
-    }else{
-      Http().newServerAt("0.0.0.0", port)
-        // .enableHttps(https)
-        .bindFlow(route_evt
-          ~ cors() (
-          new BlockService(ra).route ~
-            new ChainService(ra).route ~
-            new TransactionService(ra).route ~
-            new DbService(ra).route ~
-            SwaggerDocService.routes))
-      System.out.println(s"^^^^^^^^http Service:${repContext.getSystemName}^^^^^^^^")
+        System.out.println(s"^^^^^^^^http Service:${repContext.getSystemName}^^^^^^^^")
     }
 
 

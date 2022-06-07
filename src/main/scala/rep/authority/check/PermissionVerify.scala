@@ -23,6 +23,14 @@ import scala.util.control.Breaks.{break, breakable}
  * 实现权限校验
  */
 
+object PermissionVerify{
+  private val errorInfo_Permission = "You do not have this operation{transaction.tranInfoAndHeight} permission, please contact the administrator."
+  private val errorInfo_Cert = "Failed to get client certificate."
+  val errorInfo_None_Permission = "{\"error info\":\""+errorInfo_Permission+"\"}"
+  val errorInfo_Cert_or_permission = "{\"error info\":\""+errorInfo_Cert + " or "+ errorInfo_Permission +"\"}"
+
+}
+
 class PermissionVerify(ctx: RepChainSystemContext) {
   val opCache = ctx.getPermissionCacheManager.getCache(DidTplPrefix.operPrefix).asInstanceOf[OperateCache]
   val authCache = ctx.getPermissionCacheManager.getCache(DidTplPrefix.authPrefix).asInstanceOf[AuthenticateCache]
@@ -155,7 +163,9 @@ class PermissionVerify(ctx: RepChainSystemContext) {
   }
 
   def CheckPermissionOfX509Certificate(cert: X509Certificate, opName: String, dbInstance: BlockPreload): Boolean = {
-    CheckPermissionOfCertHash(this.ctx.getHashTool.hashstr(toPemString(cert)), opName, dbInstance)
+    val pem = toPemString(cert)
+    val hash = this.ctx.getHashTool.hashstr(IdTool.deleteLine(pem))
+    CheckPermissionOfCertHash(hash, opName, dbInstance)
   }
 
   def CheckPermissionOfDeployContract(doTrans: DoTransactionOfSandboxInSingle): Boolean = {
@@ -233,13 +243,12 @@ class PermissionVerify(ctx: RepChainSystemContext) {
     val pemWriter = new JcaPEMWriter(writer)
     try{
       pemWriter.writeObject(x509)
-      writer.toString
-    }catch{
-      case e:Exception=>
-        ""
-    }finally {
       try{pemWriter.close()}catch {case e:Exception=>e.printStackTrace()}
       try{writer.close()}catch {case e:Exception=>e.printStackTrace()}
+      System.out.println(s"pem:::${writer.toString}")
+      writer.toString
+    }catch{
+      case e:Exception=> ""
     }
   }
 }

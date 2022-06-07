@@ -17,13 +17,18 @@ package rep.crypto.cert
 
 import java.security.{KeyStore, PrivateKey, PublicKey}
 import java.security.cert.Certificate
+
 import scala.collection.mutable
 import java.io._
 import java.util.{ArrayList, List}
+
 import rep.app.system.RepChainSystemContext
-import rep.authority.cache.{CertificateCache}
+import rep.authority.cache.CertificateCache
+import rep.log.RepLogger
 import rep.proto.rc2.CertId
 import rep.sc.tpl.did.DidTplPrefix
+import rep.utils.IdTool
+
 import scala.util.control.Breaks._
 
 /**
@@ -92,10 +97,20 @@ class SignTool(ctx:RepChainSystemContext) {
 
   //根据CertId实现验签
   def verify(signature: Array[Byte], message: Array[Byte], certinfo: CertId): Boolean = {
-    val k = certinfo.creditCode + "." + certinfo.certName
-    var pk = getVerifyCert(k)
-    //this.getSigner(sysName).verify(signature, message, pk)
-    this.signer.verify(signature, message, pk)
+    var r = false
+    try{
+      val k = certinfo.creditCode + "." + certinfo.certName
+      val pk = getVerifyCert(k)
+      r = this.signer.verify(signature, message, pk)
+    }catch {
+      case e:Exception=>{
+        RepLogger.trace(RepLogger.System_Logger,s"验签异常失败，certinfo=${IdTool.getSigner4String(certinfo)}")
+      }
+    }
+    if(!r){
+      RepLogger.trace(RepLogger.System_Logger,s"验签失败，certinfo=${IdTool.getSigner4String(certinfo)}")
+    }
+    r
   }
 
   //根据公钥实现签名
