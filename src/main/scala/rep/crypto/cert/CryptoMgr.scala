@@ -89,13 +89,6 @@ class CryptoMgr(ctx:RepChainSystemContext) {
     rel
   }
 
-  /*def loadSystemConfInDebug={
-    val userConfFile = new File("conf/system.conf")
-    val combined_conf = ConfigFactory.parseFile(userConfFile)
-    val final_conf = ConfigFactory.load(combined_conf)
-    SystemProfile.initConfigSystem(final_conf,"215159697776981712.node1" )
-  }*/
-
   private def checkProvider={
     if(!isLoadProvider){
       synchronized {

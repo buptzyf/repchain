@@ -69,17 +69,17 @@ class RdidOperOperationSpec(_system: ActorSystem) extends TestKit(_system) with 
   val transactionTool = ctx.getTransactionBuilder
 
   // 加载node1的私钥
-  ctx.getSignTool.loadPrivateKey(sysName, "123", s"${keyFileSuffix.substring(1)}/" + sysName + s"${keyFileSuffix}")
+  ctx.getSignTool.loadPrivateKey(sysName, "123", s"${keyFileSuffix.substring(1)}/${ctx.getConfig.getChainNetworkId}/" + sysName + s"${keyFileSuffix}")
   // 加载super_admin的私钥
-  ctx.getSignTool.loadPrivateKey(superAdmin, "super_admin", s"${keyFileSuffix.substring(1)}/" + superAdmin + s"${keyFileSuffix}")
+  ctx.getSignTool.loadPrivateKey(superAdmin, "super_admin", s"${keyFileSuffix.substring(1)}/${ctx.getConfig.getChainNetworkId}/" + superAdmin + s"${keyFileSuffix}")
 
   val cid = ChaincodeId("RdidOperateAuthorizeTPL", 1)
 
-  val certNode1: BufferedSource = scala.io.Source.fromFile(s"${keyFileSuffix.substring(1)}/certs/121000005l35120456.node1.cer")
+  val certNode1: BufferedSource = scala.io.Source.fromFile(s"${keyFileSuffix.substring(1)}/${ctx.getConfig.getChainNetworkId}/121000005l35120456.node1.cer")
   val certStr1: String = try certNode1.mkString finally certNode1.close()
-  val certNode2: BufferedSource = scala.io.Source.fromFile(s"${keyFileSuffix.substring(1)}/certs/12110107bi45jh675g.node2.cer")
+  val certNode2: BufferedSource = scala.io.Source.fromFile(s"${keyFileSuffix.substring(1)}/${ctx.getConfig.getChainNetworkId}/12110107bi45jh675g.node2.cer")
   val certStr2: String = try certNode2.mkString finally certNode2.close()
-  val superCert: BufferedSource = scala.io.Source.fromFile(s"${keyFileSuffix.substring(1)}/certs/951002007l78123233.super_admin.cer", "UTF-8")
+  val superCert: BufferedSource = scala.io.Source.fromFile(s"${keyFileSuffix.substring(1)}/${ctx.getConfig.getChainNetworkId}/951002007l78123233.super_admin.cer", "UTF-8")
   val superCertPem: String = try superCert.mkString finally superCert.close()
 
   val certs: mutable.Map[String, String] = mutable.Map("node1" -> certStr1, "node2" -> certStr2, "super_admin" -> superCertPem)

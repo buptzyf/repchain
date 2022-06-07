@@ -27,9 +27,9 @@ object CreateGenesisInfo {
   def main(args: Array[String]): Unit = {
     val ctx = new RepChainSystemContext("121000005l35120456.node1")
 
-    ctx.getSignTool.loadPrivateKey("121000005l35120456.node1", "123", s"${ctx.getCryptoMgr.getKeyFileSuffix.substring(1)}/121000005l35120456.node1${ctx.getCryptoMgr.getKeyFileSuffix}")
-    ctx.getSignTool.loadNodeCertList("changeme", s"${ctx.getCryptoMgr.getKeyFileSuffix.substring(1)}/mytruststore${ctx.getCryptoMgr.getKeyFileSuffix}")
-    ctx.getSignTool.loadPrivateKey("951002007l78123233.super_admin", "super_admin", s"${ctx.getCryptoMgr.getKeyFileSuffix.substring(1)}/951002007l78123233.super_admin${ctx.getCryptoMgr.getKeyFileSuffix}")
+    ctx.getSignTool.loadPrivateKey("121000005l35120456.node1", "123", s"${ctx.getCryptoMgr.getKeyFileSuffix.substring(1)}/${ctx.getConfig.getChainNetworkId}/121000005l35120456.node1${ctx.getCryptoMgr.getKeyFileSuffix}")
+    ctx.getSignTool.loadNodeCertList("changeme", s"${ctx.getCryptoMgr.getKeyFileSuffix.substring(1)}/${ctx.getConfig.getChainNetworkId}/mytruststore${ctx.getCryptoMgr.getKeyFileSuffix}")
+    ctx.getSignTool.loadPrivateKey("951002007l78123233.super_admin", "super_admin", s"${ctx.getCryptoMgr.getKeyFileSuffix.substring(1)}/${ctx.getConfig.getChainNetworkId}/951002007l78123233.super_admin${ctx.getCryptoMgr.getKeyFileSuffix}")
     val sysName = "121000005l35120456.node1"
     val superAdmin = "951002007l78123233.super_admin"
     val super_credit = "951002007l78123233"
@@ -57,7 +57,7 @@ object CreateGenesisInfo {
     nodes(4) = ("node4", "921000005k36123789", "18912345678")
     nodes(5) = ("node5", "921000006e0012v696", "18912345678")
     for (i <- 0 to 5) {
-      val certfile = scala.io.Source.fromFile(s"${ctx.getCryptoMgr.getKeyFileSuffix.substring(1)}/" + nodes(i)._2 + "." + nodes(i)._1 + ".cer", "UTF-8")
+      val certfile = scala.io.Source.fromFile(s"${ctx.getCryptoMgr.getKeyFileSuffix.substring(1)}/${ctx.getConfig.getChainNetworkId}/" + nodes(i)._2 + "." + nodes(i)._1 + ".cer", "UTF-8")
       val certstr = try certfile.mkString finally certfile.close()
       val certstrhash = ctx.getHashTool.hashstr(IdTool.deleteLine(certstr))
       val certid = IdTool.getCertIdFromName(nodes(i)._2 + "." + nodes(i)._1)

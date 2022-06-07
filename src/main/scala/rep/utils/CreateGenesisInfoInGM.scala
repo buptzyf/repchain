@@ -28,9 +28,9 @@ object CreateGenesisInfoInGM {
 
     val dir4key = ctx.getCryptoMgr.getKeyFileSuffix.substring(1)
     val keySuffix = ctx.getCryptoMgr.getKeyFileSuffix
-    ctx.getSignTool.loadPrivateKey("215159697776981712.node1", "123", s"${dir4key}/215159697776981712.node1${keySuffix}")
-    ctx.getSignTool.loadNodeCertList("changeme", s"${dir4key}/mytruststore${keySuffix}")
-    ctx.getSignTool.loadPrivateKey("257091603041653856.super_admin", "super_admin", s"${dir4key}/257091603041653856.super_admin${keySuffix}")
+    ctx.getSignTool.loadPrivateKey("215159697776981712.node1", "123", s"${dir4key}/${ctx.getConfig.getChainNetworkId}/215159697776981712.node1${keySuffix}")
+    ctx.getSignTool.loadNodeCertList("changeme", s"${dir4key}/${ctx.getConfig.getChainNetworkId}/mytruststore${keySuffix}")
+    ctx.getSignTool.loadPrivateKey("257091603041653856.super_admin", "super_admin", s"${dir4key}/${ctx.getConfig.getChainNetworkId}/257091603041653856.super_admin${keySuffix}")
     val sysName = "215159697776981712.node1"
     val superAdmin = "257091603041653856.super_admin"
     val super_credit = "257091603041653856"
@@ -56,7 +56,7 @@ object CreateGenesisInfoInGM {
     nodes(4) = ("node4", "645377164372772928", "18912345678")
     nodes(5) = ("node5", "379552050023903168", "18912345678")
     for (i <- 0 to 5) {
-      val certfile = scala.io.Source.fromFile(s"${dir4key}/" + nodes(i)._2 + "." + nodes(i)._1 + ".cer", "UTF-8")
+      val certfile = scala.io.Source.fromFile(s"${dir4key}/${ctx.getConfig.getChainNetworkId}/" + nodes(i)._2 + "." + nodes(i)._1 + ".cer", "UTF-8")
       val certstr = try certfile.mkString finally certfile.close()
       val certstrhash = ctx.getHashTool.hashstr(IdTool.deleteLine(certstr))
       val certid = IdTool.getCertIdFromName(nodes(i)._2 + "." + nodes(i)._1)
