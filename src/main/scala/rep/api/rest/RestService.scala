@@ -82,7 +82,7 @@ class ChainService(ra: RestRouter)(implicit executionContext: ExecutionContext)
 
 
 
-  val route = getBlockChainInfo ~ getNodeNumber ~/* SystemStartup ~ QuerySystemStatus ~ SystemShutdown ~*/ getCacheTransNumber ~ getAcceptedTransNumber ~ loadBlockInfoToCache ~ IsLoadBlockInfoToCache
+  val route = getBlockChainInfo ~ getNodeNumber ~ getCacheTransNumber ~ getAcceptedTransNumber
 
   @GET
   @Operation(tags = Array("chaininfo"), summary = "返回块链信息", description = "getChainInfo", method = "GET")
@@ -113,98 +113,6 @@ class ChainService(ra: RestRouter)(implicit executionContext: ExecutionContext)
       }
     }
 
- /* @GET
-  @Path("/SystemStartup/{nodeName}")
-  @Operation(tags = Array("chaininfo"), summary  = "启动指定名称的节点", description = "SystemStartup", method = "GET")
-  @Parameters(Array(
-    new Parameter(name = "nodeName", description = "节点名称", required = true, schema = new Schema(implementation = classOf[String]), in = ParameterIn.PATH, example = "nodeName")))
-  @ApiResponses(Array(
-    new ApiResponse(responseCode = "200", description = "返回节点启动的结果", content =  Array(new Content(mediaType = "application/json",schema = new Schema(implementation = classOf[QueryResult])))))
-  )
-  def SystemStartup =
-    path("chaininfo" / "SystemStartup" / Segment) { nodeName =>
-      get {
-        extractClientIP { ip =>
-          RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} System startup,nodeName=${nodeName}")
-          complete { (ra.getRestActor ? SystemStart(nodeName)).mapTo[QueryResult] }
-        }
-
-        //complete { (ra ? BlockHeight(blockHeight.toInt)).mapTo[QueryResult] }
-      }
-    }
-
-  @GET
-  @Path("/SystemStatus/{nodeName}")
-  @Operation(tags = Array("chaininfo"), summary  = "查询节点状态", description = "SystemStatus", method = "GET")
-  @Parameters(Array(
-    new Parameter(name = "nodeName", description = "节点名称", required = true, schema = new Schema(implementation = classOf[String]), in = ParameterIn.PATH, example = "nodeName")))
-  @ApiResponses(Array(
-    new ApiResponse(responseCode = "200", description = "返回节点状态的结果", content =  Array(new Content(mediaType = "application/json",schema = new Schema(implementation = classOf[QueryResult])))))
-  )
-  def QuerySystemStatus =
-    path("chaininfo" / "SystemStatus" / Segment) { nodeName =>
-      get {
-        extractClientIP { ip =>
-          RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} System startup,nodeName=${nodeName}")
-          complete { (ra.getRestActor ? SystemStatus(nodeName)).mapTo[QueryResult] }
-        }
-
-        //complete { (ra ? BlockHeight(blockHeight.toInt)).mapTo[QueryResult] }
-      }
-    }
-
-  @GET
-  @Path("/SystemStop/{nodeName}")
-  @Operation(tags = Array("chaininfo"), summary  = "停止指定名称的节点", description = "SystemStop", method = "GET")
-  @Parameters(Array(
-    new Parameter(name = "nodeName", description = "节点名称", required = true, schema = new Schema(implementation = classOf[String]), in = ParameterIn.PATH, example = "nodeName")))
-  @ApiResponses(Array(
-    new ApiResponse(responseCode = "200", description = "返回节点停止的结果", content =  Array(new Content(mediaType = "application/json",schema = new Schema(implementation = classOf[QueryResult])))))
-  )
-  def SystemShutdown =
-    path("chaininfo" / "SystemStop" / Segment) { nodeName =>
-      get {
-        extractClientIP { ip =>
-          RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} System stop,nodeName=${nodeName}")
-          complete { (ra.getRestActor ? SystemStop(nodeName)).mapTo[QueryResult] }
-        }
-
-        //complete { (ra ? BlockHeight(blockHeight.toInt)).mapTo[QueryResult] }
-      }
-    }
-*/
-
-  @GET
-  @Path("/loadBlockInfoToCache")
-  @Operation(tags = Array("chaininfo"), summary = "初始化装载区块索引到缓存",  description= "loadBlockInfoToCache", method = "GET")
-  @ApiResponses(Array(
-    new ApiResponse(responseCode = "200", description = "初始化装载区块索引到缓存量", content =  Array(new Content(mediaType = "application/json",schema = new Schema(implementation = classOf[QueryResult])))))
-  )
-  def loadBlockInfoToCache =
-    path("chaininfo" / "loadBlockInfoToCache") {
-      get {
-        extractClientIP { ip =>
-          RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} get loadBlockInfoToCache")
-          complete { (ra.getRestActor ? LoadBlockInfo).mapTo[QueryResult] }
-        }
-      }
-    }
-
-  @GET
-  @Path("/IsLoadBlockInfoToCache")
-  @Operation(tags = Array("chaininfo"), summary  = "是否完成始化装载区块索引到缓存", description  = "IsLoadBlockInfoToCache", method = "GET")
-  @ApiResponses(Array(
-    new ApiResponse(responseCode = "200", description = "是否完成初始化装载区块索引到缓存量", content =  Array(new Content(mediaType = "application/json",schema = new Schema(implementation = classOf[QueryResult])))))
-  )
-  def IsLoadBlockInfoToCache =
-    path("chaininfo" / "IsLoadBlockInfoToCache") {
-      get {
-        extractClientIP { ip =>
-          RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} get IsLoadBlockInfoToCache")
-          complete { (ra.getRestActor ? IsLoadBlockInfo).mapTo[QueryResult] }
-        }
-      }
-    }
 
   @GET
   @Path("/getcachetransnumber")
@@ -262,7 +170,7 @@ class BlockService(ra: RestRouter)(implicit executionContext: ExecutionContext)
   implicit val serialization = jackson.Serialization // or native.Serialization
   implicit val formats = DefaultFormats
 
-  val route = getBlockById ~ getBlockByHeight ~ getBlockByHeightToo ~ getTransNumberOfBlock ~ getBlockStreamByHeight ~ getBlockTimeOfCreate ~ getBlockTimeOfTxrByTxid ~ getBlockTimeOfTransaction
+  val route = getBlockById ~ getBlockByHeightToo ~ getTransNumberOfBlock ~ getBlockStreamByHeight ~ getBlockTimeOfCreate ~ getBlockTimeOfTransaction
 
   @GET
   @Path("/hash/{blockId}")
@@ -304,26 +212,6 @@ class BlockService(ra: RestRouter)(implicit executionContext: ExecutionContext)
       }
     }
 
-  @POST
-  @Path("/blockHeight")
-  @Operation(tags = Array("block"), summary  = "返回指定高度的区块", description = "getBlockByHeight", method = "POST",
-    requestBody = new RequestBody(description = "区块高度", required = true,
-      content = Array(new Content(mediaType = MediaType.APPLICATION_JSON, schema = new Schema(name = "height", description = "height", `type` = "string", example = "{\"height\":1}")))))
-  //  @Parameters(Array(
-  //    new Parameter(name = "height", description = "区块高度", required = true, schema = new Schema(implementation = classOf[String], `type` = "string"), in = ParameterIn.DEFAULT)))
-  @ApiResponses(Array(
-    new ApiResponse(responseCode = "200", description = "返回区块json内容", content =  Array(new Content(mediaType = "application/json",schema = new Schema(implementation = classOf[QueryResult])))))
-  )
-  def getBlockByHeight =
-    path("block" / "blockHeight") {
-      post {
-        entity(as[Map[String, Int]]) { blockQuery =>
-          complete {
-            (ra.getRestActor ? BlockHeight(blockQuery("height"))).mapTo[QueryResult]
-          }
-        }
-      }
-    }
 
   @POST
   @Path("/getTransNumberOfBlock")
@@ -386,25 +274,6 @@ class BlockService(ra: RestRouter)(implicit executionContext: ExecutionContext)
       }
     }
 
-
-  @POST
-  @Path("/blocktimeoftran")
-  @Operation(tags = Array("block"), summary  = "返回指定交易的入块时间", description = "getBlockTimeOfTransaction", method = "POST",
-    requestBody = new RequestBody(description = "交易id", required = true,
-      content = Array(new Content(mediaType = MediaType.APPLICATION_JSON, schema = new Schema(name = "交易ID", description = "交易id", `type` = "string", example = "{\"txid\":\"8128801f-bb5e-4934-8fdb-0b89747bd2e6\"}")))))
-  //  @Parameters(Array(
-  //    new Parameter(name = "txid", value = "交易id", required = true, dataType = "String", paramType = "body")))
-  @ApiResponses(Array(
-    new ApiResponse(responseCode = "200", description = "返回指定交易的入块时间", content =  Array(new Content(mediaType = "application/json",schema = new Schema(implementation = classOf[QueryResult])))))
-  )
-  def getBlockTimeOfTxrByTxid =
-    path("block" / "blocktimeoftran") {
-      post {
-        entity(as[Map[String, String]]) { trans =>
-          complete { (ra.getRestActor ? BlockTimeForTxid(trans("txid"))).mapTo[QueryResult] }
-        }
-      }
-    }
 
   @GET
   @Path("/stream/{blockHeight}")

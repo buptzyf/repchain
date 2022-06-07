@@ -79,60 +79,6 @@ class BlockSearcher(ctx:RepChainSystemContext,isEncrypt:Boolean=false) {
     }
   }
 
-//////////////////区块性能测试使用的缓存（信通院），用于获取交易入块的时间
-  private var cacheOfHeightAndIndex = new HashMap[Long, Option[BlockIndex]]()
-  private var cacheOfTxIdAndHeight = new HashMap[String, Long]()
-
-  /**
-   * @author jiangbuyun
-   * @version	2.0
-   * @since	2022-04-13
-   * @category	导入所有区块的索引信息
-   * @return 导入成功返回true
-   * */
-  def loadBlockInfoToCache: Boolean = {
-    var b: Boolean = false
-    val chaininfo = this.getChainInfo
-    val mh = chaininfo.height
-    var h: Long = 2
-    var start : Long = System.currentTimeMillis()
-    while (h <= mh) {
-      val hidx = this.getBlockIndexByHeight(Some(h))
-      this.cacheOfHeightAndIndex += h -> hidx
-      val ts = hidx.get.getTxIds
-      ts.foreach(f => {
-        this.cacheOfTxIdAndHeight += f -> h
-      })
-      h += 1
-      if(h % 1000 == 0){
-        var end1 = System.currentTimeMillis()
-        println(h+" load time ="+(end1 - start)/1000+"s")
-      }
-    }
-    var end = System.currentTimeMillis()
-    println(s"load finish,h=${h},mh=${mh} time ="+(end - start)/1000+"s")
-    b
-  }
-
-  /**
-   * @author jiangbuyun
-   * @version	2.0
-   * @since	2022-04-13
-   * @category	检查是否导入完成
-   * @param
-   * @return 导入完成返回 1，否则返回 0
-   * */
-  def isFinish: String = {
-    var b = "0"
-    val chaininfo = this.getChainInfo
-    var idx = this.cacheOfHeightAndIndex(chaininfo.height)
-    if (idx != None) {
-      b = "1"
-    }
-    b
-  }
-///////////////////////////////////////////////////////////////////
-
   /////获取链信息///////
   /**
    * @author jiangbuyun

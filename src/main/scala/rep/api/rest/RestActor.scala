@@ -17,36 +17,24 @@
 package rep.api.rest
 
 import akka.util.Timeout
-
 import scala.concurrent.duration._
-import akka.pattern.{AskTimeoutException, ask}
-
-import scala.concurrent._
 import rep.crypto._
 import org.json4s._
 import org.json4s.jackson.JsonMethods
-import rep.network.module.ModuleActorType
 import akka.actor.Props
-import rep.app.management.{ReasonOfStartup, ReasonOfStop, RepChainMgr}
 import rep.log.RepLogger
 import rep.network.base.ModuleBase
 import rep.network.consensus.byzantium.ConsensusCondition
-import rep.network.consensus.common.MsgOfConsensus.{PreTransBlock, PreTransBlockResult}
-import rep.network.consensus.util.BlockHelp
-import rep.proto.rc2.{ActionResult, Block, ChaincodeId, Event, Transaction, TransactionResult}
-import rep.sc.TypeOfSender
-import rep.sc.SandboxDispatcher.DoTransaction
-import rep.sc.Sandbox.DoTransactionResult
+import rep.proto.rc2.{ActionResult, ChaincodeId, Event, Transaction}
 import rep.storage.chain.block.BlockSearcher
 import rep.storage.db.factory.DBFactory
 import rep.utils.GlobalUtils.EventType
-
-import scala.collection.mutable.ArrayBuffer
-import scala.util.Random
 import rep.utils.{MessageToJson, SerializeUtils}
+
 /**
  * RestActor伴生object，包含可接受的传入消息定义，以及处理的返回结果定义。
  * 以及用于建立Tranaction，检索Tranaction的静态方法
+ *
  * @author c4w created
  *
  */
@@ -56,39 +44,48 @@ object RestActor {
 
 
   case object ChainInfo
+
   case object NodeNumber
+
   case object TransNumber
+
   case object AcceptedTransNumber
 
-  /*case class SystemStart(nodeName: String)
-  case class SystemStop(nodeName:String)
-  case class SystemStatus(nodeName:String)*/
-
   case class BlockId(bid: String)
+
   case class BlockHeight(h: Int)
+
   case class BlockTime(createTime: String, createTimeUtc: String)
+
   case class BlockTimeForHeight(h: Long)
+
   case class BlockTimeForTxid(txid: String)
+
   case class BlockHeightStream(h: Int)
+
   case class TransactionId(txid: String)
+
   case class TransactionStreamId(txid: String)
+
   case class TranInfoAndHeightId(txid: String)
+
   case class TranInfoHeight(tranInfo: JValue, height: Long)
+
   case class TransNumberOfBlock(height: Long)
+
   case class QueryDB(netId: String, chainCodeName: String, oid: String, key: String)
-  case object LoadBlockInfo
-  case object IsLoadBlockInfo
 
   case class PostResult(txid: String, result: Option[ActionResult], err: Option[String])
+
   case class QueryResult(result: Option[JValue])
 
   case class resultMsg(result: String)
 
   case class CSpec(methodType: Int, chainCodeName: String, chainCodeVersion: Int,
                    iptFunc: String, iptArgs: Seq[String], timeout: Int, legal_prose: String,
-                   code: String, codeType: Int, state: Boolean,gasLimited:Int,oid:String,runType:Int,stateType:Int,contractLevel:Int)
-  case class tranSign(tran: String)
+                   code: String, codeType: Int, state: Boolean, gasLimited: Int, oid: String, runType: Int, stateType: Int, contractLevel: Int)
 
+  case class tranSign(tran: String)
 
 
 }
@@ -101,10 +98,10 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
 
   import RestActor._
   import spray.json._
-  import akka.http.scaladsl.model.{ HttpResponse, MediaTypes, HttpEntity }
+  import akka.http.scaladsl.model.{HttpResponse, MediaTypes, HttpEntity}
   import rep.network.autotransaction.Topic
   import akka.cluster.pubsub.DistributedPubSubMediator.Publish
-  //import rep.utils.JsonFormat.AnyJsonFormat
+
   val config = pe.getRepChainContext.getConfig
   val contractOperationMode = config.getContractRunMode
 
@@ -114,8 +111,9 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
 
   /**
    * 根据节点名称和chainCode定义建立交易实例
+   *
    * @param nodeName 节点名称
-   * @param c chainCode定义
+   * @param c        chainCode定义
    */
   def buildTranaction(nodeName: String, c: CSpec): Transaction = {
     val method_type = c.methodType match {
@@ -144,7 +142,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
       case _ =>
         rep.proto.rc2.ChaincodeDeploy.CodeType.CODE_SCALA
     }
-    val run_type = c.runType match{
+    val run_type = c.runType match {
       case 1 =>
         rep.proto.rc2.ChaincodeDeploy.RunType.RUN_SERIAL
       case 2 =>
@@ -154,7 +152,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
       case _ =>
         rep.proto.rc2.ChaincodeDeploy.RunType.RUN_SERIAL
     }
-    val state_type = c.stateType match{
+    val state_type = c.stateType match {
       case 1 =>
         rep.proto.rc2.ChaincodeDeploy.StateType.STATE_BLOCK
       case 2 =>
@@ -162,7 +160,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
       case _ =>
         rep.proto.rc2.ChaincodeDeploy.StateType.STATE_BLOCK
     }
-    val contract_Level = c.contractLevel match{
+    val contract_Level = c.contractLevel match {
       case 1 =>
         rep.proto.rc2.ChaincodeDeploy.ContractClassification.CONTRACT_SYSTEM
       case 2 =>
@@ -171,14 +169,14 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
         rep.proto.rc2.ChaincodeDeploy.ContractClassification.CONTRACT_CUSTOM
     }
     val chaincodeId = new ChaincodeId(c.chainCodeName, c.chainCodeVersion)
-    val gas_limited = if(c.gasLimited < 0) 0 else c.gasLimited
-    val oid = if(c.oid == null || c.oid.equalsIgnoreCase("null"))"" else c.oid
+    val gas_limited = if (c.gasLimited < 0) 0 else c.gasLimited
+    val oid = if (c.oid == null || c.oid.equalsIgnoreCase("null")) "" else c.oid
     if (method_type == Transaction.Type.CHAINCODE_DEPLOY) {
       pe.getRepChainContext.getTransactionBuilder.createTransaction4Deploy(nodeName, chaincodeId, c.code,
-        c.legal_prose, c.timeout, code_type,run_type,
-        state_type,contract_Level,gas_limited)
+        c.legal_prose, c.timeout, code_type, run_type,
+        state_type, contract_Level, gas_limited)
     } else if (method_type == Transaction.Type.CHAINCODE_INVOKE) {
-      pe.getRepChainContext.getTransactionBuilder.createTransaction4Invoke(nodeName, chaincodeId, c.iptFunc, c.iptArgs,gas_limited,oid)
+      pe.getRepChainContext.getTransactionBuilder.createTransaction4Invoke(nodeName, chaincodeId, c.iptFunc, c.iptArgs, gas_limited, oid)
     } else if (method_type == Transaction.Type.CHAINCODE_SET_STATE) {
       pe.getRepChainContext.getTransactionBuilder.createTransaction4State(nodeName, chaincodeId, c.state)
     } else {
@@ -199,7 +197,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
 
         //pe.getTransPoolMgr.putTran(t,pe.getSysTag)
 
-        if(config.isBroadcastTransaction) {
+        if (config.isBroadcastTransaction) {
           mediator ! Publish(Topic.Transaction, t)
         }
         sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)
@@ -216,7 +214,6 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
       }
     }
   }
-
 
 
   def receive: Receive = {
@@ -249,37 +246,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
     // 流式提交交易
     case t: Transaction =>
       preTransaction(t)
-/*
-    case SystemStart(nodeName) =>
-      val result = RepChainMgr.Startup4Single(nodeName,ReasonOfStartup.Manual)
-      val rs = "{\"status\":\""+result+"\"}"
-      val r = rs match {
-        case null => QueryResult(None)
-        case _ =>
-          QueryResult(Option(JsonMethods.parse(string2JsonInput(rs))))
-      }
-      sender ! r
 
-    case  SystemStatus(nodeName:String) =>
-      val result = RepChainMgr.systemStatus(nodeName)
-      val rs = "{\"status\":\""+result+"\"}"
-      val r = rs match {
-        case null => QueryResult(None)
-        case _ =>
-          QueryResult(Option(JsonMethods.parse(string2JsonInput(rs))))
-      }
-      sender ! r
-
-    case SystemStop(nodeName) =>
-      val result = RepChainMgr.shutdown(nodeName,ReasonOfStop.Manual)
-      val rs = "{\"status\":\""+result+"\"}"
-      val r = rs match {
-        case null => QueryResult(None)
-        case _ =>
-          QueryResult(Option(JsonMethods.parse(string2JsonInput(rs))))
-      }
-      sender ! r
-*/
     // 根据高度检索块
     case BlockHeight(h) =>
       val bb = sr.getBlockByHeight(h)
@@ -392,15 +359,6 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
       val rs = "{\"transnumberofblock\":\"" + num + "\"}"
       sender ! QueryResult(Option(JsonMethods.parse(string2JsonInput(rs))))
 
-    case LoadBlockInfo =>
-      sr.loadBlockInfoToCache
-      val rs = "{\"startup\":\"" + "true" + "\"}"
-      sender ! QueryResult(Option(JsonMethods.parse(string2JsonInput(rs))))
-    case IsLoadBlockInfo =>
-      val num = sr.isFinish
-      val rs = "{\"isfinish\":\"" + num + "\"}"
-      sender ! QueryResult(Option(JsonMethods.parse(string2JsonInput(rs))))
-
     case QueryDB(netId, cName, oid, key) =>
       val dataAccess = DBFactory.getDBAccess(config)
       val tran_oid = oid match {
@@ -411,171 +369,6 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
       val pvalue = dataAccess.getBytes(pkey)
       val jsonString = SerializeUtils.compactJson(SerializeUtils.deserialise(pvalue))
       sender ! QueryResult(Option(JsonMethods.parse(string2JsonInput(jsonString))))
-  }
-
-  //test contract speed
-  private def  testContractSpeed(h:Long):Long={
-    val si2 = scala.io.Source.fromFile("api_req/json/transfer_" + pe.getSysTag + ".json","UTF-8")
-    val li2 = try si2.mkString finally si2.close()
-    val chaincode:ChaincodeId = new ChaincodeId("ContractAssetsTPL",1)
-    var txs = new ArrayBuffer[Transaction]()
-    var start = System.currentTimeMillis()
-    val len = h.toInt
-    for( i <- 1 to len){
-      val t3 = pe.getRepChainContext.getTransactionBuilder.createTransaction4Invoke(pe.getSysTag, chaincode,"transfer", Seq(li2))
-      txs += t3
-    }
-    var end = System.currentTimeMillis()
-    println(s"create transaction,trans number=${len},spent time =${(end - start)}ms")
-
-    val dbtag = "test_db_spend"
-    var txresults = new ArrayBuffer[Option[TransactionResult]]()
-    start = System.currentTimeMillis()
-
-    val tr = ExecuteTransaction(txs,dbtag)//+"_"+h+"_"+Random.nextInt(10000))
-    if(tr._2.length > 0){
-      tr._2.foreach(trs=>{
-        //todo in struct change 2022-04-07
-        //var ts = TransactionResult(trs.txId, trs.ol.toSeq, trs.Option(trs.r))
-        //txresults += Some(ts)
-      })
-    }
-
-    /*txs.foreach(t=>{
-      val tr = ExecuteTransaction(t,dbtag)//+"_"+h+"_"+Random.nextInt(10000))
-
-      var ts = TransactionResult(t.id, tr._2.ol.toSeq, Option(tr._2.r))
-      txresults += Some(ts)
-    })*/
-    end = System.currentTimeMillis()
-    println(s"execute transaction,trans number=${len},spent time =${(end - start)}ms")
-    end - start
-  }
-
-  private def ExecuteTransaction(ts: Seq[Transaction], db_identifier: String): (Int, Seq[DoTransactionResult]) = {
-    try {
-      val future1 = pe.getActorRef(ModuleActorType.ActorType.transactiondispatcher) ? new DoTransaction(ts,  db_identifier,TypeOfSender.FromPreloader)
-      val result = Await.result(future1, timeout.duration).asInstanceOf[Seq[DoTransactionResult]]
-      (0, result)
-    } catch {
-      case e: AskTimeoutException => (1, null)
-      case te:TimeoutException =>
-        (1, null)
-    }
-  }
-
-
-  private var testHash=""
-  private var testheight : Long= 0
-
-  protected def ExecuteTransactionOfBlock(block: Block): Block = {
-    try {
-      val future = pe.getActorRef(ModuleActorType.ActorType.dispatchofpreload) ? PreTransBlock(block, "preload")
-      val result = Await.result(future, timeout.duration).asInstanceOf[PreTransBlockResult]
-      if (result.result) {
-        result.blc
-      } else {
-        null
-      }
-    } catch {
-      case e: AskTimeoutException => null
-    }
-  }
-
-  private def dyncCreateTrans(h:Long):Long={
-    val nodename = Array("121000005l35120456.node1", "12110107bi45jh675g.node2",
-    "122000002n00123567.node3", "921000005k36123789.node4", "921000006e0012v696.node5")
-    val txinfo = new Array[String](5)
-    pe.getRepChainContext.getSignTool.loadNodeCertList("changeme", s"${pe.getRepChainContext.getCryptoMgr.getKeyFileSuffix.substring(1)}/mytruststore${pe.getRepChainContext.getCryptoMgr.getKeyFileSuffix}")
-    for( i <- 1 to 5){
-      pe.getRepChainContext.getSignTool.loadPrivateKey(nodename(i-1), "123", s"${pe.getRepChainContext.getCryptoMgr.getKeyFileSuffix.substring(1)}/"+nodename(i-1)+"${CryptoMgr.getKeyFileSuffix}")
-      val si2 = scala.io.Source.fromFile("api_req/json/transfer_" + nodename(i-1) + ".json","UTF-8")
-      txinfo(i-1) = try si2.mkString finally si2.close()
-    }
-
-    if(this.testHash == ""){
-      //val sr: ImpDataAccess = ImpDataAccess.GetDataAccess(pe.getSysTag)
-      val cinfo = sr.getChainInfo
-      this.testHash = cinfo.currentBlockHash.toStringUtf8
-      this.testheight = cinfo.height
-      pe.resetSystemCurrentChainStatus(cinfo)
-    }
-
-    var chaincode:ChaincodeId = new ChaincodeId("ContractAssetsTPL",1)
-    val len = h.toInt
-    var txs = new ArrayBuffer[Transaction]()
-    var start = System.currentTimeMillis()
-    for( i <- 1 to len){
-      val j = Random.nextInt(1000) % 5
-      val t3 = pe.getRepChainContext.getTransactionBuilder.createTransaction4Invoke(nodename(j), chaincode,"transfer", Seq(txinfo(j)))
-      txs += t3
-    }
-    var end = System.currentTimeMillis()
-    println(s"create transaction,trans number=${len},spent time =${(end - start)}ms")
-
-
-    val dbtag = "test_db_spend"
-    var txresults = new ArrayBuffer[Option[TransactionResult]]()
-    start = System.currentTimeMillis()
-
-    var blc = BlockHelp.buildBlock(this.testHash, this.testheight + 1, txs.toSeq)
-    blc = ExecuteTransactionOfBlock(blc)
-    //this.testHash = blc.hashOfBlock.toStringUtf8
-
-    /*val tr = ExecuteTransaction(txs,dbtag+"_"+h+"_"+Random.nextInt(10000))
-    //val tr = ExecuteTransaction(txs,dbtag)//+"_"+h+"_"+Random.nextInt(10000))
-    if(tr._2.length > 0){
-      tr._2.foreach(trs=>{
-        var ts = TransactionResult(trs.txId, trs.ol.toSeq, Option(trs.r))
-        txresults += Some(ts)
-      })
-    }*/
-
-    /*txs.foreach(t=>{
-      val tr = ExecuteTransaction(t,dbtag)//+"_"+h+"_"+Random.nextInt(10000))
-      var ts = TransactionResult(t.id, tr._2.ol.toSeq, Option(tr._2.r))
-      txresults += Some(ts)
-    })*/
-    end = System.currentTimeMillis()
-    println(s"execute transaction,trans number=${len},spent time =${(end - start)}ms")
-    end - start
-  }
-
-  private def checkTransRepeat(h:Long):Long={
-    val nodename = Array("121000005l35120456.node1", "12110107bi45jh675g.node2",
-      "122000002n00123567.node3", "921000005k36123789.node4", "921000006e0012v696.node5")
-    val txinfo = new Array[String](5)
-    pe.getRepChainContext.getSignTool.loadNodeCertList("changeme", s"${pe.getRepChainContext.getCryptoMgr.getKeyFileSuffix.substring(1)}/mytruststore${pe.getRepChainContext.getCryptoMgr.getKeyFileSuffix}")
-    for( i <- 1 to 5){
-      pe.getRepChainContext.getSignTool.loadPrivateKey(nodename(i-1), "123", s"${pe.getRepChainContext.getCryptoMgr.getKeyFileSuffix.substring(1)}/"+nodename(i-1)+"${CryptoMgr.getKeyFileSuffix}")
-      val si2 = scala.io.Source.fromFile("api_req/json/transfer_" + nodename(i-1) + ".json","UTF-8")
-      txinfo(i-1) = try si2.mkString finally si2.close()
-    }
-
-    var chaincode:ChaincodeId = new ChaincodeId("ContractAssetsTPL",1)
-    val len = h.toInt
-    var txs = new ArrayBuffer[Transaction]()
-    var start = System.currentTimeMillis()
-    for( i <- 1 to len){
-      val j = Random.nextInt(1000) % 5
-      val t3 = pe.getRepChainContext.getTransactionBuilder.createTransaction4Invoke(nodename(j), chaincode,"transfer", Seq(txinfo(j)))
-      txs += t3
-    }
-    var end = System.currentTimeMillis()
-    println(s"create transaction,trans number=${len},spent time =${(end - start)}ms")
-
-    val dbtag = "test_db_spend"
-    var txresults = new ArrayBuffer[Boolean]()
-    start = System.currentTimeMillis()
-
-    //val sr: ImpDataAccess = ImpDataAccess.GetDataAccess(pe.getSysTag)
-    txs.foreach(t=>{
-      val rc = sr.isExistTransactionByTxId(t.id)
-      txresults += rc
-    })
-    end = System.currentTimeMillis()
-    println(s"execute transaction,trans number=${len},spent time =${(end - start)}ms")
-    end - start
   }
 
 }

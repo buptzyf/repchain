@@ -9,9 +9,13 @@ import scala.concurrent.duration._
 object RepChainConfigFilePathMgr {
 
   def getCert(session:TlsSessionInfo):X509Certificate={
-    val sslSession = session.getSession()
-    val client_cert = sslSession.getPeerCertificates
-    client_cert(0).asInstanceOf[X509Certificate]
+    try{
+      val sslSession = session.getSession()
+      val client_cert = sslSession.getPeerCertificates
+      client_cert(0).asInstanceOf[X509Certificate]
+    }catch {
+      case e:Exception=> null
+    }
   }
 
   def getSavePath(network_name:String,node_name:String,file_type:String,file_name:String):Path={
