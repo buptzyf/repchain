@@ -350,7 +350,7 @@ class BlockSearcher(ctx:RepChainSystemContext,isEncrypt:Boolean=false) {
       case _ =>
         val idx = this.getObjectForClass[BlockIndex](KeyPrefixManager.getBlockIndexKey4Height(ctx.getConfig,h.get))
         idx match {
-          case None => null
+          case None => None
           case _ => idx.asInstanceOf[Option[BlockIndex]]
         }
     }

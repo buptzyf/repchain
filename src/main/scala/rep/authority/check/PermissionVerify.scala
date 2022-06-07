@@ -245,7 +245,6 @@ class PermissionVerify(ctx: RepChainSystemContext) {
       pemWriter.writeObject(x509)
       try{pemWriter.close()}catch {case e:Exception=>e.printStackTrace()}
       try{writer.close()}catch {case e:Exception=>e.printStackTrace()}
-      System.out.println(s"pem:::${writer.toString}")
       writer.toString
     }catch{
       case e:Exception=> ""
