@@ -163,7 +163,7 @@ class PermissionVerify(ctx: RepChainSystemContext) {
   }
 
   def CheckPermissionOfX509Certificate(cert: X509Certificate, opName: String, dbInstance: BlockPreload): Boolean = {
-    val pem = toPemString(cert)
+    val pem = IdTool.toPemString(cert)
     val hash = this.ctx.getHashTool.hashstr(IdTool.deleteLine(pem))
     CheckPermissionOfCertHash(hash, opName, dbInstance)
   }
@@ -236,18 +236,5 @@ class PermissionVerify(ctx: RepChainSystemContext) {
       }))
     }
     r
-  }
-
-  private def toPemString(x509: X509Certificate): String = {
-    val writer = new StringWriter
-    val pemWriter = new JcaPEMWriter(writer)
-    try{
-      pemWriter.writeObject(x509)
-      try{pemWriter.close()}catch {case e:Exception=>e.printStackTrace()}
-      try{writer.close()}catch {case e:Exception=>e.printStackTrace()}
-      writer.toString
-    }catch{
-      case e:Exception=> ""
-    }
   }
 }

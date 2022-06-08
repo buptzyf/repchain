@@ -68,7 +68,7 @@ class ImpECDSASigner(ctx:RepChainSystemContext) extends ISigner {
             case e : Exception => isValid = false
         }
         var end = System.currentTimeMillis()
-        RepLogger.OutputTime_Logger.debug(s"Cert Check,spent time=${(end-start)}(ms)")
+        RepLogger.OutputTime_Logger.trace(s"Cert Check,spent time=${(end-start)}(ms)")
         isValid;
    }
   

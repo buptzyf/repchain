@@ -18,7 +18,11 @@ package rep.utils
 
 
 
+import java.io.StringWriter
+import java.security.cert.X509Certificate
 import java.util.UUID
+
+import org.bouncycastle.openssl.jcajce.JcaPEMWriter
 import rep.proto.rc2.{CertId, ChaincodeId, Transaction}
 
 
@@ -28,12 +32,25 @@ object IdTool {
     UUID.randomUUID().toString
   }
 
+  def toPemString(x509: X509Certificate): String = {
+    val writer = new StringWriter
+    val pemWriter = new JcaPEMWriter(writer)
+    try{
+      pemWriter.writeObject(x509)
+      try{pemWriter.close()}catch {case e:Exception=>e.printStackTrace()}
+      try{writer.close()}catch {case e:Exception=>e.printStackTrace()}
+      writer.toString
+    }catch{
+      case e:Exception=> ""
+    }
+  }
+
   def deleteLine(src:String):String={
     var rStr = ""
     if(src == null) {
       rStr
     }else{
-      rStr = src.replaceAll("\\r\\n|\\n|\\\\n|\\s","")
+      rStr = src.replaceAll("\\r\\n|\\n|\\r|\\s","")
     }
     rStr
   }
