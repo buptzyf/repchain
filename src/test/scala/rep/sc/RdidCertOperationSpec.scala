@@ -77,29 +77,29 @@ class RdidCertOperationSpec(_system: ActorSystem) extends TestKit(_system) with 
   val sha256 = ctx.getHashTool
   val transactionTool = ctx.getTransactionBuilder
   // 加载node1的私钥
-  ctx.getSignTool.loadPrivateKey(sysName, "123", s"${keyFileSuffix.substring(1)}/" + sysName + s"${keyFileSuffix}")
+  ctx.getSignTool.loadPrivateKey(sysName, "123", s"${keyFileSuffix.substring(1)}/${ctx.getConfig.getChainNetworkId}/" + sysName + s"${keyFileSuffix}")
   // 加载super_admin的私钥
-  ctx.getSignTool.loadPrivateKey(superAdmin, "super_admin", s"${keyFileSuffix.substring(1)}/" + superAdmin + s"${keyFileSuffix}")
+  ctx.getSignTool.loadPrivateKey(superAdmin, "super_admin", s"${keyFileSuffix.substring(1)}/${ctx.getConfig.getChainNetworkId}/" + superAdmin + s"${keyFileSuffix}")
 
   val cid = ChaincodeId("RdidOperateAuthorizeTPL", 1)
 
-  val certNode1: BufferedSource = scala.io.Source.fromFile(s"${keyFileSuffix.substring(1)}/certs/121000005l35120456.node1.cer")
+  val certNode1: BufferedSource = scala.io.Source.fromFile(s"${keyFileSuffix.substring(1)}/${ctx.getConfig.getChainNetworkId}/121000005l35120456.node1.cer")
   val certStr1: String = try certNode1.mkString finally certNode1.close()
-  val certNode2: BufferedSource = scala.io.Source.fromFile(s"${keyFileSuffix.substring(1)}/certs/12110107bi45jh675g.node2.cer")
+  val certNode2: BufferedSource = scala.io.Source.fromFile(s"${keyFileSuffix.substring(1)}/${ctx.getConfig.getChainNetworkId}/12110107bi45jh675g.node2.cer")
   val certStr2: String = try certNode2.mkString finally certNode2.close()
-  val certNode3: BufferedSource = scala.io.Source.fromFile(s"${keyFileSuffix.substring(1)}/certs/122000002n00123567.node3.cer")
+  val certNode3: BufferedSource = scala.io.Source.fromFile(s"${keyFileSuffix.substring(1)}/${ctx.getConfig.getChainNetworkId}/122000002n00123567.node3.cer")
   val certStr3: String = try certNode3.mkString finally certNode3.close()
-  val certNode4: BufferedSource = scala.io.Source.fromFile(s"${keyFileSuffix.substring(1)}/certs/921000005k36123789.node4.cer")
+  val certNode4: BufferedSource = scala.io.Source.fromFile(s"${keyFileSuffix.substring(1)}/${ctx.getConfig.getChainNetworkId}/921000005k36123789.node4.cer")
   val certStr4: String = try certNode4.mkString finally certNode4.close()
-  val certNode5: BufferedSource = scala.io.Source.fromFile(s"${keyFileSuffix.substring(1)}/certs/921000006e0012v696.node5.cer")
+  val certNode5: BufferedSource = scala.io.Source.fromFile(s"${keyFileSuffix.substring(1)}/${ctx.getConfig.getChainNetworkId}/921000006e0012v696.node5.cer")
   val certStr5: String = try certNode5.mkString finally certNode5.close()
-  val superCert: BufferedSource = scala.io.Source.fromFile(s"${keyFileSuffix.substring(1)}/certs/951002007l78123233.super_admin.cer", "UTF-8")
+  val superCert: BufferedSource = scala.io.Source.fromFile(s"${keyFileSuffix.substring(1)}/${ctx.getConfig.getChainNetworkId}/951002007l78123233.super_admin.cer", "UTF-8")
   val superCertPem: String = try superCert.mkString finally superCert.close()
   val certs: mutable.Map[String, String] = mutable.Map("node1" -> certStr1, "node2" -> certStr2, "node3" -> certStr3, "node4" -> certStr4, "node5" -> certStr5)
 
-  val cert1 = Certificate(certStr1, "SHA256withECDSA", certValid = true, None, None, Certificate.CertType.CERT_AUTHENTICATION, Some(CertId("121000005l35120456", "CERT1", "1")), sha256.hashstr(certStr1), "1")
-  val cert2 = Certificate(certStr2, "SHA256withECDSA", certValid = true, None, None, Certificate.CertType.CERT_AUTHENTICATION, Some(CertId("121000005l35120456", "CERT2", "1")), sha256.hashstr(certStr2), "1")
-  val cert3 = Certificate(certStr3, "SHA256withECDSA", certValid = true, None, None, Certificate.CertType.CERT_CUSTOM, Some(CertId("121000005l35120456", "CERT3", "1")), sha256.hashstr(certStr3), "1")
+  val cert1 = Certificate(certStr1, "SHA256withECDSA", certValid = true, None, None, Certificate.CertType.CERT_AUTHENTICATION, Some(CertId("121000005l35120456", "CERT1", "1")), sha256.hashstr(IdTool.deleteLine(certStr1)), "1")
+  val cert2 = Certificate(certStr2, "SHA256withECDSA", certValid = true, None, None, Certificate.CertType.CERT_AUTHENTICATION, Some(CertId("121000005l35120456", "CERT2", "1")), sha256.hashstr(IdTool.deleteLine(certStr2)), "1")
+  val cert3 = Certificate(certStr3, "SHA256withECDSA", certValid = true, None, None, Certificate.CertType.CERT_CUSTOM, Some(CertId("121000005l35120456", "CERT3", "1")), sha256.hashstr(IdTool.deleteLine(certStr3)), "1")
 
 
   // 只有AuthCert
@@ -133,7 +133,7 @@ class RdidCertOperationSpec(_system: ActorSystem) extends TestKit(_system) with 
 
   test("注册superAdmin账户与操作") {
     // 注册账户
-    val superCertHash = sha256.hashstr(superCertPem)
+    val superCertHash = sha256.hashstr(IdTool.deleteLine(superCertPem))
     val superCertId = CertId("951002007l78123233", "super_admin")
     val millis = System.currentTimeMillis()
     //生成Did的身份证书
@@ -232,7 +232,7 @@ class RdidCertOperationSpec(_system: ActorSystem) extends TestKit(_system) with 
     val cip = new ChaincodeInput(chaincodeInputFunc, params)
     t = t.withId(txid).withCid(chaincodeId).withIpt(cip).withType(Transaction.Type.CHAINCODE_INVOKE).clearSignature
     var sobj = Signature(Option(certid), Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)))
-    val privateKey = loadPrivateKey(nodeName, "123", s"${keyFileSuffix.substring(1)}/121000005l35120456.node1${keyFileSuffix}")
+    val privateKey = loadPrivateKey(nodeName, "123", s"${keyFileSuffix.substring(1)}/${ctx.getConfig.getChainNetworkId}/121000005l35120456.node1${keyFileSuffix}")
     sobj = sobj.withSignature(ByteString.copyFrom(ctx.getSigner.sign(privateKey, t.toByteArray)))
     t = t.withSignature(sobj)
     t

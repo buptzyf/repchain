@@ -27,7 +27,16 @@ object IdTool {
   def getRandomUUID: String = {
     UUID.randomUUID().toString
   }
-  
+
+  def deleteLine(src:String):String={
+    var rStr = ""
+    if(src == null) {
+      rStr
+    }else{
+      rStr = src.replaceAll("\\r\\n|\\n|\\\\n|\\s","")
+    }
+    rStr
+  }
 
   def isDidContract(contractName:String):Boolean = {
     contractName == "RdidOperateAuthorizeTPL"

@@ -17,7 +17,7 @@ class ChainInfoInCache(mda:BlockSearcher) {
     val lstInfo = mda.getLastChainInfo
     currentheight = lstInfo.height
     currenttxnumber = lstInfo.txCount
-    val bidx = mda.getBlockIndexByHeight(Some(currentheight)).get
+    val bidx = mda.getBlockIndexByHeight(Some(currentheight)).getOrElse(null)
     if (bidx != null) {
       bhash = bidx.getHash
       bprevhash = bidx.getPreHash

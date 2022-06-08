@@ -26,6 +26,7 @@ import java.util.ArrayList
 
 import akka.util.Timeout
 import org.slf4j.LoggerFactory
+import rep.app.conf.RepChainConfig
 import rep.log.RepLogger
 
 import scala.concurrent.Await
@@ -165,7 +166,7 @@ class ClusterSystem(sysTag: String, isStartupClusterSystem: Boolean) {
       throw new Exception("没有足够的磁盘空间")
     }
 
-    loadSecurityInfo(ctx.getConfig.getSystemConf)
+    loadSecurityInfo
 
     if (!checkSystemStorage) {
       terminateOfSystem
@@ -202,12 +203,12 @@ class ClusterSystem(sysTag: String, isStartupClusterSystem: Boolean) {
     r
   }
 
-  def loadSecurityInfo(conf:Config):Unit={
-    val cryptoMgr = ctx.getCryptoMgr
-    val mykeyPath = cryptoMgr.getKeyFileSuffix.substring(1)+ java.io.File.separatorChar + ctx.getSystemName + cryptoMgr.getKeyFileSuffix
-    val psw = conf.getString("akka.remote.artery.ssl.config-ssl-engine.key-store-password")
-    val trustPath = cryptoMgr.getKeyFileSuffix.substring(1)+ java.io.File.separatorChar+ctx.getConfig.getGMTrustStoreName + cryptoMgr.getKeyFileSuffix
-    val trustPwd = conf.getString("akka.remote.artery.ssl.config-ssl-engine.trust-store-password-mm")
+  def loadSecurityInfo:Unit={
+    val conf = ctx.getConfig
+    val mykeyPath = conf.getKeyStore
+    val psw = conf.getKeyPassword
+    val trustPath = conf.getTrustStore
+    val trustPwd = conf.getTrustPassword
     ctx.getSignTool.loadPrivateKey(ctx.getSystemName, psw, mykeyPath)
     ctx.getSignTool.loadNodeCertList(trustPwd, trustPath)
     RepLogger.info(RepLogger.System_Logger,  "密钥初始化装载完成...")

@@ -28,9 +28,9 @@ object CreateGenesisInfoInGM {
 
     val dir4key = ctx.getCryptoMgr.getKeyFileSuffix.substring(1)
     val keySuffix = ctx.getCryptoMgr.getKeyFileSuffix
-    ctx.getSignTool.loadPrivateKey("215159697776981712.node1", "123", s"${dir4key}/215159697776981712.node1${keySuffix}")
-    ctx.getSignTool.loadNodeCertList("changeme", s"${dir4key}/mytruststore${keySuffix}")
-    ctx.getSignTool.loadPrivateKey("257091603041653856.super_admin", "super_admin", s"${dir4key}/257091603041653856.super_admin${keySuffix}")
+    ctx.getSignTool.loadPrivateKey("215159697776981712.node1", "123", s"${dir4key}/${ctx.getConfig.getChainNetworkId}/215159697776981712.node1${keySuffix}")
+    ctx.getSignTool.loadNodeCertList("changeme", s"${dir4key}/${ctx.getConfig.getChainNetworkId}/mytruststore${keySuffix}")
+    ctx.getSignTool.loadPrivateKey("257091603041653856.super_admin", "super_admin", s"${dir4key}/${ctx.getConfig.getChainNetworkId}/257091603041653856.super_admin${keySuffix}")
     val sysName = "215159697776981712.node1"
     val superAdmin = "257091603041653856.super_admin"
     val super_credit = "257091603041653856"
@@ -56,9 +56,9 @@ object CreateGenesisInfoInGM {
     nodes(4) = ("node4", "645377164372772928", "18912345678")
     nodes(5) = ("node5", "379552050023903168", "18912345678")
     for (i <- 0 to 5) {
-      val certfile = scala.io.Source.fromFile(s"${dir4key}/" + nodes(i)._2 + "." + nodes(i)._1 + ".cer", "UTF-8")
+      val certfile = scala.io.Source.fromFile(s"${dir4key}/${ctx.getConfig.getChainNetworkId}/" + nodes(i)._2 + "." + nodes(i)._1 + ".cer", "UTF-8")
       val certstr = try certfile.mkString finally certfile.close()
-      val certstrhash = ctx.getHashTool.hashstr(certstr)
+      val certstrhash = ctx.getHashTool.hashstr(IdTool.deleteLine(certstr))
       val certid = IdTool.getCertIdFromName(nodes(i)._2 + "." + nodes(i)._1)
       val millis = System.currentTimeMillis()
       //生成Did的身份证书
@@ -106,31 +106,35 @@ object CreateGenesisInfoInGM {
     }
 
     //api操作注册
-    val opsOfAPI: Array[(String, String, String)] = new Array[(String, String, String)](15)
-    opsOfAPI(0) = (ctx.getHashTool.hashstr("chaininfo.chaininfo"), "获取链信息", "chaininfo.chaininfo")
-    opsOfAPI(1) = (ctx.getHashTool.hashstr("chaininfo.node"), "返回组网节点数量", "chaininfo.node")
-    opsOfAPI(2) = (ctx.getHashTool.hashstr("chaininfo.getcachetransnumber"), "返回系统缓存交易数量", "chaininfo.getcachetransnumber")
-    opsOfAPI(3) = (ctx.getHashTool.hashstr("chaininfo.getAcceptedTransNumber"), "返回系统接收到的交易数量", "chaininfo.getAcceptedTransNumber")
+    //api操作注册
+    val opsOfAPI: Array[(String, String, String,Boolean)] = new Array[(String, String, String,Boolean)](17)
+    opsOfAPI(0) = (ctx.getHashTool.hashstr("chaininfo.chaininfo"), "获取链信息", "chaininfo.chaininfo",true)
+    opsOfAPI(1) = (ctx.getHashTool.hashstr("chaininfo.node"), "返回组网节点数量", "chaininfo.node",true)
+    opsOfAPI(2) = (ctx.getHashTool.hashstr("chaininfo.getcachetransnumber"), "返回系统缓存交易数量", "chaininfo.getcachetransnumber",true)
+    opsOfAPI(3) = (ctx.getHashTool.hashstr("chaininfo.getAcceptedTransNumber"), "返回系统接收到的交易数量", "chaininfo.getAcceptedTransNumber",true)
 
-    opsOfAPI(4) = (ctx.getHashTool.hashstr("block.hash"), "返回指定id的区块", "block.hash")
-    opsOfAPI(5) = (ctx.getHashTool.hashstr("block.blockHeight"), "返回指定高度的区块", "block.blockHeight")
-    opsOfAPI(6) = (ctx.getHashTool.hashstr("block.getTransNumberOfBlock"), "返回指定高度区块包含的交易数", "block.getTransNumberOfBlock")
-    opsOfAPI(7) = (ctx.getHashTool.hashstr("block.blocktime"), "返回指定高度的区块的出块时间", "block.blocktime")
-    opsOfAPI(8) = (ctx.getHashTool.hashstr("block.blocktimeoftran"), "返回指定交易的入块时间", "block.blocktimeoftran")
-    opsOfAPI(9) = (ctx.getHashTool.hashstr("block.stream"), "返回指定高度的区块字节流", "block.stream")
+    opsOfAPI(4) = (ctx.getHashTool.hashstr("block.hash"), "返回指定id的区块", "block.hash",false)
+    opsOfAPI(5) = (ctx.getHashTool.hashstr("block.blockHeight"), "返回指定高度的区块", "block.blockHeight",false)
+    opsOfAPI(6) = (ctx.getHashTool.hashstr("block.getTransNumberOfBlock"), "返回指定高度区块包含的交易数", "block.getTransNumberOfBlock",true)
+    opsOfAPI(7) = (ctx.getHashTool.hashstr("block.blocktime"), "返回指定高度的区块的出块时间", "block.blocktime",true)
+    opsOfAPI(8) = (ctx.getHashTool.hashstr("block.blocktimeoftran"), "返回指定交易的入块时间", "block.blocktimeoftran",true)
+    opsOfAPI(9) = (ctx.getHashTool.hashstr("block.stream"), "返回指定高度的区块字节流", "block.stream",false)
 
-    opsOfAPI(10) = (ctx.getHashTool.hashstr("transaction"), "返回指定id的交易", "transaction")
-    opsOfAPI(11) = (ctx.getHashTool.hashstr("transaction.stream"), "返回指定id的交易字节流", "transaction.stream")
-    opsOfAPI(12) = (ctx.getHashTool.hashstr("transaction.postTranByString"), "提交带签名的交易", "transaction.postTranByString")
-    opsOfAPI(13) = (ctx.getHashTool.hashstr("transaction.postTranStream"), "提交带签名的交易字节流", "transaction.postTranStream")
-    opsOfAPI(14) = (ctx.getHashTool.hashstr("transaction.postTran"), "提交交易", "transaction.postTran")
+    opsOfAPI(10) = (ctx.getHashTool.hashstr("transaction"), "返回指定id的交易", "transaction",false)
+    opsOfAPI(11) = (ctx.getHashTool.hashstr("transaction.stream"), "返回指定id的交易字节流", "transaction.stream",false)
+    opsOfAPI(12) = (ctx.getHashTool.hashstr("transaction.postTranByString"), "提交带签名的交易", "transaction.postTranByString",true)
+    opsOfAPI(13) = (ctx.getHashTool.hashstr("transaction.postTranStream"), "提交带签名的交易字节流", "transaction.postTranStream",true)
+    opsOfAPI(14) = (ctx.getHashTool.hashstr("transaction.postTran"), "提交交易", "transaction.postTran",true)
+    opsOfAPI(15) = (ctx.getHashTool.hashstr("transaction.tranInfoAndHeight"), "回指定id的交易信息及所在区块高度", "transaction.tranInfoAndHeight",false)
+    opsOfAPI(16) = (ctx.getHashTool.hashstr("db.query"), "查询合约存储在DB中的数据", "db.query",false)
 
-    for (i <- 0 to 14) {
+
+    for (i <- 0 to 16) {
       val millis = System.currentTimeMillis()
       val snls = List("transaction.stream", "transaction.postTranByString", "transaction.postTranStream", "transaction.postTran")
       //生成Operate，不是公开的
       val op = rep.proto.rc2.Operate(opsOfAPI(i)._1, opsOfAPI(i)._2, super_credit, false, OperateType.OPERATE_SERVICE,
-        List(opsOfAPI(i)._3), "*", "", Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)),
+        snls, "*", opsOfAPI(i)._3, Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)),
         _root_.scala.None, true, "1.0")
       translist += ctx.getTransactionBuilder.createTransaction4Invoke(superAdmin, cid1, "signUpOperate", Seq(JsonFormat.toJsonString(op)))
     }
@@ -148,7 +152,7 @@ object CreateGenesisInfoInGM {
     }
 
     // 授权节点所有api相关的操作
-    for (i <- 0 to 14) {
+    for (i <- 0 to 16) {
       opids += opsOfAPI(i)._1
     }
 

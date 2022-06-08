@@ -1,6 +1,7 @@
 package rep.app.conf
 
 import java.io.File
+import java.nio.file.Paths
 import java.util
 
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
@@ -38,12 +39,54 @@ class RepChainConfig {
         ConfigFactory.parseString("akka.remote.artery.ssl.config-ssl-engine.key-store = \"jks/" + this.systemName +
           ".jks\"")
       var combined_conf = ConfigFactory.parseFile(userConfigFile).withFallback(this.sysConf)
-      combined_conf = myConfig.withFallback(combined_conf)
       this.sysConf = ConfigFactory.load(combined_conf)
+      setSSLConfig
     } else{
       RepLogger.trace(RepLogger.System_Logger, this.systemName + " ~ " + "ClusterSystem" + "~" + " custom configuration file not exist")
     }
     RepLogger.trace(RepLogger.System_Logger, this.systemName + " ~ " + "ClusterSystem" + "~" + "load System configuration successfully")
+  }
+
+  private def setSSLConfig:Unit={
+    val networkId = this.getChainNetworkId
+    val isUseGM = this.isUseGM
+    val prefix = if(isUseGM) "pfx" else "jks"
+    val base_path = prefix + File.separator + networkId + File.separator
+    val key_store = base_path + this.systemName + "."+ prefix
+    val trust_store = base_path + "mytruststore"+"." + prefix
+    var myConfig =
+      ConfigFactory.parseString("akka.remote.artery.ssl.config-ssl-engine.base-path = \"" + base_path + "\"")
+    this.sysConf = myConfig.withFallback(this.sysConf)
+    myConfig =
+      ConfigFactory.parseString("akka.remote.artery.ssl.config-ssl-engine.key-store = \"" + key_store + "\"")
+    this.sysConf = myConfig.withFallback(this.sysConf)
+    myConfig =
+      ConfigFactory.parseString("akka.remote.artery.ssl.config-ssl-engine.trust-store = \"" + trust_store + "\"")
+    this.sysConf = myConfig.withFallback(this.sysConf)
+  }
+
+  def getBasePath:String={
+    this.sysConf.getString("akka.remote.artery.ssl.config-ssl-engine.base-path")
+  }
+
+  def getKeyStore:String={
+    this.sysConf.getString("akka.remote.artery.ssl.config-ssl-engine.key-store")
+  }
+
+  def getTrustStore:String={
+    this.sysConf.getString("akka.remote.artery.ssl.config-ssl-engine.trust-store")
+  }
+
+  def getKeyPassword:String={
+    this.sysConf.getString("akka.remote.artery.ssl.config-ssl-engine.key-password")
+  }
+
+  def getKeyStorePassword:String={
+    this.sysConf.getString("akka.remote.artery.ssl.config-ssl-engine.key-store-password")
+  }
+
+  def getTrustPassword:String={
+    this.sysConf.getString("akka.remote.artery.ssl.config-ssl-engine.trust-store-password")
   }
 
   def getSystemName:String={
@@ -106,6 +149,13 @@ class RepChainConfig {
    */
   def isUseHttps:Boolean={
     this.sysConf.getInt("system.http_mode") match {
+      case 0 => false
+      case 1 => true
+    }
+  }
+
+  def isNeedClientAuth:Boolean={
+    this.sysConf.getInt("system.is_need_client_auth") match {
       case 0 => false
       case 1 => true
     }

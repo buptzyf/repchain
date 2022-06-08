@@ -16,20 +16,22 @@
 
 package rep.sc
 
-import akka.actor.{ ActorSystem}
+import akka.actor.ActorSystem
 import akka.testkit.{TestKit, TestProbe}
 import org.json4s.jackson.Serialization
 import org.json4s.native.Serialization.write
 import org.json4s.{DefaultFormats, jackson}
 import org.scalatest._
 import rep.app.conf.RepChainConfig
-import rep.app.system.{ RepChainSystemContext}
+import rep.app.system.RepChainSystemContext
 import rep.network.tools.PeerExtension
 import rep.proto.rc2.{ActionResult, CertId, Certificate, ChaincodeDeploy, ChaincodeId, Signer, TransactionResult}
 import rep.sc.tpl.did.operation.SignerOperation
 import rep.sc.tpl.did.operation.SignerOperation.SignerStatus
 import scalapb.json4s.JsonFormat
 import rep.sc.SandboxDispatcher.DoTransaction
+import rep.utils.IdTool
+
 import scala.collection.mutable
 import scala.concurrent.duration._
 import scala.io.BufferedSource
@@ -65,29 +67,29 @@ class RdidSignrOperationSpec(_system: ActorSystem) extends TestKit(_system) with
   val transactionTool = ctx.getTransactionBuilder
 
   // 加载node1的私钥
-  ctx.getSignTool.loadPrivateKey(sysName, "123", s"${keyFileSuffix.substring(1)}/" + sysName + s"${keyFileSuffix}")
+  ctx.getSignTool.loadPrivateKey(sysName, "123", s"${keyFileSuffix.substring(1)}/${ctx.getConfig.getChainNetworkId}/" + sysName + s"${keyFileSuffix}")
   // 加载super_admin的私钥
-  ctx.getSignTool.loadPrivateKey(superAdmin, "super_admin", s"${keyFileSuffix.substring(1)}/" + superAdmin + s"${keyFileSuffix}")
+  ctx.getSignTool.loadPrivateKey(superAdmin, "super_admin", s"${keyFileSuffix.substring(1)}/${ctx.getConfig.getChainNetworkId}/" + superAdmin + s"${keyFileSuffix}")
 
   val cid = ChaincodeId("RdidOperateAuthorizeTPL", 1)
 
-  val certNode1: BufferedSource = scala.io.Source.fromFile(s"${keyFileSuffix.substring(1)}/certs/121000005l35120456.node1.cer")
+  val certNode1: BufferedSource = scala.io.Source.fromFile(s"${keyFileSuffix.substring(1)}/${ctx.getConfig.getChainNetworkId}/121000005l35120456.node1.cer")
   val certStr1: String = try certNode1.mkString finally certNode1.close()
-  val certNode2: BufferedSource = scala.io.Source.fromFile(s"${keyFileSuffix.substring(1)}/certs/12110107bi45jh675g.node2.cer")
+  val certNode2: BufferedSource = scala.io.Source.fromFile(s"${keyFileSuffix.substring(1)}/${ctx.getConfig.getChainNetworkId}/12110107bi45jh675g.node2.cer")
   val certStr2: String = try certNode2.mkString finally certNode2.close()
-  val certNode3: BufferedSource = scala.io.Source.fromFile(s"${keyFileSuffix.substring(1)}/certs/122000002n00123567.node3.cer")
+  val certNode3: BufferedSource = scala.io.Source.fromFile(s"${keyFileSuffix.substring(1)}/${ctx.getConfig.getChainNetworkId}/122000002n00123567.node3.cer")
   val certStr3: String = try certNode3.mkString finally certNode3.close()
-  val certNode4: BufferedSource = scala.io.Source.fromFile(s"${keyFileSuffix.substring(1)}/certs/921000005k36123789.node4.cer")
+  val certNode4: BufferedSource = scala.io.Source.fromFile(s"${keyFileSuffix.substring(1)}/${ctx.getConfig.getChainNetworkId}/921000005k36123789.node4.cer")
   val certStr4: String = try certNode4.mkString finally certNode4.close()
-  val certNode5: BufferedSource = scala.io.Source.fromFile(s"${keyFileSuffix.substring(1)}/certs/921000006e0012v696.node5.cer")
+  val certNode5: BufferedSource = scala.io.Source.fromFile(s"${keyFileSuffix.substring(1)}/${ctx.getConfig.getChainNetworkId}/921000006e0012v696.node5.cer")
   val certStr5: String = try certNode5.mkString finally certNode5.close()
   val certs: mutable.Map[String, String] = mutable.Map("node1" -> certStr1, "node2" -> certStr2, "node3" -> certStr3, "node4" -> certStr4, "node5" -> certStr5)
 
-  val node1Cert1 = Certificate(certStr1, "SHA256withECDSA", certValid = true, None, None, certType = Certificate.CertType.CERT_AUTHENTICATION, Some(CertId("121000005l35120456", "node1Cert1", "1")), ctx.getHashTool.hashstr(certStr1), "1")
-  val node1Cert2 = Certificate(certStr2, "SHA256withECDSA", certValid = true, None, None, Certificate.CertType.CERT_CUSTOM, Some(CertId("121000005l35120456", "node1Cert1", "1")), ctx.getHashTool.hashstr(certStr1), "1")
-  val node1Cert3 = Certificate(certStr2, "SHA256withECDSA", certValid = true, None, None, certType = Certificate.CertType.CERT_AUTHENTICATION, Some(CertId("121000005l35120456", "node1Cert1", "1")), ctx.getHashTool.hashstr(certStr1), "1")
-  val node1Cert4 = Certificate(certStr2, "SHA256withECDSA", certValid = true, None, None, certType = Certificate.CertType.CERT_AUTHENTICATION, Some(CertId("121000005l3512v587", "node1Cert1", "1")), ctx.getHashTool.hashstr(certStr2), "1")
-  val node1Cert5 = Certificate(certStr2, "SHA256withECDSA", certValid = true, None, None, certType = Certificate.CertType.CERT_AUTHENTICATION, Some(CertId("121000005l3512v123", "node1Cert1", "1")), ctx.getHashTool.hashstr(certStr2), "1")
+  val node1Cert1 = Certificate(certStr1, "SHA256withECDSA", certValid = true, None, None, certType = Certificate.CertType.CERT_AUTHENTICATION, Some(CertId("121000005l35120456", "node1Cert1", "1")), ctx.getHashTool.hashstr(IdTool.deleteLine(certStr1)), "1")
+  val node1Cert2 = Certificate(certStr2, "SHA256withECDSA", certValid = true, None, None, Certificate.CertType.CERT_CUSTOM, Some(CertId("121000005l35120456", "node1Cert1", "1")), ctx.getHashTool.hashstr(IdTool.deleteLine(certStr1)), "1")
+  val node1Cert3 = Certificate(certStr2, "SHA256withECDSA", certValid = true, None, None, certType = Certificate.CertType.CERT_AUTHENTICATION, Some(CertId("121000005l35120456", "node1Cert1", "1")), ctx.getHashTool.hashstr(IdTool.deleteLine(certStr1)), "1")
+  val node1Cert4 = Certificate(certStr2, "SHA256withECDSA", certValid = true, None, None, certType = Certificate.CertType.CERT_AUTHENTICATION, Some(CertId("121000005l3512v587", "node1Cert1", "1")), ctx.getHashTool.hashstr(IdTool.deleteLine(certStr2)), "1")
+  val node1Cert5 = Certificate(certStr2, "SHA256withECDSA", certValid = true, None, None, certType = Certificate.CertType.CERT_AUTHENTICATION, Some(CertId("121000005l3512v123", "node1Cert1", "1")), ctx.getHashTool.hashstr(IdTool.deleteLine(certStr2)), "1")
 
   // 只有AuthCert
   val node1AuthCerts1 = List(node1Cert1)
