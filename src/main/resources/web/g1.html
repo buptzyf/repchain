@@ -299,7 +299,11 @@
     }
     function buildWS() {
         //Connect to our server: node server.js
+        var protocol = location.protocol
         var ws_url = "ws://" + location.host + "/event";
+        if(protocol == 'https:'){
+            ws_url = "wss://" + location.host + "/event";
+        }
         var socket = new WebSocket(ws_url);
         socket.binaryType = "arraybuffer"; // We are talking binary
 
