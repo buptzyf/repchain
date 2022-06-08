@@ -105,10 +105,11 @@ class HttpThread(url: String, info: AlertInfo) extends Runnable {
     var Str = new StringBuffer()
 
     Str.append("{\"query\":\"mutation {\\n  createAlert(data: {")
-      .append("category: ").append(info.category).append(",")
-      .append("level: ").append(info.level).append(",")
-      .append("alertDesc: \\\"").append(info.desc).append("\\\",")
-      .append("alertTime: \\\"").append(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'+08:00'").format(new Date())).append("\\\"")
+      .append("CATEGORY: ").append(info.category).append(",")
+      .append("LEVEL: ").append(info.level).append(",")
+      .append("ALERT_DESC: \\\"").append(info.desc).append("\\\",")
+      .append("BLOCKCHAIN: { connect: {id: \\\"identity-net\\\"}}").append(",")
+      .append("ALERT_TIME: \\\"").append(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'+08:00'").format(new Date())).append("\\\"")
       .append("})")
       .append("{\\n    id\\n  }\\n}\\n\"}")
 
