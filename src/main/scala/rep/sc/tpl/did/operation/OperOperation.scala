@@ -52,13 +52,15 @@ object OperOperation extends DidOperation {
         } else {
           // 非deploy与setState以及"RdidOperateAuthorizeTPL.function"的，则必须是合约部署者
           val cert = ctx.t.getSignature.certId.get
-          val contractName = operate.authFullName.split("\\.")(0)
+          //val contractName = operate.authFullName.split("\\.")(0)
+          val contractName = operate.authFullName.substring(0,operate.authFullName.lastIndexOf("."))//.split("\\.")(0)
           try {
             ctx.api.permissionCheck(cert.creditCode, cert.certName, contractName + ".deploy")
           } catch {
-            case _: SandboxException =>
+            case se: SandboxException =>
               try {
-                ctx.api.permissionCheck(cert.creditCode, cert.certName, "*.deploy")
+                val netid = operate.authFullName.substring(0,operate.authFullName.indexOf("."))
+                ctx.api.permissionCheck(cert.creditCode, cert.certName, netid+".*.deploy")
               } catch {
                 case se: SandboxException =>
                   throw ContractException(toJsonErrMsg(canNotDeployContract), se)

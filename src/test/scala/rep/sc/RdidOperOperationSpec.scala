@@ -100,9 +100,9 @@ class RdidOperOperationSpec(_system: ActorSystem) extends TestKit(_system) with 
   )
 
   val operate1 = Operate("operateId12345", "operateId12345", "X21000005l35120678", true, OperateType.OPERATE_CONTRACT, Seq.empty, "https://thyland/transaction", "RdidOperateAuthorizeTPL.signUpCertificate", None, None, true, "1")
-  val operate2 = Operate(ctx.getHashTool.hashstr("RdidOperateAuthorizeTPL.signUpCertificate"), "operateId12345", "951002007l78123233", true, OperateType.OPERATE_CONTRACT, Seq.empty, "https://thyland/transaction", "RdidOperateAuthorizeTPL.signUpCertificate", None, None, true, "1")
-  val operate3 = Operate(ctx.getHashTool.hashstr("RdidOperateAuthorizeTPL.signUpCertificate"), "RdidOperateAuthorizeTPL.signUpCertificate", "X21000005l35120678", true, OperateType.OPERATE_CONTRACT, Seq.empty, "https://thyland/transaction", "RdidOperateAuthorizeTPL.signUpCertificate", None, None, true, "1")
-  val operate4 = Operate(ctx.getHashTool.hashstr("RdidOperateAuthorizeTPL.operateId12345"), "operateId12345", "951002007l78123233", true, OperateType.OPERATE_CONTRACT, Seq.empty, "https://thyland/transaction", "RdidOperateAuthorizeTPL.operateId12345", None, None, true, "1")
+  val operate2 = Operate(ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}.RdidOperateAuthorizeTPL.signUpCertificate"), "operateId12345", "951002007l78123233", true, OperateType.OPERATE_CONTRACT, Seq.empty, "https://thyland/transaction", s"${ctx.getConfig.getChainNetworkId}.RdidOperateAuthorizeTPL.signUpCertificate", None, None, true, "1")
+  val operate3 = Operate(ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}.RdidOperateAuthorizeTPL.signUpCertificate"), "RdidOperateAuthorizeTPL.signUpCertificate", "X21000005l35120678", true, OperateType.OPERATE_CONTRACT, Seq.empty, "https://thyland/transaction", s"${ctx.getConfig.getChainNetworkId}.RdidOperateAuthorizeTPL.signUpCertificate", None, None, true, "1")
+  val operate4 = Operate(ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}.RdidOperateAuthorizeTPL.operateId12345"), "operateId12345", "951002007l78123233", true, OperateType.OPERATE_CONTRACT, Seq.empty, "https://thyland/transaction", s"${ctx.getConfig.getChainNetworkId}.RdidOperateAuthorizeTPL.operateId12345", None, None, true, "1")
   //准备探针以验证调用返回结果
   val probe = TestProbe()
   private val sandbox = system.actorOf(TransactionDispatcher.props("transactiondispatcher"), "transactiondispatcher")

@@ -142,17 +142,17 @@ class PermissionVerify(ctx: RepChainSystemContext) {
   }
 
   //通过证书的Id对象来校验权限
-  def CheckPermissionOfCertId(certId: CertId, opName: String, dbInstance: BlockPreload): Boolean = {
+  private def CheckPermissionOfCertId(certId: CertId, opName: String, dbInstance: BlockPreload): Boolean = {
     CheckPermission(certId.creditCode, certId.certName, opName, dbInstance)
   }
 
   //通过证书Id的字符串来校验权限
-  def CheckPermissionOfCertIdStr(certId: String, opName: String, dbInstance: BlockPreload): Boolean = {
+  private def CheckPermissionOfCertIdStr(certId: String, opName: String, dbInstance: BlockPreload): Boolean = {
     CheckPermissionOfCertId(IdTool.getCertIdFromName(certId), opName, dbInstance)
   }
 
   //通过证书的hash来校验权限
-  def CheckPermissionOfCertHash(certHash: String, opName: String, dbInstance: BlockPreload): Boolean = {
+  private def CheckPermissionOfCertHash(certHash: String, opName: String, dbInstance: BlockPreload): Boolean = {
     val certId = certHashCache.get(certHash, dbInstance)
     if (certId == None) {
       RepLogger.Permission_Logger.trace(s"System=${ctx.getSystemName},PermissionVerify.CheckPermission certHash not exist,certHash=${certHash},opName=${opName}")
@@ -165,7 +165,7 @@ class PermissionVerify(ctx: RepChainSystemContext) {
   def CheckPermissionOfX509Certificate(cert: X509Certificate, opName: String, dbInstance: BlockPreload): Boolean = {
     val pem = IdTool.toPemString(cert)
     val hash = this.ctx.getHashTool.hashstr(IdTool.deleteLine(pem))
-    CheckPermissionOfCertHash(hash, opName, dbInstance)
+    CheckPermissionOfCertHash(hash, ctx.getConfig.getChainNetworkId+"."+opName, dbInstance)
   }
 
   def CheckPermissionOfDeployContract(doTrans: DoTransactionOfSandboxInSingle): Boolean = {
@@ -177,12 +177,12 @@ class PermissionVerify(ctx: RepChainSystemContext) {
       System.out.println("")
     }*/
     try {
-      if (!CheckPermissionOfCertId(doTrans.t.signature.get.certId.get, opName = "*.deploy", dbInstance)) {
-        r = CheckPermissionOfCertId(doTrans.t.signature.get.certId.get, cid.chaincodeName + ".deploy", dbInstance)
+      if (!CheckPermissionOfCertId(doTrans.t.signature.get.certId.get, opName = s"${ctx.getConfig.getChainNetworkId}.*.deploy", dbInstance)) {
+        r = CheckPermissionOfCertId(doTrans.t.signature.get.certId.get, ctx.getConfig.getChainNetworkId+"."+cid.chaincodeName + ".deploy", dbInstance)
       }
     } catch {
       case e: SandboxException =>
-        r = CheckPermissionOfCertId(doTrans.t.signature.get.certId.get, cid.chaincodeName + ".deploy", dbInstance)
+        r = CheckPermissionOfCertId(doTrans.t.signature.get.certId.get, ctx.getConfig.getChainNetworkId+"."+cid.chaincodeName + ".deploy", dbInstance)
     }
 
     r
@@ -193,14 +193,13 @@ class PermissionVerify(ctx: RepChainSystemContext) {
     val cid = doTrans.t.cid.get
     val dbInstance = ctx.getBlockPreload(doTrans.da)
     try {
-      if (!CheckPermissionOfCertId(doTrans.t.signature.get.certId.get, opName = "*.setState", dbInstance)) {
-        r = CheckPermissionOfCertId(doTrans.t.signature.get.certId.get, cid.chaincodeName + ".setState", dbInstance)
+      if (!CheckPermissionOfCertId(doTrans.t.signature.get.certId.get, opName = s"${ctx.getConfig.getChainNetworkId}.*.setState", dbInstance)) {
+        r = CheckPermissionOfCertId(doTrans.t.signature.get.certId.get, ctx.getConfig.getChainNetworkId+"."+cid.chaincodeName + ".setState", dbInstance)
       }
     } catch {
       case e: SandboxException =>
-        r = CheckPermissionOfCertId(doTrans.t.signature.get.certId.get, cid.chaincodeName + ".setState", dbInstance)
+        r = CheckPermissionOfCertId(doTrans.t.signature.get.certId.get, ctx.getConfig.getChainNetworkId+"."+cid.chaincodeName + ".setState", dbInstance)
     }
-
     r
   }
 
@@ -211,7 +210,7 @@ class PermissionVerify(ctx: RepChainSystemContext) {
     }
     val dbInstance = ctx.getBlockPreload(doTrans.da)
     CheckPermissionOfCertId(doTrans.t.signature.get.certId.get,
-      cid.chaincodeName + "." + doTrans.t.getIpt.function,
+      ctx.getConfig.getChainNetworkId+"."+cid.chaincodeName + "." + doTrans.t.getIpt.function,
       dbInstance)
   }
 
