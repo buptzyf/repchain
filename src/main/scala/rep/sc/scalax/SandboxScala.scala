@@ -112,7 +112,7 @@ class SandboxScala(cid: ChaincodeId) extends Sandbox(cid) {
           val data = ipt.args
           cobj.onAction(ctx, action, data.head)
         case Transaction.Type.CHAINCODE_SET_STATE =>
-          val key_tx_state = KeyPrefixManager.getWorldStateKey(pe.getRepChainContext.getConfig,tx_cid+PRE_STATE,t.getCid.chaincodeName,t.oid)
+          val key_tx_state = tx_cid + PRE_STATE//KeyPrefixManager.getWorldStateKey(pe.getRepChainContext.getConfig,tx_cid+PRE_STATE,t.getCid.chaincodeName,t.oid)
           shim.setVal(key_tx_state,t.para.state.get)
           //val state_bytes = serialise(t.para.state.get)
           //val oldState = shim.srOfTransaction.get(key_tx_state)
