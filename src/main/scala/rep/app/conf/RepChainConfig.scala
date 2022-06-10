@@ -51,7 +51,7 @@ class RepChainConfig {
     val networkId = this.getChainNetworkId
     val isUseGM = this.isUseGM
     val prefix = if(isUseGM) "pfx" else "jks"
-    val base_path = prefix + File.separator + networkId + File.separator
+    val base_path = prefix + "/" + networkId + "/"
     val key_store = base_path + this.systemName + "."+ prefix
     val trust_store = base_path + "mytruststore"+"." + prefix
     var myConfig =
