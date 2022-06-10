@@ -25,7 +25,7 @@ class RepChainSystemContext(systemName:String) {
   private val blockStorager : BlockStorager = new BlockStorager(this)
   private val blockPreloads : ConcurrentHashMap[String,BlockPreload] = new ConcurrentHashMap[String,BlockPreload]()
   private val systemCertList : SystemCertList = new SystemCertList(this)
-  private val httpLogger = new HttpLogger(config.getOuputAlertThreads,config.getOutputMaxThreads,config.getOutputAlertAliveTime,
+  private val httpLogger = new HttpLogger(config.getChainNetworkId, config.getOuputAlertThreads,config.getOutputMaxThreads,config.getOutputAlertAliveTime,
                                           config.isOutputAlert,config.getOutputAlertPrismaUrl)
   private val transactionBuilder:TransactionBuilder = new TransactionBuilder(this.signTool)
   private val permissionCacheManager:PermissionCacheManager = PermissionCacheManager.getCacheInstance(this)

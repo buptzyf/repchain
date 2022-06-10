@@ -9,7 +9,7 @@ import java.util.concurrent.{ LinkedBlockingQueue, ThreadPoolExecutor, TimeUnit}
  * @since	2021-07-09
  * @category	http日志器，采用线程池写入prisma
  * */
-class HttpLogger(coreSize: Int, maxSize: Int, aliveTime: Int, isOutputAlert: Boolean, url: String) {
+class HttpLogger(netWorkId: String, coreSize: Int, maxSize: Int, aliveTime: Int, isOutputAlert: Boolean, url: String) {
   private var threadpool: ThreadPoolExecutor = null
 
 
@@ -29,7 +29,7 @@ class HttpLogger(coreSize: Int, maxSize: Int, aliveTime: Int, isOutputAlert: Boo
 
   def SendAlert(info: AlertInfo): Unit = {
     if (this.isOutputAlert) {
-      val task = new HttpThread(url, info)
+      val task = new HttpThread(url, netWorkId, info)
       this.threadpool.execute(task)
     }
   }
