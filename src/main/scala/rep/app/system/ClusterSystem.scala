@@ -71,7 +71,7 @@ class ClusterSystem(sysTag: String, isStartupClusterSystem: Boolean) {
   //private var statistics: ActorRef = null
 
   val SYSTEM_NAME = "Repchain"
-  private var ctx : RepChainSystemContext = new RepChainSystemContext(sysTag)
+  private var ctx : RepChainSystemContext = new RepChainSystemContext(sysTag,this)
   private var moduleManager: ActorRef = null
   private var sysConf: Config = ctx.getConfig.getSystemConf
   private var sysActor: ActorSystem = null
@@ -129,6 +129,7 @@ class ClusterSystem(sysTag: String, isStartupClusterSystem: Boolean) {
       val result = sysActor.terminate
       val result1 = Await.result(result, timeout.duration)//.asInstanceOf[Terminated]
       r = result1.getAddressTerminated
+      this.ctx = null
     }catch{
       case e:Exception =>
         r = false
@@ -147,6 +148,10 @@ class ClusterSystem(sysTag: String, isStartupClusterSystem: Boolean) {
     if (nodeList.contains(this.sysTag)) {
       val roles: List[String] = new ArrayList[String]
       roles.add("CRFD-Node:" + this.sysTag)
+      sysConf = sysConf.withValue("akka.cluster.roles", ConfigValueFactory.fromAnyRef(roles))
+    }else{
+      val roles: List[String] = new ArrayList[String]
+      roles.add("CRFD-Backup-Node:" + this.sysTag)
       sysConf = sysConf.withValue("akka.cluster.roles", ConfigValueFactory.fromAnyRef(roles))
     }
     RepLogger.info(RepLogger.System_Logger,  "检查系统组网角色...")
@@ -210,7 +215,7 @@ class ClusterSystem(sysTag: String, isStartupClusterSystem: Boolean) {
     val trustPath = conf.getTrustStore
     val trustPwd = conf.getTrustPassword
     ctx.getSignTool.loadPrivateKey(ctx.getSystemName, psw, mykeyPath)
-    ctx.getSignTool.loadNodeCertList(trustPwd, trustPath)
+    //ctx.getSignTool.loadNodeCertList(trustPwd, trustPath)
     RepLogger.info(RepLogger.System_Logger,  "密钥初始化装载完成...")
   }
 

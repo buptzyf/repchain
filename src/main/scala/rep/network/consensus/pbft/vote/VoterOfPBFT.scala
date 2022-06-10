@@ -84,7 +84,7 @@ class VoterOfPBFT(moduleName: String) extends IVoter(moduleName: String) {
   override def receive: Receive = {
     case VoteOfBlocker(flag:String) =>
       RepLogger.debug(RepLogger.zLogger,"R: " + ConfirmOfBlockOfPBFT.nn(sender) + "->" + ConfirmOfBlockOfPBFT.nn(pe.getSysTag) + ", VoteOfBlocker: " + flag)
-      if (NodeHelp.isCandidateNow(pe.getSysTag, pe.getRepChainContext.getSystemCertList.getSystemCertList)) {
+      if (NodeHelp.isCandidateNow(pe.getSysTag, pe.getRepChainContext.getSystemCertList.getVoteList)) {
         voteMsgHandler(false,null)
       }
     case VoteOfForce=>

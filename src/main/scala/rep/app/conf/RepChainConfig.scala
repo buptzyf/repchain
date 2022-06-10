@@ -97,6 +97,14 @@ class RepChainConfig {
     this.sysConf
   }
 
+  def getMemberManagementContractName:String={
+    this.sysConf.getString("system.member_management.contract_name")
+  }
+
+  def getMemberManagementContractMethod:String={
+    this.sysConf.getString("system.member_management.contract_method")
+  }
+
   /**
    * @author jiangbuyun
    * @version	2.0

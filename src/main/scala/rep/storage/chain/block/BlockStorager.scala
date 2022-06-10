@@ -2,6 +2,7 @@ package rep.storage.chain.block
 
 import com.google.protobuf.ByteString
 import rep.app.system.RepChainSystemContext
+import rep.crypto.nodedynamicmanagement.ReloadableTrustManager
 import rep.log.RepLogger
 import rep.proto.rc2.{Block, Transaction}
 import rep.storage.chain.KeyPrefixManager
@@ -11,6 +12,7 @@ import rep.storage.filesystem.common.IFileWriter
 import rep.storage.filesystem.factory.FileFactory
 import rep.storage.util.pathUtil
 import rep.utils.{IdTool, SerializeUtils}
+
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.util.control.Breaks.{break, breakable}
@@ -68,6 +70,9 @@ class BlockStorager(ctx: RepChainSystemContext, isEncrypt: Boolean = false) exte
         val accountContractName = ctx.getConfig.getAccountContractName
         val certMethod = ctx.getConfig.getAccountCertChangeMethod
 
+        val memberContractName = ctx.getConfig.getMemberManagementContractName
+        val memberContractMethod = ctx.getConfig.getMemberManagementContractMethod
+
         r.statesSet.foreach(f => {
           val k = f._1
           val v = f._2
@@ -97,6 +102,16 @@ class BlockStorager(ctx: RepChainSystemContext, isEncrypt: Boolean = false) exte
             t.`type` == Transaction.Type.CHAINCODE_INVOKE && t.para.ipt.get.function.equalsIgnoreCase(certMethod)) {
             //证书修改
             ctx.getPermissionCacheManager.updateCertCache(k)
+          }else if (t.getCid.chaincodeName.equalsIgnoreCase(memberContractName) &&
+            t.`type` == Transaction.Type.CHAINCODE_INVOKE && t.para.ipt.get.function.equalsIgnoreCase(memberContractMethod)){
+            if(k.indexOf(ReloadableTrustManager.key_trust_stores) > 0){
+              val obj = SerializeUtils.deserialise(f._2.toByteArray)
+              if(obj != null && obj.isInstanceOf[mutable.HashMap[String,Array[Byte]]]){
+                val hm = obj.asInstanceOf[mutable.HashMap[String,Array[Byte]]]
+                ctx.getReloadTrustStore.notifyTrustChange(hm)
+              }
+            }
+
           }
         })
       }

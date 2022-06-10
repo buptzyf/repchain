@@ -30,9 +30,9 @@ object CreateGenesisInfo4NoTransaction {
     val superAdmin = "951002007l78123233.super_admin"
     val super_credit = "951002007l78123233"
 
-    val ctx = new RepChainSystemContext(sysName)
+    val ctx = new RepChainSystemContext(sysName,null)
     ctx.getSignTool.loadPrivateKey(sysName, "123", s"${ctx.getCryptoMgr.getKeyFileSuffix.substring(1)}/${ctx.getConfig.getChainNetworkId}/$sysName${ctx.getCryptoMgr.getKeyFileSuffix}")
-    ctx.getSignTool.loadNodeCertList("changeme", s"${ctx.getCryptoMgr.getKeyFileSuffix.substring(1)}/${ctx.getConfig.getChainNetworkId}/mytruststore${ctx.getCryptoMgr.getKeyFileSuffix}")
+    //ctx.getSignTool.loadNodeCertList("changeme", s"${ctx.getCryptoMgr.getKeyFileSuffix.substring(1)}/${ctx.getConfig.getChainNetworkId}/mytruststore${ctx.getCryptoMgr.getKeyFileSuffix}")
     ctx.getSignTool.loadPrivateKey(superAdmin, "super_admin", s"${ctx.getCryptoMgr.getKeyFileSuffix.substring(1)}/${ctx.getConfig.getChainNetworkId}/$superAdmin${ctx.getCryptoMgr.getKeyFileSuffix}")
 
     val translist: ArrayBuffer[Transaction] = new ArrayBuffer[Transaction]

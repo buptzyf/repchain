@@ -109,7 +109,7 @@ class VoterOfCFRD(moduleName: String) extends IVoter(moduleName: String) {
 
   override def receive: Receive = {
     case VoteOfBlocker =>
-      if (NodeHelp.isCandidateNow(pe.getSysTag, pe.getRepChainContext.getSystemCertList.getSystemCertList)) {
+      if (NodeHelp.isCandidateNow(pe.getSysTag, pe.getRepChainContext.getSystemCertList.getVoteList)) {
         voteMsgHandler(false,null)
       }
     case VoteOfForce=>

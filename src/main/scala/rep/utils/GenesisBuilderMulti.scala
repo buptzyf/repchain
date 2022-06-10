@@ -40,7 +40,7 @@ object GenesisBuilderMulti {
   implicit val serialization = jackson.Serialization // or native.Serialization
   implicit val formats = DefaultFormats
   private val setMap = new mutable.HashMap[String, Int]()
-  val ctx = new RepChainSystemContext("121000005l35120456.node1")
+  val ctx = new RepChainSystemContext("121000005l35120456.node1",null)
 
   def main(args: Array[String]): Unit = {
 
@@ -48,7 +48,7 @@ object GenesisBuilderMulti {
     val keySuffix = ctx.getCryptoMgr.getKeyFileSuffix
 
     ctx.getSignTool.loadPrivateKey("121000005l35120456.node1", "123", s"${dir4key}/121000005l35120456.node1${keySuffix}")
-    ctx.getSignTool.loadNodeCertList("changeme", s"${dir4key}/mytruststore${keySuffix}")
+    //ctx.getSignTool.loadNodeCertList("changeme", s"${dir4key}/mytruststore${keySuffix}")
     ctx.getSignTool.loadPrivateKey("951002007l78123233.super_admin", "super_admin", s"${dir4key}/951002007l78123233.super_admin${keySuffix}")
 
     val transList = new util.ArrayList[Transaction]

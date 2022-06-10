@@ -1,24 +1,19 @@
 package rep.crypto.nodedynamicmanagement
 
 import javax.net.ssl._
-import java.io.{ByteArrayInputStream, File, FileInputStream, StringReader}
 import java.net.Socket
-import java.security.KeyStore
+import java.security.{KeyStore, KeyStoreException}
 import java.security.cert.Certificate
 import java.security.cert.CertificateException
-import java.security.cert.CertificateFactory
 import java.security.cert.X509Certificate
 import scala.util.control.Breaks.{break, breakable}
-import scala.collection.mutable.HashMap
+import scala.collection.mutable.{ArrayBuffer, HashMap}
 import rep.app.system.RepChainSystemContext
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
-import org.bouncycastle.util.io.pem.PemReader
+import rep.crypto.cert.CertificateUtil
 import rep.log.RepLogger
-import rep.storage.chain.KeyPrefixManager
-import rep.storage.db.factory.DBFactory
-import rep.utils.{IdTool, SerializeUtils}
-import scala.collection.JavaConverters._
+
 
 
 /**
@@ -29,31 +24,33 @@ import scala.collection.JavaConverters._
  */
 final  class ReloadableTrustManager private(ctx: RepChainSystemContext) extends X509ExtendedTrustManager {
   // 默认不检查证书的有效时间
-  private var checkValid = false
-  private var trustStore: KeyStore = null
-  private var trustManager: X509ExtendedTrustManager = null
-  private val trustsMap = new ConcurrentHashMap[String, Certificate]() asScala
-  private val trustStatus = new AtomicBoolean(false) //需要更新设置为true，装载完成设置false
+  private val checkValid = new AtomicBoolean(false)
+  private var trustCertificateManager : ReloadableTrustManager.Manager =  null
+
+  private val isUpdateTrustCerts = new AtomicBoolean(false) //需要更新设置为true，装载完成设置false
+  private val lock : Object = new Object
 
   //初始化装载
-  reloadTrustManager
+  loadUpdateTrustCertificateManager(null)
 
   override def checkClientTrusted(chain: Array[X509Certificate], authType: String, socket: Socket): Unit = {
-    trustManager.checkClientTrusted(chain, authType, socket)
+    this.lock.synchronized({
+      this.trustCertificateManager.trustManager.checkClientTrusted(chain, authType, socket)
+    })
   }
 
   override def checkServerTrusted(chain: Array[X509Certificate], authType: String, socket: Socket): Unit = {
-    trustManager.checkServerTrusted(chain, authType, socket)
+    this.lock.synchronized({this.trustCertificateManager.trustManager.checkServerTrusted(chain, authType, socket)})
   }
 
   override def checkClientTrusted(chain: Array[X509Certificate], authType: String, engine: SSLEngine): Unit = {
     checkValid(chain)
-    trustManager.checkClientTrusted(chain, authType, engine)
+    this.lock.synchronized({this.trustCertificateManager.trustManager.checkClientTrusted(chain, authType, engine)})
   }
 
   override def checkServerTrusted(chain: Array[X509Certificate], authType: String, engine: SSLEngine): Unit = {
     checkValid(chain)
-    trustManager.checkServerTrusted(chain, authType, engine)
+    this.lock.synchronized({this.trustCertificateManager.trustManager.checkServerTrusted(chain, authType, engine)})
   }
 
   override def checkClientTrusted(chain: Array[X509Certificate], authType: String): Unit = {
@@ -65,13 +62,9 @@ final  class ReloadableTrustManager private(ctx: RepChainSystemContext) extends 
   }
 
   override def getAcceptedIssuers: Array[X509Certificate] = {
-    try {
-      reloadTrustManager
-    } catch {
-      case ex: Exception =>
-        ex.printStackTrace();
-    }
-    trustManager.getAcceptedIssuers();
+    this.lock.synchronized({
+      this.trustCertificateManager.trustManager.getAcceptedIssuers()
+    })
   }
 
   private def checkTrusted(role: String, chain: Array[X509Certificate], authType: String): Unit = {
@@ -81,15 +74,14 @@ final  class ReloadableTrustManager private(ctx: RepChainSystemContext) extends 
       if (chain == null || chain.length == 0 || authType == null || authType.length() == 0) {
         throw new IllegalArgumentException()
       }
-      if (this.trustStatus.get()) {
-        reloadTrustManager
-      }
-      chain.foreach(certificate => {
-        if (checkValid) {
-          certificate.checkValidity()
-        }
+      this.lock.synchronized({
+        chain.foreach(certificate => {
+          if (checkValid.get()) {
+            certificate.checkValidity()
+          }
+        })
+        result = this.isExistTrustCertificate(chain)
       })
-      result = this.isExistTrustCertificate(chain)
     } catch {
       case ex: Exception =>
         throw new CertificateException(ex.getMessage(), ex.getCause())
@@ -104,7 +96,7 @@ final  class ReloadableTrustManager private(ctx: RepChainSystemContext) extends 
     try {
       breakable(
         chain.foreach(certificate => {
-          if (this.trustStore.getCertificateAlias(certificate) != null) {
+          if (this.trustCertificateManager.trustKeyStore.getCertificateAlias(certificate) != null) {
             r = true
             break
           }
@@ -119,7 +111,7 @@ final  class ReloadableTrustManager private(ctx: RepChainSystemContext) extends 
 
   private def checkValid(chain: Array[X509Certificate]): Unit = {
     try {
-      if (checkValid) {
+      if (checkValid.get()) {
         chain.foreach(certificate => {
           certificate.checkValidity()
         })
@@ -130,117 +122,123 @@ final  class ReloadableTrustManager private(ctx: RepChainSystemContext) extends 
     }
   }
 
-  private def reloadTrustManager: Unit = {
-    this.trustStatus.set(false)
-    this.loadTrustCertificate
-    this.loadTrustStore
-    this.loadTrustManager
-  }
 
-  private def loadTrustCertificateFromTrustFile: Unit = {
-    val fis = new FileInputStream(new File(ctx.getConfig.getTrustStore))
-    val pwd = ctx.getConfig.getTrustPassword.toCharArray()
-    val trustKeyStore = KeyStore.getInstance(KeyStore.getDefaultType())
-    trustKeyStore.load(fis, pwd)
-    val enums = trustKeyStore.aliases()
-    while (enums.hasMoreElements) {
-      val alias = enums.nextElement()
-      val cert = trustKeyStore.getCertificate(alias)
-      this.trustsMap(alias) = cert
-    }
-    if (!this.trustsMap.isEmpty) {
-      writeTrustCertificateToDB
+  class UpdateThread(updateCertInfo:HashMap[String,Array[Byte]]) extends Runnable{
+
+    override def run(): Unit = {
+      try{
+        loadUpdateTrustCertificateManager(updateCertInfo)
+      }catch {
+        case ex:Exception=>
+          RepLogger.trace(RepLogger.System_Logger, "ReloadableTrustManager 接收更新线程异常，msg="+ex.getMessage)
+      }
+
     }
   }
 
-  private def writeTrustCertificateToDB: Unit = {
-    val map = new HashMap[String, Array[Byte]]
-    this.trustsMap.foreach(f => {
-      val alias = f._1
-      val cert = f._2
-      val pemReader = new PemReader(new StringReader(IdTool.toPemString(cert.asInstanceOf[X509Certificate])))
-      val certBytes = pemReader.readPemObject().getContent
-      map(alias) = certBytes
-    })
-    if (!map.isEmpty) {
-      val db = DBFactory.getDBAccess(ctx.getConfig)
-      db.putBytes(KeyPrefixManager.getWorldStateKey(ctx.getConfig, ReloadableTrustManager.key_trust_stores,
-        "ManageNodeCert"), SerializeUtils.serialise(map))
+  ///////////////////////信任证书装载/////////////////////////////////////////////////////////////////////
+  private def loadUpdateTrustCertificateManager(updateCertInfo:HashMap[String,Array[Byte]]): Unit = {
+    try{
+      this.lock.synchronized({
+      var oldCertificates:HashMap[String,Certificate] = null
+      if(trustCertificateManager != null && trustCertificateManager.trustCertificates != null){
+        oldCertificates = trustCertificateManager.trustCertificates
+      }
+      val tmpTrustCerts = if(updateCertInfo == null)
+                            CertificateUtil.loadTrustCertificate(ctx)
+                          else
+                            CertificateUtil.loadTrustCertificateFromBytes(updateCertInfo)
+      val certsOfDeleted = findDeleteCerts(tmpTrustCerts,oldCertificates)
+      val keyStore = loadTrustStores(tmpTrustCerts)
+      val tm = loadTrustManager(keyStore)
+        this.trustCertificateManager = ReloadableTrustManager.Manager(tmpTrustCerts,certsOfDeleted,keyStore,tm)
+        //发送更新给systemcertList和SignTool
+        ctx.getSystemCertList.updateCertList(tmpTrustCerts.keySet.toArray)
+        ctx.getSignTool.updateCertList(tmpTrustCerts)
+        //shutdown 被删除的节点
+        if(certsOfDeleted.length > 0){
+          ctx.shutDownNode(certsOfDeleted)
+        }
+        this.isUpdateTrustCerts.set(true)
+        RepLogger.trace(RepLogger.System_Logger, "ReloadableTrustManager 装载更新数据，certs="+tmpTrustCerts.mkString(","))
+      })
+    }catch {
+      case ex:Exception=>
+        RepLogger.trace(RepLogger.System_Logger, "ReloadableTrustManager 装载更新数据异常，msg="+ex.getMessage)
     }
   }
 
-  private def loadTrustCertificate = {
-    this.trustsMap.clear()
-    val db = DBFactory.getDBAccess(ctx.getConfig)
-    val keyValue = db.getObject[HashMap[String, Array[Byte]]](
-      KeyPrefixManager.getWorldStateKey(ctx.getConfig, ReloadableTrustManager.key_trust_stores,
-        "ManageNodeCert"))
-    if (keyValue == None) {
-      loadTrustCertificateFromTrustFile
-    } else {
-      val certFactory: CertificateFactory = CertificateFactory.getInstance("X.509")
-      val keyMap = keyValue.getOrElse(null)
-      keyMap.foreach(item => {
-        val k = item._1
-        val v = item._2
-        val nodeCert: Certificate = certFactory.generateCertificate(new ByteArrayInputStream(v))
-        this.trustsMap(k) = nodeCert
+  private def findDeleteCerts(recentCerts:HashMap[String,Certificate],oldCerificates:HashMap[String,Certificate]): Array[String] ={
+    val delList = new ArrayBuffer[String]()
+    if(oldCerificates != null){
+      oldCerificates.keySet.foreach(k=>{
+        if(!recentCerts.contains(k)){
+          delList += k
+        }
       })
     }
+    delList.toArray
   }
 
-  private def loadTrustStore = {
-    this.trustStore = KeyStore.getInstance(KeyStore.getDefaultType())
-    this.trustsMap.foreach(f => {
-      val k = f._1
-      val cert = f._2
-      this.trustStore.setCertificateEntry(k, cert);
-    })
+  private def loadTrustStores(recentCerts:HashMap[String,Certificate]):KeyStore = {
+    try{
+      val Store = KeyStore.getInstance(KeyStore.getDefaultType())
+      Store.load(null, null)
+      recentCerts.foreach(f => {
+        val k = f._1
+        val cert = f._2
+        Store.setCertificateEntry(k, cert);
+      })
+      Store
+    }catch {
+      case e:KeyStoreException=>
+        throw e
+    }
   }
 
-  private def loadTrustManager = {
+  private def loadTrustManager(recentStore:KeyStore) : X509ExtendedTrustManager= {
+    var rtm : X509ExtendedTrustManager= null
     val tmf: TrustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-    tmf.init(this.trustStore)
-
+    tmf.init(recentStore)
     val tm: Array[TrustManager] = tmf.getTrustManagers()
     if (tm != null) {
       breakable(
         tm.foreach(manager => {
           if (manager.isInstanceOf[X509ExtendedTrustManager]) {
-            this.trustManager = manager.asInstanceOf[X509ExtendedTrustManager]
+            rtm = manager.asInstanceOf[X509ExtendedTrustManager]
             break
           }
         })
       )
     }
+    rtm
   }
+  ///////////////////////信任证书装载--完成/////////////////////////////////////////////////////////////////////
 
   def isCheckValid: Boolean = {
-    checkValid
+    checkValid.get()
   }
 
   def setCheckValid(checkValid: Boolean): Unit = {
-    this.checkValid = checkValid
+    this.checkValid.set(checkValid)
   }
 
-  def notifyTrustChange: Unit = {
-    this.trustStatus.set(true)
-  }
-
-  def getTrustCertificate(name: String): Certificate = {
-    if (this.trustsMap.contains(name)) {
-      this.trustsMap(name)
-    } else {
-      null
+  def notifyTrustChange(data:HashMap[String, Array[Byte]]): Unit = {
+    try{
+      val thread = new Thread(new UpdateThread(data))
+      thread.start()
+    }catch {
+      case ex:Exception=>
+        RepLogger.trace(RepLogger.System_Logger, "ReloadableTrustManager 通知更新异常，msg="+ex.getMessage)
     }
+
   }
 
-  def getTrustNameList: Array[String] = {
-    this.trustsMap.keySet.toArray[String]
-  }
 }
 
 object ReloadableTrustManager {
+  case class Manager(trustCertificates:HashMap[String, Certificate],certificatesOfDeleted:Array[String],
+                     trustKeyStore:KeyStore,trustManager: X509ExtendedTrustManager)
   val key_trust_stores = "TSDb-Trust-Stores"
   private val TrustManagerInstances = new ConcurrentHashMap[String, ReloadableTrustManager]()
 

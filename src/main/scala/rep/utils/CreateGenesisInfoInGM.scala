@@ -24,12 +24,12 @@ object CreateGenesisInfoInGM {
   implicit val formats = DefaultFormats
 
   def main(args: Array[String]): Unit = {
-    val ctx = new RepChainSystemContext("215159697776981712.node1")
+    val ctx = new RepChainSystemContext("215159697776981712.node1",null)
 
     val dir4key = ctx.getCryptoMgr.getKeyFileSuffix.substring(1)
     val keySuffix = ctx.getCryptoMgr.getKeyFileSuffix
     ctx.getSignTool.loadPrivateKey("215159697776981712.node1", "123", s"${dir4key}/${ctx.getConfig.getChainNetworkId}/215159697776981712.node1${keySuffix}")
-    ctx.getSignTool.loadNodeCertList("changeme", s"${dir4key}/${ctx.getConfig.getChainNetworkId}/mytruststore${keySuffix}")
+    //ctx.getSignTool.loadNodeCertList("changeme", s"${dir4key}/${ctx.getConfig.getChainNetworkId}/mytruststore${keySuffix}")
     ctx.getSignTool.loadPrivateKey("257091603041653856.super_admin", "super_admin", s"${dir4key}/${ctx.getConfig.getChainNetworkId}/257091603041653856.super_admin${keySuffix}")
     val sysName = "215159697776981712.node1"
     val superAdmin = "257091603041653856.super_admin"

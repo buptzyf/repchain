@@ -24,7 +24,7 @@ import rep.network.module.cfrd.CFRDActorType
 import rep.utils.GlobalUtils.EventType
 import rep.utils.TimeUtils
 import org.slf4j.LoggerFactory
-import rep.app.management.RepChainMgr
+import rep.app.management.{ReasonOfStop, RepChainMgr}
 
 import scala.collection.mutable.HashMap
 import rep.network.base.ModuleBase
@@ -47,10 +47,14 @@ import rep.proto.rc2.Event
  */
 object MemberListener {
   def props(name: String): Props = Props(classOf[MemberListener], name)
+
   //稳定节点回收请求
   case object Recollection
+
   case object CollectionMemeberStatus
+
 }
+
 /**
  * Cluster节点状态监听类
  *
@@ -80,18 +84,18 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
     super.preStart()
 
   cluster.subscribe(self, classOf[MemberEvent])
-  cluster.subscribe(self,classOf[ClusterDomainEvent])
+  cluster.subscribe(self, classOf[ClusterDomainEvent])
   //context.system.eventStream.subscribe(self, classOf[akka.remote.DisassociatedEvent])
 
 
   //SubscribeTopic(mediator, self, addr_self, Topic.Event, false)
 
-  def memberRemovedHandler(member:Member):Unit={
+  def memberRemovedHandler(member: Member): Unit = {
     RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("Member is Removed: {}. {} nodes cluster" + "~" + member.address))
     System.err.println(s"MemberRemoved:printer=${pe.getSysTag} ~~ removed=${pe.getNodeMgr.getNodeName4AddrString(member.address.toString)}")
 
     val tmp = pe.getNodeMgr.getNodeName4AddrString(member.address.toString)
-    if(tmp.equals(pe.getSysTag)){
+    if (tmp.equals(pe.getSysTag)) {
       RepChainMgr.ReStart(pe.getSysTag)
     }
 
@@ -101,8 +105,23 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
     sendEvent(EventType.PUBLISH_INFO, mediator, NodeHelp.getNodeName(member.roles), Topic.Event, Event.Action.MEMBER_DOWN)
   }
 
+  def memberLeaveHandler(member: Member): Unit = {
+    RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("Member is Removed: {}. {} nodes cluster" + "~" + member.address))
+    System.err.println(s"MemberRemoved:printer=${pe.getSysTag} ~~ removed=${pe.getNodeMgr.getNodeName4AddrString(member.address.toString)}")
+
+    val tmp = pe.getNodeMgr.getNodeName4AddrString(member.address.toString)
+    if (tmp.equals(pe.getSysTag) && pe.getRepChainContext.getSignTool.getTrustCertificate(tmp) == null) {
+      preloadNodesMap.remove(member.address)
+      pe.getNodeMgr.removeNode(member.address)
+      pe.getNodeMgr.removeStableNode(member.address)
+      sendEvent(EventType.PUBLISH_INFO, mediator, NodeHelp.getNodeName(member.roles), Topic.Event, Event.Action.MEMBER_DOWN)
+      RepChainMgr.shutdown(pe.getSysTag, ReasonOfStop.Manual)
+    }
+  }
+
   /**
    * 节点状态是否稳定
+   *
    * @param srcTime
    * @param dur
    * @return
@@ -132,8 +151,9 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
           } else {
             RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"CurrentClusterState: nodes is candidator,node name =${m.address.toString}"))
           }
+          pe.getRepChainContext.registerNode(NodeHelp.getNodeNameFromRoles(m.roles), m.address)
         }
-        System.err.println(m.address.toString +"\t" +m.status.toString())
+        System.err.println(m.address.toString + "\t" + m.status.toString())
       })
       pe.getNodeMgr.resetNodes(nodes)
       pe.getNodeMgr.resetStableNodes(snodes.toSet)
@@ -147,13 +167,14 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
       RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("Member is Up: {}. {} nodes in cluster" + "~" + member.address + "~" + pe.getNodeMgr.getNodes.mkString("|")))
       pe.getNodeMgr.putNode(member.address)
       if (member.roles != null && !member.roles.isEmpty && NodeHelp.isCandidatorNode(member.roles)) {
-        RepLogger.sendAlertToDB(pe.getRepChainContext.getHttpLogger(),new AlertInfo("NETWORK",4,s"Node Name=${NodeHelp.getNodeName(member.roles)},Node Address=${member.address.toString},is up."))
+        RepLogger.sendAlertToDB(pe.getRepChainContext.getHttpLogger(), new AlertInfo("NETWORK", 4, s"Node Name=${NodeHelp.getNodeName(member.roles)},Node Address=${member.address.toString},is up."))
         preloadNodesMap.put(member.address, (TimeUtils.getCurrentTime(), NodeHelp.getNodeName(member.roles)))
         RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"Member is Up:  nodes is condidator,node name=${NodeHelp.getNodeName(member.roles)}"))
         sendEvent(EventType.PUBLISH_INFO, mediator, NodeHelp.getNodeName(member.roles), Topic.Event, Event.Action.MEMBER_UP)
       } else {
         RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"Member is Up:  nodes is not condidator,node address=${member.address.toString}"))
       }
+      pe.getRepChainContext.registerNode(NodeHelp.getNodeNameFromRoles(member.roles), member.address)
       schedulerLink = scheduler.scheduleOnce((
         pe.getRepChainContext.getTimePolicy.getStableTimeDur).millis, self, Recollection)
     //稳定节点收集
@@ -162,13 +183,13 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
       RepLogger.trace(RepLogger.System_Logger, this.getLogMsgPrefix(" MemberListening recollection"))
       preloadNodesMap.foreach(node => {
         if (isStableNode(node._2._1, pe.getRepChainContext.getTimePolicy.getSysNodeStableDelay)) {
-          RepLogger.sendAlertToDB(pe.getRepChainContext.getHttpLogger(),new AlertInfo("NETWORK",4,s"Node Name=${node._2._2},Node Address=${node._2._1},is stable node."))
+          RepLogger.sendAlertToDB(pe.getRepChainContext.getHttpLogger(), new AlertInfo("NETWORK", 4, s"Node Name=${node._2._2},Node Address=${node._2._1},is stable node."))
           pe.getNodeMgr.putStableNode(node._1, node._2._2)
         } else {
           RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"Recollection:  nodes not stable,node name=${node._2._2}"))
         }
       })
-      
+
       if (preloadNodesMap.size > 0) {
         pe.getNodeMgr.getStableNodes.foreach(node => {
           if (preloadNodesMap.contains(node)) {
@@ -194,7 +215,7 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
       if (preloadNodesMap.size > 0) {
         //self ! Recollection
         schedulerLink = scheduler.scheduleOnce((
-          pe.getRepChainContext.getTimePolicy.getStableTimeDur/5).millis, self, Recollection)
+          pe.getRepChainContext.getTimePolicy.getStableTimeDur / 5).millis, self, Recollection)
       }
 
     //成员离网
@@ -220,26 +241,26 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
       preloadNodesMap.remove(event.remoteAddress)
       pe.getNodeMgr.removeNode(event.remoteAddress)
       pe.getNodeMgr.removeStableNode(event.remoteAddress)*/
-    case UnreachableMember(member)=>
+    case UnreachableMember(member) =>
       RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("UnreachableMember is : {}. {} nodes cluster" + "~" + member.address))
-        System.err.println(s"UnreachableMember:printer=${pe.getSysTag} ~~ removed=${pe.getNodeMgr.getNodeName4AddrString(member.address.toString)}")
-        preloadNodesMap.remove(member.address)
-        pe.getNodeMgr.removeNode(member.address)
-        pe.getNodeMgr.removeStableNode(member.address)
-        sendEvent(EventType.PUBLISH_INFO, mediator, NodeHelp.getNodeName(member.roles), Topic.Event, Event.Action.MEMBER_DOWN)
+      System.err.println(s"UnreachableMember:printer=${pe.getSysTag} ~~ removed=${pe.getNodeMgr.getNodeName4AddrString(member.address.toString)}")
+      preloadNodesMap.remove(member.address)
+      pe.getNodeMgr.removeNode(member.address)
+      pe.getNodeMgr.removeStableNode(member.address)
+      sendEvent(EventType.PUBLISH_INFO, mediator, NodeHelp.getNodeName(member.roles), Topic.Event, Event.Action.MEMBER_DOWN)
     case ReachableMember(member) =>
       RepLogger.trace(RepLogger.System_Logger, this.getLogMsgPrefix(" ReachableMember recollection"))
       val addr = member.address
-      if(member.status == MemberStatus.up){
-        if(member.roles != null && !member.roles.isEmpty && NodeHelp.isCandidatorNode(member.roles)){
+      if (member.status == MemberStatus.up) {
+        if (member.roles != null && !member.roles.isEmpty && NodeHelp.isCandidatorNode(member.roles)) {
           val name = NodeHelp.getNodeName(member.roles)
           pe.getNodeMgr.putNode(addr)
           pe.getNodeMgr.putStableNode(addr, name)
           sendEvent(EventType.PUBLISH_INFO, mediator, name, Topic.Event, Event.Action.MEMBER_UP)
-        }else{
+        } else {
           RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"ReachableMember is Up:  nodes is not condidator,node address=${member.address.toString}"))
         }
-      }else{
+      } else {
         RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"ReachableMember is not Up:  node address=${member.address.toString}"))
       }
 
@@ -258,23 +279,23 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
       }
 
     case MemberLeft(member) => //ignore
-      System.err.println("MemberLeft:"+member.address.toString +"\t" +member.status.toString())
+      System.err.println("MemberLeft:" + member.address.toString + "\t" + member.status.toString())
       RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("MemberLeft: {}. {} nodes cluster" + "~" + member.address.toString))
-      /*preloadNodesMap.remove(member.address)
-      pe.getNodeMgr.removeNode(member.address)
-      pe.getNodeMgr.removeStableNode(member.address)*/
-      //memberRemovedHandler(member)
+    /*preloadNodesMap.remove(member.address)
+    pe.getNodeMgr.removeNode(member.address)
+    pe.getNodeMgr.removeStableNode(member.address)*/
+    //memberRemovedHandler(member)
 
     case MemberExited(member) => //ignore
-      System.err.println("MemberExited:"+member.address.toString +"\t" +member.status.toString())
+      System.err.println("MemberExited:" + member.address.toString + "\t" + member.status.toString())
       RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("MemberExited: {}. {} nodes cluster" + "~" + member.address.toString))
-      /*preloadNodesMap.remove(member.address)
-      pe.getNodeMgr.removeNode(member.address)
-      pe.getNodeMgr.removeStableNode(member.address)*/
-      //memberRemovedHandler(member)
-    case MemberDowned(member)=>
-      System.err.println("MemberDowned:"+member.address.toString +"\t" +member.status.toString())
-      //memberRemovedHandler(member)
+    /*preloadNodesMap.remove(member.address)
+    pe.getNodeMgr.removeNode(member.address)
+    pe.getNodeMgr.removeStableNode(member.address)*/
+    //memberRemovedHandler(member)
+    case MemberDowned(member) =>
+      System.err.println("MemberDowned:" + member.address.toString + "\t" + member.status.toString())
+    //memberRemovedHandler(member)
     case _: MemberEvent => // ignore
   }
 }

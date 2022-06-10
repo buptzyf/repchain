@@ -20,7 +20,7 @@ class CustomSSLEngine(override val config: Config, override val log: MarkerLoggi
       system.settings.config.getConfig("akka.remote.artery.ssl.config-ssl-engine"),
       Logging.withMarker(system, classOf[CustomSSLEngine].getName)
     )
-    sysName = system.name
+    sysName = config.getString("node-name")
   }
 
   /**

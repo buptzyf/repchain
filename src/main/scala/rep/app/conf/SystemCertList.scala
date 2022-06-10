@@ -16,42 +16,70 @@
 
 package rep.app.conf
 
+import java.security.cert.Certificate
+import java.util.concurrent.atomic.AtomicBoolean
+
 import rep.app.system.RepChainSystemContext
+import rep.crypto.cert.CertificateUtil
 import rep.log.RepLogger
+
+import scala.collection.mutable.HashMap
 
 /**
  * @author jiangbuyun
  * @version	0.7
  * @category	获取信任的证书列表，抽签时从此文件中获取。
  * */
+
 class SystemCertList(ctx:RepChainSystemContext) {
   private var mySystemCertList:Set[String] = (new scala.collection.mutable.ArrayBuffer[String]()).toSet[String]
 
-  loadVoteNodeListForCert
+  private val isChangeCertList : AtomicBoolean = new AtomicBoolean(false)
+  private var certList : Array[String] = null
+  private val lock : Object = new Object
 
-  private def loadVoteNodeListForCert = {
-    synchronized{
-      if(this.mySystemCertList.isEmpty){
-        val list = ctx.getConfig.getVoteNodeList
-        val cList = ctx.getSignTool.getAliasOfTrustkey
-        var rList : scala.collection.mutable.ArrayBuffer[String] = new scala.collection.mutable.ArrayBuffer[String]()
-        for( i <- 0 until cList.size()){
-          val alias = cList.get(i)
-          if(list.contains(alias)){
-            rList += alias
-          }
+  loadCertListFromConfig
+
+  private def loadCertListFromConfig:Unit={
+    if(this.mySystemCertList.isEmpty){
+      val tmpMap = CertificateUtil.loadTrustCertificate(this.ctx)
+      val list = ctx.getConfig.getVoteNodeList
+      val cList = tmpMap.keySet.toArray
+      var rList : scala.collection.mutable.ArrayBuffer[String] = new scala.collection.mutable.ArrayBuffer[String]()
+      cList.foreach(alias=>{
+        if(list.contains(alias)){
+          rList += alias
         }
-        this.mySystemCertList = rList.toSet[String]
-        RepLogger.trace(RepLogger.System_Logger, this.mySystemCertList.mkString(","))
-      }
+      })
+      this.mySystemCertList = rList.toSet[String]
+      RepLogger.trace(RepLogger.System_Logger, "SystemCertList 初始化装载="+this.mySystemCertList.mkString(","))
     }
   }
 
-  def getSystemCertList:Set[String] = {
-    if(this.mySystemCertList.isEmpty){
-      loadVoteNodeListForCert
+  def updateCertList(update:Array[String]):Unit={
+    //if(update != null && update.length >= ctx.getConfig.getMinVoteNumber){
+      this.lock.synchronized({
+        this.certList = update
+        this.isChangeCertList.set(true)
+      })
+    RepLogger.trace(RepLogger.System_Logger, "SystemCertList 更新通知接收="+this.certList.mkString(","))
+    //}
+  }
+
+  def getVoteList:Set[String] = {
+    if(this.isChangeCertList.get()){
+      this.lock.synchronized({
+        if(this.certList != null){
+          this.mySystemCertList = this.certList.toSet
+        }
+        this.isChangeCertList.set(false)
+        RepLogger.trace(RepLogger.System_Logger, "SystemCertList 更新装载="+this.mySystemCertList.mkString(","))
+        this.mySystemCertList
+      })
+    }else{
+      this.mySystemCertList
     }
-    this.mySystemCertList
+
   }
 
 }

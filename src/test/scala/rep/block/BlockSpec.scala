@@ -16,7 +16,7 @@ class BlockSpec(_system: ActorSystem) extends TestKit(_system) with Matchers wit
     ActorSystem("BlockSpec", new RepChainConfig("121000005l35120456.node1").getSystemConf)
   )
 
-  val ctx : RepChainSystemContext = new RepChainSystemContext("121000005l35120456.node1")
+  val ctx : RepChainSystemContext = new RepChainSystemContext("121000005l35120456.node1",null)
   val pe = PeerExtension(system)
   pe.setRepChainContext(ctx)
   val moduleManager = system.actorOf(ModuleManagerOfCFRD.props("modulemanager", false), "modulemanager")

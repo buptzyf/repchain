@@ -6,7 +6,7 @@ import rep.log.httplog.AlertInfo
 import rep.storage.verify.verify4Storage
 
 object storageCheck extends App {
-  val ctx = new RepChainSystemContext("330597659476689954.node6")
+  val ctx = new RepChainSystemContext("330597659476689954.node6",null)
 
   checkSystemStorage
 

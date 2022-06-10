@@ -1,13 +1,15 @@
 package rep.app.system
 
-import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.{ConcurrentHashMap, Executors, TimeUnit}
 
+import akka.actor.Address
 import javax.net.ssl.SSLContext
 import rep.app.conf.{RepChainConfig, SystemCertList, TimePolicy}
 import rep.authority.cache.PermissionCacheManager
 import rep.authority.check.PermissionVerify
 import rep.crypto.Sha256
 import rep.crypto.cert.{CryptoMgr, ISigner, ImpECDSASigner, SignTool}
+import rep.crypto.nodedynamicmanagement.ReloadableTrustManager
 import rep.log.RepLogger
 import rep.log.httplog.HttpLogger
 import rep.network.autotransaction.TransactionBuilder
@@ -15,7 +17,7 @@ import rep.network.tools.transpool.PoolOfTransaction
 import rep.storage.chain.block.{BlockSearcher, BlockStorager}
 import rep.storage.chain.preload.BlockPreload
 
-class RepChainSystemContext(systemName:String) {
+class RepChainSystemContext(systemName:String,cs:ClusterSystem) {
   private val config : RepChainConfig = new RepChainConfig(systemName)
   private val timePolicy : TimePolicy = new TimePolicy(config.getSystemConf)
   private val poolOfTransaction : PoolOfTransaction =  new PoolOfTransaction(this)
@@ -31,6 +33,36 @@ class RepChainSystemContext(systemName:String) {
   private val permissionCacheManager:PermissionCacheManager = PermissionCacheManager.getCacheInstance(this)
   private val permissionVerify : PermissionVerify =  new PermissionVerify(this)
   private val hashTool : Sha256 = new Sha256(this.cryptoManager.getInstance)
+  private val reloadTrustStore : ReloadableTrustManager = ReloadableTrustManager.createReloadableTrustManager(this)
+  private val registerClusterNode:ConcurrentHashMap[String,Address] = new ConcurrentHashMap[String,Address]()
+
+  def registerNode(name:String,address: Address):Unit={
+    if(name != "")
+      this.registerClusterNode.put(name,address)
+  }
+
+  def shutDownNode(del:Array[String]): Unit ={
+    if(cs != null && cs.getClusterInstance != null){
+      try{
+        del.foreach(name=>{
+          if(registerClusterNode.containsKey(name)){
+            val address = this.registerClusterNode.getOrDefault(name,null)
+            if(address != null){
+              cs.getClusterInstance.leave(address)
+              RepLogger.trace(RepLogger.System_Logger, s"RepChainSystemContext shutdown name=${name},address=${address}")
+            }
+          }
+        })
+      }catch {
+        case ex:Exception=>
+          RepLogger.info(RepLogger.System_Logger, "RepChainSystemContext shutdown="+del.mkString(",")+",error msg="+ex.getMessage)
+      }
+    }
+  }
+
+  def getReloadTrustStore:ReloadableTrustManager={
+    this.reloadTrustStore
+  }
 
   def getHashTool:Sha256={
     this.hashTool
@@ -137,4 +169,44 @@ class RepChainSystemContext(systemName:String) {
   def getBlockStorager:BlockStorager={
     this.blockStorager
   }
+
+  /*var scheduledExecutorService = Executors.newSingleThreadScheduledExecutor
+  def StartClusterStub={
+    this.scheduledExecutorService.scheduleWithFixedDelay(//).scheduleAtFixedRate(
+      new ClusterTestStub,100,60, TimeUnit.SECONDS
+    )
+  }
+
+  class ClusterTestStub extends Runnable{
+    override def run(){
+      try{
+
+        System.err.println(s"entry terminate systemName")
+        if(!isStarting.get()){
+          if(!isSingle){
+            //单机模拟多节点时，采用随机down某个节点
+            System.err.println(s"start terminate systemName")
+            var rd = scala.util.Random.nextInt(100)
+            rd = rd % 5
+            if(rd == 0) rd =  rd + 1
+            var systemname = nodelist(rd)
+            systemname = "921000006e0012v696.node5"
+            RepChainMgr.Stop(systemname)
+            System.err.println(s"stop system,systemName=${systemname}")
+          }else{
+            //单机启动时，需要做测试时启动该节点的动态停止，模拟断网
+            System.err.println(s"start terminate systemName")
+            val systemname = nodelist(0)
+            //如果想down某个节点，就在条件中注明down的节点名称，例子里面down节点5
+            if(systemname == "921000006e0012v696.node5"){
+              RepChainMgr.Stop(systemname)
+              System.err.println(s"stop system,systemName=${systemname}")
+            }
+          }
+        }
+      }catch{
+        case e:Exception=>e.printStackTrace()
+      }
+    }
+  }*/
 }

@@ -90,7 +90,7 @@ abstract class IStorager (moduleName: String) extends ModuleBase(moduleName) {
   protected def sendVoteMessage:Unit
 
   private def NoticeVoteModule = {
-    if (NodeHelp.isCandidateNow(pe.getSysTag, pe.getRepChainContext.getSystemCertList.getSystemCertList)) {
+    if (NodeHelp.isCandidateNow(pe.getSysTag, pe.getRepChainContext.getSystemCertList.getVoteList)) {
       if (pe.getBlockCacheMgr.isEmpty ) {
         RepLogger.trace(RepLogger.Storager_Logger, this.getLogMsgPrefix("presistence is over,this is startup vote" + "~" + selfAddr))
         //通知抽签模块，开始抽签

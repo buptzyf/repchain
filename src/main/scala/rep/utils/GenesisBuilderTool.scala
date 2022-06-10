@@ -37,7 +37,7 @@ import scala.collection.mutable
   * @author zyf
   */
 object GenesisBuilderTool {
-  val ctx = new RepChainSystemContext("121000005l35120456.node1")
+  val ctx = new RepChainSystemContext("121000005l35120456.node1",null)
   implicit val serialization = jackson.Serialization // or native.Serialization
   implicit val formats = DefaultFormats
   private val setMap = new mutable.HashMap[String, Int]()

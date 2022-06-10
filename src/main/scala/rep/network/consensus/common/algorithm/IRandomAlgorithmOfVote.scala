@@ -13,7 +13,7 @@ class IRandomAlgorithmOfVote extends IAlgorithmOfVote {
   case class randomNumber(var number:Long,var generateSerial:Int)
 
   override def blocker(nodes: Array[String], position:Int): String = {
-    if(nodes.nonEmpty){
+    if(nodes != null && nodes.nonEmpty){
       var pos = position
       if(position >= nodes.size){
         pos = position % nodes.size

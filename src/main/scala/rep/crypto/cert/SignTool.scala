@@ -17,32 +17,40 @@ package rep.crypto.cert
 
 import java.security.{KeyStore, PrivateKey, PublicKey}
 import java.security.cert.Certificate
-
-import scala.collection.mutable
 import java.io._
-import java.util.{ArrayList, List}
-
+import java.util.concurrent.atomic.AtomicBoolean
 import rep.app.system.RepChainSystemContext
 import rep.authority.cache.CertificateCache
 import rep.log.RepLogger
 import rep.proto.rc2.CertId
 import rep.sc.tpl.did.DidTplPrefix
 import rep.utils.IdTool
-
+import scala.collection.mutable.HashMap
 import scala.util.control.Breaks._
 
 /**
  * 负责签名和验签的工具了，所有相关的功能都调用该类
+ *
  * @author jiangbuyun
- * @version	1.0
+ * @version 1.0
  */
-class SignTool(ctx:RepChainSystemContext) {
-  private val signer:ISigner = ctx.getSigner
-  private val keyPassword = mutable.HashMap[String, String]()
-  private val keyStores = mutable.HashMap[String, KeyStore]()
-  private val PublicKeyCerts = mutable.HashMap[String, Certificate]()
-  private val TrustNodeList: List[String] = new ArrayList[String]
-  private var isAddPublicKey = false
+class SignTool(ctx: RepChainSystemContext) {
+  private val signer: ISigner = ctx.getSigner
+  private val keyPassword = HashMap[String, String]()
+  private val keyStores = HashMap[String, KeyStore]()
+  private var PublicKeyCerts = HashMap[String, Certificate]()
+  private var updateKeyCerts = HashMap[String, Certificate]()
+  private val isChangeCerts = new AtomicBoolean(false)
+  private val lock : Object = new Object
+
+  loadTrustCertFromConfig
+
+  private def loadTrustCertFromConfig={
+    if(this.PublicKeyCerts.isEmpty){
+      this.PublicKeyCerts = CertificateUtil.loadTrustCertificate(this.ctx)
+      RepLogger.trace(RepLogger.System_Logger, "SignTool 初始化装载="+this.PublicKeyCerts.mkString(","))
+    }
+  }
 
   private def getPrivateKey(pkeyname: String): PrivateKey = {
     val sk = keyStores(pkeyname).getKey(pkeyname, keyPassword(pkeyname).toCharArray())
@@ -54,7 +62,7 @@ class SignTool(ctx:RepChainSystemContext) {
     if (this.keyStores.contains(pkeyname)) {
       pk = getPrivateKey(pkeyname)
     }
-    this.signer.sign(pk,message)
+    this.signer.sign(pk, message)
   }
 
   //根据CertId实现签名
@@ -71,15 +79,14 @@ class SignTool(ctx:RepChainSystemContext) {
   private def getVerifyCert(pubkeyname: String): PublicKey = {
     var pkcert: Certificate = null
 
-    if (PublicKeyCerts.contains(pubkeyname)) {
-      pkcert = PublicKeyCerts.get(pubkeyname).get
-    } else {
+    pkcert = getTrustCertificate(pubkeyname)
+    if (pkcert == null) {
       val cache = ctx.getPermissionCacheManager.getCache(DidTplPrefix.certPrefix).asInstanceOf[CertificateCache]
-      val cert = cache.get(pubkeyname,null)
-      if(cert != None){
-        if(cert.get.cert_valid){
+      val cert = cache.get(pubkeyname, null)
+      if (cert != None) {
+        if (cert.get.cert_valid) {
           pkcert = cert.get.certificate
-        }else{
+        } else {
           throw new RuntimeException("验证签名时证书已经失效！")
         }
       }
@@ -88,7 +95,7 @@ class SignTool(ctx:RepChainSystemContext) {
     if (pkcert == null) {
       throw new RuntimeException("验证签名时证书为空！")
     }
-    
+
     if (!this.signer.CertificateIsValid(new java.util.Date(), pkcert)) {
       throw new RuntimeException("验证签名时证书已经过期！")
     }
@@ -98,17 +105,17 @@ class SignTool(ctx:RepChainSystemContext) {
   //根据CertId实现验签
   def verify(signature: Array[Byte], message: Array[Byte], certinfo: CertId): Boolean = {
     var r = false
-    try{
+    try {
       val k = certinfo.creditCode + "." + certinfo.certName
       val pk = getVerifyCert(k)
       r = this.signer.verify(signature, message, pk)
-    }catch {
-      case e:Exception=>{
-        RepLogger.trace(RepLogger.System_Logger,s"验签异常失败，certinfo=${IdTool.getSigner4String(certinfo)}")
+    } catch {
+      case e: Exception => {
+        RepLogger.trace(RepLogger.System_Logger, s"验签异常失败，certinfo=${IdTool.getSigner4String(certinfo)}")
       }
     }
-    if(!r){
-      RepLogger.trace(RepLogger.System_Logger,s"验签失败，certinfo=${IdTool.getSigner4String(certinfo)}")
+    if (!r) {
+      RepLogger.trace(RepLogger.System_Logger, s"验签失败，certinfo=${IdTool.getSigner4String(certinfo)}")
     }
     r
   }
@@ -139,45 +146,72 @@ class SignTool(ctx:RepChainSystemContext) {
     loadPrivateKey(pkeyname, password, path)
   }
 
-  //节点启动时需要调用该函数初始化节点公钥
-  def loadNodeCertList(password: String, path: String) = {
-    synchronized {
-      if (!this.isAddPublicKey) {
-        val fis = new FileInputStream(new File(path))
-        val pwd = password.toCharArray()
-        val trustKeyStore = ctx.getCryptoMgr.getKeyStorer
-        trustKeyStore.load(fis, pwd)
-        val enums = trustKeyStore.aliases()
-        while (enums.hasMoreElements) {
-          val alias = enums.nextElement()
-          val cert = trustKeyStore.getCertificate(alias)
-          this.TrustNodeList.add(alias)
-          PublicKeyCerts.put(alias, cert)
+  def updateCertList(update:HashMap[String,Certificate]):Unit={
+    if(update != null){
+      this.lock.synchronized({
+        this.updateKeyCerts = update
+        this.isChangeCerts.set(true)
+        RepLogger.trace(RepLogger.System_Logger, "SignTool 接收更新通知="+this.updateKeyCerts.mkString(","))
+      })
+    }
+  }
+
+  def getTrustCertificate(name: String): Certificate = {
+    if(this.isChangeCerts.get()){
+      this.lock.synchronized({
+        if(this.isChangeCerts.get()){
+          if(this.updateKeyCerts != null){
+            this.PublicKeyCerts = this.updateKeyCerts
+          }
+          this.isChangeCerts.set(false)
+          RepLogger.trace(RepLogger.System_Logger, "SignTool 接收更新（getTrustCertificate）="+this.PublicKeyCerts.mkString(","))
         }
-        this.isAddPublicKey = true
+
+        if (this.PublicKeyCerts.contains(name)) {
+          this.PublicKeyCerts(name)
+        } else {
+          null
+        }
+      })
+    }else{
+      if (this.PublicKeyCerts.contains(name)) {
+        this.PublicKeyCerts(name)
+      } else {
+        null
       }
     }
   }
 
-  //提供给共识获取证书列表
-  def getAliasOfTrustkey: List[String] = {
-    this.TrustNodeList
-  }
-
   //判断某个名称是否是共识节点
   def isNode4Credit(credit: String): Boolean = {
+    if(this.isChangeCerts.get()){
+      this.lock.synchronized({
+        if (this.isChangeCerts.get()) {
+          if (this.updateKeyCerts != null) {
+            this.PublicKeyCerts = this.updateKeyCerts
+          }
+          this.isChangeCerts.set(false)
+          RepLogger.trace(RepLogger.System_Logger, "SignTool 接收更新（isNode4Credit）="+this.PublicKeyCerts.mkString(","))
+        }
+        findCredit(credit,this.PublicKeyCerts)
+      })}else{
+      findCredit(credit,this.PublicKeyCerts)
+    }
+  }
+
+
+  private def findCredit(credit: String,hm : HashMap[String,Certificate]): Boolean = {
     var r: Boolean = false
     val n = credit + "."
-    val size = this.TrustNodeList.size() - 1
-    var i : Int = 0
     breakable(
-      while (i <= size) {
-        if (TrustNodeList.get(i).indexOf(n) == 0) {
+      hm.keySet.foreach(k=>{
+        if(k.indexOf(n) == 0){
           r = true
           break
         }
-        i = i + 1
       })
+    )
     r
   }
+
 }

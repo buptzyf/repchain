@@ -51,7 +51,7 @@ abstract class IVoter(moduleName: String) extends ModuleBase(moduleName) {
   }
 
   protected def resetCandidator(currentblockhash: String) = {
-    candidator = algorithmInVoted.candidators(pe.getSysTag, currentblockhash, pe.getRepChainContext.getSystemCertList.getSystemCertList, pe.getRepChainContext.getHashTool.hash(currentblockhash))
+    candidator = algorithmInVoted.candidators(pe.getSysTag, currentblockhash, pe.getRepChainContext.getSystemCertList.getVoteList, pe.getRepChainContext.getHashTool.hash(currentblockhash))
   }
 
   protected def resetBlocker(idx: Int, currentblockhash: String, currentheight: Long) = {

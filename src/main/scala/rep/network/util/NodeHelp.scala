@@ -100,6 +100,23 @@ object NodeHelp {
     r
   }
 
+  def getNodeNameFromRoles(roles: Set[String]): String = {
+    var r = ""
+    if(roles != null){
+      breakable(
+        roles.foreach(f => {
+          if (f.startsWith("CRFD-Node")) {
+            r = f.substring(f.indexOf("CRFD-Node") + 10)
+            break
+          }else if (f.startsWith("CRFD-Backup-Node")) {
+            r = f.substring(f.indexOf("CRFD-Backup-Node") + 17)
+            break
+          }
+        }))
+    }
+    r
+  }
+
   def IsSameVote(src:BlockerInfo,dest:BlockerInfo):Boolean={
     src.VoteHeight==dest.VoteHeight && src.voteBlockHash==dest.voteBlockHash && src.VoteIndex==dest.VoteIndex
   }

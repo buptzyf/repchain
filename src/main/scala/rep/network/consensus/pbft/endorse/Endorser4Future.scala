@@ -154,7 +154,7 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
         ConfirmOfBlockOfPBFT.h4(pe.getCurrentBlockHash) + "," + pe.getCurrentHeight)
       r = ResultFlagOfEndorse.BlockHeightError
     } else {
-      if (NodeHelp.isCandidateNow(pe.getSysTag,  pe.getRepChainContext.getSystemCertList.getSystemCertList)
+      if (NodeHelp.isCandidateNow(pe.getSysTag,  pe.getRepChainContext.getSystemCertList.getVoteList)
         //是候选节点，可以背书
         && (!pe.isSynching)
         && (block.getHeader.hashPrevious.toStringUtf8 == pe.getBlocker.voteBlockHash)
