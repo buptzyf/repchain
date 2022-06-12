@@ -87,6 +87,18 @@ class BlockStorager(ctx: RepChainSystemContext, isEncrypt: Boolean = false) exte
             t.`type` == Transaction.Type.CHAINCODE_INVOKE && t.para.ipt.get.function.equalsIgnoreCase(certMethod)) {
             //证书修改
             ctx.getPermissionCacheManager.updateCertCache(k)
+          }else if (t.getCid.chaincodeName.equalsIgnoreCase(memberContractName) &&
+            t.`type` == Transaction.Type.CHAINCODE_INVOKE && t.para.ipt.get.function.equalsIgnoreCase(memberContractMethod)){
+            if(k.indexOf(ReloadableTrustManager.key_trust_stores) > 0){
+              val obj = SerializeUtils.deserialise(f._2.toByteArray)
+              if(obj != null && obj.isInstanceOf[mutable.HashMap[String,Array[Byte]]]){
+                val hm = obj.asInstanceOf[mutable.HashMap[String,Array[Byte]]]
+                ctx.getReloadTrustStore.notifyTrustChange(hm)
+                RepLogger.trace(RepLogger.Storager_Logger, s"update trust store, keys=${hm.keySet.mkString(",")}")
+              }
+              RepLogger.trace(RepLogger.Storager_Logger, s"update trust store, entry key find")
+            }
+            RepLogger.trace(RepLogger.Storager_Logger, s"update trust store, entry contract find")
           }
         })
 
@@ -102,16 +114,6 @@ class BlockStorager(ctx: RepChainSystemContext, isEncrypt: Boolean = false) exte
             t.`type` == Transaction.Type.CHAINCODE_INVOKE && t.para.ipt.get.function.equalsIgnoreCase(certMethod)) {
             //证书修改
             ctx.getPermissionCacheManager.updateCertCache(k)
-          }else if (t.getCid.chaincodeName.equalsIgnoreCase(memberContractName) &&
-            t.`type` == Transaction.Type.CHAINCODE_INVOKE && t.para.ipt.get.function.equalsIgnoreCase(memberContractMethod)){
-            if(k.indexOf(ReloadableTrustManager.key_trust_stores) > 0){
-              val obj = SerializeUtils.deserialise(f._2.toByteArray)
-              if(obj != null && obj.isInstanceOf[mutable.HashMap[String,Array[Byte]]]){
-                val hm = obj.asInstanceOf[mutable.HashMap[String,Array[Byte]]]
-                ctx.getReloadTrustStore.notifyTrustChange(hm)
-              }
-            }
-
           }
         })
       }
@@ -288,6 +290,9 @@ class BlockStorager(ctx: RepChainSystemContext, isEncrypt: Boolean = false) exte
         val accountContractName = ctx.getConfig.getAccountContractName
         val certMethod = ctx.getConfig.getAccountCertChangeMethod
 
+        val memberContractName = ctx.getConfig.getMemberManagementContractName
+        val memberContractMethod = ctx.getConfig.getMemberManagementContractMethod
+
         r.statesSet.foreach(f => {
           val k = f._1
           val v = f._2
@@ -308,6 +313,18 @@ class BlockStorager(ctx: RepChainSystemContext, isEncrypt: Boolean = false) exte
             t.`type` == Transaction.Type.CHAINCODE_INVOKE) {
             //账户修改
             ctx.getPermissionCacheManager.updateCache(k)
+          }else if (t.getCid.chaincodeName.equalsIgnoreCase(memberContractName) &&
+            t.`type` == Transaction.Type.CHAINCODE_INVOKE && t.para.ipt.get.function.equalsIgnoreCase(memberContractMethod)){
+            if(k.indexOf(ReloadableTrustManager.key_trust_stores) > 0){
+              val obj = SerializeUtils.deserialise(f._2.toByteArray)
+              if(obj != null && obj.isInstanceOf[mutable.HashMap[String,Array[Byte]]]){
+                val hm = obj.asInstanceOf[mutable.HashMap[String,Array[Byte]]]
+                ctx.getReloadTrustStore.notifyTrustChange(hm)
+                RepLogger.trace(RepLogger.Storager_Logger, s"update trust store, keys=${hm.keySet.mkString(",")}")
+              }
+              RepLogger.trace(RepLogger.Storager_Logger, s"update trust store, entry key find")
+            }
+            RepLogger.trace(RepLogger.Storager_Logger, s"update trust store, entry contract find")
           }
         })
 

@@ -154,24 +154,22 @@ object EventServer {
      (get & pathPrefix("swagger")) {
         getFromResourceDirectory("swagger")
       }~ //提供静态文件的web访问服务
-     (get & pathPrefix("web")) { 
+     (get & pathPrefix("web")) {
         getFromResourceDirectory("web")
       }~ //提供Event的WebSocket订阅服务
       path("event") {
         get {
-          //must ref to the same actor
-         //val source = Source.actorPublisher[Event](Props[EventActor]).map(evt =>  BinaryMessage(ByteString(evt.toByteArray))) 
-         //val sourceGraph: Graph[SourceShape[Event], NotUsed] = new EventActor4Stage(system)
           val sourceGraph: Graph[SourceShape[Event], NotUsed] = new EventActor4Stage(evtactor)
           val source: Source[Event, NotUsed] = Source.fromGraph(sourceGraph)
-          
-          
-          extractUpgradeToWebSocket { upgrade =>
+
+          extractWebSocketUpgrade
+          //extractUpgradeToWebSocket
+          { upgrade =>
             complete(upgrade.handleMessagesWithSinkSource(Sink.ignore, source.map(evt => BinaryMessage(ByteString(evt.toByteArray)))))
           }
-         /*extractUpgradeToWebSocket { upgrade =>
-            complete(upgrade.handleMessagesWithSinkSource(Sink.ignore, source))
-          }*/
+         //extractUpgradeToWebSocket { upgrade =>
+         //   complete(upgrade.handleMessagesWithSinkSource(Sink.ignore, source))
+         // }
         }
       }
 
@@ -243,7 +241,8 @@ object EventServer {
               new ChainService(ra).route ~
               new TransactionService(ra,repContext,false).route ~
               new DbService(ra,repContext,false).route ~
-              SwaggerDocService.routes))
+              SwaggerDocService.routes
+          ))
         System.out.println(s"^^^^^^^^http Service:${repContext.getSystemName}^^^^^^^^")
     }
 

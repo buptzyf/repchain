@@ -27,6 +27,7 @@ import java.util.ArrayList
 import akka.util.Timeout
 import org.slf4j.LoggerFactory
 import rep.app.conf.RepChainConfig
+import rep.crypto.nodedynamicmanagement.ReloadableTrustManagerTest4Inner
 import rep.log.RepLogger
 
 import scala.concurrent.Await
@@ -71,7 +72,7 @@ class ClusterSystem(sysTag: String, isStartupClusterSystem: Boolean) {
   //private var statistics: ActorRef = null
 
   val SYSTEM_NAME = "Repchain"
-  private var ctx : RepChainSystemContext = new RepChainSystemContext(sysTag,this)
+  private var ctx : RepChainSystemContext = new RepChainSystemContext(sysTag)
   private var moduleManager: ActorRef = null
   private var sysConf: Config = ctx.getConfig.getSystemConf
   private var sysActor: ActorSystem = null
@@ -108,12 +109,10 @@ class ClusterSystem(sysTag: String, isStartupClusterSystem: Boolean) {
       clusterOfInner = Cluster(sysActor)
       clusterAddress = clusterOfInner.selfAddress
       RepLogger.info(RepLogger.System_Logger,  "集群已经启动...")
-      /*val list = sysConf.getList("akka.cluster.seed-nodes")
-      val address = Address.apply(list.get(0).unwrapped().toString,sysActor.name)
-      System.out.println(s"systemname=${this.sysTag},seednode=${address.toString},clusterOfInner.selfAddress=${clusterOfInner.selfAddress.toString}")
-      clusterOfInner.join(address)*/
     }
-
+    //在测试信任证书动态改变测试与跟踪时启用代码
+    /*val testTrustCertificate = new ReloadableTrustManagerTest4Inner(ctx)
+    testTrustCertificate.StartClusterStub*/
     RepLogger.trace(RepLogger.System_Logger, sysTag + "~" + "System" + " ~ " + s"System(${sysTag}) init successfully" + " ~ ")
   }
 

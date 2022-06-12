@@ -68,7 +68,7 @@ object CertificateUtil {
       tmpMap(alias)=cert
     }
     RepLogger.trace(RepLogger.System_Logger, "CertificateUtil 在文件中装载信任证书="+tmpMap.mkString(","))
-    if(tmpMap.isEmpty){
+    if(!tmpMap.isEmpty){
       writeTrustCertificateToDB(tmpMap,ctx)
     }
     tmpMap

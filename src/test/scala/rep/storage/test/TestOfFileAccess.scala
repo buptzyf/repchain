@@ -12,7 +12,7 @@ import rep.storage.util.pathUtil
 object TestOfFileAccess extends App {
   val systemName = "215159697776981712.node1"
   //val config = new RepChainConfig(systemName)
-  val ctx = new RepChainSystemContext(systemName,null)
+  val ctx = new RepChainSystemContext(systemName)
   var testCount = 0
   var errorCount = 0
   var rightCount = 0

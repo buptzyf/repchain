@@ -25,7 +25,7 @@ object CreateGenesisInfo {
   implicit val formats = DefaultFormats
 
   def main(args: Array[String]): Unit = {
-    val ctx = new RepChainSystemContext("121000005l35120456.node1",null)
+    val ctx = new RepChainSystemContext("121000005l35120456.node1")
 
     ctx.getSignTool.loadPrivateKey("121000005l35120456.node1", "123", s"${ctx.getCryptoMgr.getKeyFileSuffix.substring(1)}/${ctx.getConfig.getChainNetworkId}/121000005l35120456.node1${ctx.getCryptoMgr.getKeyFileSuffix}")
     //ctx.getSignTool.loadNodeCertList("changeme", s"${ctx.getCryptoMgr.getKeyFileSuffix.substring(1)}/${ctx.getConfig.getChainNetworkId}/mytruststore${ctx.getCryptoMgr.getKeyFileSuffix}")

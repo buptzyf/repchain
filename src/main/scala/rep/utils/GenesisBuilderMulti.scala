@@ -40,7 +40,7 @@ object GenesisBuilderMulti {
   implicit val serialization = jackson.Serialization // or native.Serialization
   implicit val formats = DefaultFormats
   private val setMap = new mutable.HashMap[String, Int]()
-  val ctx = new RepChainSystemContext("121000005l35120456.node1",null)
+  val ctx = new RepChainSystemContext("121000005l35120456.node1")
 
   def main(args: Array[String]): Unit = {
 

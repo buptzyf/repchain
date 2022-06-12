@@ -5,6 +5,7 @@ import akka.event.{Logging, MarkerLoggingAdapter}
 import akka.remote.artery.tcp.ConfigSSLEngineProvider
 import com.typesafe.config.Config
 import javax.net.ssl._
+import java.lang.reflect.Proxy
 
 /**
  * @author zyf
@@ -30,7 +31,7 @@ class CustomSSLEngine(override val config: Config, override val log: MarkerLoggi
    */
   override protected def trustManagers: Array[TrustManager] = {
     Array(
-      ReloadableTrustManager.getReloadableTrustManager(sysName)
+      ReloadableTrustManager.getReloadableTrustManager(sysName).getProxyInstance
     )
   }
 

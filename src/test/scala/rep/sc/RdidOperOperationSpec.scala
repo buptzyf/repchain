@@ -48,7 +48,7 @@ class RdidOperOperationSpec(_system: ActorSystem) extends TestKit(_system) with 
 
   def this() = this(ActorSystem("RdidOperOperationSpec", new RepChainConfig("121000005l35120456.node1").getSystemConf))
 
-  val ctx : RepChainSystemContext = new RepChainSystemContext("121000005l35120456.node1",null)
+  val ctx : RepChainSystemContext = new RepChainSystemContext("121000005l35120456.node1")
   val pe = PeerExtension(system)
   pe.setRepChainContext(ctx)
   //val moduleManager = system.actorOf(ModuleManagerOfCFRD.props("modulemanager", false), "modulemanager")

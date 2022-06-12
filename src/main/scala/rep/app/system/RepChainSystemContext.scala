@@ -1,10 +1,11 @@
 package rep.app.system
 
-import java.util.concurrent.{ConcurrentHashMap, Executors, TimeUnit}
+
+import java.util.concurrent.ConcurrentHashMap
 
 import akka.actor.Address
-import javax.net.ssl.SSLContext
 import rep.app.conf.{RepChainConfig, SystemCertList, TimePolicy}
+import rep.app.management.{ReasonOfStop, RepChainMgr}
 import rep.authority.cache.PermissionCacheManager
 import rep.authority.check.PermissionVerify
 import rep.crypto.Sha256
@@ -17,7 +18,7 @@ import rep.network.tools.transpool.PoolOfTransaction
 import rep.storage.chain.block.{BlockSearcher, BlockStorager}
 import rep.storage.chain.preload.BlockPreload
 
-class RepChainSystemContext(systemName:String,cs:ClusterSystem) {
+class RepChainSystemContext(systemName:String){//},cs:ClusterSystem) {
   private val config : RepChainConfig = new RepChainConfig(systemName)
   private val timePolicy : TimePolicy = new TimePolicy(config.getSystemConf)
   private val poolOfTransaction : PoolOfTransaction =  new PoolOfTransaction(this)
@@ -41,7 +42,7 @@ class RepChainSystemContext(systemName:String,cs:ClusterSystem) {
       this.registerClusterNode.put(name,address)
   }
 
-  def shutDownNode(del:Array[String]): Unit ={
+  /*def shutDownNode(del:Array[String]): Unit ={
     if(cs != null && cs.getClusterInstance != null){
       try{
         del.foreach(name=>{
@@ -58,6 +59,15 @@ class RepChainSystemContext(systemName:String,cs:ClusterSystem) {
           RepLogger.info(RepLogger.System_Logger, "RepChainSystemContext shutdown="+del.mkString(",")+",error msg="+ex.getMessage)
       }
     }
+  }*/
+
+  def shutDownNode(del:Array[String]): Unit ={
+    del.foreach(name=>{
+      if(name.equalsIgnoreCase(this.systemName)){
+        RepChainMgr.shutdown(systemName,ReasonOfStop.Manual)
+        RepLogger.info(RepLogger.System_Logger, "RepChainSystemContext del trust store, shutdown="+name)
+      }
+    })
   }
 
   def getReloadTrustStore:ReloadableTrustManager={
@@ -170,43 +180,5 @@ class RepChainSystemContext(systemName:String,cs:ClusterSystem) {
     this.blockStorager
   }
 
-  /*var scheduledExecutorService = Executors.newSingleThreadScheduledExecutor
-  def StartClusterStub={
-    this.scheduledExecutorService.scheduleWithFixedDelay(//).scheduleAtFixedRate(
-      new ClusterTestStub,100,60, TimeUnit.SECONDS
-    )
-  }
 
-  class ClusterTestStub extends Runnable{
-    override def run(){
-      try{
-
-        System.err.println(s"entry terminate systemName")
-        if(!isStarting.get()){
-          if(!isSingle){
-            //单机模拟多节点时，采用随机down某个节点
-            System.err.println(s"start terminate systemName")
-            var rd = scala.util.Random.nextInt(100)
-            rd = rd % 5
-            if(rd == 0) rd =  rd + 1
-            var systemname = nodelist(rd)
-            systemname = "921000006e0012v696.node5"
-            RepChainMgr.Stop(systemname)
-            System.err.println(s"stop system,systemName=${systemname}")
-          }else{
-            //单机启动时，需要做测试时启动该节点的动态停止，模拟断网
-            System.err.println(s"start terminate systemName")
-            val systemname = nodelist(0)
-            //如果想down某个节点，就在条件中注明down的节点名称，例子里面down节点5
-            if(systemname == "921000006e0012v696.node5"){
-              RepChainMgr.Stop(systemname)
-              System.err.println(s"stop system,systemName=${systemname}")
-            }
-          }
-        }
-      }catch{
-        case e:Exception=>e.printStackTrace()
-      }
-    }
-  }*/
 }

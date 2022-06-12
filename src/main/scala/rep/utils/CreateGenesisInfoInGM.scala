@@ -24,7 +24,7 @@ object CreateGenesisInfoInGM {
   implicit val formats = DefaultFormats
 
   def main(args: Array[String]): Unit = {
-    val ctx = new RepChainSystemContext("215159697776981712.node1",null)
+    val ctx = new RepChainSystemContext("215159697776981712.node1")
 
     val dir4key = ctx.getCryptoMgr.getKeyFileSuffix.substring(1)
     val keySuffix = ctx.getCryptoMgr.getKeyFileSuffix

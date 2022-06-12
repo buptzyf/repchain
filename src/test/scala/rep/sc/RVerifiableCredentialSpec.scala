@@ -39,7 +39,7 @@ class RVerifiableCredentialSpec(_system: ActorSystem) extends TestKit(_system)
   val dbTag = "121000005l35120456.node1"
   val contractName = "RVerifiableCredentialTPL"
 
-  val ctx : RepChainSystemContext = new RepChainSystemContext("121000005l35120456.node1",null)
+  val ctx : RepChainSystemContext = new RepChainSystemContext("121000005l35120456.node1")
   val pe = PeerExtension(system)
   pe.setRepChainContext(ctx)
   //val moduleManager = system.actorOf(ModuleManagerOfCFRD.props("modulemanager", false), "modulemanager")

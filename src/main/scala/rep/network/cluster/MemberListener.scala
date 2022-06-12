@@ -115,7 +115,8 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
       pe.getNodeMgr.removeNode(member.address)
       pe.getNodeMgr.removeStableNode(member.address)
       sendEvent(EventType.PUBLISH_INFO, mediator, NodeHelp.getNodeName(member.roles), Topic.Event, Event.Action.MEMBER_DOWN)
-      RepChainMgr.shutdown(pe.getSysTag, ReasonOfStop.Manual)
+      val result = RepChainMgr.shutdown(pe.getSysTag, ReasonOfStop.Manual)
+      RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}发起shutdown命令（因为信任证书被删除），启动结果=${result}"))
     }
   }
 

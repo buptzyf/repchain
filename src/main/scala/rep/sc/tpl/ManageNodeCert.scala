@@ -28,7 +28,7 @@ class ManageNodeCert extends IContract {
    */
   def updateNodeCert(ctx: ContractContext, data: Map[String, String]): ActionResult = {
     if (ctx.api.getVal(key_trust_stores) == null) {
-      throw ContractException("未始化了，请使用initNodeCert来初始化")
+      throw ContractException("未初始化")
     }
     val certMap = ctx.api.getVal(key_trust_stores).asInstanceOf[HashMap[String, Array[Byte]]]
     for ((alias, certPem) <- data) {
