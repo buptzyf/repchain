@@ -44,7 +44,7 @@ Cleared 清除
 */
 case class AlertInfo(category: String, level: Int, desc: String)
 
-class HttpThread(url: String, info: AlertInfo) extends Runnable {
+class HttpThread(url: String, netWorkId: String, info: AlertInfo) extends Runnable {
   private val paramOfJSon = this.ConvertAlertInfoToJSon(info)
 
   override def run(): Unit = {
@@ -108,7 +108,7 @@ class HttpThread(url: String, info: AlertInfo) extends Runnable {
       .append("CATEGORY: ").append(info.category).append(",")
       .append("LEVEL: ").append(info.level).append(",")
       .append("ALERT_DESC: \\\"").append(info.desc).append("\\\",")
-      .append("BLOCKCHAIN: { connect: {id: \\\"identity-net\\\"}}").append(",")
+      .append("BLOCKCHAIN: { connect: {id: \\\"" + netWorkId + "\\\"}}").append(",")
       .append("ALERT_TIME: \\\"").append(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'+08:00'").format(new Date())).append("\\\"")
       .append("})")
       .append("{\\n    id\\n  }\\n}\\n\"}")
