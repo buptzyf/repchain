@@ -4,7 +4,7 @@
     "height" : "1"
   },
   "transactions" : [ {
-    "id" : "e76f35fc-ad2d-4e5e-a56b-dbc97567b09e",
+    "id" : "80aadd45-8d10-494e-b090-0fb16429456c",
     "type" : "CHAINCODE_DEPLOY",
     "cid" : {
       "chaincodeName" : "RdidOperateAuthorizeTPL",
@@ -23,11 +23,11 @@
         "creditCode" : "951002007l78123233",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2022-06-09T10:40:55.533Z",
-      "signature" : "MEQCIEkjun3MnwK01MgsDgUQ33gVcUclsEWoYJJvDLxKmmD9AiAMf9ipWsaHnd4g3LnYPJH2gpE/0TmCu/uPSUJv04eXTA=="
+      "tmLocal" : "2022-06-13T21:36:15.527Z",
+      "signature" : "MEYCIQC7+Vlb8nzljCF3LuueLl5tNrECkzgkrPDl73HAGFe19gIhAJjqNXrjMuqJHFYcCIC0JELPDKVnAPmhZopGXRe2caJ7"
     }
   }, {
-    "id" : "b142dc88-5361-41d3-9a6b-713c25980aad",
+    "id" : "3042699d-16d5-4123-a2bc-71af2661ac58",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "RdidOperateAuthorizeTPL",
@@ -35,18 +35,18 @@
     },
     "ipt" : {
       "function" : "signUpSigner",
-      "args" : [ "{\"name\":\"super_admin\",\"creditCode\":\"951002007l78123233\",\"mobile\":\"18912345678\",\"authenticationCerts\":[{\"certificate\":\"-----BEGIN CERTIFICATE-----\\r\\nMIIBZDCCAQqgAwIBAgIGAYEEX3LxMAoGCCqGSM49BAMCMDkxFDASBgNVBAMMC3N1\\r\\ncGVyX2FkbWluMQ4wDAYDVQQLDAVpc2NhczERMA8GA1UECgwIUmVwQ2hhaW4wHhcN\\r\\nMjIwNTI3MDcxNjEzWhcNMjcwNTI2MDcxNjEzWjA5MRQwEgYDVQQDDAtzdXBlcl9h\\r\\nZG1pbjEOMAwGA1UECwwFaXNjYXMxETAPBgNVBAoMCFJlcENoYWluMFkwEwYHKoZI\\r\\nzj0CAQYIKoZIzj0DAQcDQgAE0SsXKYp6BqzCk0BvfKPSIeCtHEAE2N53xM2CkPNE\\r\\n3lueJp8G6S3jHJuzesV/1IMmbzVzk8xMotgMfJFEOcAtBDAKBggqhkjOPQQDAgNI\\r\\nADBFAiEAh8uOog9ZkpP939xaTqna8kGpLwYmZ6FukL6C85VgweQCIC/2hSUY/bJO\\r\\nUQ27QWcjGxBTGdW1GfLS/4HNr9h923IJ\\r\\n-----END CERTIFICATE-----\\r\\n\",\"algType\":\"SHA256withECDSA\",\"certValid\":true,\"regTime\":\"2022-06-09T02:40:55.637Z\",\"certType\":\"CERT_AUTHENTICATION\",\"id\":{\"creditCode\":\"951002007l78123233\",\"certName\":\"super_admin\"},\"certHash\":\"bfa99c1336052c87649787edcfee51fedf632301d7369f645034c8ac7e3e0d98\",\"version\":\"1.0\"}],\"createTime\":\"2022-06-09T02:40:55.637Z\",\"signerValid\":true,\"version\":\"1.0\"}" ]
+      "args" : [ "{\"name\":\"super_admin\",\"creditCode\":\"951002007l78123233\",\"mobile\":\"18912345678\",\"authenticationCerts\":[{\"certificate\":\"-----BEGIN CERTIFICATE-----\\r\\nMIIBZDCCAQqgAwIBAgIGAYEEX3LxMAoGCCqGSM49BAMCMDkxFDASBgNVBAMMC3N1\\r\\ncGVyX2FkbWluMQ4wDAYDVQQLDAVpc2NhczERMA8GA1UECgwIUmVwQ2hhaW4wHhcN\\r\\nMjIwNTI3MDcxNjEzWhcNMjcwNTI2MDcxNjEzWjA5MRQwEgYDVQQDDAtzdXBlcl9h\\r\\nZG1pbjEOMAwGA1UECwwFaXNjYXMxETAPBgNVBAoMCFJlcENoYWluMFkwEwYHKoZI\\r\\nzj0CAQYIKoZIzj0DAQcDQgAE0SsXKYp6BqzCk0BvfKPSIeCtHEAE2N53xM2CkPNE\\r\\n3lueJp8G6S3jHJuzesV/1IMmbzVzk8xMotgMfJFEOcAtBDAKBggqhkjOPQQDAgNI\\r\\nADBFAiEAh8uOog9ZkpP939xaTqna8kGpLwYmZ6FukL6C85VgweQCIC/2hSUY/bJO\\r\\nUQ27QWcjGxBTGdW1GfLS/4HNr9h923IJ\\r\\n-----END CERTIFICATE-----\\r\\n\",\"algType\":\"SHA256withECDSA\",\"certValid\":true,\"regTime\":\"2022-06-13T13:36:15.623Z\",\"certType\":\"CERT_AUTHENTICATION\",\"id\":{\"creditCode\":\"951002007l78123233\",\"certName\":\"super_admin\"},\"certHash\":\"bfa99c1336052c87649787edcfee51fedf632301d7369f645034c8ac7e3e0d98\",\"version\":\"1.0\"}],\"createTime\":\"2022-06-13T13:36:15.623Z\",\"signerValid\":true,\"version\":\"1.0\"}" ]
     },
     "signature" : {
       "certId" : {
         "creditCode" : "951002007l78123233",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2022-06-09T10:40:56.077Z",
-      "signature" : "MEUCIQCTMEs4PxEqNI+cfCB8rOBUBrX9+R/HkuilYHYzy8dRIgIgUHY7cvc2h/49tRqUTqeE5W64aoPsNK9zbfaE2uVrVY0="
+      "tmLocal" : "2022-06-13T21:36:16.022Z",
+      "signature" : "MEYCIQCyEO+CgeVHbFECInMtfHvr/fsVsW9HMWE6y7oMU2WDBQIhALQbhUal4274Czzhi4nKT/h/dViLjzsQRKEQ6KUcjt/Z"
     }
   }, {
-    "id" : "667bc7d1-4f68-4e76-be5c-e175e8376c21",
+    "id" : "3efd7d31-ae63-4b54-83a9-9bafdfe1ff57",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "RdidOperateAuthorizeTPL",
@@ -54,18 +54,18 @@
     },
     "ipt" : {
       "function" : "signUpSigner",
-      "args" : [ "{\"name\":\"node1\",\"creditCode\":\"121000005l35120456\",\"mobile\":\"18912345678\",\"authenticationCerts\":[{\"certificate\":\"-----BEGIN CERTIFICATE-----\\r\\nMIIBVjCB/qADAgECAgYBgQRfc0swCgYIKoZIzj0EAwIwMzEOMAwGA1UEAwwFbm9k\\r\\nZTExDjAMBgNVBAsMBWlzY2FzMREwDwYDVQQKDAhSZXBDaGFpbjAeFw0yMjA1Mjcw\\r\\nNzE2MTNaFw0yNzA1MjYwNzE2MTNaMDMxDjAMBgNVBAMMBW5vZGUxMQ4wDAYDVQQL\\r\\nDAVpc2NhczERMA8GA1UECgwIUmVwQ2hhaW4wWTATBgcqhkjOPQIBBggqhkjOPQMB\\r\\nBwNCAAS2dFJZHZe07B9cZAugHd1dotPTAf8Lb05dW/644EXqTaXst4MzVt43grLp\\r\\nuhEkvdtFB6n75yOrc0zQ+Q5fUFuQMAoGCCqGSM49BAMCA0cAMEQCIBHI9RGCplmK\\r\\nlovEmnUMG7WpCs3m5G+SUsrGj9DFu7HXAiBEewxv+oZdbgi2RZs+2d5uEydvZW/8\\r\\n2TSY7Ip3isk0aQ==\\r\\n-----END CERTIFICATE-----\\r\\n\",\"algType\":\"SHA256withECDSA\",\"certValid\":true,\"regTime\":\"2022-06-09T02:40:56.094Z\",\"certType\":\"CERT_AUTHENTICATION\",\"id\":{\"creditCode\":\"121000005l35120456\",\"certName\":\"node1\"},\"certHash\":\"14a092c3d9cdbd18bde03d665cea97d1f8deea0c69bd9145a230ba0ea91a4bed\",\"version\":\"1.0\"}],\"createTime\":\"2022-06-09T02:40:56.094Z\",\"signerValid\":true,\"version\":\"1.0\"}" ]
+      "args" : [ "{\"name\":\"node1\",\"creditCode\":\"121000005l35120456\",\"mobile\":\"18912345678\",\"authenticationCerts\":[{\"certificate\":\"-----BEGIN CERTIFICATE-----\\r\\nMIIBVjCB/qADAgECAgYBgQRfc0swCgYIKoZIzj0EAwIwMzEOMAwGA1UEAwwFbm9k\\r\\nZTExDjAMBgNVBAsMBWlzY2FzMREwDwYDVQQKDAhSZXBDaGFpbjAeFw0yMjA1Mjcw\\r\\nNzE2MTNaFw0yNzA1MjYwNzE2MTNaMDMxDjAMBgNVBAMMBW5vZGUxMQ4wDAYDVQQL\\r\\nDAVpc2NhczERMA8GA1UECgwIUmVwQ2hhaW4wWTATBgcqhkjOPQIBBggqhkjOPQMB\\r\\nBwNCAAS2dFJZHZe07B9cZAugHd1dotPTAf8Lb05dW/644EXqTaXst4MzVt43grLp\\r\\nuhEkvdtFB6n75yOrc0zQ+Q5fUFuQMAoGCCqGSM49BAMCA0cAMEQCIBHI9RGCplmK\\r\\nlovEmnUMG7WpCs3m5G+SUsrGj9DFu7HXAiBEewxv+oZdbgi2RZs+2d5uEydvZW/8\\r\\n2TSY7Ip3isk0aQ==\\r\\n-----END CERTIFICATE-----\\r\\n\",\"algType\":\"SHA256withECDSA\",\"certValid\":true,\"regTime\":\"2022-06-13T13:36:16.033Z\",\"certType\":\"CERT_AUTHENTICATION\",\"id\":{\"creditCode\":\"121000005l35120456\",\"certName\":\"node1\"},\"certHash\":\"14a092c3d9cdbd18bde03d665cea97d1f8deea0c69bd9145a230ba0ea91a4bed\",\"version\":\"1.0\"}],\"createTime\":\"2022-06-13T13:36:16.033Z\",\"signerValid\":true,\"version\":\"1.0\"}" ]
     },
     "signature" : {
       "certId" : {
         "creditCode" : "951002007l78123233",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2022-06-09T10:40:56.095Z",
-      "signature" : "MEQCIAHD1ScgF7j5T12sJqPk1dn3bLEGB83JO4hOhKgf2VELAiAeSYmQIqCwK7d52eExM/Sf3QrqxxuiPCOxmGPMjZZ1bA=="
+      "tmLocal" : "2022-06-13T21:36:16.034Z",
+      "signature" : "MEQCIF1AscrgDEQhM3UrLyMcw9+1V2+f+8NrCpiHVVBmwPSBAiBsj7pWqH7szFuavaEjti7Ptsc0U70ZJdFnsbBw+wQFAQ=="
     }
   }, {
-    "id" : "618c6d54-bba2-40dd-a200-7f8ec3020395",
+    "id" : "74bb4caf-923e-4c66-a402-cb0120d08e01",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "RdidOperateAuthorizeTPL",
@@ -73,18 +73,18 @@
     },
     "ipt" : {
       "function" : "signUpSigner",
-      "args" : [ "{\"name\":\"node2\",\"creditCode\":\"12110107bi45jh675g\",\"mobile\":\"18912345678\",\"authenticationCerts\":[{\"certificate\":\"-----BEGIN CERTIFICATE-----\\r\\nMIIBVjCB/qADAgECAgYBgQRfc1EwCgYIKoZIzj0EAwIwMzEOMAwGA1UEAwwFbm9k\\r\\nZTIxDjAMBgNVBAsMBWlzY2FzMREwDwYDVQQKDAhSZXBDaGFpbjAeFw0yMjA1Mjcw\\r\\nNzE2MTNaFw0yNzA1MjYwNzE2MTNaMDMxDjAMBgNVBAMMBW5vZGUyMQ4wDAYDVQQL\\r\\nDAVpc2NhczERMA8GA1UECgwIUmVwQ2hhaW4wWTATBgcqhkjOPQIBBggqhkjOPQMB\\r\\nBwNCAAT9CcKGs5t447n4j7qqsjd5zsc9EUcXCPRlvVYa0HHllEvZhLiLn8PFXIBG\\r\\nyc/4DVlgbaSoP+R+DCBxc4ctlA/xMAoGCCqGSM49BAMCA0cAMEQCIARYMcxuzXwZ\\r\\nzLt7bOYCmzVI16gUxP8VUG2lXpcKe7+UAiBzMp7PYkhiZvk0qaivHIQlS6gDhnDh\\r\\nMvUmIX9EpPcNjQ==\\r\\n-----END CERTIFICATE-----\\r\\n\",\"algType\":\"SHA256withECDSA\",\"certValid\":true,\"regTime\":\"2022-06-09T02:40:56.103Z\",\"certType\":\"CERT_AUTHENTICATION\",\"id\":{\"creditCode\":\"12110107bi45jh675g\",\"certName\":\"node2\"},\"certHash\":\"a353b7069b5f353a4299ec98e0c927366ff9f8de9acd3320061f8e7bbd9edc31\",\"version\":\"1.0\"}],\"createTime\":\"2022-06-09T02:40:56.103Z\",\"signerValid\":true,\"version\":\"1.0\"}" ]
+      "args" : [ "{\"name\":\"node2\",\"creditCode\":\"12110107bi45jh675g\",\"mobile\":\"18912345678\",\"authenticationCerts\":[{\"certificate\":\"-----BEGIN CERTIFICATE-----\\r\\nMIIBVjCB/qADAgECAgYBgQRfc1EwCgYIKoZIzj0EAwIwMzEOMAwGA1UEAwwFbm9k\\r\\nZTIxDjAMBgNVBAsMBWlzY2FzMREwDwYDVQQKDAhSZXBDaGFpbjAeFw0yMjA1Mjcw\\r\\nNzE2MTNaFw0yNzA1MjYwNzE2MTNaMDMxDjAMBgNVBAMMBW5vZGUyMQ4wDAYDVQQL\\r\\nDAVpc2NhczERMA8GA1UECgwIUmVwQ2hhaW4wWTATBgcqhkjOPQIBBggqhkjOPQMB\\r\\nBwNCAAT9CcKGs5t447n4j7qqsjd5zsc9EUcXCPRlvVYa0HHllEvZhLiLn8PFXIBG\\r\\nyc/4DVlgbaSoP+R+DCBxc4ctlA/xMAoGCCqGSM49BAMCA0cAMEQCIARYMcxuzXwZ\\r\\nzLt7bOYCmzVI16gUxP8VUG2lXpcKe7+UAiBzMp7PYkhiZvk0qaivHIQlS6gDhnDh\\r\\nMvUmIX9EpPcNjQ==\\r\\n-----END CERTIFICATE-----\\r\\n\",\"algType\":\"SHA256withECDSA\",\"certValid\":true,\"regTime\":\"2022-06-13T13:36:16.040Z\",\"certType\":\"CERT_AUTHENTICATION\",\"id\":{\"creditCode\":\"12110107bi45jh675g\",\"certName\":\"node2\"},\"certHash\":\"a353b7069b5f353a4299ec98e0c927366ff9f8de9acd3320061f8e7bbd9edc31\",\"version\":\"1.0\"}],\"createTime\":\"2022-06-13T13:36:16.040Z\",\"signerValid\":true,\"version\":\"1.0\"}" ]
     },
     "signature" : {
       "certId" : {
         "creditCode" : "951002007l78123233",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2022-06-09T10:40:56.104Z",
-      "signature" : "MEUCIBmZAzcJfsFuLjD5qL/pS+xLJUwvvSASQpAWxbv/vUixAiEAnmGrQy8JTXN/A30Qhbz5o1k3g0r2z5MxgeLF0J7s9sc="
+      "tmLocal" : "2022-06-13T21:36:16.041Z",
+      "signature" : "MEUCIGC6OJbYeuGpC7apGFQxVqMHPVNt2dHwZ+A4phio3s+dAiEA9+4ltCwfWHsPc7XtTuz5MA9hoOLXuJOf6SMf2OhBz/E="
     }
   }, {
-    "id" : "36ed3478-7884-45cd-ab1b-1b8ddc0fae13",
+    "id" : "2a81879d-bfe9-48ba-bb74-0fc0299e241d",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "RdidOperateAuthorizeTPL",
@@ -92,18 +92,18 @@
     },
     "ipt" : {
       "function" : "signUpSigner",
-      "args" : [ "{\"name\":\"node3\",\"creditCode\":\"122000002n00123567\",\"mobile\":\"18912345678\",\"authenticationCerts\":[{\"certificate\":\"-----BEGIN CERTIFICATE-----\\r\\nMIIBVjCB/qADAgECAgYBgQRfc1wwCgYIKoZIzj0EAwIwMzEOMAwGA1UEAwwFbm9k\\r\\nZTMxDjAMBgNVBAsMBWlzY2FzMREwDwYDVQQKDAhSZXBDaGFpbjAeFw0yMjA1Mjcw\\r\\nNzE2MTNaFw0yNzA1MjYwNzE2MTNaMDMxDjAMBgNVBAMMBW5vZGUzMQ4wDAYDVQQL\\r\\nDAVpc2NhczERMA8GA1UECgwIUmVwQ2hhaW4wWTATBgcqhkjOPQIBBggqhkjOPQMB\\r\\nBwNCAARXK2acTVy1JuqDTDPLqxE4AtoKD5n14GXokDG466SCK2ujp7yFdyjLiLR3\\r\\njGFfIP7xUd3hj/95R/1tA9BAdYJ5MAoGCCqGSM49BAMCA0cAMEQCICPI1F0dt8Yj\\r\\nUWW2oz2g1+peD9aYY2dv1ajYDoI2AQ2kAiByQgwU0LZjo9qktmHLw0qmzNoo6D4k\\r\\npC441kRm373ASQ==\\r\\n-----END CERTIFICATE-----\\r\\n\",\"algType\":\"SHA256withECDSA\",\"certValid\":true,\"regTime\":\"2022-06-09T02:40:56.112Z\",\"certType\":\"CERT_AUTHENTICATION\",\"id\":{\"creditCode\":\"122000002n00123567\",\"certName\":\"node3\"},\"certHash\":\"3fff355994e86903ba89066637513029e0806acd121df529d8931fe06364f207\",\"version\":\"1.0\"}],\"createTime\":\"2022-06-09T02:40:56.112Z\",\"signerValid\":true,\"version\":\"1.0\"}" ]
+      "args" : [ "{\"name\":\"node3\",\"creditCode\":\"122000002n00123567\",\"mobile\":\"18912345678\",\"authenticationCerts\":[{\"certificate\":\"-----BEGIN CERTIFICATE-----\\r\\nMIIBVjCB/qADAgECAgYBgQRfc1wwCgYIKoZIzj0EAwIwMzEOMAwGA1UEAwwFbm9k\\r\\nZTMxDjAMBgNVBAsMBWlzY2FzMREwDwYDVQQKDAhSZXBDaGFpbjAeFw0yMjA1Mjcw\\r\\nNzE2MTNaFw0yNzA1MjYwNzE2MTNaMDMxDjAMBgNVBAMMBW5vZGUzMQ4wDAYDVQQL\\r\\nDAVpc2NhczERMA8GA1UECgwIUmVwQ2hhaW4wWTATBgcqhkjOPQIBBggqhkjOPQMB\\r\\nBwNCAARXK2acTVy1JuqDTDPLqxE4AtoKD5n14GXokDG466SCK2ujp7yFdyjLiLR3\\r\\njGFfIP7xUd3hj/95R/1tA9BAdYJ5MAoGCCqGSM49BAMCA0cAMEQCICPI1F0dt8Yj\\r\\nUWW2oz2g1+peD9aYY2dv1ajYDoI2AQ2kAiByQgwU0LZjo9qktmHLw0qmzNoo6D4k\\r\\npC441kRm373ASQ==\\r\\n-----END CERTIFICATE-----\\r\\n\",\"algType\":\"SHA256withECDSA\",\"certValid\":true,\"regTime\":\"2022-06-13T13:36:16.047Z\",\"certType\":\"CERT_AUTHENTICATION\",\"id\":{\"creditCode\":\"122000002n00123567\",\"certName\":\"node3\"},\"certHash\":\"3fff355994e86903ba89066637513029e0806acd121df529d8931fe06364f207\",\"version\":\"1.0\"}],\"createTime\":\"2022-06-13T13:36:16.047Z\",\"signerValid\":true,\"version\":\"1.0\"}" ]
     },
     "signature" : {
       "certId" : {
         "creditCode" : "951002007l78123233",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2022-06-09T10:40:56.113Z",
-      "signature" : "MEUCIQD+FbVKyVS+uqOAt4lpcljhmwJC3DaluUk0hiMdchbJfgIgWfXWBW8eXYa2Nr6TXa1HsKCbuJnMfCISGMV7G/vvKpY="
+      "tmLocal" : "2022-06-13T21:36:16.048Z",
+      "signature" : "MEQCIHrrT/UlErs1aVDBNCn+XfaiRolWyNpbnMttsL/pKliaAiAYMPoVcxkVEggtiwBj2S2YjoJGr7yVS6K/8sk3YEVzUQ=="
     }
   }, {
-    "id" : "4074ab77-394f-4a87-b83b-cc4888c4fef5",
+    "id" : "e7eba8de-574b-456f-85c3-e00304a55edf",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "RdidOperateAuthorizeTPL",
@@ -111,18 +111,18 @@
     },
     "ipt" : {
       "function" : "signUpSigner",
-      "args" : [ "{\"name\":\"node4\",\"creditCode\":\"921000005k36123789\",\"mobile\":\"18912345678\",\"authenticationCerts\":[{\"certificate\":\"-----BEGIN CERTIFICATE-----\\r\\nMIIBWDCB/qADAgECAgYBgQRfc2MwCgYIKoZIzj0EAwIwMzEOMAwGA1UEAwwFbm9k\\r\\nZTQxDjAMBgNVBAsMBWlzY2FzMREwDwYDVQQKDAhSZXBDaGFpbjAeFw0yMjA1Mjcw\\r\\nNzE2MTNaFw0yNzA1MjYwNzE2MTNaMDMxDjAMBgNVBAMMBW5vZGU0MQ4wDAYDVQQL\\r\\nDAVpc2NhczERMA8GA1UECgwIUmVwQ2hhaW4wWTATBgcqhkjOPQIBBggqhkjOPQMB\\r\\nBwNCAATkWdfpSiA9NJasf9fLeu8YYgQzwcsko0DSJ31nF0HhquKWDS8C++xTB9V7\\r\\n3Me7ErFmgAHPwEEy1YzienzdDVQoMAoGCCqGSM49BAMCA0kAMEYCIQCMcslpWQ2P\\r\\nk5sSX9D8CjDclS/Y9SvInoygGy2FjUcYygIhAJ4AtwU66drGZSB/Sc4G4dVCHA8K\\r\\n8IudOJjmAHAa4mJb\\r\\n-----END CERTIFICATE-----\\r\\n\",\"algType\":\"SHA256withECDSA\",\"certValid\":true,\"regTime\":\"2022-06-09T02:40:56.121Z\",\"certType\":\"CERT_AUTHENTICATION\",\"id\":{\"creditCode\":\"921000005k36123789\",\"certName\":\"node4\"},\"certHash\":\"8c5729dd8d97aa877450ea6e5dbadec1e1c207c7a505101545c8d5b8c3c7a2b6\",\"version\":\"1.0\"}],\"createTime\":\"2022-06-09T02:40:56.121Z\",\"signerValid\":true,\"version\":\"1.0\"}" ]
+      "args" : [ "{\"name\":\"node4\",\"creditCode\":\"921000005k36123789\",\"mobile\":\"18912345678\",\"authenticationCerts\":[{\"certificate\":\"-----BEGIN CERTIFICATE-----\\r\\nMIIBWDCB/qADAgECAgYBgQRfc2MwCgYIKoZIzj0EAwIwMzEOMAwGA1UEAwwFbm9k\\r\\nZTQxDjAMBgNVBAsMBWlzY2FzMREwDwYDVQQKDAhSZXBDaGFpbjAeFw0yMjA1Mjcw\\r\\nNzE2MTNaFw0yNzA1MjYwNzE2MTNaMDMxDjAMBgNVBAMMBW5vZGU0MQ4wDAYDVQQL\\r\\nDAVpc2NhczERMA8GA1UECgwIUmVwQ2hhaW4wWTATBgcqhkjOPQIBBggqhkjOPQMB\\r\\nBwNCAATkWdfpSiA9NJasf9fLeu8YYgQzwcsko0DSJ31nF0HhquKWDS8C++xTB9V7\\r\\n3Me7ErFmgAHPwEEy1YzienzdDVQoMAoGCCqGSM49BAMCA0kAMEYCIQCMcslpWQ2P\\r\\nk5sSX9D8CjDclS/Y9SvInoygGy2FjUcYygIhAJ4AtwU66drGZSB/Sc4G4dVCHA8K\\r\\n8IudOJjmAHAa4mJb\\r\\n-----END CERTIFICATE-----\\r\\n\",\"algType\":\"SHA256withECDSA\",\"certValid\":true,\"regTime\":\"2022-06-13T13:36:16.054Z\",\"certType\":\"CERT_AUTHENTICATION\",\"id\":{\"creditCode\":\"921000005k36123789\",\"certName\":\"node4\"},\"certHash\":\"8c5729dd8d97aa877450ea6e5dbadec1e1c207c7a505101545c8d5b8c3c7a2b6\",\"version\":\"1.0\"}],\"createTime\":\"2022-06-13T13:36:16.054Z\",\"signerValid\":true,\"version\":\"1.0\"}" ]
     },
     "signature" : {
       "certId" : {
         "creditCode" : "951002007l78123233",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2022-06-09T10:40:56.122Z",
-      "signature" : "MEUCIAt7e7rFfCB7F7Zf2M5PfAw1+T3Hbdw12ZYMve1NyGrAAiEAgkna5dLm+erN05VPU9akzZGIQX+aoZJ7dn+xdjgXEm8="
+      "tmLocal" : "2022-06-13T21:36:16.055Z",
+      "signature" : "MEYCIQCLeHSuhHj3NDx+gwNbw1Nrs3qjmjJvQPTfkD10ZT48xQIhAJwyNaL42yNQfpKMfTnLRt/8C0UaxtI19or6kFHQLF/+"
     }
   }, {
-    "id" : "e65fe833-1bba-4fdb-9d92-de567ef2252d",
+    "id" : "bc4d0e14-6113-422a-941f-d3dd1a298890",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "RdidOperateAuthorizeTPL",
@@ -130,18 +130,18 @@
     },
     "ipt" : {
       "function" : "signUpSigner",
-      "args" : [ "{\"name\":\"node5\",\"creditCode\":\"921000006e0012v696\",\"mobile\":\"18912345678\",\"authenticationCerts\":[{\"certificate\":\"-----BEGIN CERTIFICATE-----\\r\\nMIIBVjCB/qADAgECAgYBgQRfc2gwCgYIKoZIzj0EAwIwMzEOMAwGA1UEAwwFbm9k\\r\\nZTUxDjAMBgNVBAsMBWlzY2FzMREwDwYDVQQKDAhSZXBDaGFpbjAeFw0yMjA1Mjcw\\r\\nNzE2MTNaFw0yNzA1MjYwNzE2MTNaMDMxDjAMBgNVBAMMBW5vZGU1MQ4wDAYDVQQL\\r\\nDAVpc2NhczERMA8GA1UECgwIUmVwQ2hhaW4wWTATBgcqhkjOPQIBBggqhkjOPQMB\\r\\nBwNCAAR5mHjtFWyP+VujryX8q54By8MAaI9TOesJzbMKM1EOSBIrKZmvYt9orclX\\r\\nrXAU72TV468D6GQSSm2//lHccnEgMAoGCCqGSM49BAMCA0cAMEQCIEd1NKDMPCNA\\r\\nCVIfr+mvTnGFp/pHuMFe71WsgP89+FRtAiBCzfChKUfCvlfWL0hUJ8XISraf1zVo\\r\\ng7DRMNKBSBn51Q==\\r\\n-----END CERTIFICATE-----\\r\\n\",\"algType\":\"SHA256withECDSA\",\"certValid\":true,\"regTime\":\"2022-06-09T02:40:56.130Z\",\"certType\":\"CERT_AUTHENTICATION\",\"id\":{\"creditCode\":\"921000006e0012v696\",\"certName\":\"node5\"},\"certHash\":\"3cc7f09679b86c1214e084e99279d945b68de916e17f850e472121831ff2d0e1\",\"version\":\"1.0\"}],\"createTime\":\"2022-06-09T02:40:56.130Z\",\"signerValid\":true,\"version\":\"1.0\"}" ]
+      "args" : [ "{\"name\":\"node5\",\"creditCode\":\"921000006e0012v696\",\"mobile\":\"18912345678\",\"authenticationCerts\":[{\"certificate\":\"-----BEGIN CERTIFICATE-----\\r\\nMIIBVjCB/qADAgECAgYBgQRfc2gwCgYIKoZIzj0EAwIwMzEOMAwGA1UEAwwFbm9k\\r\\nZTUxDjAMBgNVBAsMBWlzY2FzMREwDwYDVQQKDAhSZXBDaGFpbjAeFw0yMjA1Mjcw\\r\\nNzE2MTNaFw0yNzA1MjYwNzE2MTNaMDMxDjAMBgNVBAMMBW5vZGU1MQ4wDAYDVQQL\\r\\nDAVpc2NhczERMA8GA1UECgwIUmVwQ2hhaW4wWTATBgcqhkjOPQIBBggqhkjOPQMB\\r\\nBwNCAAR5mHjtFWyP+VujryX8q54By8MAaI9TOesJzbMKM1EOSBIrKZmvYt9orclX\\r\\nrXAU72TV468D6GQSSm2//lHccnEgMAoGCCqGSM49BAMCA0cAMEQCIEd1NKDMPCNA\\r\\nCVIfr+mvTnGFp/pHuMFe71WsgP89+FRtAiBCzfChKUfCvlfWL0hUJ8XISraf1zVo\\r\\ng7DRMNKBSBn51Q==\\r\\n-----END CERTIFICATE-----\\r\\n\",\"algType\":\"SHA256withECDSA\",\"certValid\":true,\"regTime\":\"2022-06-13T13:36:16.060Z\",\"certType\":\"CERT_AUTHENTICATION\",\"id\":{\"creditCode\":\"921000006e0012v696\",\"certName\":\"node5\"},\"certHash\":\"3cc7f09679b86c1214e084e99279d945b68de916e17f850e472121831ff2d0e1\",\"version\":\"1.0\"}],\"createTime\":\"2022-06-13T13:36:16.060Z\",\"signerValid\":true,\"version\":\"1.0\"}" ]
     },
     "signature" : {
       "certId" : {
         "creditCode" : "951002007l78123233",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2022-06-09T10:40:56.131Z",
-      "signature" : "MEUCIQC7c8xIBJhH7TrLFovqoGTiqauxyRIIaLP4qE3DRl+lrgIgVqbHHwVdwqPY7VnLBr8X7yF6ERggN/iZFMAS3ar3hqU="
+      "tmLocal" : "2022-06-13T21:36:16.061Z",
+      "signature" : "MEQCICxLeDTfHASkMutR+zB7qUMeoyL87Yobu22RYAofgP8cAiA/RtmxMmpy5TtBpk03r7hKnq5jEQyfHhsg5Ldw3wv7gg=="
     }
   }, {
-    "id" : "1581e742-8705-4bdf-89bf-7bbafeb2b73b",
+    "id" : "3caea14b-9e2c-4fae-a40b-083bdae46066",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "RdidOperateAuthorizeTPL",
@@ -149,18 +149,18 @@
     },
     "ipt" : {
       "function" : "signUpOperate",
-      "args" : [ "{\"opId\":\"ba5df570ad4bb522163240330cad567d80c50562fe9a258a4d595bb707e471fe\",\"description\":\"注册RDID\",\"register\":\"951002007l78123233\",\"operateType\":\"OPERATE_CONTRACT\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net.RdidOperateAuthorizeTPL.signUpSigner\",\"createTime\":\"2022-06-09T02:40:56.155Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
+      "args" : [ "{\"opId\":\"f8b48c41201b228a6c32d179ecfb2921a664d3cf1dcbc80164dc3c47e61c6afb\",\"description\":\"注册RDID\",\"register\":\"951002007l78123233\",\"operateType\":\"OPERATE_CONTRACT\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net:RdidOperateAuthorizeTPL.signUpSigner\",\"createTime\":\"2022-06-13T13:36:16.084Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
     },
     "signature" : {
       "certId" : {
         "creditCode" : "951002007l78123233",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2022-06-09T10:40:56.160Z",
-      "signature" : "MEYCIQCv+wHiSUpvgB7cu1L08KY8y9sBzn2pKRdiAh4tJ4IySwIhAJ65eQ5VX8K2vOceezGR0/DKvb0LQcqI/+RyRL/V5LdP"
+      "tmLocal" : "2022-06-13T21:36:16.091Z",
+      "signature" : "MEYCIQCKlyStGP2qwkMh2oGVmj9C95KcPxLTqfqPEavSNm3JKQIhANqNNRIB9w4H9zqWf3/yMplA7dOdSFYxSOahB2VsN9A4"
     }
   }, {
-    "id" : "c5a10df6-44f6-4650-9092-336a74f683d9",
+    "id" : "d65750a7-1871-45c3-a68c-0ab768fbb547",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "RdidOperateAuthorizeTPL",
@@ -168,18 +168,18 @@
     },
     "ipt" : {
       "function" : "signUpOperate",
-      "args" : [ "{\"opId\":\"061bc2a3a621b257e6117d92125fd8838a3e04b427f9f3fd58eb8bbfded91dc7\",\"description\":\"禁用或启用RDID\",\"register\":\"951002007l78123233\",\"operateType\":\"OPERATE_CONTRACT\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net.RdidOperateAuthorizeTPL.updateSignerStatus\",\"createTime\":\"2022-06-09T02:40:56.162Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
+      "args" : [ "{\"opId\":\"d0dc9cb7db941d633740eb7e5e8628eda17cb9fcbf47c5d5bbe186379606ec83\",\"description\":\"禁用或启用RDID\",\"register\":\"951002007l78123233\",\"operateType\":\"OPERATE_CONTRACT\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net:RdidOperateAuthorizeTPL.updateSignerStatus\",\"createTime\":\"2022-06-13T13:36:16.093Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
     },
     "signature" : {
       "certId" : {
         "creditCode" : "951002007l78123233",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2022-06-09T10:40:56.162Z",
-      "signature" : "MEUCID3Fz4Wlh+PhA2xUi0IYA3TAka59De+N1ILK7E3lYhD3AiEAsihpCKZIO1FwSMfpmaaIb/Q83HH08ZvgXaok1kYYSXQ="
+      "tmLocal" : "2022-06-13T21:36:16.094Z",
+      "signature" : "MEYCIQDVlZkrUz0llW25gfuCr1cDD2RxYL2iemuBQHvaRg1aEAIhAIBcErQcFfV5+qOe/uMituacLRA7ZZOrjMX4tHhhBfc4"
     }
   }, {
-    "id" : "e1d1d61a-419f-4a18-8d3a-7e8bbace8797",
+    "id" : "e1f087f2-2c85-46da-bf90-eed9cfc914d8",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "RdidOperateAuthorizeTPL",
@@ -187,18 +187,18 @@
     },
     "ipt" : {
       "function" : "signUpOperate",
-      "args" : [ "{\"opId\":\"588caecd3197f09fd0887cee504c53f6b07877ac2f0e38b9222ec24b53642da1\",\"description\":\"更新信息\",\"register\":\"951002007l78123233\",\"operateType\":\"OPERATE_CONTRACT\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net.RdidOperateAuthorizeTPL.updateSigner\",\"createTime\":\"2022-06-09T02:40:56.164Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
+      "args" : [ "{\"opId\":\"98cdb6f9d023583e52561cd3001d3aa28948b218b45631eeec0c696150c99f42\",\"description\":\"更新信息\",\"register\":\"951002007l78123233\",\"operateType\":\"OPERATE_CONTRACT\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net:RdidOperateAuthorizeTPL.updateSigner\",\"createTime\":\"2022-06-13T13:36:16.096Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
     },
     "signature" : {
       "certId" : {
         "creditCode" : "951002007l78123233",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2022-06-09T10:40:56.164Z",
-      "signature" : "MEUCIQDHfiSaHYpFAQRfxMQDinqABgJy/MLObbRiQgH2cvK9BQIgbRSSiGk3/TBWr1SNgBMV/6MRHF7KGUvDPLqqUhAHYWQ="
+      "tmLocal" : "2022-06-13T21:36:16.096Z",
+      "signature" : "MEUCIBwjKIr99DZ9S9UxPb4bcSSW7ILu3fs9EXZioZMZLtlpAiEAnOfd415h3Xutg7kpCKFIeGONPIxZXE8UEbNgtW3YEvI="
     }
   }, {
-    "id" : "99a45f62-fba0-4ce1-8bd0-cb0b1e9c24f9",
+    "id" : "677e3c88-af7b-46a8-8b41-c1d442097ac4",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "RdidOperateAuthorizeTPL",
@@ -206,18 +206,18 @@
     },
     "ipt" : {
       "function" : "signUpOperate",
-      "args" : [ "{\"opId\":\"4de6321bc1948a5e0aeaa07f1162d06b8112cb54361ff52020e88e972799134c\",\"description\":\"用户注册证书\",\"register\":\"951002007l78123233\",\"isPublish\":true,\"operateType\":\"OPERATE_CONTRACT\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net.RdidOperateAuthorizeTPL.signUpCertificate\",\"createTime\":\"2022-06-09T02:40:56.166Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
+      "args" : [ "{\"opId\":\"94ddf8e8dd2af79f7bd4b9277a45f30de06a0bc7544d4cbfc77fc8cf841a5eab\",\"description\":\"用户注册证书\",\"register\":\"951002007l78123233\",\"isPublish\":true,\"operateType\":\"OPERATE_CONTRACT\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net:RdidOperateAuthorizeTPL.signUpCertificate\",\"createTime\":\"2022-06-13T13:36:16.098Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
     },
     "signature" : {
       "certId" : {
         "creditCode" : "951002007l78123233",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2022-06-09T10:40:56.166Z",
-      "signature" : "MEUCIFNrFoa4IKqhL0K+hyrlE66ezzhuPpT8sV6zOmKySAKzAiEAo9XIjVY6G4cxvIB+D5jWZIT3YIgtLZRnc+O9H9CPXGc="
+      "tmLocal" : "2022-06-13T21:36:16.099Z",
+      "signature" : "MEYCIQDukn+Xi6xIpaIQBSqypEv38ixN/RG6Hz4HDVAN4NM5FAIhAMXpabjH0Few8GFGqtFgQHGe6anQL7Qu5mr1/HvUjLqd"
     }
   }, {
-    "id" : "8f7bfb81-14ad-41d0-a981-7fc19b1de146",
+    "id" : "5455fb0f-ac6b-44c3-82e3-c994ffd959f9",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "RdidOperateAuthorizeTPL",
@@ -225,18 +225,18 @@
     },
     "ipt" : {
       "function" : "signUpOperate",
-      "args" : [ "{\"opId\":\"d76ea506f89ee0fb33935b09ff5c3ace322622253cb575a6df0349284fc3ca13\",\"description\":\"用户禁用或启用证书\",\"register\":\"951002007l78123233\",\"isPublish\":true,\"operateType\":\"OPERATE_CONTRACT\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net.RdidOperateAuthorizeTPL.updateCertificateStatus\",\"createTime\":\"2022-06-09T02:40:56.168Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
+      "args" : [ "{\"opId\":\"5ed487bd096073f47ced54ff13b31257bea1985430cce655d15c5bf646da1a77\",\"description\":\"用户禁用或启用证书\",\"register\":\"951002007l78123233\",\"isPublish\":true,\"operateType\":\"OPERATE_CONTRACT\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net:RdidOperateAuthorizeTPL.updateCertificateStatus\",\"createTime\":\"2022-06-13T13:36:16.101Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
     },
     "signature" : {
       "certId" : {
         "creditCode" : "951002007l78123233",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2022-06-09T10:40:56.169Z",
-      "signature" : "MEUCIQDYOOCKnLVmRMKYBnC+JocVq/bTtFFlzQWms5H2WcHDkAIgPrUT/mLWcIades4HuY0d1IVslrfnaqEzJk/r2SFf+KU="
+      "tmLocal" : "2022-06-13T21:36:16.102Z",
+      "signature" : "MEUCICVGOTkmELj6iQ6UzBBOGIfPNtZ+Wq/okHUUdlFsG58DAiEAg6W06Rr4UR5HzMuEC74G62QdvTafsmBXQhQWxcIklIA="
     }
   }, {
-    "id" : "063783b1-758a-4efe-9bdf-cf4b2b9cd9d8",
+    "id" : "728f8bf8-eea4-4762-bf05-48cd93e675b2",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "RdidOperateAuthorizeTPL",
@@ -244,18 +244,18 @@
     },
     "ipt" : {
       "function" : "signUpOperate",
-      "args" : [ "{\"opId\":\"a073aab314b227b466c5304e6dd1eb0f6c478ad875c20a7cabf314e342838bb8\",\"description\":\"用户可为所有人注册证书，需授权\",\"register\":\"951002007l78123233\",\"operateType\":\"OPERATE_CONTRACT\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net.RdidOperateAuthorizeTPL.signUpAllTypeCertificate\",\"createTime\":\"2022-06-09T02:40:56.172Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
+      "args" : [ "{\"opId\":\"e28d61a4f5d38553a83e51244aca1d4a6d9db01e8f7c03fbd5a439d5568da454\",\"description\":\"用户可为所有人注册证书，需授权\",\"register\":\"951002007l78123233\",\"operateType\":\"OPERATE_CONTRACT\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net:RdidOperateAuthorizeTPL.signUpAllTypeCertificate\",\"createTime\":\"2022-06-13T13:36:16.105Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
     },
     "signature" : {
       "certId" : {
         "creditCode" : "951002007l78123233",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2022-06-09T10:40:56.172Z",
-      "signature" : "MEUCIQC+Uh/g0hI21SLKSwJE2bJxmVIHARVNML2veejnAzVQegIgNsvnIzbaYlTpPdJjPw8mTQ7EC4lkXyL1M939igYL5c0="
+      "tmLocal" : "2022-06-13T21:36:16.105Z",
+      "signature" : "MEQCIHEr4Fp5s7HbychN4Aq4SXzp30+W6CBdzbwYcoclbGuXAiBZZV5mTErdPas5z56unlgGJlmPOpbLEYrtABuhGTdh0Q=="
     }
   }, {
-    "id" : "2d6a3dff-913b-4299-9e90-9f1374f167c8",
+    "id" : "d3e66d70-d5ff-4653-bbfc-459d3075f8b9",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "RdidOperateAuthorizeTPL",
@@ -263,18 +263,18 @@
     },
     "ipt" : {
       "function" : "signUpOperate",
-      "args" : [ "{\"opId\":\"42b7e5f56f7e6c20821b0658b8e973f1f3417df0ea1f40260721dd61dff56a7c\",\"description\":\"用户可为所有人禁用或启用证书，需授权，super_admin特殊处理\",\"register\":\"951002007l78123233\",\"operateType\":\"OPERATE_CONTRACT\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net.RdidOperateAuthorizeTPL.updateAllTypeCertificateStatus\",\"createTime\":\"2022-06-09T02:40:56.174Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
+      "args" : [ "{\"opId\":\"868de167bf0f8c144e5ae621afef3dd98edb3a5dc68e42b6de807065135ba9dc\",\"description\":\"用户可为所有人禁用或启用证书，需授权，super_admin特殊处理\",\"register\":\"951002007l78123233\",\"operateType\":\"OPERATE_CONTRACT\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net:RdidOperateAuthorizeTPL.updateAllTypeCertificateStatus\",\"createTime\":\"2022-06-13T13:36:16.107Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
     },
     "signature" : {
       "certId" : {
         "creditCode" : "951002007l78123233",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2022-06-09T10:40:56.175Z",
-      "signature" : "MEQCIDFnj80JjNv/g9oOQmiFfQ1OOnqskVdRXi9MSZtN+xJRAiBWBVjeBTC9KwMPAzzHQZ2aM1nxWOzNIunzTkY/H6wtKg=="
+      "tmLocal" : "2022-06-13T21:36:16.107Z",
+      "signature" : "MEQCICeTeYbYeWXIKuSB1MHE3T4y0OddMcd8XeSuX381cyD8AiAjnsjYLSb+qmGnYCWRTknh3iTtf74Nr7dV8movtkRjIw=="
     }
   }, {
-    "id" : "c52e5b54-e089-4259-a175-f091f289c494",
+    "id" : "d2710199-a84f-4e93-b68f-c18c035f3e3f",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "RdidOperateAuthorizeTPL",
@@ -282,18 +282,18 @@
     },
     "ipt" : {
       "function" : "signUpOperate",
-      "args" : [ "{\"opId\":\"4c3c3e0cbb5a878d70cf2ba8c94679ef618960b58568c9f6e261cbd033c74d14\",\"description\":\"注册操作，自己注册自己\",\"register\":\"951002007l78123233\",\"isPublish\":true,\"operateType\":\"OPERATE_CONTRACT\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net.RdidOperateAuthorizeTPL.signUpOperate\",\"createTime\":\"2022-06-09T02:40:56.178Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
+      "args" : [ "{\"opId\":\"d00dbd24b065e4083bbc4ca229293d0e0bd1a1f701a89e723300ae68f260e0d2\",\"description\":\"注册操作，自己注册自己\",\"register\":\"951002007l78123233\",\"isPublish\":true,\"operateType\":\"OPERATE_CONTRACT\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net:RdidOperateAuthorizeTPL.signUpOperate\",\"createTime\":\"2022-06-13T13:36:16.109Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
     },
     "signature" : {
       "certId" : {
         "creditCode" : "951002007l78123233",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2022-06-09T10:40:56.178Z",
-      "signature" : "MEUCIDCsVKwr4QHNmQGImXrzJRYXq5NSyd6CNNNxgmNc/bwVAiEAsg9DNOZZPalOCdrZ8tfVTg7jyNl48V5V+sA3tqZdWcI="
+      "tmLocal" : "2022-06-13T21:36:16.110Z",
+      "signature" : "MEQCH1zGL0SnX+4K5XqFOJvFO+9TRbHdx+nEB5Z09PARnaQCIQDcgwjKS8+V0U0suoaOetdzYdl7m8Gw/1WwbjCnc0i8nw=="
     }
   }, {
-    "id" : "dd505dc6-e54c-4f62-9510-e63ee4689c16",
+    "id" : "1ff655e0-8aeb-45d9-ade4-6d9be43e9894",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "RdidOperateAuthorizeTPL",
@@ -301,18 +301,18 @@
     },
     "ipt" : {
       "function" : "signUpOperate",
-      "args" : [ "{\"opId\":\"95f4d6e5e3bdd062b4cd29598adc1116e24096d9d4f5f90c1ab0a57b8ac619b7\",\"description\":\"禁用或启用操作，自己更新自己名下的操作\",\"register\":\"951002007l78123233\",\"isPublish\":true,\"operateType\":\"OPERATE_CONTRACT\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net.RdidOperateAuthorizeTPL.updateOperateStatus\",\"createTime\":\"2022-06-09T02:40:56.180Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
+      "args" : [ "{\"opId\":\"bf924b8636ccecc9402b1d69edff94e75578df78124e36c5b7a62abd05bf273f\",\"description\":\"禁用或启用操作，自己更新自己名下的操作\",\"register\":\"951002007l78123233\",\"isPublish\":true,\"operateType\":\"OPERATE_CONTRACT\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net:RdidOperateAuthorizeTPL.updateOperateStatus\",\"createTime\":\"2022-06-13T13:36:16.111Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
     },
     "signature" : {
       "certId" : {
         "creditCode" : "951002007l78123233",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2022-06-09T10:40:56.180Z",
-      "signature" : "MEUCIEJt/QSEGx409ANlkr8t5sbGI/nc/Z3RjqeDBh8ipFO6AiEA4lYgSjKOyLGqMwM8eboi8ROLB6kXbDXbDSmhbnd4//s="
+      "tmLocal" : "2022-06-13T21:36:16.112Z",
+      "signature" : "MEYCIQC6TH5aV+HMEuojnHjUElhOtCqI5ugzhxCaPcD0o+nufAIhAJp8EAGy93h2KlP9hcn3dwpEur3+K5/7L2EamBXoZaWh"
     }
   }, {
-    "id" : "7144c311-b9fc-4a59-a3ac-bb8b11903d85",
+    "id" : "78b106cd-87ee-4df8-9e68-ce47e6ca224b",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "RdidOperateAuthorizeTPL",
@@ -320,18 +320,18 @@
     },
     "ipt" : {
       "function" : "signUpOperate",
-      "args" : [ "{\"opId\":\"73cf8dd74ff3a7d908edc0469d2e72e48e5bddb241171f430e21da7aa65a5e21\",\"description\":\"授权操作\",\"register\":\"951002007l78123233\",\"isPublish\":true,\"operateType\":\"OPERATE_CONTRACT\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net.RdidOperateAuthorizeTPL.grantOperate\",\"createTime\":\"2022-06-09T02:40:56.182Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
+      "args" : [ "{\"opId\":\"672d720b63ea4c63a159dfa4845a7354e56cca541ab43b0a1b3e012ebaaa1e3b\",\"description\":\"授权操作\",\"register\":\"951002007l78123233\",\"isPublish\":true,\"operateType\":\"OPERATE_CONTRACT\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net:RdidOperateAuthorizeTPL.grantOperate\",\"createTime\":\"2022-06-13T13:36:16.113Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
     },
     "signature" : {
       "certId" : {
         "creditCode" : "951002007l78123233",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2022-06-09T10:40:56.183Z",
-      "signature" : "MEUCIHa1DLQQLYy84kTfkyx+cJBZtrAiBQGcp3yMxN3Ftp1LAiEA4yLkXITjnVFli7WSKv3FKbGw4MAYEyDbwUAKkufw21U="
+      "tmLocal" : "2022-06-13T21:36:16.114Z",
+      "signature" : "MEYCIQCBX0YqdSSOdtByWv2KuldHt36QOKn/8/Ct7aTaw+HsaAIhAKR2B3E3K5CrzOKRRxx6ibTZnybTo4hEyBa/STR+zAz1"
     }
   }, {
-    "id" : "9b8c7a8d-aadd-4c1d-a517-014ab4dda3ed",
+    "id" : "36f6ed39-e847-4fb8-997e-f4a38bfe6c6c",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "RdidOperateAuthorizeTPL",
@@ -339,18 +339,18 @@
     },
     "ipt" : {
       "function" : "signUpOperate",
-      "args" : [ "{\"opId\":\"ff639894b6d104658e6ec287bfc0bdde0aa7ab2da91d32f3e052eafade751ee3\",\"description\":\"禁用或启用授权\",\"register\":\"951002007l78123233\",\"isPublish\":true,\"operateType\":\"OPERATE_CONTRACT\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net.RdidOperateAuthorizeTPL.updateGrantOperateStatus\",\"createTime\":\"2022-06-09T02:40:56.185Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
+      "args" : [ "{\"opId\":\"8600fea980fd58a01feb028d4b4db1bad68d81e88980162412ef11d42b0f82e4\",\"description\":\"禁用或启用授权\",\"register\":\"951002007l78123233\",\"isPublish\":true,\"operateType\":\"OPERATE_CONTRACT\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net:RdidOperateAuthorizeTPL.updateGrantOperateStatus\",\"createTime\":\"2022-06-13T13:36:16.116Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
     },
     "signature" : {
       "certId" : {
         "creditCode" : "951002007l78123233",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2022-06-09T10:40:56.185Z",
-      "signature" : "MEYCIQCiVZ/NS1bhh175gvg8iPPH4gt5se+F6DdH6fM/Ff9QiwIhALloklTKCTePv473plJ+dMqTvz7oUAidMKhpdQvPmXIA"
+      "tmLocal" : "2022-06-13T21:36:16.116Z",
+      "signature" : "MEYCIQCCGNajVreeR2RXg+uHVzuT/+3T2nM+SfYWTwtyIANlMQIhAPzKQanH2ojmBX1Kc9PQWptGfM+7wVHrCWMD+i5cIo2/"
     }
   }, {
-    "id" : "af235973-4bcf-4b48-8e1c-57691ea2f5be",
+    "id" : "ad18cb6b-4081-4ecd-b3e9-e5afb8613d8b",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "RdidOperateAuthorizeTPL",
@@ -358,18 +358,18 @@
     },
     "ipt" : {
       "function" : "signUpOperate",
-      "args" : [ "{\"opId\":\"a7a1eaeea433c1643983ced2617a281a5545dbec5018baa08159d2590601cf11\",\"description\":\"绑定证书到授权操作\",\"register\":\"951002007l78123233\",\"isPublish\":true,\"operateType\":\"OPERATE_CONTRACT\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net.RdidOperateAuthorizeTPL.bindCertToAuthorize\",\"createTime\":\"2022-06-09T02:40:56.187Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
+      "args" : [ "{\"opId\":\"cee6e80fcf67edd35dca8fc805fea9cb270d77801afe20b682d3c1bf6119a22b\",\"description\":\"绑定证书到授权操作\",\"register\":\"951002007l78123233\",\"isPublish\":true,\"operateType\":\"OPERATE_CONTRACT\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net:RdidOperateAuthorizeTPL.bindCertToAuthorize\",\"createTime\":\"2022-06-13T13:36:16.118Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
     },
     "signature" : {
       "certId" : {
         "creditCode" : "951002007l78123233",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2022-06-09T10:40:56.187Z",
-      "signature" : "MEUCIQCTv8lOrTT+UH/aCNnm/4/3qt5bxKWGxp9V9bnYkEFOBwIgR5ORFWCLVSNF2o8Mo4NvYF3Z7HhpGylNj80boD9lGec="
+      "tmLocal" : "2022-06-13T21:36:16.118Z",
+      "signature" : "MEUCIQCdjrt6UIQlffiuz5x/PJuoCL/cr37npSFIi73OCnyOpwIgJtMn56LhEm0hTMkwjvQDOKiMshpyX01EIMA90SvGvYo="
     }
   }, {
-    "id" : "178e6f7c-7720-48da-9bfa-001f4028e18e",
+    "id" : "169384f7-0cc0-420e-bb19-88c8e79987ff",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "RdidOperateAuthorizeTPL",
@@ -377,18 +377,18 @@
     },
     "ipt" : {
       "function" : "signUpOperate",
-      "args" : [ "{\"opId\":\"4289eec5859d52dbe4d3d3d06589d56c504f6723989185edad308c70fd04566c\",\"description\":\"发布合约操作\",\"register\":\"951002007l78123233\",\"operateType\":\"OPERATE_CONTRACT\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net.*.deploy\",\"createTime\":\"2022-06-09T02:40:56.190Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
+      "args" : [ "{\"opId\":\"b34acc1da5938bf09400c8c0e6a8f821d9de5700a58679ad28d97763d0a8a0e4\",\"description\":\"发布合约操作\",\"register\":\"951002007l78123233\",\"operateType\":\"OPERATE_CONTRACT\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net:*.deploy\",\"createTime\":\"2022-06-13T13:36:16.120Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
     },
     "signature" : {
       "certId" : {
         "creditCode" : "951002007l78123233",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2022-06-09T10:40:56.190Z",
-      "signature" : "MEUCIGhytxyeopZ/7gLAA5UqciDfe9YqKOLjnOpkSZmS2fHDAiEA1k6uDI13RHTNY/v9kZt/2tNHAau/QAS6owrjhNmLlro="
+      "tmLocal" : "2022-06-13T21:36:16.120Z",
+      "signature" : "MEQCIG3prjkKFL1yiFjtD8eA6LQqxN8SBUpomjhYNCVWcaKeAiBtE1qGoffZgwZbaeixUSvssJ8CM2+5Dnk4zqNE3Qyt2A=="
     }
   }, {
-    "id" : "c1bd62cc-5473-4458-80ad-ece03273be7e",
+    "id" : "42afd67e-dea8-4841-9fd7-23b2ff78605b",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "RdidOperateAuthorizeTPL",
@@ -396,18 +396,18 @@
     },
     "ipt" : {
       "function" : "signUpOperate",
-      "args" : [ "{\"opId\":\"6c445cb7a6b5df8fea1fb498e7aa8185645fc540ef9494b84d67468d4f891c5d\",\"description\":\"改变合约状态操作\",\"register\":\"951002007l78123233\",\"operateType\":\"OPERATE_CONTRACT\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net.*.setState\",\"createTime\":\"2022-06-09T02:40:56.192Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
+      "args" : [ "{\"opId\":\"a8d9188188e52099f08538b731517022f9aadd93064664ed1a9c827d9d52c036\",\"description\":\"改变合约状态操作\",\"register\":\"951002007l78123233\",\"operateType\":\"OPERATE_CONTRACT\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net:*.setState\",\"createTime\":\"2022-06-13T13:36:16.121Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
     },
     "signature" : {
       "certId" : {
         "creditCode" : "951002007l78123233",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2022-06-09T10:40:56.192Z",
-      "signature" : "MEUCIDIUVsIYhBziI0XwHvJMnwxxaXcRLUmcvqi/NHOSRT6qAiEA/opmzvTDightsTISH3LheXpEiaQ0+ngRWNGB3jYbX4Y="
+      "tmLocal" : "2022-06-13T21:36:16.121Z",
+      "signature" : "MEQCIAzNkx+s8uZrMd47Zr/20DB+O84u22iVxIISz+8/fY+PAiAqvNkY4+R5Oplqz0ef2pwnnBdHUQVEqA3n3gq2HNOCew=="
     }
   }, {
-    "id" : "681aba02-6ddb-4819-8974-1fd6f6926c0a",
+    "id" : "8352a3bf-5ef8-4dc3-80e8-6dbe32be9929",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "RdidOperateAuthorizeTPL",
@@ -415,18 +415,18 @@
     },
     "ipt" : {
       "function" : "signUpOperate",
-      "args" : [ "{\"opId\":\"77caf589262b9a5b663b811535ed2964984858aa1002373c130ffe7bce441d13\",\"description\":\"获取链信息\",\"register\":\"951002007l78123233\",\"isPublish\":true,\"operateType\":\"OPERATE_SERVICE\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net.chaininfo.chaininfo\",\"createTime\":\"2022-06-09T02:40:56.202Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
+      "args" : [ "{\"opId\":\"fc6f1c7ff9b9e82d6fcc2d4099af97e76b4dcdf90de299b28b3e86906d4a36da\",\"description\":\"获取链信息\",\"register\":\"951002007l78123233\",\"isPublish\":true,\"operateType\":\"OPERATE_SERVICE\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net:chaininfo.chaininfo\",\"createTime\":\"2022-06-13T13:36:16.129Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
     },
     "signature" : {
       "certId" : {
         "creditCode" : "951002007l78123233",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2022-06-09T10:40:56.203Z",
-      "signature" : "MEQCIAopsZpRZStdnOCiBdF3iEA5UhKqy4nCfGMLX4IOi4hyAiAFck6tkXDcpdM+9IMqAKliSQs6lKF5pPlsBpqaBIZLuQ=="
+      "tmLocal" : "2022-06-13T21:36:16.130Z",
+      "signature" : "MEQCID4oVSWLNjJDeCl3VrKDFTFEwrA/cx+SC0w/OiKPDyPaAiBUFvssz73gexouRsUkfaLvxJnl0vxEev9D2NI7dYSONg=="
     }
   }, {
-    "id" : "989fa33b-7d1a-4a0d-a99c-0bdfef17f350",
+    "id" : "20b4bd92-e52d-4e36-b5b9-98090f2dfb9c",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "RdidOperateAuthorizeTPL",
@@ -434,18 +434,18 @@
     },
     "ipt" : {
       "function" : "signUpOperate",
-      "args" : [ "{\"opId\":\"ee0233b6ad0cc3f43a3f402e7052dd84ffaabfca60ceed2abcfdb974315114ab\",\"description\":\"返回组网节点数量\",\"register\":\"951002007l78123233\",\"isPublish\":true,\"operateType\":\"OPERATE_SERVICE\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net.chaininfo.node\",\"createTime\":\"2022-06-09T02:40:56.205Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
+      "args" : [ "{\"opId\":\"9ac23316809a5b29efea6aad3707b9f1dba81a44f1a284ba7b4a1c2ab3194783\",\"description\":\"返回组网节点数量\",\"register\":\"951002007l78123233\",\"isPublish\":true,\"operateType\":\"OPERATE_SERVICE\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net:chaininfo.node\",\"createTime\":\"2022-06-13T13:36:16.132Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
     },
     "signature" : {
       "certId" : {
         "creditCode" : "951002007l78123233",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2022-06-09T10:40:56.206Z",
-      "signature" : "MEUCIQC9xzUw/uIOoavM8kG3wr+W6wP3gbg/vMqqMUF/CUf53AIgFIt2ey4zY+8Dw2WMv5aDVpWo8YMTgh46tXUD5Vsdm+4="
+      "tmLocal" : "2022-06-13T21:36:16.133Z",
+      "signature" : "MEUCIQDVxz/DVxFmWyMrNwyMfZO8cSafifwrlfZHUInnY2GP2AIgDEHWI+Q7vK2Q4lVcmjstzxatt504PHHPjdUVN/w+EVM="
     }
   }, {
-    "id" : "d3a4e22b-3969-4cba-b640-5a38c2c0bca9",
+    "id" : "b6db9ceb-0bb0-4f59-a24f-9b307d84a3e5",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "RdidOperateAuthorizeTPL",
@@ -453,18 +453,18 @@
     },
     "ipt" : {
       "function" : "signUpOperate",
-      "args" : [ "{\"opId\":\"31a6f1709c358c458fcb58ca2f963fc9138832ce88a169f4517fbafea1405785\",\"description\":\"返回系统缓存交易数量\",\"register\":\"951002007l78123233\",\"isPublish\":true,\"operateType\":\"OPERATE_SERVICE\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net.chaininfo.getcachetransnumber\",\"createTime\":\"2022-06-09T02:40:56.207Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
+      "args" : [ "{\"opId\":\"031d24adc1ae5c5a4552176735442e73b0ff45ddcda2f73ab788d2e527d3f47d\",\"description\":\"返回系统缓存交易数量\",\"register\":\"951002007l78123233\",\"isPublish\":true,\"operateType\":\"OPERATE_SERVICE\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net:chaininfo.getcachetransnumber\",\"createTime\":\"2022-06-13T13:36:16.134Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
     },
     "signature" : {
       "certId" : {
         "creditCode" : "951002007l78123233",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2022-06-09T10:40:56.208Z",
-      "signature" : "MEUCIQCxBGG63G7Y70lwc/gXidajHdOl4ru1NjlvRelV5GD73AIgKFrr6ia8UEaqWa58EMFhriIob9GCpYW8kyCx2NE/nSA="
+      "tmLocal" : "2022-06-13T21:36:16.134Z",
+      "signature" : "MEMCIGnMPHprO/6PBLeiJ7c86CfH4HrSWE+2uJCuhcF8zEZdAh85a35/grs4h6SCeZtKoRTlNZZeTph816hOOCNwP8VX"
     }
   }, {
-    "id" : "f2aefc5b-e826-45c3-ac5e-2c91b02d7bb8",
+    "id" : "665d32b3-b034-4399-976d-56e764c532fe",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "RdidOperateAuthorizeTPL",
@@ -472,18 +472,18 @@
     },
     "ipt" : {
       "function" : "signUpOperate",
-      "args" : [ "{\"opId\":\"64d1ed473d331cc171374dc76bdd73efd19c34a6658fd54d42cff77ed03a9aa0\",\"description\":\"返回系统接收到的交易数量\",\"register\":\"951002007l78123233\",\"isPublish\":true,\"operateType\":\"OPERATE_SERVICE\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net.chaininfo.getAcceptedTransNumber\",\"createTime\":\"2022-06-09T02:40:56.209Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
+      "args" : [ "{\"opId\":\"966e471ba2224218bd6fe6268c0b8ffd121624188dbcfc98c8e2e4e4fb4dc65b\",\"description\":\"返回系统接收到的交易数量\",\"register\":\"951002007l78123233\",\"isPublish\":true,\"operateType\":\"OPERATE_SERVICE\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net:chaininfo.getAcceptedTransNumber\",\"createTime\":\"2022-06-13T13:36:16.136Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
     },
     "signature" : {
       "certId" : {
         "creditCode" : "951002007l78123233",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2022-06-09T10:40:56.209Z",
-      "signature" : "MEUCIEAw4VyW+VdfCmuUd3vKqgWh/u/cInFypd7xgwNjB9YkAiEAiLc6ASjI85HoSx5KAY3m3nZKaDZxVX0VO8JT8HVjweY="
+      "tmLocal" : "2022-06-13T21:36:16.136Z",
+      "signature" : "MEQCIH4BgYXba4D6AsbgJXPX7FmhZdtOwt9iylW0Lo+lwYiIAiBkQ16KbxMofd5VUeyOc95OJTKovKiqlSOwJiaiA2iQ0A=="
     }
   }, {
-    "id" : "5f52b26f-895b-4850-bc1e-a29892cd6fa5",
+    "id" : "ddd5beae-ff83-4373-8ce3-768742924cfe",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "RdidOperateAuthorizeTPL",
@@ -491,18 +491,18 @@
     },
     "ipt" : {
       "function" : "signUpOperate",
-      "args" : [ "{\"opId\":\"bc0b7898fc2b58225a30ca0ed2caa55d91a7ba3b16f03b30a498a7c809e6598f\",\"description\":\"返回指定id的区块\",\"register\":\"951002007l78123233\",\"operateType\":\"OPERATE_SERVICE\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net.block.hash\",\"createTime\":\"2022-06-09T02:40:56.211Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
+      "args" : [ "{\"opId\":\"f7ae6b2112b4f3b04bf1122bafa04d90114499f66962549908cbc3fb141baf85\",\"description\":\"返回指定id的区块\",\"register\":\"951002007l78123233\",\"operateType\":\"OPERATE_SERVICE\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net:block.hash\",\"createTime\":\"2022-06-13T13:36:16.137Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
     },
     "signature" : {
       "certId" : {
         "creditCode" : "951002007l78123233",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2022-06-09T10:40:56.211Z",
-      "signature" : "MEUCIQCSKATo4MUwsNBmLtjM8grTQHtvfGKX1bm6oV89sirknwIgXxOwhE8FJZIyaCbIg+NGJw6CKSHd5FR1vFgoJRXoWIM="
+      "tmLocal" : "2022-06-13T21:36:16.137Z",
+      "signature" : "MEQCIAuzCQnMfLdJYE3cMWxL0kwRYYijloT6EYER3BbuFW/QAiACerdqwEwrw9j0z0m1Q3Z5FpMNURYYZwVQB3m2+H5oiw=="
     }
   }, {
-    "id" : "5e5252a0-b597-4d30-ab6d-ec64d1178e45",
+    "id" : "8dae794c-7818-46b6-a965-8a9e38540710",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "RdidOperateAuthorizeTPL",
@@ -510,18 +510,18 @@
     },
     "ipt" : {
       "function" : "signUpOperate",
-      "args" : [ "{\"opId\":\"dcf0229a7f49d1bba8af9d06c0514cbaf0f7c289efb45fe701325b161cdc68cf\",\"description\":\"返回指定高度的区块\",\"register\":\"951002007l78123233\",\"operateType\":\"OPERATE_SERVICE\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net.block.blockHeight\",\"createTime\":\"2022-06-09T02:40:56.213Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
+      "args" : [ "{\"opId\":\"15c1e7fb8fb1bc26b3fff47b58d1d5034035c99c79f4bca3bdcdd31fedfcb51e\",\"description\":\"返回指定高度的区块\",\"register\":\"951002007l78123233\",\"operateType\":\"OPERATE_SERVICE\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net:block.blockHeight\",\"createTime\":\"2022-06-13T13:36:16.139Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
     },
     "signature" : {
       "certId" : {
         "creditCode" : "951002007l78123233",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2022-06-09T10:40:56.213Z",
-      "signature" : "MEUCIQDHTdRjur1WrzT04DgGMALmUTXnVbMFSj0ge8nMECuSegIgKPHYwmGOuwg1FvINk0Q62nl2hgrgOxY6jAWkgvPIc7M="
+      "tmLocal" : "2022-06-13T21:36:16.139Z",
+      "signature" : "MEQCICwkgbTME86ugZ9QkSiCtNgr1xVhfbKC7l+TYt/B4qVuAiASXkOxYGugRPjM6yEoWYbdQa37SokZWRv2ISpfynm9Ag=="
     }
   }, {
-    "id" : "915999b8-af9e-4dce-91e1-f050a4b97395",
+    "id" : "11fd8ee5-b250-42b8-9889-a908e37ac3ec",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "RdidOperateAuthorizeTPL",
@@ -529,18 +529,18 @@
     },
     "ipt" : {
       "function" : "signUpOperate",
-      "args" : [ "{\"opId\":\"c3fd418c2a01538c1eb50619fcd3e47a570f747373cb1d78e57eaeee6335c305\",\"description\":\"返回指定高度区块包含的交易数\",\"register\":\"951002007l78123233\",\"isPublish\":true,\"operateType\":\"OPERATE_SERVICE\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net.block.getTransNumberOfBlock\",\"createTime\":\"2022-06-09T02:40:56.214Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
+      "args" : [ "{\"opId\":\"08c0239a00076d4b99ffd4e7dea43e7f2881e958ebefb8fba52fb9865e52b3ac\",\"description\":\"返回指定高度区块包含的交易数\",\"register\":\"951002007l78123233\",\"isPublish\":true,\"operateType\":\"OPERATE_SERVICE\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net:block.getTransNumberOfBlock\",\"createTime\":\"2022-06-13T13:36:16.141Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
     },
     "signature" : {
       "certId" : {
         "creditCode" : "951002007l78123233",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2022-06-09T10:40:56.214Z",
-      "signature" : "MEUCIGpExYPq+VSgNLwYvJmenqtvBm4YYFedWWzvbzt764BkAiEAlFEXJjsXWzghE+rN/7lh1zAUq5+9RTSVAB0swHcfPoI="
+      "tmLocal" : "2022-06-13T21:36:16.141Z",
+      "signature" : "MEQCIHKOqAKSuNZy5CIYoXcfdXgpXH2pzZ5i0u4/8W66Vn19AiBWvqYxUZzxEoJ5YUDKqtSnWwFwKrZiCAYy1xqIH+wJxw=="
     }
   }, {
-    "id" : "a99eb314-84c2-446d-8f56-b898b50db0b8",
+    "id" : "41ccbe50-afed-4bff-ba85-3da5a5e4c4be",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "RdidOperateAuthorizeTPL",
@@ -548,18 +548,18 @@
     },
     "ipt" : {
       "function" : "signUpOperate",
-      "args" : [ "{\"opId\":\"fb54958350d6cdeb675cb6a16f30a5df3bcc5ec170c32bbd377ec94507815f62\",\"description\":\"返回指定高度的区块的出块时间\",\"register\":\"951002007l78123233\",\"isPublish\":true,\"operateType\":\"OPERATE_SERVICE\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net.block.blocktime\",\"createTime\":\"2022-06-09T02:40:56.216Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
+      "args" : [ "{\"opId\":\"982bcc2078474eb87ec3657d5820eb496c8e7476d936695bf573d108633e173c\",\"description\":\"返回指定高度的区块的出块时间\",\"register\":\"951002007l78123233\",\"isPublish\":true,\"operateType\":\"OPERATE_SERVICE\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net:block.blocktime\",\"createTime\":\"2022-06-13T13:36:16.143Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
     },
     "signature" : {
       "certId" : {
         "creditCode" : "951002007l78123233",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2022-06-09T10:40:56.216Z",
-      "signature" : "MEUCIQCFSNYRY1BVbBw9gdkN/ZBGkEwMAxTnAflexKm0biWy3QIgOm3nqEaZ+wcyjffX69H1McKczXPcBqw30TF3T7OmFP4="
+      "tmLocal" : "2022-06-13T21:36:16.143Z",
+      "signature" : "MEYCIQCyJBlO7PfU/UbhnKQBOAP8As48a13whF2mXVszNWCOQwIhAMQ5HL/mFJmoR0fFWMFsQfCHMs4kHUgN0QokGgHN53ui"
     }
   }, {
-    "id" : "2bc486f1-8930-4275-946c-190ce87efbd9",
+    "id" : "b574f0c7-6091-4155-9cd9-a5ff34060d94",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "RdidOperateAuthorizeTPL",
@@ -567,18 +567,18 @@
     },
     "ipt" : {
       "function" : "signUpOperate",
-      "args" : [ "{\"opId\":\"53dd043328a97fb1340cb67d0199cff5aebc6a1c94d715f7656f4d62ae16bdd8\",\"description\":\"返回指定交易的入块时间\",\"register\":\"951002007l78123233\",\"isPublish\":true,\"operateType\":\"OPERATE_SERVICE\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net.block.blocktimeoftran\",\"createTime\":\"2022-06-09T02:40:56.218Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
+      "args" : [ "{\"opId\":\"6fc23a0a33d5b751d19f75ba7105ed373cca0c2cc4e824d2a4a799f8750bf475\",\"description\":\"返回指定交易的入块时间\",\"register\":\"951002007l78123233\",\"isPublish\":true,\"operateType\":\"OPERATE_SERVICE\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net:block.blocktimeoftran\",\"createTime\":\"2022-06-13T13:36:16.144Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
     },
     "signature" : {
       "certId" : {
         "creditCode" : "951002007l78123233",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2022-06-09T10:40:56.219Z",
-      "signature" : "MEYCIQDWAK/M64Q6UYhoZq0DVUcvoOjwho0cDf/jWFpZrVf4YgIhAIj8D4ax0rgPiIoymKi0/two0itr4uBxpXSk4s0HUfLR"
+      "tmLocal" : "2022-06-13T21:36:16.144Z",
+      "signature" : "MEUCIQCYnfBUf8aPXPsAaZNxKW6Y+26dXCJBOz95YeLX0b8TUgIgYZ/QiuCSod0CZL/Ef+bZcKAU1aXhFKH+NStT9K9drUk="
     }
   }, {
-    "id" : "1cf236c3-00b7-46aa-bc6c-51b2a931ecfc",
+    "id" : "702cce87-d7f8-4d35-a0d2-406353fc7fa8",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "RdidOperateAuthorizeTPL",
@@ -586,18 +586,18 @@
     },
     "ipt" : {
       "function" : "signUpOperate",
-      "args" : [ "{\"opId\":\"ecbebf6643bce58ed1d5cf35e787206cd918ef56d1e264d801562d6eb3786bec\",\"description\":\"返回指定高度的区块字节流\",\"register\":\"951002007l78123233\",\"operateType\":\"OPERATE_SERVICE\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net.block.stream\",\"createTime\":\"2022-06-09T02:40:56.220Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
+      "args" : [ "{\"opId\":\"803159cbc23bfd752d20489169a9034cae7721b282193115b8f6f4dbcb7b5fb9\",\"description\":\"返回指定高度的区块字节流\",\"register\":\"951002007l78123233\",\"operateType\":\"OPERATE_SERVICE\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net:block.stream\",\"createTime\":\"2022-06-13T13:36:16.146Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
     },
     "signature" : {
       "certId" : {
         "creditCode" : "951002007l78123233",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2022-06-09T10:40:56.221Z",
-      "signature" : "MEUCIC3/udho6zpBLdNcHaaou9mf419XXMXL0rRZfyyPKGhKAiEAucSjDXLM63viievgI/kxfZQl2bP1cDJAjvLqptWbOSw="
+      "tmLocal" : "2022-06-13T21:36:16.146Z",
+      "signature" : "MEYCIQCDJzJMIuzDIteXYml3ihKisrlRGmJMOCA+3GumnROMLQIhAOFgO7o63IWueSDQNkWgx05aiZVglsj0vXr/bPJwJaeO"
     }
   }, {
-    "id" : "bedaceb1-aa76-4923-b799-3e955ef609b5",
+    "id" : "50a72b00-3aee-48b3-a870-6e34d907574b",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "RdidOperateAuthorizeTPL",
@@ -605,18 +605,18 @@
     },
     "ipt" : {
       "function" : "signUpOperate",
-      "args" : [ "{\"opId\":\"04d79d36125183fb9b07d5b2e61fed98494031338ef28af1928560701fe32130\",\"description\":\"返回指定id的交易\",\"register\":\"951002007l78123233\",\"operateType\":\"OPERATE_SERVICE\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net.transaction\",\"createTime\":\"2022-06-09T02:40:56.222Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
+      "args" : [ "{\"opId\":\"14afc4a7cf1b0e50e5224cceff224413a725d4e0df752d567b1fb3ad9ee3f8f7\",\"description\":\"返回指定id的交易\",\"register\":\"951002007l78123233\",\"operateType\":\"OPERATE_SERVICE\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net:transaction\",\"createTime\":\"2022-06-13T13:36:16.148Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
     },
     "signature" : {
       "certId" : {
         "creditCode" : "951002007l78123233",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2022-06-09T10:40:56.222Z",
-      "signature" : "MEYCIQDXqTG/R3lrww2cvUL1OOQYX2hRZGAEvlAli5RseXkxWwIhALEdiSWqOk9Wvj6TB0T2EXQeUPsi8nVIE7oF0Vt5cVgt"
+      "tmLocal" : "2022-06-13T21:36:16.148Z",
+      "signature" : "MEUCIHQtfq7sbSJKOErW5lk8AGrh4Wd7xBrT2QU7rSJQsN5RAiEApCTKYnvsihnKX9BOHKuS2iYMnLAsMWztBHpfrR7nf9Y="
     }
   }, {
-    "id" : "d58c2f05-4719-4fce-a146-9507549b63de",
+    "id" : "9d1db8c2-95e5-4290-8b37-d747ec8c8aea",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "RdidOperateAuthorizeTPL",
@@ -624,18 +624,18 @@
     },
     "ipt" : {
       "function" : "signUpOperate",
-      "args" : [ "{\"opId\":\"afa9c63dd919fbb4ce35bbc903428f7f46ccbe7a241cccc63efe6c2cdb797fa7\",\"description\":\"返回指定id的交易字节流\",\"register\":\"951002007l78123233\",\"operateType\":\"OPERATE_SERVICE\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net.transaction.stream\",\"createTime\":\"2022-06-09T02:40:56.224Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
+      "args" : [ "{\"opId\":\"4a0ee68b19af9f20315876169efc2e1a14d7f39cb17b43b30a99a2ca954bab64\",\"description\":\"返回指定id的交易字节流\",\"register\":\"951002007l78123233\",\"operateType\":\"OPERATE_SERVICE\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net:transaction.stream\",\"createTime\":\"2022-06-13T13:36:16.149Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
     },
     "signature" : {
       "certId" : {
         "creditCode" : "951002007l78123233",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2022-06-09T10:40:56.224Z",
-      "signature" : "MEUCIHQe/NY8OsdJYQZMJMvinsRyDr95/9jWRSUQ8ziZktgUAiEA0dbbbwJk6ARXDH+rupadc9x+rIqNrUrwgWhBmlZVzio="
+      "tmLocal" : "2022-06-13T21:36:16.150Z",
+      "signature" : "MEUCIBHRQqwsPxi7usTc+iRA+cnSgv8HEDu0KbJWJKBuBFm8AiEA4/M42uqk0uv6QJotxbTGUZ8Ws0Qj52xb+TqhuDng5z0="
     }
   }, {
-    "id" : "a6b57863-0c8a-42e1-9875-2feb9848f050",
+    "id" : "f8cda3ce-b3df-4c4d-8c67-6b819454182c",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "RdidOperateAuthorizeTPL",
@@ -643,18 +643,18 @@
     },
     "ipt" : {
       "function" : "signUpOperate",
-      "args" : [ "{\"opId\":\"d2b5b6962e5887eafb270244148c1a44c5f1fe6a0bc0b7c1cabff4af1609aa40\",\"description\":\"提交带签名的交易\",\"register\":\"951002007l78123233\",\"isPublish\":true,\"operateType\":\"OPERATE_SERVICE\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net.transaction.postTranByString\",\"createTime\":\"2022-06-09T02:40:56.226Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
+      "args" : [ "{\"opId\":\"78c28e9062cac0c0de1d0560bb30e81a18617c40e0a4eb4bf596246e61e5b6ac\",\"description\":\"提交带签名的交易\",\"register\":\"951002007l78123233\",\"isPublish\":true,\"operateType\":\"OPERATE_SERVICE\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net:transaction.postTranByString\",\"createTime\":\"2022-06-13T13:36:16.151Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
     },
     "signature" : {
       "certId" : {
         "creditCode" : "951002007l78123233",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2022-06-09T10:40:56.227Z",
-      "signature" : "MEQCIEY5C/BCwm2v8mfky+meYE4cbue012qPT1c4dmXnISo5AiB4ulPxQTWx4VDNGylh/i4jATOVK80WbN4IIxJsEf9qWg=="
+      "tmLocal" : "2022-06-13T21:36:16.151Z",
+      "signature" : "MEYCIQCtk0IM7pz6u6Z6oe90hQGo64pnJTdkydo7c/RSsw05swIhAOTSTaqvuRCONrXby9gFgyes610umAbhcbaDp/yg6Emw"
     }
   }, {
-    "id" : "753d1f11-5bee-40ef-be7b-64b616097ce5",
+    "id" : "b77435f9-7638-41d1-88c3-c5f61e8bc569",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "RdidOperateAuthorizeTPL",
@@ -662,18 +662,18 @@
     },
     "ipt" : {
       "function" : "signUpOperate",
-      "args" : [ "{\"opId\":\"76c90df287c08066259854096bf6cd7a73541be4c54da4c792618f5f333a8097\",\"description\":\"提交带签名的交易字节流\",\"register\":\"951002007l78123233\",\"isPublish\":true,\"operateType\":\"OPERATE_SERVICE\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net.transaction.postTranStream\",\"createTime\":\"2022-06-09T02:40:56.228Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
+      "args" : [ "{\"opId\":\"7499f09cc19f5b13f437a89e18bba6793edebf732a7793e1c7e916a5a210cbda\",\"description\":\"提交带签名的交易字节流\",\"register\":\"951002007l78123233\",\"isPublish\":true,\"operateType\":\"OPERATE_SERVICE\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net:transaction.postTranStream\",\"createTime\":\"2022-06-13T13:36:16.153Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
     },
     "signature" : {
       "certId" : {
         "creditCode" : "951002007l78123233",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2022-06-09T10:40:56.228Z",
-      "signature" : "MEUCIQCPx4da2WWXWa45B8b3RWQ2EY1gUWBL8iQfsaDxUam7XgIgMxnETDubiLlNbSACiARkQAW8HXZnhrNmIkupbpC2w8A="
+      "tmLocal" : "2022-06-13T21:36:16.153Z",
+      "signature" : "MEYCIQDixXB38XhITo+NzhxRKOADnLD6Wwh/7DKa2gQujIGZ3wIhAMgw2U9/cuu2flp5ULGnaY0o3O8x/cLnWp2fxunw08ky"
     }
   }, {
-    "id" : "760d669b-affa-4f25-907e-1e3c4774e053",
+    "id" : "4c9e9793-b420-4f5a-9ffc-3b9f51c772c2",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "RdidOperateAuthorizeTPL",
@@ -681,18 +681,18 @@
     },
     "ipt" : {
       "function" : "signUpOperate",
-      "args" : [ "{\"opId\":\"59a3e5978ab3b2cb5771c5c2c0e667d822b064cdd7c5429f54f8e18b98922ad7\",\"description\":\"提交交易\",\"register\":\"951002007l78123233\",\"isPublish\":true,\"operateType\":\"OPERATE_SERVICE\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net.transaction.postTran\",\"createTime\":\"2022-06-09T02:40:56.230Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
+      "args" : [ "{\"opId\":\"a2d31b6e22d01694e0c5cb7d9961bbe4923236b44f1e76be01eaf6e3af2c3fa7\",\"description\":\"提交交易\",\"register\":\"951002007l78123233\",\"isPublish\":true,\"operateType\":\"OPERATE_SERVICE\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net:transaction.postTran\",\"createTime\":\"2022-06-13T13:36:16.154Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
     },
     "signature" : {
       "certId" : {
         "creditCode" : "951002007l78123233",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2022-06-09T10:40:56.230Z",
-      "signature" : "MEYCIQCvkiLVg912dQ9Q86eBKlTzC9ZdlwfxG/+F+65peJLHegIhAPf4X67v07z3DcqQ+7U2Fzzia6E6QZ5I9oxbe3fwoEqB"
+      "tmLocal" : "2022-06-13T21:36:16.154Z",
+      "signature" : "MEYCIQDj98HypgfuxWt0tN8ISyuS7b0Wm4LsvQW0Bo5GQNYLuQIhAPu/5NovEY/I+JXm8avU+/hHsMp7rZqbYmuj5a0qA2MK"
     }
   }, {
-    "id" : "b112e738-8719-4a3e-a6a2-b58988acef69",
+    "id" : "6a020ffe-b198-4274-86a1-c11fe4372200",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "RdidOperateAuthorizeTPL",
@@ -700,18 +700,18 @@
     },
     "ipt" : {
       "function" : "signUpOperate",
-      "args" : [ "{\"opId\":\"7eed502b19ac06aff4a9fecaf32f79eeee3004885fbc6b712cc1a5c94ccd76f3\",\"description\":\"回指定id的交易信息及所在区块高度\",\"register\":\"951002007l78123233\",\"operateType\":\"OPERATE_SERVICE\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net.transaction.tranInfoAndHeight\",\"createTime\":\"2022-06-09T02:40:56.232Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
+      "args" : [ "{\"opId\":\"04cb5cfc7e3c11ea88ed5c7f568405be63edf5ac5293a2aada3e5c4c59226e73\",\"description\":\"回指定id的交易信息及所在区块高度\",\"register\":\"951002007l78123233\",\"operateType\":\"OPERATE_SERVICE\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net:transaction.tranInfoAndHeight\",\"createTime\":\"2022-06-13T13:36:16.156Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
     },
     "signature" : {
       "certId" : {
         "creditCode" : "951002007l78123233",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2022-06-09T10:40:56.233Z",
-      "signature" : "MEQCIF+O2FpHaQAD5UcK6WU1JDWkuSP0JCGzNSeG2Angr4NjAiB6v2RF6RHgqZpUSTmesrcIwmzBX4Ovb8hAK9o0YJKbAw=="
+      "tmLocal" : "2022-06-13T21:36:16.156Z",
+      "signature" : "MEQCIBuYKicZfuuXapDi2+Lom9YCEqoqT8eSGrA5sxXouG7CAiBh0hf3cWVL7GFkT5G9FdnczOTr+joSlxPeTlUQxubf+g=="
     }
   }, {
-    "id" : "f77d2f34-5e14-4bc1-a198-597b029e33d1",
+    "id" : "3605884b-0f97-43b9-b441-617678443ec5",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "RdidOperateAuthorizeTPL",
@@ -719,18 +719,18 @@
     },
     "ipt" : {
       "function" : "signUpOperate",
-      "args" : [ "{\"opId\":\"984b52c8f97660d899ae42f5a88534429bb8e0883691113700db36ec2fe3d002\",\"description\":\"查询合约存储在DB中的数据\",\"register\":\"951002007l78123233\",\"operateType\":\"OPERATE_SERVICE\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net.db.query\",\"createTime\":\"2022-06-09T02:40:56.235Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
+      "args" : [ "{\"opId\":\"ddaf9bdb51ea3ba7718df5c156782efd92401191f59401d7cd4d1b6a37d83966\",\"description\":\"查询合约存储在DB中的数据\",\"register\":\"951002007l78123233\",\"operateType\":\"OPERATE_SERVICE\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net:db.query\",\"createTime\":\"2022-06-13T13:36:16.157Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
     },
     "signature" : {
       "certId" : {
         "creditCode" : "951002007l78123233",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2022-06-09T10:40:56.235Z",
-      "signature" : "MEUCIQDhvCpTboYy5vRwNDW69h+NkvPcZzQKTb/cRezEyTylowIgX/1RsqIwM0hIb4WUGkarmzpr7GXdmgPD6hMEGHnxkMg="
+      "tmLocal" : "2022-06-13T21:36:16.158Z",
+      "signature" : "MEUCIAorngGSsHk+vN4Za1k9Webq0KQVKgDfYQm3wOwmcH/UAiEAqt4vxZGdkFR4/tz5I78DAxwdns/pXMwwawEhphLJhKs="
     }
   }, {
-    "id" : "d98e02e3-fcd9-4049-8680-240aa1248b00",
+    "id" : "ce5def24-f64d-49e9-8658-7e2ac86d3030",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "RdidOperateAuthorizeTPL",
@@ -738,18 +738,18 @@
     },
     "ipt" : {
       "function" : "grantOperate",
-      "args" : [ "[\"{\\\"id\\\":\\\"b0413d3e-0726-432d-b471-9e36cadc24d4\\\",\\\"grant\\\":\\\"951002007l78123233\\\",\\\"granted\\\":[\\\"121000005l35120456\\\",\\\"12110107bi45jh675g\\\",\\\"122000002n00123567\\\",\\\"921000005k36123789\\\",\\\"921000006e0012v696\\\"],\\\"opId\\\":[\\\"ba5df570ad4bb522163240330cad567d80c50562fe9a258a4d595bb707e471fe\\\",\\\"061bc2a3a621b257e6117d92125fd8838a3e04b427f9f3fd58eb8bbfded91dc7\\\",\\\"588caecd3197f09fd0887cee504c53f6b07877ac2f0e38b9222ec24b53642da1\\\",\\\"4de6321bc1948a5e0aeaa07f1162d06b8112cb54361ff52020e88e972799134c\\\",\\\"d76ea506f89ee0fb33935b09ff5c3ace322622253cb575a6df0349284fc3ca13\\\",\\\"a073aab314b227b466c5304e6dd1eb0f6c478ad875c20a7cabf314e342838bb8\\\",\\\"42b7e5f56f7e6c20821b0658b8e973f1f3417df0ea1f40260721dd61dff56a7c\\\",\\\"4c3c3e0cbb5a878d70cf2ba8c94679ef618960b58568c9f6e261cbd033c74d14\\\",\\\"95f4d6e5e3bdd062b4cd29598adc1116e24096d9d4f5f90c1ab0a57b8ac619b7\\\",\\\"73cf8dd74ff3a7d908edc0469d2e72e48e5bddb241171f430e21da7aa65a5e21\\\",\\\"ff639894b6d104658e6ec287bfc0bdde0aa7ab2da91d32f3e052eafade751ee3\\\",\\\"a7a1eaeea433c1643983ced2617a281a5545dbec5018baa08159d2590601cf11\\\",\\\"4289eec5859d52dbe4d3d3d06589d56c504f6723989185edad308c70fd04566c\\\",\\\"6c445cb7a6b5df8fea1fb498e7aa8185645fc540ef9494b84d67468d4f891c5d\\\",\\\"77caf589262b9a5b663b811535ed2964984858aa1002373c130ffe7bce441d13\\\",\\\"ee0233b6ad0cc3f43a3f402e7052dd84ffaabfca60ceed2abcfdb974315114ab\\\",\\\"31a6f1709c358c458fcb58ca2f963fc9138832ce88a169f4517fbafea1405785\\\",\\\"64d1ed473d331cc171374dc76bdd73efd19c34a6658fd54d42cff77ed03a9aa0\\\",\\\"bc0b7898fc2b58225a30ca0ed2caa55d91a7ba3b16f03b30a498a7c809e6598f\\\",\\\"dcf0229a7f49d1bba8af9d06c0514cbaf0f7c289efb45fe701325b161cdc68cf\\\",\\\"c3fd418c2a01538c1eb50619fcd3e47a570f747373cb1d78e57eaeee6335c305\\\",\\\"fb54958350d6cdeb675cb6a16f30a5df3bcc5ec170c32bbd377ec94507815f62\\\",\\\"53dd043328a97fb1340cb67d0199cff5aebc6a1c94d715f7656f4d62ae16bdd8\\\",\\\"ecbebf6643bce58ed1d5cf35e787206cd918ef56d1e264d801562d6eb3786bec\\\",\\\"04d79d36125183fb9b07d5b2e61fed98494031338ef28af1928560701fe32130\\\",\\\"afa9c63dd919fbb4ce35bbc903428f7f46ccbe7a241cccc63efe6c2cdb797fa7\\\",\\\"d2b5b6962e5887eafb270244148c1a44c5f1fe6a0bc0b7c1cabff4af1609aa40\\\",\\\"76c90df287c08066259854096bf6cd7a73541be4c54da4c792618f5f333a8097\\\",\\\"59a3e5978ab3b2cb5771c5c2c0e667d822b064cdd7c5429f54f8e18b98922ad7\\\",\\\"7eed502b19ac06aff4a9fecaf32f79eeee3004885fbc6b712cc1a5c94ccd76f3\\\",\\\"984b52c8f97660d899ae42f5a88534429bb8e0883691113700db36ec2fe3d002\\\"],\\\"isTransfer\\\":\\\"TRANSFER_REPEATEDLY\\\",\\\"createTime\\\":\\\"2022-06-09T02:40:56.238Z\\\",\\\"authorizeValid\\\":true,\\\"version\\\":\\\"1.0\\\"}\"]" ]
+      "args" : [ "[\"{\\\"id\\\":\\\"385003f9-2b03-4be4-9981-cf5c0248c3a5\\\",\\\"grant\\\":\\\"951002007l78123233\\\",\\\"granted\\\":[\\\"121000005l35120456\\\",\\\"12110107bi45jh675g\\\",\\\"122000002n00123567\\\",\\\"921000005k36123789\\\",\\\"921000006e0012v696\\\"],\\\"opId\\\":[\\\"f8b48c41201b228a6c32d179ecfb2921a664d3cf1dcbc80164dc3c47e61c6afb\\\",\\\"d0dc9cb7db941d633740eb7e5e8628eda17cb9fcbf47c5d5bbe186379606ec83\\\",\\\"98cdb6f9d023583e52561cd3001d3aa28948b218b45631eeec0c696150c99f42\\\",\\\"94ddf8e8dd2af79f7bd4b9277a45f30de06a0bc7544d4cbfc77fc8cf841a5eab\\\",\\\"5ed487bd096073f47ced54ff13b31257bea1985430cce655d15c5bf646da1a77\\\",\\\"e28d61a4f5d38553a83e51244aca1d4a6d9db01e8f7c03fbd5a439d5568da454\\\",\\\"868de167bf0f8c144e5ae621afef3dd98edb3a5dc68e42b6de807065135ba9dc\\\",\\\"d00dbd24b065e4083bbc4ca229293d0e0bd1a1f701a89e723300ae68f260e0d2\\\",\\\"bf924b8636ccecc9402b1d69edff94e75578df78124e36c5b7a62abd05bf273f\\\",\\\"672d720b63ea4c63a159dfa4845a7354e56cca541ab43b0a1b3e012ebaaa1e3b\\\",\\\"8600fea980fd58a01feb028d4b4db1bad68d81e88980162412ef11d42b0f82e4\\\",\\\"cee6e80fcf67edd35dca8fc805fea9cb270d77801afe20b682d3c1bf6119a22b\\\",\\\"b34acc1da5938bf09400c8c0e6a8f821d9de5700a58679ad28d97763d0a8a0e4\\\",\\\"a8d9188188e52099f08538b731517022f9aadd93064664ed1a9c827d9d52c036\\\",\\\"fc6f1c7ff9b9e82d6fcc2d4099af97e76b4dcdf90de299b28b3e86906d4a36da\\\",\\\"9ac23316809a5b29efea6aad3707b9f1dba81a44f1a284ba7b4a1c2ab3194783\\\",\\\"031d24adc1ae5c5a4552176735442e73b0ff45ddcda2f73ab788d2e527d3f47d\\\",\\\"966e471ba2224218bd6fe6268c0b8ffd121624188dbcfc98c8e2e4e4fb4dc65b\\\",\\\"f7ae6b2112b4f3b04bf1122bafa04d90114499f66962549908cbc3fb141baf85\\\",\\\"15c1e7fb8fb1bc26b3fff47b58d1d5034035c99c79f4bca3bdcdd31fedfcb51e\\\",\\\"08c0239a00076d4b99ffd4e7dea43e7f2881e958ebefb8fba52fb9865e52b3ac\\\",\\\"982bcc2078474eb87ec3657d5820eb496c8e7476d936695bf573d108633e173c\\\",\\\"6fc23a0a33d5b751d19f75ba7105ed373cca0c2cc4e824d2a4a799f8750bf475\\\",\\\"803159cbc23bfd752d20489169a9034cae7721b282193115b8f6f4dbcb7b5fb9\\\",\\\"14afc4a7cf1b0e50e5224cceff224413a725d4e0df752d567b1fb3ad9ee3f8f7\\\",\\\"4a0ee68b19af9f20315876169efc2e1a14d7f39cb17b43b30a99a2ca954bab64\\\",\\\"78c28e9062cac0c0de1d0560bb30e81a18617c40e0a4eb4bf596246e61e5b6ac\\\",\\\"7499f09cc19f5b13f437a89e18bba6793edebf732a7793e1c7e916a5a210cbda\\\",\\\"a2d31b6e22d01694e0c5cb7d9961bbe4923236b44f1e76be01eaf6e3af2c3fa7\\\",\\\"04cb5cfc7e3c11ea88ed5c7f568405be63edf5ac5293a2aada3e5c4c59226e73\\\",\\\"ddaf9bdb51ea3ba7718df5c156782efd92401191f59401d7cd4d1b6a37d83966\\\"],\\\"isTransfer\\\":\\\"TRANSFER_REPEATEDLY\\\",\\\"createTime\\\":\\\"2022-06-13T13:36:16.160Z\\\",\\\"authorizeValid\\\":true,\\\"version\\\":\\\"1.0\\\"}\"]" ]
     },
     "signature" : {
       "certId" : {
         "creditCode" : "951002007l78123233",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2022-06-09T10:40:56.289Z",
-      "signature" : "MEYCIQCtEHzoTw0a2/SL+5gK0rXVrLff4Invl+S72ZIhHF3ouQIhANVhVOrSIFTeoJ2nEmPCpiudDEpH3UkREn0z3lsroWi4"
+      "tmLocal" : "2022-06-13T21:36:16.217Z",
+      "signature" : "MEUCIA/HzVsfgAfAlgzYvsgXr9e9RH0LMwjd2JWs6iDY5+gBAiEA3CHompv6Tc8RKYqzsmwCBuErYYej4P6aJ+Smx++jcAc="
     }
   }, {
-    "id" : "5673baf7-c351-4826-b25a-678814bf4168",
+    "id" : "44671ee6-fc06-497b-9d8f-2d3514c558a1",
     "type" : "CHAINCODE_DEPLOY",
     "cid" : {
       "chaincodeName" : "ContractAssetsTPL",
@@ -768,11 +768,11 @@
         "creditCode" : "121000005l35120456",
         "certName" : "node1"
       },
-      "tmLocal" : "2022-06-09T10:40:56.292Z",
-      "signature" : "MEUCIHcagTSNKf9mWc4q9bVuSxXDb/4S2X3YTYiAsRJ0/AhyAiEAonkOsnMym2o6a1qlveKQbB/3WZ0MKFh35mSYpryF42U="
+      "tmLocal" : "2022-06-13T21:36:16.220Z",
+      "signature" : "MEUCIEz3k1qTJ4gHgtyYQ8aNHmqeBtU5gnQI/9R8mcPUflEgAiEAnKnhEC4ZWeayC/fWfwnCn5nTjb4/Op3nczweuj0rpL8="
     }
   }, {
-    "id" : "577b1b4a-4943-440e-aa3c-9ae8c7d8d813",
+    "id" : "61dba27f-fd22-446a-867c-b50fb639013f",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "RdidOperateAuthorizeTPL",
@@ -780,18 +780,18 @@
     },
     "ipt" : {
       "function" : "signUpOperate",
-      "args" : [ "{\"opId\":\"3acb572299650b8165ff2dcfc15fd9a1413b065dd5454ed141e0ee8a259b55cb\",\"description\":\"转账交易\",\"register\":\"121000005l35120456\",\"isPublish\":true,\"operateType\":\"OPERATE_CONTRACT\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net.ContractAssetsTPL.transfer\",\"createTime\":\"2022-06-09T02:40:56.296Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
+      "args" : [ "{\"opId\":\"ab8c970b44a93cd72236e65e498d1241464c2ad2ce53476180e6219dc781a727\",\"description\":\"转账交易\",\"register\":\"121000005l35120456\",\"isPublish\":true,\"operateType\":\"OPERATE_CONTRACT\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net:ContractAssetsTPL.transfer\",\"createTime\":\"2022-06-13T13:36:16.223Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
     },
     "signature" : {
       "certId" : {
         "creditCode" : "121000005l35120456",
         "certName" : "node1"
       },
-      "tmLocal" : "2022-06-09T10:40:56.296Z",
-      "signature" : "MEYCIQDOqcggjF1wMzwaVr855kEnLFu2ykTJL+hbTik3NEGOrwIhAMF3t6+SwWFRy9lA9+aQPv4ATOi9Kpbq+lBt6aJW0LEF"
+      "tmLocal" : "2022-06-13T21:36:16.223Z",
+      "signature" : "MEYCIQCTwQz9SSmx4hlfVcz1W/4FHsJNtjRdWJbIO9QBkByXGgIhAN7+NBXcOqUZmHwDoPIPb7KLSUbhzva+uYZXY3iESNwY"
     }
   }, {
-    "id" : "ff477e69-eb19-4ce4-95d0-1e645dfb8c20",
+    "id" : "e86881e7-bf87-4302-b433-458835b58a5a",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "RdidOperateAuthorizeTPL",
@@ -799,18 +799,18 @@
     },
     "ipt" : {
       "function" : "signUpOperate",
-      "args" : [ "{\"opId\":\"f621194c9e2efdf90c37dd27ba3d97f8c8a32a9d4cf33680458a585070e9a957\",\"description\":\"初始化账户\",\"register\":\"121000005l35120456\",\"operateType\":\"OPERATE_CONTRACT\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net.ContractAssetsTPL.set\",\"createTime\":\"2022-06-09T02:40:56.296Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
+      "args" : [ "{\"opId\":\"6ad7bd63f6531f1d6c35709f9648c169a4a7024191b88d2f940abf89d03689d1\",\"description\":\"初始化账户\",\"register\":\"121000005l35120456\",\"operateType\":\"OPERATE_CONTRACT\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net:ContractAssetsTPL.set\",\"createTime\":\"2022-06-13T13:36:16.223Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
     },
     "signature" : {
       "certId" : {
         "creditCode" : "121000005l35120456",
         "certName" : "node1"
       },
-      "tmLocal" : "2022-06-09T10:40:56.298Z",
-      "signature" : "MEUCIG4LheHwiEYc4M1hsdv/tvuYEl0itJBfVRb3bnlU5fJTAiEA1HXzfoQRG1YWmh2FKlUSo55qFqyzLpHWAhOvQETqf1M="
+      "tmLocal" : "2022-06-13T21:36:16.224Z",
+      "signature" : "MEQCIGTBH3OoMGJRHe1V3W5EZXwdb+FSfhfnq8xC8Bv9EKv/AiAoGLcMnAgTUyTz/b86v6U8J0G4nEMqc/5Z4Nklr4EG9g=="
     }
   }, {
-    "id" : "e7148c25-507b-4b1e-81d7-9feb91bd53fb",
+    "id" : "d7291591-5395-4691-b162-a720b581be34",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "RdidOperateAuthorizeTPL",
@@ -818,18 +818,18 @@
     },
     "ipt" : {
       "function" : "signUpOperate",
-      "args" : [ "{\"opId\":\"0164540d35995c10b4c3f071842b80c4a2d0e7032b9af3f8b3ecf937e9a9ff7d\",\"description\":\"存证\",\"register\":\"121000005l35120456\",\"isPublish\":true,\"operateType\":\"OPERATE_CONTRACT\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net.ContractAssetsTPL.putProof\",\"createTime\":\"2022-06-09T02:40:56.296Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
+      "args" : [ "{\"opId\":\"1914df2e1eb28f2d8f5adb6323b37176444cea4727cfdfc17a58ea8157e4c2c9\",\"description\":\"存证\",\"register\":\"121000005l35120456\",\"isPublish\":true,\"operateType\":\"OPERATE_CONTRACT\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net:ContractAssetsTPL.putProof\",\"createTime\":\"2022-06-13T13:36:16.223Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
     },
     "signature" : {
       "certId" : {
         "creditCode" : "121000005l35120456",
         "certName" : "node1"
       },
-      "tmLocal" : "2022-06-09T10:40:56.299Z",
-      "signature" : "MEQCIA0TNs5gNifElmnlLn8OhGv/eafC1fZEFkFzeDsplVpuAiBjkYqZBUAkyfxkjhqjCuBOJmYxUYC4MLLPQ5cgwRBj1A=="
+      "tmLocal" : "2022-06-13T21:36:16.226Z",
+      "signature" : "MEUCIQDyOOJib9F0y+Np2QXiaaxDgQRf3UUsNhO5Yw0Is+5VFAIgNlf+DdUDCbzuaI9Wk9t4TGunzkc6Y/I/YG58/QsfIwc="
     }
   }, {
-    "id" : "7404c9e6-3d11-41b9-8570-4e32842016e3",
+    "id" : "eed6c6c5-8d40-4e79-ab43-c85a95c9f094",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "ContractAssetsTPL",
@@ -844,11 +844,11 @@
         "creditCode" : "951002007l78123233",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2022-06-09T10:40:56.302Z",
-      "signature" : "MEUCIQCvDwf6T8JKwtiyM4Omxx13wq2sF5VgOkaH6cHO7kBZKAIgKfsS994SSS5r/E4xdJU1X5k98ghjDkQTfYJ5TLwbq/A="
+      "tmLocal" : "2022-06-13T21:36:16.228Z",
+      "signature" : "MEYCIQCy0wxagJZcaAfiL3cb1vB3zBvF5U6EjvhTUp1UqyuSMAIhAMuuXfE9Rn4aoIWS5H4Dm9sGREToHzWADg3byNQxaK0S"
     }
   }, {
-    "id" : "40f07b59-7746-4684-8169-ecdcc83998cb",
+    "id" : "a07f2994-76fa-4120-b686-77bb125027d0",
     "type" : "CHAINCODE_DEPLOY",
     "cid" : {
       "chaincodeName" : "RVerifiableCredentialTPL",
@@ -867,11 +867,11 @@
         "creditCode" : "121000005l35120456",
         "certName" : "node1"
       },
-      "tmLocal" : "2022-06-09T10:40:56.305Z",
-      "signature" : "MEQCIHnSSWoN12/T8mCR1UaJNVYrcjE17rim94E0lD9WdgtYAiACki3qPADHQ0xSqrnlac8q/xqvzgdlLeNIfNbBFvIqjw=="
+      "tmLocal" : "2022-06-13T21:36:16.231Z",
+      "signature" : "MEUCIB+/sSvEquWFTwUhVaoI0fxsi9QXpVFLxZ/S2k7e7kIAAiEAnoc1DC+cCsLRU5Vq1VRd1Q0NRGlls+8zzjSA08UQBuU="
     }
   }, {
-    "id" : "b765d8b2-9ce0-4d0a-bc49-92063b375762",
+    "id" : "e7a388e1-ac26-437e-850d-df9a13ab6a73",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "RdidOperateAuthorizeTPL",
@@ -879,18 +879,18 @@
     },
     "ipt" : {
       "function" : "signUpOperate",
-      "args" : [ "{\"opId\":\"ff518bd93eb2c2ea352986591c5acecc760f24e07f0c706cebb272cccb99d99c\",\"description\":\"注册可验证凭据属性结构\",\"register\":\"121000005l35120456\",\"isPublish\":true,\"operateType\":\"OPERATE_CONTRACT\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net.RVerifiableCredentialTPL.signupCCS\",\"createTime\":\"2022-06-09T02:40:56.296Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
+      "args" : [ "{\"opId\":\"2ea50fb47441532582b9c0fbb516aaeb4c4bcb6ca5baf8fab30182327a1ee3e0\",\"description\":\"注册可验证凭据属性结构\",\"register\":\"121000005l35120456\",\"isPublish\":true,\"operateType\":\"OPERATE_CONTRACT\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net:RVerifiableCredentialTPL.signupCCS\",\"createTime\":\"2022-06-13T13:36:16.223Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
     },
     "signature" : {
       "certId" : {
         "creditCode" : "121000005l35120456",
         "certName" : "node1"
       },
-      "tmLocal" : "2022-06-09T10:40:56.311Z",
-      "signature" : "MEYCIQCif7tz88lsbWfxCSuF0JCRT+9pX+iGQNamy+GHqDEBsQIhAIO2C6DurZIAefiVF0KGeE5eqQIsQlNTfpgQOUkopVjs"
+      "tmLocal" : "2022-06-13T21:36:16.236Z",
+      "signature" : "MEYCIQC3NJyslL/nf0UaUOGeZjsAHUgbJJdQqnRLcFGFq5NgbQIhAJQaBQaeGWu3c7q0Q6yVQ0ybmis3jfzqIkwyih88Btzy"
     }
   }, {
-    "id" : "b6ef4353-b3c5-42bf-9eb5-1d6315e731e9",
+    "id" : "34858896-d9ff-4c9a-ab70-a96303eebed5",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "RdidOperateAuthorizeTPL",
@@ -898,18 +898,18 @@
     },
     "ipt" : {
       "function" : "signUpOperate",
-      "args" : [ "{\"opId\":\"307f541944e9d3b677b28f3b9f64809b9ea9394ea8785ac603c4ee205c2e7525\",\"description\":\"更新可验证凭据属性结构有效状态\",\"register\":\"121000005l35120456\",\"operateType\":\"OPERATE_CONTRACT\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net.RVerifiableCredentialTPL.updateCCSStatus\",\"createTime\":\"2022-06-09T02:40:56.296Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
+      "args" : [ "{\"opId\":\"e0991435227a1b82d64e135736a6a30dd617ec1a5df50a20b4083f3b88ae3987\",\"description\":\"更新可验证凭据属性结构有效状态\",\"register\":\"121000005l35120456\",\"operateType\":\"OPERATE_CONTRACT\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net:RVerifiableCredentialTPL.updateCCSStatus\",\"createTime\":\"2022-06-13T13:36:16.223Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
     },
     "signature" : {
       "certId" : {
         "creditCode" : "121000005l35120456",
         "certName" : "node1"
       },
-      "tmLocal" : "2022-06-09T10:40:56.312Z",
-      "signature" : "MEQCIAS9T7k2z95xHzltGAO4o2YOCDMcyttn7inz9zG87z7rAiBP7SGOzNiMYaeQD0n/MGscuN5va416Egd4p9Mtvmd7gg=="
+      "tmLocal" : "2022-06-13T21:36:16.238Z",
+      "signature" : "MEUCIQCfDHD6o3a6VnhUtQjHvwbgDTGDg/g1lO97vjjolXwwLwIgcQD+ydiF8fmAozhVkmDGloDWI9JS39QRUKRF8UUDfoM="
     }
   }, {
-    "id" : "76362cd6-ca4a-478b-9c0d-edafa437cddc",
+    "id" : "63e4f7b4-1074-47ed-850b-4df48ea0619c",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "RdidOperateAuthorizeTPL",
@@ -917,18 +917,18 @@
     },
     "ipt" : {
       "function" : "signUpOperate",
-      "args" : [ "{\"opId\":\"b623e1a51cc7def9281ed1baecc51193ad9297fdff34e6a62cccbb5d9aa7866d\",\"description\":\"注册可验证凭据状态\",\"register\":\"121000005l35120456\",\"isPublish\":true,\"operateType\":\"OPERATE_CONTRACT\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net.RVerifiableCredentialTPL.signupVCStatus\",\"createTime\":\"2022-06-09T02:40:56.296Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
+      "args" : [ "{\"opId\":\"fc2e7dd7d03a9ba2e6b755f648e899990712867efaacb6de1defeb2d1bb19cc2\",\"description\":\"注册可验证凭据状态\",\"register\":\"121000005l35120456\",\"isPublish\":true,\"operateType\":\"OPERATE_CONTRACT\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net:RVerifiableCredentialTPL.signupVCStatus\",\"createTime\":\"2022-06-13T13:36:16.223Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
     },
     "signature" : {
       "certId" : {
         "creditCode" : "121000005l35120456",
         "certName" : "node1"
       },
-      "tmLocal" : "2022-06-09T10:40:56.314Z",
-      "signature" : "MEYCIQDo0Pz/ltFR6hEAJxDEylufLN9RXi4PWagDr5w2JQOQsQIhAPVuQFLZOckBQQslso68AsWv5H8Ptw8mX6+z02REFdb9"
+      "tmLocal" : "2022-06-13T21:36:16.239Z",
+      "signature" : "MEQCIGThkaRws288CcGGmZ20zSep3O1WdiHyMshhnHhuULgvAiB/K5zN00y1L+K9fMS1lsW/vE58vqILaqbZThZFKCf7dQ=="
     }
   }, {
-    "id" : "a4c832b7-1e81-4e8c-9a15-430a2f4a572f",
+    "id" : "91ab3cd6-79cf-4ee2-9bde-2803cdc8ffcc",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "RdidOperateAuthorizeTPL",
@@ -936,18 +936,18 @@
     },
     "ipt" : {
       "function" : "signUpOperate",
-      "args" : [ "{\"opId\":\"71a6b9bd2564c6c21bc16b5afdc4b3de23d9e49d14c85ae842f021c98f1c0b27\",\"description\":\"更新可验证凭据状态\",\"register\":\"121000005l35120456\",\"isPublish\":true,\"operateType\":\"OPERATE_CONTRACT\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net.RVerifiableCredentialTPL.updateVCStatus\",\"createTime\":\"2022-06-09T02:40:56.296Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
+      "args" : [ "{\"opId\":\"b4bcdf07c972ab4dabf1b3008ed44e9b0f09ed79141ba48939c502b243ac0b69\",\"description\":\"更新可验证凭据状态\",\"register\":\"121000005l35120456\",\"isPublish\":true,\"operateType\":\"OPERATE_CONTRACT\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net:RVerifiableCredentialTPL.updateVCStatus\",\"createTime\":\"2022-06-13T13:36:16.223Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
     },
     "signature" : {
       "certId" : {
         "creditCode" : "121000005l35120456",
         "certName" : "node1"
       },
-      "tmLocal" : "2022-06-09T10:40:56.316Z",
-      "signature" : "MEUCIAKJ/dgHN7ghczi2ou6dyzNKRlNLWF0p7ooYFRIYn8S7AiEA9rH6QB0cnpHVSrUl7rswdka9mVg8btAVNf03zpWF7Bk="
+      "tmLocal" : "2022-06-13T21:36:16.240Z",
+      "signature" : "MEUCIAnVBjZMrwKuIEzDzwX+HLsq4zyHp03g5m2TJIn02BPFAiEAkqgpRUdE0WY32bH4xxUuLyEKqrinNE5mEktEs3mq96c="
     }
   }, {
-    "id" : "c9c0063c-ffe7-46bb-8887-242e73de6a00",
+    "id" : "5f4cada8-d636-4b2a-9fbb-db30473d5d77",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "RdidOperateAuthorizeTPL",
@@ -955,18 +955,18 @@
     },
     "ipt" : {
       "function" : "signUpOperate",
-      "args" : [ "{\"opId\":\"df2a4f1d6c316a8e204a2c654ffd1b4c7c80f1e3523e579acf55fec976dae4d7\",\"description\":\"撤销可验证凭据属性状态\",\"register\":\"121000005l35120456\",\"isPublish\":true,\"operateType\":\"OPERATE_CONTRACT\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net.RVerifiableCredentialTPL.revokeVCClaims\",\"createTime\":\"2022-06-09T02:40:56.296Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
+      "args" : [ "{\"opId\":\"571bdbe7286114508a93336313ceb6ca6f8b0a4abfdde2c5089503dd289aed9b\",\"description\":\"撤销可验证凭据属性状态\",\"register\":\"121000005l35120456\",\"isPublish\":true,\"operateType\":\"OPERATE_CONTRACT\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net:RVerifiableCredentialTPL.revokeVCClaims\",\"createTime\":\"2022-06-13T13:36:16.223Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
     },
     "signature" : {
       "certId" : {
         "creditCode" : "121000005l35120456",
         "certName" : "node1"
       },
-      "tmLocal" : "2022-06-09T10:40:56.318Z",
-      "signature" : "MEQCIGZrLAe8Nd7A3QvTwxAUDHyDenYADiTfRbpiel7WBSENAiBPlCgMfJ3dP+9pkfByaqNhJ5Wj1dxB0gtH9sdgYPObNQ=="
+      "tmLocal" : "2022-06-13T21:36:16.241Z",
+      "signature" : "MEYCIQDiBZ5JrnXH7W+H5rQ41EFpiZ/0qUmiZxe11vbVBauo1QIhANbnatz961J8udplNq1/+neUVxLVTnB2qrM9tom3mSTh"
     }
   }, {
-    "id" : "72daa5dc-73a0-41fe-8836-e71845373db2",
+    "id" : "bb6765c2-4d48-4d94-9043-9e1a65172a6e",
     "type" : "CHAINCODE_DEPLOY",
     "cid" : {
       "chaincodeName" : "InterfaceCooperation",
@@ -985,11 +985,11 @@
         "creditCode" : "951002007l78123233",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2022-06-09T10:40:56.321Z",
-      "signature" : "MEYCIQDn4euDKdoV5xXW1zHeceyRGv+bygN8rLT+7QbqZOvuewIhAPZv5ypYYGgyt1h4Fhs77iqI8IhHu6+PXHZZFdTMUgMM"
+      "tmLocal" : "2022-06-13T21:36:16.245Z",
+      "signature" : "MEYCIQDPNhfnF8ciZSjn9VwnmQb4e8FqdMVG4zZEyQSpfTVkcQIhAIz4E40HScu1sTJ+VfmEMXxhwKV3uXtEp4IEr+CGb0co"
     }
   }, {
-    "id" : "574c1ab4-320b-44e1-b193-8d756a3b60c6",
+    "id" : "0d824874-9b94-4e72-8ed8-f6ceac4d713c",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "RdidOperateAuthorizeTPL",
@@ -997,18 +997,18 @@
     },
     "ipt" : {
       "function" : "signUpOperate",
-      "args" : [ "{\"opId\":\"a2013a16d02814881c4b2a252f831380ae6e8576f82d5c9c6fb6291b2bddfc77\",\"description\":\"注册接口定义\",\"register\":\"951002007l78123233\",\"operateType\":\"OPERATE_CONTRACT\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net.InterfaceCooperation.registerApiDefinition\",\"createTime\":\"2022-06-09T02:40:56.327Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
+      "args" : [ "{\"opId\":\"492edb40678c60ef3030c32aee90d1eccd1d1690365f52a8fd9446175857c9cb\",\"description\":\"注册接口定义\",\"register\":\"951002007l78123233\",\"operateType\":\"OPERATE_CONTRACT\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net:InterfaceCooperation.registerApiDefinition\",\"createTime\":\"2022-06-13T13:36:16.249Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
     },
     "signature" : {
       "certId" : {
         "creditCode" : "951002007l78123233",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2022-06-09T10:40:56.329Z",
-      "signature" : "MEUCIEORQ7ySW7OeNVubYuyyNevOKlsNRzY8TtQ7bAtn8ZDgAiEArrvTBX5VJ0FUtTZdjfwqQyTwukvnliAmfk2/SyyNf+I="
+      "tmLocal" : "2022-06-13T21:36:16.251Z",
+      "signature" : "MEUCIG//Qu10NuZdqPn2stj6gsyCz5ta3X2WI52gkPmAAzfkAiEA2tq2EB4nv9BVVELZlafAg+1c2zoQAPcujl2C9eVU0/M="
     }
   }, {
-    "id" : "f6148356-9fc0-46a6-8495-a28c3a54b8c0",
+    "id" : "38b37923-c503-4f6d-a5fb-5f49b6c949c8",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "RdidOperateAuthorizeTPL",
@@ -1016,18 +1016,18 @@
     },
     "ipt" : {
       "function" : "signUpOperate",
-      "args" : [ "{\"opId\":\"e77a0289e56b0a2c540828ad5c0e0a52b123c22ade2d9081242062e3856ab01f\",\"description\":\"注册接口服务\",\"register\":\"951002007l78123233\",\"operateType\":\"OPERATE_CONTRACT\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net.InterfaceCooperation.registerApiService\",\"createTime\":\"2022-06-09T02:40:56.327Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
+      "args" : [ "{\"opId\":\"74168efd2830519471e3eacb44404b6d586da107241f8532978033084a5037e1\",\"description\":\"注册接口服务\",\"register\":\"951002007l78123233\",\"operateType\":\"OPERATE_CONTRACT\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net:InterfaceCooperation.registerApiService\",\"createTime\":\"2022-06-13T13:36:16.249Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
     },
     "signature" : {
       "certId" : {
         "creditCode" : "951002007l78123233",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2022-06-09T10:40:56.332Z",
-      "signature" : "MEUCIQCHeaMZOUH3dTTbtGrDEx7rkWTM1Z/UhJyBV5xczl/O3wIgOGMJF1y1Au1H2lC62rkHhuBGtzcjaqU1KLWaX28aQqE="
+      "tmLocal" : "2022-06-13T21:36:16.253Z",
+      "signature" : "MEUCIQDRcQxXCSaJcqgfOB90Eil+8V0le2lgpNkgbXHKJJXk2QIgDs3fVi5v85RQTVi4KwQtnvrbNDcm47CM3ecOXXoUvBc="
     }
   }, {
-    "id" : "e151885a-d343-424c-b707-4c383dc4da3e",
+    "id" : "1c0103d9-cfd0-4ec9-bb5d-9c767e31e3da",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "RdidOperateAuthorizeTPL",
@@ -1035,18 +1035,18 @@
     },
     "ipt" : {
       "function" : "signUpOperate",
-      "args" : [ "{\"opId\":\"be6a7a16c40e80e3bc55817757a0b5cc4592ed0ba28cc4042188bfc158f57ff3\",\"description\":\"注册接口应答\",\"register\":\"951002007l78123233\",\"operateType\":\"OPERATE_CONTRACT\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net.InterfaceCooperation.registerApiAckReceive\",\"createTime\":\"2022-06-09T02:40:56.327Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
+      "args" : [ "{\"opId\":\"a2e88ac520023c972e0366e0dab0f1f2a312902deb3dc0f8e7832ed10a35ee6f\",\"description\":\"注册接口应答\",\"register\":\"951002007l78123233\",\"operateType\":\"OPERATE_CONTRACT\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net:InterfaceCooperation.registerApiAckReceive\",\"createTime\":\"2022-06-13T13:36:16.249Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
     },
     "signature" : {
       "certId" : {
         "creditCode" : "951002007l78123233",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2022-06-09T10:40:56.334Z",
-      "signature" : "MEQCIHvWxwATSAAGs7xJMQDJkEiTFYNXQib8XJYhfuIQZ86tAiAX90TuGbISRoxmi0C6ddqwCdKYmzi+38wzTUhgkyS63g=="
+      "tmLocal" : "2022-06-13T21:36:16.255Z",
+      "signature" : "MEUCIGGXnhx+zr1uTSKiK5qpIRo4pmpyfkWUFAQ0e+XVUyVuAiEA+tKOy3SEK7E0FmUP1T3nib2yTkkdRFaD/Y1wfSwKSMI="
     }
   }, {
-    "id" : "cdc54e7d-98bf-4654-ae4a-885c1009ed55",
+    "id" : "778d6d86-55d3-4e1e-9c62-8188be92a29f",
     "type" : "CHAINCODE_INVOKE",
     "cid" : {
       "chaincodeName" : "RdidOperateAuthorizeTPL",
@@ -1054,15 +1054,15 @@
     },
     "ipt" : {
       "function" : "signUpOperate",
-      "args" : [ "{\"opId\":\"10852a4b721820e5156277e74a34f0a4c91cfb93301d7c3b8f1ac2fcf6994a6f\",\"description\":\"请求应答存证\",\"register\":\"951002007l78123233\",\"operateType\":\"OPERATE_CONTRACT\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net.InterfaceCooperation.reqAckProof\",\"createTime\":\"2022-06-09T02:40:56.327Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
+      "args" : [ "{\"opId\":\"b4d38a2db24d9911ee6d66915bcc4ae49877c016df432055431a0c250127305f\",\"description\":\"请求应答存证\",\"register\":\"951002007l78123233\",\"operateType\":\"OPERATE_CONTRACT\",\"operateServiceName\":[\"transaction.stream\",\"transaction.postTranByString\",\"transaction.postTranStream\",\"transaction.postTran\"],\"operateEndpoint\":\"*\",\"authFullName\":\"identity-net:InterfaceCooperation.reqAckProof\",\"createTime\":\"2022-06-13T13:36:16.249Z\",\"opValid\":true,\"version\":\"1.0\"}" ]
     },
     "signature" : {
       "certId" : {
         "creditCode" : "951002007l78123233",
         "certName" : "super_admin"
       },
-      "tmLocal" : "2022-06-09T10:40:56.335Z",
-      "signature" : "MEYCIQCIW6yik0yy3egRzVDAyVVx8Jze/oD7dRvsp5uu6FNsmgIhAJhdBO9EWkaE3YLRHIIOA35owuO7/hiiU1mErJ3gzUwS"
+      "tmLocal" : "2022-06-13T21:36:16.256Z",
+      "signature" : "MEUCIQCZB8J9hXffxQJQwo09yV4/gtkrPoqPVJSf2sviCKpd5gIgXY78QDsG0LySQ7/tyi1ETrYkOxCbaU7cmo8msXYqlTo="
     }
   } ]
 }

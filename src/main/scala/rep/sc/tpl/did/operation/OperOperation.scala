@@ -1,5 +1,6 @@
 package rep.sc.tpl.did.operation
 
+import rep.authority.check.PermissionVerify
 import rep.crypto.Sha256
 import rep.proto.rc2.Operate.OperateType
 import rep.proto.rc2.{ActionResult, Operate}
@@ -59,8 +60,8 @@ object OperOperation extends DidOperation {
           } catch {
             case se: SandboxException =>
               try {
-                val netid = operate.authFullName.substring(0,operate.authFullName.indexOf("."))
-                ctx.api.permissionCheck(cert.creditCode, cert.certName, netid+".*.deploy")
+                val netid = operate.authFullName.substring(0,operate.authFullName.indexOf(PermissionVerify.DIDPrefixSign))
+                ctx.api.permissionCheck(cert.creditCode, cert.certName, netid+s"${PermissionVerify.DIDPrefixSign}*.deploy")
               } catch {
                 case se: SandboxException =>
                   throw ContractException(toJsonErrMsg(canNotDeployContract), se)

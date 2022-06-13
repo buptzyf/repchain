@@ -29,6 +29,7 @@ import org.json4s.{DefaultFormats, jackson}
 import org.scalatest._
 import rep.app.conf.RepChainConfig
 import rep.app.system.{ClusterSystem, RepChainSystemContext}
+import rep.authority.check.PermissionVerify
 import rep.network.module.cfrd.ModuleManagerOfCFRD
 import rep.network.tools.PeerExtension
 import rep.proto.rc2.Certificate.CertType
@@ -147,15 +148,15 @@ class RdidCertOperationSpec(_system: ActorSystem) extends TestKit(_system) with 
     msg_recv6(0).err.get.reason.isEmpty should be(true)
 
     val snls = List("transaction.stream", "transaction.postTranByString", "transaction.postTranStream", "transaction.postTran")
-    val certOpt = Operate(sha256.hashstr(s"${ctx.getConfig.getChainNetworkId}.RdidOperateAuthorizeTPL.signUpCertificate"), "注册普通证书", superAdmin.split("\\.")(0), isPublish = true, OperateType.OPERATE_CONTRACT,
-      snls, "*", s"${ctx.getConfig.getChainNetworkId}.RdidOperateAuthorizeTPL.signUpCertificate", Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, true, "1.0")
+    val certOpt = Operate(sha256.hashstr(s"${ctx.getConfig.getChainNetworkId}${PermissionVerify.DIDPrefixSign}RdidOperateAuthorizeTPL.signUpCertificate"), "注册普通证书", superAdmin.split("\\.")(0), isPublish = true, OperateType.OPERATE_CONTRACT,
+      snls, "*", s"${ctx.getConfig.getChainNetworkId}${PermissionVerify.DIDPrefixSign}RdidOperateAuthorizeTPL.signUpCertificate", Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, true, "1.0")
     val t8 = transactionTool.createTransaction4Invoke(superAdmin, cid, "signUpOperate", Seq(JsonFormat.toJsonString(certOpt)))
     probe.send(sandbox, DoTransaction(Seq[Transaction](t8), "dbnumber", TypeOfSender.FromAPI))
     val msg_recv8 = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
     msg_recv8.head.err.get.reason.isEmpty should be(true)
 
-    val certStatusOpt = Operate(sha256.hashstr(s"${ctx.getConfig.getChainNetworkId}.RdidOperateAuthorizeTPL.updateCertificateStatus"), "修改普通证书状态", superAdmin.split("\\.")(0), isPublish = true, OperateType.OPERATE_CONTRACT,
-      snls, "*", s"${ctx.getConfig.getChainNetworkId}.RdidOperateAuthorizeTPL.updateCertificateStatus", Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, true, "1.0")
+    val certStatusOpt = Operate(sha256.hashstr(s"${ctx.getConfig.getChainNetworkId}${PermissionVerify.DIDPrefixSign}RdidOperateAuthorizeTPL.updateCertificateStatus"), "修改普通证书状态", superAdmin.split("\\.")(0), isPublish = true, OperateType.OPERATE_CONTRACT,
+      snls, "*", s"${ctx.getConfig.getChainNetworkId}${PermissionVerify.DIDPrefixSign}RdidOperateAuthorizeTPL.updateCertificateStatus", Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, true, "1.0")
     val t9 = transactionTool.createTransaction4Invoke(superAdmin, cid, "signUpOperate", Seq(JsonFormat.toJsonString(certStatusOpt)))
     probe.send(sandbox, DoTransaction(Seq[Transaction](t9), "dbnumber", TypeOfSender.FromAPI))
     val msg_recv9 = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)

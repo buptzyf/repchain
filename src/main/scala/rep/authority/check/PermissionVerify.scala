@@ -24,6 +24,7 @@ import scala.util.control.Breaks.{break, breakable}
  */
 
 object PermissionVerify{
+  val DIDPrefixSign : String = ":"
   private val errorInfo_Permission = "You do not have this operation{transaction.tranInfoAndHeight} permission, please contact the administrator."
   private val errorInfo_Cert = "Failed to get client certificate."
   val errorInfo_None_Permission = "{\"error info\":\""+errorInfo_Permission+"\"}"
@@ -177,12 +178,12 @@ class PermissionVerify(ctx: RepChainSystemContext) {
       System.out.println("")
     }*/
     try {
-      if (!CheckPermissionOfCertId(doTrans.t.signature.get.certId.get, opName = s"${ctx.getConfig.getChainNetworkId}.*.deploy", dbInstance)) {
-        r = CheckPermissionOfCertId(doTrans.t.signature.get.certId.get, ctx.getConfig.getChainNetworkId+"."+cid.chaincodeName + ".deploy", dbInstance)
+      if (!CheckPermissionOfCertId(doTrans.t.signature.get.certId.get, opName = s"${ctx.getConfig.getChainNetworkId}${PermissionVerify.DIDPrefixSign}*.deploy", dbInstance)) {
+        r = CheckPermissionOfCertId(doTrans.t.signature.get.certId.get, ctx.getConfig.getChainNetworkId+PermissionVerify.DIDPrefixSign+cid.chaincodeName + ".deploy", dbInstance)
       }
     } catch {
       case e: SandboxException =>
-        r = CheckPermissionOfCertId(doTrans.t.signature.get.certId.get, ctx.getConfig.getChainNetworkId+"."+cid.chaincodeName + ".deploy", dbInstance)
+        r = CheckPermissionOfCertId(doTrans.t.signature.get.certId.get, ctx.getConfig.getChainNetworkId+PermissionVerify.DIDPrefixSign+cid.chaincodeName + ".deploy", dbInstance)
     }
 
     r
@@ -193,12 +194,12 @@ class PermissionVerify(ctx: RepChainSystemContext) {
     val cid = doTrans.t.cid.get
     val dbInstance = ctx.getBlockPreload(doTrans.da)
     try {
-      if (!CheckPermissionOfCertId(doTrans.t.signature.get.certId.get, opName = s"${ctx.getConfig.getChainNetworkId}.*.setState", dbInstance)) {
-        r = CheckPermissionOfCertId(doTrans.t.signature.get.certId.get, ctx.getConfig.getChainNetworkId+"."+cid.chaincodeName + ".setState", dbInstance)
+      if (!CheckPermissionOfCertId(doTrans.t.signature.get.certId.get, opName = s"${ctx.getConfig.getChainNetworkId}${PermissionVerify.DIDPrefixSign}*.setState", dbInstance)) {
+        r = CheckPermissionOfCertId(doTrans.t.signature.get.certId.get, ctx.getConfig.getChainNetworkId+PermissionVerify.DIDPrefixSign+cid.chaincodeName + ".setState", dbInstance)
       }
     } catch {
       case e: SandboxException =>
-        r = CheckPermissionOfCertId(doTrans.t.signature.get.certId.get, ctx.getConfig.getChainNetworkId+"."+cid.chaincodeName + ".setState", dbInstance)
+        r = CheckPermissionOfCertId(doTrans.t.signature.get.certId.get, ctx.getConfig.getChainNetworkId+PermissionVerify.DIDPrefixSign+cid.chaincodeName + ".setState", dbInstance)
     }
     r
   }
@@ -210,7 +211,7 @@ class PermissionVerify(ctx: RepChainSystemContext) {
     }
     val dbInstance = ctx.getBlockPreload(doTrans.da)
     CheckPermissionOfCertId(doTrans.t.signature.get.certId.get,
-      ctx.getConfig.getChainNetworkId+"."+cid.chaincodeName + "." + doTrans.t.getIpt.function,
+      ctx.getConfig.getChainNetworkId+PermissionVerify.DIDPrefixSign+cid.chaincodeName + "." + doTrans.t.getIpt.function,
       dbInstance)
   }
 
