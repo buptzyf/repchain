@@ -107,7 +107,7 @@ object IdTool {
     }
   }
 
-  def getSignerFromCreditAndName(credit:String,name:String): Unit ={
+  def getSignerFromCreditAndName(credit:String,name:String): String ={
     credit + IdTool.NameSpaceSeparator + name
   }
 
