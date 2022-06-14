@@ -174,11 +174,11 @@ class PermissionVerify(ctx: RepChainSystemContext) {
     }*/
     try {
       if (!CheckPermissionOfCertId(doTrans.t.signature.get.certId.get, opName = s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}*${IdTool.NameSpaceSeparator}deploy", dbInstance)) {
-        r = CheckPermissionOfCertId(doTrans.t.signature.get.certId.get, ctx.getConfig.getChainNetworkId+IdTool.DIDPrefixSeparator+cid.chaincodeName + "${IdTool.NameSpaceSeparator}deploy", dbInstance)
+        r = CheckPermissionOfCertId(doTrans.t.signature.get.certId.get, ctx.getConfig.getChainNetworkId+IdTool.DIDPrefixSeparator+cid.chaincodeName + s"${IdTool.NameSpaceSeparator}deploy", dbInstance)
       }
     } catch {
       case e: SandboxException =>
-        r = CheckPermissionOfCertId(doTrans.t.signature.get.certId.get, ctx.getConfig.getChainNetworkId+IdTool.DIDPrefixSeparator+cid.chaincodeName + "${IdTool.NameSpaceSeparator}deploy", dbInstance)
+        r = CheckPermissionOfCertId(doTrans.t.signature.get.certId.get, ctx.getConfig.getChainNetworkId+IdTool.DIDPrefixSeparator+cid.chaincodeName + s"${IdTool.NameSpaceSeparator}deploy", dbInstance)
     }
 
     r
@@ -190,11 +190,11 @@ class PermissionVerify(ctx: RepChainSystemContext) {
     val dbInstance = ctx.getBlockPreload(doTrans.da)
     try {
       if (!CheckPermissionOfCertId(doTrans.t.signature.get.certId.get, opName = s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}*${IdTool.NameSpaceSeparator}setState", dbInstance)) {
-        r = CheckPermissionOfCertId(doTrans.t.signature.get.certId.get, ctx.getConfig.getChainNetworkId+IdTool.DIDPrefixSeparator+cid.chaincodeName + "${IdTool.NameSpaceSeparator}setState", dbInstance)
+        r = CheckPermissionOfCertId(doTrans.t.signature.get.certId.get, ctx.getConfig.getChainNetworkId+IdTool.DIDPrefixSeparator+cid.chaincodeName + s"${IdTool.NameSpaceSeparator}setState", dbInstance)
       }
     } catch {
       case e: SandboxException =>
-        r = CheckPermissionOfCertId(doTrans.t.signature.get.certId.get, ctx.getConfig.getChainNetworkId+IdTool.DIDPrefixSeparator+cid.chaincodeName + "${IdTool.NameSpaceSeparator}setState", dbInstance)
+        r = CheckPermissionOfCertId(doTrans.t.signature.get.certId.get, ctx.getConfig.getChainNetworkId+IdTool.DIDPrefixSeparator+cid.chaincodeName + s"${IdTool.NameSpaceSeparator}setState", dbInstance)
     }
     r
   }
