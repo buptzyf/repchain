@@ -6,6 +6,7 @@ import rep.proto.rc2.Operate.OperateType
 import rep.sc.tpl.did.DidTplPrefix
 import rep.storage.chain.KeyPrefixManager
 import rep.storage.chain.preload.BlockPreload
+import rep.utils.IdTool
 
 object OperateCache{
   case class opData(opId:String,opValid:Boolean,isOpen:Boolean,register:String)
@@ -34,7 +35,7 @@ class OperateCache(ctx : RepChainSystemContext) extends ICache(ctx) {
   }
 
   override protected def getPrefix: String = {
-    this.common_prefix + this.splitSign + DidTplPrefix.operPrefix
+    this.common_prefix + IdTool.WorldStateKeySeparator + DidTplPrefix.operPrefix
   }
 
   def get(key:String,blockPreload: BlockPreload):Option[opData]={
@@ -46,6 +47,6 @@ class OperateCache(ctx : RepChainSystemContext) extends ICache(ctx) {
   }
 
   override protected def getCacheType: String = {
-    this.splitSign + DidTplPrefix.operPrefix
+    IdTool.WorldStateKeySeparator + DidTplPrefix.operPrefix
   }
 }

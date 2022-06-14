@@ -69,7 +69,7 @@ object SignerOperation extends DidOperation {
           throw ContractException(toJsonErrMsg(authCertExistsCode, authCertExists.format(certKey)))
         } else if (!signer.creditCode.equals(certId.creditCode)) {
           throw ContractException(toJsonErrMsg(SignerCertificateNotMatch))
-        } else if (!ctx.api.getSha256Tool.hashstr(IdTool.deleteLine(cert.certificate)).equals(cert.certHash)) {
+        } else if (!ctx.api.getSha256Tool.hashstr(ctx.api.getChainNetId+IdTool.DIDPrefixSeparator+IdTool.deleteLine(cert.certificate)).equals(cert.certHash)) {
           throw ContractException(toJsonErrMsg(hashNotMatch))
         } else {
           // 身份校验用

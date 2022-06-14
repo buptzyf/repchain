@@ -23,10 +23,14 @@ import java.security.cert.X509Certificate
 import java.util.UUID
 
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter
+import rep.app.conf.RepChainConfig
 import rep.proto.rc2.{CertId, ChaincodeId, Transaction}
 
 
 object IdTool {
+  val DIDPrefixSeparator : String = ":"
+  val WorldStateKeySeparator : String = "_"
+  val NameSpaceSeparator : String = "."
 
   def getRandomUUID: String = {
     UUID.randomUUID().toString
@@ -69,17 +73,61 @@ object IdTool {
   } 
   
   def getCid(chaincodeid:ChaincodeId):String={
-    chaincodeid.chaincodeName+"_"+chaincodeid.version.toString()
+    chaincodeid.chaincodeName+IdTool.WorldStateKeySeparator+chaincodeid.version.toString()
   }
-  
-  def getSigner4String(certid:CertId):String={
-   certid.certName + "." + certid.creditCode
+
+  def getCompleteOpName(config:RepChainConfig,opName:String):String={
+    val flag = config.getChainNetworkId+IdTool.DIDPrefixSeparator
+    if(opName.indexOf(flag) < 0){
+      flag + opName
+    }else{
+      opName
+    }
   }
-  
+
+  def getCompleteSignerName(config:RepChainConfig,signerName:String):String={
+    val flag1 = config.getChainNetworkId+IdTool.DIDPrefixSeparator
+    val flag2 = config.getIdentityNetName + IdTool.DIDPrefixSeparator
+    if(signerName.indexOf(flag1) < 0 && signerName.indexOf(flag2) < 0){
+      flag1 + signerName
+    }else{
+      signerName
+    }
+  }
+
+  def getNodeSignerName(config:RepChainConfig,signerName:String):String={
+    val flag1 = config.getChainNetworkId+IdTool.DIDPrefixSeparator
+    val flag2 = config.getIdentityNetName + IdTool.DIDPrefixSeparator
+    if(signerName.indexOf(flag1) >= 0){
+        signerName.substring(signerName.indexOf(flag1)+flag1.length)
+    }else if(signerName.indexOf(flag2) >= 0){
+      signerName.substring(signerName.indexOf(flag2)+flag2.length)
+    }else{
+      signerName
+    }
+  }
+
+  def getSignerFromCreditAndName(credit:String,name:String): Unit ={
+    credit + IdTool.NameSpaceSeparator + name
+  }
+
+  def getSignerFromCertId(certid:CertId):String={
+    var str = ""
+    if(certid != null){
+      str = certid.creditCode + IdTool.NameSpaceSeparator + certid.certName
+    }
+    str
+  }
+
+  def getCertIdFromCreditAndName(credit:String,name:String):CertId={
+    CertId(credit,name)
+  }
+
+  //creditcode 已经修改成：网络id+did分隔符+id字符串
   def getCertIdFromName(name:String):CertId={
-    if(name != null && name.indexOf(".")> 0){
-        CertId(name.substring(0,name.indexOf(".")),
-                name.substring(name.indexOf(".")+1,name.length()))
+    if(name != null && name.lastIndexOf(IdTool.NameSpaceSeparator)> 0){
+        CertId(name.substring(0,name.lastIndexOf(IdTool.NameSpaceSeparator)),
+                name.substring(name.lastIndexOf(IdTool.NameSpaceSeparator)+1,name.length()))
     }else{
       null
     }

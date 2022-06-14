@@ -67,7 +67,7 @@ object CertOperation extends DidOperation {
     } else if (customCert.certType.isCertAuthentication || customCert.certType.isCertUndefined) {
       // 身份校验证书通过signer注册指定，或通过 signUpAllTypeCertificate
       throw ContractException(toJsonErrMsg(canNotSignUpAuthCertificate))
-    } else if (!ctx.api.getSha256Tool.hashstr(IdTool.deleteLine(customCert.certificate)).equals(customCert.certHash)) {
+    } else if (!ctx.api.getSha256Tool.hashstr(ctx.api.getChainNetId+IdTool.DIDPrefixSeparator+IdTool.deleteLine(customCert.certificate)).equals(customCert.certHash)) {
       throw ContractException(toJsonErrMsg(hashNotMatch))
     } else {
       ctx.api.setVal(certKey, customCert)

@@ -3,6 +3,7 @@ package rep.authority.cache
 import rep.app.system.RepChainSystemContext
 import rep.sc.tpl.did.DidTplPrefix
 import rep.storage.chain.preload.BlockPreload
+import rep.utils.IdTool
 
 class AuthenticateBindToCertCache(ctx : RepChainSystemContext) extends ICache(ctx) {
   override protected def dataTypeConvert(any: Option[Any],blockPreload: BlockPreload): Option[Any] = {
@@ -14,7 +15,7 @@ class AuthenticateBindToCertCache(ctx : RepChainSystemContext) extends ICache(ct
   }
 
   override protected def getPrefix: String = {
-    this.common_prefix + this.splitSign + DidTplPrefix.bindPrefix
+    this.common_prefix + IdTool.WorldStateKeySeparator + DidTplPrefix.bindPrefix
   }
 
   def get(authid:String,certid:String,blockPreload: BlockPreload):Option[Boolean]={
@@ -30,6 +31,6 @@ class AuthenticateBindToCertCache(ctx : RepChainSystemContext) extends ICache(ct
   }
 
   override protected def getCacheType: String = {
-    this.splitSign + DidTplPrefix.bindPrefix
+    IdTool.WorldStateKeySeparator + DidTplPrefix.bindPrefix
   }
 }

@@ -15,7 +15,6 @@ import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 
 abstract class ICache(ctx: RepChainSystemContext) {
-  final protected val splitSign = "_"
   final private val config = ctx.getConfig
   final private val cid = ChaincodeId(config.getAccountContractName, config.getAccountContractVersion)
   final val common_prefix: String = KeyPrefixManager.getIdentityNetKeyPrefix(
@@ -80,12 +79,12 @@ abstract class ICache(ctx: RepChainSystemContext) {
   def updateCache(key: String): Unit = {
     var pk = key
     if (IdTool.isDidContract(ctx.getConfig.getAccountContractName)) {
-      val splitString = this.splitSign + this.getCacheType
+      val splitString = IdTool.WorldStateKeySeparator + this.getCacheType
       val idx = key.lastIndexOf(splitString)
       if (idx > 0)
         pk = key.substring(idx + splitString.length)
     } else {
-      val idx = key.lastIndexOf(this.splitSign)
+      val idx = key.lastIndexOf(IdTool.WorldStateKeySeparator)
       if (idx > 0) pk = key.substring(idx + 1)
     }
     this.cache.remove(pk)

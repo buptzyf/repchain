@@ -73,9 +73,9 @@ class SignerCache(ctx : RepChainSystemContext) extends ICache(ctx){
 
   override protected def getPrefix: String = {
     if(IdTool.isDidContract(ctx.getConfig.getAccountContractName)){
-      this.common_prefix + this.splitSign + DidTplPrefix.signerPrefix
+      this.common_prefix + IdTool.WorldStateKeySeparator + DidTplPrefix.signerPrefix
     }else{
-      this.common_prefix + this.splitSign
+      this.common_prefix + IdTool.WorldStateKeySeparator
     }
 
   }
@@ -89,6 +89,6 @@ class SignerCache(ctx : RepChainSystemContext) extends ICache(ctx){
   }
 
   override protected def getCacheType: String = {
-    this.splitSign + DidTplPrefix.signerPrefix
+    IdTool.WorldStateKeySeparator + DidTplPrefix.signerPrefix
   }
 }

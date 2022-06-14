@@ -71,16 +71,16 @@ class RdidCertOperationSpec(_system: ActorSystem) extends TestKit(_system) with 
   implicit val serialization: Serialization.type = jackson.Serialization
   implicit val formats: DefaultFormats.type = DefaultFormats
 
-  val sysName = "121000005l35120456.node1"
-  val superAdmin = "951002007l78123233.super_admin"
+  val sysName = s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}121000005l35120456.node1"
+  val superAdmin = s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}951002007l78123233.super_admin"
 
   val keyFileSuffix = ctx.getCryptoMgr.getKeyFileSuffix
   val sha256 = ctx.getHashTool
   val transactionTool = ctx.getTransactionBuilder
   // 加载node1的私钥
-  ctx.getSignTool.loadPrivateKey(sysName, "123", s"${keyFileSuffix.substring(1)}/${ctx.getConfig.getChainNetworkId}/" + sysName + s"${keyFileSuffix}")
+  ctx.getSignTool.loadPrivateKey("121000005l35120456.node1", "123", s"${keyFileSuffix.substring(1)}/${ctx.getConfig.getChainNetworkId}/" + "121000005l35120456.node1" + s"${keyFileSuffix}")
   // 加载super_admin的私钥
-  ctx.getSignTool.loadPrivateKey(superAdmin, "super_admin", s"${keyFileSuffix.substring(1)}/${ctx.getConfig.getChainNetworkId}/" + superAdmin + s"${keyFileSuffix}")
+  ctx.getSignTool.loadPrivateKey("951002007l78123233.super_admin", "super_admin", s"${keyFileSuffix.substring(1)}/${ctx.getConfig.getChainNetworkId}/" + "951002007l78123233.super_admin" + s"${keyFileSuffix}")
 
   val cid = ChaincodeId("RdidOperateAuthorizeTPL", 1)
 
@@ -98,9 +98,9 @@ class RdidCertOperationSpec(_system: ActorSystem) extends TestKit(_system) with 
   val superCertPem: String = try superCert.mkString finally superCert.close()
   val certs: mutable.Map[String, String] = mutable.Map("node1" -> certStr1, "node2" -> certStr2, "node3" -> certStr3, "node4" -> certStr4, "node5" -> certStr5)
 
-  val cert1 = Certificate(certStr1, "SHA256withECDSA", certValid = true, None, None, Certificate.CertType.CERT_AUTHENTICATION, Some(CertId("121000005l35120456", "CERT1", "1")), sha256.hashstr(IdTool.deleteLine(certStr1)), "1")
-  val cert2 = Certificate(certStr2, "SHA256withECDSA", certValid = true, None, None, Certificate.CertType.CERT_AUTHENTICATION, Some(CertId("121000005l35120456", "CERT2", "1")), sha256.hashstr(IdTool.deleteLine(certStr2)), "1")
-  val cert3 = Certificate(certStr3, "SHA256withECDSA", certValid = true, None, None, Certificate.CertType.CERT_CUSTOM, Some(CertId("121000005l35120456", "CERT3", "1")), sha256.hashstr(IdTool.deleteLine(certStr3)), "1")
+  val cert1 = Certificate(certStr1, "SHA256withECDSA", certValid = true, None, None, Certificate.CertType.CERT_AUTHENTICATION, Some(CertId(s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}121000005l35120456", "CERT1", "1")), sha256.hashstr(s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}"+IdTool.deleteLine(certStr1)), "1")
+  val cert2 = Certificate(certStr2, "SHA256withECDSA", certValid = true, None, None, Certificate.CertType.CERT_AUTHENTICATION, Some(CertId(s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}121000005l35120456", "CERT2", "1")), sha256.hashstr(s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}"+IdTool.deleteLine(certStr2)), "1")
+  val cert3 = Certificate(certStr3, "SHA256withECDSA", certValid = true, None, None, Certificate.CertType.CERT_CUSTOM, Some(CertId(s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}121000005l35120456", "CERT3", "1")), sha256.hashstr(s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}"+IdTool.deleteLine(certStr3)), "1")
 
 
   // 只有AuthCert
@@ -110,8 +110,8 @@ class RdidCertOperationSpec(_system: ActorSystem) extends TestKit(_system) with 
 
 
   val signers: Array[Signer] = Array(
-    Signer("node1", "121000005l35120456", "18912345678", Seq.empty, Seq.empty, Seq.empty, Seq.empty, node1AuthCerts1, "", None, None, signerValid = true, "1"),
-    Signer("node1", "121000005l35120456", "18912345678", Seq.empty, Seq.empty, Seq.empty, Seq.empty, node1AuthCerts1, "", None, None, signerValid = true, "1"),
+    Signer("node1", s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}121000005l35120456", "18912345678", Seq.empty, Seq.empty, Seq.empty, Seq.empty, node1AuthCerts1, "", None, None, signerValid = true, "1"),
+    Signer("node1", s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}121000005l35120456", "18912345678", Seq.empty, Seq.empty, Seq.empty, Seq.empty, node1AuthCerts1, "", None, None, signerValid = true, "1"),
   )
 
   //准备探针以验证调用返回结果
@@ -134,13 +134,13 @@ class RdidCertOperationSpec(_system: ActorSystem) extends TestKit(_system) with 
 
   test("注册superAdmin账户与操作") {
     // 注册账户
-    val superCertHash = sha256.hashstr(IdTool.deleteLine(superCertPem))
-    val superCertId = CertId("951002007l78123233", "super_admin")
+    val superCertHash = sha256.hashstr(s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}"+IdTool.deleteLine(superCertPem))
+    val superCertId = CertId(s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}951002007l78123233", "super_admin")
     val millis = System.currentTimeMillis()
     //生成Did的身份证书
     val superAuthCert = Certificate(superCertPem, "SHA256withECDSA", true, Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, CertType.CERT_AUTHENTICATION, Option(superCertId), superCertHash, "1.0")
     // 账户
-    val superSigner = Signer("super_admin", "951002007l78123233", "13856789234", Seq.empty, Seq.empty, Seq.empty, Seq.empty, List(superAuthCert), "", Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, true, "1.0")
+    val superSigner = Signer("super_admin", s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}951002007l78123233", "13856789234", Seq.empty, Seq.empty, Seq.empty, Seq.empty, List(superAuthCert), "", Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, true, "1.0")
     val t6 = transactionTool.createTransaction4Invoke(superAdmin, cid, ACTION.SignUpSigner, Seq(JsonFormat.toJsonString(superSigner)))
     val msg_send6 = DoTransaction(Seq[Transaction](t6), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send6)
@@ -148,15 +148,15 @@ class RdidCertOperationSpec(_system: ActorSystem) extends TestKit(_system) with 
     msg_recv6(0).err.get.reason.isEmpty should be(true)
 
     val snls = List("transaction.stream", "transaction.postTranByString", "transaction.postTranStream", "transaction.postTran")
-    val certOpt = Operate(sha256.hashstr(s"${ctx.getConfig.getChainNetworkId}${PermissionVerify.DIDPrefixSign}RdidOperateAuthorizeTPL.signUpCertificate"), "注册普通证书", superAdmin.split("\\.")(0), isPublish = true, OperateType.OPERATE_CONTRACT,
-      snls, "*", s"${ctx.getConfig.getChainNetworkId}${PermissionVerify.DIDPrefixSign}RdidOperateAuthorizeTPL.signUpCertificate", Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, true, "1.0")
+    val certOpt = Operate(sha256.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.signUpCertificate"), "注册普通证书", superAdmin.split("\\.")(0), isPublish = true, OperateType.OPERATE_CONTRACT,
+      snls, "*", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.signUpCertificate", Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, true, "1.0")
     val t8 = transactionTool.createTransaction4Invoke(superAdmin, cid, "signUpOperate", Seq(JsonFormat.toJsonString(certOpt)))
     probe.send(sandbox, DoTransaction(Seq[Transaction](t8), "dbnumber", TypeOfSender.FromAPI))
     val msg_recv8 = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
     msg_recv8.head.err.get.reason.isEmpty should be(true)
 
-    val certStatusOpt = Operate(sha256.hashstr(s"${ctx.getConfig.getChainNetworkId}${PermissionVerify.DIDPrefixSign}RdidOperateAuthorizeTPL.updateCertificateStatus"), "修改普通证书状态", superAdmin.split("\\.")(0), isPublish = true, OperateType.OPERATE_CONTRACT,
-      snls, "*", s"${ctx.getConfig.getChainNetworkId}${PermissionVerify.DIDPrefixSign}RdidOperateAuthorizeTPL.updateCertificateStatus", Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, true, "1.0")
+    val certStatusOpt = Operate(sha256.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.updateCertificateStatus"), "修改普通证书状态", superAdmin.split("\\.")(0), isPublish = true, OperateType.OPERATE_CONTRACT,
+      snls, "*", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.updateCertificateStatus", Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, true, "1.0")
     val t9 = transactionTool.createTransaction4Invoke(superAdmin, cid, "signUpOperate", Seq(JsonFormat.toJsonString(certStatusOpt)))
     probe.send(sandbox, DoTransaction(Seq[Transaction](t9), "dbnumber", TypeOfSender.FromAPI))
     val msg_recv9 = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
@@ -181,7 +181,7 @@ class RdidCertOperationSpec(_system: ActorSystem) extends TestKit(_system) with 
 //  }
 
   test("使用node1来注册普通证书--这里使用cert3") {
-    val t = createTransaction4Invoke(sysName, cid, CertId("121000005l35120456", "CERT1", "1"), chaincodeInputFunc = "signUpCertificate", params = Seq(JsonFormat.toJsonString(cert3)))
+    val t = createTransaction4Invoke("121000005l35120456.node1", cid, CertId(s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}121000005l35120456", "CERT1", "1"), chaincodeInputFunc = "signUpCertificate", params = Seq(JsonFormat.toJsonString(cert3)))
     val msg_send = DoTransaction(Seq(t), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Seq[TransactionResult]](60000.seconds)
@@ -190,7 +190,7 @@ class RdidCertOperationSpec(_system: ActorSystem) extends TestKit(_system) with 
 
   test("使用普通证书来调用signUpCertificate，应该失败， checkAuthCertAndRule") {
     // CERT3被注册为普通证书，使用cert3构建的交易，不能调用signUpCertificate
-    val t = createTransaction4Invoke(nodeName = "121000005l35120456.node1", cid, CertId("121000005l35120456", "CERT3", "1"), chaincodeInputFunc = "signUpCertificate", params = Seq(JsonFormat.toJsonString(cert3)))
+    val t = createTransaction4Invoke(nodeName = "121000005l35120456.node1", cid, CertId(s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}121000005l35120456", "CERT3", "1"), chaincodeInputFunc = "signUpCertificate", params = Seq(JsonFormat.toJsonString(cert3)))
     val msg_send = DoTransaction(Seq(t), "dbnumber", TypeOfSender.FromAPI)
 //    SignTool.verify(t.getSignature.signature.toByteArray, t.clearSignature.toByteArray, CertId("121000005l35120456", "CERT3", "1"), sysName)
     probe.send(sandbox, msg_send)
@@ -200,7 +200,7 @@ class RdidCertOperationSpec(_system: ActorSystem) extends TestKit(_system) with 
 
 
   test("使用node1来禁用普通证书--这里使用cert3") {
-    val t = createTransaction4Invoke(nodeName = "121000005l35120456.node1", cid, CertId("121000005l35120456", "CERT1", "1"), chaincodeInputFunc = "updateCertificateStatus", params = Seq(write(CertStatus("121000005l35120456", "CERT3", false))))
+    val t = createTransaction4Invoke(nodeName = "121000005l35120456.node1", cid, CertId(s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}121000005l35120456", "CERT1", "1"), chaincodeInputFunc = "updateCertificateStatus", params = Seq(write(CertStatus(s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}121000005l35120456", "CERT3", false))))
     val msg_send = DoTransaction(Seq(t), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
@@ -208,7 +208,7 @@ class RdidCertOperationSpec(_system: ActorSystem) extends TestKit(_system) with 
   }
 
   test("禁用不存在的证书") {
-    val t = createTransaction4Invoke(nodeName = "121000005l35120456.node1", cid, CertId("121000005l35120456", "CERT1", "1"), chaincodeInputFunc = "updateCertificateStatus", params = Seq(write(CertStatus("121000005l35120456", "CERT4", false))))
+    val t = createTransaction4Invoke(nodeName = "121000005l35120456.node1", cid, CertId(s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}121000005l35120456", "CERT1", "1"), chaincodeInputFunc = "updateCertificateStatus", params = Seq(write(CertStatus(s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}121000005l35120456", "CERT4", false))))
     val msg_send = DoTransaction(Seq(t), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
@@ -217,7 +217,7 @@ class RdidCertOperationSpec(_system: ActorSystem) extends TestKit(_system) with 
 
   test("被注册证书虽然已存在，但是应该失败，checkAuthCertAndRule") {
     // CERT3被注册为普通证书，使用cert3构建的交易，不能调用signUpCertificate
-    val t = createTransaction4Invoke(nodeName = "121000005l35120456.node1", cid, CertId("121000005l35120456", "CERT3", "1"), chaincodeInputFunc = "updateCertificateStatus", params = Seq(write(CertStatus("121000005l35120456", "CERT3", false))))
+    val t = createTransaction4Invoke(nodeName = "121000005l35120456.node1", cid, CertId(s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}121000005l35120456", "CERT3", "1"), chaincodeInputFunc = "updateCertificateStatus", params = Seq(write(CertStatus(s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}121000005l35120456", "CERT3", false))))
     val msg_send = DoTransaction(Seq(t), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)

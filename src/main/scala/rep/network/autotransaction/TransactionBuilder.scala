@@ -45,7 +45,7 @@ class TransactionBuilder(signTool: SignTool) {
     //use node's key sign transaction
     val certid = IdTool.getCertIdFromName(nodeName)
     var sobj = Signature(Option(certid), Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)))
-    sobj = sobj.withSignature(ByteString.copyFrom(this.signTool.sign(nodeName, t.toByteArray)))
+    sobj = sobj.withSignature(ByteString.copyFrom(this.signTool.signWithNodeName(nodeName, t.toByteArray)))
     //add signature
     t = t.withSignature(sobj)
     //finsih
@@ -107,7 +107,7 @@ class TransactionBuilder(signTool: SignTool) {
     //use node's key sign transaction
     val certid = IdTool.getCertIdFromName(nodeName)
     var sobj = Signature(Option(certid), Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)))
-    sobj = sobj.withSignature(ByteString.copyFrom(this.signTool.sign(nodeName, t.toByteArray)))
+    sobj = sobj.withSignature(ByteString.copyFrom(this.signTool.signWithNodeName(nodeName, t.toByteArray)))
     //add transaction's signature
     t = t.withSignature(sobj)
     //finish
@@ -144,7 +144,7 @@ class TransactionBuilder(signTool: SignTool) {
     //use node's key sign transaction
     val certid = IdTool.getCertIdFromName(nodeName)
     var sobj = Signature(Option(certid), Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)))
-    sobj = sobj.withSignature(ByteString.copyFrom(this.signTool.sign(nodeName, t.toByteArray)))
+    sobj = sobj.withSignature(ByteString.copyFrom(this.signTool.signWithNodeName(nodeName, t.toByteArray)))
     //add transaction's signature
     t = t.withSignature(sobj)
     //finish

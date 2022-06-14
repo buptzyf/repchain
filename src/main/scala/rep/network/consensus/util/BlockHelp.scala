@@ -35,7 +35,7 @@ object BlockHelp {
       val millis = TimeUtils.getCurrentTime()
       val certid = IdTool.getCertIdFromName(alise)
       Signature(
-        Option(certid),
+        Option(IdTool.getCertIdFromName(IdTool.getCompleteSignerName(signTool.getConfig,alise)) ),
         Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)),
         ByteString.copyFrom(signTool.sign4CertId(certid, NonEndorseDataOfBlock)))
     } catch {

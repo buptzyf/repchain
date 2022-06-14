@@ -3,6 +3,7 @@ package rep.sc.tpl.did.operation
 import rep.proto.rc2.{ActionResult, Authorize, BindCertToAuthorize, Certificate, Operate}
 import rep.sc.scalax.{ContractContext, ContractException}
 import rep.sc.tpl.did.DidTplPrefix._
+import rep.utils.IdTool
 import scalapb.json4s.JsonFormat
 
 /**
@@ -142,12 +143,12 @@ object AuthOperation extends DidOperation {
         val authorize = ctx.api.getVal(authPrefix + authId).asInstanceOf[Authorize]
         // 如果未被禁用，这可以绑定，此处不判断证书有效性，因为有效无效，验签时候会判断
         if (authorize.authorizeValid) {
-          val certKey = certPrefix + bindCertToAuthorize.getGranted.creditCode + "." + bindCertToAuthorize.getGranted.certName
+          val certKey = certPrefix + IdTool.getSignerFromCertId(bindCertToAuthorize.getGranted)
           val cert = ctx.api.getVal(certKey)
           if (cert == null) {
             throw ContractException(toJsonErrMsg(bindCertNotExists))
           } else if (cert.asInstanceOf[Certificate].certValid) {
-            ctx.api.setVal(bindPrefix + authId + "-" + bindCertToAuthorize.getGranted.creditCode + "." + bindCertToAuthorize.getGranted.certName, true)
+            ctx.api.setVal(bindPrefix + authId + "-" + IdTool.getSignerFromCertId(bindCertToAuthorize.getGranted), true)
           } else {
             throw ContractException(toJsonErrMsg(bindCertNotValid))
           }

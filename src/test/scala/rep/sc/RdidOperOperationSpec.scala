@@ -62,17 +62,17 @@ class RdidOperOperationSpec(_system: ActorSystem) extends TestKit(_system) with 
   implicit val serialization: Serialization.type = jackson.Serialization
   implicit val formats: DefaultFormats.type = DefaultFormats
 
-  val sysName = "121000005l35120456.node1"
-  val superAdmin = "951002007l78123233.super_admin"
+  val sysName = s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}121000005l35120456.node1"
+  val superAdmin = s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}951002007l78123233.super_admin"
 
   val keyFileSuffix = ctx.getCryptoMgr.getKeyFileSuffix
   val sha256 = ctx.getHashTool
   val transactionTool = ctx.getTransactionBuilder
 
   // 加载node1的私钥
-  ctx.getSignTool.loadPrivateKey(sysName, "123", s"${keyFileSuffix.substring(1)}/${ctx.getConfig.getChainNetworkId}/" + sysName + s"${keyFileSuffix}")
+  ctx.getSignTool.loadPrivateKey("121000005l35120456.node1", "123", s"${keyFileSuffix.substring(1)}/${ctx.getConfig.getChainNetworkId}/" + "121000005l35120456.node1" + s"${keyFileSuffix}")
   // 加载super_admin的私钥
-  ctx.getSignTool.loadPrivateKey(superAdmin, "super_admin", s"${keyFileSuffix.substring(1)}/${ctx.getConfig.getChainNetworkId}/" + superAdmin + s"${keyFileSuffix}")
+  ctx.getSignTool.loadPrivateKey("951002007l78123233.super_admin", "super_admin", s"${keyFileSuffix.substring(1)}/${ctx.getConfig.getChainNetworkId}/" + "951002007l78123233.super_admin" + s"${keyFileSuffix}")
 
   val cid = ChaincodeId("RdidOperateAuthorizeTPL", 1)
 
@@ -85,25 +85,25 @@ class RdidOperOperationSpec(_system: ActorSystem) extends TestKit(_system) with 
 
   val certs: mutable.Map[String, String] = mutable.Map("node1" -> certStr1, "node2" -> certStr2, "super_admin" -> superCertPem)
 
-  val node1Cert1 = Certificate(certStr1, "SHA256withECDSA", certValid = true, None, None, Certificate.CertType.CERT_AUTHENTICATION, Some(CertId("121000005l35120456", "node1Cert1", "1")), sha256.hashstr(IdTool.deleteLine(certStr1)), "1")
+  val node1Cert1 = Certificate(certStr1, "SHA256withECDSA", certValid = true, None, None, Certificate.CertType.CERT_AUTHENTICATION, Some(CertId(s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}121000005l35120456", "node1Cert1", "1")), sha256.hashstr(s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}"+IdTool.deleteLine(certStr1)), "1")
 
   // 包含有AuthCert
   val node1AuthCerts1 = Seq(node1Cert1)
 
-  val superCertId = CertId("951002007l78123233", "super_admin")
+  val superCertId = CertId(s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}951002007l78123233", "super_admin")
   val millis: Long = System.currentTimeMillis()
   //生成Did的身份证书
-  val superAuthCert = Certificate(superCertPem, "SHA256withECDSA", true, Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, CertType.CERT_AUTHENTICATION, Option(superCertId), sha256.hashstr(IdTool.deleteLine(superCertPem)), "1.0")
+  val superAuthCert = Certificate(superCertPem, "SHA256withECDSA", true, Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, CertType.CERT_AUTHENTICATION, Option(superCertId), sha256.hashstr(s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}"+IdTool.deleteLine(superCertPem)), "1.0")
 
   val signers: Array[Signer] = Array(
-    Signer("super_admin", "951002007l78123233", "13856789234", Seq.empty, Seq.empty, Seq.empty, Seq.empty, List(superAuthCert), "", Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, true, "1.0"),
-    Signer("node1", "121000005l35120456", "18912345678", Seq.empty, Seq.empty, Seq.empty, Seq.empty, Seq(node1Cert1), "", None, None, signerValid = true, "1"),
+    Signer("super_admin", s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}951002007l78123233", "13856789234", Seq.empty, Seq.empty, Seq.empty, Seq.empty, List(superAuthCert), "", Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, true, "1.0"),
+    Signer("node1", s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}121000005l35120456", "18912345678", Seq.empty, Seq.empty, Seq.empty, Seq.empty, Seq(node1Cert1), "", None, None, signerValid = true, "1"),
   )
 
   val operate1 = Operate("operateId12345", "operateId12345", "X21000005l35120678", true, OperateType.OPERATE_CONTRACT, Seq.empty, "https://thyland/transaction", "RdidOperateAuthorizeTPL.signUpCertificate", None, None, true, "1")
-  val operate2 = Operate(ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${PermissionVerify.DIDPrefixSign}RdidOperateAuthorizeTPL.signUpCertificate"), "operateId12345", "951002007l78123233", true, OperateType.OPERATE_CONTRACT, Seq.empty, "https://thyland/transaction", s"${ctx.getConfig.getChainNetworkId}${PermissionVerify.DIDPrefixSign}RdidOperateAuthorizeTPL.signUpCertificate", None, None, true, "1")
-  val operate3 = Operate(ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${PermissionVerify.DIDPrefixSign}RdidOperateAuthorizeTPL.signUpCertificate"), "RdidOperateAuthorizeTPL.signUpCertificate", "X21000005l35120678", true, OperateType.OPERATE_CONTRACT, Seq.empty, "https://thyland/transaction", s"${ctx.getConfig.getChainNetworkId}${PermissionVerify.DIDPrefixSign}RdidOperateAuthorizeTPL.signUpCertificate", None, None, true, "1")
-  val operate4 = Operate(ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${PermissionVerify.DIDPrefixSign}RdidOperateAuthorizeTPL.operateId12345"), "operateId12345", "951002007l78123233", true, OperateType.OPERATE_CONTRACT, Seq.empty, "https://thyland/transaction", s"${ctx.getConfig.getChainNetworkId}${PermissionVerify.DIDPrefixSign}RdidOperateAuthorizeTPL.operateId12345", None, None, true, "1")
+  val operate2 = Operate(ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.signUpCertificate"), "operateId12345", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}951002007l78123233", true, OperateType.OPERATE_CONTRACT, Seq.empty, "https://thyland/transaction", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.signUpCertificate", None, None, true, "1")
+  val operate3 = Operate(ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.signUpCertificate"), "RdidOperateAuthorizeTPL.signUpCertificate", "X21000005l35120678", true, OperateType.OPERATE_CONTRACT, Seq.empty, "https://thyland/transaction", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.signUpCertificate", None, None, true, "1")
+  val operate4 = Operate(ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.operateId12345"), "operateId12345", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}951002007l78123233", true, OperateType.OPERATE_CONTRACT, Seq.empty, "https://thyland/transaction", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.operateId12345", None, None, true, "1")
   //准备探针以验证调用返回结果
   val probe = TestProbe()
   private val sandbox = system.actorOf(TransactionDispatcher.props("transactiondispatcher"), "transactiondispatcher")

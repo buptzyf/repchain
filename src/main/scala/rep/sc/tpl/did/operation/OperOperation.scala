@@ -7,6 +7,7 @@ import rep.proto.rc2.{ActionResult, Operate}
 import rep.sc.Sandbox.SandboxException
 import rep.sc.scalax.{ContractContext, ContractException}
 import rep.sc.tpl.did.DidTplPrefix.{operPrefix, signerPrefix}
+import rep.utils.IdTool
 
 /**
   * 注册操作，禁用启用操作
@@ -60,8 +61,8 @@ object OperOperation extends DidOperation {
           } catch {
             case se: SandboxException =>
               try {
-                val netid = operate.authFullName.substring(0,operate.authFullName.indexOf(PermissionVerify.DIDPrefixSign))
-                ctx.api.permissionCheck(cert.creditCode, cert.certName, netid+s"${PermissionVerify.DIDPrefixSign}*.deploy")
+                val netid = operate.authFullName.substring(0,operate.authFullName.indexOf(IdTool.DIDPrefixSeparator))
+                ctx.api.permissionCheck(cert.creditCode, cert.certName, netid+s"${IdTool.DIDPrefixSeparator}*.deploy")
               } catch {
                 case se: SandboxException =>
                   throw ContractException(toJsonErrMsg(canNotDeployContract), se)
