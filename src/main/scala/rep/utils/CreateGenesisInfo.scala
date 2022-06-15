@@ -158,12 +158,27 @@ object CreateGenesisInfo {
       opids += opsOfAPI(i)._1
     }
 
-    val tmpmillis = System.currentTimeMillis()
+    val als = new ArrayBuffer[String]
+    granteds.foreach(granted=>{
+      opids.foreach(op=>{
+        val gs = Array{granted}
+        val os = Array{op}
+        val tmpmillis = System.currentTimeMillis()
+        val at = Authorize(IdTool.getRandomUUID, super_credit,gs , os,
+          TransferType.TRANSFER_REPEATEDLY, Option(Timestamp(tmpmillis / 1000, ((tmpmillis % 1000) * 1000000).toInt)),
+          _root_.scala.None, true, "1.0")
+        als += JsonFormat.toJsonString(at)
+      })
+    })
+    translist += ctx.getTransactionBuilder.createTransaction4Invoke(superAdmin, cid1, "grantOperate", Seq(SerializeUtils.compactJson(als)))
+    /*val tmpmillis = System.currentTimeMillis()
     val at = Authorize(IdTool.getRandomUUID, super_credit, granteds, opids,
       TransferType.TRANSFER_REPEATEDLY, Option(Timestamp(tmpmillis / 1000, ((tmpmillis % 1000) * 1000000).toInt)),
       _root_.scala.None, true, "1.0")
     var als: List[String] = List(JsonFormat.toJsonString(at))
     translist += ctx.getTransactionBuilder.createTransaction4Invoke(superAdmin, cid1, "grantOperate", Seq(SerializeUtils.compactJson(als)))
+*/
+
 
     //部署应用合约--分账合约
     val s2 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/ContractAssetsTPL.scala", "UTF-8")

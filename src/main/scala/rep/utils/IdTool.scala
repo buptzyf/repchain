@@ -85,6 +85,18 @@ object IdTool {
     }
   }
 
+  def getNetworkIdFromName(config:RepChainConfig,name:String):String={
+    val flag1 = config.getChainNetworkId+IdTool.DIDPrefixSeparator
+    val flag2 = config.getIdentityNetName + IdTool.DIDPrefixSeparator
+    if(name.indexOf(flag1) >= 0){
+      config.getChainNetworkId
+    }else if(name.indexOf(flag2) >= 0){
+      config.getIdentityNetName
+    }else{
+      name
+    }
+  }
+
   def getCompleteSignerName(config:RepChainConfig,signerName:String):String={
     val flag1 = config.getChainNetworkId+IdTool.DIDPrefixSeparator
     val flag2 = config.getIdentityNetName + IdTool.DIDPrefixSeparator
