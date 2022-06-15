@@ -43,7 +43,7 @@ import scala.io.BufferedSource
   */
 class RdidSignrOperationSpec(_system: ActorSystem) extends TestKit(_system) with Matchers with FunSuiteLike with BeforeAndAfterAll {
 
-  def this() = this(ActorSystem("RdidSignrOperationSpec", new RepChainConfig("121000005l35120456.node1").getSystemConf))
+  def this() = this(ActorSystem("RdidSignrOperationSpec", new RepChainSystemContext("121000005l35120456.node1").getConfig.getSystemConf))
 
   val ctx : RepChainSystemContext = new RepChainSystemContext("121000005l35120456.node1")
   val pe = PeerExtension(system)

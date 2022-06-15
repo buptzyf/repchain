@@ -45,15 +45,20 @@ class SystemCertList(ctx:RepChainSystemContext) {
       val tmpMap = CertificateUtil.loadTrustCertificate(this.ctx)
       val list = ctx.getConfig.getVoteNodeList
       val cList = tmpMap.keySet.toArray
-      var rList : scala.collection.mutable.ArrayBuffer[String] = new scala.collection.mutable.ArrayBuffer[String]()
-      cList.foreach(alias=>{
-        if(list.contains(alias)){
-          rList += alias
-        }
-      })
-      this.mySystemCertList = rList.toSet[String]
+      this.mySystemCertList = checkCertList(cList)
       RepLogger.trace(RepLogger.System_Logger, "SystemCertList 初始化装载="+this.mySystemCertList.mkString(","))
     }
+  }
+
+  private def checkCertList(inputList : Array[String]):Set[String]={
+    var rList : scala.collection.mutable.ArrayBuffer[String] = new scala.collection.mutable.ArrayBuffer[String]()
+    val list = ctx.getConfig.getVoteNodeList
+    inputList.foreach(name=>{
+      if(list.contains(name)){
+        rList += name
+      }
+    })
+    rList.toSet[String]
   }
 
   def updateCertList(update:Array[String]):Unit={
@@ -70,7 +75,7 @@ class SystemCertList(ctx:RepChainSystemContext) {
     if(this.isChangeCertList.get()){
       this.lock.synchronized({
         if(this.certList != null){
-          this.mySystemCertList = this.certList.toSet
+          this.mySystemCertList = checkCertList(this.certList)
         }
         this.isChangeCertList.set(false)
         RepLogger.trace(RepLogger.System_Logger, "SystemCertList 更新装载="+this.mySystemCertList.mkString(","))

@@ -46,10 +46,12 @@ import scala.io.BufferedSource
   * @param _system
   */
 class RdidOperOperationSpec(_system: ActorSystem) extends TestKit(_system) with Matchers with FunSuiteLike with BeforeAndAfterAll {
-
-  def this() = this(ActorSystem("RdidOperOperationSpec", new RepChainConfig("121000005l35120456.node1").getSystemConf))
-
   val ctx : RepChainSystemContext = new RepChainSystemContext("121000005l35120456.node1")
+  def this() = this(
+    ActorSystem("RdidOperOperationSpec", new RepChainSystemContext("121000005l35120456.node1").getConfig.getSystemConf)
+  )
+
+
   val pe = PeerExtension(system)
   pe.setRepChainContext(ctx)
   //val moduleManager = system.actorOf(ModuleManagerOfCFRD.props("modulemanager", false), "modulemanager")

@@ -55,7 +55,7 @@ import scala.io.BufferedSource
   */
 class RdidCertOperationSpec(_system: ActorSystem) extends TestKit(_system) with Matchers with FunSuiteLike with BeforeAndAfterAll {
   def this() = this(
-    ActorSystem("RdidCertOperationSpec", new RepChainConfig("121000005l35120456.node1").getSystemConf)
+    ActorSystem("RdidCertOperationSpec", new RepChainSystemContext("121000005l35120456.node1").getConfig.getSystemConf)
   )
 
   val ctx : RepChainSystemContext = new RepChainSystemContext("121000005l35120456.node1")
