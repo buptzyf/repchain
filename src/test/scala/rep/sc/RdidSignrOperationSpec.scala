@@ -59,17 +59,17 @@ class RdidSignrOperationSpec(_system: ActorSystem) extends TestKit(_system) with
   implicit val serialization: Serialization.type = jackson.Serialization
   implicit val formats: DefaultFormats.type = DefaultFormats
 
-  val sysName = "121000005l35120456.node1"
-  val superAdmin = "951002007l78123233.super_admin"
+  val sysName = s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}121000005l35120456.node1"
+  val superAdmin = s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}951002007l78123233.super_admin"
 
   val keyFileSuffix = ctx.getCryptoMgr.getKeyFileSuffix
   val sha256 = ctx.getHashTool
   val transactionTool = ctx.getTransactionBuilder
 
   // 加载node1的私钥
-  ctx.getSignTool.loadPrivateKey(sysName, "123", s"${keyFileSuffix.substring(1)}/${ctx.getConfig.getChainNetworkId}/" + sysName + s"${keyFileSuffix}")
+  ctx.getSignTool.loadPrivateKey("121000005l35120456.node1", "123", s"${keyFileSuffix.substring(1)}/${ctx.getConfig.getChainNetworkId}/" + "121000005l35120456.node1" + s"${keyFileSuffix}")
   // 加载super_admin的私钥
-  ctx.getSignTool.loadPrivateKey(superAdmin, "super_admin", s"${keyFileSuffix.substring(1)}/${ctx.getConfig.getChainNetworkId}/" + superAdmin + s"${keyFileSuffix}")
+  ctx.getSignTool.loadPrivateKey("951002007l78123233.super_admin", "super_admin", s"${keyFileSuffix.substring(1)}/${ctx.getConfig.getChainNetworkId}/" + "951002007l78123233.super_admin" + s"${keyFileSuffix}")
 
   val cid = ChaincodeId("RdidOperateAuthorizeTPL", 1)
 
@@ -85,11 +85,11 @@ class RdidSignrOperationSpec(_system: ActorSystem) extends TestKit(_system) with
   val certStr5: String = try certNode5.mkString finally certNode5.close()
   val certs: mutable.Map[String, String] = mutable.Map("node1" -> certStr1, "node2" -> certStr2, "node3" -> certStr3, "node4" -> certStr4, "node5" -> certStr5)
 
-  val node1Cert1 = Certificate(certStr1, "SHA256withECDSA", certValid = true, None, None, certType = Certificate.CertType.CERT_AUTHENTICATION, Some(CertId("121000005l35120456", "node1Cert1", "1")), ctx.getHashTool.hashstr(IdTool.deleteLine(certStr1)), "1")
-  val node1Cert2 = Certificate(certStr2, "SHA256withECDSA", certValid = true, None, None, Certificate.CertType.CERT_CUSTOM, Some(CertId("121000005l35120456", "node1Cert1", "1")), ctx.getHashTool.hashstr(IdTool.deleteLine(certStr1)), "1")
-  val node1Cert3 = Certificate(certStr2, "SHA256withECDSA", certValid = true, None, None, certType = Certificate.CertType.CERT_AUTHENTICATION, Some(CertId("121000005l35120456", "node1Cert1", "1")), ctx.getHashTool.hashstr(IdTool.deleteLine(certStr1)), "1")
-  val node1Cert4 = Certificate(certStr2, "SHA256withECDSA", certValid = true, None, None, certType = Certificate.CertType.CERT_AUTHENTICATION, Some(CertId("121000005l3512v587", "node1Cert1", "1")), ctx.getHashTool.hashstr(IdTool.deleteLine(certStr2)), "1")
-  val node1Cert5 = Certificate(certStr2, "SHA256withECDSA", certValid = true, None, None, certType = Certificate.CertType.CERT_AUTHENTICATION, Some(CertId("121000005l3512v123", "node1Cert1", "1")), ctx.getHashTool.hashstr(IdTool.deleteLine(certStr2)), "1")
+  val node1Cert1 = Certificate(certStr1, "SHA256withECDSA", certValid = true, None, None, certType = Certificate.CertType.CERT_AUTHENTICATION, Some(CertId(s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}121000005l35120456", "node1Cert1", "1")), ctx.getHashTool.hashstr(s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}"+IdTool.deleteLine(certStr1)), "1")
+  val node1Cert2 = Certificate(certStr2, "SHA256withECDSA", certValid = true, None, None, Certificate.CertType.CERT_CUSTOM, Some(CertId(s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}121000005l35120456", "node1Cert1", "1")), ctx.getHashTool.hashstr(s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}"+IdTool.deleteLine(certStr1)), "1")
+  val node1Cert3 = Certificate(certStr2, "SHA256withECDSA", certValid = true, None, None, certType = Certificate.CertType.CERT_AUTHENTICATION, Some(CertId(s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}121000005l35120456", "node1Cert1", "1")), ctx.getHashTool.hashstr(s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}"+IdTool.deleteLine(certStr1)), "1")
+  val node1Cert4 = Certificate(certStr2, "SHA256withECDSA", certValid = true, None, None, certType = Certificate.CertType.CERT_AUTHENTICATION, Some(CertId(s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}121000005l3512v587", "node1Cert1", "1")), ctx.getHashTool.hashstr(s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}"+IdTool.deleteLine(certStr2)), "1")
+  val node1Cert5 = Certificate(certStr2, "SHA256withECDSA", certValid = true, None, None, certType = Certificate.CertType.CERT_AUTHENTICATION, Some(CertId(s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}121000005l3512v123", "node1Cert1", "1")), ctx.getHashTool.hashstr(s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}"+IdTool.deleteLine(certStr2)), "1")
 
   // 只有AuthCert
   val node1AuthCerts1 = List(node1Cert1)
@@ -101,13 +101,13 @@ class RdidSignrOperationSpec(_system: ActorSystem) extends TestKit(_system) with
   val node1AuthCerts4 = Seq(node1Cert5)
 
   val signers: Array[Signer] = Array(
-    Signer("node1", "121000005l35120456", "18912345678", Seq.empty, Seq.empty, Seq.empty, Seq.empty, node1AuthCerts1, "", None, None, signerValid = true, "1"),
-    Signer("node1", "121000005l35120456", "18912345678", Seq.empty, Seq.empty, Seq.empty, Seq.empty, node1AuthCerts1, "", None, None, signerValid = true, "1"),
-    Signer("node2", "12110107bi45jh675g", "18912345678", certNames = List("node1"), Seq.empty, Seq.empty, Seq.empty, node1AuthCerts1, "", None, None, signerValid = true, "1"),
-    Signer("node3", "122000002n00123567", "18912345678", Seq.empty, Seq.empty, operateIds = Seq("operTest123"), Seq.empty, node1AuthCerts1, "", None, None, signerValid = true, "1"),
-    Signer("node4", "921000005k36123789", "18912345678", Seq.empty, Seq.empty, Seq.empty, Seq.empty, node1AuthCerts2, "", None, None, signerValid = true, "1"),
-    Signer("node5", "921000006e0012v696", "18912345678", Seq.empty, Seq.empty, Seq.empty, Seq.empty, node1AuthCerts3, "", None, None, signerValid = true, "1"),
-    Signer("node1", "121000005l3512v587", "18912345678", Seq.empty, Seq.empty, Seq.empty, Seq.empty, node1AuthCerts4, "", None, None, signerValid = true, "1"),
+    Signer("node1", s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}121000005l35120456", "18912345678", Seq.empty, Seq.empty, Seq.empty, Seq.empty, node1AuthCerts1, "", None, None, signerValid = true, "1"),
+    Signer("node1", s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}121000005l35120456", "18912345678", Seq.empty, Seq.empty, Seq.empty, Seq.empty, node1AuthCerts1, "", None, None, signerValid = true, "1"),
+    Signer("node2", s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}12110107bi45jh675g", "18912345678", certNames = List("node1"), Seq.empty, Seq.empty, Seq.empty, node1AuthCerts1, "", None, None, signerValid = true, "1"),
+    Signer("node3", s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}122000002n00123567", "18912345678", Seq.empty, Seq.empty, operateIds = Seq("operTest123"), Seq.empty, node1AuthCerts1, "", None, None, signerValid = true, "1"),
+    Signer("node4", s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}921000005k36123789", "18912345678", Seq.empty, Seq.empty, Seq.empty, Seq.empty, node1AuthCerts2, "", None, None, signerValid = true, "1"),
+    Signer("node5", s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}921000006e0012v696", "18912345678", Seq.empty, Seq.empty, Seq.empty, Seq.empty, node1AuthCerts3, "", None, None, signerValid = true, "1"),
+    Signer("node1", s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}121000005l3512v587", "18912345678", Seq.empty, Seq.empty, Seq.empty, Seq.empty, node1AuthCerts4, "", None, None, signerValid = true, "1"),
 //    Signer("super_admin", "951002007l78123233", "18912345678", List("super_admin"))
   )
 
@@ -191,7 +191,7 @@ class RdidSignrOperationSpec(_system: ActorSystem) extends TestKit(_system) with
   }
 
   test("禁用账户") {
-    val t = transactionTool.createTransaction4Invoke(superAdmin, cid, chaincodeInputFunc = "updateSignerStatus", params = Seq(write(SignerStatus("121000005l35120456", false))))
+    val t = transactionTool.createTransaction4Invoke(superAdmin, cid, chaincodeInputFunc = "updateSignerStatus", params = Seq(write(SignerStatus(s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}121000005l35120456", false))))
     val msg_send = DoTransaction(Seq(t), "dbnumber", TypeOfSender.FromAPI)
     probe.send(sandbox, msg_send)
     val msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)

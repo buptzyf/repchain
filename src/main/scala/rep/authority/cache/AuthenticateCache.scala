@@ -4,6 +4,7 @@ import rep.app.system.RepChainSystemContext
 import rep.proto.rc2.Authorize
 import rep.sc.tpl.did.DidTplPrefix
 import rep.storage.chain.preload.BlockPreload
+import rep.utils.IdTool
 
 object AuthenticateCache{
   case class authData(authid:String,authorizeValid:Boolean,ops:List[String])
@@ -26,7 +27,15 @@ class AuthenticateCache(ctx : RepChainSystemContext) extends ICache(ctx) {
   }
 
   override protected def getPrefix: String = {
-    this.common_prefix + this.splitSign + DidTplPrefix.authPrefix
+    this.common_prefix + IdTool.WorldStateKeySeparator + DidTplPrefix.authPrefix
+  }
+
+  override protected def getBaseNetworkPrefix: String = {
+    this.common_prefix + IdTool.WorldStateKeySeparator + DidTplPrefix.authPrefix
+  }
+
+  override protected def getBusinessNetworkPrefix: String = {
+    this.business_prefix + IdTool.WorldStateKeySeparator + DidTplPrefix.authPrefix
   }
 
   def get(key:String,blockPreload: BlockPreload):Option[authData]={
@@ -38,6 +47,6 @@ class AuthenticateCache(ctx : RepChainSystemContext) extends ICache(ctx) {
   }
 
   override protected def getCacheType: String = {
-    this.splitSign + DidTplPrefix.authPrefix
+    IdTool.WorldStateKeySeparator + DidTplPrefix.authPrefix
   }
 }

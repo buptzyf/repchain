@@ -3,6 +3,7 @@ package rep.sc.tpl.did.operation
 import rep.proto.rc2.{ActionResult, Authorize, BindCertToAuthorize, Certificate, Operate}
 import rep.sc.scalax.{ContractContext, ContractException}
 import rep.sc.tpl.did.DidTplPrefix._
+import rep.utils.IdTool
 import scalapb.json4s.JsonFormat
 
 /**
@@ -21,6 +22,10 @@ object AuthOperation extends DidOperation {
   val grantedNotTranPoster = ActionResult(15006, "不能绑定Authorize到非签名交易提交者的证书上")
   val bindCertNotExists = ActionResult(15007, "要绑定的证书不存在")
   val bindCertNotValid = ActionResult(15008, "要绑定的证书无效")
+  val grantedIdOrOpIdNotOnlyCode = 15009
+  val grantedIdOrOpIdNotOnly = "authId为%s的Authorize的被授权人或操作列表元素不是一个"
+  val operHasBeenAuthCode = 15010
+  val operHasBeenAuth = "operId为%s的Operate已经被授权过"
 
   case class AuthorizeStatus(authId: String, state: Boolean)
 
@@ -41,6 +46,9 @@ object AuthOperation extends DidOperation {
       val authorizeIds = grantSigner.authorizeIds
       // 保证交易的提交者才能授权自己拥有的操作
       if (ctx.t.getSignature.getCertId.creditCode.equals(authorize.grant)) {
+        if (authorize.opId.length != 1 || authorize.granted.length != 1) {
+          throw ContractException(toJsonErrMsg(grantedIdOrOpIdNotOnlyCode, grantedIdOrOpIdNotOnly.format(authorize.id)))
+        }
         // 检查granter是否具有该操作，并且该操作有效
         val checkOpIdValid = (opId: String) => {
           val operateIdsCheck: Boolean = operateIds.contains(opId)
@@ -54,32 +62,25 @@ object AuthOperation extends DidOperation {
         }
         if (ctx.api.getVal(authPrefix + authorize.id) == null) {
           // granter 拥有 operateId 且 有效
-          if (authorize.opId.forall(opId => checkOpIdValid(opId))) {
-            authorize.granted.foreach(grantedId => {
-              // 检查被授权账户的有效性
-              val grantedSigner = checkSignerValid(ctx, grantedId)
-              var newAuthIds = Seq.empty[String]
-              grantedSigner.authorizeIds.foreach(authId => {
-                var oldAuth = ctx.api.getVal(authPrefix + authId).asInstanceOf[Authorize]
-                // 检查被授权账户是否已经授权了该操作
-                val oldOpId = oldAuth.opId.filterNot(oldOpId => {
-                  authorize.opId.contains(oldOpId)
-                })
-                // 更新被授权账户的历史Authorize的操作列表
-                if (oldOpId.nonEmpty) {
-                  newAuthIds = newAuthIds :+ authId
-                  oldAuth = oldAuth.withOpId(oldOpId)
-                  ctx.api.setVal(authPrefix + authId, oldAuth)
-                } else {
-                  ctx.api.delVal(authPrefix + authId)
-                }
-              })
-              val newGrantedSigner = grantedSigner.withAuthorizeIds(newAuthIds :+ authorize.id)
+          if (checkOpIdValid(authorize.opId.head)) {
+            // 被授权的账户
+            val grantedId = authorize.granted.head
+            // 检查被授权账户的有效性
+            val grantedSigner = checkSignerValid(ctx, grantedId)
+            val repeated = grantedSigner.authorizeIds.find(authId => {
+              val oldAuth = ctx.api.getVal(authPrefix + authId).asInstanceOf[Authorize]
+              oldAuth.opId.head.equals(authorize.opId.head)
+            })
+            if (repeated.isEmpty) {
+              val newAuthIds = grantedSigner.authorizeIds :+ (authorize.id)
+              val newGrantedSigner = grantedSigner.withAuthorizeIds(newAuthIds)
               // 更新signer
               ctx.api.setVal(signerPrefix + grantedId, newGrantedSigner)
               // 保存授权权限
               ctx.api.setVal(authPrefix + authorize.id, authorize)
-            })
+            } else {
+              throw ContractException(toJsonErrMsg(operHasBeenAuthCode, operHasBeenAuth.format(repeated.head)))
+            }
           } else {
             throw ContractException(toJsonErrMsg(someOperateNotExistsOrNotValid))
           }
@@ -142,12 +143,12 @@ object AuthOperation extends DidOperation {
         val authorize = ctx.api.getVal(authPrefix + authId).asInstanceOf[Authorize]
         // 如果未被禁用，这可以绑定，此处不判断证书有效性，因为有效无效，验签时候会判断
         if (authorize.authorizeValid) {
-          val certKey = certPrefix + bindCertToAuthorize.getGranted.creditCode + "." + bindCertToAuthorize.getGranted.certName
+          val certKey = certPrefix + IdTool.getSignerFromCertId(bindCertToAuthorize.getGranted)
           val cert = ctx.api.getVal(certKey)
           if (cert == null) {
             throw ContractException(toJsonErrMsg(bindCertNotExists))
           } else if (cert.asInstanceOf[Certificate].certValid) {
-            ctx.api.setVal(bindPrefix + authId + "-" + bindCertToAuthorize.getGranted.creditCode + "." + bindCertToAuthorize.getGranted.certName, true)
+            ctx.api.setVal(bindPrefix + authId + "-" + IdTool.getSignerFromCertId(bindCertToAuthorize.getGranted), true)
           } else {
             throw ContractException(toJsonErrMsg(bindCertNotValid))
           }

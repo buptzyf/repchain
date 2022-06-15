@@ -20,7 +20,7 @@ import scala.util.control.Breaks._
 import com.google.protobuf.ByteString
 import rep.crypto.Sha256
 import rep.crypto.cert.SignTool
-import rep.proto.rc2.{Block, Signature, Transaction}
+import rep.proto.rc2.{Block, CertId, Signature, Transaction}
 import rep.utils.IdTool
 
 object BlockVerify {
@@ -77,7 +77,8 @@ object BlockVerify {
     var resultMsg = ""
     try {
       val certid = endor.getCertId
-      result = signTool.verify(endor.signature.toByteArray, NonSignDataOfBlock, certid)
+      val name = IdTool.getNodeSignerName(signTool.getConfig,certid.creditCode)
+      result = signTool.verify(endor.signature.toByteArray, NonSignDataOfBlock, CertId(name,certid.certName))
     } catch {
       case e: RuntimeException =>
         result = false
@@ -157,7 +158,7 @@ object BlockVerify {
   def sort(src: Array[Signature]): Array[Signature] = {
     if (src.length > 1) {
       val a = src.slice(1, src.length)
-      val b = a.sortWith((l, r) => IdTool.getSigner4String(l.getCertId) < IdTool.getSigner4String(r.getCertId))
+      val b = a.sortWith((l, r) => IdTool.getSignerFromCertId(l.getCertId) < IdTool.getSignerFromCertId(r.getCertId))
       src.patch(1, b, src.length - 1)
     } else {
       src
@@ -170,7 +171,7 @@ object BlockVerify {
       val as = sort(srclist)
       breakable(
         for (i <- 0 until srclist.length) {
-          if (IdTool.getSigner4String(srclist(i).getCertId) != IdTool.getSigner4String(as(i).getCertId)) {
+          if (IdTool.getSignerFromCertId(srclist(i).getCertId) != IdTool.getSignerFromCertId(as(i).getCertId)) {
             b = 0
             break
           }

@@ -1,10 +1,7 @@
 package rep.authority.check
 
 
-import java.io.{StringWriter, Writer}
 import java.security.cert.X509Certificate
-
-import org.bouncycastle.openssl.jcajce.JcaPEMWriter
 import rep.app.system.RepChainSystemContext
 import rep.authority.cache.SignerCache.signerData
 import rep.authority.cache.{AuthenticateBindToCertCache, AuthenticateCache, CertificateCache, CertificateHashCache, OperateCache, PermissionCacheManager, SignerCache}
@@ -15,7 +12,6 @@ import rep.sc.SandboxDispatcher._
 import rep.sc.tpl.did.DidTplPrefix
 import rep.storage.chain.preload.BlockPreload
 import rep.utils.IdTool
-
 import scala.util.control.Breaks.{break, breakable}
 
 /**
@@ -88,7 +84,7 @@ class PermissionVerify(ctx: RepChainSystemContext) {
                         if (ad.get.authorizeValid) {
                           val b = IsBindCert(ad.get.authid, sd.get, dbinstance)
                           if (b._1) {
-                            if (b._2.equals(did + "." + certName)) {
+                            if (b._2.equals(IdTool.getSignerFromCreditAndName(did,certName))) {
                               r = true
                               break
                             }
@@ -164,8 +160,8 @@ class PermissionVerify(ctx: RepChainSystemContext) {
 
   def CheckPermissionOfX509Certificate(cert: X509Certificate, opName: String, dbInstance: BlockPreload): Boolean = {
     val pem = IdTool.toPemString(cert)
-    val hash = this.ctx.getHashTool.hashstr(IdTool.deleteLine(pem))
-    CheckPermissionOfCertHash(hash, ctx.getConfig.getChainNetworkId+"."+opName, dbInstance)
+    val hash = this.ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}"+IdTool.deleteLine(pem))
+    CheckPermissionOfCertHash(hash, IdTool.getCompleteOpName(ctx.getConfig,opName), dbInstance)
   }
 
   def CheckPermissionOfDeployContract(doTrans: DoTransactionOfSandboxInSingle): Boolean = {
@@ -177,12 +173,12 @@ class PermissionVerify(ctx: RepChainSystemContext) {
       System.out.println("")
     }*/
     try {
-      if (!CheckPermissionOfCertId(doTrans.t.signature.get.certId.get, opName = s"${ctx.getConfig.getChainNetworkId}.*.deploy", dbInstance)) {
-        r = CheckPermissionOfCertId(doTrans.t.signature.get.certId.get, ctx.getConfig.getChainNetworkId+"."+cid.chaincodeName + ".deploy", dbInstance)
+      if (!CheckPermissionOfCertId(doTrans.t.signature.get.certId.get, opName = s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}*${IdTool.NameSpaceSeparator}deploy", dbInstance)) {
+        r = CheckPermissionOfCertId(doTrans.t.signature.get.certId.get, ctx.getConfig.getChainNetworkId+IdTool.DIDPrefixSeparator+cid.chaincodeName + s"${IdTool.NameSpaceSeparator}deploy", dbInstance)
       }
     } catch {
       case e: SandboxException =>
-        r = CheckPermissionOfCertId(doTrans.t.signature.get.certId.get, ctx.getConfig.getChainNetworkId+"."+cid.chaincodeName + ".deploy", dbInstance)
+        r = CheckPermissionOfCertId(doTrans.t.signature.get.certId.get, ctx.getConfig.getChainNetworkId+IdTool.DIDPrefixSeparator+cid.chaincodeName + s"${IdTool.NameSpaceSeparator}deploy", dbInstance)
     }
 
     r
@@ -193,12 +189,12 @@ class PermissionVerify(ctx: RepChainSystemContext) {
     val cid = doTrans.t.cid.get
     val dbInstance = ctx.getBlockPreload(doTrans.da)
     try {
-      if (!CheckPermissionOfCertId(doTrans.t.signature.get.certId.get, opName = s"${ctx.getConfig.getChainNetworkId}.*.setState", dbInstance)) {
-        r = CheckPermissionOfCertId(doTrans.t.signature.get.certId.get, ctx.getConfig.getChainNetworkId+"."+cid.chaincodeName + ".setState", dbInstance)
+      if (!CheckPermissionOfCertId(doTrans.t.signature.get.certId.get, opName = s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}*${IdTool.NameSpaceSeparator}setState", dbInstance)) {
+        r = CheckPermissionOfCertId(doTrans.t.signature.get.certId.get, ctx.getConfig.getChainNetworkId+IdTool.DIDPrefixSeparator+cid.chaincodeName + s"${IdTool.NameSpaceSeparator}setState", dbInstance)
       }
     } catch {
       case e: SandboxException =>
-        r = CheckPermissionOfCertId(doTrans.t.signature.get.certId.get, ctx.getConfig.getChainNetworkId+"."+cid.chaincodeName + ".setState", dbInstance)
+        r = CheckPermissionOfCertId(doTrans.t.signature.get.certId.get, ctx.getConfig.getChainNetworkId+IdTool.DIDPrefixSeparator+cid.chaincodeName + s"${IdTool.NameSpaceSeparator}setState", dbInstance)
     }
     r
   }
@@ -210,7 +206,7 @@ class PermissionVerify(ctx: RepChainSystemContext) {
     }
     val dbInstance = ctx.getBlockPreload(doTrans.da)
     CheckPermissionOfCertId(doTrans.t.signature.get.certId.get,
-      ctx.getConfig.getChainNetworkId+"."+cid.chaincodeName + "." + doTrans.t.getIpt.function,
+      ctx.getConfig.getChainNetworkId+IdTool.DIDPrefixSeparator+cid.chaincodeName + IdTool.NameSpaceSeparator + doTrans.t.getIpt.function,
       dbInstance)
   }
 

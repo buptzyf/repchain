@@ -20,8 +20,9 @@ import akka.actor.Props
 import akka.cluster.pubsub.DistributedPubSubMediator.Publish
 import rep.log.RepLogger
 import rep.network.base.ModuleBase
-import rep.proto.rc2.{ChaincodeId,  Event}
+import rep.proto.rc2.{ChaincodeId, Event}
 import rep.utils.GlobalUtils.EventType
+import rep.utils.IdTool
 /**
  *
  * 代理节点辅助类
@@ -98,7 +99,7 @@ class PeerHelper(name: String) extends ModuleBase(name) {
     case TickInvoke =>
       try {
         //createTransForLoop //在做tps测试到时候，执行该函数，并且注释其他代码
-        val t3 = pe.getRepChainContext.getTransactionBuilder.createTransaction4Invoke(pe.getSysTag, chaincode,
+        val t3 = pe.getRepChainContext.getTransactionBuilder.createTransaction4Invoke(pe.getRepChainContext.getConfig.getChainNetworkId+IdTool.DIDPrefixSeparator+pe.getSysTag, chaincode,
           "transfer", Seq(li2))
         //pe.getActorRef(ModuleActorType.ActorType.transactionpool) ! t3
         sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)

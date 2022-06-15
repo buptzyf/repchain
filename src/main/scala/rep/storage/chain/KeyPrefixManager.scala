@@ -131,6 +131,13 @@ object KeyPrefixManager {
       getIdentityNetId(config)+"_"+chainCodeName+"_"+oid
   }
 
+  def getCustomNetKeyPrefix(networkId:String,chainCodeName:String,oid:String="_"):String={
+    if(oid==null ||  oid.equalsIgnoreCase(""))
+      networkId+"_"+chainCodeName+"_"+"_"
+    else
+      networkId+"_"+chainCodeName+"_"+oid
+  }
+
   /*def getContractStateKey(systemName:String,key:String):String={
     getChainId(systemName)+"_"+this.ContractDeployKeyByCIdPrefix+"_"+key
   }*/

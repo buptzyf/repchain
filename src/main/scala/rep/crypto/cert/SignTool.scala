@@ -19,6 +19,9 @@ import java.security.{KeyStore, PrivateKey, PublicKey}
 import java.security.cert.Certificate
 import java.io._
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.{ArrayList, List}
+
+import rep.app.conf.RepChainConfig
 import rep.app.system.RepChainSystemContext
 import rep.authority.cache.CertificateCache
 import rep.log.RepLogger
@@ -65,9 +68,23 @@ class SignTool(ctx: RepChainSystemContext) {
     this.signer.sign(pk, message)
   }
 
+  def getConfig:RepChainConfig={
+    ctx.getConfig
+  }
+
+  def signWithNodeName(pkeyname: String, message: Array[Byte]): Array[Byte] = {
+    var pk: PrivateKey = null
+    val flag = ctx.getConfig.getChainNetworkId + IdTool.DIDPrefixSeparator
+    val keyStr = if(pkeyname.indexOf(flag) >= 0 ) pkeyname.substring(pkeyname.indexOf(flag)+flag.length)else pkeyname
+    if (this.keyStores.contains(keyStr)) {
+      pk = getPrivateKey(keyStr)
+    }
+    this.signer.sign(pk,message)
+  }
+
   //根据CertId实现签名
   def sign4CertId(certinfo: CertId, message: Array[Byte]): Array[Byte] = {
-    val pkeyname = certinfo.creditCode + "." + certinfo.certName
+    val pkeyname = IdTool.getSignerFromCertId(certinfo) //certinfo.creditCode + "." + certinfo.certName
     sign(pkeyname, message)
   }
 
@@ -105,17 +122,17 @@ class SignTool(ctx: RepChainSystemContext) {
   //根据CertId实现验签
   def verify(signature: Array[Byte], message: Array[Byte], certinfo: CertId): Boolean = {
     var r = false
-    try {
-      val k = certinfo.creditCode + "." + certinfo.certName
+    try{
+      val k = IdTool.getSignerFromCertId(certinfo)//certinfo.creditCode + "." + certinfo.certName
       val pk = getVerifyCert(k)
       r = this.signer.verify(signature, message, pk)
-    } catch {
-      case e: Exception => {
-        RepLogger.trace(RepLogger.System_Logger, s"验签异常失败，certinfo=${IdTool.getSigner4String(certinfo)}")
+    }catch {
+      case e:Exception=>{
+        RepLogger.trace(RepLogger.System_Logger,s"验签异常失败，certinfo=${IdTool.getSignerFromCertId(certinfo)}")
       }
     }
-    if (!r) {
-      RepLogger.trace(RepLogger.System_Logger, s"验签失败，certinfo=${IdTool.getSigner4String(certinfo)}")
+    if(!r){
+      RepLogger.trace(RepLogger.System_Logger,s"验签失败，certinfo=${IdTool.getSignerFromCertId(certinfo)}")
     }
     r
   }
@@ -142,7 +159,7 @@ class SignTool(ctx: RepChainSystemContext) {
   }
 
   def loadPrivateKey4CertId(certinfo: CertId, password: String, path: String) = {
-    val pkeyname = certinfo.creditCode + "." + certinfo.certName
+    val pkeyname = IdTool.getSignerFromCertId(certinfo) // certinfo.creditCode + "." + certinfo.certName
     loadPrivateKey(pkeyname, password, path)
   }
 
@@ -202,10 +219,11 @@ class SignTool(ctx: RepChainSystemContext) {
 
   private def findCredit(credit: String,hm : HashMap[String,Certificate]): Boolean = {
     var r: Boolean = false
-    val n = credit + "."
+    //val n = credit + "."
+    val n = IdTool.getNodeSignerName(ctx.getConfig,credit)
     breakable(
       hm.keySet.foreach(k=>{
-        if(k.indexOf(n) == 0){
+          if(k.indexOf(n) == 0){
           r = true
           break
         }

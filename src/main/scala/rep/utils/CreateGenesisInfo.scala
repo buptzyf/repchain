@@ -7,6 +7,7 @@ import com.typesafe.config.ConfigFactory
 import org.json4s.jackson.JsonMethods.{pretty, render}
 import org.json4s.{DefaultFormats, jackson}
 import rep.app.system.RepChainSystemContext
+import rep.authority.check.PermissionVerify
 import rep.crypto.Sha256
 import rep.network.consensus.util.BlockHelp
 import rep.proto.rc2.Authorize.TransferType
@@ -30,10 +31,10 @@ object CreateGenesisInfo {
     ctx.getSignTool.loadPrivateKey("121000005l35120456.node1", "123", s"${ctx.getCryptoMgr.getKeyFileSuffix.substring(1)}/${ctx.getConfig.getChainNetworkId}/121000005l35120456.node1${ctx.getCryptoMgr.getKeyFileSuffix}")
     //ctx.getSignTool.loadNodeCertList("changeme", s"${ctx.getCryptoMgr.getKeyFileSuffix.substring(1)}/${ctx.getConfig.getChainNetworkId}/mytruststore${ctx.getCryptoMgr.getKeyFileSuffix}")
     ctx.getSignTool.loadPrivateKey("951002007l78123233.super_admin", "super_admin", s"${ctx.getCryptoMgr.getKeyFileSuffix.substring(1)}/${ctx.getConfig.getChainNetworkId}/951002007l78123233.super_admin${ctx.getCryptoMgr.getKeyFileSuffix}")
-    val sysName = "121000005l35120456.node1"
-    val superAdmin = "951002007l78123233.super_admin"
-    val super_credit = "951002007l78123233"
-    val sys_credit = "121000005l35120456"
+    val sysName = s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}121000005l35120456.node1"
+    val superAdmin = s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}951002007l78123233.super_admin"
+    val super_credit = s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}951002007l78123233"
+    val sys_credit = s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}121000005l35120456"
 
     val translist: ArrayBuffer[Transaction] = new ArrayBuffer[Transaction]
 
@@ -49,18 +50,19 @@ object CreateGenesisInfo {
 
     //注册合约的管理者，默认注册某个节点的DiD，并授予角色管理权限
     //注册节点DiD
+    val flag = s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}"
     val nodes: Array[(String, String, String)] = new Array[(String, String, String)](6)
-    nodes(0) = ("super_admin", "951002007l78123233", "18912345678")
-    nodes(1) = ("node1", "121000005l35120456", "18912345678")
-    nodes(2) = ("node2", "12110107bi45jh675g", "18912345678")
-    nodes(3) = ("node3", "122000002n00123567", "18912345678")
-    nodes(4) = ("node4", "921000005k36123789", "18912345678")
-    nodes(5) = ("node5", "921000006e0012v696", "18912345678")
+    nodes(0) = ("super_admin", s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}951002007l78123233", "18912345678")
+    nodes(1) = ("node1", s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}121000005l35120456", "18912345678")
+    nodes(2) = ("node2", s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}12110107bi45jh675g", "18912345678")
+    nodes(3) = ("node3", s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}122000002n00123567", "18912345678")
+    nodes(4) = ("node4", s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}921000005k36123789", "18912345678")
+    nodes(5) = ("node5", s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}921000006e0012v696", "18912345678")
     for (i <- 0 to 5) {
-      val certfile = scala.io.Source.fromFile(s"${ctx.getCryptoMgr.getKeyFileSuffix.substring(1)}/${ctx.getConfig.getChainNetworkId}/" + nodes(i)._2 + "." + nodes(i)._1 + ".cer", "UTF-8")
+      val certfile = scala.io.Source.fromFile(s"${ctx.getCryptoMgr.getKeyFileSuffix.substring(1)}/${ctx.getConfig.getChainNetworkId}/" + nodes(i)._2.substring(nodes(i)._2.indexOf(flag)+flag.length) + "." + nodes(i)._1 + ".cer", "UTF-8")
       val certstr = try certfile.mkString finally certfile.close()
-      val certstrhash = ctx.getHashTool.hashstr(IdTool.deleteLine(certstr))
-      val certid = IdTool.getCertIdFromName(nodes(i)._2 + "." + nodes(i)._1)
+      val certstrhash = ctx.getHashTool.hashstr(s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}"+IdTool.deleteLine(certstr))
+      val certid = IdTool.getCertIdFromCreditAndName(nodes(i)._2,nodes(i)._1)
       val millis = System.currentTimeMillis()
       //生成Did的身份证书
       val authcert = Certificate(certstr, "SHA256withECDSA", true, Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)),
@@ -73,20 +75,20 @@ object CreateGenesisInfo {
     //注册操作
     //权限管理合约操作注册
     val opsOfContract: Array[(String, String, String)] = new Array[(String, String, String)](14)
-    opsOfContract(0) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}.RdidOperateAuthorizeTPL.signUpSigner"), "注册RDID", s"${ctx.getConfig.getChainNetworkId}.RdidOperateAuthorizeTPL.signUpSigner")
-    opsOfContract(1) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}.RdidOperateAuthorizeTPL.updateSignerStatus"), "禁用或启用RDID", s"${ctx.getConfig.getChainNetworkId}.RdidOperateAuthorizeTPL.updateSignerStatus")
-    opsOfContract(2) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}.RdidOperateAuthorizeTPL.updateSigner"), "更新信息", s"${ctx.getConfig.getChainNetworkId}.RdidOperateAuthorizeTPL.updateSigner")
-    opsOfContract(3) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}.RdidOperateAuthorizeTPL.signUpCertificate"), "用户注册证书", s"${ctx.getConfig.getChainNetworkId}.RdidOperateAuthorizeTPL.signUpCertificate")
-    opsOfContract(4) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}.RdidOperateAuthorizeTPL.updateCertificateStatus"), "用户禁用或启用证书", s"${ctx.getConfig.getChainNetworkId}.RdidOperateAuthorizeTPL.updateCertificateStatus")
-    opsOfContract(5) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}.RdidOperateAuthorizeTPL.signUpAllTypeCertificate"), "用户可为所有人注册证书，需授权", s"${ctx.getConfig.getChainNetworkId}.RdidOperateAuthorizeTPL.signUpAllTypeCertificate")
-    opsOfContract(6) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}.RdidOperateAuthorizeTPL.updateAllTypeCertificateStatus"), "用户可为所有人禁用或启用证书，需授权，super_admin特殊处理", s"${ctx.getConfig.getChainNetworkId}.RdidOperateAuthorizeTPL.updateAllTypeCertificateStatus")
-    opsOfContract(7) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}.RdidOperateAuthorizeTPL.signUpOperate"), "注册操作，自己注册自己", s"${ctx.getConfig.getChainNetworkId}.RdidOperateAuthorizeTPL.signUpOperate")
-    opsOfContract(8) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}.RdidOperateAuthorizeTPL.updateOperateStatus"), "禁用或启用操作，自己更新自己名下的操作", s"${ctx.getConfig.getChainNetworkId}.RdidOperateAuthorizeTPL.updateOperateStatus")
-    opsOfContract(9) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}.RdidOperateAuthorizeTPL.grantOperate"), "授权操作", s"${ctx.getConfig.getChainNetworkId}.RdidOperateAuthorizeTPL.grantOperate")
-    opsOfContract(10) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}.RdidOperateAuthorizeTPL.updateGrantOperateStatus"), "禁用或启用授权", s"${ctx.getConfig.getChainNetworkId}.RdidOperateAuthorizeTPL.updateGrantOperateStatus")
-    opsOfContract(11) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}.RdidOperateAuthorizeTPL.bindCertToAuthorize"), "绑定证书到授权操作", s"${ctx.getConfig.getChainNetworkId}.RdidOperateAuthorizeTPL.bindCertToAuthorize")
-    opsOfContract(12) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}.*.deploy"), "发布合约操作", s"${ctx.getConfig.getChainNetworkId}.*.deploy") //*表示可以发布任意合约
-    opsOfContract(13) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}.*.setState"), "改变合约状态操作", s"${ctx.getConfig.getChainNetworkId}.*.setState") //*表示可以设置任意合约状态
+    opsOfContract(0) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.signUpSigner"), "注册RDID", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.signUpSigner")
+    opsOfContract(1) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.updateSignerStatus"), "禁用或启用RDID", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.updateSignerStatus")
+    opsOfContract(2) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.updateSigner"), "更新信息", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.updateSigner")
+    opsOfContract(3) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.signUpCertificate"), "用户注册证书", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.signUpCertificate")
+    opsOfContract(4) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.updateCertificateStatus"), "用户禁用或启用证书", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.updateCertificateStatus")
+    opsOfContract(5) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.signUpAllTypeCertificate"), "用户可为所有人注册证书，需授权", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.signUpAllTypeCertificate")
+    opsOfContract(6) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.updateAllTypeCertificateStatus"), "用户可为所有人禁用或启用证书，需授权，super_admin特殊处理", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.updateAllTypeCertificateStatus")
+    opsOfContract(7) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.signUpOperate"), "注册操作，自己注册自己", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.signUpOperate")
+    opsOfContract(8) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.updateOperateStatus"), "禁用或启用操作，自己更新自己名下的操作", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.updateOperateStatus")
+    opsOfContract(9) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.grantOperate"), "授权操作", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.grantOperate")
+    opsOfContract(10) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.updateGrantOperateStatus"), "禁用或启用授权", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.updateGrantOperateStatus")
+    opsOfContract(11) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.bindCertToAuthorize"), "绑定证书到授权操作", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.bindCertToAuthorize")
+    opsOfContract(12) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}*.deploy"), "发布合约操作", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}*.deploy") //*表示可以发布任意合约
+    opsOfContract(13) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}*.setState"), "改变合约状态操作", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}*.setState") //*表示可以设置任意合约状态
 
     for (i <- 0 to 13) {
       val millis = System.currentTimeMillis()
@@ -108,25 +110,25 @@ object CreateGenesisInfo {
 
     //api操作注册
     val opsOfAPI: Array[(String, String, String,Boolean)] = new Array[(String, String, String,Boolean)](17)
-    opsOfAPI(0) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}.chaininfo.chaininfo"), "获取链信息", s"${ctx.getConfig.getChainNetworkId}.chaininfo.chaininfo",true)
-    opsOfAPI(1) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}.chaininfo.node"), "返回组网节点数量", s"${ctx.getConfig.getChainNetworkId}.chaininfo.node",true)
-    opsOfAPI(2) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}.chaininfo.getcachetransnumber"), "返回系统缓存交易数量", s"${ctx.getConfig.getChainNetworkId}.chaininfo.getcachetransnumber",true)
-    opsOfAPI(3) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}.chaininfo.getAcceptedTransNumber"), "返回系统接收到的交易数量", s"${ctx.getConfig.getChainNetworkId}.chaininfo.getAcceptedTransNumber",true)
+    opsOfAPI(0) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}chaininfo.chaininfo"), "获取链信息", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}chaininfo.chaininfo",true)
+    opsOfAPI(1) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}chaininfo.node"), "返回组网节点数量", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}chaininfo.node",true)
+    opsOfAPI(2) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}chaininfo.getcachetransnumber"), "返回系统缓存交易数量", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}chaininfo.getcachetransnumber",true)
+    opsOfAPI(3) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}chaininfo.getAcceptedTransNumber"), "返回系统接收到的交易数量", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}chaininfo.getAcceptedTransNumber",true)
 
-    opsOfAPI(4) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}.block.hash"), "返回指定id的区块", s"${ctx.getConfig.getChainNetworkId}.block.hash",false)
-    opsOfAPI(5) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}.block.blockHeight"), "返回指定高度的区块", s"${ctx.getConfig.getChainNetworkId}.block.blockHeight",false)
-    opsOfAPI(6) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}.block.getTransNumberOfBlock"), "返回指定高度区块包含的交易数", s"${ctx.getConfig.getChainNetworkId}.block.getTransNumberOfBlock",true)
-    opsOfAPI(7) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}.block.blocktime"), "返回指定高度的区块的出块时间", s"${ctx.getConfig.getChainNetworkId}.block.blocktime",true)
-    opsOfAPI(8) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}.block.blocktimeoftran"), "返回指定交易的入块时间", s"${ctx.getConfig.getChainNetworkId}.block.blocktimeoftran",true)
-    opsOfAPI(9) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}.block.stream"), "返回指定高度的区块字节流", s"${ctx.getConfig.getChainNetworkId}.block.stream",false)
+    opsOfAPI(4) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}block.hash"), "返回指定id的区块", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}block.hash",false)
+    opsOfAPI(5) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}block.blockHeight"), "返回指定高度的区块", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}block.blockHeight",false)
+    opsOfAPI(6) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}block.getTransNumberOfBlock"), "返回指定高度区块包含的交易数", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}block.getTransNumberOfBlock",true)
+    opsOfAPI(7) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}block.blocktime"), "返回指定高度的区块的出块时间", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}block.blocktime",true)
+    opsOfAPI(8) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}block.blocktimeoftran"), "返回指定交易的入块时间", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}block.blocktimeoftran",true)
+    opsOfAPI(9) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}block.stream"), "返回指定高度的区块字节流", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}block.stream",false)
 
-    opsOfAPI(10) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}.transaction"), "返回指定id的交易", s"${ctx.getConfig.getChainNetworkId}.transaction",false)
-    opsOfAPI(11) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}.transaction.stream"), "返回指定id的交易字节流", s"${ctx.getConfig.getChainNetworkId}.transaction.stream",false)
-    opsOfAPI(12) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}.transaction.postTranByString"), "提交带签名的交易", s"${ctx.getConfig.getChainNetworkId}.transaction.postTranByString",true)
-    opsOfAPI(13) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}.transaction.postTranStream"), "提交带签名的交易字节流", s"${ctx.getConfig.getChainNetworkId}.transaction.postTranStream",true)
-    opsOfAPI(14) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}.transaction.postTran"), "提交交易", s"${ctx.getConfig.getChainNetworkId}.transaction.postTran",true)
-    opsOfAPI(15) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}.transaction.tranInfoAndHeight"), "回指定id的交易信息及所在区块高度", s"${ctx.getConfig.getChainNetworkId}.transaction.tranInfoAndHeight",false)
-    opsOfAPI(16) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}.db.query"), "查询合约存储在DB中的数据", s"${ctx.getConfig.getChainNetworkId}.db.query",false)
+    opsOfAPI(10) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}transaction"), "返回指定id的交易", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}transaction",false)
+    opsOfAPI(11) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}transaction.stream"), "返回指定id的交易字节流", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}transaction.stream",false)
+    opsOfAPI(12) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}transaction.postTranByString"), "提交带签名的交易", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}transaction.postTranByString",true)
+    opsOfAPI(13) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}transaction.postTranStream"), "提交带签名的交易字节流", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}transaction.postTranStream",true)
+    opsOfAPI(14) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}transaction.postTran"), "提交交易", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}transaction.postTran",true)
+    opsOfAPI(15) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}transaction.tranInfoAndHeight"), "回指定id的交易信息及所在区块高度", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}transaction.tranInfoAndHeight",false)
+    opsOfAPI(16) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}db.query"), "查询合约存储在DB中的数据", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}db.query",false)
 
 
     for (i <- 0 to 16) {
@@ -156,12 +158,27 @@ object CreateGenesisInfo {
       opids += opsOfAPI(i)._1
     }
 
-    val tmpmillis = System.currentTimeMillis()
+    val als = new ArrayBuffer[String]
+    granteds.foreach(granted=>{
+      opids.foreach(op=>{
+        val gs = Array{granted}
+        val os = Array{op}
+        val tmpmillis = System.currentTimeMillis()
+        val at = Authorize(IdTool.getRandomUUID, super_credit,gs , os,
+          TransferType.TRANSFER_REPEATEDLY, Option(Timestamp(tmpmillis / 1000, ((tmpmillis % 1000) * 1000000).toInt)),
+          _root_.scala.None, true, "1.0")
+        als += JsonFormat.toJsonString(at)
+      })
+    })
+    translist += ctx.getTransactionBuilder.createTransaction4Invoke(superAdmin, cid1, "grantOperate", Seq(SerializeUtils.compactJson(als)))
+    /*val tmpmillis = System.currentTimeMillis()
     val at = Authorize(IdTool.getRandomUUID, super_credit, granteds, opids,
       TransferType.TRANSFER_REPEATEDLY, Option(Timestamp(tmpmillis / 1000, ((tmpmillis % 1000) * 1000000).toInt)),
       _root_.scala.None, true, "1.0")
     var als: List[String] = List(JsonFormat.toJsonString(at))
     translist += ctx.getTransactionBuilder.createTransaction4Invoke(superAdmin, cid1, "grantOperate", Seq(SerializeUtils.compactJson(als)))
+*/
+
 
     //部署应用合约--分账合约
     val s2 = scala.io.Source.fromFile("src/main/scala/rep/sc/tpl/ContractAssetsTPL.scala", "UTF-8")
@@ -174,9 +191,9 @@ object CreateGenesisInfo {
 
     //建立应用合约的操作
     val opsOfCustomContract: Array[(String, String, String)] = new Array[(String, String, String)](3)
-    opsOfCustomContract(0) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}.ContractAssetsTPL.transfer"), "转账交易", s"${ctx.getConfig.getChainNetworkId}.ContractAssetsTPL.transfer")
-    opsOfCustomContract(1) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}.ContractAssetsTPL.set"), "初始化账户", s"${ctx.getConfig.getChainNetworkId}.ContractAssetsTPL.set")
-    opsOfCustomContract(2) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}.ContractAssetsTPL.putProof"), "存证", s"${ctx.getConfig.getChainNetworkId}.ContractAssetsTPL.putProof")
+    opsOfCustomContract(0) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}ContractAssetsTPL.transfer"), "转账交易", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}ContractAssetsTPL.transfer")
+    opsOfCustomContract(1) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}ContractAssetsTPL.set"), "初始化账户", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}ContractAssetsTPL.set")
+    opsOfCustomContract(2) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}ContractAssetsTPL.putProof"), "存证", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}ContractAssetsTPL.putProof")
 
     val tmillis = System.currentTimeMillis()
     val snls = List("transaction.stream", "transaction.postTranByString", "transaction.postTranStream", "transaction.postTran")
@@ -201,7 +218,7 @@ object CreateGenesisInfo {
     // 设置账户初始金额
     val s3 = scala.io.Source.fromFile("api_req/json/set.json", "UTF-8")
     val ct1 = try s3.mkString finally s3.close()
-    translist += ctx.getTransactionBuilder.createTransaction4Invoke("951002007l78123233.super_admin", cid2, "set", Seq(ct1))
+    translist += ctx.getTransactionBuilder.createTransaction4Invoke(superAdmin, cid2, "set", Seq(ct1))
 
 
     //部署应用合约--凭据管理合约
@@ -215,11 +232,11 @@ object CreateGenesisInfo {
 
     //建立凭据管理合约的操作
     val opsOfCustomContract1: Array[(String, String, String)] = new Array[(String, String, String)](5)
-    opsOfCustomContract1(0) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}.RVerifiableCredentialTPL." + RVerifiableCredentialTPL.Action.SignupCCS), "注册可验证凭据属性结构", s"${ctx.getConfig.getChainNetworkId}.RVerifiableCredentialTPL." + RVerifiableCredentialTPL.Action.SignupCCS)
-    opsOfCustomContract1(1) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}.RVerifiableCredentialTPL." + RVerifiableCredentialTPL.Action.UpdateCCSStatus), "更新可验证凭据属性结构有效状态", s"${ctx.getConfig.getChainNetworkId}.RVerifiableCredentialTPL." + RVerifiableCredentialTPL.Action.UpdateCCSStatus)
-    opsOfCustomContract1(2) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}.RVerifiableCredentialTPL." + RVerifiableCredentialTPL.Action.SignupVCStatus), "注册可验证凭据状态", s"${ctx.getConfig.getChainNetworkId}.RVerifiableCredentialTPL." + RVerifiableCredentialTPL.Action.SignupVCStatus)
-    opsOfCustomContract1(3) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}.RVerifiableCredentialTPL." + RVerifiableCredentialTPL.Action.UpdateVCStatus), "更新可验证凭据状态", s"${ctx.getConfig.getChainNetworkId}.RVerifiableCredentialTPL." + RVerifiableCredentialTPL.Action.UpdateVCStatus)
-    opsOfCustomContract1(4) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}.RVerifiableCredentialTPL." + RVerifiableCredentialTPL.Action.RevokeVCClaims), "撤销可验证凭据属性状态", s"${ctx.getConfig.getChainNetworkId}.RVerifiableCredentialTPL." + RVerifiableCredentialTPL.Action.RevokeVCClaims)
+    opsOfCustomContract1(0) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RVerifiableCredentialTPL." + RVerifiableCredentialTPL.Action.SignupCCS), "注册可验证凭据属性结构", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RVerifiableCredentialTPL." + RVerifiableCredentialTPL.Action.SignupCCS)
+    opsOfCustomContract1(1) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RVerifiableCredentialTPL." + RVerifiableCredentialTPL.Action.UpdateCCSStatus), "更新可验证凭据属性结构有效状态", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RVerifiableCredentialTPL." + RVerifiableCredentialTPL.Action.UpdateCCSStatus)
+    opsOfCustomContract1(2) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RVerifiableCredentialTPL." + RVerifiableCredentialTPL.Action.SignupVCStatus), "注册可验证凭据状态", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RVerifiableCredentialTPL." + RVerifiableCredentialTPL.Action.SignupVCStatus)
+    opsOfCustomContract1(3) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RVerifiableCredentialTPL." + RVerifiableCredentialTPL.Action.UpdateVCStatus), "更新可验证凭据状态", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RVerifiableCredentialTPL." + RVerifiableCredentialTPL.Action.UpdateVCStatus)
+    opsOfCustomContract1(4) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RVerifiableCredentialTPL." + RVerifiableCredentialTPL.Action.RevokeVCClaims), "撤销可验证凭据属性状态", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RVerifiableCredentialTPL." + RVerifiableCredentialTPL.Action.RevokeVCClaims)
 
     //生成Operate 目前这些操作都是公开的，都可以调用
     val op11 = Operate(opsOfCustomContract1(0)._1, opsOfCustomContract1(0)._2, sys_credit, true, OperateType.OPERATE_CONTRACT,
@@ -262,10 +279,10 @@ object CreateGenesisInfo {
 
     //建立应用合约的操作
     val opsOfCoopContract: Array[(String, String, String)] = new Array[(String, String, String)](4)
-    opsOfCoopContract(0) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}.InterfaceCooperation.registerApiDefinition"), "注册接口定义", s"${ctx.getConfig.getChainNetworkId}.InterfaceCooperation.registerApiDefinition")
-    opsOfCoopContract(1) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}.InterfaceCooperation.registerApiService"), "注册接口服务", s"${ctx.getConfig.getChainNetworkId}.InterfaceCooperation.registerApiService")
-    opsOfCoopContract(2) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}.InterfaceCooperation.registerApiAckReceive"), "注册接口应答", s"${ctx.getConfig.getChainNetworkId}.InterfaceCooperation.registerApiAckReceive")
-    opsOfCoopContract(3) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}.InterfaceCooperation.reqAckProof"), "请求应答存证", s"${ctx.getConfig.getChainNetworkId}.InterfaceCooperation.reqAckProof")
+    opsOfCoopContract(0) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}InterfaceCooperation.registerApiDefinition"), "注册接口定义", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}InterfaceCooperation.registerApiDefinition")
+    opsOfCoopContract(1) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}InterfaceCooperation.registerApiService"), "注册接口服务", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}InterfaceCooperation.registerApiService")
+    opsOfCoopContract(2) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}InterfaceCooperation.registerApiAckReceive"), "注册接口应答", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}InterfaceCooperation.registerApiAckReceive")
+    opsOfCoopContract(3) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}InterfaceCooperation.reqAckProof"), "请求应答存证", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}InterfaceCooperation.reqAckProof")
 
     val coop_millis = System.currentTimeMillis()
     val coop_snls = List("transaction.stream", "transaction.postTranByString", "transaction.postTranStream", "transaction.postTran")

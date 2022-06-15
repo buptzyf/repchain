@@ -22,19 +22,35 @@ class CertificateCache(ctx : RepChainSystemContext) extends ICache(ctx){
       var cd : Option[certData] = None
       val cert = any.get.asInstanceOf[Certificate]
       if(cert != null) {
-        cd = Some(certData(IdTool.getSigner4String(cert.id.get),cert.certHash,getCertByPem(cert.certificate),cert.certValid))
+        cd = Some(certData(IdTool.getSignerFromCertId(cert.id.get),cert.certHash,getCertByPem(cert.certificate),cert.certValid))
       }
       cd
     }
   }
 
+  override protected def getBaseNetworkPrefix: String = {
+    if(IdTool.isDidContract(ctx.getConfig.getAccountContractName)){
+      this.common_prefix + IdTool.WorldStateKeySeparator + DidTplPrefix.certPrefix
+    }else{
+      this.common_prefix + IdTool.WorldStateKeySeparator
+    }
+  }
+
+  override protected def getBusinessNetworkPrefix: String = {
+    if(IdTool.isDidContract(ctx.getConfig.getAccountContractName)){
+      this.business_prefix + IdTool.WorldStateKeySeparator + DidTplPrefix.certPrefix
+    }else{
+      this.business_prefix + IdTool.WorldStateKeySeparator
+    }
+  }
+
+
   override protected def getPrefix: String = {
     if(IdTool.isDidContract(ctx.getConfig.getAccountContractName)){
-      this.common_prefix + this.splitSign + DidTplPrefix.certPrefix
+      this.common_prefix + IdTool.WorldStateKeySeparator + DidTplPrefix.certPrefix
     }else{
-      this.common_prefix + this.splitSign
+      this.common_prefix + IdTool.WorldStateKeySeparator
     }
-
   }
 
   private def getCertByPem(pemCert: String): java.security.cert.Certificate = {
@@ -55,6 +71,6 @@ class CertificateCache(ctx : RepChainSystemContext) extends ICache(ctx){
 
 
   override protected def getCacheType: String = {
-    this.splitSign + DidTplPrefix.certPrefix
+    IdTool.WorldStateKeySeparator + DidTplPrefix.certPrefix
   }
 }
