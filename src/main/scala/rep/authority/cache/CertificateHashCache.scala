@@ -18,6 +18,14 @@ class CertificateHashCache(ctx : RepChainSystemContext) extends ICache(ctx) {
     this.common_prefix + IdTool.WorldStateKeySeparator + DidTplPrefix.hashPrefix
   }
 
+  override protected def getBaseNetworkPrefix: String = {
+    this.common_prefix + IdTool.WorldStateKeySeparator + DidTplPrefix.hashPrefix
+  }
+
+  override protected def getBusinessNetworkPrefix: String = {
+    this.business_prefix + IdTool.WorldStateKeySeparator + DidTplPrefix.hashPrefix
+  }
+
   def get(key:String,blockPreload: BlockPreload):Option[String]={
     val d = this.getData(key,blockPreload)
     if(d == None)

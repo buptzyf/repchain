@@ -69,7 +69,21 @@ class SignerCache(ctx : RepChainSystemContext) extends ICache(ctx){
     }
   }
 
+  override protected def getBaseNetworkPrefix: String = {
+    if(IdTool.isDidContract(ctx.getConfig.getAccountContractName)){
+      this.common_prefix + IdTool.WorldStateKeySeparator + DidTplPrefix.signerPrefix
+    }else{
+      this.common_prefix + IdTool.WorldStateKeySeparator
+    }
+  }
 
+  override protected def getBusinessNetworkPrefix: String = {
+    if(IdTool.isDidContract(ctx.getConfig.getAccountContractName)){
+      this.business_prefix + IdTool.WorldStateKeySeparator + DidTplPrefix.signerPrefix
+    }else{
+      this.business_prefix + IdTool.WorldStateKeySeparator
+    }
+  }
 
   override protected def getPrefix: String = {
     if(IdTool.isDidContract(ctx.getConfig.getAccountContractName)){

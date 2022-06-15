@@ -30,6 +30,14 @@ class AuthenticateCache(ctx : RepChainSystemContext) extends ICache(ctx) {
     this.common_prefix + IdTool.WorldStateKeySeparator + DidTplPrefix.authPrefix
   }
 
+  override protected def getBaseNetworkPrefix: String = {
+    this.common_prefix + IdTool.WorldStateKeySeparator + DidTplPrefix.authPrefix
+  }
+
+  override protected def getBusinessNetworkPrefix: String = {
+    this.business_prefix + IdTool.WorldStateKeySeparator + DidTplPrefix.authPrefix
+  }
+
   def get(key:String,blockPreload: BlockPreload):Option[authData]={
     val d = this.getData(key,blockPreload)
     if(d == None)

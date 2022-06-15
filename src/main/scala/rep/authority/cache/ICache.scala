@@ -18,7 +18,9 @@ abstract class ICache(ctx: RepChainSystemContext) {
   final private val config = ctx.getConfig
   final private val cid = ChaincodeId(config.getAccountContractName, config.getAccountContractVersion)
   final val common_prefix: String = KeyPrefixManager.getIdentityNetKeyPrefix(
-    config, cid.chaincodeName)
+                                      config, cid.chaincodeName)
+  final val business_prefix : String = KeyPrefixManager.getCustomNetKeyPrefix(
+                                      ctx.getConfig.getChainNetworkId,cid.chaincodeName)
   final private val db = DBFactory.getDBAccess(config)
   final protected val cacheMaxSize = config.getAccountCacheSize
   final protected implicit val cache = new ConcurrentLinkedHashMap.Builder[String, Option[Any]]()
@@ -32,26 +34,35 @@ abstract class ICache(ctx: RepChainSystemContext) {
 
   protected def getPrefix: String
 
+  protected def getBaseNetworkPrefix: String
+  protected def getBusinessNetworkPrefix: String
+
   protected def getCacheType: String
 
   private def readData(key: String, blockPreload: BlockPreload): Option[Any] = {
-    var r = this.cache.getOrDefault(key, None)
+    val r = this.cache.getOrDefault(key, None)
     if (r == None) {
-      RepLogger.Permission_Logger.trace(s"ICache.readData asynchronous read,key=${key}")
-      asynchronousReadData(key, blockPreload)
+      RepLogger.Permission_Logger.trace(s"ICache.readData asynchronous read,from IdentityNet,key=${key}")
+      //获取数据方式，0：从基础链获取；1：从业务链获取；
+      var data = asynchronousReadData(key, blockPreload,0)
+      if(data == None && !this.ctx.getConfig.getIdentityNetName.equalsIgnoreCase(this.ctx.getConfig.getChainNetworkId)){
+        data = asynchronousReadData(key, blockPreload,1)
+        RepLogger.Permission_Logger.trace(s"ICache.readData asynchronous read,from Business,key=${key}")
+      }
+      data
     } else {
       RepLogger.Permission_Logger.trace(s"ICache.readData cache read,key=${key},data=${r}")
       r
     }
   }
 
-  private def asynchronousReadData(key: String, blockPreload: BlockPreload): Option[Any] = {
+  private def asynchronousReadData(key: String, blockPreload: BlockPreload,mode:Int): Option[Any] = {
     var r: Option[Any] = None
     try {
       var dr: Future[Option[Any]] = this.reader.get(key)
       if (dr == null) {
         //对于相同的key对应值的获取，保证系统只有一个线程在读，不会生成多个线程，防止缓存被众多线程击穿
-        dr = asynchronousHandleData(key, blockPreload)
+        dr = asynchronousHandleData(key, blockPreload, mode)
         val old = this.reader.putIfAbsent(key, dr)
         if (old != null) {
           dr = old
@@ -66,7 +77,8 @@ abstract class ICache(ctx: RepChainSystemContext) {
     r
   }
 
-  private def asynchronousHandleData(key: String, blockPreload: BlockPreload): Future[Option[Any]] = Future {
+  private def asynchronousHandleData(key: String, blockPreload: BlockPreload,mode :Int): Future[Option[Any]] = Future {
+    val prefix = if(mode == 0) this.getBaseNetworkPrefix else this.getBusinessNetworkPrefix
     val r = this.dataTypeConvert(this.db.getObject(this.getPrefix + key), blockPreload)
     if (r != None) {
       //将读取的数据写入缓存
@@ -106,7 +118,7 @@ abstract class ICache(ctx: RepChainSystemContext) {
   protected def getData(key: String, blockPreload: BlockPreload): Option[Any] = {
     if (blockPreload != null) {
       //在预执行中获取，如果预执行中没有找到，再到缓存中获取
-      val pd = dataTypeConvert(blockPreload.getObjectFromCache(this.getPrefix + key), blockPreload)
+      val pd = dataTypeConvert(blockPreload.getObjectFromCache(this.getBusinessNetworkPrefix + key), blockPreload)
       if (pd == None) {
         readData(key, blockPreload)
         //readDataOfRealtime(key,blockPreload)

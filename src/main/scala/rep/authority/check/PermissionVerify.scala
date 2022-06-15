@@ -160,7 +160,7 @@ class PermissionVerify(ctx: RepChainSystemContext) {
 
   def CheckPermissionOfX509Certificate(cert: X509Certificate, opName: String, dbInstance: BlockPreload): Boolean = {
     val pem = IdTool.toPemString(cert)
-    val hash = this.ctx.getHashTool.hashstr(IdTool.deleteLine(pem))
+    val hash = this.ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}"+IdTool.deleteLine(pem))
     CheckPermissionOfCertHash(hash, IdTool.getCompleteOpName(ctx.getConfig,opName), dbInstance)
   }
 

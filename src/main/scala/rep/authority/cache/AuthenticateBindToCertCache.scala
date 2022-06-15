@@ -18,6 +18,14 @@ class AuthenticateBindToCertCache(ctx : RepChainSystemContext) extends ICache(ct
     this.common_prefix + IdTool.WorldStateKeySeparator + DidTplPrefix.bindPrefix
   }
 
+  override protected def getBaseNetworkPrefix: String = {
+    this.common_prefix + IdTool.WorldStateKeySeparator + DidTplPrefix.bindPrefix
+  }
+
+  override protected def getBusinessNetworkPrefix: String = {
+    this.business_prefix + IdTool.WorldStateKeySeparator + DidTplPrefix.bindPrefix
+  }
+
   def get(authid:String,certid:String,blockPreload: BlockPreload):Option[Boolean]={
     get(authid+"-"+certid,blockPreload)
   }

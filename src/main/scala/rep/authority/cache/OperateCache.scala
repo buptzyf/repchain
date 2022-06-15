@@ -49,4 +49,12 @@ class OperateCache(ctx : RepChainSystemContext) extends ICache(ctx) {
   override protected def getCacheType: String = {
     IdTool.WorldStateKeySeparator + DidTplPrefix.operPrefix
   }
+
+  override protected def getBaseNetworkPrefix: String = {
+    this.common_prefix + IdTool.WorldStateKeySeparator + DidTplPrefix.operPrefix
+  }
+
+  override protected def getBusinessNetworkPrefix: String = {
+    this.business_prefix + IdTool.WorldStateKeySeparator + DidTplPrefix.operPrefix
+  }
 }
