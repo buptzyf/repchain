@@ -143,7 +143,7 @@ class ClusterSystem(sysTag: String, isStartupClusterSystem: Boolean) {
   }
 
   private def initConsensusNodeOfConfig = {
-    val nodeList = sysConf.getStringList("system.vote.vote_node_list")
+    val nodeList =  ctx.getConsensusNodeConfig.getVoteListOfConfig //sysConf.getStringList("system.vote.vote_node_list")
     if (nodeList.contains(this.sysTag)) {
       val roles: List[String] = new ArrayList[String]
       roles.add("CRFD-Node:" + this.sysTag)
