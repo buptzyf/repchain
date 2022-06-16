@@ -14,9 +14,9 @@ class AuthenticateBindToCertCache(ctx : RepChainSystemContext) extends ICache(ct
     }
   }
 
-  override protected def getPrefix: String = {
+  /*override protected def getPrefix: String = {
     this.common_prefix + IdTool.WorldStateKeySeparator + DidTplPrefix.bindPrefix
-  }
+  }*/
 
   override protected def getBaseNetworkPrefix: String = {
     this.common_prefix + IdTool.WorldStateKeySeparator + DidTplPrefix.bindPrefix

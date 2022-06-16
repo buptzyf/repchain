@@ -13,4 +13,8 @@ object DidTplPrefix {
   val hashPrefix = "hash-"
   val ccsPrefix  = "ccs-"
   val vcsPrefix  = "vcs-"
+  val authIdxPrefix = "authidx-"
+  val operIdxPrefix = "operidx-"
+  val authIdxSuffix = "-authenticates"
+  val operIdxSuffix = "-operates"
 }

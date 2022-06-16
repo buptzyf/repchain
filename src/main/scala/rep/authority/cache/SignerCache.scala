@@ -29,7 +29,17 @@ class SignerCache(ctx : RepChainSystemContext) extends ICache(ctx){
     }else{
       List[String]()
     }
+  }
 
+  protected def getAuthenticates(creditCode:String,blockPreload: BlockPreload):Array[String]={
+    val authIdx = ctx.getPermissionCacheManager.getCache(DidTplPrefix.authIdxPrefix)
+    if(authIdx != null){
+      val authIdx_cache = authIdx.asInstanceOf[AuthenticateIndexCache]
+      val data = authIdx_cache.get(creditCode+DidTplPrefix.authIdxSuffix,blockPreload)
+      if(data == None) Array[String]() else data.get
+    }else{
+      Array[String]()
+    }
   }
 
   override protected def dataTypeConvert(any: Option[Any],blockPreload: BlockPreload): Option[Any] = {
@@ -41,9 +51,9 @@ class SignerCache(ctx : RepChainSystemContext) extends ICache(ctx){
       val opIds:ConcurrentHashMap[String,ArrayBuffer[String]] = new ConcurrentHashMap[String,ArrayBuffer[String]]()
       RepLogger.Permission_Logger.trace(s"ISignerCache.signerToSignerData ,key=${signer.creditCode}")
       if(signer != null) {
-        if(!signer.authorizeIds.isEmpty) {
+        val authList = this.getAuthenticates(DidTplPrefix.authIdxPrefix + signer.creditCode + DidTplPrefix.authIdxSuffix,blockPreload)
+        if(!authList.isEmpty) {
           RepLogger.Permission_Logger.trace(s"ISignerCache.signerToSignerData find Signer`s auth ,key=${signer.creditCode}")
-          val authList = signer.authorizeIds.toList
           authList.foreach(f=>{
             val opList = getOpIdInAuthid(f,blockPreload)
             if(!opList.isEmpty){
@@ -63,6 +73,7 @@ class SignerCache(ctx : RepChainSystemContext) extends ICache(ctx){
             }
           })
         }
+
         sd = Some(signerData(signer.creditCode,signer.signerValid,opIds,signer.certNames,signer.createTime))
       }
       sd
@@ -85,14 +96,14 @@ class SignerCache(ctx : RepChainSystemContext) extends ICache(ctx){
     }
   }
 
-  override protected def getPrefix: String = {
+  /*override protected def getPrefix: String = {
     if(IdTool.isDidContract(ctx.getConfig.getAccountContractName)){
       this.common_prefix + IdTool.WorldStateKeySeparator + DidTplPrefix.signerPrefix
     }else{
       this.common_prefix + IdTool.WorldStateKeySeparator
     }
 
-  }
+  }*/
 
   def get(key:String,blockPreload: BlockPreload):Option[signerData]={
     val d = this.getData(key,blockPreload)

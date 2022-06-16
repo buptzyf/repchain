@@ -32,7 +32,7 @@ abstract class ICache(ctx: RepChainSystemContext) {
   //负责数据格式转换
   protected def dataTypeConvert(any: Option[Any], blockPreload: BlockPreload): Option[Any]
 
-  protected def getPrefix: String
+  //protected def getPrefix: String
 
   protected def getBaseNetworkPrefix: String
   protected def getBusinessNetworkPrefix: String
@@ -79,7 +79,7 @@ abstract class ICache(ctx: RepChainSystemContext) {
 
   private def asynchronousHandleData(key: String, blockPreload: BlockPreload,mode :Int): Future[Option[Any]] = Future {
     val prefix = if(mode == 0) this.getBaseNetworkPrefix else this.getBusinessNetworkPrefix
-    val r = this.dataTypeConvert(this.db.getObject(this.getPrefix + key), blockPreload)
+    val r = this.dataTypeConvert(this.db.getObject(prefix + key), blockPreload)
     if (r != None) {
       //将读取的数据写入缓存
       this.cache.put(key, r)
@@ -103,7 +103,7 @@ abstract class ICache(ctx: RepChainSystemContext) {
     RepLogger.Permission_Logger.trace(s"ICache.updateCache update cache data,key=${key},pk=${pk}")
   }
 
-  protected def readDataOfRealtime(key: String, blockPreload: BlockPreload): Option[Any] = {
+  /*protected def readDataOfRealtime(key: String, blockPreload: BlockPreload): Option[Any] = {
     synchronized {
       val r = this.dataTypeConvert(this.db.getObject(this.getPrefix + key), blockPreload)
       if (r != None) {
@@ -113,7 +113,7 @@ abstract class ICache(ctx: RepChainSystemContext) {
       RepLogger.Permission_Logger.trace(s"ICache.read data in realtime,key=${key},data=${r}")
       r
     }
-  }
+  }*/
 
   protected def getData(key: String, blockPreload: BlockPreload): Option[Any] = {
     if (blockPreload != null) {

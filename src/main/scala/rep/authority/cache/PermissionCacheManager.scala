@@ -20,6 +20,8 @@ class PermissionCacheManager private(ctx : RepChainSystemContext) {
   private val certificateCache = new CertificateCache(ctx)
   private val certificateHashCache = new CertificateHashCache(ctx)
   private val operateCache = new OperateCache(ctx)
+  private val authIdxCache = new AuthenticateIndexCache(ctx)
+  private val operIdxCache = new OperateIndexCache(ctx)
 
   /**
    * @author jiangbuyun
@@ -38,6 +40,8 @@ class PermissionCacheManager private(ctx : RepChainSystemContext) {
         case DidTplPrefix.certPrefix=> obj = this.certificateCache
         case DidTplPrefix.hashPrefix=> obj = this.certificateHashCache
         case DidTplPrefix.operPrefix=> obj = this.operateCache
+        case DidTplPrefix.authIdxPrefix=> obj = this.authIdxCache
+        case DidTplPrefix.operIdxPrefix=> obj = this.operIdxCache
       }
     obj
   }
@@ -76,6 +80,10 @@ class PermissionCacheManager private(ctx : RepChainSystemContext) {
         this.authenticateBindToCertCache.updateCache(key)
     }else if(key.indexOf("_"+DidTplPrefix.hashPrefix)>0) {
         this.certificateHashCache.updateCache(key)
+    }else if(key.indexOf("_"+DidTplPrefix.authIdxPrefix)>0) {
+      this.authIdxCache.updateCache(key)
+    }else if(key.indexOf("_"+DidTplPrefix.operIdxPrefix)>0) {
+      this.operIdxCache.updateCache(key)
     }
   }
 }

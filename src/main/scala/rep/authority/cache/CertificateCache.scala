@@ -45,13 +45,13 @@ class CertificateCache(ctx : RepChainSystemContext) extends ICache(ctx){
   }
 
 
-  override protected def getPrefix: String = {
+  /*override protected def getPrefix: String = {
     if(IdTool.isDidContract(ctx.getConfig.getAccountContractName)){
       this.common_prefix + IdTool.WorldStateKeySeparator + DidTplPrefix.certPrefix
     }else{
       this.common_prefix + IdTool.WorldStateKeySeparator
     }
-  }
+  }*/
 
   private def getCertByPem(pemCert: String): java.security.cert.Certificate = {
     val cf = java.security.cert.CertificateFactory.getInstance("X.509")

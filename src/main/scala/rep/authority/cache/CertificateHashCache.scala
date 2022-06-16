@@ -14,9 +14,9 @@ class CertificateHashCache(ctx : RepChainSystemContext) extends ICache(ctx) {
     }
   }
 
-  override protected def getPrefix: String = {
+  /*override protected def getPrefix: String = {
     this.common_prefix + IdTool.WorldStateKeySeparator + DidTplPrefix.hashPrefix
-  }
+  }*/
 
   override protected def getBaseNetworkPrefix: String = {
     this.common_prefix + IdTool.WorldStateKeySeparator + DidTplPrefix.hashPrefix

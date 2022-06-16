@@ -34,9 +34,9 @@ class OperateCache(ctx : RepChainSystemContext) extends ICache(ctx) {
     }
   }
 
-  override protected def getPrefix: String = {
+  /*override protected def getPrefix: String = {
     this.common_prefix + IdTool.WorldStateKeySeparator + DidTplPrefix.operPrefix
-  }
+  }*/
 
   def get(key:String,blockPreload: BlockPreload):Option[opData]={
     val d = this.getData(ctx.getHashTool.hashstr(key),blockPreload)
