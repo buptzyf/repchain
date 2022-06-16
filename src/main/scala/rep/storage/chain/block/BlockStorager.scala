@@ -4,6 +4,7 @@ import com.google.protobuf.ByteString
 import rep.app.system.RepChainSystemContext
 import rep.crypto.nodedynamicmanagement.ReloadableTrustManager
 import rep.log.RepLogger
+import rep.network.cluster.management.ConsensusNodeUtil
 import rep.proto.rc2.{Block, Transaction}
 import rep.storage.chain.KeyPrefixManager
 import rep.storage.db.common.ITransactionCallback
@@ -72,6 +73,7 @@ class BlockStorager(ctx: RepChainSystemContext, isEncrypt: Boolean = false) exte
 
         val memberContractName = ctx.getConfig.getMemberManagementContractName
         val memberContractMethod = ctx.getConfig.getMemberManagementContractMethod
+        val memberVoteMethod = ctx.getConfig.getMemberManagementContractVoteMethod
 
         r.statesSet.foreach(f => {
           val k = f._1
@@ -99,6 +101,18 @@ class BlockStorager(ctx: RepChainSystemContext, isEncrypt: Boolean = false) exte
               RepLogger.trace(RepLogger.Storager_Logger, s"update trust store, entry key find")
             }
             RepLogger.trace(RepLogger.Storager_Logger, s"update trust store, entry contract find")
+          }else if (t.getCid.chaincodeName.equalsIgnoreCase(memberContractName) &&
+            t.`type` == Transaction.Type.CHAINCODE_INVOKE && t.para.ipt.get.function.equalsIgnoreCase(memberVoteMethod)){
+            if(k.indexOf(ConsensusNodeUtil.vote_node_list) > 0){
+              val obj = SerializeUtils.deserialise(f._2.toByteArray)
+              if(obj != null && obj.isInstanceOf[Array[String]]){
+                val vl = obj.asInstanceOf[Array[String]]
+                ctx.getConsensusNodeConfig.notifyVoteListChange(vl)
+                RepLogger.trace(RepLogger.Storager_Logger, s"update vote list, keys=${vl.mkString(",")}")
+              }
+              RepLogger.trace(RepLogger.Storager_Logger, s"update vote list, entry key find")
+            }
+            RepLogger.trace(RepLogger.Storager_Logger, s"update vote list, entry contract find")
           }
         })
 
@@ -292,6 +306,7 @@ class BlockStorager(ctx: RepChainSystemContext, isEncrypt: Boolean = false) exte
 
         val memberContractName = ctx.getConfig.getMemberManagementContractName
         val memberContractMethod = ctx.getConfig.getMemberManagementContractMethod
+        val memberVoteMethod = ctx.getConfig.getMemberManagementContractVoteMethod
 
         r.statesSet.foreach(f => {
           val k = f._1
@@ -325,6 +340,18 @@ class BlockStorager(ctx: RepChainSystemContext, isEncrypt: Boolean = false) exte
               RepLogger.trace(RepLogger.Storager_Logger, s"update trust store, entry key find")
             }
             RepLogger.trace(RepLogger.Storager_Logger, s"update trust store, entry contract find")
+          }else if (t.getCid.chaincodeName.equalsIgnoreCase(memberContractName) &&
+            t.`type` == Transaction.Type.CHAINCODE_INVOKE && t.para.ipt.get.function.equalsIgnoreCase(memberVoteMethod)){
+            if(k.indexOf(ConsensusNodeUtil.vote_node_list) > 0){
+              val obj = SerializeUtils.deserialise(f._2.toByteArray)
+              if(obj != null && obj.isInstanceOf[Array[String]]){
+                val vl = obj.asInstanceOf[Array[String]]
+                ctx.getConsensusNodeConfig.notifyVoteListChange(vl)
+                RepLogger.trace(RepLogger.Storager_Logger, s"update vote list, keys=${vl.mkString(",")}")
+              }
+              RepLogger.trace(RepLogger.Storager_Logger, s"update vote list, entry key find")
+            }
+            RepLogger.trace(RepLogger.Storager_Logger, s"update vote list, entry contract find")
           }
         })
 

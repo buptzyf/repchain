@@ -70,7 +70,7 @@ abstract class IVoter(moduleName: String) extends ModuleBase(moduleName) {
 
 
   protected def voteMsgHandler(isForce:Boolean,forceInfo:ForceVoteInfo) = {
-    if (new ConsensusCondition(pe.getRepChainContext.getConfig).CheckWorkConditionOfSystem(pe.getNodeMgr.getStableNodes.size)) {
+    if (new ConsensusCondition(pe.getRepChainContext).CheckWorkConditionOfSystem(pe.getRepChainContext.getNodeMgr.getStableNodes.size)) {
       //只有共识节点符合要求之后开始工作
       if (getSystemBlockHash == "") {
         //系统属于初始化状态

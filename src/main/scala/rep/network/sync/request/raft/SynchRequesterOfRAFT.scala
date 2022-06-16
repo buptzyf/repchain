@@ -30,7 +30,7 @@ class SynchRequesterOfRAFT (moduleName: String) extends ISynchRequester(moduleNa
   import context.dispatcher
 
   override protected def getAnalyzerInSynch: ISynchAnalyzer = {
-    new IRAFTSynchAnalyzer(pe.getRepChainContext, pe.getSystemCurrentChainStatus, pe.getNodeMgr)
+    new IRAFTSynchAnalyzer(pe.getRepChainContext, pe.getSystemCurrentChainStatus, pe.getRepChainContext.getNodeMgr)
   }
 
 
@@ -60,7 +60,7 @@ class SynchRequesterOfRAFT (moduleName: String) extends ISynchRequester(moduleNa
     val lh = pe.getCurrentHeight
     val lhash = pe.getCurrentBlockHash
     val lprehash = pe.getSystemCurrentChainStatus.previousBlockHash.toStringUtf8()
-    val addr = pe.getNodeMgr.getNodeAddr4NodeName(blockerName)
+    val addr = pe.getRepChainContext.getNodeMgr.getNodeAddr4NodeName(blockerName)
     RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"current stableNode，node content=${addr.toString}"))
     sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, BlockEvent.CHAIN_INFO_SYNC, Event.Action.BLOCK_SYNC)
     val res = GetNodeOfChainInfo(addr, lh)
@@ -120,10 +120,10 @@ class SynchRequesterOfRAFT (moduleName: String) extends ISynchRequester(moduleNa
       schedulerLink = clearSched()
       var rb = true
       initSystemChainInfo
-      if (consensusCondition.CheckWorkConditionOfSystem(pe.getNodeMgr.getStableNodes.size) && !pe.isSynching) {
+      if (consensusCondition.CheckWorkConditionOfSystem(pe.getRepChainContext.getNodeMgr.getStableNodes.size) && !pe.isSynching) {
         pe.setSynching(true)
         try {
-          val ssize = pe.getNodeMgr.getStableNodes.size
+          val ssize = pe.getRepChainContext.getNodeMgr.getStableNodes.size
           if(pe.getRepChainContext.getConfig.getVoteNodeList.length == ssize){
             rb = Handler(isNoticeModuleMgr)
           }

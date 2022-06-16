@@ -16,7 +16,7 @@ import scala.collection.mutable.HashMap
 class ManageNodeCert extends IContract {
 
   val key_trust_stores = "TSDb-Trust-Stores"
-  val vote_list = "Vote-List"
+  val vote_list = "TSDb-Vote-List"
 
   def init(ctx: ContractContext) {
     println(s"tid: ${ctx.t.id}, execute the contract which name is ${ctx.t.getCid.chaincodeName} and version is ${ctx.t.getCid.version}")

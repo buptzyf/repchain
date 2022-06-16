@@ -32,7 +32,7 @@ abstract class ISynchRequester(moduleName: String) extends ModuleBase(moduleName
 
   implicit val timeout = Timeout(pe.getRepChainContext.getTimePolicy.getTimeoutSync.seconds)
   protected val responseActorName = "/user/modulemanager/synchresponser"
-  protected val consensusCondition = new ConsensusCondition(pe.getRepChainContext.getConfig)
+  protected val consensusCondition = new ConsensusCondition(pe.getRepChainContext)
 
   protected def toAkkaUrl(addr: String, actorName: String): String = {
     return addr + "/" + actorName;
@@ -85,7 +85,7 @@ abstract class ISynchRequester(moduleName: String) extends ModuleBase(moduleName
 
   protected def getBlockData(height: Long, ref: ActorRef): Boolean = {
     try {
-      sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, pe.getNodeMgr.getNodeName4AddrString(NodeHelp.getNodeAddress(ref)), Event.Action.BLOCK_SYNC_DATA)
+      sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, pe.getRepChainContext.getNodeMgr.getNodeName4AddrString(NodeHelp.getNodeAddress(ref)), Event.Action.BLOCK_SYNC_DATA)
       val selection: ActorSelection = context.actorSelection(toAkkaUrl(NodeHelp.getNodeAddress(ref), responseActorName));
       val future1 = selection ? BlockDataOfRequest(height)
       //logMsg(LogType.INFO, "--------AsyncGetNodeOfChainInfo success")
@@ -143,9 +143,9 @@ abstract class ISynchRequester(moduleName: String) extends ModuleBase(moduleName
     val lh = pe.getCurrentHeight
     val lhash = pe.getCurrentBlockHash
     val lprehash = pe.getSystemCurrentChainStatus.previousBlockHash.toStringUtf8()
-    val nodes = pe.getNodeMgr.getStableNodes
+    val nodes = pe.getRepChainContext.getNodeMgr.getStableNodes
     RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"current stableNode，node content=${nodes.mkString("|")}"))
-    RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"current stableNode，node name content=${pe.getNodeMgr.getStableNodeNames.mkString("|")}"))
+    RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"current stableNode，node name content=${pe.getRepChainContext.getNodeMgr.getStableNodeNames.mkString("|")}"))
     sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, BlockEvent.CHAIN_INFO_SYNC, Event.Action.BLOCK_SYNC)
     val res = AsyncGetNodeOfChainInfos(nodes, lh)
 

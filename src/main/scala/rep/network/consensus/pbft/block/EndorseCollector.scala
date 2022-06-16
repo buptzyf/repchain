@@ -84,7 +84,7 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
           if(block.getHeader.hashPrevious.toStringUtf8() == pe.getCurrentBlockHash){
             RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"collectioner recv endorsement,height=${block.getHeader.height},local height=${pe.getCurrentHeight}"))
             resetEndorseInfo(block, blocker)
-            pe.getNodeMgr.getStableNodes.foreach(f => {
+            pe.getRepChainContext.getNodeMgr.getStableNodes.foreach(f => {
               RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"collectioner send endorsement to requester,height=${block.getHeader.height},local height=${pe.getCurrentHeight}"))
               router.route(RequesterOfEndorsement(block, blocker, f), self)
             })

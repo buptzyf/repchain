@@ -20,7 +20,7 @@ abstract class ISynchAnalyzer(val ctx:RepChainSystemContext, val lchaininfo: Blo
   protected var saction: SynchAction = null
   protected var raction: RollbackAction = null
   protected var maxinfo: MaxBlockInfo = null
-  protected val consensusCondition = new ConsensusCondition(ctx.getConfig)
+  protected val consensusCondition = new ConsensusCondition(ctx)
   protected val systemName = ctx.getSystemName
 
   def getResult: AnalysisResult = {

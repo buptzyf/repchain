@@ -14,6 +14,8 @@ import rep.crypto.nodedynamicmanagement.ReloadableTrustManager
 import rep.log.RepLogger
 import rep.log.httplog.HttpLogger
 import rep.network.autotransaction.TransactionBuilder
+import rep.network.cluster.management.ConsensusNodeConfig
+import rep.network.tools.NodeMgr
 import rep.network.tools.transpool.PoolOfTransaction
 import rep.storage.chain.block.{BlockSearcher, BlockStorager}
 import rep.storage.chain.preload.BlockPreload
@@ -35,7 +37,13 @@ class RepChainSystemContext(systemName:String){//},cs:ClusterSystem) {
   private val permissionVerify : PermissionVerify =  new PermissionVerify(this)
   private val hashTool : Sha256 = new Sha256(this.cryptoManager.getInstance)
   private val reloadTrustStore : ReloadableTrustManager = ReloadableTrustManager.createReloadableTrustManager(this)
+  private val consensusNodeConfig : ConsensusNodeConfig = new ConsensusNodeConfig(this)
   private val registerClusterNode:ConcurrentHashMap[String,Address] = new ConcurrentHashMap[String,Address]()
+  private val nodemgr = new NodeMgr
+
+  def getNodeMgr: NodeMgr = {
+    this.nodemgr
+  }
 
   def registerNode(name:String,address: Address):Unit={
     if(name != "")
@@ -72,6 +80,10 @@ class RepChainSystemContext(systemName:String){//},cs:ClusterSystem) {
 
   def getReloadTrustStore:ReloadableTrustManager={
     this.reloadTrustStore
+  }
+
+  def getConsensusNodeConfig:ConsensusNodeConfig={
+    this.consensusNodeConfig
   }
 
   def getHashTool:Sha256={

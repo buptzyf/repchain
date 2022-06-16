@@ -26,7 +26,7 @@ class SynchRequesterOfPBFT(moduleName: String) extends ISynchRequester(moduleNam
   import context.dispatcher
 
   override protected def getAnalyzerInSynch: ISynchAnalyzer = {
-    new IPBFTOfSynchAnalyzer(pe.getRepChainContext, pe.getSystemCurrentChainStatus, pe.getNodeMgr)
+    new IPBFTOfSynchAnalyzer(pe.getRepChainContext, pe.getSystemCurrentChainStatus, pe.getRepChainContext.getNodeMgr)
   }
 
 
@@ -36,7 +36,7 @@ class SynchRequesterOfPBFT(moduleName: String) extends ISynchRequester(moduleNam
       schedulerLink = clearSched()
       var rb = true
       initSystemChainInfo
-      if (consensusCondition.CheckWorkConditionOfSystem(pe.getNodeMgr.getStableNodes.size) && !pe.isSynching) {
+      if (consensusCondition.CheckWorkConditionOfSystem(pe.getRepChainContext.getNodeMgr.getStableNodes.size) && !pe.isSynching) {
         pe.setSynching(true)
         try {
             rb = Handler(isNoticeModuleMgr)

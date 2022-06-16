@@ -107,7 +107,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
 
   implicit val timeout = Timeout(1000.seconds)
   val sr: BlockSearcher = new BlockSearcher(pe.getRepChainContext)
-  private val consensusCondition = new ConsensusCondition(pe.getRepChainContext.getConfig)
+  private val consensusCondition = new ConsensusCondition(pe.getRepChainContext)
 
   /**
    * 根据节点名称和chainCode定义建立交易实例
@@ -189,7 +189,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
     val tranLimitSize = config.getBlockMaxLength / 3
     if (t.toByteArray.length > tranLimitSize) {
       sender ! PostResult(t.id, None, Option(s"交易大小超出限制： ${tranLimitSize}，请重新检查"))
-    } else if (!this.consensusCondition.CheckWorkConditionOfSystem(pe.getNodeMgr.getStableNodes.size)) {
+    } else if (!this.consensusCondition.CheckWorkConditionOfSystem(pe.getRepChainContext.getNodeMgr.getStableNodes.size)) {
       sender ! PostResult(t.id, None, Option("共识节点数目太少，暂时无法处理交易"))
     } else {
       try {
@@ -339,8 +339,8 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
       sender ! QueryResult(Option(cij))
 
     case NodeNumber =>
-      val stablenode = pe.getNodeMgr.getStableNodes.size
-      val snode = pe.getNodeMgr.getNodes.size
+      val stablenode = pe.getRepChainContext.getNodeMgr.getStableNodes.size
+      val snode = pe.getRepChainContext.getNodeMgr.getNodes.size
       val rs = "{\"consensusnodes\":\"" + stablenode + "\",\"nodes\":\"" + snode + "\"}"
       sender ! QueryResult(Option(JsonMethods.parse(string2JsonInput(rs))))
 

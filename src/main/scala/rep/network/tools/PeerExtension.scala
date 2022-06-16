@@ -67,11 +67,11 @@ class PeerExtensionImpl extends Extension {
 /*********区块缓存管理结束************/
 
 /*********组网节点信息管理，包括抽签候选人信息开始************/
-  private val nodemgr = new NodeMgr
+ /* private val nodemgr = new NodeMgr
 
   def getNodeMgr: NodeMgr = {
     this.nodemgr
-  }
+  }*/
 /*********组网节点信息管理，包括抽签候选人信息结束************/
 private var startVoteInfo:AtomicReference[MaxBlockInfo] = new AtomicReference[MaxBlockInfo](new MaxBlockInfo(0,""))
 

@@ -56,7 +56,7 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
   private var recvedEndorse = new HashMap[String, Signature]()
   private var resendEndorsements = new ArrayBuffer[Address]
   private val config = pe.getRepChainContext.getConfig
-  private val consensusCondition = new ConsensusCondition(config)
+  private val consensusCondition = new ConsensusCondition(pe.getRepChainContext)
 
   override def preStart(): Unit = {
     RepLogger.info(RepLogger.Consensus_Logger, this.getLogMsgPrefix( "EndorseCollector Start"))
@@ -121,7 +121,7 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
   override def receive = {
     //case CollectEndorsement(block, blocker,index) =>
     case CollectEndorsement(block, blocker) =>
-      if(!pe.isSynching && this.consensusCondition.CheckWorkConditionOfSystem(pe.getNodeMgr.getStableNodes.size)) {
+      if(!pe.isSynching && this.consensusCondition.CheckWorkConditionOfSystem(pe.getRepChainContext.getNodeMgr.getStableNodes.size)) {
         createRouter
 
         if (this.block != null && this.block.getHeader.hashPresent.toStringUtf8() == block.getHeader.hashPresent.toStringUtf8()) {
@@ -132,7 +132,7 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
               RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"collectioner recv endorsement in repeat endorsement,height=${block.getHeader.height},local height=${pe.getCurrentHeight}"))
               //resetEndorseInfo(block, blocker, index)
               resetEndorseInfo(block, blocker)
-              pe.getNodeMgr.getStableNodes.foreach(f => {
+              pe.getRepChainContext.getNodeMgr.getStableNodes.foreach(f => {
                 RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"collectioner send endorsement to requester in repeat endorsement,height=${block.getHeader.height},local height=${pe.getCurrentHeight}"))
                 //router.route(RequesterOfEndorsement(block, blocker, f, pe.getBlocker.VoteIndex), self)
                 router.route(RequesterOfEndorsement(block, blocker, f), self)
@@ -148,7 +148,7 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
             RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"collectioner recv endorsement in first endorsement,height=${block.getHeader.height},local height=${pe.getCurrentHeight}"))
             //resetEndorseInfo(block, blocker, index)
             resetEndorseInfo(block, blocker)
-            pe.getNodeMgr.getStableNodes.foreach(f => {
+            pe.getRepChainContext.getNodeMgr.getStableNodes.foreach(f => {
               RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"collectioner send endorsement to requester in first endorsement,height=${block.getHeader.height},local height=${pe.getCurrentHeight}"))
               //router.route(RequesterOfEndorsement(block, blocker, f, pe.getBlocker.VoteIndex), self)
               router.route(RequesterOfEndorsement(block, blocker, f), self)
@@ -205,7 +205,7 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
         }
       }
     case ResendEndorseInfo(endorer)=>
-      if(!pe.isSynching && this.consensusCondition.CheckWorkConditionOfSystem(pe.getNodeMgr.getStableNodes.size)){
+      if(!pe.isSynching && this.consensusCondition.CheckWorkConditionOfSystem(pe.getRepChainContext.getNodeMgr.getStableNodes.size)){
         if (this.block != null && this.block.getHeader.hashPrevious.toStringUtf8() == pe.getCurrentBlockHash ) {
           RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( s"recv ResendEndorseInfo endorse info,resend times eq ${this.resendTimes} ," +
             s"height=${block.getHeader.height},local height=${pe.getCurrentHeight}"))
@@ -248,7 +248,7 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
       }*/
     case DelayResendEndorseInfo(bHash)=>
       this.schedulerLink = clearSched()
-      if(!pe.isSynching && this.consensusCondition.CheckWorkConditionOfSystem(pe.getNodeMgr.getStableNodes.size)){
+      if(!pe.isSynching && this.consensusCondition.CheckWorkConditionOfSystem(pe.getRepChainContext.getNodeMgr.getStableNodes.size)){
         if (this.block != null && bHash == this.block.getHeader.hashPresent.toStringUtf8 && this.block.getHeader.hashPrevious.toStringUtf8() == pe.getCurrentBlockHash ) {
           if(this.router != null){
             if(this.resendTimes <= config.getEndorsementResendTimes){

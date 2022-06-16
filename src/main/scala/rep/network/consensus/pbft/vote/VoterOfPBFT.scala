@@ -65,7 +65,7 @@ class VoterOfPBFT(moduleName: String) extends IVoter(moduleName: String) {
             RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},blocker=null,reset voter,height=${currentheight},blocker=${this.Blocker.blocker},voteidx=${this.Blocker.VoteIndex}" + "~" + selfAddr))
           } else {
             if (((System.currentTimeMillis() - this.Blocker.voteTime) / 1000 > pe.getRepChainContext.getTimePolicy.getTimeOutBlock)
-              ||(!pe.getNodeMgr.getStableNodeNames.contains(this.Blocker.blocker))) { //zhj
+              ||(!pe.getRepChainContext.getNodeMgr.getStableNodeNames.contains(this.Blocker.blocker))) { //zhj
               //说明出块超时
               this.voteCount = 0
               this.resetBlocker(this.Blocker.VoteIndex + 1, currentblockhash, currentheight)

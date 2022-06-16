@@ -105,7 +105,7 @@ abstract class ITransactionPool (moduleName: String) extends ModuleBase(moduleNa
       this.addr4NonUser = this.selfAddr.substring(0, this.selfAddr.indexOf("/user"))
     }
 
-    pe.getNodeMgr.getStableNodes.foreach(f => {
+    pe.getRepChainContext.getNodeMgr.getStableNodes.foreach(f => {
       if (this.addr4NonUser != "" && !NodeHelp.isSameNode(f.toString, this.addr4NonUser)) {
         visitStoreService(f, this.transPoolActorName, t)
       }

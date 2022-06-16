@@ -3,6 +3,7 @@ package rep.network.consensus.byzantium
 import java.util.concurrent.atomic.AtomicInteger
 
 import rep.app.conf.RepChainConfig
+import rep.app.system.RepChainSystemContext
 
 
 /**
@@ -11,22 +12,24 @@ import rep.app.conf.RepChainConfig
  * todo:自动部署可以更新
  */
 
-class ConsensusCondition(config:RepChainConfig){
-  private val ConsensusNodes : AtomicInteger = new AtomicInteger(config.getVoteNodeList.length)
-  private val ConsensusScale : AtomicInteger = new AtomicInteger(config.getEndorsementNumberMode)
-  private val LeastNodeNumber: AtomicInteger = new AtomicInteger(config.getMinVoteNumber)
-  private def Check(input:Int):Boolean={
-    var scaledata = this.ConsensusScale.get()
-    if(this.ConsensusScale == 1) {
-      scaledata = 2
-    }
+class ConsensusCondition(ctx:RepChainSystemContext){
 
-    if(scaledata == 2) {
-      //采用大于1/2方法计算
-      input >= (Math.floor(((this.ConsensusNodes.get()) * 1.0) / scaledata + 1))
-    }else if(scaledata == 3) {
-      //采用大于2/3方法计算
-      input >= (Math.floor((((this.ConsensusNodes.get()) * 1.0) / scaledata) * 2) + 1)
+  private def byzantineExamination(input:Int):Boolean={
+    if(input >= ctx.getConfig.getMinVoteNumber){
+      var mode = ctx.getConfig.getEndorsementNumberMode
+      if(mode == 1) {
+        mode = 2
+      }
+
+      if(mode == 2) {
+        //采用大于1/2方法计算
+        input >= Math.floor((ctx.getConsensusNodeConfig.getVoteListOfConfig.length * 1.0) / mode + 1)
+      }else if(mode == 3) {
+        //采用大于2/3方法计算
+        input >= (Math.floor(((ctx.getConsensusNodeConfig.getVoteListOfConfig.length * 1.0) / mode) * 2) + 1)
+      }else{
+        false
+      }
     }else{
       false
     }
@@ -34,28 +37,17 @@ class ConsensusCondition(config:RepChainConfig){
 
   //提供一致性判断方法
   def ConsensusConditionChecked(inputNumber: Int): Boolean = {
-    if (config.getConsensustype == "PBFT") { //zhj
+    if (ctx.getConfig.getConsensustype == "PBFT") { //zhj
       true
     } else {
-      this.Check(inputNumber)
+      this.byzantineExamination(inputNumber)
     }
   }
 
   //系统是否可以正常工作
   def CheckWorkConditionOfSystem(nodeNumber:Int):Boolean = {
-    nodeNumber >= this.LeastNodeNumber.get() && this.Check(nodeNumber)
+    nodeNumber >= ctx.getConfig.getMinVoteNumber && this.byzantineExamination(nodeNumber)
   }
 
-  def ChangeConsensusNodes(nodeNumber:Int): Unit ={
-    this.ConsensusNodes.set(nodeNumber)
-  }
-
-  def ChangeConsensusScale(scale:Int)={
-    this.ConsensusScale.set(scale)
-  }
-
-  def ChangeLeastNodeNumber(limit:Int) ={
-    this.LeastNodeNumber.set(limit)
-  }
 
 }

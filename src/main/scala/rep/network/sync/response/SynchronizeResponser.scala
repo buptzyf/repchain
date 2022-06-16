@@ -82,7 +82,7 @@ class SynchronizeResponser(moduleName: String) extends ModuleBase(moduleName) {
         data = searcher.getBlockByHeight(startHeight).get
         sender  ! SyncMsg.BlockDataOfResponse(data)
       }
-      sendEvent(EventType.PUBLISH_INFO, mediator,pe.getSysTag, pe.getNodeMgr.getNodeName4AddrString(NodeHelp.getNodeAddress(sender)), Event.Action.BLOCK_SYNC_DATA)
+      sendEvent(EventType.PUBLISH_INFO, mediator,pe.getSysTag, pe.getRepChainContext.getNodeMgr.getNodeName4AddrString(NodeHelp.getNodeAddress(sender)), Event.Action.BLOCK_SYNC_DATA)
   }
 
 }

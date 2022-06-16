@@ -85,7 +85,7 @@ class ConfirmOfBlock(moduleName: String) extends IConfirmOfBlock(moduleName) {
     } else {
       //与上一个块一致
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"confirm verify blockhash,height=${block.getHeader.height}"))
-        if (new ConsensusCondition(pe.getRepChainContext.getConfig).ConsensusConditionChecked(block.getHeader.endorsements.size)) {
+        if (new ConsensusCondition(pe.getRepChainContext).ConsensusConditionChecked(block.getHeader.endorsements.size)) {
           //符合大多数人背书要求
           handler(block, actRefOfBlock)
         } else {

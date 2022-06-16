@@ -57,7 +57,7 @@ class PbftPrepare(moduleName: String) extends ModuleBase(moduleName) {
       ByteString.copyFrom(pe.getRepChainContext.getSignTool.sign(pe.getSysTag, bytes)))
     var commit : MPbftCommit = MPbftCommit(prepares,Some(sig))
 
-    pe.getNodeMgr.getStableNodes.foreach(f => {
+    pe.getRepChainContext.getNodeMgr.getStableNodes.foreach(f => {
       val actorPath = f.toString + "/user/modulemanager/dispatchofRecvendorsement"
       val actor : ActorSelection = context.actorSelection(actorPath)
       actor ! MsgPbftCommit(prepare.senderPath,prepare.block,prepare.blocker,commit,pe.getSystemCurrentChainStatus)

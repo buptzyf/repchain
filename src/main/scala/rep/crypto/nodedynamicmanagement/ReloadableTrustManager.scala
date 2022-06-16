@@ -66,7 +66,7 @@ class ReloadableTrustManager private(ctx: RepChainSystemContext){
         val tm = loadTrustManager(keyStore)
 
         //发送更新给systemcertList和SignTool
-        ctx.getSystemCertList.updateCertList(tmpTrustCerts.keySet.toArray)
+        //ctx.getSystemCertList.updateCertList(tmpTrustCerts.keySet.toArray)
         ctx.getSignTool.updateCertList(tmpTrustCerts)
         //shutdown 被删除的节点
         if (certsOfDeleted.length > 0) {

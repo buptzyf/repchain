@@ -32,59 +32,17 @@ import scala.collection.mutable.HashMap
  * */
 
 class SystemCertList(ctx:RepChainSystemContext) {
-  private var mySystemCertList:Set[String] = (new scala.collection.mutable.ArrayBuffer[String]()).toSet[String]
 
-  private val isChangeCertList : AtomicBoolean = new AtomicBoolean(false)
-  private var certList : Array[String] = null
-  private val lock : Object = new Object
-
-  loadCertListFromConfig
-
-  private def loadCertListFromConfig:Unit={
-    if(this.mySystemCertList.isEmpty){
-      val tmpMap = CertificateUtil.loadTrustCertificate(this.ctx)
-      val list = ctx.getConfig.getVoteNodeList
-      val cList = tmpMap.keySet.toArray
-      this.mySystemCertList = checkCertList(cList)
-      RepLogger.trace(RepLogger.System_Logger, "SystemCertList 初始化装载="+this.mySystemCertList.mkString(","))
-    }
-  }
-
-  private def checkCertList(inputList : Array[String]):Set[String]={
+  def getVoteList:Set[String] = {
     var rList : scala.collection.mutable.ArrayBuffer[String] = new scala.collection.mutable.ArrayBuffer[String]()
-    val list = ctx.getConfig.getVoteNodeList
-    inputList.foreach(name=>{
+    val nodeMgr = ctx.getNodeMgr
+    val list = ctx.getConsensusNodeConfig.getVoteListOfConfig
+    nodeMgr.getStableNodeNames.foreach(name=>{
       if(list.contains(name)){
         rList += name
       }
     })
     rList.toSet[String]
-  }
-
-  def updateCertList(update:Array[String]):Unit={
-    //if(update != null && update.length >= ctx.getConfig.getMinVoteNumber){
-      this.lock.synchronized({
-        this.certList = update
-        this.isChangeCertList.set(true)
-      })
-    RepLogger.trace(RepLogger.System_Logger, "SystemCertList 更新通知接收="+this.certList.mkString(","))
-    //}
-  }
-
-  def getVoteList:Set[String] = {
-    if(this.isChangeCertList.get()){
-      this.lock.synchronized({
-        if(this.certList != null){
-          this.mySystemCertList = checkCertList(this.certList)
-        }
-        this.isChangeCertList.set(false)
-        RepLogger.trace(RepLogger.System_Logger, "SystemCertList 更新装载="+this.mySystemCertList.mkString(","))
-        this.mySystemCertList
-      })
-    }else{
-      this.mySystemCertList
-    }
-
   }
 
 }

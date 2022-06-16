@@ -76,7 +76,7 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
 
   var preloadNodesMap = HashMap[Address, (Long, String)]()
 
-  val consensusCondition = new ConsensusCondition(pe.getRepChainContext.getConfig)
+  val consensusCondition = new ConsensusCondition(pe.getRepChainContext)
 
   private var isStartSynch = false
 
@@ -92,28 +92,28 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
 
   def memberRemovedHandler(member: Member): Unit = {
     RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("Member is Removed: {}. {} nodes cluster" + "~" + member.address))
-    System.err.println(s"MemberRemoved:printer=${pe.getSysTag} ~~ removed=${pe.getNodeMgr.getNodeName4AddrString(member.address.toString)}")
+    System.err.println(s"MemberRemoved:printer=${pe.getSysTag} ~~ removed=${pe.getRepChainContext.getNodeMgr.getNodeName4AddrString(member.address.toString)}")
 
-    val tmp = pe.getNodeMgr.getNodeName4AddrString(member.address.toString)
+    val tmp = pe.getRepChainContext.getNodeMgr.getNodeName4AddrString(member.address.toString)
     if (tmp.equals(pe.getSysTag)) {
       RepChainMgr.ReStart(pe.getSysTag)
     }
 
     preloadNodesMap.remove(member.address)
-    pe.getNodeMgr.removeNode(member.address)
-    pe.getNodeMgr.removeStableNode(member.address)
+    pe.getRepChainContext.getNodeMgr.removeNode(member.address)
+    pe.getRepChainContext.getNodeMgr.removeStableNode(member.address)
     sendEvent(EventType.PUBLISH_INFO, mediator, NodeHelp.getNodeName(member.roles), Topic.Event, Event.Action.MEMBER_DOWN)
   }
 
   def memberLeaveHandler(member: Member): Unit = {
     RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("Member is Removed: {}. {} nodes cluster" + "~" + member.address))
-    System.err.println(s"MemberRemoved:printer=${pe.getSysTag} ~~ removed=${pe.getNodeMgr.getNodeName4AddrString(member.address.toString)}")
+    System.err.println(s"MemberRemoved:printer=${pe.getSysTag} ~~ removed=${pe.getRepChainContext.getNodeMgr.getNodeName4AddrString(member.address.toString)}")
 
-    val tmp = pe.getNodeMgr.getNodeName4AddrString(member.address.toString)
+    val tmp = pe.getRepChainContext.getNodeMgr.getNodeName4AddrString(member.address.toString)
     if (tmp.equals(pe.getSysTag) && pe.getRepChainContext.getSignTool.getTrustCertificate(tmp) == null) {
       preloadNodesMap.remove(member.address)
-      pe.getNodeMgr.removeNode(member.address)
-      pe.getNodeMgr.removeStableNode(member.address)
+      pe.getRepChainContext.getNodeMgr.removeNode(member.address)
+      pe.getRepChainContext.getNodeMgr.removeStableNode(member.address)
       sendEvent(EventType.PUBLISH_INFO, mediator, NodeHelp.getNodeName(member.roles), Topic.Event, Event.Action.MEMBER_DOWN)
       val result = RepChainMgr.shutdown(pe.getSysTag, ReasonOfStop.Manual)
       RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}发起shutdown命令（因为信任证书被删除），启动结果=${result}"))
@@ -156,17 +156,17 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
         }
         System.err.println(m.address.toString + "\t" + m.status.toString())
       })
-      pe.getNodeMgr.resetNodes(nodes)
-      pe.getNodeMgr.resetStableNodes(snodes.toSet)
-      if (this.consensusCondition.CheckWorkConditionOfSystem(pe.getNodeMgr.getStableNodes.size)) {
+      pe.getRepChainContext.getNodeMgr.resetNodes(nodes)
+      pe.getRepChainContext.getNodeMgr.resetStableNodes(snodes.toSet)
+      if (this.consensusCondition.CheckWorkConditionOfSystem(pe.getRepChainContext.getNodeMgr.getStableNodes.size)) {
         schedulerLink = scheduler.scheduleOnce((
           pe.getRepChainContext.getTimePolicy.getStableTimeDur).millis, self, Recollection)
       }
 
     //成员入网
     case MemberUp(member) =>
-      RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("Member is Up: {}. {} nodes in cluster" + "~" + member.address + "~" + pe.getNodeMgr.getNodes.mkString("|")))
-      pe.getNodeMgr.putNode(member.address)
+      RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("Member is Up: {}. {} nodes in cluster" + "~" + member.address + "~" + pe.getRepChainContext.getNodeMgr.getNodes.mkString("|")))
+      pe.getRepChainContext.getNodeMgr.putNode(member.address)
       if (member.roles != null && !member.roles.isEmpty && NodeHelp.isCandidatorNode(member.roles)) {
         RepLogger.sendAlertToDB(pe.getRepChainContext.getHttpLogger(), new AlertInfo("NETWORK", 4, s"Node Name=${NodeHelp.getNodeName(member.roles)},Node Address=${member.address.toString},is up."))
         preloadNodesMap.put(member.address, (TimeUtils.getCurrentTime(), NodeHelp.getNodeName(member.roles)))
@@ -185,14 +185,14 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
       preloadNodesMap.foreach(node => {
         if (isStableNode(node._2._1, pe.getRepChainContext.getTimePolicy.getSysNodeStableDelay)) {
           RepLogger.sendAlertToDB(pe.getRepChainContext.getHttpLogger(), new AlertInfo("NETWORK", 4, s"Node Name=${node._2._2},Node Address=${node._2._1},is stable node."))
-          pe.getNodeMgr.putStableNode(node._1, node._2._2)
+          pe.getRepChainContext.getNodeMgr.putStableNode(node._1, node._2._2)
         } else {
           RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"Recollection:  nodes not stable,node name=${node._2._2}"))
         }
       })
 
       if (preloadNodesMap.size > 0) {
-        pe.getNodeMgr.getStableNodes.foreach(node => {
+        pe.getRepChainContext.getNodeMgr.getStableNodes.foreach(node => {
           if (preloadNodesMap.contains(node)) {
             preloadNodesMap.remove(node)
             RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"Recollection: clear preloadnodemap,node=${node}"))
@@ -201,7 +201,7 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
       }
 
       if (!this.isStartSynch) {
-        if (this.consensusCondition.CheckWorkConditionOfSystem(pe.getNodeMgr.getStableNodes.size)) {
+        if (this.consensusCondition.CheckWorkConditionOfSystem(pe.getRepChainContext.getNodeMgr.getStableNodes.size)) {
           //组网成功之后开始系统同步
           RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"Recollection:  system startup ,start sync,node name=${pe.getSysTag}"))
           pe.getActorRef(CFRDActorType.ActorType.synchrequester) ! StartSync(true)
@@ -244,10 +244,10 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
       pe.getNodeMgr.removeStableNode(event.remoteAddress)*/
     case UnreachableMember(member) =>
       RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("UnreachableMember is : {}. {} nodes cluster" + "~" + member.address))
-      System.err.println(s"UnreachableMember:printer=${pe.getSysTag} ~~ removed=${pe.getNodeMgr.getNodeName4AddrString(member.address.toString)}")
+      System.err.println(s"UnreachableMember:printer=${pe.getSysTag} ~~ removed=${pe.getRepChainContext.getNodeMgr.getNodeName4AddrString(member.address.toString)}")
       preloadNodesMap.remove(member.address)
-      pe.getNodeMgr.removeNode(member.address)
-      pe.getNodeMgr.removeStableNode(member.address)
+      pe.getRepChainContext.getNodeMgr.removeNode(member.address)
+      pe.getRepChainContext.getNodeMgr.removeStableNode(member.address)
       sendEvent(EventType.PUBLISH_INFO, mediator, NodeHelp.getNodeName(member.roles), Topic.Event, Event.Action.MEMBER_DOWN)
     case ReachableMember(member) =>
       RepLogger.trace(RepLogger.System_Logger, this.getLogMsgPrefix(" ReachableMember recollection"))
@@ -255,8 +255,8 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
       if (member.status == MemberStatus.up) {
         if (member.roles != null && !member.roles.isEmpty && NodeHelp.isCandidatorNode(member.roles)) {
           val name = NodeHelp.getNodeName(member.roles)
-          pe.getNodeMgr.putNode(addr)
-          pe.getNodeMgr.putStableNode(addr, name)
+          pe.getRepChainContext.getNodeMgr.putNode(addr)
+          pe.getRepChainContext.getNodeMgr.putStableNode(addr, name)
           sendEvent(EventType.PUBLISH_INFO, mediator, name, Topic.Event, Event.Action.MEMBER_UP)
         } else {
           RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"ReachableMember is Up:  nodes is not condidator,node address=${member.address.toString}"))
@@ -267,7 +267,7 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
 
 
       if (!this.isStartSynch) {
-        if (this.consensusCondition.CheckWorkConditionOfSystem(pe.getNodeMgr.getStableNodes.size)) {
+        if (this.consensusCondition.CheckWorkConditionOfSystem(pe.getRepChainContext.getNodeMgr.getStableNodes.size)) {
           //组网成功之后开始系统同步
           RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"ReachableMember Recollection:  system startup ,start sync,node name=${pe.getSysTag}"))
           pe.getActorRef(CFRDActorType.ActorType.synchrequester) ! StartSync(true)

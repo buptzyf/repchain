@@ -42,7 +42,7 @@ class PbftPrePrepare(moduleName: String) extends ModuleBase(moduleName) {
   }
 
   private def ProcessMsgPbftPrePrepare(prePrepare: MsgPbftPrePrepare): Unit = {
-    pe.getNodeMgr.getStableNodes.foreach(f => {
+    pe.getRepChainContext.getNodeMgr.getStableNodes.foreach(f => {
       val actorPath = f.toString + "/user/modulemanager/dispatchofRecvendorsement"
       val actor : ActorSelection = context.actorSelection(actorPath)
       val prepare : MPbftPrepare = MPbftPrepare(Some(BlockHelp.SignBlock(prePrepare.block.getHeader, pe.getSysTag,pe.getRepChainContext.getSignTool)))

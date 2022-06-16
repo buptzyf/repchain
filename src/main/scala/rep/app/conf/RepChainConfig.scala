@@ -105,6 +105,10 @@ class RepChainConfig {
     this.sysConf.getString("system.member_management.contract_method")
   }
 
+  def getMemberManagementContractVoteMethod:String={
+    this.sysConf.getString("system.member_management.contract_vote_method")
+  }
+
   /**
    * @author jiangbuyun
    * @version	2.0
