@@ -61,6 +61,7 @@ class AuthenticateIndexCache(ctx : RepChainSystemContext) extends ICache(ctx) {
       }
       if (r != None) {
         this.cache.put(key, r)
+        RepLogger.Permission_Logger.trace(s"AuthenticateIndexCache.readData ,key=${key}，value=${r.get.asInstanceOf[Array[String]]}")
       }
     }
     r

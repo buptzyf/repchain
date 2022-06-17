@@ -40,7 +40,7 @@ class OperateIndexCache(ctx : RepChainSystemContext) extends ICache(ctx){
   override protected def readData(key: String, blockPreload: BlockPreload): Option[Any] = {
     var r = this.cache.getOrDefault(key, None)
     if (r == None) {
-      RepLogger.Permission_Logger.trace(s"AuthenticateIndexCache.readData asynchronous read,from IdentityNet,key=${key}")
+      RepLogger.Permission_Logger.trace(s"OperateIndexCache.readData asynchronous read,from IdentityNet,key=${key}")
       //获取数据方式，0：从基础链获取；1：从业务链获取；
       val base = this.dataTypeConvert(this.db.getObject(this.getBaseNetworkPrefix + key), blockPreload)
       val business = this.dataTypeConvert(this.db.getObject(this.getBaseNetworkPrefix + key), blockPreload)
@@ -61,6 +61,7 @@ class OperateIndexCache(ctx : RepChainSystemContext) extends ICache(ctx){
       }
       if (r != None) {
         this.cache.put(key, r)
+        RepLogger.Permission_Logger.trace(s"OperateIndexCache.readData ,key=${key}，value=${r.get.asInstanceOf[Array[String]]}")
       }
     }
     r
