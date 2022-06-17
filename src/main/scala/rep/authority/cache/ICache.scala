@@ -21,7 +21,7 @@ abstract class ICache(ctx: RepChainSystemContext) {
                                       config, cid.chaincodeName)
   final val business_prefix : String = KeyPrefixManager.getCustomNetKeyPrefix(
                                       ctx.getConfig.getChainNetworkId,cid.chaincodeName)
-  final private val db = DBFactory.getDBAccess(config)
+  final protected val db = DBFactory.getDBAccess(config)
   final protected val cacheMaxSize = config.getAccountCacheSize
   final protected implicit val cache = new ConcurrentLinkedHashMap.Builder[String, Option[Any]]()
     .maximumWeightedCapacity(cacheMaxSize)
@@ -39,7 +39,7 @@ abstract class ICache(ctx: RepChainSystemContext) {
 
   protected def getCacheType: String
 
-  private def readData(key: String, blockPreload: BlockPreload): Option[Any] = {
+  protected def readData(key: String, blockPreload: BlockPreload): Option[Any] = {
     val r = this.cache.getOrDefault(key, None)
     if (r == None) {
       RepLogger.Permission_Logger.trace(s"ICache.readData asynchronous read,from IdentityNet,key=${key}")
