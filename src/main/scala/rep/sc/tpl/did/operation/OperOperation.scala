@@ -6,7 +6,7 @@ import rep.proto.rc2.Operate.OperateType
 import rep.proto.rc2.{ActionResult, Operate}
 import rep.sc.Sandbox.SandboxException
 import rep.sc.scalax.{ContractContext, ContractException}
-import rep.sc.tpl.did.DidTplPrefix.{operPrefix, signerPrefix}
+import rep.sc.tpl.did.DidTplPrefix.{operIdxPrefix, operIdxSuffix, operPrefix, signerPrefix}
 import rep.utils.IdTool
 
 /**
@@ -78,16 +78,18 @@ object OperOperation extends DidOperation {
         throw ContractException(toJsonErrMsg(operateTypeUndefined))
     }
     val certId = ctx.t.getSignature.getCertId
-    if (ctx.api.getVal(operPrefix + operate.opId) == null) {
+    val operIndex = operPrefix + operate.opId
+    if (ctx.api.getVal(operIndex) == null) {
       // 只允许自己给自己注册
       if (operate.register.equals(certId.creditCode)) {
-        // 检查账户的有效性
-        val signer = checkSignerValid(ctx, operate.register)
-        val newSigner = signer.withOperateIds(signer.operateIds.:+(operate.opId))
-        // 将operateId注册到Signer里
-        ctx.api.setVal(signerPrefix + operate.register, newSigner)
+        val operSeqIndex = operIdxPrefix + operate.register + operIdxSuffix
+        val operSeqOld = ctx.api.getVal(operSeqIndex).asInstanceOf[Seq[String]]
+        // 将operateId增加到序列里
+        val operSeqNew = if (operSeqOld == null) Seq(operate.opId) else operSeqOld.:+(operate.opId)
+        // 保存operateSeq
+        ctx.api.setVal(operSeqIndex, operSeqNew)
         // 保存operate
-        ctx.api.setVal(operPrefix + operate.opId, operate)
+        ctx.api.setVal(operIndex, operate)
       } else {
         throw ContractException(toJsonErrMsg(registerNotTranPoster))
       }
@@ -114,7 +116,7 @@ object OperOperation extends DidOperation {
       // 自己禁用自己的操作，或者管理员禁用
       if (operate.register.equals(tranCertId.creditCode) || isAdmin) {
         // 检查账户的有效性
-        checkSignerValid(ctx, operate.register)
+        // checkSignerValid(ctx, operate.register)
         var newOperate = Operate.defaultInstance
         if (status.state) {
           newOperate = operate.withOpValid(status.state).clearDisableTime

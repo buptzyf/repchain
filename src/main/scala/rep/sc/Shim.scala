@@ -282,6 +282,7 @@ class Shim {
     }
   }
 
+  @Deprecated
   def isExistKey4DID(key:String):Boolean={
     val baseKey = KeyPrefixManager.getCustomNetKeyPrefix(ctx.getConfig.getIdentityNetName, ctx.getConfig.getAccountContractName) + PRE_SPLIT + key
     val b = get(baseKey)

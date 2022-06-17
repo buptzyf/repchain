@@ -41,9 +41,13 @@ object AuthOperation extends DidOperation {
     authorizeList.foreach(authStr => {
       val authorize = JsonFormat.parser.fromJsonString(authStr)(Authorize)
       // 检查授权账户的有效性
-      val grantSigner = checkSignerValid(ctx, authorize.grant)
-      val operateIds = grantSigner.operateIds
-      val authorizeIds = grantSigner.authorizeIds
+      // val grantSigner = checkSignerValid(ctx, authorize.grant)
+      val grantOperSeqIndex = operIdxPrefix + authorize.grant + operIdxSuffix
+      val grantOperSeqOld = ctx.api.getVal(grantOperSeqIndex).asInstanceOf[Seq[String]]
+      val grantOperSeq = if (grantOperSeqOld == null) Seq.empty else grantOperSeqOld
+      val grantAuthSeqIndex = authIdxPrefix + authorize.grant + authIdxSuffix
+      val grantAuthSeqOld = ctx.api.getVal(grantAuthSeqIndex).asInstanceOf[Seq[String]]
+      val grantAuthSeq = if (grantAuthSeqOld == null) Seq.empty else grantAuthSeqOld
       // 保证交易的提交者才能授权自己拥有的操作
       if (ctx.t.getSignature.getCertId.creditCode.equals(authorize.grant)) {
         if (authorize.opId.length != 1 || authorize.granted.length != 1) {
@@ -51,8 +55,8 @@ object AuthOperation extends DidOperation {
         }
         // 检查granter是否具有该操作，并且该操作有效
         val checkOpIdValid = (opId: String) => {
-          val operateIdsCheck: Boolean = operateIds.contains(opId)
-          val authorizeIdsCheck: Boolean = authorizeIds.exists(authorizeId => {
+          val operateIdsCheck: Boolean = grantOperSeq.contains(opId)
+          val authorizeIdsCheck: Boolean = grantAuthSeq.exists(authorizeId => {
             val authorize = ctx.api.getVal(authPrefix + authorizeId).asInstanceOf[Authorize]
             // 拥有，有效，同时可被无限让渡
             authorize.opId.contains(opId) && authorize.authorizeValid && authorize.isTransfer.isTransferRepeatedly
@@ -63,19 +67,21 @@ object AuthOperation extends DidOperation {
         if (ctx.api.getVal(authPrefix + authorize.id) == null) {
           // granter 拥有 operateId 且 有效
           if (checkOpIdValid(authorize.opId.head)) {
-            // 被授权的账户
+            // 被授权的账户(因为唯一，只取head即可)
             val grantedId = authorize.granted.head
             // 检查被授权账户的有效性
-            val grantedSigner = checkSignerValid(ctx, grantedId)
-            val repeated = grantedSigner.authorizeIds.find(authId => {
+            // val grantedSigner = checkSignerValid(ctx, grantedId)
+            val grantedAuthSeqIndex = authIdxPrefix + grantedId + authIdxSuffix
+            val grantedAuthSeqOld = ctx.api.getVal(grantedAuthSeqIndex).asInstanceOf[Seq[String]]
+            val grantedAuthSeq = if (grantedAuthSeqOld == null) Seq.empty else grantedAuthSeqOld
+            val repeated = grantedAuthSeq.find(authId => {
               val oldAuth = ctx.api.getVal(authPrefix + authId).asInstanceOf[Authorize]
               oldAuth.opId.head.equals(authorize.opId.head)
             })
             if (repeated.isEmpty) {
-              val newAuthIds = grantedSigner.authorizeIds :+ (authorize.id)
-              val newGrantedSigner = grantedSigner.withAuthorizeIds(newAuthIds)
-              // 更新signer
-              ctx.api.setVal(signerPrefix + grantedId, newGrantedSigner)
+              val grantedAuthSeqNew = grantedAuthSeq :+ (authorize.id)
+              // 更新并保存GrantedAuthSeq
+              ctx.api.setVal(grantedAuthSeqIndex, grantedAuthSeqNew)
               // 保存授权权限
               ctx.api.setVal(authPrefix + authorize.id, authorize)
             } else {
@@ -137,9 +143,12 @@ object AuthOperation extends DidOperation {
     */
   def bindCertToAuthorize(ctx: ContractContext, bindCertToAuthorize: BindCertToAuthorize): ActionResult = {
     if (bindCertToAuthorize.getGranted.creditCode.equals(ctx.t.getSignature.getCertId.creditCode)) {
-      val signer = checkSignerValid(ctx, bindCertToAuthorize.getGranted.creditCode)
+      val authSeqIndex = authIdxPrefix + bindCertToAuthorize.getGranted.creditCode + authIdxSuffix
+      val authSeqOld = ctx.api.getVal(authSeqIndex).asInstanceOf[Seq[String]]
+      val authSeq = if (authSeqOld == null) Seq.empty else authSeqOld
+      // val signer = checkSignerValid(ctx, bindCertToAuthorize.getGranted.creditCode)
       val authId = bindCertToAuthorize.authorizeId
-      if (signer.authorizeIds.contains(authId)) {
+      if (authSeq.contains(authId)) {
         val authorize = ctx.api.getVal(authPrefix + authId).asInstanceOf[Authorize]
         // 如果未被禁用，这可以绑定，此处不判断证书有效性，因为有效无效，验签时候会判断
         if (authorize.authorizeValid) {
