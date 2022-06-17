@@ -4,13 +4,16 @@ import java.util.concurrent.ConcurrentHashMap
 
 import com.googlecode.concurrentlinkedhashmap.{ConcurrentLinkedHashMap, Weighers}
 import rep.app.system.RepChainSystemContext
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import rep.log.RepLogger
 import rep.proto.rc2.ChaincodeId
+import rep.sc.tpl.did.DidTplPrefix
 import rep.storage.chain.KeyPrefixManager
 import rep.storage.chain.preload.BlockPreload
 import rep.storage.db.factory.DBFactory
 import rep.utils.IdTool
+
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 
@@ -91,10 +94,17 @@ abstract class ICache(ctx: RepChainSystemContext) {
   def updateCache(key: String): Unit = {
     var pk = key
     if (IdTool.isDidContract(ctx.getConfig.getAccountContractName)) {
-      val splitString = IdTool.WorldStateKeySeparator + this.getCacheType
+      val splitString =
+        //IdTool.WorldStateKeySeparator +
+          this.getCacheType
       val idx = key.lastIndexOf(splitString)
       if (idx > 0)
         pk = key.substring(idx + splitString.length)
+      if(this.getCacheType.equalsIgnoreCase(IdTool.WorldStateKeySeparator + DidTplPrefix.authIdxPrefix)){
+        val signer = ctx.getPermissionCacheManager.getCache(DidTplPrefix.signerPrefix)
+        signer.updateCache(key.substring(0,idx+1)+DidTplPrefix.signerPrefix+pk.substring(0,pk.indexOf(DidTplPrefix.authIdxSuffix)))
+        RepLogger.Permission_Logger.trace(s"ICache.updateCache update cache data,key=${key},pk=${pk},signer=${DidTplPrefix.signerPrefix+pk.substring(0,pk.indexOf(DidTplPrefix.authIdxSuffix))}")
+      }
     } else {
       val idx = key.lastIndexOf(IdTool.WorldStateKeySeparator)
       if (idx > 0) pk = key.substring(idx + 1)

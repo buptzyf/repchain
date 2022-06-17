@@ -26,11 +26,11 @@ class AuthenticateIndexCache(ctx : RepChainSystemContext) extends ICache(ctx) {
   }
 
   override protected def getBaseNetworkPrefix: String = {
-    this.common_prefix + IdTool.WorldStateKeySeparator + DidTplPrefix.authPrefix
+    this.common_prefix + IdTool.WorldStateKeySeparator + DidTplPrefix.authIdxPrefix
   }
 
   override protected def getBusinessNetworkPrefix: String = {
-    this.business_prefix + IdTool.WorldStateKeySeparator + DidTplPrefix.authPrefix
+    this.business_prefix + IdTool.WorldStateKeySeparator + DidTplPrefix.authIdxPrefix
   }
 
   override protected def getCacheType: String = {
@@ -43,7 +43,7 @@ class AuthenticateIndexCache(ctx : RepChainSystemContext) extends ICache(ctx) {
       RepLogger.Permission_Logger.trace(s"AuthenticateIndexCache.readData asynchronous read,from IdentityNet,key=${key}")
       //获取数据方式，0：从基础链获取；1：从业务链获取；
       val base = this.dataTypeConvert(this.db.getObject(this.getBaseNetworkPrefix + key), blockPreload)
-      val business = this.dataTypeConvert(this.db.getObject(this.getBaseNetworkPrefix + key), blockPreload)
+      val business = if(ctx.getConfig.getIdentityNetName.equalsIgnoreCase(ctx.getConfig.getChainNetworkId)) None else this.dataTypeConvert(this.db.getObject(this.getBusinessNetworkPrefix + key), blockPreload)
       if (base != None) {
         if (business != None) {
           val base1 = base.get.asInstanceOf[Array[String]]

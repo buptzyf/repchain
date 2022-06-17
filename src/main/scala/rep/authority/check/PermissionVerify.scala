@@ -73,12 +73,12 @@ class PermissionVerify(ctx: RepChainSystemContext) {
               r = true
             } else {
               //不属于自己的操作，检查是否有授权
-              RepLogger.Permission_Logger.trace(s"System=${ctx.getSystemName},PermissionVerify.CheckPermission check auth,did=${did},opname=${opname}")
+              RepLogger.Permission_Logger.trace(s"System=${ctx.getSystemName},PermissionVerify.CheckPermission check auth,did=${did},opname=${opname},ops=${sd.get.opIds}")
               if (sd.get.opIds.containsKey(od.get.opId)) {
-                val opid = sd.get.opIds.get(od.get.opId)
-                if (opid != null) {
-                  if (opid.length > 0) {
-                    breakable(opid.foreach(f => {
+                val authIds = sd.get.opIds.get(od.get.opId)
+                if (authIds != null) {
+                  if (authIds.length > 0) {
+                    breakable(authIds.foreach(f => {
                       val ad = authCache.get(f, dbinstance)
                       if (ad != None) {
                         if (ad.get.authorizeValid) {
