@@ -282,6 +282,26 @@ class Shim {
     }
   }
 
+  def isExistKey4DID(key:String):Boolean={
+    val baseKey = KeyPrefixManager.getCustomNetKeyPrefix(ctx.getConfig.getIdentityNetName, ctx.getConfig.getAccountContractName) + PRE_SPLIT + key
+    val b = get(baseKey)
+    if(b == null){
+      if(ctx.getConfig.getIdentityNetName.equalsIgnoreCase(ctx.getConfig.getChainNetworkId)){
+        false
+      }else{
+        val businessKey = KeyPrefixManager.getCustomNetKeyPrefix(ctx.getConfig.getChainNetworkId, ctx.getConfig.getAccountContractName)+ PRE_SPLIT + key
+        val bs = get(businessKey)
+        if(bs == null){
+          false
+        }else{
+          true
+        }
+      }
+    }else{
+      true
+    }
+  }
+
   def permissionCheck(did:String,certName:String,op:String):Boolean={
     this.ctx.getPermissionVerify.CheckPermission(did,certName,op,this.srOfTransaction.getBlockPreload)
   }
