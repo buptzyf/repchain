@@ -51,7 +51,15 @@ class SignerCache(ctx : RepChainSystemContext) extends ICache(ctx){
       val opIds:ConcurrentHashMap[String,ArrayBuffer[String]] = new ConcurrentHashMap[String,ArrayBuffer[String]]()
       RepLogger.Permission_Logger.trace(s"ISignerCache.signerToSignerData ,key=${signer.creditCode}")
       if(signer != null) {
-        val authList = this.getAuthenticates(DidTplPrefix.authIdxPrefix + signer.creditCode + DidTplPrefix.authIdxSuffix,blockPreload)
+        var authList = this.getAuthenticates(DidTplPrefix.authIdxPrefix + signer.creditCode + DidTplPrefix.authIdxSuffix,blockPreload)
+        //同时可以从账户名下获取授权信息
+        /*if(!signer.authorizeIds.isEmpty){
+          if(!authList.isEmpty){
+            authList = Array.concat(authList,signer.authorizeIds.toArray)
+          }else{
+            authList = signer.authorizeIds.toArray
+          }
+        }*/
         if(!authList.isEmpty) {
           RepLogger.Permission_Logger.trace(s"ISignerCache.signerToSignerData find Signer`s auth ,key=${signer.creditCode}")
           authList.foreach(f=>{
