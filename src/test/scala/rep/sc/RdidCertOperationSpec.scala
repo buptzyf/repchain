@@ -98,9 +98,9 @@ class RdidCertOperationSpec(_system: ActorSystem) extends TestKit(_system) with 
   val superCertPem: String = try superCert.mkString finally superCert.close()
   val certs: mutable.Map[String, String] = mutable.Map("node1" -> certStr1, "node2" -> certStr2, "node3" -> certStr3, "node4" -> certStr4, "node5" -> certStr5)
 
-  val cert1 = Certificate(certStr1, "SHA256withECDSA", certValid = true, None, None, Certificate.CertType.CERT_AUTHENTICATION, Some(CertId(s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}121000005l35120456", "CERT1", "1")), sha256.hashstr(s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}"+IdTool.deleteLine(certStr1)), "1")
-  val cert2 = Certificate(certStr2, "SHA256withECDSA", certValid = true, None, None, Certificate.CertType.CERT_AUTHENTICATION, Some(CertId(s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}121000005l35120456", "CERT2", "1")), sha256.hashstr(s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}"+IdTool.deleteLine(certStr2)), "1")
-  val cert3 = Certificate(certStr3, "SHA256withECDSA", certValid = true, None, None, Certificate.CertType.CERT_CUSTOM, Some(CertId(s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}121000005l35120456", "CERT3", "1")), sha256.hashstr(s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}"+IdTool.deleteLine(certStr3)), "1")
+  val cert1 = Certificate(certStr1, "SHA256withECDSA", certValid = true, None, None, Certificate.CertType.CERT_AUTHENTICATION, Some(CertId(s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}121000005l35120456", "CERT1", "1")), sha256.hashstr(IdTool.deleteLine(certStr1)), "1")
+  val cert2 = Certificate(certStr2, "SHA256withECDSA", certValid = true, None, None, Certificate.CertType.CERT_AUTHENTICATION, Some(CertId(s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}121000005l35120456", "CERT2", "1")), sha256.hashstr(IdTool.deleteLine(certStr2)), "1")
+  val cert3 = Certificate(certStr3, "SHA256withECDSA", certValid = true, None, None, Certificate.CertType.CERT_CUSTOM, Some(CertId(s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}121000005l35120456", "CERT3", "1")), sha256.hashstr(IdTool.deleteLine(certStr3)), "1")
 
 
   // 只有AuthCert
@@ -134,7 +134,7 @@ class RdidCertOperationSpec(_system: ActorSystem) extends TestKit(_system) with 
 
   test("注册superAdmin账户与操作") {
     // 注册账户
-    val superCertHash = sha256.hashstr(s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}"+IdTool.deleteLine(superCertPem))
+    val superCertHash = sha256.hashstr(IdTool.deleteLine(superCertPem))
     val superCertId = CertId(s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}951002007l78123233", "super_admin")
     val millis = System.currentTimeMillis()
     //生成Did的身份证书

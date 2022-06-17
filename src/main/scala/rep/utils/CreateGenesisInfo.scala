@@ -61,7 +61,7 @@ object CreateGenesisInfo {
     for (i <- 0 to 5) {
       val certfile = scala.io.Source.fromFile(s"${ctx.getCryptoMgr.getKeyFileSuffix.substring(1)}/${ctx.getConfig.getChainNetworkId}/" + nodes(i)._2.substring(nodes(i)._2.indexOf(flag)+flag.length) + "." + nodes(i)._1 + ".cer", "UTF-8")
       val certstr = try certfile.mkString finally certfile.close()
-      val certstrhash = ctx.getHashTool.hashstr(s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}"+IdTool.deleteLine(certstr))
+      val certstrhash = ctx.getHashTool.hashstr(IdTool.deleteLine(certstr))
       val certid = IdTool.getCertIdFromCreditAndName(nodes(i)._2,nodes(i)._1)
       val millis = System.currentTimeMillis()
       //生成Did的身份证书

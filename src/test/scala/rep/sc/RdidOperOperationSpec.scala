@@ -87,7 +87,7 @@ class RdidOperOperationSpec(_system: ActorSystem) extends TestKit(_system) with 
 
   val certs: mutable.Map[String, String] = mutable.Map("node1" -> certStr1, "node2" -> certStr2, "super_admin" -> superCertPem)
 
-  val node1Cert1 = Certificate(certStr1, "SHA256withECDSA", certValid = true, None, None, Certificate.CertType.CERT_AUTHENTICATION, Some(CertId(s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}121000005l35120456", "node1Cert1", "1")), sha256.hashstr(s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}"+IdTool.deleteLine(certStr1)), "1")
+  val node1Cert1 = Certificate(certStr1, "SHA256withECDSA", certValid = true, None, None, Certificate.CertType.CERT_AUTHENTICATION, Some(CertId(s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}121000005l35120456", "node1Cert1", "1")), sha256.hashstr(IdTool.deleteLine(certStr1)), "1")
 
   // 包含有AuthCert
   val node1AuthCerts1 = Seq(node1Cert1)
@@ -95,7 +95,7 @@ class RdidOperOperationSpec(_system: ActorSystem) extends TestKit(_system) with 
   val superCertId = CertId(s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}951002007l78123233", "super_admin")
   val millis: Long = System.currentTimeMillis()
   //生成Did的身份证书
-  val superAuthCert = Certificate(superCertPem, "SHA256withECDSA", true, Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, CertType.CERT_AUTHENTICATION, Option(superCertId), sha256.hashstr(s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}"+IdTool.deleteLine(superCertPem)), "1.0")
+  val superAuthCert = Certificate(superCertPem, "SHA256withECDSA", true, Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, CertType.CERT_AUTHENTICATION, Option(superCertId), sha256.hashstr(IdTool.deleteLine(superCertPem)), "1.0")
 
   val signers: Array[Signer] = Array(
     Signer("super_admin", s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}951002007l78123233", "13856789234", Seq.empty, Seq.empty, Seq.empty, Seq.empty, List(superAuthCert), "", Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), None, true, "1.0"),
