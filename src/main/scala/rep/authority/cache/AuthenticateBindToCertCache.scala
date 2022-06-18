@@ -1,29 +1,17 @@
 package rep.authority.cache
 
-import rep.app.system.RepChainSystemContext
+import rep.authority.cache.PermissionCacheManager.CommonDataOfCache
 import rep.sc.tpl.did.DidTplPrefix
 import rep.storage.chain.preload.BlockPreload
 import rep.utils.IdTool
 
-class AuthenticateBindToCertCache(ctx : RepChainSystemContext) extends ICache(ctx) {
+class AuthenticateBindToCertCache(cd:CommonDataOfCache,mgr:PermissionCacheManager) extends ICache(cd,mgr) {
   override protected def dataTypeConvert(any: Option[Any],blockPreload: BlockPreload): Option[Any] = {
     if(any == None){
       None
     }else{
       Some(any.get.asInstanceOf[Boolean])
     }
-  }
-
-  /*override protected def getPrefix: String = {
-    this.common_prefix + IdTool.WorldStateKeySeparator + DidTplPrefix.bindPrefix
-  }*/
-
-  override protected def getBaseNetworkPrefix: String = {
-    this.common_prefix + IdTool.WorldStateKeySeparator + DidTplPrefix.bindPrefix
-  }
-
-  override protected def getBusinessNetworkPrefix: String = {
-    this.business_prefix + IdTool.WorldStateKeySeparator + DidTplPrefix.bindPrefix
   }
 
   def get(authid:String,certid:String,blockPreload: BlockPreload):Option[Boolean]={
@@ -39,6 +27,7 @@ class AuthenticateBindToCertCache(ctx : RepChainSystemContext) extends ICache(ct
   }
 
   override protected def getCacheType: String = {
-    IdTool.WorldStateKeySeparator + DidTplPrefix.bindPrefix
+    DidTplPrefix.bindPrefix
   }
+
 }

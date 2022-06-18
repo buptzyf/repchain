@@ -24,6 +24,11 @@ class BlockPreload(preloadId:String,ctx:RepChainSystemContext,isEncrypt:Boolean=
   private val readCache  :ConcurrentHashMap[String,Array[Byte]] = new ConcurrentHashMap[String,Array[Byte]]
   private val transactionPreloads:ConcurrentHashMap[String,TransactionPreload] = new ConcurrentHashMap[String,TransactionPreload]
 
+  def getCurrentChainNetName:String={
+    this.ctx.getConfig.getChainNetworkId
+  }
+
+
   /**
    * @author jiangbuyun
    * @version	2.0

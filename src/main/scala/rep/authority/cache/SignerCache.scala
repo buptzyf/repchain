@@ -3,6 +3,7 @@ package rep.authority.cache
 import java.util.concurrent.ConcurrentHashMap
 
 import rep.app.system.RepChainSystemContext
+import rep.authority.cache.PermissionCacheManager.CommonDataOfCache
 import rep.log.RepLogger
 import rep.proto.rc2.Signer
 import rep.sc.tpl.did.DidTplPrefix
@@ -16,12 +17,12 @@ object SignerCache{
                         certNames:Seq[String],createTime:_root_.scala.Option[com.google.protobuf.timestamp.Timestamp])
 }
 
-class SignerCache(ctx : RepChainSystemContext) extends ICache(ctx){
+class SignerCache(cd:CommonDataOfCache,mgr:PermissionCacheManager) extends ICache(cd,mgr){
   import SignerCache._
 
   protected def getOpIdInAuthid(authid:String,blockPreload: BlockPreload):List[String]={
     RepLogger.Permission_Logger.trace(s"SignerCache.getOpidInAuthid ,key=${authid}")
-    val auth = ctx.getPermissionCacheManager.getCache(DidTplPrefix.authPrefix)
+    val auth = mgr.getCache(DidTplPrefix.authPrefix)
     if(auth != null){
       val auth_cache = auth.asInstanceOf[AuthenticateCache]
       val data = auth_cache.get(authid,blockPreload)
@@ -32,7 +33,7 @@ class SignerCache(ctx : RepChainSystemContext) extends ICache(ctx){
   }
 
   protected def getAuthenticates(creditCode:String,blockPreload: BlockPreload):Array[String]={
-    val authIdx = ctx.getPermissionCacheManager.getCache(DidTplPrefix.authIdxPrefix)
+    val authIdx = mgr.getCache(DidTplPrefix.authIdxPrefix)
     if(authIdx != null){
       val authIdx_cache = authIdx.asInstanceOf[AuthenticateIndexCache]
       val data = authIdx_cache.get(creditCode+DidTplPrefix.authIdxSuffix,blockPreload)
@@ -88,22 +89,6 @@ class SignerCache(ctx : RepChainSystemContext) extends ICache(ctx){
     }
   }
 
-  override protected def getBaseNetworkPrefix: String = {
-    if(IdTool.isDidContract(ctx.getConfig.getAccountContractName)){
-      this.common_prefix + IdTool.WorldStateKeySeparator + DidTplPrefix.signerPrefix
-    }else{
-      this.common_prefix + IdTool.WorldStateKeySeparator
-    }
-  }
-
-  override protected def getBusinessNetworkPrefix: String = {
-    if(IdTool.isDidContract(ctx.getConfig.getAccountContractName)){
-      this.business_prefix + IdTool.WorldStateKeySeparator + DidTplPrefix.signerPrefix
-    }else{
-      this.business_prefix + IdTool.WorldStateKeySeparator
-    }
-  }
-
   /*override protected def getPrefix: String = {
     if(IdTool.isDidContract(ctx.getConfig.getAccountContractName)){
       this.common_prefix + IdTool.WorldStateKeySeparator + DidTplPrefix.signerPrefix
@@ -122,6 +107,6 @@ class SignerCache(ctx : RepChainSystemContext) extends ICache(ctx){
   }
 
   override protected def getCacheType: String = {
-    IdTool.WorldStateKeySeparator + DidTplPrefix.signerPrefix
+    DidTplPrefix.signerPrefix
   }
 }

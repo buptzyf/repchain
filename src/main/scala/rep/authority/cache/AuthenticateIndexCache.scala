@@ -1,12 +1,12 @@
 package rep.authority.cache
 
-import rep.app.system.RepChainSystemContext
+import rep.authority.cache.PermissionCacheManager.CommonDataOfCache
 import rep.log.RepLogger
 import rep.sc.tpl.did.DidTplPrefix
 import rep.storage.chain.preload.BlockPreload
 import rep.utils.IdTool
 
-class AuthenticateIndexCache(ctx : RepChainSystemContext) extends ICache(ctx) {
+class AuthenticateIndexCache(cd:CommonDataOfCache,mgr:PermissionCacheManager) extends ICache(cd,mgr) {
   override protected def dataTypeConvert(any: Option[Any], blockPreload: BlockPreload): Option[Any] = {
     if(any == None){
       None
@@ -25,46 +25,12 @@ class AuthenticateIndexCache(ctx : RepChainSystemContext) extends ICache(ctx) {
     }
   }
 
-  override protected def getBaseNetworkPrefix: String = {
-    this.common_prefix + IdTool.WorldStateKeySeparator + DidTplPrefix.authIdxPrefix
-  }
-
-  override protected def getBusinessNetworkPrefix: String = {
-    this.business_prefix + IdTool.WorldStateKeySeparator + DidTplPrefix.authIdxPrefix
-  }
-
   override protected def getCacheType: String = {
-    IdTool.WorldStateKeySeparator + DidTplPrefix.authIdxPrefix
+    DidTplPrefix.authIdxPrefix
   }
 
   override protected def readData(key: String, blockPreload: BlockPreload): Option[Any] = {
-    var r = this.cache.getOrDefault(key, None)
-    if (r == None) {
-      RepLogger.Permission_Logger.trace(s"AuthenticateIndexCache.readData asynchronous read,from IdentityNet,key=${key}")
-      //获取数据方式，0：从基础链获取；1：从业务链获取；
-      val base = this.dataTypeConvert(this.db.getObject(this.getBaseNetworkPrefix + key), blockPreload)
-      val business = if(ctx.getConfig.getIdentityNetName.equalsIgnoreCase(ctx.getConfig.getChainNetworkId)) None else this.dataTypeConvert(this.db.getObject(this.getBusinessNetworkPrefix + key), blockPreload)
-      if (base != None) {
-        if (business != None) {
-          val base1 = base.get.asInstanceOf[Array[String]]
-          val business1 = business.get.asInstanceOf[Array[String]]
-          r = Some(Array.concat(base1, business1))
-        } else {
-          r = base
-        }
-      } else {
-        if (business != None) {
-          r = business
-        } else {
-          r = None
-        }
-      }
-      if (r != None) {
-        this.cache.put(key, r)
-        RepLogger.Permission_Logger.trace(s"AuthenticateIndexCache.readData ,key=${key}，value=${r.get.asInstanceOf[Array[String]]}")
-      }
-    }
-    r
+    this.readDataFromMultiChain(key,blockPreload)
   }
 
   def get(key:String,blockPreload: BlockPreload):Option[Array[String]]={

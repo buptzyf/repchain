@@ -7,6 +7,7 @@ import akka.actor.Address
 import rep.app.conf.{RepChainConfig, SystemCertList, TimePolicy}
 import rep.app.management.{ReasonOfStop, RepChainMgr}
 import rep.authority.cache.PermissionCacheManager
+import rep.authority.cache.PermissionCacheManager.CommonDataOfCache
 import rep.authority.check.PermissionVerify
 import rep.crypto.Sha256
 import rep.crypto.cert.{CryptoMgr, ISigner, ImpECDSASigner, SignTool}
@@ -17,8 +18,11 @@ import rep.network.autotransaction.TransactionBuilder
 import rep.network.cluster.management.ConsensusNodeConfig
 import rep.network.tools.NodeMgr
 import rep.network.tools.transpool.PoolOfTransaction
+import rep.proto.rc2.ChaincodeId
 import rep.storage.chain.block.{BlockSearcher, BlockStorager}
 import rep.storage.chain.preload.BlockPreload
+import rep.storage.db.factory.DBFactory
+import rep.storage.filesystem.FileOperate
 
 class RepChainSystemContext(systemName:String){//},cs:ClusterSystem) {
   private val config : RepChainConfig = new RepChainConfig(systemName)
@@ -33,7 +37,13 @@ class RepChainSystemContext(systemName:String){//},cs:ClusterSystem) {
   private val httpLogger = new HttpLogger(config.getChainNetworkId, config.getOuputAlertThreads,config.getOutputMaxThreads,config.getOutputAlertAliveTime,
                                           config.isOutputAlert,config.getOutputAlertPrismaUrl)
   private val transactionBuilder:TransactionBuilder = new TransactionBuilder(this.signTool)
-  private val permissionCacheManager:PermissionCacheManager = PermissionCacheManager.getCacheInstance(this)
+
+  private val permissionCacheManager:PermissionCacheManager = PermissionCacheManager.getCacheInstance(
+    FileOperate.mergeFilePath(Array[String](config.getStorageDBPath,config.getStorageDBName)) + config.getIdentityNetName,
+    CommonDataOfCache(DBFactory.getDBAccess(config),config.getIdentityNetName,ChaincodeId(config.getAccountContractName,
+      config.getAccountContractVersion),config.getAccountCacheSize)
+  )
+  permissionCacheManager.registerBusinessNet(config.getChainNetworkId)
   private val permissionVerify : PermissionVerify =  new PermissionVerify(this)
   private val hashTool : Sha256 = new Sha256(this.cryptoManager.getInstance)
   private val reloadTrustStore : ReloadableTrustManager = ReloadableTrustManager.createReloadableTrustManager(this)

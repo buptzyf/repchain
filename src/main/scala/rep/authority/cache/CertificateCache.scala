@@ -1,8 +1,9 @@
 package rep.authority.cache
 
 import java.io.{ByteArrayInputStream, StringReader}
+
 import org.bouncycastle.util.io.pem.PemReader
-import rep.app.system.RepChainSystemContext
+import rep.authority.cache.PermissionCacheManager.CommonDataOfCache
 import rep.proto.rc2.Certificate
 import rep.sc.tpl.did.DidTplPrefix
 import rep.storage.chain.preload.BlockPreload
@@ -12,7 +13,7 @@ object CertificateCache{
   case class certData(certId:String,certHash:String,certificate:java.security.cert.Certificate,cert_valid:Boolean)
 }
 
-class CertificateCache(ctx : RepChainSystemContext) extends ICache(ctx){
+class CertificateCache(cd:CommonDataOfCache,mgr:PermissionCacheManager) extends ICache(cd,mgr){
   import CertificateCache._
 
   override protected def dataTypeConvert(any: Option[Any],blockPreload: BlockPreload): Option[Any] = {
@@ -27,31 +28,6 @@ class CertificateCache(ctx : RepChainSystemContext) extends ICache(ctx){
       cd
     }
   }
-
-  override protected def getBaseNetworkPrefix: String = {
-    if(IdTool.isDidContract(ctx.getConfig.getAccountContractName)){
-      this.common_prefix + IdTool.WorldStateKeySeparator + DidTplPrefix.certPrefix
-    }else{
-      this.common_prefix + IdTool.WorldStateKeySeparator
-    }
-  }
-
-  override protected def getBusinessNetworkPrefix: String = {
-    if(IdTool.isDidContract(ctx.getConfig.getAccountContractName)){
-      this.business_prefix + IdTool.WorldStateKeySeparator + DidTplPrefix.certPrefix
-    }else{
-      this.business_prefix + IdTool.WorldStateKeySeparator
-    }
-  }
-
-
-  /*override protected def getPrefix: String = {
-    if(IdTool.isDidContract(ctx.getConfig.getAccountContractName)){
-      this.common_prefix + IdTool.WorldStateKeySeparator + DidTplPrefix.certPrefix
-    }else{
-      this.common_prefix + IdTool.WorldStateKeySeparator
-    }
-  }*/
 
   private def getCertByPem(pemCert: String): java.security.cert.Certificate = {
     val cf = java.security.cert.CertificateFactory.getInstance("X.509")
@@ -71,6 +47,6 @@ class CertificateCache(ctx : RepChainSystemContext) extends ICache(ctx){
 
 
   override protected def getCacheType: String = {
-    IdTool.WorldStateKeySeparator + DidTplPrefix.certPrefix
+    DidTplPrefix.certPrefix
   }
 }

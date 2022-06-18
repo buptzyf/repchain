@@ -45,7 +45,7 @@ class PermissionVerify(ctx: RepChainSystemContext) {
       RepLogger.Permission_Logger.trace(s"System=${ctx.getSystemName},PermissionVerify.CheckPermission is not chain cert,did=${did},opname=${opname}")
       //不是链证书，检查是否有合约部署权限
       //获取Signer信息
-      val od = opCache.get(opname, dbinstance)
+      val od = opCache.get(ctx.getHashTool.hashstr(opname), dbinstance)
       val sd = sigCache.get(did, dbinstance)
       if (sd == None) {
         //实体账户不存在

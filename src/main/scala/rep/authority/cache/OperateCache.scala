@@ -1,6 +1,7 @@
 package rep.authority.cache
 
 import rep.app.system.RepChainSystemContext
+import rep.authority.cache.PermissionCacheManager.CommonDataOfCache
 import rep.proto.rc2.Operate
 import rep.proto.rc2.Operate.OperateType
 import rep.sc.tpl.did.DidTplPrefix
@@ -12,7 +13,7 @@ object OperateCache{
   case class opData(opId:String,opValid:Boolean,isOpen:Boolean,register:String)
 }
 
-class OperateCache(ctx : RepChainSystemContext) extends ICache(ctx) {
+class OperateCache(cd:CommonDataOfCache,mgr:PermissionCacheManager) extends ICache(cd,mgr) {
   import OperateCache._
 
   override protected def dataTypeConvert(any: Option[Any],blockPreload: BlockPreload): Option[Any] = {
@@ -34,12 +35,8 @@ class OperateCache(ctx : RepChainSystemContext) extends ICache(ctx) {
     }
   }
 
-  /*override protected def getPrefix: String = {
-    this.common_prefix + IdTool.WorldStateKeySeparator + DidTplPrefix.operPrefix
-  }*/
-
   def get(key:String,blockPreload: BlockPreload):Option[opData]={
-    val d = this.getData(ctx.getHashTool.hashstr(key),blockPreload)
+    val d = this.getData(key,blockPreload)
     if(d == None)
       None
     else
@@ -47,14 +44,7 @@ class OperateCache(ctx : RepChainSystemContext) extends ICache(ctx) {
   }
 
   override protected def getCacheType: String = {
-    IdTool.WorldStateKeySeparator + DidTplPrefix.operPrefix
+    DidTplPrefix.operPrefix
   }
 
-  override protected def getBaseNetworkPrefix: String = {
-    this.common_prefix + IdTool.WorldStateKeySeparator + DidTplPrefix.operPrefix
-  }
-
-  override protected def getBusinessNetworkPrefix: String = {
-    this.business_prefix + IdTool.WorldStateKeySeparator + DidTplPrefix.operPrefix
-  }
 }

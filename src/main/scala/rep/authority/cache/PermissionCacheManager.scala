@@ -1,9 +1,13 @@
 package rep.authority.cache
 
 import java.util.concurrent.ConcurrentHashMap
+
 import rep.app.system.RepChainSystemContext
+import rep.authority.cache.PermissionCacheManager.CommonDataOfCache
 import rep.log.RepLogger
+import rep.proto.rc2.ChaincodeId
 import rep.sc.tpl.did.DidTplPrefix
+import rep.storage.db.common.IDBAccess
 import rep.storage.filesystem.FileOperate
 
 
@@ -13,15 +17,26 @@ import rep.storage.filesystem.FileOperate
  * @since	2022-04-19
  * @category	根据系统名称获取账户权限相关的缓存实例
  */
-class PermissionCacheManager private(ctx : RepChainSystemContext) {
-  private val signerCache = new SignerCache(ctx)
-  private val authenticateBindToCertCache = new AuthenticateBindToCertCache(ctx)
-  private val authenticateCache = new AuthenticateCache(ctx)
-  private val certificateCache = new CertificateCache(ctx)
-  private val certificateHashCache = new CertificateHashCache(ctx)
-  private val operateCache = new OperateCache(ctx)
-  private val authIdxCache = new AuthenticateIndexCache(ctx)
-  private val operIdxCache = new OperateIndexCache(ctx)
+class PermissionCacheManager private(systemKey:String,cd:CommonDataOfCache) {
+  private val signerCache = new SignerCache(cd,this)
+  private val authenticateBindToCertCache = new AuthenticateBindToCertCache(cd,this)
+  private val authenticateCache = new AuthenticateCache(cd,this)
+  private val certificateCache = new CertificateCache(cd,this)
+  private val certificateHashCache = new CertificateHashCache(cd,this)
+  private val operateCache = new OperateCache(cd,this)
+  private val authIdxCache = new AuthenticateIndexCache(cd,this)
+  private val operIdxCache = new OperateIndexCache(cd,this)
+
+  def registerBusinessNet(networkName:String):Unit={
+    signerCache.registerBusinessNet(networkName)
+    authenticateBindToCertCache.registerBusinessNet(networkName)
+    authenticateCache.registerBusinessNet(networkName)
+    certificateCache.registerBusinessNet(networkName)
+    certificateHashCache.registerBusinessNet(networkName)
+    operateCache.registerBusinessNet(networkName)
+    authIdxCache.registerBusinessNet(networkName)
+    operIdxCache.registerBusinessNet(networkName)
+  }
 
   /**
    * @author jiangbuyun
@@ -56,7 +71,7 @@ class PermissionCacheManager private(ctx : RepChainSystemContext) {
    * */
   def updateCertCache(key:String):Unit={
     System.err.println(s"t=${System.currentTimeMillis()},entry PermissionCacheManager#######updateCertCache,key=${key}," +
-      s"node=${this.ctx.getSystemName}")
+      s"node=${systemKey}")
     this.certificateCache.updateCache(key)
   }
   /**
@@ -89,6 +104,7 @@ class PermissionCacheManager private(ctx : RepChainSystemContext) {
 }
 
 object PermissionCacheManager {
+  case class CommonDataOfCache(db:IDBAccess,baseNetName:String,cid:ChaincodeId,cacheSize:Int)
   private val cacheInstances = new ConcurrentHashMap[String, PermissionCacheManager]()
 
   /**
@@ -96,19 +112,18 @@ object PermissionCacheManager {
    * @version	2.0
    * @since	2022-05-18
    * @category	根据数据库路径缓存实例
-   * @param ctx : RepChainSystemContext
    * @return	如果成功返回PermissionCacheManager实例，否则为null
    */
-  def getCacheInstance(ctx : RepChainSystemContext): PermissionCacheManager = {
+  def getCacheInstance(systemKey:String,cd:CommonDataOfCache): PermissionCacheManager = {
     var instance: PermissionCacheManager = null
-    val key = FileOperate.mergeFilePath(Array[String](ctx.getConfig.getStorageDBPath,ctx.getConfig.getStorageDBName))
-    if (cacheInstances.containsKey(key)) {
-      RepLogger.trace(RepLogger.Storager_Logger,s"CacheInstance exist, key=${key}")
-      instance = cacheInstances.get(key)
+    //val key = FileOperate.mergeFilePath(Array[String](ctx.getConfig.getStorageDBPath,ctx.getConfig.getStorageDBName))
+    if (cacheInstances.containsKey(systemKey)) {
+      RepLogger.trace(RepLogger.Storager_Logger,s"CacheInstance exist, key=${systemKey}")
+      instance = cacheInstances.get(systemKey)
     } else {
-      RepLogger.trace(RepLogger.Storager_Logger,s"CacheInstance not exist,create new Instance, key=${key}")
-      instance = new PermissionCacheManager(ctx)
-      val old = cacheInstances.putIfAbsent(key,instance)
+      RepLogger.trace(RepLogger.Storager_Logger,s"CacheInstance not exist,create new Instance, key=${systemKey}")
+      instance = new PermissionCacheManager(systemKey,cd)
+      val old = cacheInstances.putIfAbsent(systemKey,instance)
       if(old != null){
         instance = old
       }

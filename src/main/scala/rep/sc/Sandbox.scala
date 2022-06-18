@@ -168,32 +168,39 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
         //当前合约处于快照中，尚未出块,属于部署阶段
         tmpStatus = getStatusFromSnapshot(txcid,oid,da,tid)
         ContractStatusSource = Some(2)
+        RepLogger.System_Logger.trace(s"######cname=${txcid},txid=${tid}当前合约处于快照中，尚未出块,属于部署阶段")
       }else if(contractStateType == ContractStateType.ContractInLevelDB){
         //当前合约部署已经出块，从持久化中装载该合约的状态
         tmpStatus = getStatusFromDB(txcid,oid,tid)
         ContractStatusSource = Some(1)
+        RepLogger.System_Logger.trace(s"######cname=${txcid},txid=${tid},当前合约部署已经出块，从持久化中装载该合约的状态")
       }
       if(tmpStatus == None){
+        RepLogger.System_Logger.trace(s"######cname=${txcid},txid=${tid},当前合约状态未知")
         throw SandboxException(ERR_UNKNOWN_CONTRACT_STATUS)
       }else{
         ContractStatus = tmpStatus
         isStart = false
+        RepLogger.System_Logger.trace(s"######cname=${txcid},txid=${tid},合约状态=${tmpStatus}")
       }
     }else if(isStart){
         //当前交易序列第一次检查合约状态，需要判断是否需要重新装载合约状态
+      RepLogger.System_Logger.trace(s"######cname=${txcid},txid=${tid},当前交易序列第一次检查合约状态，需要判断是否需要重新装载合约状态")
         if(contractStateType == ContractStateType.ContractInLevelDB && ContractStatusSource.get == 2) {
           //当前合约已经持久化，并且合约状态的值还是来自于预执行，需要重新装载
           tmpStatus = getStatusFromDB(txcid,oid,da)
           if (tmpStatus == None) {
+            RepLogger.System_Logger.trace(s"######cname=${txcid},txid=${tid},合约状态=${tmpStatus},当前合约已经持久化，并且合约状态的值还是来自于预执行，需要重新装载")
             throw SandboxException(ERR_UNKNOWN_CONTRACT_STATUS)
           } else {
             ContractStatus = tmpStatus
             ContractStatusSource = Some(1)
+            RepLogger.System_Logger.trace(s"######cname=${txcid},txid=${tid},合约状态=${tmpStatus},从持久化中获取合约状态")
           }
         }
       isStart = false
     }
-
+    RepLogger.System_Logger.trace(s"######cname=${txcid},txid=${tid},合约状态=${this.ContractStatus},返回最后的合约状态")
     this.ContractStatus
   }
 
