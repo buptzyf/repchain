@@ -256,10 +256,6 @@ class RepChainConfig {
     this.sysConf.getInt("system.account.chain_code_version")
   }
 
-  def getAccountCertChangeMethod:String={
-    this.sysConf.getString("system.account.cert_status_change_function")
-  }
-
   def getAccountCacheSize:Int={
     this.sysConf.getInt("system.account.cache_size")
   }

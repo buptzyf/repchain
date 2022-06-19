@@ -28,6 +28,7 @@ object SandboxDispatcher {
   val ERR_REPEATED_CID = "存在重复的合约Id"
   val ERR_CODER = "合约只能由部署者升级更新"
   val ERR_DISABLE_CID = "合约处于禁用状态"
+  val ERR_NONDID_CONTRACT = "系统不支持非DID账户管理合约"
 
   //权限检查异常消息预定义
   val ERR_NO_PERMISSION_OF_DEPLOY = "没有合约部署的权限"

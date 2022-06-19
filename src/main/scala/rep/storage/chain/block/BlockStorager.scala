@@ -69,7 +69,6 @@ class BlockStorager(ctx: RepChainSystemContext, isEncrypt: Boolean = false) exte
         //val chainCodeId = IdTool.getCid(t.getCid)
         //val oid = if(t.oid.isEmpty) "_" else t.oid.toString
         val accountContractName = ctx.getConfig.getAccountContractName
-        val certMethod = ctx.getConfig.getAccountCertChangeMethod
 
         val memberContractName = ctx.getConfig.getMemberManagementContractName
         val memberContractMethod = ctx.getConfig.getMemberManagementContractMethod
@@ -85,10 +84,6 @@ class BlockStorager(ctx: RepChainSystemContext, isEncrypt: Boolean = false) exte
             t.`type` == Transaction.Type.CHAINCODE_INVOKE && IdTool.isDidContract(accountContractName)) {
             //账户修改
             ctx.getPermissionCacheManager.updateCache(k)
-          } else if (t.getCid.chaincodeName.equalsIgnoreCase(accountContractName) &&
-            t.`type` == Transaction.Type.CHAINCODE_INVOKE && t.para.ipt.get.function.equalsIgnoreCase(certMethod)) {
-            //证书修改
-            ctx.getPermissionCacheManager.updateCertCache(k)
           }else if (t.getCid.chaincodeName.equalsIgnoreCase(memberContractName) &&
             t.`type` == Transaction.Type.CHAINCODE_INVOKE && t.para.ipt.get.function.equalsIgnoreCase(memberContractMethod)){
             if(k.indexOf(ReloadableTrustManager.key_trust_stores) > 0){
@@ -124,10 +119,6 @@ class BlockStorager(ctx: RepChainSystemContext, isEncrypt: Boolean = false) exte
             t.`type` == Transaction.Type.CHAINCODE_INVOKE && IdTool.isDidContract(accountContractName)) {
             //账户修改
             ctx.getPermissionCacheManager.updateCache(k)
-          } else if (t.getCid.chaincodeName.equalsIgnoreCase(accountContractName) &&
-            t.`type` == Transaction.Type.CHAINCODE_INVOKE && t.para.ipt.get.function.equalsIgnoreCase(certMethod)) {
-            //证书修改
-            ctx.getPermissionCacheManager.updateCertCache(k)
           }
         })
       }
@@ -302,7 +293,6 @@ class BlockStorager(ctx: RepChainSystemContext, isEncrypt: Boolean = false) exte
         val r = result(i)
         val t = trs(i)
         val accountContractName = ctx.getConfig.getAccountContractName
-        val certMethod = ctx.getConfig.getAccountCertChangeMethod
 
         val memberContractName = ctx.getConfig.getMemberManagementContractName
         val memberContractMethod = ctx.getConfig.getMemberManagementContractMethod
@@ -321,10 +311,6 @@ class BlockStorager(ctx: RepChainSystemContext, isEncrypt: Boolean = false) exte
           }
 
           if (t.getCid.chaincodeName.equalsIgnoreCase(accountContractName) &&
-            t.`type` == Transaction.Type.CHAINCODE_INVOKE && t.para.ipt.get.function.equalsIgnoreCase(certMethod)) {
-            //证书修改
-            ctx.getPermissionCacheManager.updateCertCache(k)
-          } else if (t.getCid.chaincodeName.equalsIgnoreCase(accountContractName) &&
             t.`type` == Transaction.Type.CHAINCODE_INVOKE) {
             //账户修改
             ctx.getPermissionCacheManager.updateCache(k)
@@ -368,10 +354,6 @@ class BlockStorager(ctx: RepChainSystemContext, isEncrypt: Boolean = false) exte
           }
 
           if (t.getCid.chaincodeName.equalsIgnoreCase(accountContractName) &&
-            t.`type` == Transaction.Type.CHAINCODE_INVOKE && t.para.ipt.get.function.equalsIgnoreCase(certMethod)) {
-            //证书修改
-            ctx.getPermissionCacheManager.updateCertCache(k)
-          } else if (t.getCid.chaincodeName.equalsIgnoreCase(accountContractName) &&
             t.`type` == Transaction.Type.CHAINCODE_INVOKE) {
             //账户修改
             ctx.getPermissionCacheManager.updateCache(k)

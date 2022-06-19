@@ -22,7 +22,9 @@ import rep.utils._
 import rep.network.tools.PeerExtension
 import rep.log.{RepLogger, RepTimeTracer}
 import rep.proto.rc2.{ActionResult, ChaincodeId, Transaction, TransactionResult}
+import rep.sc.Sandbox.SandboxException
 import rep.storage.chain.KeyPrefixManager
+
 import scala.collection.immutable.HashMap
 
 
@@ -248,13 +250,14 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
       case Transaction.Type.CHAINCODE_DEPLOY =>
         dotrans.contractStateType match {
           case ContractStateType.ContractInLevelDB =>
-            throw new SandboxException(ERR_REPEATED_CID)
+            throw SandboxException(ERR_REPEATED_CID)
           case _ =>
             //检查合约部署者以及权限
             if(IdTool.isDidContract(pe.getRepChainContext.getConfig.getAccountContractName)){
               permissioncheck.CheckPermissionOfDeployContract(dotrans)
             }else{
-              IsCurrentSigner(dotrans)
+              throw SandboxException(ERR_NONDID_CONTRACT)
+              //IsCurrentSigner(dotrans)
             }
         }
       case Transaction.Type.CHAINCODE_SET_STATE =>
@@ -262,7 +265,8 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
         if(IdTool.isDidContract(pe.getRepChainContext.getConfig.getAccountContractName)){
           permissioncheck.CheckPermissionOfSetStateContract(dotrans)
         }else{
-          IsCurrentSigner(dotrans)
+          throw SandboxException(ERR_NONDID_CONTRACT)
+          //IsCurrentSigner(dotrans)
         }
 
       case Transaction.Type.CHAINCODE_INVOKE =>
@@ -274,6 +278,8 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
         }else{
           if(IdTool.isDidContract(pe.getRepChainContext.getConfig.getAccountContractName)) {
             permissioncheck.CheckPermissionOfInvokeContract(dotrans)
+          }else{
+            throw SandboxException(ERR_NONDID_CONTRACT)
           }
         }
       case _ => throw SandboxException(ERR_UNKNOWN_TRANSACTION_TYPE)
