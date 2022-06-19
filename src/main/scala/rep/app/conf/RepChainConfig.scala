@@ -260,10 +260,6 @@ class RepChainConfig {
     this.sysConf.getInt("system.account.cache_size")
   }
 
-  def getBlockNumberOfBlocker:Int={
-    this.sysConf.getInt("system.block.block_number_blocker")
-  }
-
   def getRetryTimeOfBlockFailed:Int={
     this.sysConf.getInt("system.block.retry_time")
   }
