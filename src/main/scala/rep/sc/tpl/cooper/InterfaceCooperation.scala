@@ -8,7 +8,6 @@ import rep.crypto.BytesHex
 import rep.proto.rc2.{ActionResult, Certificate}
 import rep.sc.scalax.{ContractContext, ContractException, IContract}
 import rep.sc.tpl.did.DidTplPrefix.certPrefix
-import rep.utils.SerializeUtils
 
 import java.io.{ByteArrayInputStream, StringReader}
 import java.nio.charset.StandardCharsets
@@ -370,7 +369,7 @@ class InterfaceCooperation extends IContract {
     */
   @throws[Exception]
   def getX509Cert(ctx: ContractContext, creditCode: String, certName: String): X509Certificate = {
-    val cert = SerializeUtils.deserialise(ctx.api.getStateEx(ctx.api.getChainNetId, didTplName, certPrefix + creditCode + "." + certName).asInstanceOf[Array[Byte]]).asInstanceOf[Certificate]
+    val cert = ctx.api.getStateEx(ctx.api.getChainNetId, didTplName, certPrefix + creditCode + "." + certName).asInstanceOf[Certificate]
     // cert.certificate 是读取pem证书文件得到的字符串
     val stringReader = new StringReader(cert.certificate)
     val pemReader = new PemReader(stringReader)
