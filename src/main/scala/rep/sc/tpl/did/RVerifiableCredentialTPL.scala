@@ -337,8 +337,8 @@ object RVerifiableCredentialTPL {
   def assertInvokerIsCreator(ctx: ContractContext, worldstate: Any, message: String) = {
     var creator = ""
     worldstate match {
-      case ccs: CreClaStruct => creator = ccs.creator.split(":").last
-      case vcs: VerCreStatus => creator = vcs.creator.split(":").last
+      case ccs: CreClaStruct => creator = s"""${ccs.creator.split(":")(2)}:${ccs.creator.split(":").last}"""
+      case vcs: VerCreStatus => creator = s"""${vcs.creator.split(":")(2)}:${vcs.creator.split(":").last}"""
     }
     if(creator != ctx.t.signature.get.certId.get.creditCode) {
       throw ContractException(

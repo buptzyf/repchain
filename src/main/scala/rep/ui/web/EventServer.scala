@@ -242,6 +242,7 @@ object EventServer {
               new ChainService(ra).route ~
               new TransactionService(ra,repContext,false).route ~
               new DbService(ra,repContext,false).route ~
+              new DidService(ra).route ~
               SwaggerDocService.routes
           ))
         System.out.println(s"^^^^^^^^http Service:${repContext.getSystemName}^^^^^^^^")

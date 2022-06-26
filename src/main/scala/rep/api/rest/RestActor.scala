@@ -415,9 +415,16 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
       }
 
       // To retrieve the signer for the did document
-      // The did is like "did:rep:<network>:<oid>:<specific_user_id>"
+      // The did is like "did:rep:<network>:<oid>:<specific_user_id>" or "did:rep:<network>:<specific_user_id>"
       val info = didOrigin.split(":");
-      val signerStateKey = s"""${info(2)}_${config.getAccountContractName}_${info(3)}_${signerPrefix}${info(2)}:${info(4)}"""
+      var oid = "_";
+      if (info.length == 5) {
+        oid = info(3) match {
+          case ""  => "_"
+          case _ => info(3)
+        }
+      }
+      val signerStateKey = s"""${info(2)}_${config.getAccountContractName}_${oid}_${signerPrefix}${info(2)}:${info(4)}"""
       val signerBytes = DBFactory.getDBAccess(config).getBytes(signerStateKey)
       if (signerBytes == null) {
           sender ! HttpResponse(
@@ -441,7 +448,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
       var capabilityInvocation: Seq[Any] = Seq()
       signer.certNames.foreach( certName => {
         // to retrieve a certificate for the signer
-        val certStateKey = s"""${info(2)}_${config.getAccountContractName}_${info(3)}_${certPrefix}${certName}"""
+        val certStateKey = s"""${info(2)}_${config.getAccountContractName}_${oid}_${certPrefix}${certName}"""
         val cert = SerializeUtils.deserialise(
           DBFactory.getDBAccess(config).getBytes(certStateKey)
         ).asInstanceOf[Certificate]
@@ -505,9 +512,17 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
 
       // to retrieve the certificate for the did pubKeyId
       // The pubKeyId is like "did:rep:<network>:<oid>:<specific_user_id>#<cert_name>"
+      // or "did:rep:<network>:<specific_user_id>#<cert_name>"
       val info = pubKeyId.split(":");
+      var oid = "_";
+      if (info.length == 5) {
+        oid = info(3) match {
+          case "" => "_"
+          case _ => info(3)
+        }
+      }
       val certName = s"""${info(2)}:${info.last.replace(DELIMITER, ".")}"""
-      val certStateKey = s"""${info(2)}_${config.getAccountContractName}_${info(3)}_${certPrefix}${certName}"""
+      val certStateKey = s"""${info(2)}_${config.getAccountContractName}_${oid}_${certPrefix}${certName}"""
       val certBytes = DBFactory.getDBAccess(config).getBytes(certStateKey)
       if (certBytes == null) {
           sender ! HttpResponse(
@@ -540,7 +555,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
     // to get the public key type
     val pemReader = new PemReader(new StringReader(certPemStr))
     val certBytes = pemReader.readPemObject().getContent
-    val pubKeyInfo = x509.Certificate.getInstance(certBytes). getSubjectPublicKeyInfo
+    val pubKeyInfo = x509.Certificate.getInstance(certBytes).getSubjectPublicKeyInfo
     val oid2MyDidPubKeyTypeName = Map(
       "1.2.840.10045.2.1" -> "Ecdsa",
       "1.2.840.10045.3.1.7" -> "Prime256v1",
