@@ -67,7 +67,7 @@ libraryDependencies += "org.apache.hadoop" % "hadoop-common" % "3.2.0"
 //libraryDependencies += "org.python" % "jython" % "2.7.2"
 libraryDependencies += "org.javatuples" % "javatuples" % "1.2"
 //add java encrpto for bc
-//libraryDependencies += "org.bouncycastle" % "bcprov-jdk15on" % "1.67"
+libraryDependencies += "org.bouncycastle" % "bcpkix-jdk15on" % "1.67"
 
 libraryDependencies ++= Seq(
 //  "io.swagger" % "swagger-jaxrs" % "1.6.0",
