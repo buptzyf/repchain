@@ -13,7 +13,6 @@ object JsseContextHelper {
     val SSLKeyStore: String = config.getString(prefix+"key-store")
     val SSLTrustStore: String = config.getString(prefix+"trust-store")
     val SSLKeyStorePassword: String = config.getString(prefix+"key-store-password")
-    val SSLKeyPassword: String = config.getString(prefix+"key-password")
     val SSLTrustStorePassword: String = config.getString(prefix+"trust-store-password")
     //val SSLEnabledAlgorithms: Set[String] = immutableSeq(config.getStringList(prefix+"enabled-algorithms")).toSet
     val SSLProtocol: String = config.getString(prefix+"protocol")
@@ -24,7 +23,7 @@ object JsseContextHelper {
     try {
       val rng = createSecureRandom(SSLRandomNumberGenerator)
       val ctx = SSLContext.getInstance(SSLProtocol)
-      ctx.init(keyManagers(SSLKeyStore, SSLKeyStorePassword,SSLKeyPassword),
+      ctx.init(keyManagers(SSLKeyStore, SSLKeyStorePassword,SSLKeyStorePassword),
         trustManagers(SSLTrustStore, SSLTrustStorePassword), rng)
       ctx
     } catch {
