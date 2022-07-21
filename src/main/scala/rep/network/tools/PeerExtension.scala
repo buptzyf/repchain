@@ -226,15 +226,6 @@ private var timeoutOfRaft:AtomicLong = new AtomicLong(0)
   def removeBlock(identifierOfBlock: String): Unit ={
     this.preloadBlockOfWaiting.remove(identifierOfBlock)
   }
-
-  private var sslContext : SSLContext = null
-  def getSSLContext:SSLContext={
-    sslContext
-  }
-
-  def setSSLContext(value: SSLContext)={
-    sslContext = value
-  }
 }
 
 object PeerExtension

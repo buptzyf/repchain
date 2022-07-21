@@ -201,6 +201,20 @@ class RepChainSystemContext(systemName:String){//},cs:ClusterSystem) {
   def getBlockStorager:BlockStorager={
     this.blockStorager
   }
+}
 
+object RepChainSystemContext{
+  private val ctxs = new ConcurrentHashMap[String,RepChainSystemContext]()
 
+  def setCtx(name:String,ctx:RepChainSystemContext):Unit={
+    this.ctxs.put(name,ctx)
+  }
+
+  def getCtx(name:String):RepChainSystemContext={
+    if(this.ctxs.containsKey(name)){
+      this.ctxs.get(name)
+    }else{
+      null
+    }
+  }
 }

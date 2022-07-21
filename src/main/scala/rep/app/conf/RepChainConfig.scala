@@ -1,11 +1,14 @@
 package rep.app.conf
 
 import java.io.File
-import java.nio.file.Paths
-import java.util
+import java.security.{Provider, Security}
 
+import akka.japi.Util.immutableSeq
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import rep.log.RepLogger
+
+import scala.collection.mutable
+import scala.util.control.Breaks.{break, breakable}
 
 
 /**
@@ -41,6 +44,7 @@ class RepChainConfig {
       var combined_conf = ConfigFactory.parseFile(userConfigFile).withFallback(this.sysConf)
       this.sysConf = ConfigFactory.load(combined_conf)
       setSSLConfig
+      loadSecurityClass
     } else{
       RepLogger.trace(RepLogger.System_Logger, this.systemName + " ~ " + "ClusterSystem" + "~" + " custom configuration file not exist")
     }
@@ -63,6 +67,65 @@ class RepChainConfig {
     myConfig =
       ConfigFactory.parseString("akka.remote.artery.ssl.config-ssl-engine.trust-store = \"" + trust_store + "\"")
     this.sysConf = myConfig.withFallback(this.sysConf)
+
+    val protocol = if(isUseGM) "GMSSLv1.1" else "TLSv1.2"
+    myConfig =
+      ConfigFactory.parseString("akka.remote.artery.ssl.config-ssl-engine.protocol = \"" + protocol + "\"")
+    this.sysConf = myConfig.withFallback(this.sysConf)
+
+    myConfig =
+      ConfigFactory.parseString("akka.remote.artery.ssl.config-ssl-engine.random-number-generator = \"" + "SecureRandom" + "\"")
+    this.sysConf = myConfig.withFallback(this.sysConf)
+
+    val algorithm = if(isUseGM) "[\"GMSSL_ECC_SM4_SM3\"]" else "[\"TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256\"]"
+    myConfig =ConfigFactory.parseString("akka.remote.artery.ssl.config-ssl-engine.enabled-algorithms = " + algorithm + "")
+    //val algorithm = if(isUseGM) Array("GMSSL_ECC_SM4_SM3") else Array("TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256")
+    //val hm = new mutable.HashMap[String,Any]()
+    //hm += "akka.remote.artery.ssl.config-ssl-engine.enabled-algorithms" -> algorithm
+    //ConfigFactory.parseMap(hm)
+    this.sysConf = myConfig.withFallback(this.sysConf)
+
+    val p2pConfig = if(isUseGM) "rep.crypto.nodedynamicmanagement4gm.CustomGMSSLEngine" else "rep.crypto.nodedynamicmanagement.CustomSSLEngine"
+    myConfig =
+      ConfigFactory.parseString("akka.remote.artery.ssl.ssl-engine-provider = \"" + p2pConfig + "\"")
+    this.sysConf = myConfig.withFallback(this.sysConf)
+
+    myConfig =
+      ConfigFactory.parseString("akka.remote.artery.ssl.config-ssl-engine.node-name = \"" + this.systemName + "\"")
+    this.sysConf = myConfig.withFallback(this.sysConf)
+  }
+
+  private def loadSecurityClass:Unit={
+    if(this.isUseGM){
+      System.out.println("%%%%%%%%load BouncyCastleProvider and BouncyCastleJsseProvider ...%%%%%%%%")
+      loadProvider("org.bouncycastle.jce.provider.BouncyCastleProvider",1)
+      loadProvider("org.bouncycastle.jsse.provider.BouncyCastleJsseProvider",2)
+      System.out.println("%%%%%%%%load BouncyCastleProvider and BouncyCastleJsseProvider finish%%%%%%%%")
+    }
+  }
+
+  private def loadProvider(cname:String,serial:Int):Unit={
+    try{
+      val cls = this.getClass.getClassLoader.loadClass(cname)
+      System.out.println(s"get getClassLoader = ${cls.getName}")
+      val csts =  cls.getConstructors()
+      System.out.println(s"get Constructors = ${csts.length}")
+      if(csts.length > 0){
+        breakable(
+          csts.foreach(cst=>{
+            if(cst.getParameterCount == 0){
+              System.out.println(s"get Constructors0 = ${cst.getName},params=${cst.getParameterCount}")
+              val p = cst.newInstance().asInstanceOf[Provider]
+              System.out.println(s"get instance = ${p.getName}")
+              Security.insertProviderAt(p,serial)
+              //Security.addProvider(p)
+              break
+            }
+          }))
+      }
+    }catch {
+      case e:Exception => System.out.println(s"loadProvider error,msg=${e.getMessage}")
+    }
   }
 
   def getBasePath:String={
@@ -87,6 +150,18 @@ class RepChainConfig {
 
   def getTrustPassword:String={
     this.sysConf.getString("akka.remote.artery.ssl.config-ssl-engine.trust-store-password")
+  }
+
+  def getProtocol:String={
+    this.sysConf.getString("akka.remote.artery.ssl.config-ssl-engine.protocol")
+  }
+
+  def getAlgorithm:Set[String]={
+    immutableSeq(this.sysConf.getStringList("akka.remote.artery.ssl.config-ssl-engine.enabled-algorithms")).toSet
+  }
+
+  def getSecureRandom:String={
+    this.sysConf.getString("akka.remote.artery.ssl.config-ssl-engine.random-number-generator")
   }
 
   def getSystemName:String={
@@ -146,7 +221,7 @@ class RepChainConfig {
    * @return	开启返回true，否则false
    */
   def getEnableWebSocket:Boolean={
-    this.sysConf.getInt("system.ws_enable") match {
+    this.sysConf.getInt("system.api.ws_enable") match {
       case 0 => false
       case 1 => true
     }
@@ -160,14 +235,14 @@ class RepChainConfig {
    * @return	开启返回true，否则false
    */
   def isUseHttps:Boolean={
-    this.sysConf.getInt("system.http_mode") match {
+    this.sysConf.getInt("system.api.http_mode") match {
       case 0 => false
       case 1 => true
     }
   }
 
   def isNeedClientAuth:Boolean={
-    this.sysConf.getInt("system.is_need_client_auth") match {
+    this.sysConf.getInt("system.api.is_need_client_auth") match {
       case 0 => false
       case 1 => true
     }
@@ -223,7 +298,7 @@ class RepChainConfig {
   }
 
   def getHttpServicePort:Int={
-    this.sysConf.getInt("system.http_service_port")
+    this.sysConf.getInt("system.api.http_service_port")
   }
 
   def getHttpServiceActorNumber:Int={
@@ -312,7 +387,7 @@ class RepChainConfig {
   }
 
   def isStartupRealtimeGraph:Boolean={
-    this.sysConf.getInt("system.real_time_graph_enable") match {
+    this.sysConf.getInt("system.api.real_time_graph_enable") match {
       case 0 => false
       case 1 => true
     }
@@ -401,8 +476,16 @@ class RepChainConfig {
     this.sysConf.getString("system.gm.gm_jce_provider_name")
   }
 
-  def getGMTrustStoreName:String={
+  /*def getGMTrustStoreName:String={
     this.sysConf.getString("system.gm.gm_trust_store_name")
+  }*/
+
+  def getGMJsseProviderName:String={
+    this.sysConf.getString("system.gm.gm_jce_provider_name")
+  }
+
+  def getGMJsseProvider:String={
+    this.sysConf.getString("system.gm.gm_jsse_provider")
   }
 
 }

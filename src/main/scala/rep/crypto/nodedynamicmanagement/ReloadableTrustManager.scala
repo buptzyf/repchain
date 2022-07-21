@@ -6,8 +6,9 @@ import java.util.concurrent.ConcurrentHashMap
 
 import javax.net.ssl.{TrustManager, TrustManagerFactory, X509ExtendedTrustManager}
 import rep.app.system.RepChainSystemContext
-import rep.crypto.cert.CertificateUtil
+import rep.crypto.cert.{CertificateUtil, CryptoMgr}
 import rep.log.RepLogger
+
 import scala.collection.mutable.{ArrayBuffer, HashMap}
 import scala.util.control.Breaks.{break, breakable}
 
@@ -100,7 +101,7 @@ class ReloadableTrustManager private(ctx: RepChainSystemContext){
 
   private def loadTrustStores(recentCerts: HashMap[String, Certificate]): KeyStore = {
     try {
-      val Store = KeyStore.getInstance(KeyStore.getDefaultType())
+      val Store = if(ctx.getConfig.isUseGM) KeyStore.getInstance(CryptoMgr.keyStoreTypeInGM,ctx.getConfig.getGMProviderNameOfJCE) else KeyStore.getInstance(KeyStore.getDefaultType())
       Store.load(null, null)
       recentCerts.foreach(f => {
         val k = f._1
@@ -116,7 +117,7 @@ class ReloadableTrustManager private(ctx: RepChainSystemContext){
 
   private def loadTrustManager(recentStore: KeyStore): X509ExtendedTrustManager = {
     var rtm: X509ExtendedTrustManager = null
-    val tmf: TrustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+    val tmf: TrustManagerFactory = if(ctx.getConfig.isUseGM) TrustManagerFactory.getInstance("PKIX", ctx.getConfig.getGMJsseProviderName) else TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
     tmf.init(recentStore)
     val tm: Array[TrustManager] = tmf.getTrustManagers()
     if (tm != null) {

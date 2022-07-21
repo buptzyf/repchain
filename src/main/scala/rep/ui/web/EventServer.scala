@@ -50,9 +50,11 @@ import akka.http.scaladsl.{ConnectionContext, Http, HttpsConnectionContext}
 import akka.japi.Util.immutableSeq
 import javax.net.ssl.{KeyManager, KeyManagerFactory, SSLContext, TrustManager, TrustManagerFactory}
 import rep.app.system.RepChainSystemContext
-import rep.crypto.JsseContextHelper
 import rep.proto.rc2.Event
 import akka.japi.Util._
+import rep.crypto.nodedynamicmanagement.JsseContextHelper
+import rep.crypto.nodedynamicmanagement4gm.GMJsseContextHelper
+
 import scala.util.Try
 
 /** Event服务伴生对象
@@ -72,63 +74,6 @@ object EventServer {
       }
   }
 
- /* def createJsseContext(repContext: RepChainSystemContext):SSLContext={
-    val config = repContext.getConfig.getSystemConf
-    val prefix = "akka.remote.artery.ssl.config-ssl-engine."
-    val SSLKeyStore: String = config.getString(prefix+"key-store")
-    val SSLTrustStore: String = config.getString(prefix+"trust-store")
-    val SSLKeyStorePassword: String = config.getString(prefix+"key-store-password")
-    val SSLKeyPassword: String = config.getString(prefix+"key-password")
-    val SSLTrustStorePassword: String = config.getString(prefix+"trust-store-password")
-    //val SSLEnabledAlgorithms: Set[String] = immutableSeq(config.getStringList(prefix+"enabled-algorithms")).toSet
-    val SSLProtocol: String = config.getString(prefix+"protocol")
-    val SSLRandomNumberGenerator: String = config.getString(prefix+"random-number-generator")
-    //val SSLRequireMutualAuthentication: Boolean = config.getBoolean(prefix+"require-mutual-authentication")
-    //val HostnameVerification: Boolean = config.getBoolean(prefix+"hostname-verification")
-
-    try {
-      val rng = createSecureRandom(SSLRandomNumberGenerator)
-      val ctx = SSLContext.getInstance(SSLProtocol)
-      ctx.init(keyManagers(SSLKeyStore, SSLKeyStorePassword,SSLKeyPassword),
-        trustManagers(SSLTrustStore, SSLTrustStorePassword), rng)
-      ctx
-    } catch {
-      case e: Exception => null
-    }
-  }
-
-  private def trustManagers(SSLTrustStore:String, SSLTrustStorePassword:String): Array[TrustManager] = {
-    val trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm)
-    trustManagerFactory.init(loadKeystore(SSLTrustStore, SSLTrustStorePassword))
-    trustManagerFactory.getTrustManagers
-  }
-
-  private def keyManagers(SSLKeyStore: String, SSLKeyStorePassword: String,SSLKeyPassword:String): Array[KeyManager] = {
-    val factory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm)
-    factory.init(loadKeystore(SSLKeyStore, SSLKeyStorePassword), SSLKeyPassword.toCharArray)
-    factory.getKeyManagers
-  }
-
-  private def loadKeystore(filename: String, password: String): KeyStore = {
-    val keyStore = KeyStore.getInstance(KeyStore.getDefaultType)
-    val fin = Files.newInputStream(Paths.get(filename))
-    try keyStore.load(fin, password.toCharArray)
-    finally Try(fin.close())
-    keyStore
-  }
-
-  private def createSecureRandom(randomNumberGenerator: String): SecureRandom = {
-    val rng = randomNumberGenerator match {
-      case s @ ("SHA1PRNG" | "NativePRNG") =>
-        SecureRandom.getInstance(s)
-      case "" | "SecureRandom" =>
-        new SecureRandom
-      case unknown =>
-        new SecureRandom
-    }
-    rng.nextInt()
-    rng
-  }*/
 
 /** 启动Event服务
  * 传入publish Actor
@@ -179,10 +124,7 @@ object EventServer {
     //允许跨域访问,以支持在应用中发起请求
     //val httpServer = Http()
     System.out.println("^^^^^^^^^^^^^^^^")
-    val pe = PeerExtension(sys)
-    if(pe.getSSLContext == null && pe.getRepChainContext.getConfig.isUseGM){
-      Thread.sleep(2000)
-    }
+
 
     repContext.getConfig.isUseHttps match{
       case true=>
@@ -190,11 +132,11 @@ object EventServer {
         repContext.getConfig.isUseGM match {
           case true=>
             https = ConnectionContext.httpsServer(() => {
-              //val engine = repContext.getSSLContext.getSSLcontext.createSSLEngine()
-              val engine = pe.getSSLContext.createSSLEngine()
+              val sslCtx = GMJsseContextHelper.createGMContext(repContext.getConfig)
+              val engine = sslCtx.createSSLEngine()
               engine.setUseClientMode(false)
-              engine.setEnabledCipherSuites(Array("GMSSL_ECC_SM4_SM3"))
-              engine.setEnabledProtocols(Array("GMSSLv1.1"))
+              engine.setEnabledCipherSuites(repContext.getConfig.getAlgorithm.toArray)
+              engine.setEnabledProtocols(Array(repContext.getConfig.getProtocol))
               engine.setNeedClientAuth(repContext.getConfig.isNeedClientAuth)
               engine
             })
@@ -210,15 +152,12 @@ object EventServer {
             System.out.println(s"^^^^^^^^https GM Service:${repContext.getSystemName}^^^^^^^^")
           case false=>
             https = ConnectionContext.httpsServer(() => {
-              val sslCtx = JsseContextHelper.createJsseContext(repContext.getConfig.getSystemConf)//EventServer.createJsseContext(repContext)
+              val sslCtx = JsseContextHelper.createJsseContext(repContext.getConfig,"TLSv1.2")
               val engine = sslCtx.createSSLEngine()
               engine.setUseClientMode(false)
-              val cipherSuite = immutableSeq(repContext.getConfig.getSystemConf.getStringList("akka.remote.artery.ssl.config-ssl-engine.enabled-algorithms")).toSet
-              engine.setEnabledCipherSuites(cipherSuite.toArray)
-              engine.setEnabledProtocols(Array(
-                repContext.getConfig.getSystemConf.getString("akka.remote.artery.ssl.config-ssl-engine.protocol")))
+              engine.setEnabledCipherSuites(repContext.getConfig.getAlgorithm.toArray)
+              engine.setEnabledProtocols(Array(repContext.getConfig.getProtocol))
               engine.setNeedClientAuth(repContext.getConfig.isNeedClientAuth)
-
               engine
             })
             Http().newServerAt("0.0.0.0", port)
@@ -258,9 +197,6 @@ class EventServer extends Actor{
   override def preStart(): Unit = {
     context.system.settings.config
     val pe = PeerExtension(context.system)
-    if(pe.getSSLContext == null && pe.getRepChainContext.getConfig.isUseGM){
-      Thread.sleep(2000)
-    }
     EventServer.start(context.system, pe.getRepChainContext)
 }
 

@@ -65,14 +65,10 @@ object ClusterSystem {
  */
 class ClusterSystem(sysTag: String, isStartupClusterSystem: Boolean) {
   protected def log = LoggerFactory.getLogger(this.getClass)
-  //private val modulePrefix = "RepCluster"
-  //private val moduleName = modulePrefix + "_" + sysTag
-  //private var webSocket: ActorRef = null
-  //private var memberLis: ActorRef = null
-  //private var statistics: ActorRef = null
 
   val SYSTEM_NAME = "Repchain"
   private var ctx : RepChainSystemContext = new RepChainSystemContext(sysTag)
+  RepChainSystemContext.setCtx(sysTag,ctx)
   private var moduleManager: ActorRef = null
   private var sysConf: Config = ctx.getConfig.getSystemConf
   private var sysActor: ActorSystem = null
