@@ -43,7 +43,7 @@ class CustomGMSSLEngine  (protected val config: Config, protected val log: Marke
   }
 
   private def constructContext(): SSLContext = {
-    GMJsseContextHelper.createGMContext(ctx.getConfig,true)
+    GMJsseContextHelper.createGMContext(ctx.getConfig,true,ctx.getConfig.getSystemName)
   }
 
   def createSecureRandom(): SecureRandom = {

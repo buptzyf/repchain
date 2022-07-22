@@ -4,16 +4,18 @@ import rep.app.system.RepChainSystemContext
 import rep.proto.rc2.Transaction
 import rep.utils.IdTool
 
+import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
+object GenesisBuilder{
+  case class signerOfTransaction(name:String,fullName:String,credit:String,pwd:String)
+}
+
 class GenesisBuilder {
+  import GenesisBuilder._
+  private val hmOfTransactionSigner = new mutable.HashMap[String,signerOfTransaction]()
   private var systemName : String = ""
-  private var systemFullName : String = ""
-  private var systemCredit : String = ""
-  private var superName : String = ""
-  private var superFullName : String = ""
-  private var superCredit : String = ""
-  private var superPwdOfPKey : String = ""
+
 
 
   private var ctx : RepChainSystemContext = null
@@ -29,34 +31,43 @@ class GenesisBuilder {
     this
   }
 
-  def superNameAndPwd(name:String,pwd:String):GenesisBuilder={
-    this.superName = name
-    this.superPwdOfPKey = pwd
-    loadSuperPrivateKey
+  def buildSigner(name:String,pwd:String):GenesisBuilder={
+    val signer = signerOfTransaction(name,
+      s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}${name}",
+      s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}${name.substring(0,name.lastIndexOf("."))}",
+      pwd
+    )
+    this.hmOfTransactionSigner += name -> signer
+    loadKey(name,pwd)
     this
   }
 
-
+  def buildSigners(signers:Array[(String,String)]):GenesisBuilder={
+    if(signers != null){
+      signers.foreach(s=>{
+        val signer = signerOfTransaction(s._1,
+          s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}${s._1}",
+          s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}${s._1.substring(0,s._1.lastIndexOf("."))}",
+          s._2
+        )
+        this.hmOfTransactionSigner += s._1 -> signer
+        loadKey(s._1,s._2)
+      })
+    }
+    this
+  }
 
   private def loadContext:Unit={
     this.ctx = new RepChainSystemContext(this.systemName)
     this.dir4key = ctx.getCryptoMgr.getKeyFileSuffix.substring(1)
     this.keySuffix = ctx.getCryptoMgr.getKeyFileSuffix
     this.NetworkId = ctx.getConfig.getChainNetworkId
-    this.systemFullName = s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}${this.systemName}"
-    this.superFullName = s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}${this.superName}"
-    this.systemCredit = s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}${this.systemName.substring(0,this.systemName.lastIndexOf("."))}"
-    this.superCredit = s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}${this.superName.substring(0,this.superName.lastIndexOf("."))}"
-
-    ctx.getSignTool.loadPrivateKey(this.systemName, this.ctx.getConfig.getKeyStorePassword,
-      s"${this.dir4key}" +
-        s"/${this.NetworkId}/${this.systemName}${this.keySuffix}")
   }
 
-  private def loadSuperPrivateKey:Unit={
-    ctx.getSignTool.loadPrivateKey(this.superName, this.superPwdOfPKey,
+  private def loadKey(name:String,pwd:String):Unit={
+    ctx.getSignTool.loadPrivateKey(name, pwd,
       s"${this.dir4key}" +
-        s"/${this.NetworkId}/${this.superName}${this.keySuffix}")
+        s"/${this.NetworkId}/${name}${this.keySuffix}")
   }
 
 
