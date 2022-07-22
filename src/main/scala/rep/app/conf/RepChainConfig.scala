@@ -481,7 +481,7 @@ class RepChainConfig {
   }*/
 
   def getGMJsseProviderName:String={
-    this.sysConf.getString("system.gm.gm_jce_provider_name")
+    this.sysConf.getString("system.gm.gm_jsse_provider_name")
   }
 
   def getGMJsseProvider:String={

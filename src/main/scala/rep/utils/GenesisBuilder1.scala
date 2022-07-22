@@ -31,7 +31,7 @@ import rep.proto.rc2.{CertId, Certificate, ChaincodeDeploy, ChaincodeId, Signer,
  * 创世块中预置了deploy基础方法的交易
  *@author shidianyue
  */
-object GenesisBuilder {
+object GenesisBuilder1 {
 
   implicit val serialization = jackson.Serialization // or native.Serialization
   implicit val formats       = DefaultFormats

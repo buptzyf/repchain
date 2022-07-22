@@ -28,7 +28,10 @@ import org.slf4j.Logger
 import rep.app.conf.RepChainConfig
 import rep.app.system.RepChainSystemContext
 import rep.crypto.Sha256
-import rep.proto.rc2.Transaction
+import rep.proto.rc2.{CertId, Certificate, Signer, Transaction}
+import rep.sc.scalax.ContractException
+import rep.sc.tpl.did.DidTplPrefix.{certPrefix, signerPrefix}
+import rep.sc.tpl.did.operation.SignerOperation.{signerNotExists, toJsonErrMsg}
 import rep.storage.chain.KeyPrefixManager
 import rep.storage.chain.preload.TransactionPreload
 
@@ -214,6 +217,57 @@ class Shim {
       null
     else
       deserialise(v)
+  }
+
+  /**
+   * @author jiangbuyun
+   * @version 2.0
+   * @since 2022-07-22
+   * @category 根据账户的DID标识获取完整账户信息
+   * @param creditCode :String 账户的DID标识
+   * @return Signer 账户完整信息
+   **/
+  def getDIDSigner(creditCode:String):Signer={
+    val tmpSigner = this.getVal(signerPrefix + creditCode)
+    // 判断是否有值
+    if (tmpSigner != null && tmpSigner.isInstanceOf[Signer]) {
+      tmpSigner.asInstanceOf[Signer]
+    } else {
+      null
+    }
+  }
+
+  /**
+   * @author jiangbuyun
+   * @version 2.0
+   * @since 2022-07-22
+   * @category 根据账户的DID标识和证书名称获取证书信息
+   * @param creditCode :String 账户的DID标识
+   * @param certName :String 证书名称
+   * @return Certificate 证书信息
+   **/
+  def getSignerCert(creditCode:String,certName:String):Certificate={
+    val tmpCert = this.getVal(certPrefix + creditCode + "." + certName)
+    // 判断是否有值
+    if (tmpCert != null && tmpCert.isInstanceOf[Certificate]) {
+      tmpCert.asInstanceOf[Certificate]
+    } else {
+      null
+    }
+  }
+
+  /**
+   * @author jiangbuyun
+   * @version 2.0
+   * @since 2022-07-22
+   * @category 验证签名结果是否正确
+   * @param originalContent:Array[Byte] 签名的原始信息
+   * @param signatureResults:Array[Byte] 签名结果
+   * @param certInfo:CertId  账户证书标识
+   * @return Boolean 验证结果，true 验证通过；false 验证不通过
+   **/
+  def VerifySignature(originalContent:Array[Byte], signatureResults:Array[Byte],certInfo:CertId):Boolean={
+    this.ctx.getSignTool.verify(signatureResults,originalContent,certInfo)
   }
 
   //判断账号是否节点账号 TODO
