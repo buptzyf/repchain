@@ -22,6 +22,12 @@ object GenesisBuilder {
 
 }
 
+/**
+ * @author jiangbuyun
+ * @version 2.0
+ * @since 2022-07-22
+ * @category 创世块生成的工具类
+ **/
 class GenesisBuilder {
 
   import GenesisBuilder._
@@ -36,7 +42,7 @@ class GenesisBuilder {
   private var keySuffix: String = ""
   private var NetworkId: String = ""
 
-  private val cidOfDID = new ChaincodeId("RdidOperateAuthorizeTPL", 1)
+  private var cidOfDID = new ChaincodeId("RdidOperateAuthorizeTPL", 1)
 
   ////////////////////初始化部分 开始/////////////////////////////////////////////////////////
   /**
@@ -50,6 +56,11 @@ class GenesisBuilder {
   def systemName(name: String): GenesisBuilder = {
     this.systemName = name
     loadContext
+    this
+  }
+
+  def chaincodeId4DID(name:String,version:Int):GenesisBuilder={
+    this.cidOfDID = ChaincodeId(name,version)
     this
   }
 
@@ -114,12 +125,11 @@ class GenesisBuilder {
    * @version 2.0
    * @since 2022-07-22
    * @category 建立DID账户
-   * @param 	signer   :(String,String,String) 账户信息，包括：账户证书名，账户ID，账户手机号，样例：("node1", "121000005l35120456", "18512345678")
+   * @param 	signer   :(String,String,String) 账户信息，包括：账户证书名，账户ID，账户手机号，交易签名者 样例：("node1", "121000005l35120456", "18512345678"，121000005l35120456.node1)
    *                   账户的证书需要存放在指定的位置
-   * @param SignerName :String 合约部署交易的签名者的名称，样例：121000005l35120456.node1
    * @return 返回自身实例
    **/
-  def buildSigner(signer: (String, String, String), SignerName: String): GenesisBuilder = {
+  def buildSigner(signer: (String, String, String, String)): GenesisBuilder = {
     try {
       val id = s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}${signer._2}"
 
@@ -137,7 +147,7 @@ class GenesisBuilder {
         _root_.scala.Seq.empty, _root_.scala.Seq.empty, _root_.scala.Seq.empty, List(authCert), "",
         Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), _root_.scala.None, true, "1.0")
 
-      this.buildInvokeTransaction(cidOfDID, "signUpSigner", JsonFormat.toJsonString(signer_tmp), SignerName)
+      this.buildInvokeTransaction(cidOfDID, "signUpSigner", JsonFormat.toJsonString(signer_tmp), signer._4)
     } catch {
       case e: Exception =>
         e.printStackTrace()
@@ -150,16 +160,15 @@ class GenesisBuilder {
    * @version 2.0
    * @since 2022-07-22
    * @category 建立多个DID账户
-   * @param 	signers  :Array[(String,String,String)] 账户数据数组，账户信息是一个三元组，包括：账户证书名，账户ID，账户手机号，样例：("node1", "121000005l35120456", "18512345678")
+   * @param 	signers  :Array[(String,String,String)] 账户数据数组，账户信息是一个三元组，包括：账户证书名，账户ID，账户手机号，合约部署交易的签名者的名称 样例：("node1", "121000005l35120456", "18512345678",121000005l35120456.node1)
    *                   账户的证书需要存放在指定的位置
-   * @param SignerName :String 合约部署交易的签名者的名称，样例：121000005l35120456.node1
    * @return 返回自身实例
    **/
-  def buildSigners(signers: Array[(String, String, String)], SignerName: String): GenesisBuilder = {
+  def buildSigners(signers: Array[(String, String, String,String)]): GenesisBuilder = {
     try {
       if (signers != null) {
         signers.foreach(s => {
-          this.buildSigner(s, SignerName)
+          this.buildSigner(s)
         })
       }
     } catch {
@@ -174,22 +183,21 @@ class GenesisBuilder {
    * @version 2.0
    * @since 2022-07-22
    * @category 建立DID操作
-   * @param 	op       :(String,String,Boolean) 操作信息，三元组包括：操作名，操作描述，是否公开，样例：("RdidOperateAuthorizeTPL.signUpSigner", "注册RDID",false)
-   * @param SignerName :String 合约部署交易的签名者的名称，样例：121000005l35120456.node1
+   * @param 	op       :(String,String,Boolean,OperateType) 操作信息，五元组包括：操作名，操作描述，是否公开,操作类型合约部署交易的签名者的名称，样例：("RdidOperateAuthorizeTPL.signUpSigner", "注册RDID",false,OperateType，121000005l35120456.node1)
    * @return 返回自身实例
    **/
-  def buildOp(op: (String, String, Boolean), SignerName: String): GenesisBuilder = {
+  def buildOp(op: (String, String, Boolean,OperateType,  String)): GenesisBuilder = {
     try {
       val millis = System.currentTimeMillis()
       val snLs = List("transaction.stream", "transaction.postTranByString", "transaction.postTranStream", "transaction.postTran")
       val opName = s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}${op._1}"
       val opNameHash = ctx.getHashTool.hashstr(opName)
-      val ownerCredit = this.hmOfTransactionSigner(SignerName).credit
+      val ownerCredit = this.hmOfTransactionSigner(op._5).credit
       // 公开操作，无需授权，普通用户可以绑定给自己的证书
-      val tmpOperate = Operate(opNameHash, op._2, ownerCredit, op._3, OperateType.OPERATE_CONTRACT,
+      val tmpOperate = Operate(opNameHash, op._2, ownerCredit, op._3, op._4,
         snLs, "*", opName, Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)),
         _root_.scala.None, true, "1.0")
-      this.buildInvokeTransaction(cidOfDID, "signUpOperate", JsonFormat.toJsonString(tmpOperate), SignerName)
+      this.buildInvokeTransaction(cidOfDID, "signUpOperate", JsonFormat.toJsonString(tmpOperate), op._5)
     } catch {
       case e: Exception =>
         e.printStackTrace()
@@ -202,15 +210,14 @@ class GenesisBuilder {
    * @version 2.0
    * @since 2022-07-22
    * @category 建立多个DID操作
-   * @param 	ops      :Array[(String,String,Boolean)] 操作信息数组，数组每个原始为三元组，包括：操作名，操作描述，是否公开，样例：("RdidOperateAuthorizeTPL.signUpSigner", "注册RDID",false)
-   * @param SignerName :String 合约部署交易的签名者的名称，样例：121000005l35120456.node1
+   * @param 	ops      :Array[(String,String,Boolean,OperateType，String)] 操作信息数组，数组每个原始为五元组，包括：操作名，操作描述，是否公开，操作类型，合约部署交易的签名者的名称 样例：("RdidOperateAuthorizeTPL.signUpSigner", "注册RDID",false，OperateType，121000005l35120456.node1)
    * @return 返回自身实例
    **/
-  def buildOps(ops: Array[(String, String, Boolean)], SignerName: String): GenesisBuilder = {
+  def buildOps(ops: Array[(String, String, Boolean,OperateType,String)]): GenesisBuilder = {
     try {
       if (ops != null) {
         ops.foreach(op => {
-          this.buildOp(op, SignerName)
+          this.buildOp(op)
         })
       }
     } catch {
@@ -295,7 +302,6 @@ class GenesisBuilder {
     }
     this
   }
-
 
   /**
    * @author jiangbuyun
