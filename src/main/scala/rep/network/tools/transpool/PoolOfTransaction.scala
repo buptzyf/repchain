@@ -54,7 +54,7 @@ class PoolOfTransaction(ctx:RepChainSystemContext) {
       this.serialOfTransaction.set(last.get)
       val trs = new ArrayBuffer[Transaction]()
       var limit = last.get
-      val tb = this.db.getBytes(this.cache_transaction_serial_tx_prefix+last.get)
+      var tb = this.db.getBytes(this.cache_transaction_serial_tx_prefix+last.get)
       while (tb != null){
         val t = Transaction.parseFrom(tb)
         if(this.isExist(t.id)){
@@ -63,6 +63,10 @@ class PoolOfTransaction(ctx:RepChainSystemContext) {
           trs += t
         }
         limit -= 1
+        if(limit >= 0)
+          tb = this.db.getBytes(this.cache_transaction_serial_tx_prefix+limit)
+        else
+          tb = null
       }
       if(trs.length > 0){
         this.addTransactionToCaches(trs,false)
