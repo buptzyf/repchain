@@ -27,12 +27,12 @@ import rep.storage.filesystem.FileOperate
 class RepChainSystemContext(systemName:String){//},cs:ClusterSystem) {
   private val config : RepChainConfig = new RepChainConfig(systemName)
   private val timePolicy : TimePolicy = new TimePolicy(config.getSystemConf)
-  private val poolOfTransaction : PoolOfTransaction =  new PoolOfTransaction(this)
   private val cryptoManager : CryptoMgr = new  CryptoMgr(this)
   private val signer : ISigner = new ImpECDSASigner(this)
   private val signTool:SignTool = new SignTool(this)
   private val blockStorager : BlockStorager = new BlockStorager(this)
   private val blockPreloads : ConcurrentHashMap[String,BlockPreload] = new ConcurrentHashMap[String,BlockPreload]()
+  private val poolOfTransaction : PoolOfTransaction =  new PoolOfTransaction(this)
   private val systemCertList : SystemCertList = new SystemCertList(this)
   private val httpLogger = new HttpLogger(config.getChainNetworkId, config.getOuputAlertThreads,config.getOutputMaxThreads,config.getOutputAlertAliveTime,
                                           config.isOutputAlert,config.getOutputAlertPrismaUrl)

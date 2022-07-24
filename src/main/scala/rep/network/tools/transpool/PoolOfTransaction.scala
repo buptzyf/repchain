@@ -1,16 +1,14 @@
 package rep.network.tools.transpool
 
 import java.util
-import java.util.concurrent.atomic.LongAdder
+import java.util.concurrent.atomic.{AtomicLong, LongAdder}
 import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedQueue}
-
 import rep.app.system.RepChainSystemContext
-import rep.log.RepLogger
 import rep.proto.rc2.Transaction
 import rep.storage.chain.block.BlockSearcher
+import rep.storage.db.common.ITransactionCallback
 import rep.storage.db.factory.DBFactory
 import rep.utils.SerializeUtils
-
 import scala.collection.mutable.ArrayBuffer
 import scala.util.control.Breaks.{break, breakable}
 
@@ -21,6 +19,9 @@ import scala.util.control.Breaks.{break, breakable}
  * @category	交易缓存池。
  * */
 class PoolOfTransaction(ctx:RepChainSystemContext) {
+  final private val cache_transaction_serial = ctx.getConfig.getSystemName+"-pl-serial"
+  final private val cache_transaction_tx_serial_prefix = ctx.getConfig.getSystemName+"-pl-tx-serial-"
+  final private val cache_transaction_serial_tx_prefix = ctx.getConfig.getSystemName+"-pl-serial-tx-"
   //交易缓存池可以缓存的最大交易数
   final private val cacheMaxSize : Int = ctx.getConfig.getMaxCacheNumberOfTransaction
   //单个区块最大的交易数
@@ -40,6 +41,73 @@ class PoolOfTransaction(ctx:RepChainSystemContext) {
   //交易缓存池，该缓存池是线程安全
   final private implicit val transactionCaches = new ConcurrentHashMap[String,Transaction]()
 
+  final private val serialOfTransaction : AtomicLong = new AtomicLong(0l)
+  final val db = DBFactory.getDBAccess(ctx.getConfig)
+
+  loadTransactionFromLevelDB
+
+  final private def loadTransactionFromLevelDB:Unit={
+    val last = this.db.getObject[Long](this.cache_transaction_serial)
+    if(last == None){
+      this.serialOfTransaction.set(0l)
+    }else{
+      this.serialOfTransaction.set(last.get)
+      val trs = new ArrayBuffer[Transaction]()
+      var limit = last.get
+      val tb = this.db.getBytes(this.cache_transaction_serial_tx_prefix+last.get)
+      while (tb != null){
+        val t = Transaction.parseFrom(tb)
+        if(this.isExist(t.id)){
+          this.deleteLocalStore(t)
+        }else{
+          trs += t
+        }
+        limit -= 1
+      }
+      if(trs.length > 0){
+        this.addTransactionToCaches(trs,false)
+      }
+    }
+  }
+
+  final private def toLocalStore(t:Transaction):Unit={
+    this.db.transactionOperate(new ITransactionCallback {
+      override def callback: Boolean = {
+        var rb = false
+        try {
+          val serial = serialOfTransaction.incrementAndGet()
+          db.putBytes(cache_transaction_serial, SerializeUtils.serialise(serial))
+          db.putBytes(cache_transaction_serial_tx_prefix+serial,t.toByteArray)
+          db.putBytes(cache_transaction_tx_serial_prefix+t.id,SerializeUtils.serialise(serial))
+          rb = true
+        } catch {
+          case e: Exception =>
+            rb = false
+        }
+        rb
+      }
+    })
+  }
+
+  final private def deleteLocalStore(t:Transaction):Unit={
+    this.db.transactionOperate(new ITransactionCallback {
+      override def callback: Boolean = {
+        var rb = false
+        try {
+          val serial = db.getObject[Long](cache_transaction_tx_serial_prefix+t.id)
+          if(serial != None){
+            db.delete(cache_transaction_tx_serial_prefix+t.id)
+            db.delete(cache_transaction_serial_tx_prefix+serial.get)
+          }
+          rb = true
+        } catch {
+          case e: Exception =>
+            rb = false
+        }
+        rb
+      }
+    })
+  }
   /**
    * @author jiangbuyun
    * @version	2.0
@@ -48,11 +116,13 @@ class PoolOfTransaction(ctx:RepChainSystemContext) {
    * @param	t:Transaction 交易
    * @return
   * */
-  def addTransactionToCache(t:Transaction):Unit={
+  def addTransactionToCache(t:Transaction,isStore:Boolean=true):Unit={
     val v = this.transactionCaches.putIfAbsent(t.id,t)
     if(v == null){
       this.transactionCount.increment()
       this.transactionOrder.offer(t.id)
+      if(isStore)
+        this.toLocalStore(t)
     }
   }
 
@@ -64,9 +134,9 @@ class PoolOfTransaction(ctx:RepChainSystemContext) {
    * @param	ts:Seq[Transaction] 交易序列
    * @return
    * */
-  def addTransactionToCache(ts:Seq[Transaction]):Unit={
+  def addTransactionToCaches(ts:Seq[Transaction],isStore:Boolean=true):Unit={
     ts.foreach(t=>{
-      this.addTransactionToCache(t)
+      this.addTransactionToCache(t,isStore)
     })
   }
 
@@ -217,6 +287,7 @@ class PoolOfTransaction(ctx:RepChainSystemContext) {
    * */
   def removeTransactionFromCache(t:Transaction):Unit = {
     val v = this.transactionCaches.remove(t.id)
+    this.deleteLocalStore(t)
     if(v != null){
       this.transactionCount.decrement()
     }
@@ -230,7 +301,7 @@ class PoolOfTransaction(ctx:RepChainSystemContext) {
    * @param
    * @return
    * */
-  def saveCachePoolToDB:Unit={
+  /*def saveCachePoolToDB:Unit={
     if(this.isPersistenceTxToDB){
       val db = DBFactory.getDBAccess(ctx.getConfig)
       var r = new ArrayBuffer[Array[Byte]]()
@@ -240,7 +311,7 @@ class PoolOfTransaction(ctx:RepChainSystemContext) {
       db.putBytes(ctx.getSystemName+"_"+txPrefix,SerializeUtils.serialise(r))
     }
     RepLogger.info(RepLogger.TransLifeCycle_Logger, s"systemname=${ctx.getSystemName},save trans to db")
-  }
+  }*/
 
   /**
    * @author jiangbuyun
@@ -250,7 +321,7 @@ class PoolOfTransaction(ctx:RepChainSystemContext) {
    * @param
    * @return
    * */
-  def restoreCachePoolFromDB:Unit={
+  /*def restoreCachePoolFromDB:Unit={
     if (this.isPersistenceTxToDB) {
       val db = DBFactory.getDBAccess(ctx.getConfig)
       try {
@@ -271,5 +342,5 @@ class PoolOfTransaction(ctx:RepChainSystemContext) {
           RepLogger.info(RepLogger.TransLifeCycle_Logger, s"systemname=${ctx.getSystemName},load trans except from db,msg=${e.getCause}")
       }
     }
-  }
+  }*/
 }

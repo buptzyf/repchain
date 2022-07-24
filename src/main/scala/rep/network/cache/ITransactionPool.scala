@@ -66,7 +66,7 @@ abstract class ITransactionPool (moduleName: String) extends ModuleBase(moduleNa
         val siginfo = sig.signature.toByteArray()
 
         if (pe.getRepChainContext.getSignTool.verify(siginfo, tOutSig.toByteArray, cert)) {
-          if (pe.getRepChainContext.getTransactionPool.isExist(t.id) || dataAccess.isExistTransactionByTxId(t.id)) {
+          if (pe.getRepChainContext.getTransactionPool.isExistInCache(t.id) || dataAccess.isExistTransactionByTxId(t.id)) {
             resultMsg = s"The transaction(${t.id}) is duplicated with txid"
           } else {
             result = true

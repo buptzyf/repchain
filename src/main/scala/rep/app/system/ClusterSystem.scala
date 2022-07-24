@@ -134,8 +134,8 @@ class ClusterSystem(sysTag: String, isStartupClusterSystem: Boolean) {
 
   //停止之前处理
   private def handlerOfBeforeTerminate:Unit={
-    val txPool = ctx.getTransactionPool
-    txPool.saveCachePoolToDB
+    //val txPool = ctx.getTransactionPool
+    //txPool.saveCachePoolToDB
   }
 
   private def initConsensusNodeOfConfig = {

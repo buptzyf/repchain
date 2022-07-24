@@ -193,20 +193,17 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
   }
 
   private def sendTransaction(t:Transaction):Unit={
-    //预执行正常,提交并广播交易
-    if (config.isBroadcastTransaction) {
-      mediator ! Publish(Topic.Transaction, t)
+    val pool = pe.getRepChainContext.getTransactionPool
+    if(!pool.hasOverflowed){
+      //优先加入本地交易池
+      pool.addTransactionToCache(t)
+      if (config.isBroadcastTransaction) {
+        mediator ! Publish(Topic.Transaction, t)
+      }
       sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)
       sender ! PostResult(t.id, None, None)
     }else{
-      val pool = pe.getRepChainContext.getTransactionPool
-      if(!pool.hasOverflowed){
-        pool.addTransactionToCache(t)
-        sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)
-        sender ! PostResult(t.id, None, None)
-      }else{
-        sender ! PostResult(t.id, None, Option("code=901,reason=交易池已经满了"))
-      }
+      sender ! PostResult(t.id, None, Option("code=901,reason=交易池已经满了"))
     }
   }
 

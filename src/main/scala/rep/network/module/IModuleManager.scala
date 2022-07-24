@@ -49,7 +49,7 @@ class IModuleManager(moduleName: String, isStartup: Boolean) extends ModuleBase(
     pe.register(ModuleActorType.ActorType.modulemanager,self)
     //loadSecurityInfo(conf)
     //pe.getRepChainContext.getTimePolicy.initTimePolicy(conf)
-    pe.getRepChainContext.getTransactionPool.restoreCachePoolFromDB
+    //pe.getRepChainContext.getTransactionPool.restoreCachePoolFromDB
     RepLogger.info(RepLogger.System_Logger,  "模块管理者初始化完成...")
   }
 

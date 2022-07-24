@@ -43,7 +43,7 @@ class TransactionChecker (moduleName: String) extends ModuleBase(moduleName){
         val siginfo = sig.signature.toByteArray()
 
         if (pe.getRepChainContext.getSignTool.verify(siginfo, tOutSig.toByteArray, cert)) {
-          if (pe.getRepChainContext.getTransactionPool.isExist(t.id) || dataAccess.isExistTransactionByTxId(t.id)) {
+          if (pe.getRepChainContext.getTransactionPool.isExistInCache(t.id) || dataAccess.isExistTransactionByTxId(t.id)) {
             resultMsg = s"The transaction(${t.id}) is duplicated with txid"
           } else {
             result = true
@@ -65,7 +65,7 @@ class TransactionChecker (moduleName: String) extends ModuleBase(moduleName){
   }
 
   private def addTransToCache(t: Transaction) = {
-    if(!pe.getRepChainContext.getTransactionPool.isExist(t.id)){
+    if(!pe.getRepChainContext.getTransactionPool.isExistInCache(t.id)){
       //交易池中不存在的交易才检查
       val checkedTransactionResult = checkTransaction(t, dataaccess)
       //签名验证成功
