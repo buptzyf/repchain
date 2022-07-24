@@ -146,6 +146,21 @@ class PoolOfTransaction(ctx:RepChainSystemContext) {
    * @author jiangbuyun
    * @version	2.0
    * @since	2022-04-15
+   * @category	根据交易Id检查交易是否已经出块
+   * @param tid:String 交易Id
+   * @return 交易已经出块返回true，否则false
+   * */
+  def isExistInCache(tid:String):Boolean={
+    var r = false
+    if(this.transactionCaches.containsKey(tid)){
+      r = true
+    }
+    r
+  }
+  /**
+   * @author jiangbuyun
+   * @version	2.0
+   * @since	2022-04-15
    * @category	从交易缓存池中获取交易
    * @param
    * @return 返回交易，缓存池不存在返回null
