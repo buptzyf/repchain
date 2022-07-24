@@ -1,12 +1,10 @@
 package rep.utils.genesis
 
 import java.io.File
-
 import com.typesafe.config.{Config, ConfigFactory}
 import rep.proto.rc2.Authorize.TransferType
 import rep.proto.rc2.ChaincodeId
 import rep.proto.rc2.Operate.OperateType
-
 import scala.collection.mutable.ArrayBuffer
 
 class CreateGenesisTool(file:File)  {

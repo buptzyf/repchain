@@ -140,7 +140,8 @@ class GenesisBuilder {
       val certId = IdTool.getCertIdFromCreditAndName(id, signer._1)
       val millis = System.currentTimeMillis()
       //生成Did的身份证书
-      val authCert = Certificate(certStr, "SHA256withECDSA", true, Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)),
+      val algorithmOfSign = if(ctx.getConfig.isUseGM) "SM3withSM2" else "SHA256withECDSA"
+      val authCert = Certificate(certStr, algorithmOfSign, true, Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)),
         _root_.scala.None, CertType.CERT_AUTHENTICATION, Option(certId), certStrHash, "1.0")
       //生成Did账户
       val signer_tmp = Signer(signer._1, id, signer._3, _root_.scala.Seq.empty,
