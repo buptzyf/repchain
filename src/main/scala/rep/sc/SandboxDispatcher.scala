@@ -232,7 +232,7 @@ class SandboxDispatcher(moduleName: String, cid: String) extends ModuleBase(modu
       case ChaincodeDeploy.CodeType.CODE_JAVASCRIPT =>
         null
       case ChaincodeDeploy.CodeType.CODE_SCALA =>
-        context.actorOf(Props(new SandboxScala(cid)).withDispatcher("contract-dispatcher"), sandboxName)
+        context.actorOf(Props(new SandboxScala(cid)), sandboxName)
       case ChaincodeDeploy.CodeType.CODE_VCL_DLL =>
         null
       case ChaincodeDeploy.CodeType.CODE_VCL_EXE =>

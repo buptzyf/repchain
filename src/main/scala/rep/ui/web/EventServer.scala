@@ -84,11 +84,9 @@ object EventServer {
   def start(sys:ActorSystem ,repContext: RepChainSystemContext) {
     implicit val system =sys
     implicit val materializer = ActorMaterializer()
-    //implicit val executionContext = system.dispatcher
+    implicit val executionContext = system.dispatcher
 
-    implicit val executionContext = system.dispatchers.lookup("http-dispatcher")
-    
-    val evtactor = system.actorOf(Props[RecvEventActor].withDispatcher("http-dispatcher"),"RecvEventActor")
+    val evtActor = system.actorOf(Props[RecvEventActor],"RecvEventActor")
 
     val port = repContext.getConfig.getHttpServicePort
     val actorNumber = repContext.getConfig.getHttpServiceActorNumber
@@ -104,7 +102,7 @@ object EventServer {
       }~ //提供Event的WebSocket订阅服务
       path("event") {
         get {
-          val sourceGraph: Graph[SourceShape[Event], NotUsed] = new EventActor4Stage(evtactor)
+          val sourceGraph: Graph[SourceShape[Event], NotUsed] = new EventActor4Stage(evtActor)
           val source: Source[Event, NotUsed] = Source.fromGraph(sourceGraph)
 
           extractWebSocketUpgrade
@@ -118,8 +116,7 @@ object EventServer {
         }
       }
 
-    //val ra = sys.actorOf(RestActor.props("api"), "api")
-    val ra = new RestRouter(actorNumber,sys)
+    val ra = sys.actorOf(RestActor.props("api"), "api")
 
     //允许跨域访问,以支持在应用中发起请求
     //val httpServer = Http()
