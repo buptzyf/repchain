@@ -3,13 +3,16 @@ package rep.network.tools.transpool
 import java.util
 import java.util.concurrent.atomic.{AtomicLong, LongAdder}
 import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedQueue}
+
 import rep.app.system.RepChainSystemContext
 import rep.proto.rc2.Transaction
 import rep.storage.chain.block.BlockSearcher
 import rep.storage.db.common.ITransactionCallback
 import rep.storage.db.factory.DBFactory
 import rep.utils.SerializeUtils
+
 import scala.collection.mutable.ArrayBuffer
+import scala.util.Random
 import scala.util.control.Breaks.{break, breakable}
 
 /**
@@ -241,6 +244,14 @@ class PoolOfTransaction(ctx:RepChainSystemContext) {
    * */
   private def getTransaction(tid:String):Transaction={
     this.transactionCaches.get(tid)
+  }
+
+  def getRandomTransaction:Transaction={
+    val keys = this.transactionCaches.keySet().toArray
+    val num = Random.nextInt() % keys.length
+    val id : String = keys(num).asInstanceOf[String]
+    val t = getTransaction(id)
+    t
   }
 
   /**

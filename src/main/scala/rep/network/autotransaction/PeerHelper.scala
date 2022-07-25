@@ -41,6 +41,7 @@ object Topic {
   val SyncOfBlock = "SyncOfBlock"
   val VoteTransform = "VoteTransform"
   val VoteSynchronized = "VoteSynchronized"
+  val MessageWithZeroTransaction = "MessageWithZeroTransaction"
 }
 
 object InnerTopic {
@@ -103,7 +104,10 @@ class PeerHelper(name: String) extends ModuleBase(name) {
           "transfer", Seq(li2))
         //pe.getActorRef(ModuleActorType.ActorType.transactionpool) ! t3
         sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)
-        mediator ! Publish(Topic.Transaction, t3)
+
+        if(!pe.getRepChainContext.getTransactionPool.hasOverflowed)pe.getRepChainContext.getTransactionPool.addTransactionToCache(t3)
+        if(pe.getRepChainContext.getConfig.isBroadcastTransaction)
+          mediator ! Publish(Topic.Transaction, t3)
          RepLogger.trace(RepLogger.System_Logger,this.getLogMsgPrefix(s"########################create transaction id =${t3.id}"))
       } catch {
         case e: RuntimeException => throw e
