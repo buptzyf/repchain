@@ -247,8 +247,8 @@ class PoolOfTransaction(ctx:RepChainSystemContext) {
   }
 
   def getRandomTransaction:Transaction={
-    val keys = this.transactionCaches.keySet().toArray
-    val num = Random.nextInt() % keys.length
+    val keys = this.transactionCaches.keySet().toArray()
+    val num = math.abs(Random.nextInt()) % keys.length
     val id : String = keys(num).asInstanceOf[String]
     val t = getTransaction(id)
     t

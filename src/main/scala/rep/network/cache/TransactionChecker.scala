@@ -65,7 +65,6 @@ class TransactionChecker (moduleName: String) extends ModuleBase(moduleName){
   }
 
   private def addTransToCache(t: Transaction) = {
-    if(!pe.getRepChainContext.getTransactionPool.isExistInCache(t.id)){
       //交易池中不存在的交易才检查
       val checkedTransactionResult = checkTransaction(t, dataaccess)
       //签名验证成功
@@ -78,9 +77,8 @@ class TransactionChecker (moduleName: String) extends ModuleBase(moduleName){
         if (poolIsEmpty)//加入交易之前交易池为空，发送抽签消息
         pe.getActorRef(CFRDActorType.ActorType.voter) ! VoteOfBlocker
       }else if(!checkedTransactionResult.result){
-        RepLogger.error(RepLogger.System_Logger,this.getLogMsgPrefix(s"${pe.getSysTag} check Transaction error,txid=${t.id}"))
+        RepLogger.error(RepLogger.System_Logger,this.getLogMsgPrefix(s"${pe.getSysTag} check Transaction error,txid=${t.id},msg=${checkedTransactionResult.msg}"))
       }
-    }
   }
 
   override def receive = {

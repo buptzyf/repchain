@@ -57,15 +57,18 @@ class VoterOfCFRD(moduleName: String) extends IVoter(moduleName: String) {
   private def checkZeroScheduler: Unit = {
     if (!checkTranNum) {
       if (schedulerOfZero == null) {
-        this.schedulerOfZero = scheduler.scheduleOnce(15.second, self, VoterOfCFRD.CheckZero)
+        this.schedulerOfZero = scheduler.scheduleWithFixedDelay(15.second,15.second, self, VoterOfCFRD.CheckZero)
+        RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag}," +
+          s"startup scheduler" + "~" + selfAddr))
       }
-      RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag}," +
-        s"startup scheduler" + "~" + selfAddr))
     } else {
-      if (schedulerOfZero != null) schedulerOfZero.cancel()
-      this.schedulerOfZero = null
-      RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag}," +
-        s"delete scheduler" + "~" + selfAddr))
+      if (schedulerOfZero != null) {
+        schedulerOfZero.cancel()
+        this.schedulerOfZero = null
+        RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag}," +
+          s"delete scheduler" + "~" + selfAddr))
+      }
+
     }
   }
 
@@ -185,15 +188,15 @@ class VoterOfCFRD(moduleName: String) extends IVoter(moduleName: String) {
 
   private def recvZeroTransactionHandle(zt: RequestWithZeroTransaction): Unit = {
     RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag}," +
-      s"recv RequestWithZeroTransaction,height=${zt.height},systemName=${zt.systemName}" + "~" + selfAddr))
+      s"recv RequestWithZeroTransaction,height=${zt.height},requester=${zt.systemName}" + "~" + selfAddr))
     if (new ConsensusCondition(pe.getRepChainContext).CheckWorkConditionOfSystem(pe.getRepChainContext.getNodeMgr.getStableNodes.size)) {
       if (!pe.isSynching && checkTranNum) {
         RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag}," +
-          s"recv RequestWithZeroTransaction,broadcast transaction" + "~" + selfAddr))
+          s"recv RequestWithZeroTransaction,broadcast transaction,requester=${zt.systemName}" + "~" + selfAddr))
         val t = pe.getRepChainContext.getTransactionPool.getRandomTransaction
         if (t != null) {
           RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag}," +
-            s"recv RequestWithZeroTransaction,get transaction ,broadcast transaction" + "~" + selfAddr))
+            s"recv RequestWithZeroTransaction,get transaction ,broadcast transaction,tid=${t.id},requester=${zt.systemName}" + "~" + selfAddr))
           mediator ! Publish(Topic.Transaction, t)
         }
       }
