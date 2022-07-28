@@ -1,0 +1,29 @@
+site_name: RepChain V2.0
+
+nav: 
+  - 功能介绍: RepChain-2.0.md
+  - 安装部署: deploy.md
+    
+
+theme:
+  name: material
+  palette:
+    primary: green
+  favicon: img/favicon.ico
+  logo: img/favicon.ico
+  language: zh
+  features:
+    - content.code.annotate
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - attr_list
+
+
+copyright: Copyright &copy; 2021-2022 RepChain V2.0
