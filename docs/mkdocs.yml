@@ -1,6 +1,7 @@
 site_name: RepChain V2.0
 
 nav: 
+  - 首页: index.md
   - 功能介绍: RepChain-2.0.md
   - 安装部署: deploy.md
     
