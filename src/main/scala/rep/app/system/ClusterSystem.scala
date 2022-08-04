@@ -107,8 +107,8 @@ class ClusterSystem(sysTag: String, isStartupClusterSystem: Boolean) {
       RepLogger.info(RepLogger.System_Logger,  "集群已经启动...")
     }
     //在测试信任证书动态改变测试与跟踪时启用代码
-    /*val testTrustCertificate = new ReloadableTrustManagerTest4Inner(ctx)
-    testTrustCertificate.StartClusterStub*/
+    //val testTrustCertificate = new ReloadableTrustManagerTest4Inner(ctx)
+    //testTrustCertificate.StartClusterStub
     RepLogger.trace(RepLogger.System_Logger, sysTag + "~" + "System" + " ~ " + s"System(${sysTag}) init successfully" + " ~ ")
   }
 

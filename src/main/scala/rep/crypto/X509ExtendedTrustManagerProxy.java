@@ -1,28 +1,29 @@
-package rep.crypto.nodedynamicmanagement;
+package rep.crypto;
 
+import net.sf.cglib.proxy.Enhancer;
+import net.sf.cglib.proxy.MethodInterceptor;
+import net.sf.cglib.proxy.MethodProxy;
 import rep.log.RepLogger;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509ExtendedTrustManager;
-import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class X509TrustManagerProxy  implements InvocationHandler {
-    private TrustManager  manager  =  null;
+public class X509ExtendedTrustManagerProxy implements MethodInterceptor {
+    private TrustManager manager  =  null;
     private X509ExtendedTrustManager target = null;
     private X509ExtendedTrustManager update = null;
     private AtomicBoolean isUpdated = new AtomicBoolean(false);
     private Object lock = new Object();
     private String systemName = null;
 
-    public X509TrustManagerProxy(String systemName,X509ExtendedTrustManager target){
+    public X509ExtendedTrustManagerProxy(String systemName,X509ExtendedTrustManager target){
         this.systemName = systemName;
         this.target = target;
     }
 
     @Override
-    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+    public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
         if(this.isUpdated.get()){
             synchronized (this.lock) {
                 if(this.isUpdated.get()){
@@ -58,13 +59,15 @@ public class X509TrustManagerProxy  implements InvocationHandler {
 
     public synchronized TrustManager Wrapper(){
         if(this.manager == null){
-            X509ExtendedTrustManager xtm = this.getRepresentedObject();
-            Object obj = Proxy.newProxyInstance(xtm.getClass().getClassLoader(), xtm.getClass().getInterfaces(),this);
+            Enhancer enhancer = new Enhancer();
+            enhancer.setSuperclass(X509ExtendedTrustManager.class);
+            enhancer.setCallback(this);
+            Object obj =  enhancer.create();
             this.manager = (TrustManager)obj;
+            /*X509ExtendedTrustManager xtm = this.getRepresentedObject();
+            Object obj = Proxy.newProxyInstance(xtm.getClass().getClassLoader(), xtm.getClass().getInterfaces(),this);
+            this.manager = (TrustManager)obj;*/
         }
         return  this.manager;
     }
 }
-
-
-
