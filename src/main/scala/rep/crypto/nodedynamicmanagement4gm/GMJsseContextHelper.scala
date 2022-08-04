@@ -91,6 +91,8 @@ object GMJsseContextHelper {
       }else{
         trustManagerFactory.getTrustManagers
       }
+
+
       //Array(new TrustAllManager)
     }
   }

@@ -38,9 +38,6 @@ class RepChainConfig {
     val userConfigFile = new File(ConfigFileDir+this.systemName+ File.separator+"system.conf")
     this.sysConf = ConfigFactory.load()
     if (userConfigFile.exists()) {
-      val myConfig =
-        ConfigFactory.parseString("akka.remote.artery.ssl.config-ssl-engine.key-store = \"jks/" + this.systemName +
-          ".jks\"")
       var combined_conf = ConfigFactory.parseFile(userConfigFile).withFallback(this.sysConf)
       this.sysConf = ConfigFactory.load(combined_conf)
       setSSLConfig
@@ -98,8 +95,8 @@ class RepChainConfig {
   private def loadSecurityClass:Unit={
     if(this.isUseGM){
       System.out.println("%%%%%%%%load BouncyCastleProvider and BouncyCastleJsseProvider ...%%%%%%%%")
-      loadProvider("org.bouncycastle.jce.provider.BouncyCastleProvider",1)
-      loadProvider("org.bouncycastle.jsse.provider.BouncyCastleJsseProvider",2)
+      loadProvider(this.getGMProviderOfJCE,1)
+      loadProvider(this.getGMJsseProvider,2)
       System.out.println("%%%%%%%%load BouncyCastleProvider and BouncyCastleJsseProvider finish%%%%%%%%")
     }
   }
@@ -488,6 +485,10 @@ class RepChainConfig {
     this.sysConf.getString("system.gm.gm_jsse_provider")
   }
 
+
+  def getGMSignKeyName:String={
+    this.sysConf.getString("system.gm.gm_pfx_sign_key_name")
+  }
 }
 
 /**

@@ -56,7 +56,8 @@ class SignTool(ctx: RepChainSystemContext) {
   }
 
   private def getPrivateKey(pkeyname: String): PrivateKey = {
-    val sk = keyStores(pkeyname).getKey(pkeyname, keyPassword(pkeyname).toCharArray())
+    val signKeyName = if(ctx.getConfig.isUseGM) ctx.getConfig.getGMSignKeyName  else  pkeyname
+    val sk = keyStores(pkeyname).getKey(signKeyName, keyPassword(pkeyname).toCharArray())
     sk.asInstanceOf[PrivateKey]
   }
 

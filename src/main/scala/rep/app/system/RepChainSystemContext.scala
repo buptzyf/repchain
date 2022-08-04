@@ -24,7 +24,7 @@ import rep.storage.chain.preload.BlockPreload
 import rep.storage.db.factory.DBFactory
 import rep.storage.filesystem.FileOperate
 
-class RepChainSystemContext(systemName:String){//},cs:ClusterSystem) {
+class RepChainSystemContext (systemName:String){//},cs:ClusterSystem) {
   private val config : RepChainConfig = new RepChainConfig(systemName)
   private val timePolicy : TimePolicy = new TimePolicy(config.getSystemConf)
   private val cryptoManager : CryptoMgr = new  CryptoMgr(this)

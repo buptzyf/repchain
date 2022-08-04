@@ -68,8 +68,13 @@ object CertificateUtil {
 
     val enums = trustKeyStore.aliases()
     while (enums.hasMoreElements) {
-      val alias = enums.nextElement()
+      var alias = enums.nextElement()
       val cert = trustKeyStore.getCertificate(alias)
+      ///todo 信任证书列表有问题，包含了文件名的后缀
+      if(alias.indexOf(".cer") > 0){
+        alias = alias.substring(0,alias.indexOf(".cer"))
+      }
+      //////////////////////////////////////////
       tmpMap(alias)=cert
     }
     RepLogger.trace(RepLogger.System_Logger, "CertificateUtil 在文件中装载信任证书="+tmpMap.mkString(","))

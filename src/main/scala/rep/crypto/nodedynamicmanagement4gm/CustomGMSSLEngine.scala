@@ -1,14 +1,16 @@
 package rep.crypto.nodedynamicmanagement4gm
 
 
-import java.security.{ SecureRandom}
+import java.security.SecureRandom
+
 import akka.actor.ActorSystem
 import akka.event.{Logging, MarkerLoggingAdapter}
-import akka.remote.artery.tcp.{SSLEngineProvider}
+import akka.remote.artery.tcp.SSLEngineProvider
 import akka.stream.TLSRole
 import com.typesafe.config.Config
 import javax.net.ssl.{SSLContext, SSLEngine, SSLSession}
 import rep.app.system.RepChainSystemContext
+import rep.crypto.cert.CertificateUtil
 
 class CustomGMSSLEngine  (protected val config: Config, protected val log: MarkerLoggingAdapter)
   extends SSLEngineProvider
@@ -18,9 +20,17 @@ class CustomGMSSLEngine  (protected val config: Config, protected val log: Marke
     this(
       system.settings.config.getConfig("akka.remote.artery.ssl.config-ssl-engine"),
       Logging.withMarker(system, classOf[CustomGMSSLEngine].getName))
-    val sysName = config.getString("node-name")
-    ctx = RepChainSystemContext.getCtx(sysName)
   }
+
+  val sysName = config.getString("node-name")
+  ctx = RepChainSystemContext.getCtx(sysName)
+
+  ////////////静态装载信任列表方法/////////////////////////////////////
+  val tmpTrustCerts = CertificateUtil.loadTrustCertificate(ctx)
+  //发送更新给systemcertList和SignTool
+  //ctx.getSystemCertList.updateCertList(tmpTrustCerts.keySet.toArray)
+  ctx.getSignTool.updateCertList(tmpTrustCerts)
+  ////////////静态装载信任列表方法/////////////////////////////////////
 
   val SSLEnabledAlgorithms: Set[String] = ctx.getConfig.getAlgorithm
   val SSLProtocol: String = ctx.getConfig.getProtocol
@@ -43,7 +53,7 @@ class CustomGMSSLEngine  (protected val config: Config, protected val log: Marke
   }
 
   private def constructContext(): SSLContext = {
-    GMJsseContextHelper.createGMContext(ctx.getConfig,true,ctx.getConfig.getSystemName)
+    GMJsseContextHelper.createGMContext(ctx.getConfig,false,ctx.getConfig.getSystemName)
   }
 
   def createSecureRandom(): SecureRandom = {

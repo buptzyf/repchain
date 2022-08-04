@@ -23,6 +23,7 @@ import rep.proto.rc2.ActionResult
 import rep.sc.scalax.IContract
 import rep.sc.scalax.ContractContext
 import rep.sc.scalax.ContractException
+import rep.utils.IdTool
 
 /**
   * 资产管理合约
@@ -54,7 +55,11 @@ class ContractAssetsTPL extends IContract {
   }
 
   def transfer(ctx: ContractContext, data: Transfer): ActionResult = {
-    if (!data.from.equals(ctx.t.getSignature.getCertId.creditCode))
+    //System.err.println(s"data.from=${data.from}")
+    //System.err.println(s"ctx.t.getSignature.getCertId.creditCode=${ctx.t.getSignature.getCertId.creditCode}")
+    val tmp = ctx.t.getSignature.getCertId.creditCode
+    val creditCode = tmp.substring(tmp.indexOf(IdTool.DIDPrefixSeparator)+1)
+    if (!data.from.equals(creditCode))
       throw ContractException("只允许从本人账户转出")
     val signerKey = data.to
     // 跨合约读账户，该处并未反序列化
