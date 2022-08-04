@@ -224,7 +224,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
         if (pe.getRepChainContext.getSignTool.verify(sig, tOutSig.toByteArray, certId)) {
           RepLogger.info(RepLogger.Business_Logger, s"验证签名成功，txid: ${t.id},creditCode: ${t.signature.get.getCertId.creditCode}, certName: ${t.signature.get.getCertId.certName}")
           if (pe.getRepChainContext.getConfig.hasPreloadOfApi) {
-            val future = pe.getActorRef(ModuleActorType.ActorType.transactiondispatcher) ? DoTransaction(Array(t).toSeq, "api_" + t.id, TypeOfSender.FromAPI)
+            val future = pe.getActorRef(ModuleActorType.ActorType.transactiondispatcher) ? DoTransaction(Seq(t), "api_" + t.id, TypeOfSender.FromAPI)
             val result = Await.result(future, timeout.duration).asInstanceOf[Seq[TransactionResult]]
             val rv = result(0).err
             rv.get.code match {
