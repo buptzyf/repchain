@@ -1,7 +1,7 @@
 package rep.crypto.cert
 
 import java.io.{ByteArrayInputStream, File, FileInputStream, StringReader}
-import java.security.KeyStore
+import java.security.{KeyStore}
 import java.security.cert.{Certificate, CertificateFactory, X509Certificate}
 import org.bouncycastle.util.io.pem.PemReader
 import rep.app.system.RepChainSystemContext

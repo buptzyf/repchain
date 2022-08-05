@@ -4,6 +4,7 @@ package rep.app.system
 import java.util.concurrent.ConcurrentHashMap
 
 import akka.actor.Address
+import javax.net.ssl.SSLContext
 import rep.app.conf.{RepChainConfig, SystemCertList, TimePolicy}
 import rep.app.management.{ReasonOfStop, RepChainMgr}
 import rep.authority.cache.PermissionCacheManager

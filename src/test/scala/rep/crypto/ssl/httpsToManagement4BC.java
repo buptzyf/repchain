@@ -1,5 +1,8 @@
 package rep.crypto.ssl;
 
+import rep.crypto.cert.CertificateUtil;
+import scala.collection.mutable.HashMap;
+
 import javax.net.ssl.*;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -8,9 +11,12 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.KeyStore;
 import java.security.Provider;
 import java.security.Security;
+import java.security.cert.Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -22,14 +28,14 @@ public class httpsToManagement4BC{
 
     try
     {
-        String urlStr = "https://localhost:7081/management/system/SystemStartup/121000005l35120456.node1";
+        String urlStr = "https://localhost:7081/management/system/SystemStartup/215159697776981712.node1";
         //String urlStr = "https://localhost:9081/web/g1.html";
 
         Security.insertProviderAt((Provider)Class.forName("org.bouncycastle.jce.provider.BouncyCastleProvider").newInstance(), 1);
         Security.insertProviderAt((Provider)Class.forName("org.bouncycastle.jsse.provider.BouncyCastleJsseProvider").newInstance(), 2);
 
-        String pfxfile = "pfx/sm2.test_node1.both.pfx";
-        String pwd = "12345678";
+        String pfxfile = "pfx/identity/215159697776981712.node1.pfx";
+        String pwd = "123";
         KeyStore pfx = KeyStore.getInstance("PKCS12","BC");
         pfx.load(new FileInputStream(pfxfile), pwd.toCharArray());
 
@@ -73,9 +79,12 @@ public class httpsToManagement4BC{
     }
 }
 
+
+
+
         public static SSLSocketFactory createSocketFactory(KeyStore kepair, char[] pwd) throws Exception
         {
-            TrustAllManager[] trust = { new TrustAllManager() };
+            //TrustAllManager[] trust = { new TrustAllManager() };
 
             KeyManager[] kms = null;
             if (kepair != null)
@@ -85,9 +94,26 @@ public class httpsToManagement4BC{
                 kms = kmf.getKeyManagers();
             }
 
+            HashMap<String, Certificate> certs = TrustLoad.loadTrustCertificateFromTrustFile("pfx/identity/mytruststore.pfx","changeme","BC");
+            KeyStore ks = TrustLoad.loadTrustStores(certs);
+            X509ExtendedTrustManager xtm = TrustLoad.loadTrustManager(ks);
+            TrustManager[] trusts = new TrustManager[]{xtm};
+           /* TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance("SunX509");
+            KeyStore tkeyStore = KeyStore.getInstance("PKCS12","BC");
+            InputStream fin = Files.newInputStream(Paths.get("pfx/identity/mytruststore.pfx"));
+            try {
+                tkeyStore.load(fin, "changeme".toCharArray());
+            } finally{
+                fin.close();
+            }
+
+            trustManagerFactory.init(tkeyStore);
+            TrustManager[] trusts = trustManagerFactory.getTrustManagers();*/
+
+
             SSLContext ctx = SSLContext.getInstance("GMSSLv1.1", "BCJSSE");
             java.security.SecureRandom secureRandom = new java.security.SecureRandom();
-            ctx.init(kms, trust, secureRandom);
+            ctx.init(kms, trusts, secureRandom);
 
             ctx.getServerSessionContext().setSessionCacheSize(8192);
             ctx.getServerSessionContext().setSessionTimeout(3600);
@@ -95,6 +121,9 @@ public class httpsToManagement4BC{
             SSLSocketFactory factory = ctx.getSocketFactory();
             return factory;
         }
+
+
+
 }
 
 class PreferredCipherSuiteSSLSocketFactory2 extends SSLSocketFactory

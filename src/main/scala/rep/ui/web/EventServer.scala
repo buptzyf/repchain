@@ -135,7 +135,7 @@ object EventServer {
         repContext.getConfig.isUseGM match {
           case true=>
             https = ConnectionContext.httpsServer(() => {
-              val sslCtx = GMJsseContextHelper.createGMContext(repContext.getConfig)
+              val sslCtx = GMJsseContextHelper.createGMContext(repContext.getConfig,true,repContext.getConfig.getSystemName)
               val engine = sslCtx.createSSLEngine()
               engine.setUseClientMode(false)
               engine.setEnabledCipherSuites(repContext.getConfig.getAlgorithm.toArray)

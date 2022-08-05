@@ -3,15 +3,12 @@ package rep.crypto.nodedynamicmanagement4gm
 import java.io.{FileNotFoundException, IOException}
 import java.nio.file.{Files, Paths}
 import java.security.{GeneralSecurityException, KeyStore, SecureRandom}
-
 import akka.remote.artery.tcp.SslTransportException
 import javax.net.ssl._
 import rep.app.conf.RepChainConfig
-import rep.crypto.TrustAllManager
 import rep.crypto.cert.CryptoMgr
 import rep.crypto.nodedynamicmanagement.ReloadableTrustManager
 import rep.log.RepLogger
-
 import scala.util.Try
 
 object GMJsseContextHelper {
