@@ -89,6 +89,7 @@ object GMJsseContextHelper {
         trustManagerFactory.getTrustManagers
       }
 
+      //TrustCertLoader.getTrustManager(SSLTrustStore,SSLTrustStorePassword,jceProviderName,jsseProviderName)
 
       //Array(new TrustAllManager)
     }

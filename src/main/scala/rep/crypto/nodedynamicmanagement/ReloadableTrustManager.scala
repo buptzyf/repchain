@@ -4,7 +4,6 @@ import java.security.{KeyStore, KeyStoreException}
 import java.security.cert.Certificate
 import java.util.concurrent.ConcurrentHashMap
 import javax.net.ssl.{TrustManager, TrustManagerFactory, X509ExtendedTrustManager}
-import org.bouncycastle.jsse.BCX509ExtendedTrustManager
 import rep.app.system.RepChainSystemContext
 import rep.crypto.X509ExtendedTrustManagerProxy
 import rep.crypto.cert.{CertificateUtil, CryptoMgr}
@@ -131,24 +130,6 @@ class ReloadableTrustManager private(ctx: RepChainSystemContext){
         tm.foreach(manager => {
           if (manager.isInstanceOf[X509ExtendedTrustManager]) {
             rtm = manager.asInstanceOf[X509ExtendedTrustManager]
-            break
-          }
-        })
-      )
-    }
-    rtm
-  }
-
-  private def loadGMTrustManager(recentStore: KeyStore): BCX509ExtendedTrustManager = {
-    var rtm: BCX509ExtendedTrustManager = null
-    val tmf: TrustManagerFactory = if(ctx.getConfig.isUseGM) TrustManagerFactory.getInstance("PKIX", ctx.getConfig.getGMJsseProviderName) else TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-    tmf.init(recentStore)
-    val tm: Array[TrustManager] = tmf.getTrustManagers()
-    if (tm != null) {
-      breakable(
-        tm.foreach(manager => {
-          if (manager.isInstanceOf[BCX509ExtendedTrustManager]) {
-            rtm = manager.asInstanceOf[BCX509ExtendedTrustManager]
             break
           }
         })

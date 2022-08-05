@@ -73,8 +73,9 @@ object ManagementServer {
           case true =>
             //使用国家密码体系（china）
             System.out.println(s"^^^^^^^^begin gmssl：https management Service:https://localhost:${conf.getHttpServicePort}^^^^^^^^")
+
             val https = ConnectionContext.httpsServer(() => {
-              val sslCtx = GMJsseContextHelper.createGMContext(conf)
+              val sslCtx = GMJsseContextHelper.createGMContext(conf,true,conf.getSystemName)
               val engine = sslCtx.createSSLEngine()
               engine.setUseClientMode(false)
               engine.setEnabledCipherSuites(conf.getAlgorithm.toArray)

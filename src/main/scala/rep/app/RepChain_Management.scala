@@ -3,12 +3,16 @@ package rep.app
 import akka.actor.ActorSystem
 import rep.app.conf.RepChainConfig
 import rep.app.management.{ManagementServer, ReasonOfStartup, RepChainMgr}
+import rep.app.system.RepChainSystemContext
+import rep.crypto.nodedynamicmanagement.ReloadableTrustManager
 
 object RepChain_Management {
   def main(args: Array[String]): Unit = {
-      val config : RepChainConfig = new RepChainConfig("management")
-      val system = ActorSystem("RepChain-Management-Server")
-      system.actorOf(ManagementServer.props(config), "ManagementServer")
+      //val config : RepChainConfig = new RepChainConfig("management")
+      val ctx = new RepChainSystemContext("management")
+    RepChainSystemContext.setCtx("management",ctx)
+      val system = ActorSystem("RepChain-Management-Server",ctx.getConfig.getSystemConf)
+      system.actorOf(ManagementServer.props(ctx.getConfig), "ManagementServer")
       if(args.length > 0){
         for(i<-0 to args.length-1){
           System.out.println(s"Start start node(${args(i)})...")
