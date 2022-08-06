@@ -1,10 +1,8 @@
 package rep.app
 
 import akka.actor.ActorSystem
-import rep.app.conf.RepChainConfig
 import rep.app.management.{ManagementServer, ReasonOfStartup, RepChainMgr}
 import rep.app.system.RepChainSystemContext
-import rep.crypto.nodedynamicmanagement.ReloadableTrustManager
 
 object RepChain_Management {
   def main(args: Array[String]): Unit = {
