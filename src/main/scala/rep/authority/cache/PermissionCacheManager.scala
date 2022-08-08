@@ -65,19 +65,6 @@ class PermissionCacheManager private(systemKey:String,cd:CommonDataOfCache) {
    * @author jiangbuyun
    * @version	2.0
    * @since	2022-04-19
-   * @category 出块之后更新证书缓存,账户合约部署非DID合约
-   * @param key:String 状态key
-   * @return
-   * */
-  def updateCertCache(key:String):Unit={
-    System.err.println(s"t=${System.currentTimeMillis()},entry PermissionCacheManager#######updateCertCache,key=${key}," +
-      s"node=${systemKey}")
-    this.certificateCache.updateCache(key)
-  }
-  /**
-   * @author jiangbuyun
-   * @version	2.0
-   * @since	2022-04-19
    * @category 出块之后更新账户权限相关缓存
    * @param key:String 状态key
    * @return

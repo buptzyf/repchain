@@ -111,14 +111,15 @@ class Shim {
   }
 
   private def checkKeyName(key: Key): Unit = {
-    if (key.indexOf("_") >= 0) {
+    //删除worldstate的key字符串中包含"_"字符的限制，也就是key可以使用任意字符串
+    /*if (key.indexOf("_") >= 0) {
       if (!key.equalsIgnoreCase(IdTool.getCid(t.getCid))
         && !key.equalsIgnoreCase(IdTool.getCid(t.getCid) + SandboxDispatcher.PRE_STATE)
         && key.lastIndexOf("super_admin") < 0) {
         println("key: " + key + ", " + SandboxDispatcher.ERR_WORLDSTATE_CANNOT_CONTAIN_UNDERSCORES)
         throw new Exception(SandboxDispatcher.ERR_WORLDSTATE_CANNOT_CONTAIN_UNDERSCORES)
       }
-    }
+    }*/
   }
 
   def setVal(key: Key, value: Any): Unit = {

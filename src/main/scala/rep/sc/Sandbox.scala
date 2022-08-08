@@ -209,8 +209,8 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
   private def getStatusFromDB(txCid: String,oid:String,da:String):Option[Boolean]={
     var r : Option[Boolean] = None
 
-    val chainCodeName : String = if(txCid.indexOf(SplitChainCodeId)>0){
-      txCid.substring(0,txCid.indexOf(SplitChainCodeId))
+    val chainCodeName : String = if(txCid.lastIndexOf(SplitChainCodeId)>0){
+      txCid.substring(0,txCid.lastIndexOf(SplitChainCodeId))
     } else txCid
     val blockPreload = pe.getRepChainContext.getBlockPreload(da)
     val state = blockPreload.getObjectFromDB(KeyPrefixManager.getWorldStateKey(pe.getRepChainContext.getConfig,txCid+PRE_STATE,chainCodeName,oid))
