@@ -254,7 +254,8 @@ class SandboxDispatcher(moduleName: String, cid: String) extends ModuleBase(modu
       RepLogger.debug(RepLogger.Sandbox_Logger, s"sandbox dispatcher ${cid},execute setcontractstate after , contract state ${this.ContractState},txid=${special_t.id},da=${da}.")
       if (this.ContractState == ContractStateType.ContractInLevelDB) {
         if(this.DeployTransactionCache.getSpec.rType == ChaincodeDeploy.RunType.RUN_PARALLEL){
-          this.createParallelRouter(this.DeployTransactionCache.cid.get, this.DeployTransactionCache.para.spec.get.cType)
+          this.createParallelRouter(this.DeployTransactionCache.cid.get,
+            this.DeployTransactionCache.para.spec.get.cType)
           RepLogger.debug(RepLogger.Sandbox_Logger, s"sandbox dispatcher ${cid},create parallel router after ,txid=${special_t.id},da=${da}.")
         }
 
@@ -273,6 +274,10 @@ class SandboxDispatcher(moduleName: String, cid: String) extends ModuleBase(modu
           typeOfSender match {
             case TypeOfSender.FromAPI =>
               RepLogger.debug(RepLogger.Sandbox_Logger, s"sandbox dispatcher ${cid},send msg to Parallel sandbox from api,txid=${special_t.id},da=${da}.")
+              if(this.RouterOfParallelSandboxs == null){
+                this.createParallelRouter(this.DeployTransactionCache.cid.get,
+                                      this.DeployTransactionCache.para.spec.get.cType)
+              }
               if(cacheIdentifier == null)
                 this.RouterOfParallelSandboxs.route(DoTransactionOfSandbox(ts, da, this.ContractState), sender)
               else
@@ -281,6 +286,10 @@ class SandboxDispatcher(moduleName: String, cid: String) extends ModuleBase(modu
               this.DeployTransactionCache.para.spec.get.rType match {
                 case ChaincodeDeploy.RunType.RUN_PARALLEL =>
                   RepLogger.debug(RepLogger.Sandbox_Logger, s"sandbox dispatcher ${cid},send msg to Parallel sandbox from parallel,txid=${special_t.id},da=${da}.")
+                  if(this.RouterOfParallelSandboxs == null){
+                    this.createParallelRouter(this.DeployTransactionCache.cid.get,
+                      this.DeployTransactionCache.para.spec.get.cType)
+                  }
                   if(cacheIdentifier == null)
                     this.RouterOfParallelSandboxs.route(DoTransactionOfSandbox(ts, da, this.ContractState), sender)
                   else
