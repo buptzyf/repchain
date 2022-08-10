@@ -18,6 +18,9 @@ package rep.api.rest
 
 import java.io.File
 import akka.actor.ActorRef
+import akka.pattern.ask
+import akka.util.ByteString
+import scala.concurrent.duration._
 import scala.util.{Failure, Success}
 import scala.concurrent.{ExecutionContext, Future}
 import akka.util.Timeout
@@ -58,17 +61,13 @@ import rep.log.RepLogger
  */
 @Tag(name = "chaininfo", description = "获得当前区块链信息")
 @Path("/chaininfo")
-class ChainService(ra: ActorRef)(implicit executionContext: ExecutionContext)
-  extends Directives {
+class ChainService(ra: ActorRef)(implicit executionContext: ExecutionContext) extends Directives {
 
-  import akka.pattern.ask
-  import scala.concurrent.duration._
   import Json4sSupport._
 
   implicit val serialization = jackson.Serialization // or native.Serialization
   implicit val formats = DefaultFormats
   implicit val timeout = Timeout(20.seconds)
-
 
   val route = getBlockChainInfo ~ getNodeNumber ~ getCacheTransNumber ~ getAcceptedTransNumber
 
@@ -154,13 +153,9 @@ class ChainService(ra: ActorRef)(implicit executionContext: ExecutionContext)
 class BlockService(ra: ActorRef, repContext: RepChainSystemContext, isCheckClientPermission: Boolean)(implicit executionContext: ExecutionContext)
   extends Directives {
 
-  import akka.pattern.ask
-  import scala.concurrent.duration._
-
-  implicit val timeout = Timeout(20.seconds)
-
   import Json4sSupport._
 
+  implicit val timeout = Timeout(20.seconds)
   implicit val serialization = jackson.Serialization // or native.Serialization
   implicit val formats = DefaultFormats
 
@@ -350,22 +345,12 @@ class BlockService(ra: ActorRef, repContext: RepChainSystemContext, isCheckClien
 class TransactionService(ra: ActorRef, repContext: RepChainSystemContext, isCheckClientPermission: Boolean)(implicit executionContext: ExecutionContext)
   extends Directives {
 
-  import akka.pattern.ask
-  import scala.concurrent.duration._
-  import java.io.FileInputStream
-
-  implicit val timeout = Timeout(20.seconds)
-
   import Json4sSupport._
   import ScalaXmlSupport._
-  import akka.stream.scaladsl.FileIO
-  import akka.util.ByteString
-  import java.nio.file.{Paths, Files}
-  import akka.stream.scaladsl.Framing
 
+  implicit val timeout = Timeout(20.seconds)
   implicit val serialization = jackson.Serialization // or native.Serialization
   implicit val formats = DefaultFormats
-
   implicit val specFormat = jsonFormat15(CSpec)
   implicit val specUnmarshaller: FromEntityUnmarshaller[CSpec] = Unmarshaller.firstOf(
     //只能处理application/xml
@@ -606,8 +591,6 @@ class TransactionService(ra: ActorRef, repContext: RepChainSystemContext, isChec
 class DbService(ra: ActorRef, repContext: RepChainSystemContext, isCheckClientPermission: Boolean)(implicit executionContext: ExecutionContext)
   extends Directives {
 
-  import akka.pattern.ask
-  import scala.concurrent.duration._
   import Json4sSupport._
 
   implicit val serialization = jackson.Serialization // or native.Serialization
@@ -651,6 +634,39 @@ class DbService(ra: ActorRef, repContext: RepChainSystemContext, isCheckClientPe
                 (ra ? query).mapTo[QueryResult]
               }
             }
+          }
+        }
+      }
+    }
+}
+
+/**
+ * 查询节点相关信息
+ *
+ * @author zyf
+ */
+@Tag(name = "nodeinfo", description = "获得当前节点信息")
+@Path("/nodeinfo")
+class NodeService(ra: ActorRef)(implicit executionContext: ExecutionContext) extends Directives {
+
+  import Json4sSupport._
+
+  implicit val serialization = jackson.Serialization // or native.Serialization
+  implicit val formats = DefaultFormats
+  implicit val timeout = Timeout(20.seconds)
+
+  val route = getNodeInfo
+
+  @GET
+  @Operation(tags = Array("nodeinfo"), summary = "返回节点信息", description = "getNodeInfo", method = "GET")
+  @ApiResponse(responseCode = "200", description = "返回节点信息", content = Array(new Content(mediaType = "application/json", schema = new Schema(implementation = classOf[QueryResult]))))
+  def getNodeInfo =
+    path("nodeinfo") {
+      get {
+        extractClientIP { ip =>
+          RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} get nodeinfo")
+          complete {
+            (ra ? NodeInfo).mapTo[QueryResult]
           }
         }
       }

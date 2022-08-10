@@ -53,6 +53,8 @@ object RestActor {
 
   case object ChainInfo
 
+  case object NodeInfo
+
   case object NodeNumber
 
   case object TransNumber
@@ -370,6 +372,13 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
     case ChainInfo =>
       val cij = MessageToJson.toJson(sr.getChainInfo)
       sender ! QueryResult(Option(cij))
+
+    // 获取节点信息
+    case NodeInfo =>
+      val netWorkId = pe.getRepChainContext.getConfig.getChainNetworkId
+      val nodeName = pe.getSysTag
+      val rs = "{\"networkid\":\"" + netWorkId + "\",\"nodename\":\"" + nodeName + "\"}"
+      sender ! QueryResult(Option(JsonMethods.parse(string2JsonInput(rs))))
 
     case NodeNumber =>
       val stablenode = pe.getRepChainContext.getNodeMgr.getStableNodes.size

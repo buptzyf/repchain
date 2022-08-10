@@ -33,7 +33,8 @@ object SwaggerDocService extends SwaggerHttpService {
     classOf[ChainService],
     classOf[BlockService],
     classOf[TransactionService],
-    classOf[DbService]
+    classOf[DbService],
+    classOf[NodeService],
   )
   override val info = Info(
     description = "RepChian API Doc",
@@ -46,16 +47,8 @@ object SwaggerDocService extends SwaggerHttpService {
    * 重写swaggerConfig，加上tag描述信息
    * @author zyf
    */
-//  val tagList: java.util.List[Tag] = new ArrayList[Tag]()
-//  tagList.add(new Tag().name("logmgr").description("日志信息管理"))
-//  tagList.add(new Tag().name("chaininfo").description("获得当前区块链信息"))
-//  tagList.add(new Tag().name("block").description("获得区块数据"))
-//  tagList.add(new Tag().name("transaction").description("获得交易数据或提交交易"))
-  override val externalDocs = Some(new ExternalDocumentation().description("Developers Guide").url("https://repchaindoc.readthedocs.io/zh/latest/index.html"))
-//  override val securitySchemes = Map("basicAuth" -> new SecurityScheme().`type`(SecurityScheme.Type.HTTP))
-//  override val swaggerConfig = super.swaggerConfig.tags(tagList)
-//  override val unwantedDefinitions = Seq("Function1", "Function1RequestContextFutureRouteResult")
-  //    new Swagger().basePath(prependSlashIfNecessary(basePath)).info(info)
-  //      .scheme(Scheme.HTTP).tags(tagList).securityDefinition("basicAuth", new BasicAuthDefinition())
-  //      .externalDocs(new ExternalDocs("Developers Guide", "https://repchaindoc.readthedocs.io/zh/latest/index.html"))
+  override val externalDocs = Some(new ExternalDocumentation()
+    .description("Developers Guide")
+    .url("https://repchain.net")
+  )
 }

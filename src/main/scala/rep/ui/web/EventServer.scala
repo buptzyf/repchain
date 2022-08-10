@@ -151,6 +151,7 @@ object EventServer {
                   new ChainService(ra).route ~
                   new TransactionService(ra,repContext,repContext.getConfig.isNeedClientAuth).route ~
                   new DbService(ra,repContext,repContext.getConfig.isNeedClientAuth).route ~
+                  new NodeService(ra).route ~
                   SwaggerDocService.routes))
             System.out.println(s"^^^^^^^^https GM Service:${repContext.getSystemName}^^^^^^^^")
           case false=>
@@ -171,6 +172,7 @@ object EventServer {
                   new ChainService(ra).route ~
                   new TransactionService(ra,repContext,repContext.getConfig.isNeedClientAuth).route ~
                   new DbService(ra,repContext,repContext.getConfig.isNeedClientAuth).route ~
+                  new NodeService(ra).route ~
                   SwaggerDocService.routes))
             System.out.println(s"^^^^^^^^https TLS Service:${repContext.getSystemName}^^^^^^^^")
         }
@@ -183,6 +185,7 @@ object EventServer {
               new ChainService(ra).route ~
               new TransactionService(ra,repContext,false).route ~
               new DbService(ra,repContext,false).route ~
+              new NodeService(ra).route ~
               SwaggerDocService.routes
           ))
         System.out.println(s"^^^^^^^^http Service:${repContext.getSystemName}^^^^^^^^")
