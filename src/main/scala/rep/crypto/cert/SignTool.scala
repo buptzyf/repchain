@@ -97,7 +97,10 @@ class SignTool(ctx: RepChainSystemContext) {
   private def getVerifyCert(pubkeyname: String): PublicKey = {
     var pkcert: Certificate = null
 
-    pkcert = getTrustCertificate(pubkeyname)
+    val tmpName = if(pubkeyname.indexOf(IdTool.DIDPrefixSeparator)>=0)
+                      pubkeyname.substring(pubkeyname.indexOf(IdTool.DIDPrefixSeparator)+1)
+                  else pubkeyname
+    pkcert = getTrustCertificate(tmpName)
     if (pkcert == null) {
       val cache = ctx.getPermissionCacheManager.getCache(DidTplPrefix.certPrefix).asInstanceOf[CertificateCache]
       val cert = cache.get(pubkeyname, null)
