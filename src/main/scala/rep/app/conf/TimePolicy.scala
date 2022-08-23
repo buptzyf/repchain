@@ -28,9 +28,9 @@ class TimePolicy(config:Config) {
     config.getLong("system.time.block.vote_retry_delay")
   }
 
-  def getTranscationWaiting:Int={
-    config.getInt("system.time.timeout.transaction_waiting")
-  }
+//  def getTranscationWaiting:Int={
+//    config.getInt("system.time.timeout.transaction_waiting")
+//  }
 
   def getSysNodeStableDelay:Long={
     config.getLong("system.cluster.node_stable_delay")

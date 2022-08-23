@@ -37,6 +37,7 @@ import rep.utils.{MessageToJson, SerializeUtils}
 
 import scala.concurrent.Await
 import akka.pattern.ask
+import rep.api.rest.ResultCode._
 import rep.sc.SandboxDispatcher.DoTransaction
 
 /**
@@ -50,6 +51,7 @@ import rep.sc.SandboxDispatcher.DoTransaction
 object RestActor {
   def props(name: String): Props = Props(classOf[RestActor], name)
 
+  case class ErrMessage(code: Int, msg: String)
 
   case object ChainInfo
 
@@ -61,17 +63,17 @@ object RestActor {
 
   case object AcceptedTransNumber
 
-  case class BlockId(bid: String)
+  case class BlockId(id: String)
 
-  case class BlockHeight(h: Int)
+  case class BlockHeight(height: Long)
 
   case class BlockTime(createTime: String, createTimeUtc: String)
 
-  case class BlockTimeForHeight(h: Long)
+  case class BlockTimeForHeight(height: Long)
 
   case class BlockTimeForTxid(txid: String)
 
-  case class BlockHeightStream(h: Int)
+  case class BlockHeightStream(height: Int)
 
   case class TransactionId(txid: String)
 
@@ -85,17 +87,15 @@ object RestActor {
 
   case class QueryDB(netId: String, chainCodeName: String, oid: String, key: String)
 
-  case class PostResult(txid: String, result: Option[ActionResult], err: Option[String])
+  case class PostResult(txid: String, err: Option[ErrMessage])
 
   case class QueryResult(result: Option[JValue])
-
-  case class resultMsg(result: String)
 
   case class CSpec(methodType: Int, chainCodeName: String, chainCodeVersion: Int,
                    iptFunc: String, iptArgs: Seq[String], timeout: Int, legal_prose: String,
                    code: String, codeType: Int, state: Boolean, gasLimited: Int, oid: String, runType: Int, stateType: Int, contractLevel: Int)
 
-  case class tranSign(tran: String)
+  case class signedTran(tran: String)
 
 
 }
@@ -182,9 +182,8 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
     val gas_limited = if (c.gasLimited < 0) 0 else c.gasLimited
     val oid = if (c.oid == null || c.oid.equalsIgnoreCase("null")) "" else c.oid
     if (method_type == Transaction.Type.CHAINCODE_DEPLOY) {
-      pe.getRepChainContext.getTransactionBuilder.createTransaction4Deploy(nodeName, chaincodeId, c.code,
-        c.legal_prose, c.timeout, code_type, run_type,
-        state_type, contract_Level, gas_limited)
+      pe.getRepChainContext.getTransactionBuilder.createTransaction4Deploy(nodeName, chaincodeId, c.code, c.legal_prose, c.timeout,
+        code_type, run_type, state_type, contract_Level, gas_limited)
     } else if (method_type == Transaction.Type.CHAINCODE_INVOKE) {
       pe.getRepChainContext.getTransactionBuilder.createTransaction4Invoke(nodeName, chaincodeId, c.iptFunc, c.iptArgs, gas_limited, oid)
     } else if (method_type == Transaction.Type.CHAINCODE_SET_STATE) {
@@ -194,30 +193,30 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
     }
   }
 
-  private def sendTransaction(t:Transaction):Unit={
+  private def sendTransaction(t: Transaction): Unit = {
     val pool = pe.getRepChainContext.getTransactionPool
-    if(!pool.hasOverflowed){
+    if (!pool.hasOverflowed) {
       //优先加入本地交易池
       pool.addTransactionToCache(t)
       if (config.isBroadcastTransaction) {
         mediator ! Publish(Topic.Transaction, t)
       }
       sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)
-      sender ! PostResult(t.id, None, None)
-    }else{
-      sender ! PostResult(t.id, None, Option("code=901,reason=交易池已经满了"))
+      sender ! PostResult(t.id, None)
+    } else {
+      sender ! PostResult(t.id, Option(ErrMessage(TranPoolFulled, "交易池已经满了")))
     }
   }
 
   // 先检查交易大小，然后再检查交易是否已存在，再去验证签名，如果没有问题，则广播
-  def preTransaction(t: Transaction): Unit = {
+  private def doTransaction(t: Transaction): Unit = {
     val tranLimitSize = config.getBlockMaxLength / 3
     if (t.toByteArray.length > tranLimitSize) {
-      sender ! PostResult(t.id, None, Option(s"交易大小超出限制： ${tranLimitSize}，请重新检查"))
+      sender ! PostResult(t.id, Option(ErrMessage(TranSizeExceed, s"交易大小超出限制： ${tranLimitSize}，请重新检查")))
     } else if (!this.consensusCondition.CheckWorkConditionOfSystem(pe.getRepChainContext.getNodeMgr.getStableNodes.size)) {
-      sender ! PostResult(t.id, None, Option("共识节点数目太少，暂时无法处理交易"))
+      sender ! PostResult(t.id, Option(ErrMessage(ConsensusNodesNotEnough, "共识节点数目太少，暂时无法处理交易")))
     } else if (pe.getRepChainContext.getTransactionPool.isExistInCache(t.id) || sr.isExistTransactionByTxId(t.id)) {
-      sender ! PostResult(t.id, None, Option(s"交易ID重复, ID为：${t.id}"))
+      sender ! PostResult(t.id, Option(ErrMessage(TranIdDuplicate, s"交易ID重复, ID为：${t.id}")))
     } else {
       try {
         val sig = t.signature.get.signature.toByteArray
@@ -228,24 +227,24 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
           if (pe.getRepChainContext.getConfig.hasPreloadOfApi) {
             val future = pe.getActorRef(ModuleActorType.ActorType.transactiondispatcher) ? DoTransaction(Seq(t), "api_" + t.id, TypeOfSender.FromAPI)
             val result = Await.result(future, timeout.duration).asInstanceOf[Seq[TransactionResult]]
-            val rv = result(0).err
+            val rv = result.head.err
             rv.get.code match {
               case 0 =>
                 sendTransaction(t)
               case _ =>
                 //预执行异常,废弃交易，向api调用者发送异常
-                sender ! PostResult(t.id, None, Option("code="+rv.get.code+",reason="+rv.get.reason))
+                sender ! PostResult(t.id, Option(ErrMessage(rv.get.code, rv.get.reason)))
             }
           } else {
             sendTransaction(t)
           }
         } else {
           RepLogger.info(RepLogger.Business_Logger, s"验证签名出错，txid: ${t.id},creditCode: ${t.signature.get.getCertId.creditCode}, certName: ${t.signature.get.getCertId.certName}")
-          sender ! PostResult(t.id, None, Option("验证签名出错"))
+          sender ! PostResult(t.id, Option(ErrMessage(SignatureVerifyFailed, "验证签名出错")))
         }
       } catch {
         case e: Exception =>
-          sender ! PostResult(t.id, None, Option(e.getMessage))
+          sender ! PostResult(t.id, Option(ErrMessage(UnkonwFailure, e.getMessage)))
       }
     }
   }
@@ -253,38 +252,38 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
 
   def receive: Receive = {
 
-    case tranSign(tr: String) =>
+    case signedTran(tranHexString: String) =>
       val tmpstart = System.currentTimeMillis()
-      val tr1 = BytesHex.hex2bytes(tr) // 解析交易编码后的16进制字符串,进行解码16进制反解码decode
+      val tr1 = BytesHex.hex2bytes(tranHexString) // 解析交易编码后的16进制字符串,进行解码16进制反解码decode
       var txr = Transaction.defaultInstance
       try {
         txr = Transaction.parseFrom(tr1)
-        preTransaction(txr)
+        doTransaction(txr)
       } catch {
         case e: Exception =>
-          sender ! PostResult(txr.id, None, Option(s"transaction parser error! + ${e.getMessage}"))
+          sender ! PostResult(txr.id, Option(ErrMessage(TranParseError, s"transaction parser error! + ${e.getMessage}")))
       }
       val tmpend = System.currentTimeMillis()
       RepLogger.trace(RepLogger.OutputTime_Logger, this.getLogMsgPrefix(s"API recv trans time,thread-id=${Thread.currentThread().getName + "-" + Thread.currentThread().getId},spent time=${(tmpend - tmpstart)}" + "~" + selfAddr))
 
     //处理post CSpec构造交易的请求
-    case c: CSpec =>
+    case cspec: CSpec =>
       var txr = Transaction.defaultInstance
       //debug状态才动用节点密钥签名
       if (contractOperationMode == 0) {
         //构建transaction并通过peer预执行广播
-        txr = buildTranaction(pe.getSysTag, c)
-        preTransaction(txr)
-      } else
-        sender ! PostResult(txr.id, None, Option("非Debug状态下此调用无效"))
+        txr = buildTranaction(pe.getSysTag, cspec)
+        doTransaction(txr)
+      } else {
+        sender ! PostResult(txr.id, Option(ErrMessage(NotValidInDebug, "非Debug状态下此调用无效")))
+      }
 
     // 流式提交交易
-    case t: Transaction =>
-      preTransaction(t)
+    case tran: Transaction => doTransaction(tran)
 
     // 根据高度检索块
-    case BlockHeight(h) =>
-      val bb = sr.getBlockByHeight(h)
+    case BlockHeight(height) =>
+      val bb = sr.getBlockByHeight(height)
       val r = bb match {
         case None => QueryResult(None)
         case _ =>
@@ -293,8 +292,8 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
       }
       sender ! r
 
-    case BlockTimeForHeight(h) =>
-      val bb = sr.getBlockCreateTimeByHeight(h)
+    case BlockTimeForHeight(height) =>
+      val bb = sr.getBlockCreateTimeByHeight(height)
       val r = bb match {
         case None => QueryResult(None)
         case _ =>
@@ -312,9 +311,9 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
       sender ! r
 
     // 根据高度检索块的子节流
-    case BlockHeightStream(h) =>
-      val bb = sr.getBlockByHeight(h)
-      if (bb == None) {
+    case BlockHeightStream(height) =>
+      val bb = sr.getBlockByHeight(height)
+      if (bb.isEmpty) {
         sender ! HttpResponse(entity = HttpEntity.Strict(MediaTypes.`application/octet-stream`, akka.util.ByteString.empty))
       } else {
         val body = akka.util.ByteString(bb.get.toByteArray)
@@ -324,8 +323,8 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
       }
 
     //根据block hash检索
-    case BlockId(bid) =>
-      val bb = sr.getBlockByBase64Hash(bid)
+    case BlockId(id) =>
+      val bb = sr.getBlockByBase64Hash(id)
       val r = bb match {
         case None => QueryResult(None)
         case _ =>
@@ -335,7 +334,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
 
     // 根据txid检索交易
     case TransactionId(txId) =>
-      var r = sr.getTransactionByTxId(txId) match {
+      val r = sr.getTransactionByTxId(txId) match {
         case None =>
           QueryResult(None)
         case t: Some[Transaction] =>
@@ -358,7 +357,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
 
     case TranInfoAndHeightId(txId) =>
       implicit val fomats = DefaultFormats
-      var r = sr.getTransactionByTxId(txId) match {
+      val r = sr.getTransactionByTxId(txId) match {
         case None =>
           QueryResult(None)
         case t: Some[Transaction] =>
@@ -377,29 +376,29 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
     case NodeInfo =>
       val netWorkId = pe.getRepChainContext.getConfig.getChainNetworkId
       val nodeName = pe.getSysTag
-      val rs = "{\"networkid\":\"" + netWorkId + "\",\"nodename\":\"" + nodeName + "\"}"
-      sender ! QueryResult(Option(JsonMethods.parse(string2JsonInput(rs))))
+      val rs = s"""{"networkid": "$netWorkId", "nodename": "$nodeName"}"""
+      sender ! QueryResult(Option(JsonMethods.parse(rs)))
 
     case NodeNumber =>
       val stablenode = pe.getRepChainContext.getNodeMgr.getStableNodes.size
       val snode = pe.getRepChainContext.getNodeMgr.getNodes.size
-      val rs = "{\"consensusnodes\":\"" + stablenode + "\",\"nodes\":\"" + snode + "\"}"
-      sender ! QueryResult(Option(JsonMethods.parse(string2JsonInput(rs))))
+      val rs = s"""{"consensusnodes": "$stablenode", "nodes": "$snode"}"""
+      sender ! QueryResult(Option(JsonMethods.parse(rs)))
 
     case TransNumber =>
       val num = pe.getRepChainContext.getTransactionPool.getCachePoolSize
-      val rs = "{\"numberofcache\":\"" + num + "\"}"
-      sender ! QueryResult(Option(JsonMethods.parse(string2JsonInput(rs))))
+      val rs = s"""{"numberofcache": "$num"}"""
+      sender ! QueryResult(Option(JsonMethods.parse(rs)))
 
     case AcceptedTransNumber =>
       val num = sr.getChainInfo.totalTransactions + pe.getRepChainContext.getTransactionPool.getCachePoolSize
-      val rs = "{\"acceptedNumber\":\"" + num + "\"}"
-      sender ! QueryResult(Option(JsonMethods.parse(string2JsonInput(rs))))
+      val rs = s"""{"acceptedNumber": "$num"}"""
+      sender ! QueryResult(Option(JsonMethods.parse(rs)))
 
     case TransNumberOfBlock(h) =>
       val num = sr.getNumberOfTransInBlockByHeight(h)
-      val rs = "{\"transnumberofblock\":\"" + num + "\"}"
-      sender ! QueryResult(Option(JsonMethods.parse(string2JsonInput(rs))))
+      val rs = s"""{"transnumberofblock": "$num"}"""
+      sender ! QueryResult(Option(JsonMethods.parse(rs)))
 
     case QueryDB(netId, cName, oid, key) =>
       val dataAccess = DBFactory.getDBAccess(config)
@@ -410,7 +409,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
       val pkey = netId + "_" + cName + "_" + tran_oid + "_" + key
       val pvalue = dataAccess.getBytes(pkey)
       val jsonString = SerializeUtils.compactJson(SerializeUtils.deserialise(pvalue))
-      sender ! QueryResult(Option(JsonMethods.parse(string2JsonInput(jsonString))))
+      sender ! QueryResult(Option(JsonMethods.parse(jsonString)))
   }
 
 }

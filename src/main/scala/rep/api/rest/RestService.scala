@@ -509,7 +509,7 @@ class TransactionService(ra: ActorRef, repContext: RepChainSystemContext, isChec
       post {
         entity(as[String]) { trans =>
           complete {
-            (ra ? tranSign(trans)).mapTo[PostResult]
+            (ra ? signedTran(trans)).mapTo[PostResult]
           }
           //          complete { (StatusCodes.Accepted, PostResult("hahhaha",None, Some("处理存在异常"))) }
         }
