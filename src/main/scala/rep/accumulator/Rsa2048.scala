@@ -71,8 +71,8 @@ object Rsa2048 {
 
   private def testInv={
     val x = BigInt("2")
-    val inv = inv(2)
-    assert(op(x,inv) == BigInt("1"))
+    val inv1 = inv(2)
+    assert(op(x,inv1) == BigInt("1"))
     System.out.println("test inv(2^-1 mod module) passed")
   }
 }
