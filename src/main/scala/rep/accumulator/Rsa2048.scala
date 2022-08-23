@@ -11,16 +11,19 @@ object Rsa2048 {
   private val RSA2048_MODULUS = BigInt.apply(RSA2048_MODULUS_STR,10)
   private val Half_MODULUS = RSA2048_MODULUS / 2
 
+  def getRSAModule:BigInt={
+    RSA2048_MODULUS
+  }
   def exp(x:BigInt,n:BigInt):BigInt={
-    x.modPow(n,this.RSA2048_MODULUS)
+    x.modPow(n,RSA2048_MODULUS)
   }
 
   def inv(x:BigInt):BigInt={
-    x.modInverse(this.RSA2048_MODULUS)
+    x.modInverse(RSA2048_MODULUS)
   }
 
   def op(a:BigInt,b:BigInt)={
-    a * b % this.RSA2048_MODULUS
+    a * b % RSA2048_MODULUS
   }
 
   def mul(a:BigInt,b:BigInt):BigInt={
@@ -36,25 +39,25 @@ object Rsa2048 {
   }
 
   def main(args:Array[String]):Unit={
-    this.testOp
-    this.testExp
-    this.testInv
+    testOp
+    testExp
+    testInv
   }
 
   private def testOp={
-    val a = this.op(BigInt("2"),BigInt("3"))
+    val a = op(BigInt("2"),BigInt("3"))
     assert(a == BigInt(6))
     System.out.println("test op(2*3) passed")
-    val b = this.op(BigInt("-2"),BigInt("-3"))
+    val b = op(BigInt("-2"),BigInt("-3"))
     assert(a == BigInt(6))
     System.out.println("test op(-2*-3) passed")
   }
 
   private def testExp={
-    val a = this.exp(BigInt("2"),BigInt("3"))
+    val a = exp(BigInt("2"),BigInt("3"))
     assert(a == BigInt("8"))
     System.out.println("test exp(2^3) passed")
-    val b = this.exp(BigInt("2"),BigInt("4096"))
+    val b = exp(BigInt("2"),BigInt("4096"))
     assert(b == BigInt("21720738995539542858936915878186921869751915989840152165899303861582487" +
                         "240810878492659751749672737203717627738047648700009977053044057502917091" +
                         "973287111671693426065546612150833232954361536709981055037121764270784874720971933716065" +
@@ -68,8 +71,8 @@ object Rsa2048 {
 
   private def testInv={
     val x = BigInt("2")
-    val inv = this.inv(2)
-    assert(this.op(x,inv) == BigInt("1"))
+    val inv = inv(2)
+    assert(op(x,inv) == BigInt("1"))
     System.out.println("test inv(2^-1 mod module) passed")
   }
 }
