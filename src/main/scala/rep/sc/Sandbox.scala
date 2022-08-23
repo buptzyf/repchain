@@ -18,6 +18,7 @@ package rep.sc
 
 import akka.actor.{Actor, actorRef2Scala}
 import com.google.protobuf.ByteString
+import rep.api.rest.ResultCode
 import rep.utils._
 import rep.network.tools.PeerExtension
 import rep.log.{RepLogger, RepTimeTracer}
@@ -147,7 +148,7 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
       case e: Exception =>
         RepLogger.except4Throwable(RepLogger.Sandbox_Logger,e.getMessage,e)
         RepLogger.except(RepLogger.Sandbox_Logger, dotrans.t.id, e)
-        new TransactionResult(dotrans.t.id, Map.empty,Map.empty,Map.empty,Option(ActionResult(101,e.getMessage)))
+        new TransactionResult(dotrans.t.id, Map.empty,Map.empty,Map.empty,Option(ActionResult(ResultCode.Transaction_Exception_In_Sandbox,e.getMessage)))
     }
   }
 

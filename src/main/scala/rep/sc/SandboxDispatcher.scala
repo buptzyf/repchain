@@ -2,12 +2,14 @@ package rep.sc
 
 import akka.actor.{ActorRef, Props, actorRef2Scala}
 import rep.sc.Sandbox._
+
 import scala.concurrent.duration._
 import akka.util.Timeout
 import rep.sc.scalax.SandboxScala
 import rep.network.base.ModuleBase
 import rep.log.RepLogger
 import akka.routing._
+import rep.api.rest.ResultCode
 import rep.proto.rc2.{ActionResult, ChaincodeDeploy, ChaincodeId, Transaction, TransactionResult}
 import rep.storage.chain.KeyPrefixManager
 
@@ -315,7 +317,7 @@ class SandboxDispatcher(moduleName: String, cid: String) extends ModuleBase(modu
   private def createErrorData(ts: scala.collection.Seq[Transaction], err: Option[akka.actor.Status.Failure]): Array[TransactionResult] = {
     var rs = scala.collection.mutable.ArrayBuffer[TransactionResult]()
     ts.foreach(t => {
-      rs += new TransactionResult(t.id, Map.empty,Map.empty,Map.empty, Option(ActionResult(105, err.get.cause.getMessage)))
+      rs += new TransactionResult(t.id, Map.empty,Map.empty,Map.empty, Option(ActionResult(ResultCode.Sandbox_Exception_In_Dispatch, err.get.cause.getMessage)))
     })
     rs.toArray
   }

@@ -2,6 +2,7 @@ package rep.network.consensus.raft.transaction
 
 import akka.actor.Props
 import com.google.protobuf.ByteString
+import rep.api.rest.ResultCode
 import rep.log.{RepLogger, RepTimeTracer}
 import rep.network.base.ModuleBase
 import rep.network.consensus.common.MsgOfConsensus.{PreTransBlockOfStream, preTransBlockResultOfStream}
@@ -11,7 +12,8 @@ import rep.network.module.cfrd.CFRDActorType
 import rep.proto.rc2.{ActionResult, Block, Transaction, TransactionResult}
 import rep.sc.SandboxDispatcher.DoTransactionOfCache
 import rep.sc.TypeOfSender
-import rep.utils.{IdTool}
+import rep.utils.IdTool
+
 import scala.util.Random
 import scala.util.control.Breaks.{break, breakable}
 
@@ -36,7 +38,7 @@ class PreloadTransactionOfStream(moduleName: String) extends ModuleBase(moduleNa
   private def createErrorData(ts: scala.collection.Seq[Transaction], err: Option[akka.actor.Status.Failure]): Array[TransactionResult] = {
     var rs = scala.collection.mutable.ArrayBuffer[TransactionResult]()
     ts.foreach(t => {
-      rs += new TransactionResult(t.id, Map.empty,Map.empty,Map.empty, Option(ActionResult(103, err.get.cause.getMessage))) //new TransactionResult(t.id, null, null, err)
+      rs += new TransactionResult(t.id, Map.empty,Map.empty,Map.empty, Option(ActionResult(ResultCode.Transaction_Exception_In_Preload, err.get.cause.getMessage))) //new TransactionResult(t.id, null, null, err)
     })
     rs.toArray
   }

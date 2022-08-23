@@ -11,4 +11,10 @@ object ResultCode {
   val SignatureVerifyFailed = 2001
   val UnkonwFailure = 5001
 
+  val Transaction_Exception_In_Sandbox = 101
+  val Transaction_Exception_In_SandboxOfScala = 102
+  val Transaction_Exception_In_Preload = 103
+  val Sandbox_Exception_In_Dispatch = 105
+  val Sandbox_Success = 0
+
 }

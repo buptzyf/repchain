@@ -17,6 +17,7 @@
 package rep.sc.scalax
 
 
+import rep.api.rest.ResultCode
 import rep.log.RepLogger
 import rep.log.httplog.AlertInfo
 import rep.proto.rc2.{ActionResult, ChaincodeId, Transaction, TransactionResult}
@@ -24,7 +25,7 @@ import rep.sc.Sandbox
 import rep.sc.Sandbox._
 import rep.sc.SandboxDispatcher.{DoTransactionOfSandboxInSingle, ERR_INVOKE_CHAINCODE_NOT_EXIST}
 import rep.storage.chain.KeyPrefixManager
-import rep.utils.{IdTool}
+import rep.utils.IdTool
 import rep.utils.SerializeUtils.serialise
 
 /**
@@ -129,7 +130,7 @@ class SandboxScala(cid: ChaincodeId) extends Sandbox(cid) {
       pe.getRepChainContext.getBlockPreload(dotrans.da).getTransactionPreload(dotrans.t.id).commit
       //shim.srOfTransaction.commit
       if(r == null){
-        new TransactionResult(t.id, shim.getStateGet,shim.getStateSet,shim.getStateDel,Option(new ActionResult(0,"")))
+        new TransactionResult(t.id, shim.getStateGet,shim.getStateSet,shim.getStateDel,Option(new ActionResult(ResultCode.Sandbox_Success,"")))
       }else{
         new TransactionResult(t.id, shim.getStateGet,shim.getStateSet,shim.getStateDel,Option(r))
       }
@@ -142,7 +143,7 @@ class SandboxScala(cid: ChaincodeId) extends Sandbox(cid) {
         RepLogger.sendAlertToDB(pe.getRepChainContext.getHttpLogger(),new AlertInfo("CONTRACT",4,s"Node Name=${pe.getSysTag},txid=${t.id},erroInfo=${e.getMessage},Transaction Exception."))
         //shim.srOfTransaction.rollback
         pe.getRepChainContext.getBlockPreload(dotrans.da).getTransactionPreload(dotrans.t.id).rollback
-        new TransactionResult(t.id, Map.empty,Map.empty,Map.empty,Option(ActionResult(102,e1.getMessage)))
+        new TransactionResult(t.id, Map.empty,Map.empty,Map.empty,Option(ActionResult(ResultCode.Transaction_Exception_In_SandboxOfScala,e1.getMessage)))
     }
   }
 }
