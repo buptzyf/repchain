@@ -70,7 +70,7 @@
   
   > 如不使用git，也可以直接下载[压缩包](https://gitee.com/BTAJL/repchain/repository/archive/RepChain_1.1.0_RC)，并解压为repchain
   
-  2.找到repchain根目录下的build.sbt文件，修改build.sbt中的`mainClass`（Jar包主类），如果部署模式为[单机模拟多节点](#单机模拟多节点)，则修改为`rep.app.Repchain`，如果部署模式为[分布式多机多节点](#分布式多机多节点)，则修改为`rep.app.Repchain_Single`，如果部署模式为[节点管理服务](#节点管理服务)，则修改为`rep.app.Repchain_Management`，如下所示：
+  2.找到repchain根目录下的build.sbt文件，修改build.sbt中的`mainClass`（Jar包主类），如果部署模式为[单机模拟多节点](#单机模拟多节点)，则修改为`rep.app.Repchain`，如果部署模式为[分布式多机多节点](#分布式多机多节点)，则修改为`rep.app.Repchain_Single`，如果部署模式为[节点管理服务](#节点管理服务)，则修改为`rep.app.RepChain_Management`，如下所示：
   
 ```shell
      # 单机模拟多节点
@@ -152,75 +152,77 @@
     - 4.`sytetem.storage.dbpath `，leveldb存储位置
     - 5.`sytetem.storage.blockpath `，block的文件存储位置
 
- * 启动方式为在终端下输入命令：
+- 启动方式为在终端下输入命令：
 
-```shell
-  # 先前在打包环节已经指定了主类
-  java -jar RepChain.jar
-```
+  ```shell
+   # 先前在打包环节已经指定了主类
+    java -jar RepChain.jar
+  ```
 
   或
 
-```shell
-  # 指定主类
-  java -cp RepChain.jar rep.app.Repchain
-```
+  ```shell
+   # 指定主类
+   java -cp RepChain.jar rep.app.Repchain
+  ```
 
- * 启动成功标志有两种验证方式
+- 启动成功标志有两种验证方式
 
-  1.通过API接口来验证。在浏览器中输入`http://localhost:9081/chaininfo/node`，如果返回结果中nodes数量为目前组网节点数量，则表示成功；或者是在终端中输入`curl http://localhost:9081/chaininfo/node`，如果返回结果中nodes数量为**目前组网节点数量**，则表示成功
+    - 通过API接口来验证。在浏览器中输入`http://localhost:9081/chaininfo/node`，如果返回结果中nodes数量为目前组网节点数量，则表示成功；或者是在终端中输入`curl http://localhost:9081/chaininfo/node`，如果返回结果中nodes数量为**目前组网节点数量**，则表示成功
 
-  ![nodes-num](img/nodes-num.png)
+    ![nodes-num](img/nodes-num.png)
   
-  2.在浏览器中输入`http://localhost:9081/web/g1.html`，如果出现如下界面，可以看到如下图所示，红框中可以看到入网的节点，则标识成功
+    - 在浏览器中输入`http://localhost:9081/web/g1.html`，如果出现如下界面，可以看到如下图所示，红框中可以看到入网的节点，则标识成功
   
-  ![front-end](img/frontend.png)
+    ![front-end](img/frontend.png)
 
 * **可能出现的问题**
   
-  1.leveldbjni相关的错误，在windows下可能是没有c++环境导致的，装[Microsoft Visual C++ 2010 x64 Redistributable](https://docs.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170#visual-studio-2010-vc-100-sp1-no-longer-supported)即可
+    - leveldbjni相关的错误，在windows下可能是没有c++环境导致的，装[Microsoft Visual C++ 2010 x64 Redistributable](https://docs.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170#visual-studio-2010-vc-100-sp1-no-longer-supported)即可
 
-  2.磁盘空间不足的错误，有如下两个可能的原因：
-    （1）确实是磁盘空间不足，修改system.conf中的配置项`diskspaceManager.diskspacealarm`
-    （2）用户权限不够，即用户不具有在所配置存储目录下的读写的权限。
+    - 磁盘空间不足的错误，有如下两个可能的原因：
+        - 确实是磁盘空间不足，修改system.conf中的配置项`diskspaceManager.diskspacealarm`
+        - 用户权限不够，即用户不具有在所配置存储目录下的读写的权限
   
 * 其他：如果想要在同一个JVM上模拟启动大于5个节点，即单机模拟6~N节点，在主类`rep.app.RepChain`中增加节点实例
 
-  准备工作
+    - 准备工作
 
-  1.`jks/identity-net`目录下相应的节点密钥对与证书应是6~N个，仿照原有jks文件放置新生成的jks文件即可，可使用[Kse](https://keystore-explorer.org/)或者[代码](https://gitee.com/BTAJL/repchain-tpldevelop/blob/master/src/main/scala/rep/jks/genjks/GenerateJks.java)来生成节点密钥对和自签名证书，并将证书导入mytruststore.jks中，注意Jks文件名，以及其中存储的密钥对或者证书的别名，`***.nodex`，下图是Kse的简单使用示例
+    1.`jks/identity-net`目录下相应的节点密钥对与证书应是6~N个，仿照原有jks文件放置新生成的jks文件即可，可使用[Kse](https://keystore-explorer.org/)或者[代码](https://gitee.com/BTAJL/repchain-tpldevelop/blob/master/src/main/scala/rep/jks/genjks/GenerateJks.java)来生成节点密钥对和自签名证书，并将证书导入mytruststore.jks中，注意Jks文件名，以及其中存储的密钥对或者证书的别名，`***.nodex`，下图是Kse的简单使用示例
 
-  ![new-jks-1](img/new-jks-1.png)
+    ![new-jks-1](img/new-jks-1.png)
 
-  ![new-jks-2](img/new-jks-2.png)
+    ![new-jks-2](img/new-jks-2.png)
 
-  > 注：其中mytruststore.jks中存放了身份链网络内所有节点的证书，如下图：
+    > 注：其中mytruststore.jks中存放了身份链网络内所有节点的证书，如下图：
 
-  ![new-jks-3](img/new-jks-3.png)
+    ![new-jks-3](img/new-jks-3.png)
 
-  2.conf目录下为节点配置文件，新增节点node6-nodeN仿照node1-node5进行配置，需要额外注意以下配置项：
+    2.conf目录下为节点配置文件，新增节点node6-nodeN仿照node1-node5进行配置，需要额外注意以下配置项：
 
-   > 1. `chain_cert_name = "identity-net:951002007l78123233.super_admin"`，单链模式下设置以`identity-net`身份链标识的管理员super_admin
-   > 2. `chain_network_id = "identity-net" `，组网id，单链模式下设置为`identity-net`，命名不能包含"_"这样的字符
-   > 3. `basic_chain_id = "identity-net"`，各种模式下均设置为`identity-net`
+    > 1.`chain_cert_name = "identity-net:951002007l78123233.super_admin"`，单链模式下设置以`identity-net`身份链标识的管理员super_admin
 
-  3.仿照node1-node5在主类`rep.app.RepChain`中增加node6-nodeN节点实例
+    > 2.`chain_network_id = "identity-net" `，组网id，单链模式下设置为`identity-net`，命名不能包含"_"这样的字符
 
-  4.编译打包以及部署的其他内容与前述一致
+    > 3.`basic_chain_id = "identity-net"`，各种模式下均设置为`identity-net`
 
-  启动方式
+    3.仿照node1-node5在主类`rep.app.RepChain`中增加node6-nodeN节点实例
 
-  > 请查看源码`src/main/scala/rep/app/RepChain.scala`
+    4.编译打包以及部署的其他内容与前述一致
 
-```shell
-  java -cp RepChain.jar rep.app.RepChain
-```
+    - 启动方式
+
+    > 请查看源码`src/main/scala/rep/app/RepChain.scala`
+
+    ```shell
+      java -cp RepChain.jar rep.app.RepChain
+    ```
 
 * <strong><font color=#FF0000>jar包部署后（单机5节点）的目录类似下图，6~N节点类似：</font></strong>
 
   > 注：其中mytruststore.jks中存放了网络内所有节点的证书
   
-  ![deploy-folder](img/deploy-folder.jpg)
+  ![deploy-folder](img/deploy-folder.png)
 
 #### 分布式多机多节点
 
@@ -300,58 +302,58 @@
 
   > 注：其中mytruststore.jks中存放了网络内所有节点的证书，各个服务器节点部署目录下mytruststore.jks一致
   
-  ![deploy-single-folder](img/deploy-single-folder.jpg)
+  ![deploy-single-folder](img/deploy-single-folder.png)
 
 - **可能出现的问题**
-  - leveldbjni相关的错误，在windows下可能是没有c++环境导致的，装[Microsoft Visual C++ 2010 x64 Redistributable](https://docs.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170#visual-studio-2010-vc-100-sp1-no-longer-supported)即可
-  - 出现节点加入网络失败的情况
-    - 可能是防火墙或者端口(种子节点或者本节点)没开放，可以手动查看或者使用nmap扫描对应的端口
-    - 可能是相应的节点证书没有放入到mytrustkeystore.jks，导致TLS连接失败
-  - 磁盘空间不足的错误，有如下两个可能的原因
-    - 确实是磁盘空间不足，修改system.conf中的配置项`diskspaceManager.diskspacealarm`
-    - 用户权限不够，即用户不具有在所配置存储目录下的读写的权限。
+    - leveldbjni相关的错误，在windows下可能是没有c++环境导致的，装[Microsoft Visual C++ 2010 x64 Redistributable](https://docs.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170#visual-studio-2010-vc-100-sp1-no-longer-supported)即可
+    - 出现节点加入网络失败的情况
+        - 可能是防火墙或者端口(种子节点或者本节点)没开放，可以手动查看或者使用nmap扫描对应的端口
+        - 可能是相应的节点证书没有放入到mytrustkeystore.jks，导致TLS连接失败
+    - 磁盘空间不足的错误，有如下两个可能的原因
+        - 确实是磁盘空间不足，修改system.conf中的配置项`diskspaceManager.diskspacealarm`
+        - 用户权限不够，即用户不具有在所配置存储目录下的读写的权限
 
 #### 节点管理服务
 
-> 节点管理服务与单机多节点、分布式多机多节点部署的原理是相同的，可以在同一个`Jvm`上模拟启动5个节点，也可以分别在不同服务器上部署RepChain.jar，然后组网连接成为分布式区块链网络。满足一个进程中运行一个节点管理服务即可，启动主类为`rep.app.Repchain_Management`
+> 节点管理服务与单机多节点、分布式多机多节点部署的原理是相同的，可以在同一个`Jvm`上模拟启动5个节点，也可以分别在不同服务器上部署RepChain.jar，然后组网连接成为分布式区块链网络。满足一个进程中运行一个节点管理服务即可，启动主类为`rep.app.RepChain_Management`
 
-- 网络部署及启动方式
-    - 单链模式下默认RepChain使用单机模拟身份链**5**节点，一般在开发测试环境中使用该部署方式，主要目的是用来测试RepChain代码或者编写好的合约，在同一个`Jvm`上模拟启动5个节点，启动主类为`rep.app.Management`
+- 网络部署
+    - 单链模式下默认RepChain使用单机模拟身份链**5**节点，一般在开发测试环境中使用该部署方式，主要目的是用来测试RepChain代码或者编写好的合约，在同一个`Jvm`上模拟启动5个节点
     - 可跨域、跨云进行去中心化部署，也可在专线、政务云上进行部署，单台服务器作为一个节点，节点服务器被各个机构各自维护
-    - 启动方式
-      - 一个进程中运行一个节点管理服务，假设在一个服务器上有node1-node5，在其所在主机的终端下输入命令：
+- 启动方式
+    - 一个进程中运行一个节点管理服务，假设在一个服务器上有node1-node5，在其所在主机的终端下输入命令：
 
-```shell
-      java  -jar RepChain.jar 8080 0 false "121000005l35120456.node1" "12110107bi45jh675g.node2" "122000002n00123567.node3" "921000005k36123789.node4" "921000006e0012v696.node5" 
-```
-      上面的命令传入了三个参数，第一个8080为节点管理服务url端口，第二个0/1为是否开启SSL，第三个true/false为是否开启双向认证。
+    ```shell
+          java  -jar RepChain.jar "121000005l35120456.node1" "12110107bi45jh675g.node2" "122000002n00123567.node3" "921000005k36123789.node4"   "921000006e0012v696.node5" 
+    ```
+      
 
 
 - ip与port的配置
 
     - 非**NAT**或非**docker**环境下使用如下配置（hostname为主机IP，port为节点之间P2P通信端口），修改conf目录下对应节点的system.conf文件中如下：
 
-```json
-    remote {
-    	#artery模式下的配置，设置的是自己节点的地址和端口
-        artery {
-          	canonical.hostname = "192.168.2.136"  	# 局域网ip
-          	canonical.port = 8082				    # 通信端口，可自由指定
+    ```json
+       remote {
+      	  #artery模式下的配置，设置的是自己节点的地址和端口
+           artery {
+              	canonical.hostname = "192.168.2.136"  	# 局域网ip
+            	  canonical.port = 8082				    # 通信端口，可自由指定
+            }
         }
-    }
-```
+    ```
 
-  下面列举5节点网络中的3个节点的端口配置情况（种子节点<seed-nodes\>处配置3个即可，注意对应种子节点所配置的通信端口），其他节点的端口配置类似（其他节点主要是修改自己的`hostname`与`port`）
+    下面列举5节点网络中的3个节点的端口配置情况（种子节点<seed-nodes\>处配置3个即可，注意对应种子节点所配置的通信端口），其他节点的端口配置类似（其他节点主要是修改自己的`hostname`与`port`）
 
-  **注**：种子节点指的是在网节点，如果创世节点启动，那么其种子节点配置项<seed-nodes\>配置自己的ip和port即可，如果是其他节点想要加入已经存在的网络，那么其种子节点的配置项<seed-nodes\>需要配置已经在网络中的节点的ip和端口
+    **注**：种子节点指的是在网节点，如果创世节点启动，那么其种子节点配置项<seed-nodes\>配置自己的ip和port即可，如果是其他节点想要加入已经存在的网络，那么其种子节点的配置项<seed-nodes\>需要配置已经在网络中的节点的ip和端口
 
-   ![ip-port-1](img/ip-port-1.jpg)
+    ![ip-port-1](img/ip-port-1.jpg)
 
-   ![ip-port-2](img/ip-port-2.jpg)
+    ![ip-port-2](img/ip-port-2.jpg)
 
-   ![ip-port-3](img/ip-port-3.jpg)
+    ![ip-port-3](img/ip-port-3.jpg)
 
-  - **NAT**环境使用如下配置，针对上述图形中的artery部分修改即可，然后将种子节点设为相应节点的外部地址，修改conf目录下对应节点的system.conf文件中如下：
+    - **NAT**环境使用如下配置，针对上述图形中的artery部分修改即可，然后将种子节点设为相应节点的外部地址，修改conf目录下对应节点的system.conf文件中如下：
 
 
     ```json
@@ -366,28 +368,28 @@
       }
     ```
 
-下面列举5节点网络中的**3**个节点的端口配置情况（种子节点处这里配置了**1**个），其他节点的端口配置类似（其他节点主要是修改自己的**内部或外部**的`hostname`与`port`）
+    下面列举5节点网络中的**3**个节点的端口配置情况（种子节点处这里配置了**1**个），其他节点的端口配置类似（其他节点主要是修改自己的**内部或外部**的`hostname`与`port`）
 
-  ![ip-port-1](img/ip-port-4.jpg)
+    ![ip-port-1](img/ip-port-4.jpg)
 
-  ![ip-port-5](img/ip-port-5.jpg)
+    ![ip-port-5](img/ip-port-5.jpg)
 
-  ![ip-port-6](img/ip-port-6.jpg)
+    ![ip-port-6](img/ip-port-6.jpg)
 
 - <strong><font color=#FF0000>jar包部署后（分布式多机多节点）的目录类似下图，以`node1`为例，其他节点类似：</font></strong>
 
   > 注：其中mytruststore.jks中存放了网络内所有节点的证书，各个服务器节点部署目录下mytruststore.jks一致
 
-  ![deploy-single-folder](img/deploy-single-folder.jpg)
+  ![deploy-single-folder](img/deploy-single-folder.png)
 
 - **可能出现的问题**
-  - leveldbjni相关的错误，在windows下可能是没有c++环境导致的，装[Microsoft Visual C++ 2010 x64 Redistributable](https://docs.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170#visual-studio-2010-vc-100-sp1-no-longer-supported)即可
-  - 出现节点加入网络失败的情况
-    - 可能是防火墙或者端口(种子节点或者本节点)没开放，可以手动查看或者使用nmap扫描对应的端口
-    - 可能是相应的节点证书没有放入到mytrustkeystore.jks，导致TLS连接失败
-  - 磁盘空间不足的错误，有如下两个可能的原因
-    - 确实是磁盘空间不足，修改system.conf中的配置项`diskspaceManager.diskspacealarm`
-    - 用户权限不够，即用户不具有在所配置存储目录下的读写的权限。
+      - leveldbjni相关的错误，在windows下可能是没有c++环境导致的，装[Microsoft Visual C++ 2010 x64 Redistributable](https://docs.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170#visual-studio-2010-vc-100-sp1-no-longer-supported)即可
+      - 出现节点加入网络失败的情况
+        - 可能是防火墙或者端口(种子节点或者本节点)没开放，可以手动查看或者使用nmap扫描对应的端口
+        - 可能是相应的节点证书没有放入到mytrustkeystore.jks，导致TLS连接失败
+      - 磁盘空间不足的错误，有如下两个可能的原因
+        - 确实是磁盘空间不足，修改system.conf中的配置项`diskspaceManager.diskspacealarm`
+        - 用户权限不够，即用户不具有在所配置存储目录下的读写的权限
 
 ### 附录
 
@@ -407,7 +409,7 @@
 
 新增节点需要停机并重启网络
 
-假设现在想增加组网节点，则需要生成新的`jks`，并放到`jks/identity`目录下，并且将证书导入到`mytrustStore.jks`中，所有节点的`mystruststore.jks`都需要更新；还可以在浏览器中输入`http://localhost:8080/swagger/index.html`，通过节点管理服务的API启动停止节点。
+假设现在想增加组网节点，则需要生成新的`jks`，并放到`jks/identity`目录下，并且将证书导入到`mytrustStore.jks`中，所有节点的`mystruststore.jks`都需要更新；还可以在浏览器中输入`http://localhost:7081/swagger/index.html`，通过节点管理服务的API启动停止节点（默认http服务的端口号为7081）。
 
 * 增加的是共识节点
 
@@ -494,7 +496,7 @@
   
   > 如不使用git，也可以直接下载[压缩包](https://gitee.com/BTAJL/repchain/repository/archive/RepChain_1.1.0_RC)，并解压为repchain
   
-  2.找到repchain根目录下的build.sbt文件，修改build.sbt中的`mainClass`（Jar包主类），如果部署模式为[单机模拟多节点](#单机模拟多节点)，则修改为`rep.app.Repchain`（主类`rep.app.Repchain`中默认只有node1-node5共5个节点，多链模式下仿照node1-node5在主类`rep.app.RepChain`中增加node6-nodeN节点实例），如果部署模式为[分布式多机多节点](#分布式多机多节点)，则修改为`rep.app.Repchain_Single`，如果部署模式为[节点管理服务](#节点管理服务)，则修改为`rep.app.Repchain_Management`，如下所示：
+  2.找到repchain根目录下的build.sbt文件，修改build.sbt中的`mainClass`（Jar包主类），如果部署模式为[单机模拟多节点](#单机模拟多节点)，则修改为`rep.app.Repchain`（主类`rep.app.Repchain`中默认只有node1-node5共5个节点，多链模式下仿照node1-node5在主类`rep.app.RepChain`中增加node6-nodeN节点实例），如果部署模式为[分布式多机多节点](#分布式多机多节点)，则修改为`rep.app.Repchain_Single`，如果部署模式为[节点管理服务](#节点管理服务)，则修改为`rep.app.RepChain_Management`，如下所示：
   
   ```shell
      # 单机模拟多节点
@@ -619,8 +621,8 @@
   
       - leveldbjni相关的错误，在windows下可能是没有c++环境导致的，装[Microsoft Visual C++ 2010 x64 Redistributable](https://docs.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170#visual-studio-2010-vc-100-sp1-no-longer-supported)即可
       - 磁盘空间不足的错误，有如下两个可能的原因：
-        - 1.确实是磁盘空间不足，修改system.conf中的配置项`diskspaceManager.diskspacealarm`
-        - 2.用户权限不够，即用户不具有在所配置存储目录下的读写的权限。
+        - 确实是磁盘空间不足，修改system.conf中的配置项`diskspaceManager.diskspacealarm`
+        - 用户权限不够，即用户不具有在所配置存储目录下的读写的权限
   
 - 其他：如果想要在同一个JVM上模拟启动大于10个节点，即单机模拟身份链6~N节点或者业务链6~N节点，在主类`rep.app.RepChain`中增加节点实例
 
@@ -628,31 +630,31 @@
 
       1.`jks/identity-net`或者`jks/credence-net`目录下相应的节点密钥对与证书应是6~N个，仿照原有jks文件放置新生成的jks文件即可，可使用[Kse](https://keystore-explorer.org/)或者[代码](https://gitee.com/BTAJL/repchain-tpldevelop/blob/master/src/main/scala/rep/jks/genjks/GenerateJks.java)来生成节点密钥对和自签名证书，并将证书导入mytruststore.jks中，注意Jks文件名，以及其中存储的密钥对或者证书的别名，`***.nodex`，下图是Kse的简单使用示例
 
-  ![new-jks-1](img/new-jks-1.png)
+    ![new-jks-1](img/new-jks-1.png)
 
-  ![new-jks-2](img/new-jks-2.png)
+    ![new-jks-2](img/new-jks-2.png)
 
-> 注：其中mytruststore.jks中存放了身份链网络内所有节点的证书，如下图：
+    > 注：其中mytruststore.jks中存放了身份链网络内所有节点的证书，如下图：
 
-  ![new-jks-3](img/new-jks-3.png)
+    ![new-jks-3](img/new-jks-3.png)
 
-  2.conf目录下为节点配置文件，身份链新增节点仿照node1-node5进行配置，业务链新增节点仿照node6-node10进行配置。
+      2.conf目录下为节点配置文件，身份链新增节点仿照node1-node5进行配置，业务链新增节点仿照node6-node10进行配置。
 
-  3.仿照node1-node5在主类`rep.app.RepChain`中增加节点实例。
+      3.仿照node1-node5在主类`rep.app.RepChain`中增加节点实例。
 
-  - 启动方式
+    - 启动方式
 
-  > 请查看源码`src/main/scala/rep/app/RepChain.scala`
+    > 请查看源码`src/main/scala/rep/app/RepChain.scala`
 
-```shell
-      java -cp RepChain.jar rep.app.RepChain
-```
+    ```shell
+        java -cp RepChain.jar rep.app.RepChain
+    ```
 
-* <strong><font color=#FF0000>jar包部署后（单机5节点）的目录类似下图，6~N节点类似：</font></strong>
+* <strong><font color=#FF0000>jar包部署后（单机10节点）的目录类似下图，新增节点类似：</font></strong>
 
   > 注：其中mytruststore.jks中存放了网络内所有节点的证书
   
-  ![deploy-folder](img/deploy-folder.jpg)
+  ![deploy-folder](img/deploy-multichain-folder.png)
 
 #### 分布式多机多节点
 
@@ -668,63 +670,63 @@
 
         - 在node1和node6所在主机的终端下输入命令：
 
-  ```shell
-      java -jar RepChain.jar "121000005l35120456.node1" "330597659476689954.node6"
-      # 或指定主类
-      java -cp RepChain.jar rep.app.Repchain_Single "121000005l35120456.node1" "330597659476689954.node6" 
-  ```
+    ```shell
+        java -jar RepChain.jar "121000005l35120456.node1" "330597659476689954.node6"
+        # 或指定主类
+        java -cp RepChain.jar rep.app.Repchain_Single "121000005l35120456.node1" "330597659476689954.node6" 
+    ```
   
 - ip与port的配置
 
     - 非**NAT**或非**docker**环境下使用如下配置（hostname为主机IP，port为节点之间P2P通信端口），修改conf目录下对应节点的system.conf文件中如下：
 
-```json
-    remote {
-    	#artery模式下的配置，设置的是自己节点的地址和端口
-        artery {
-          	canonical.hostname = "192.168.2.136"  	# 局域网ip
-          	canonical.port = 8082				    # 通信端口，可自由指定
+    ```json
+        remote {
+    	    #artery模式下的配置，设置的是自己节点的地址和端口
+            artery {
+          	    canonical.hostname = "192.168.2.136"  	# 局域网ip
+          	    canonical.port = 8082				    # 通信端口，可自由指定
+            }
         }
-    }
-```
+    ```
 
-下面列举5节点身份链网络中的3个节点的端口配置情况（种子节点\<seed-nodes\>处配置3个即可，注意对应种子节点所配置的通信端口），其他节点的端口配置类似（其他节点主要是修改自己的`hostname`与`port`）
+    下面列举5节点身份链网络中的3个节点的端口配置情况（种子节点\<seed-nodes\>处配置3个即可，注意对应种子节点所配置的通信端口），其他节点的端口配置类似（其他节点主要是修改自己的`hostname`与`port`）
 
-  **注**：种子节点指的是在网节点，如果创世节点启动，那么其种子节点配置项\<seed-nodes\>配置自己的ip和port即可，如果是其他节点想要加入已经存在的网络，那么其种子节点的配置项\<seed-nodes\>需要配置已经在网络中的节点的ip和端口
+    **注**：种子节点指的是在网节点，如果创世节点启动，那么其种子节点配置项\<seed-nodes\>配置自己的ip和port即可，如果是其他节点想要加入已经存在的网络，那么其种子节点的配置项\<seed-nodes\>需要配置已经在网络中的节点的ip和端口
 
-  ![ip-port-1](img/ip-port-1.jpg)
+    ![ip-port-1](img/ip-port-1.jpg)
 
-  ![ip-port-2](img/ip-port-2.jpg)
+    ![ip-port-2](img/ip-port-2.jpg)
 
-  ![ip-port-3](img/ip-port-3.jpg)
+    ![ip-port-3](img/ip-port-3.jpg)
 
-  - **NAT**环境使用如下配置，针对上述图形中的artery部分修改即可，然后将种子节点设为相应节点的外部地址，修改conf目录下对应节点的system.conf文件中如下：
+    - **NAT**环境使用如下配置，针对上述图形中的artery部分修改即可，然后将种子节点设为相应节点的外部地址，修改conf目录下对应节点的system.conf文件中如下：
 
-```json
-      remote {
-      	#artery模式下的配置，设置的是自己节点的地址和端口
-          artery {
-              canonical.hostname = "139.10.1.3"  	# 外部地址
-              canonical.port = 8082				    # 外部端口
-              bind.hostname = "192.168.2.136"		# 局域网地址
-              bind.port = 8082					    # 局域网端口
+    ```json
+          remote {
+      	    #artery模式下的配置，设置的是自己节点的地址和端口
+              artery {
+                  canonical.hostname = "139.10.1.3"  	# 外部地址
+                  canonical.port = 8082				    # 外部端口
+                  bind.hostname = "192.168.2.136"		# 局域网地址
+                  bind.port = 8082					    # 局域网端口
+              }
           }
-      }
-```
+    ```
 
-下面列举5节点身份链网络中的**3**个节点的端口配置情况（种子节点处这里配置了**1**个），其他节点的端口配置类似（其他节点主要是修改自己的**内部或外部**的`hostname`与`port`）
+    下面列举5节点身份链网络中的**3**个节点的端口配置情况（种子节点处这里配置了**1**个），其他节点的端口配置类似（其他节点主要是修改自己的**内部或外部**的`hostname`与`port`）
 
-![ip-port-1](img/ip-port-4.jpg)
+    ![ip-port-1](img/ip-port-4.jpg)
 
-![ip-port-5](img/ip-port-5.jpg)
+    ![ip-port-5](img/ip-port-5.jpg)
     
-![ip-port-6](img/ip-port-6.jpg)
+    ![ip-port-6](img/ip-port-6.jpg)
 
-- <strong><font color=#FF0000>jar包部署后（分布式多机多节点）的目录类似下图，以`node1`为例，其他节点类似：</font></strong>
+- <strong><font color=#FF0000>jar包部署后（分布式多机多节点）的目录类似下图，以`node1`和`node6`为例，其他节点类似：</font></strong>
 
   > 注：其中mytruststore.jks中存放了网络内所有节点的证书，各个服务器节点部署目录下mytruststore.jks一致
   
-  ![deploy-single-folder](img/deploy-single-folder.jpg)
+  ![deploy-single-folder](img/deploy-multichain-single-folder.png)
 
 - **可能出现的问题**
     - leveldbjni相关的错误，在windows下可能是没有c++环境导致的，装[Microsoft Visual C++ 2010 x64 Redistributable](https://docs.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170#visual-studio-2010-vc-100-sp1-no-longer-supported)即可
@@ -733,93 +735,92 @@
         - 可能是相应的节点证书没有放入到mytrustkeystore.jks，导致TLS连接失败
     - 磁盘空间不足的错误，有如下两个可能的原因
         - 确实是磁盘空间不足，修改system.conf中的配置项`diskspaceManager.diskspacealarm`
-        - 用户权限不够，即用户不具有在所配置存储目录下的读写的权限。
+        - 用户权限不够，即用户不具有在所配置存储目录下的读写的权限
 
 #### 节点管理服务
 
-> 节点管理服务与单机多节点、分布式多机多节点部署的原理是相同的，可以在同一个`Jvm`上模拟启动10个节点，也可以分别在不同服务器上部署RepChain.jar，然后组网连接成为分布式区块链网络。满足一个进程中运行一个节点管理服务即可，启动主类为`rep.app.Repchain_Management`
+> 节点管理服务与单机多节点、分布式多机多节点部署的原理是相同的，可以在同一个`Jvm`上模拟启动10个节点，也可以分别在不同服务器上部署RepChain.jar，然后组网连接成为分布式区块链网络。满足一个进程中运行一个节点管理服务即可，启动主类为`rep.app.RepChain_Management`
 
 ![multi-single](img/multi-single.jpg)
 
 - 网络部署及启动方式
 
-    - 1、单链模式下默认RepChain使用单机模拟身份链**5**节点和业务链**5**节点，一般在开发测试环境中使用该部署方式，主要目的是用来测试RepChain代码或者编写好的合约，在同一个`Jvm`上模拟启动10个节点，启动主类为`rep.app.Management`
+    - 单链模式下默认RepChain使用单机模拟身份链**5**节点和业务链**5**节点，一般在开发测试环境中使用该部署方式，主要目的是用来测试RepChain代码或者编写好的合约，在同一个`Jvm`上模拟启动10个节点
 
-    - 2、可跨域、跨云进行去中心化部署，也可在专线、政务云上进行部署，单台服务器作为一个身份链节点和一个业务链节点，节点服务器被各个机构各自维护
+    - 可跨域、跨云进行去中心化部署，也可在专线、政务云上进行部署，单台服务器作为一个身份链节点和一个业务链节点，节点服务器被各个机构各自维护
 
   -  启动方式
 
       - 一个进程中运行一个节点管理服务，假设在一个服务器上有node1和node6，在其所在主机的终端下输入命令：
 
     ```shell
-      java  -jar RepChain.jar 8080 0 false "121000005l35120456.node1" "330597659476689954.node6" 
+      java -jar RepChain.jar "121000005l35120456.node1" "330597659476689954.node6" 
       # 或指定主类
-      java -cp RepChain.jar rep.app.Repchain_Management 8080 0 false "121000005l35120456.node1" "330597659476689954.node6" 
+      java -cp RepChain.jar rep.app.RepChain_Management "121000005l35120456.node1" "330597659476689954.node6" 
     ```
 
-      上面的命令传入了三个参数，第一个8080为节点管理服务url端口，第二个0/1为是否开启SSL，第三个true/false为是否开启双向认证。
 
 
 - ip与port的配置
 
     - 非**NAT**或非**docker**环境下使用如下配置（hostname为主机IP，port为节点之间P2P通信端口），修改conf目录下对应节点的system.conf文件中如下：
 
-  ```json
-    remote {
-    	#artery模式下的配置，设置的是自己节点的地址和端口
-        artery {
-          	canonical.hostname = "192.168.2.136"  	# 局域网ip
-          	canonical.port = 8082				    # 通信端口，可自由指定
-        }
-    }
-  ```
-
-  下面列举5节点身份链网络中的3个节点的端口配置情况（种子节点<seed-nodes\>处配置3个即可，注意对应种子节点所配置的通信端口），其他节点的端口配置类似（其他节点主要是修改自己的`hostname`与`port`）
-
-  **注**：种子节点指的是在网节点，如果创世节点启动，那么其种子节点配置项<seed-nodes\>配置自己的ip和port即可，如果是其他节点想要加入已经存在的网络，那么其种子节点的配置项<seed-nodes\>需要配置已经在网络中的节点的ip和端口
-
-  ![ip-port-1](img/ip-port-1.jpg)
-
-  ![ip-port-2](img/ip-port-2.jpg)
-
-  ![ip-port-3](img/ip-port-3.jpg)
-
-  * **NAT**环境使用如下配置，针对上述图形中的artery部分修改即可，然后将种子节点设为相应节点的外部地址，修改conf目录下对应节点的system.conf文件中如下：
-
-  ```json
+    ```json
       remote {
-      	#artery模式下的配置，设置的是自己节点的地址和端口
+    	  #artery模式下的配置，设置的是自己节点的地址和端口
           artery {
-              canonical.hostname = "139.10.1.3"  	# 外部地址
-              canonical.port = 8082				    # 外部端口
-              bind.hostname = "192.168.2.136"		# 局域网地址
-              bind.port = 8082					    # 局域网端口
+          	  canonical.hostname = "192.168.2.136"  	# 局域网ip
+          	  canonical.port = 8082				    # 通信端口，可自由指定
           }
       }
-  ```
+    ```
 
-  下面列举5节点身份链网络中的**3**个节点的端口配置情况（种子节点处这里配置了**1**个），其他节点的端口配置类似（其他节点主要是修改自己的**内部或外部**的`hostname`与`port`）
+    下面列举5节点身份链网络中的3个节点的端口配置情况（种子节点<seed-nodes\>处配置3个即可，注意对应种子节点所配置的通信端口），其他节点的端口配置类似（其他节点主要是修改自己的`hostname`与`port`）
 
-  ![ip-port-1](img/ip-port-4.jpg)
+    **注**：种子节点指的是在网节点，如果创世节点启动，那么其种子节点配置项<seed-nodes\>配置自己的ip和port即可，如果是其他节点想要加入已经存在的网络，那么其种子节点的配置项<seed-nodes\>需要配置已经在网络中的节点的ip和端口
 
-  ![ip-port-5](img/ip-port-5.jpg)
+    ![ip-port-1](img/ip-port-1.jpg)
 
-  ![ip-port-6](img/ip-port-6.jpg)
+    ![ip-port-2](img/ip-port-2.jpg)
 
-- <strong><font color=#FF0000>jar包部署后（分布式多机多节点）的目录类似下图，以`node1`为例，其他节点类似：</font></strong>
+    ![ip-port-3](img/ip-port-3.jpg)
+
+    * **NAT**环境使用如下配置，针对上述图形中的artery部分修改即可，然后将种子节点设为相应节点的外部地址，修改conf目录下对应节点的system.conf文件中如下：
+
+    ```json
+        remote {
+      	  #artery模式下的配置，设置的是自己节点的地址和端口
+           artery {
+               canonical.hostname = "139.10.1.3"  	# 外部地址
+               canonical.port = 8082				    # 外部端口
+               bind.hostname = "192.168.2.136"		# 局域网地址
+                bind.port = 8082					    # 局域网端口
+            }
+       }
+    ```
+
+    下面列举5节点身份链网络中的**3**个节点的端口配置情况（种子节点处这里配置了**1**个），其他节点的端口配置类似（其他节点主要是修改自己的**内部或外部**的`hostname`与`port`）
+
+    ![ip-port-1](img/ip-port-4.jpg)
+
+    ![ip-port-5](img/ip-port-5.jpg)
+
+    ![ip-port-6](img/ip-port-6.jpg)
+
+- <strong><font color=#FF0000>jar包部署后（分布式多机多节点）的目录类似下图，以`node1`和`node6`为例，其他节点类似：</font></strong>
 
   > 注：其中mytruststore.jks中存放了网络内所有节点的证书，各个服务器节点部署目录下mytruststore.jks一致
 
-  ![deploy-single-folder](img/deploy-single-folder.jpg)
+  ![deploy-single-folder](img/deploy-multichain-single-folder.png)
 
 - **可能出现的问题**
-     leveldbjni相关的错误，在windows下可能是没有c++环境导致的，装[Microsoft Visual C++ 2010 x64 Redistributable](https://docs.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170#visual-studio-2010-vc-100-sp1-no-longer-supported)即可
+    - leveldbjni相关的错误，在windows下可能是没有c++环境导致的，装[Microsoft Visual C++ 2010 x64 Redistributable](https://docs.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170#visual-studio-2010-vc-100-sp1-no-longer-supported)即可
     - 出现节点加入网络失败的情况
         - 可能是防火墙或者端口(种子节点或者本节点)没开放，可以手动查看或者使用nmap扫描对应的端口
         - 可能是相应的节点证书没有放入到mytrustkeystore.jks，导致TLS连接失败
     - 磁盘空间不足的错误，有如下两个可能的原因
         - 确实是磁盘空间不足，修改system.conf中的配置项`diskspaceManager.diskspacealarm`
-        - 用户权限不够，即用户不具有在所配置存储目录下的读写的权限。
+        - 用户权限不够，即用户不具有在所配置存储目录下的读写的权限
 
 ### 附录
 
@@ -847,7 +848,7 @@
 
 新增节点需要停机并重启网络
 
-假设现在想增加组网节点，则需要生成新的`jks`，并放到`jks/identity`以及`jks/credence`目录下，并且将证书导入到`mytrustStore.jks`中，所有节点的`mystruststore.jks`都需要更新；还可以在浏览器中输入`http://localhost:8080/management/swagger`，通过节点管理服务的API启动停止节点。
+假设现在想增加组网节点，则需要生成新的`jks`，并放到`jks/identity`以及`jks/credence`目录下，并且将证书导入到`mytrustStore.jks`中，所有节点的`mystruststore.jks`都需要更新；还可以在浏览器中输入`http://localhost:7081/swagger/index.html`，通过节点管理服务的API启动停止节点（默认http服务的端口号为7081）。
 
 * 增加的是共识节点
 
@@ -934,7 +935,7 @@
   
   > 如不使用git，也可以直接下载[压缩包](https://gitee.com/BTAJL/repchain/repository/archive/RepChain_1.1.0_RC)，并解压为repchain
   
-  2.找到repchain根目录下的build.sbt文件，修改build.sbt中的`mainClass`（Jar包主类），如果部署模式为[单机模拟多节点](#单机模拟多节点)，则修改为`rep.app.Repchain`（主类`rep.app.Repchain`中默认只有node1-node5共5个节点，多链模式下仿照node1-node5在主类`rep.app.RepChain`中增加node6-nodeN节点实例），如果部署模式为[分布式多机多节点](#分布式多机多节点)，则修改为`rep.app.Repchain_Single`，如果部署模式为[节点管理服务](#节点管理服务)，则修改为`rep.app.Repchain_Management`，如下所示：
+  2.找到repchain根目录下的build.sbt文件，修改build.sbt中的`mainClass`（Jar包主类），如果部署模式为[单机模拟多节点](#单机模拟多节点)，则修改为`rep.app.Repchain`（主类`rep.app.Repchain`中默认只有node1-node5共5个节点，多链模式下仿照node1-node5在主类`rep.app.RepChain`中增加node6-nodeN节点实例），如果部署模式为[分布式多机多节点](#分布式多机多节点)，则修改为`rep.app.Repchain_Single`，如果部署模式为[节点管理服务](#节点管理服务)，则修改为`rep.app.RepChain_Management`，如下所示：
   
   ```shell
      # 单机模拟多节点
@@ -1002,8 +1003,8 @@
 
 - 环境需求：
   
-    - 1.硬件的基础配置：CPU：4核，Memory：8G
-    - 2.Java环境：Jdk-13，推荐[Azul-zuluJdk](https://www.azul.com/downloads/?version=java-13-mts&architecture=x86-64-bit&package=jdk)，也可使用[Oracle-Jdk](https://www.oracle.com/java/technologies/downloads/archive/)
+    - 硬件的基础配置：CPU：4核，Memory：8G
+    - Java环境：Jdk-13，推荐[Azul-zuluJdk](https://www.azul.com/downloads/?version=java-13-mts&architecture=x86-64-bit&package=jdk)，也可使用[Oracle-Jdk](https://www.oracle.com/java/technologies/downloads/archive/)
   
 * 配置文件
 
@@ -1053,14 +1054,14 @@
   
     - 在浏览器中输入`http://localhost:9081/web/g1.html`，如果出现如下界面，可以看到如下图所示，红框中可以看到入网的节点，则标识成功
   
-   ![front-end](img/frontend.png)
+    ![front-end](img/frontend.png)
 
 -  **可能出现的问题**
   
     - leveldbjni相关的错误，在windows下可能是没有c++环境导致的，装[Microsoft Visual C++ 2010 x64 Redistributable](https://docs.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170#visual-studio-2010-vc-100-sp1-no-longer-supported)即可
     - 磁盘空间不足的错误，有如下两个可能的原因：
-        - 1.确实是磁盘空间不足，修改system.conf中的配置项`diskspaceManager.diskspacealarm`
-        - 2.用户权限不够，即用户不具有在所配置存储目录下的读写的权限。
+        - 确实是磁盘空间不足，修改system.conf中的配置项`diskspaceManager.diskspacealarm`
+        - 用户权限不够，即用户不具有在所配置存储目录下的读写的权限
   
 * 其他：如果想要在同一个JVM上模拟启动大于10个节点，即单机模拟身份链6~N节点或者业务链6~N节点，在主类`rep.app.RepChain`中增加节点实例
 
@@ -1068,33 +1069,31 @@
 
     1.`jks/identity-net`或者`jks/credence-net`目录下相应的节点密钥对与证书应是6~N个，仿照原有jks文件放置新生成的jks文件即可，可使用[Kse](https://keystore-explorer.org/)或者[代码](https://gitee.com/BTAJL/repchain-tpldevelop/blob/master/src/main/scala/rep/jks/genjks/GenerateJks.java)来生成节点密钥对和自签名证书，并将证书导入mytruststore.jks中，注意Jks文件名，以及其中存储的密钥对或者证书的别名，`***.nodex`，下图是Kse的简单使用示例
 
-  ![new-jks-1](img/new-jks-1.png)
+    ![new-jks-1](img/new-jks-1.png)
 
-  ![new-jks-2](img/new-jks-2.png)
+    ![new-jks-2](img/new-jks-2.png)
 
-  > 注：其中mytruststore.jks中存放了身份链网络内所有节点的证书，如下图：
+    > 注：其中mytruststore.jks中存放了身份链网络内所有节点的证书，如下图：
 
-  ![new-jks-3](img/new-jks-3.png)
+    ![new-jks-3](img/new-jks-3.png)
 
-  2.conf目录下为节点配置文件，身份链新增节点仿照node1-node5进行配置，业务链新增节点仿照node6-node10进行配置。
+    2.conf目录下为节点配置文件，身份链新增节点仿照node1-node5进行配置，业务链新增节点仿照node6-node10进行配置。
 
-  3.仿照node1-node5在主类`rep.app.RepChain`中增加节点实例。
+    3.仿照node1-node5在主类`rep.app.RepChain`中增加节点实例。
 
-  * 启动方式
+    * 启动方式
 
-    * 在终端输入命令
+       > 请查看源码`src/main/scala/rep/app/RepChain.scala`
 
-      > 请查看源码`src/main/scala/rep/app/RepChain.scala`
+      ```shell
+       java -cp RepChain.jar rep.app.RepChain
+      ```
 
-    ```shell
-      java -cp RepChain.jar rep.app.RepChain
-    ```
-
-* <strong><font color=#FF0000>jar包部署后（单机5节点）的目录类似下图，6~N节点类似：</font></strong>
+* <strong><font color=#FF0000>jar包部署后（单机10节点）的目录类似下图，新增节点类似：</font></strong>
 
   > 注：其中mytruststore.jks中存放了网络内所有节点的证书
   
-  ![deploy-folder](img/deploy-folder.jpg)
+  ![deploy-folder](img/deploy-multichain-folder.png)
 
 #### 分布式多机多节点
 
@@ -1110,63 +1109,63 @@
 
         - 在node1和node6所在主机的终端下输入命令：
 
-  ```shell
-      java -jar RepChain.jar "121000005l35120456.node1" "330597659476689954.node6"
-      # 或指定主类
-      java -cp RepChain.jar rep.app.Repchain_Single "121000005l35120456.node1" "330597659476689954.node6" 
-  ```
+    ```shell
+        java -jar RepChain.jar "121000005l35120456.node1" "330597659476689954.node6"
+          # 或指定主类
+         java -cp RepChain.jar rep.app.Repchain_Single "121000005l35120456.node1" "330597659476689954.node6" 
+    ```
   
-- ip与port的配置
+  - ip与port的配置
 
-    - 非**NAT**或非**docker**环境下使用如下配置（hostname为主机IP，port为节点之间P2P通信端口），修改conf目录下对应节点的system.conf文件中如下：
-
-  ```json
-    remote {
-    	#artery模式下的配置，设置的是自己节点的地址和端口
-        artery {
-          	canonical.hostname = "192.168.2.136"  	# 局域网ip
-          	canonical.port = 8082				    # 通信端口，可自由指定
-        }
-    }
-  ```
-
-  下面列举5节点身份链网络中的3个节点的端口配置情况（种子节点<seed-nodes\>处配置3个即可，注意对应种子节点所配置的通信端口），其他节点的端口配置类似（其他节点主要是修改自己的`hostname`与`port`）
-
-  **注**：种子节点指的是在网节点，如果创世节点启动，那么其种子节点配置项<seed-nodes\>配置自己的ip和port即可，如果是其他节点想要加入已经存在的网络，那么其种子节点的配置项<seed-nodes\>需要配置已经在网络中的节点的ip和端口
-
-  ![ip-port-1](img/ip-port-1.jpg)
-
-  ![ip-port-2](img/ip-port-2.jpg)
-
-  ![ip-port-3](img/ip-port-3.jpg)
-
-  * **NAT**环境使用如下配置，针对上述图形中的artery部分修改即可，然后将种子节点设为相应节点的外部地址，修改conf目录下对应节点的system.conf文件中如下：
+      - 非**NAT**或非**docker**环境下使用如下配置（hostname为主机IP，port为节点之间P2P通信端口），修改conf目录下对应节点的system.conf文件中如下：
 
     ```json
       remote {
-      	#artery模式下的配置，设置的是自己节点的地址和端口
+    	  #artery模式下的配置，设置的是自己节点的地址和端口
           artery {
-              canonical.hostname = "139.10.1.3"  	# 外部地址
-              canonical.port = 8082				    # 外部端口
-              bind.hostname = "192.168.2.136"		# 局域网地址
-              bind.port = 8082					    # 局域网端口
-          }
-      }
+           	canonical.hostname = "192.168.2.136"  	# 局域网ip
+           	canonical.port = 8082				    # 通信端口，可自由指定
+         }
+     }
     ```
 
-    下面列举5节点身份链网络中的**3**个节点的端口配置情况（种子节点处这里配置了**1**个），其他节点的端口配置类似（其他节点主要是修改自己的**内部或外部**的`hostname`与`port`）
+    下面列举5节点身份链网络中的3个节点的端口配置情况（种子节点<seed-nodes\>处配置3个即可，注意对应种子节点所配置的通信端口），其他节点的端口配置类似（其他节点主要是修改自己的`hostname`与`port`）
 
-    ![ip-port-1](img/ip-port-4.jpg)
+    **注**：种子节点指的是在网节点，如果创世节点启动，那么其种子节点配置项<seed-nodes\>配置自己的ip和port即可，如果是其他节点想要加入已经存在的网络，那么其种子节点的配置项<seed-nodes\>需要配置已经在网络中的节点的ip和端口
 
-    ![ip-port-5](img/ip-port-5.jpg)
+    ![ip-port-1](img/ip-port-1.jpg)
+
+    ![ip-port-2](img/ip-port-2.jpg)
+
+    ![ip-port-3](img/ip-port-3.jpg)
+
+    * **NAT**环境使用如下配置，针对上述图形中的artery部分修改即可，然后将种子节点设为相应节点的外部地址，修改conf目录下对应节点的system.conf文件中如下：
+
+      ```json
+        remote {
+        	#artery模式下的配置，设置的是自己节点的地址和端口
+            artery {
+               canonical.hostname = "139.10.1.3"  	# 外部地址
+               canonical.port = 8082				    # 外部端口
+                bind.hostname = "192.168.2.136"		# 局域网地址
+               bind.port = 8082					    # 局域网端口
+           }
+       }
+      ```
+
+     下面列举5节点身份链网络中的**3**个节点的端口配置情况（种子节点处这里配置了**1**个），其他节点的端口配置类似（其他节点主要是修改自己的**内部或外部**的`hostname`与`port`）
+
+     ![ip-port-1](img/ip-port-4.jpg)
+
+     ![ip-port-5](img/ip-port-5.jpg)
     
-    ![ip-port-6](img/ip-port-6.jpg)
+     ![ip-port-6](img/ip-port-6.jpg)
 
-- <strong><font color=#FF0000>jar包部署后（分布式多机多节点）的目录类似下图，以`node1`为例，其他节点类似：</font></strong>
+- <strong><font color=#FF0000>jar包部署后（分布式多机多节点）的目录类似下图，以`node1`和`node6`为例，其他节点类似：</font></strong>
 
   > 注：其中mytruststore.jks中存放了网络内所有节点的证书，各个服务器节点部署目录下mytruststore.jks一致
   
-  ![deploy-single-folder](img/deploy-single-folder.jpg)
+  ![deploy-single-folder](img/deploy-multichain-single-folder.png)
 
 * **可能出现的问题**
     * leveldbjni相关的错误，在windows下可能是没有c++环境导致的，装[Microsoft Visual C++ 2010 x64 Redistributable](https://docs.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170#visual-studio-2010-vc-100-sp1-no-longer-supported)即可
@@ -1175,84 +1174,83 @@
         * 可能是相应的节点证书没有放入到mytrustkeystore.jks，导致TLS连接失败
     * 磁盘空间不足的错误，有如下两个可能的原因
         * 确实是磁盘空间不足，修改system.conf中的配置项`diskspaceManager.diskspacealarm`
-        * 用户权限不够，即用户不具有在所配置存储目录下的读写的权限。
+        * 用户权限不够，即用户不具有在所配置存储目录下的读写的权限
 
 #### 节点管理服务
 
-> 节点管理服务与单机多节点、分布式多机多节点部署的原理是相同的，可以在同一个`Jvm`上模拟启动10个节点，也可以分别在不同服务器上部署RepChain.jar，然后组网连接成为分布式区块链网络。满足一个进程中运行一个节点管理服务即可，启动主类为`rep.app.Repchain_Management`
+> 节点管理服务与单机多节点、分布式多机多节点部署的原理是相同的，可以在同一个`Jvm`上模拟启动10个节点，也可以分别在不同服务器上部署RepChain.jar，然后组网连接成为分布式区块链网络。满足一个进程中运行一个节点管理服务即可，启动主类为`rep.app.RepChain_Management`
 
 ![multi-single](img/multi-single.jpg)
 
-- 网络部署及启动方式
+- 网络部署
 
-    - 1、单链模式下默认RepChain使用单机模拟身份链**5**节点和业务链**5**节点，一般在开发测试环境中使用该部署方式，主要目的是用来测试RepChain代码或者编写好的合约，在同一个`Jvm`上模拟启动10个节点，启动主类为`rep.app.Management`
+    - 单链模式下默认RepChain使用单机模拟身份链**5**节点和业务链**5**节点，一般在开发测试环境中使用该部署方式，主要目的是用来测试RepChain代码或者编写好的合约，在同一个`Jvm`上模拟启动10个节点
 
-    - 2、可跨域、跨云进行去中心化部署，也可在专线、政务云上进行部署，单台服务器作为一个身份链节点和一个业务链节点，节点服务器被各个机构各自维护
+    - 可跨域、跨云进行去中心化部署，也可在专线、政务云上进行部署，单台服务器作为一个身份链节点和一个业务链节点，节点服务器被各个机构各自维护
 
-  - 启动方式
+- 启动方式
 
     - 一个进程中运行一个节点管理服务，假设在一个服务器上有node1和node6，在其所在主机的终端下输入命令：
 
-  ```shell
-      java  -jar RepChain.jar 8080 0 false "121000005l35120456.node1" "330597659476689954.node6" 
-      # 或指定主类
-      java -cp RepChain.jar rep.app.Repchain_Management 8080 0 false "121000005l35120456.node1" "330597659476689954.node6" 
-  ```
+    ```shell
+       java -jar RepChain.jar "121000005l35120456.node1" "330597659476689954.node6" 
+       # 或指定主类
+       java -cp RepChain.jar rep.app.RepChain_Management "121000005l35120456.node1" "330597659476689954.node6" 
+    ```
 
-  上面的命令传入了三个参数，第一个8080为节点管理服务url端口，第二个0/1为是否开启SSL，第三个true/false为是否开启双向认证。
 
 
 - ip与port的配置
 
     * 非**NAT**或非**docker**环境下使用如下配置（hostname为主机IP，port为节点之间P2P通信端口），修改conf目录下对应节点的system.conf文件中如下：
 
-  ```json
-    remote {
-    	#artery模式下的配置，设置的是自己节点的地址和端口
-        artery {
-          	canonical.hostname = "192.168.2.136"  	# 局域网ip
-          	canonical.port = 8082				    # 通信端口，可自由指定
+      ```json
+        remote {
+      	  #artery模式下的配置，设置的是自己节点的地址和端口
+            artery {
+              	canonical.hostname = "192.168.2.136"  	# 局域网ip
+              	canonical.port = 8082				    # 通信端口，可自由指定
+           }
         }
-    }
-  ```
+      ```
 
-  下面列举5节点身份链网络中的3个节点的端口配置情况（种子节点\<seed-nodes\>处配置3个即可，注意对应种子节点所配置的通信端口），其他节点的端口配置类似（其他节点主要是修改自己的`hostname`与`port`）
+    下面列举5节点身份链网络中的3个节点的端口配置情况（种子节点\<seed-nodes\>处配置3个即可，注意对应种子节点所配置的通信端口），其他节点的端口配置类似（其他节点主要是修改自己的`hostname`与`port`）
 
-  **注**：种子节点指的是在网节点，如果创世节点启动，那么其种子节点配置项\<seed-nodes\>配置自己的ip和port即可，如果是其他节点想要加入已经存在的网络，那么其种子节点的配置项\<seed-nodes\>需要配置已经在网络中的节点的ip和端口
+    **注**：种子节点指的是在网节点，如果创世节点启动，那么其种子节点配置项\<seed-nodes\>配置自己的ip和port即可，如果是其他节点想要加入已经存在的网络，那么其种子节点的配置项\<seed-nodes\>需要配置已经在网络中的节点的ip和端口
 
-  ![ip-port-1](img/ip-port-1.jpg)
+    ![ip-port-1](img/ip-port-1.jpg)
 
-  ![ip-port-2](img/ip-port-2.jpg)
+    ![ip-port-2](img/ip-port-2.jpg)
 
-  ![ip-port-3](img/ip-port-3.jpg)
+    ![ip-port-3](img/ip-port-3.jpg)
 
-  * **NAT**环境使用如下配置，针对上述图形中的artery部分修改即可，然后将种子节点设为相应节点的外部地址，修改conf目录下对应节点的system.conf文件中如下：
+    * **NAT**环境使用如下配置，针对上述图形中的artery部分修改即可，然后将种子节点设为相应节点的外部地址，修改conf目录下对应节点的system.conf文件中如下：
 
-    ```json
-      remote {
-      	#artery模式下的配置，设置的是自己节点的地址和端口
-          artery {
-              canonical.hostname = "139.10.1.3"  	# 外部地址
-              canonical.port = 8082				    # 外部端口
-              bind.hostname = "192.168.2.136"		# 局域网地址
-              bind.port = 8082					    # 局域网端口
-          }
-      }
-    ```
+      ```json
+        remote {
+        	#artery模式下的配置，设置的是自己节点的地址和端口
+            artery {
+                canonical.hostname = "139.10.1.3"  	# 外部地址
+                canonical.port = 8082				    # 外部端口
+                 bind.hostname = "192.168.2.136"		# 局域网地址
+                 bind.port = 8082					    # 局域网端口
+             }
+        }
+      ```
 
-    下面列举5节点身份链网络中的**3**个节点的端口配置情况（种子节点处这里配置了**1**个），其他节点的端口配置类似（其他节点主要是修改自己的**内部或外部**的`hostname`与`port`）
+     下面列举5节点身份链网络中的**3**个节点的端口配置情况（种子节点处这里配置了**1**个），其他节点的端口配置类似（其他节点主要是修改自己的**内部或外部**的`hostname`与`port`）
 
-    ![ip-port-1](img/ip-port-4.jpg)
+     ![ip-port-1](img/ip-port-4.jpg)
 
-    ![ip-port-5](img/ip-port-5.jpg)
+     ![ip-port-5](img/ip-port-5.jpg)
 
-    ![ip-port-6](img/ip-port-6.jpg)
+     ![ip-port-6](img/ip-port-6.jpg)
 
-- <strong><font color=#FF0000>jar包部署后（分布式多机多节点）的目录类似下图，以`node1`为例，其他节点类似：</font></strong>
+- <strong><font color=#FF0000>jar包部署后（分布式多机多节点）的目录类似下图，以`node1`和`node6`为例，其他节点类似：</font></strong>
 
   > 注：其中mytruststore.jks中存放了网络内所有节点的证书，各个服务器节点部署目录下mytruststore.jks一致
 
-  ![deploy-single-folder](img/deploy-single-folder.jpg)
+  ![deploy-single-folder](img/deploy-multichain-single-folder.png)
 
 * **可能出现的问题**
     * leveldbjni相关的错误，在windows下可能是没有c++环境导致的，装[Microsoft Visual C++ 2010 x64 Redistributable](https://docs.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170#visual-studio-2010-vc-100-sp1-no-longer-supported)即可
@@ -1261,7 +1259,7 @@
         * 可能是相应的节点证书没有放入到mytrustkeystore.jks，导致TLS连接失败
     * 磁盘空间不足的错误，有如下两个可能的原因：
         * 确实是磁盘空间不足，修改system.conf中的配置项`diskspaceManager.diskspacealarm`
-        * 用户权限不够，即用户不具有在所配置存储目录下的读写的权限。
+        * 用户权限不够，即用户不具有在所配置存储目录下的读写的权限 
 
 ### 附录
 
@@ -1289,7 +1287,7 @@
 
 新增节点需要停机并重启网络
 
-假设现在想增加组网节点，则需要生成新的`jks`，并放到`jks/identity`以及`jks/credence`目录下，并且将证书导入到`mytrustStore.jks`中，所有节点的`mystruststore.jks`都需要更新；还可以在浏览器中输入`http://localhost:8080/management/swagger`，通过节点管理服务的API启动停止节点。
+假设现在想增加组网节点，则需要生成新的`jks`，并放到`jks/identity`以及`jks/credence`目录下，并且将证书导入到`mytrustStore.jks`中，所有节点的`mystruststore.jks`都需要更新；还可以在浏览器中输入`http://localhost:7081/swagger/index.html`，通过节点管理服务的API启动停止节点（默认http服务的端口号为7081）。
 
 * 增加的是共识节点
 

@@ -896,7 +896,7 @@
 <blockquote>
 <p>如不使用git，也可以直接下载<a href="https://gitee.com/BTAJL/repchain/repository/archive/RepChain_1.1.0_RC">压缩包</a>，并解压为repchain</p>
 </blockquote>
-<p>2.找到repchain根目录下的build.sbt文件，修改build.sbt中的<code>mainClass</code>（Jar包主类），如果部署模式为<a href="#单机模拟多节点">单机模拟多节点</a>，则修改为<code>rep.app.Repchain</code>，如果部署模式为<a href="#分布式多机多节点">分布式多机多节点</a>，则修改为<code>rep.app.Repchain_Single</code>，如果部署模式为<a href="#节点管理服务">节点管理服务</a>，则修改为<code>rep.app.Repchain_Management</code>，如下所示：</p>
+<p>2.找到repchain根目录下的build.sbt文件，修改build.sbt中的<code>mainClass</code>（Jar包主类），如果部署模式为<a href="#单机模拟多节点">单机模拟多节点</a>，则修改为<code>rep.app.Repchain</code>，如果部署模式为<a href="#分布式多机多节点">分布式多机多节点</a>，则修改为<code>rep.app.Repchain_Single</code>，如果部署模式为<a href="#节点管理服务">节点管理服务</a>，则修改为<code>rep.app.RepChain_Management</code>，如下所示：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>     <span class="c1"># 单机模拟多节点</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>     mainClass <span class="k">in</span> <span class="o">(</span>Compile, packageBin<span class="o">)</span> :<span class="o">=</span> Some<span class="o">(</span><span class="s2">&quot;rep.app.Repchain&quot;</span><span class="o">)</span>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>     <span class="c1"># 或</span>
@@ -979,31 +979,45 @@
 <p>启动方式为在终端下输入命令：</p>
 </li>
 </ul>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>  <span class="c1"># 先前在打包环节已经指定了主类</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a> <span class="c1"># 先前在打包环节已经指定了主类</span>
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>  java -jar RepChain.jar
 </code></pre></div>
 <p>或</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>  <span class="c1"># 指定主类</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>  java -cp RepChain.jar rep.app.Repchain
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a> <span class="c1"># 指定主类</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a> java -cp RepChain.jar rep.app.Repchain
 </code></pre></div>
 <ul>
-<li>启动成功标志有两种验证方式</li>
+<li>
+<p>启动成功标志有两种验证方式</p>
+<ul>
+<li>通过API接口来验证。在浏览器中输入<code>http://localhost:9081/chaininfo/node</code>，如果返回结果中nodes数量为目前组网节点数量，则表示成功；或者是在终端中输入<code>curl http://localhost:9081/chaininfo/node</code>，如果返回结果中nodes数量为<strong>目前组网节点数量</strong>，则表示成功</li>
 </ul>
-<p>1.通过API接口来验证。在浏览器中输入<code>http://localhost:9081/chaininfo/node</code>，如果返回结果中nodes数量为目前组网节点数量，则表示成功；或者是在终端中输入<code>curl http://localhost:9081/chaininfo/node</code>，如果返回结果中nodes数量为<strong>目前组网节点数量</strong>，则表示成功</p>
 <p><img alt="nodes-num" src="../img/nodes-num.png" /></p>
-<p>2.在浏览器中输入<code>http://localhost:9081/web/g1.html</code>，如果出现如下界面，可以看到如下图所示，红框中可以看到入网的节点，则标识成功</p>
+<ul>
+<li>在浏览器中输入<code>http://localhost:9081/web/g1.html</code>，如果出现如下界面，可以看到如下图所示，红框中可以看到入网的节点，则标识成功</li>
+</ul>
 <p><img alt="front-end" src="../img/frontend.png" /></p>
+</li>
+<li>
+<p><strong>可能出现的问题</strong></p>
 <ul>
-<li><strong>可能出现的问题</strong></li>
-</ul>
-<p>1.leveldbjni相关的错误，在windows下可能是没有c++环境导致的，装<a href="https://docs.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170#visual-studio-2010-vc-100-sp1-no-longer-supported">Microsoft Visual C++ 2010 x64 Redistributable</a>即可</p>
-<p>2.磁盘空间不足的错误，有如下两个可能的原因：
-    （1）确实是磁盘空间不足，修改system.conf中的配置项<code>diskspaceManager.diskspacealarm</code>
-    （2）用户权限不够，即用户不具有在所配置存储目录下的读写的权限。</p>
+<li>
+<p>leveldbjni相关的错误，在windows下可能是没有c++环境导致的，装<a href="https://docs.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170#visual-studio-2010-vc-100-sp1-no-longer-supported">Microsoft Visual C++ 2010 x64 Redistributable</a>即可</p>
+</li>
+<li>
+<p>磁盘空间不足的错误，有如下两个可能的原因：</p>
 <ul>
-<li>其他：如果想要在同一个JVM上模拟启动大于5个节点，即单机模拟6~N节点，在主类<code>rep.app.RepChain</code>中增加节点实例</li>
+<li>确实是磁盘空间不足，修改system.conf中的配置项<code>diskspaceManager.diskspacealarm</code></li>
+<li>用户权限不够，即用户不具有在所配置存储目录下的读写的权限</li>
 </ul>
-<p>准备工作</p>
+</li>
+</ul>
+</li>
+<li>
+<p>其他：如果想要在同一个JVM上模拟启动大于5个节点，即单机模拟6~N节点，在主类<code>rep.app.RepChain</code>中增加节点实例</p>
+<ul>
+<li>准备工作</li>
+</ul>
 <p>1.<code>jks/identity-net</code>目录下相应的节点密钥对与证书应是6~N个，仿照原有jks文件放置新生成的jks文件即可，可使用<a href="https://keystore-explorer.org/">Kse</a>或者<a href="https://gitee.com/BTAJL/repchain-tpldevelop/blob/master/src/main/scala/rep/jks/genjks/GenerateJks.java">代码</a>来生成节点密钥对和自签名证书，并将证书导入mytruststore.jks中，注意Jks文件名，以及其中存储的密钥对或者证书的别名，<code>***.nodex</code>，下图是Kse的简单使用示例</p>
 <p><img alt="new-jks-1" src="../img/new-jks-1.png" /></p>
 <p><img alt="new-jks-2" src="../img/new-jks-2.png" /></p>
@@ -1013,27 +1027,29 @@
 <p><img alt="new-jks-3" src="../img/new-jks-3.png" /></p>
 <p>2.conf目录下为节点配置文件，新增节点node6-nodeN仿照node1-node5进行配置，需要额外注意以下配置项：</p>
 <blockquote>
-<ol>
-<li><code>chain_cert_name = "identity-net:951002007l78123233.super_admin"</code>，单链模式下设置以<code>identity-net</code>身份链标识的管理员super_admin</li>
-<li><code>chain_network_id = "identity-net"</code>，组网id，单链模式下设置为<code>identity-net</code>，命名不能包含"_"这样的字符</li>
-<li><code>basic_chain_id = "identity-net"</code>，各种模式下均设置为<code>identity-net</code></li>
-</ol>
+<p>1.<code>chain_cert_name = "identity-net:951002007l78123233.super_admin"</code>，单链模式下设置以<code>identity-net</code>身份链标识的管理员super_admin</p>
+<p>2.<code>chain_network_id = "identity-net"</code>，组网id，单链模式下设置为<code>identity-net</code>，命名不能包含"_"这样的字符</p>
+<p>3.<code>basic_chain_id = "identity-net"</code>，各种模式下均设置为<code>identity-net</code></p>
 </blockquote>
 <p>3.仿照node1-node5在主类<code>rep.app.RepChain</code>中增加node6-nodeN节点实例</p>
 <p>4.编译打包以及部署的其他内容与前述一致</p>
-<p>启动方式</p>
+<ul>
+<li>启动方式</li>
+</ul>
 <blockquote>
 <p>请查看源码<code>src/main/scala/rep/app/RepChain.scala</code></p>
 </blockquote>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>  java -cp RepChain.jar rep.app.RepChain
 </code></pre></div>
-<ul>
-<li><strong><font color=#FF0000>jar包部署后（单机5节点）的目录类似下图，6~N节点类似：</font></strong></li>
+</li>
+<li>
+<p><strong><font color=#FF0000>jar包部署后（单机5节点）的目录类似下图，6~N节点类似：</font></strong></p>
+</li>
 </ul>
 <blockquote>
 <p>注：其中mytruststore.jks中存放了网络内所有节点的证书</p>
 </blockquote>
-<p><img alt="deploy-folder" src="../img/deploy-folder.jpg" /></p>
+<p><img alt="deploy-folder" src="../img/deploy-folder.png" /></p>
 <h4 id="_5">分布式多机多节点</h4>
 <blockquote>
 <p>分布式多机多节点与单机多节点部署的原理是相同的，区别在于多机多节点是分别在不同服务器上部署RepChain.jar，然后组网连接成为分布式区块链网络。同一个<code>Jvm</code>上启动1个节点，启动主类为<code>rep.app.Repchain_Single</code></p>
@@ -1104,9 +1120,9 @@
 <blockquote>
 <p>注：其中mytruststore.jks中存放了网络内所有节点的证书，各个服务器节点部署目录下mytruststore.jks一致</p>
 </blockquote>
-<p><img alt="deploy-single-folder" src="../img/deploy-single-folder.jpg" /></p>
+<p><img alt="deploy-single-folder" src="../img/deploy-single-folder.png" /></p>
 <ul>
-<li><strong>可能出现的问题</strong></li>
+<li><strong>可能出现的问题</strong><ul>
 <li>leveldbjni相关的错误，在windows下可能是没有c++环境导致的，装<a href="https://docs.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170#visual-studio-2010-vc-100-sp1-no-longer-supported">Microsoft Visual C++ 2010 x64 Redistributable</a>即可</li>
 <li>出现节点加入网络失败的情况<ul>
 <li>可能是防火墙或者端口(种子节点或者本节点)没开放，可以手动查看或者使用nmap扫描对应的端口</li>
@@ -1115,39 +1131,40 @@
 </li>
 <li>磁盘空间不足的错误，有如下两个可能的原因<ul>
 <li>确实是磁盘空间不足，修改system.conf中的配置项<code>diskspaceManager.diskspacealarm</code></li>
-<li>用户权限不够，即用户不具有在所配置存储目录下的读写的权限。</li>
+<li>用户权限不够，即用户不具有在所配置存储目录下的读写的权限</li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
 <h4 id="_6">节点管理服务</h4>
 <blockquote>
-<p>节点管理服务与单机多节点、分布式多机多节点部署的原理是相同的，可以在同一个<code>Jvm</code>上模拟启动5个节点，也可以分别在不同服务器上部署RepChain.jar，然后组网连接成为分布式区块链网络。满足一个进程中运行一个节点管理服务即可，启动主类为<code>rep.app.Repchain_Management</code></p>
+<p>节点管理服务与单机多节点、分布式多机多节点部署的原理是相同的，可以在同一个<code>Jvm</code>上模拟启动5个节点，也可以分别在不同服务器上部署RepChain.jar，然后组网连接成为分布式区块链网络。满足一个进程中运行一个节点管理服务即可，启动主类为<code>rep.app.RepChain_Management</code></p>
 </blockquote>
 <ul>
-<li>网络部署及启动方式<ul>
-<li>单链模式下默认RepChain使用单机模拟身份链<strong>5</strong>节点，一般在开发测试环境中使用该部署方式，主要目的是用来测试RepChain代码或者编写好的合约，在同一个<code>Jvm</code>上模拟启动5个节点，启动主类为<code>rep.app.Management</code></li>
+<li>网络部署<ul>
+<li>单链模式下默认RepChain使用单机模拟身份链<strong>5</strong>节点，一般在开发测试环境中使用该部署方式，主要目的是用来测试RepChain代码或者编写好的合约，在同一个<code>Jvm</code>上模拟启动5个节点</li>
 <li>可跨域、跨云进行去中心化部署，也可在专线、政务云上进行部署，单台服务器作为一个节点，节点服务器被各个机构各自维护</li>
-<li>启动方式</li>
-<li>一个进程中运行一个节点管理服务，假设在一个服务器上有node1-node5，在其所在主机的终端下输入命令：</li>
 </ul>
 </li>
-</ul>
-<p><div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>      java  -jar RepChain.jar <span class="m">8080</span> <span class="m">0</span> <span class="nb">false</span> <span class="s2">&quot;121000005l35120456.node1&quot;</span> <span class="s2">&quot;12110107bi45jh675g.node2&quot;</span> <span class="s2">&quot;122000002n00123567.node3&quot;</span> <span class="s2">&quot;921000005k36123789.node4&quot;</span> <span class="s2">&quot;921000006e0012v696.node5&quot;</span> 
-</code></pre></div>
-      上面的命令传入了三个参数，第一个8080为节点管理服务url端口，第二个0/1为是否开启SSL，第三个true/false为是否开启双向认证。</p>
+<li>
+<p>启动方式</p>
 <ul>
+<li>一个进程中运行一个节点管理服务，假设在一个服务器上有node1-node5，在其所在主机的终端下输入命令：</li>
+</ul>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>      java  -jar RepChain.jar <span class="s2">&quot;121000005l35120456.node1&quot;</span> <span class="s2">&quot;12110107bi45jh675g.node2&quot;</span> <span class="s2">&quot;122000002n00123567.node3&quot;</span> <span class="s2">&quot;921000005k36123789.node4&quot;</span>   <span class="s2">&quot;921000006e0012v696.node5&quot;</span> 
+</code></pre></div>
+</li>
 <li>
 <p>ip与port的配置</p>
 <ul>
 <li>非<strong>NAT</strong>或非<strong>docker</strong>环境下使用如下配置（hostname为主机IP，port为节点之间P2P通信端口），修改conf目录下对应节点的system.conf文件中如下：</li>
 </ul>
-</li>
-</ul>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="w">    </span><span class="err">remo</span><span class="kc">te</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">        </span><span class="err">#ar</span><span class="kc">ter</span><span class="err">y模式下的配置，设置的是自己节点的地址和端口</span><span class="w"></span>
-<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="w">        </span><span class="err">ar</span><span class="kc">ter</span><span class="err">y</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="w">   </span><span class="err">remo</span><span class="kc">te</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">      </span><span class="err">#ar</span><span class="kc">ter</span><span class="err">y模式下的配置，设置的是自己节点的地址和端口</span><span class="w"></span>
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="w">       </span><span class="err">ar</span><span class="kc">ter</span><span class="err">y</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
 <a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="w">            </span><span class="err">ca</span><span class="kc">n</span><span class="err">o</span><span class="kc">n</span><span class="err">ical.hos</span><span class="kc">tna</span><span class="err">me</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="s2">&quot;192.168.2.136&quot;</span><span class="w">    </span><span class="err">#</span><span class="w"> </span><span class="err">局域网ip</span><span class="w"></span>
-<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="w">            </span><span class="err">ca</span><span class="kc">n</span><span class="err">o</span><span class="kc">n</span><span class="err">ical.por</span><span class="kc">t</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="mi">8082</span><span class="w">                   </span><span class="err">#</span><span class="w"> </span><span class="err">通信端口，可自由指定</span><span class="w"></span>
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="w">              </span><span class="err">ca</span><span class="kc">n</span><span class="err">o</span><span class="kc">n</span><span class="err">ical.por</span><span class="kc">t</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="mi">8082</span><span class="w">                 </span><span class="err">#</span><span class="w"> </span><span class="err">通信端口，可自由指定</span><span class="w"></span>
 <a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="w">        </span><span class="p">}</span><span class="w"></span>
 <a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="w">    </span><span class="p">}</span><span class="w"></span>
 </code></pre></div>
@@ -1157,8 +1174,8 @@
 <p><img alt="ip-port-2" src="../img/ip-port-2.jpg" /></p>
 <p><img alt="ip-port-3" src="../img/ip-port-3.jpg" /></p>
 <ul>
-<li>
-<p><strong>NAT</strong>环境使用如下配置，针对上述图形中的artery部分修改即可，然后将种子节点设为相应节点的外部地址，修改conf目录下对应节点的system.conf文件中如下：</p>
+<li><strong>NAT</strong>环境使用如下配置，针对上述图形中的artery部分修改即可，然后将种子节点设为相应节点的外部地址，修改conf目录下对应节点的system.conf文件中如下：</li>
+</ul>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="w">  </span><span class="err">remo</span><span class="kc">te</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
 <a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="w">    </span><span class="err">#ar</span><span class="kc">ter</span><span class="err">y模式下的配置，设置的是自己节点的地址和端口</span><span class="w"></span>
 <a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="w">      </span><span class="err">ar</span><span class="kc">ter</span><span class="err">y</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
@@ -1169,21 +1186,21 @@
 <a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a><span class="w">      </span><span class="p">}</span><span class="w"></span>
 <a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a><span class="w">  </span><span class="p">}</span><span class="w"></span>
 </code></pre></div>
-</li>
-</ul>
 <p>下面列举5节点网络中的<strong>3</strong>个节点的端口配置情况（种子节点处这里配置了<strong>1</strong>个），其他节点的端口配置类似（其他节点主要是修改自己的<strong>内部或外部</strong>的<code>hostname</code>与<code>port</code>）</p>
 <p><img alt="ip-port-1" src="../img/ip-port-4.jpg" /></p>
 <p><img alt="ip-port-5" src="../img/ip-port-5.jpg" /></p>
 <p><img alt="ip-port-6" src="../img/ip-port-6.jpg" /></p>
-<ul>
-<li><strong><font color=#FF0000>jar包部署后（分布式多机多节点）的目录类似下图，以<code>node1</code>为例，其他节点类似：</font></strong></li>
+</li>
+<li>
+<p><strong><font color=#FF0000>jar包部署后（分布式多机多节点）的目录类似下图，以<code>node1</code>为例，其他节点类似：</font></strong></p>
+</li>
 </ul>
 <blockquote>
 <p>注：其中mytruststore.jks中存放了网络内所有节点的证书，各个服务器节点部署目录下mytruststore.jks一致</p>
 </blockquote>
-<p><img alt="deploy-single-folder" src="../img/deploy-single-folder.jpg" /></p>
+<p><img alt="deploy-single-folder" src="../img/deploy-single-folder.png" /></p>
 <ul>
-<li><strong>可能出现的问题</strong></li>
+<li><strong>可能出现的问题</strong><ul>
 <li>leveldbjni相关的错误，在windows下可能是没有c++环境导致的，装<a href="https://docs.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170#visual-studio-2010-vc-100-sp1-no-longer-supported">Microsoft Visual C++ 2010 x64 Redistributable</a>即可</li>
 <li>出现节点加入网络失败的情况<ul>
 <li>可能是防火墙或者端口(种子节点或者本节点)没开放，可以手动查看或者使用nmap扫描对应的端口</li>
@@ -1192,7 +1209,9 @@
 </li>
 <li>磁盘空间不足的错误，有如下两个可能的原因<ul>
 <li>确实是磁盘空间不足，修改system.conf中的配置项<code>diskspaceManager.diskspacealarm</code></li>
-<li>用户权限不够，即用户不具有在所配置存储目录下的读写的权限。</li>
+<li>用户权限不够，即用户不具有在所配置存储目录下的读写的权限</li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -1208,7 +1227,7 @@
 </ol>
 <h4 id="_10">新增节点</h4>
 <p>新增节点需要停机并重启网络</p>
-<p>假设现在想增加组网节点，则需要生成新的<code>jks</code>，并放到<code>jks/identity</code>目录下，并且将证书导入到<code>mytrustStore.jks</code>中，所有节点的<code>mystruststore.jks</code>都需要更新；还可以在浏览器中输入<code>http://localhost:8080/swagger/index.html</code>，通过节点管理服务的API启动停止节点。</p>
+<p>假设现在想增加组网节点，则需要生成新的<code>jks</code>，并放到<code>jks/identity</code>目录下，并且将证书导入到<code>mytrustStore.jks</code>中，所有节点的<code>mystruststore.jks</code>都需要更新；还可以在浏览器中输入<code>http://localhost:7081/swagger/index.html</code>，通过节点管理服务的API启动停止节点（默认http服务的端口号为7081）。</p>
 <ul>
 <li>增加的是共识节点</li>
 </ul>
@@ -1287,7 +1306,7 @@
 <blockquote>
 <p>如不使用git，也可以直接下载<a href="https://gitee.com/BTAJL/repchain/repository/archive/RepChain_1.1.0_RC">压缩包</a>，并解压为repchain</p>
 </blockquote>
-<p>2.找到repchain根目录下的build.sbt文件，修改build.sbt中的<code>mainClass</code>（Jar包主类），如果部署模式为<a href="#单机模拟多节点">单机模拟多节点</a>，则修改为<code>rep.app.Repchain</code>（主类<code>rep.app.Repchain</code>中默认只有node1-node5共5个节点，多链模式下仿照node1-node5在主类<code>rep.app.RepChain</code>中增加node6-nodeN节点实例），如果部署模式为<a href="#分布式多机多节点">分布式多机多节点</a>，则修改为<code>rep.app.Repchain_Single</code>，如果部署模式为<a href="#节点管理服务">节点管理服务</a>，则修改为<code>rep.app.Repchain_Management</code>，如下所示：</p>
+<p>2.找到repchain根目录下的build.sbt文件，修改build.sbt中的<code>mainClass</code>（Jar包主类），如果部署模式为<a href="#单机模拟多节点">单机模拟多节点</a>，则修改为<code>rep.app.Repchain</code>（主类<code>rep.app.Repchain</code>中默认只有node1-node5共5个节点，多链模式下仿照node1-node5在主类<code>rep.app.RepChain</code>中增加node6-nodeN节点实例），如果部署模式为<a href="#分布式多机多节点">分布式多机多节点</a>，则修改为<code>rep.app.Repchain_Single</code>，如果部署模式为<a href="#节点管理服务">节点管理服务</a>，则修改为<code>rep.app.RepChain_Management</code>，如下所示：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>   <span class="c1"># 单机模拟多节点</span>
 <a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>   mainClass <span class="k">in</span> <span class="o">(</span>Compile, packageBin<span class="o">)</span> :<span class="o">=</span> Some<span class="o">(</span><span class="s2">&quot;rep.app.Repchain&quot;</span><span class="o">)</span>
 <a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>   <span class="c1"># 或</span>
@@ -1413,8 +1432,8 @@
 <ul>
 <li>leveldbjni相关的错误，在windows下可能是没有c++环境导致的，装<a href="https://docs.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170#visual-studio-2010-vc-100-sp1-no-longer-supported">Microsoft Visual C++ 2010 x64 Redistributable</a>即可</li>
 <li>磁盘空间不足的错误，有如下两个可能的原因：<ul>
-<li>1.确实是磁盘空间不足，修改system.conf中的配置项<code>diskspaceManager.diskspacealarm</code></li>
-<li>2.用户权限不够，即用户不具有在所配置存储目录下的读写的权限。</li>
+<li>确实是磁盘空间不足，修改system.conf中的配置项<code>diskspaceManager.diskspacealarm</code></li>
+<li>用户权限不够，即用户不具有在所配置存储目录下的读写的权限</li>
 </ul>
 </li>
 </ul>
@@ -1425,8 +1444,6 @@
 <li>准备工作</li>
 </ul>
 <p>1.<code>jks/identity-net</code>或者<code>jks/credence-net</code>目录下相应的节点密钥对与证书应是6~N个，仿照原有jks文件放置新生成的jks文件即可，可使用<a href="https://keystore-explorer.org/">Kse</a>或者<a href="https://gitee.com/BTAJL/repchain-tpldevelop/blob/master/src/main/scala/rep/jks/genjks/GenerateJks.java">代码</a>来生成节点密钥对和自签名证书，并将证书导入mytruststore.jks中，注意Jks文件名，以及其中存储的密钥对或者证书的别名，<code>***.nodex</code>，下图是Kse的简单使用示例</p>
-</li>
-</ul>
 <p><img alt="new-jks-1" src="../img/new-jks-1.png" /></p>
 <p><img alt="new-jks-2" src="../img/new-jks-2.png" /></p>
 <blockquote>
@@ -1441,15 +1458,17 @@
 <blockquote>
 <p>请查看源码<code>src/main/scala/rep/app/RepChain.scala</code></p>
 </blockquote>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>      java -cp RepChain.jar rep.app.RepChain
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>    java -cp RepChain.jar rep.app.RepChain
 </code></pre></div>
-<ul>
-<li><strong><font color=#FF0000>jar包部署后（单机5节点）的目录类似下图，6~N节点类似：</font></strong></li>
+</li>
+<li>
+<p><strong><font color=#FF0000>jar包部署后（单机10节点）的目录类似下图，新增节点类似：</font></strong></p>
+</li>
 </ul>
 <blockquote>
 <p>注：其中mytruststore.jks中存放了网络内所有节点的证书</p>
 </blockquote>
-<p><img alt="deploy-folder" src="../img/deploy-folder.jpg" /></p>
+<p><img alt="deploy-folder" src="../img/deploy-multichain-folder.png" /></p>
 <h4 id="_15">分布式多机多节点</h4>
 <blockquote>
 <p>分布式多机多节点与单机多节点部署的原理是相同的，区别在于多机多节点是分别在不同服务器上部署RepChain.jar，然后组网连接成为分布式区块链网络。同一个<code>Jvm</code>上启动2个节点分别参与身份链和业务链组网，启动主类为<code>rep.app.Repchain_Single</code></p>
@@ -1469,19 +1488,15 @@
 </ul>
 </li>
 </ul>
-</li>
-</ul>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>    java -jar RepChain.jar <span class="s2">&quot;121000005l35120456.node1&quot;</span> <span class="s2">&quot;330597659476689954.node6&quot;</span>
 <a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>    <span class="c1"># 或指定主类</span>
 <a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a>    java -cp RepChain.jar rep.app.Repchain_Single <span class="s2">&quot;121000005l35120456.node1&quot;</span> <span class="s2">&quot;330597659476689954.node6&quot;</span> 
 </code></pre></div>
-<ul>
+</li>
 <li>
 <p>ip与port的配置</p>
 <ul>
 <li>非<strong>NAT</strong>或非<strong>docker</strong>环境下使用如下配置（hostname为主机IP，port为节点之间P2P通信端口），修改conf目录下对应节点的system.conf文件中如下：</li>
-</ul>
-</li>
 </ul>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="w">    </span><span class="err">remo</span><span class="kc">te</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
 <a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a><span class="w">        </span><span class="err">#ar</span><span class="kc">ter</span><span class="err">y模式下的配置，设置的是自己节点的地址和端口</span><span class="w"></span>
@@ -1513,13 +1528,15 @@
 <p><img alt="ip-port-1" src="../img/ip-port-4.jpg" /></p>
 <p><img alt="ip-port-5" src="../img/ip-port-5.jpg" /></p>
 <p><img alt="ip-port-6" src="../img/ip-port-6.jpg" /></p>
-<ul>
-<li><strong><font color=#FF0000>jar包部署后（分布式多机多节点）的目录类似下图，以<code>node1</code>为例，其他节点类似：</font></strong></li>
+</li>
+<li>
+<p><strong><font color=#FF0000>jar包部署后（分布式多机多节点）的目录类似下图，以<code>node1</code>和<code>node6</code>为例，其他节点类似：</font></strong></p>
+</li>
 </ul>
 <blockquote>
 <p>注：其中mytruststore.jks中存放了网络内所有节点的证书，各个服务器节点部署目录下mytruststore.jks一致</p>
 </blockquote>
-<p><img alt="deploy-single-folder" src="../img/deploy-single-folder.jpg" /></p>
+<p><img alt="deploy-single-folder" src="../img/deploy-multichain-single-folder.png" /></p>
 <ul>
 <li><strong>可能出现的问题</strong><ul>
 <li>leveldbjni相关的错误，在windows下可能是没有c++环境导致的，装<a href="https://docs.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170#visual-studio-2010-vc-100-sp1-no-longer-supported">Microsoft Visual C++ 2010 x64 Redistributable</a>即可</li>
@@ -1530,7 +1547,7 @@
 </li>
 <li>磁盘空间不足的错误，有如下两个可能的原因<ul>
 <li>确实是磁盘空间不足，修改system.conf中的配置项<code>diskspaceManager.diskspacealarm</code></li>
-<li>用户权限不够，即用户不具有在所配置存储目录下的读写的权限。</li>
+<li>用户权限不够，即用户不具有在所配置存储目录下的读写的权限</li>
 </ul>
 </li>
 </ul>
@@ -1538,7 +1555,7 @@
 </ul>
 <h4 id="_16">节点管理服务</h4>
 <blockquote>
-<p>节点管理服务与单机多节点、分布式多机多节点部署的原理是相同的，可以在同一个<code>Jvm</code>上模拟启动10个节点，也可以分别在不同服务器上部署RepChain.jar，然后组网连接成为分布式区块链网络。满足一个进程中运行一个节点管理服务即可，启动主类为<code>rep.app.Repchain_Management</code></p>
+<p>节点管理服务与单机多节点、分布式多机多节点部署的原理是相同的，可以在同一个<code>Jvm</code>上模拟启动10个节点，也可以分别在不同服务器上部署RepChain.jar，然后组网连接成为分布式区块链网络。满足一个进程中运行一个节点管理服务即可，启动主类为<code>rep.app.RepChain_Management</code></p>
 </blockquote>
 <p><img alt="multi-single" src="../img/multi-single.jpg" /></p>
 <ul>
@@ -1546,10 +1563,10 @@
 <p>网络部署及启动方式</p>
 <ul>
 <li>
-<p>1、单链模式下默认RepChain使用单机模拟身份链<strong>5</strong>节点和业务链<strong>5</strong>节点，一般在开发测试环境中使用该部署方式，主要目的是用来测试RepChain代码或者编写好的合约，在同一个<code>Jvm</code>上模拟启动10个节点，启动主类为<code>rep.app.Management</code></p>
+<p>单链模式下默认RepChain使用单机模拟身份链<strong>5</strong>节点和业务链<strong>5</strong>节点，一般在开发测试环境中使用该部署方式，主要目的是用来测试RepChain代码或者编写好的合约，在同一个<code>Jvm</code>上模拟启动10个节点</p>
 </li>
 <li>
-<p>2、可跨域、跨云进行去中心化部署，也可在专线、政务云上进行部署，单台服务器作为一个身份链节点和一个业务链节点，节点服务器被各个机构各自维护</p>
+<p>可跨域、跨云进行去中心化部署，也可在专线、政务云上进行部署，单台服务器作为一个身份链节点和一个业务链节点，节点服务器被各个机构各自维护</p>
 </li>
 </ul>
 </li>
@@ -1558,24 +1575,21 @@
 <ul>
 <li>一个进程中运行一个节点管理服务，假设在一个服务器上有node1和node6，在其所在主机的终端下输入命令：</li>
 </ul>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>  java  -jar RepChain.jar <span class="m">8080</span> <span class="m">0</span> <span class="nb">false</span> <span class="s2">&quot;121000005l35120456.node1&quot;</span> <span class="s2">&quot;330597659476689954.node6&quot;</span> 
+<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>  java -jar RepChain.jar <span class="s2">&quot;121000005l35120456.node1&quot;</span> <span class="s2">&quot;330597659476689954.node6&quot;</span> 
 <a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>  <span class="c1"># 或指定主类</span>
-<a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a>  java -cp RepChain.jar rep.app.Repchain_Management <span class="m">8080</span> <span class="m">0</span> <span class="nb">false</span> <span class="s2">&quot;121000005l35120456.node1&quot;</span> <span class="s2">&quot;330597659476689954.node6&quot;</span> 
+<a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a>  java -cp RepChain.jar rep.app.RepChain_Management <span class="s2">&quot;121000005l35120456.node1&quot;</span> <span class="s2">&quot;330597659476689954.node6&quot;</span> 
 </code></pre></div>
-<p>上面的命令传入了三个参数，第一个8080为节点管理服务url端口，第二个0/1为是否开启SSL，第三个true/false为是否开启双向认证。</p>
 </li>
 <li>
 <p>ip与port的配置</p>
 <ul>
 <li>非<strong>NAT</strong>或非<strong>docker</strong>环境下使用如下配置（hostname为主机IP，port为节点之间P2P通信端口），修改conf目录下对应节点的system.conf文件中如下：</li>
 </ul>
-</li>
-</ul>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="w">  </span><span class="err">remo</span><span class="kc">te</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
 <a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a><span class="w">      </span><span class="err">#ar</span><span class="kc">ter</span><span class="err">y模式下的配置，设置的是自己节点的地址和端口</span><span class="w"></span>
 <a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a><span class="w">      </span><span class="err">ar</span><span class="kc">ter</span><span class="err">y</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a><span class="w">          </span><span class="err">ca</span><span class="kc">n</span><span class="err">o</span><span class="kc">n</span><span class="err">ical.hos</span><span class="kc">tna</span><span class="err">me</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="s2">&quot;192.168.2.136&quot;</span><span class="w">    </span><span class="err">#</span><span class="w"> </span><span class="err">局域网ip</span><span class="w"></span>
-<a id="__codelineno-27-5" name="__codelineno-27-5" href="#__codelineno-27-5"></a><span class="w">          </span><span class="err">ca</span><span class="kc">n</span><span class="err">o</span><span class="kc">n</span><span class="err">ical.por</span><span class="kc">t</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="mi">8082</span><span class="w">                   </span><span class="err">#</span><span class="w"> </span><span class="err">通信端口，可自由指定</span><span class="w"></span>
+<a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a><span class="w">          </span><span class="err">ca</span><span class="kc">n</span><span class="err">o</span><span class="kc">n</span><span class="err">ical.hos</span><span class="kc">tna</span><span class="err">me</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="s2">&quot;192.168.2.136&quot;</span><span class="w">      </span><span class="err">#</span><span class="w"> </span><span class="err">局域网ip</span><span class="w"></span>
+<a id="__codelineno-27-5" name="__codelineno-27-5" href="#__codelineno-27-5"></a><span class="w">          </span><span class="err">ca</span><span class="kc">n</span><span class="err">o</span><span class="kc">n</span><span class="err">ical.por</span><span class="kc">t</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="mi">8082</span><span class="w">                 </span><span class="err">#</span><span class="w"> </span><span class="err">通信端口，可自由指定</span><span class="w"></span>
 <a id="__codelineno-27-6" name="__codelineno-27-6" href="#__codelineno-27-6"></a><span class="w">      </span><span class="p">}</span><span class="w"></span>
 <a id="__codelineno-27-7" name="__codelineno-27-7" href="#__codelineno-27-7"></a><span class="w">  </span><span class="p">}</span><span class="w"></span>
 </code></pre></div>
@@ -1589,28 +1603,30 @@
 </ul>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="w">    </span><span class="err">remo</span><span class="kc">te</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
 <a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a><span class="w">      </span><span class="err">#ar</span><span class="kc">ter</span><span class="err">y模式下的配置，设置的是自己节点的地址和端口</span><span class="w"></span>
-<a id="__codelineno-28-3" name="__codelineno-28-3" href="#__codelineno-28-3"></a><span class="w">        </span><span class="err">ar</span><span class="kc">ter</span><span class="err">y</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<a id="__codelineno-28-4" name="__codelineno-28-4" href="#__codelineno-28-4"></a><span class="w">            </span><span class="err">ca</span><span class="kc">n</span><span class="err">o</span><span class="kc">n</span><span class="err">ical.hos</span><span class="kc">tna</span><span class="err">me</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="s2">&quot;139.10.1.3&quot;</span><span class="w">     </span><span class="err">#</span><span class="w"> </span><span class="err">外部地址</span><span class="w"></span>
-<a id="__codelineno-28-5" name="__codelineno-28-5" href="#__codelineno-28-5"></a><span class="w">            </span><span class="err">ca</span><span class="kc">n</span><span class="err">o</span><span class="kc">n</span><span class="err">ical.por</span><span class="kc">t</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="mi">8082</span><span class="w">                 </span><span class="err">#</span><span class="w"> </span><span class="err">外部端口</span><span class="w"></span>
-<a id="__codelineno-28-6" name="__codelineno-28-6" href="#__codelineno-28-6"></a><span class="w">            </span><span class="err">bi</span><span class="kc">n</span><span class="err">d.hos</span><span class="kc">tna</span><span class="err">me</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="s2">&quot;192.168.2.136&quot;</span><span class="w">       </span><span class="err">#</span><span class="w"> </span><span class="err">局域网地址</span><span class="w"></span>
-<a id="__codelineno-28-7" name="__codelineno-28-7" href="#__codelineno-28-7"></a><span class="w">            </span><span class="err">bi</span><span class="kc">n</span><span class="err">d.por</span><span class="kc">t</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="mi">8082</span><span class="w">                      </span><span class="err">#</span><span class="w"> </span><span class="err">局域网端口</span><span class="w"></span>
+<a id="__codelineno-28-3" name="__codelineno-28-3" href="#__codelineno-28-3"></a><span class="w">       </span><span class="err">ar</span><span class="kc">ter</span><span class="err">y</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<a id="__codelineno-28-4" name="__codelineno-28-4" href="#__codelineno-28-4"></a><span class="w">           </span><span class="err">ca</span><span class="kc">n</span><span class="err">o</span><span class="kc">n</span><span class="err">ical.hos</span><span class="kc">tna</span><span class="err">me</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="s2">&quot;139.10.1.3&quot;</span><span class="w">    </span><span class="err">#</span><span class="w"> </span><span class="err">外部地址</span><span class="w"></span>
+<a id="__codelineno-28-5" name="__codelineno-28-5" href="#__codelineno-28-5"></a><span class="w">           </span><span class="err">ca</span><span class="kc">n</span><span class="err">o</span><span class="kc">n</span><span class="err">ical.por</span><span class="kc">t</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="mi">8082</span><span class="w">                    </span><span class="err">#</span><span class="w"> </span><span class="err">外部端口</span><span class="w"></span>
+<a id="__codelineno-28-6" name="__codelineno-28-6" href="#__codelineno-28-6"></a><span class="w">           </span><span class="err">bi</span><span class="kc">n</span><span class="err">d.hos</span><span class="kc">tna</span><span class="err">me</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="s2">&quot;192.168.2.136&quot;</span><span class="w">      </span><span class="err">#</span><span class="w"> </span><span class="err">局域网地址</span><span class="w"></span>
+<a id="__codelineno-28-7" name="__codelineno-28-7" href="#__codelineno-28-7"></a><span class="w">            </span><span class="err">bi</span><span class="kc">n</span><span class="err">d.por</span><span class="kc">t</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="mi">8082</span><span class="w">                        </span><span class="err">#</span><span class="w"> </span><span class="err">局域网端口</span><span class="w"></span>
 <a id="__codelineno-28-8" name="__codelineno-28-8" href="#__codelineno-28-8"></a><span class="w">        </span><span class="p">}</span><span class="w"></span>
-<a id="__codelineno-28-9" name="__codelineno-28-9" href="#__codelineno-28-9"></a><span class="w">    </span><span class="p">}</span><span class="w"></span>
+<a id="__codelineno-28-9" name="__codelineno-28-9" href="#__codelineno-28-9"></a><span class="w">   </span><span class="p">}</span><span class="w"></span>
 </code></pre></div>
 <p>下面列举5节点身份链网络中的<strong>3</strong>个节点的端口配置情况（种子节点处这里配置了<strong>1</strong>个），其他节点的端口配置类似（其他节点主要是修改自己的<strong>内部或外部</strong>的<code>hostname</code>与<code>port</code>）</p>
 <p><img alt="ip-port-1" src="../img/ip-port-4.jpg" /></p>
 <p><img alt="ip-port-5" src="../img/ip-port-5.jpg" /></p>
 <p><img alt="ip-port-6" src="../img/ip-port-6.jpg" /></p>
-<ul>
-<li><strong><font color=#FF0000>jar包部署后（分布式多机多节点）的目录类似下图，以<code>node1</code>为例，其他节点类似：</font></strong></li>
+</li>
+<li>
+<p><strong><font color=#FF0000>jar包部署后（分布式多机多节点）的目录类似下图，以<code>node1</code>和<code>node6</code>为例，其他节点类似：</font></strong></p>
+</li>
 </ul>
 <blockquote>
 <p>注：其中mytruststore.jks中存放了网络内所有节点的证书，各个服务器节点部署目录下mytruststore.jks一致</p>
 </blockquote>
-<p><img alt="deploy-single-folder" src="../img/deploy-single-folder.jpg" /></p>
+<p><img alt="deploy-single-folder" src="../img/deploy-multichain-single-folder.png" /></p>
 <ul>
-<li><strong>可能出现的问题</strong>
-     leveldbjni相关的错误，在windows下可能是没有c++环境导致的，装<a href="https://docs.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170#visual-studio-2010-vc-100-sp1-no-longer-supported">Microsoft Visual C++ 2010 x64 Redistributable</a>即可<ul>
+<li><strong>可能出现的问题</strong><ul>
+<li>leveldbjni相关的错误，在windows下可能是没有c++环境导致的，装<a href="https://docs.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170#visual-studio-2010-vc-100-sp1-no-longer-supported">Microsoft Visual C++ 2010 x64 Redistributable</a>即可</li>
 <li>出现节点加入网络失败的情况<ul>
 <li>可能是防火墙或者端口(种子节点或者本节点)没开放，可以手动查看或者使用nmap扫描对应的端口</li>
 <li>可能是相应的节点证书没有放入到mytrustkeystore.jks，导致TLS连接失败</li>
@@ -1618,7 +1634,7 @@
 </li>
 <li>磁盘空间不足的错误，有如下两个可能的原因<ul>
 <li>确实是磁盘空间不足，修改system.conf中的配置项<code>diskspaceManager.diskspacealarm</code></li>
-<li>用户权限不够，即用户不具有在所配置存储目录下的读写的权限。</li>
+<li>用户权限不够，即用户不具有在所配置存储目录下的读写的权限</li>
 </ul>
 </li>
 </ul>
@@ -1649,7 +1665,7 @@
 </ul>
 <h4 id="_20">新增节点</h4>
 <p>新增节点需要停机并重启网络</p>
-<p>假设现在想增加组网节点，则需要生成新的<code>jks</code>，并放到<code>jks/identity</code>以及<code>jks/credence</code>目录下，并且将证书导入到<code>mytrustStore.jks</code>中，所有节点的<code>mystruststore.jks</code>都需要更新；还可以在浏览器中输入<code>http://localhost:8080/management/swagger</code>，通过节点管理服务的API启动停止节点。</p>
+<p>假设现在想增加组网节点，则需要生成新的<code>jks</code>，并放到<code>jks/identity</code>以及<code>jks/credence</code>目录下，并且将证书导入到<code>mytrustStore.jks</code>中，所有节点的<code>mystruststore.jks</code>都需要更新；还可以在浏览器中输入<code>http://localhost:7081/swagger/index.html</code>，通过节点管理服务的API启动停止节点（默认http服务的端口号为7081）。</p>
 <ul>
 <li>增加的是共识节点</li>
 </ul>
@@ -1736,7 +1752,7 @@
 <blockquote>
 <p>如不使用git，也可以直接下载<a href="https://gitee.com/BTAJL/repchain/repository/archive/RepChain_1.1.0_RC">压缩包</a>，并解压为repchain</p>
 </blockquote>
-<p>2.找到repchain根目录下的build.sbt文件，修改build.sbt中的<code>mainClass</code>（Jar包主类），如果部署模式为<a href="#单机模拟多节点">单机模拟多节点</a>，则修改为<code>rep.app.Repchain</code>（主类<code>rep.app.Repchain</code>中默认只有node1-node5共5个节点，多链模式下仿照node1-node5在主类<code>rep.app.RepChain</code>中增加node6-nodeN节点实例），如果部署模式为<a href="#分布式多机多节点">分布式多机多节点</a>，则修改为<code>rep.app.Repchain_Single</code>，如果部署模式为<a href="#节点管理服务">节点管理服务</a>，则修改为<code>rep.app.Repchain_Management</code>，如下所示：</p>
+<p>2.找到repchain根目录下的build.sbt文件，修改build.sbt中的<code>mainClass</code>（Jar包主类），如果部署模式为<a href="#单机模拟多节点">单机模拟多节点</a>，则修改为<code>rep.app.Repchain</code>（主类<code>rep.app.Repchain</code>中默认只有node1-node5共5个节点，多链模式下仿照node1-node5在主类<code>rep.app.RepChain</code>中增加node6-nodeN节点实例），如果部署模式为<a href="#分布式多机多节点">分布式多机多节点</a>，则修改为<code>rep.app.Repchain_Single</code>，如果部署模式为<a href="#节点管理服务">节点管理服务</a>，则修改为<code>rep.app.RepChain_Management</code>，如下所示：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a>   <span class="c1"># 单机模拟多节点</span>
 <a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a>   mainClass <span class="k">in</span> <span class="o">(</span>Compile, packageBin<span class="o">)</span> :<span class="o">=</span> Some<span class="o">(</span><span class="s2">&quot;rep.app.Repchain&quot;</span><span class="o">)</span>
 <a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a>   <span class="c1"># 或</span>
@@ -1793,8 +1809,8 @@
 <li>
 <p>环境需求：</p>
 <ul>
-<li>1.硬件的基础配置：CPU：4核，Memory：8G</li>
-<li>2.Java环境：Jdk-13，推荐<a href="https://www.azul.com/downloads/?version=java-13-mts&amp;architecture=x86-64-bit&amp;package=jdk">Azul-zuluJdk</a>，也可使用<a href="https://www.oracle.com/java/technologies/downloads/archive/">Oracle-Jdk</a></li>
+<li>硬件的基础配置：CPU：4核，Memory：8G</li>
+<li>Java环境：Jdk-13，推荐<a href="https://www.azul.com/downloads/?version=java-13-mts&amp;architecture=x86-64-bit&amp;package=jdk">Azul-zuluJdk</a>，也可使用<a href="https://www.oracle.com/java/technologies/downloads/archive/">Oracle-Jdk</a></li>
 </ul>
 </li>
 <li>
@@ -1855,17 +1871,15 @@
 <ul>
 <li>在浏览器中输入<code>http://localhost:9081/web/g1.html</code>，如果出现如下界面，可以看到如下图所示，红框中可以看到入网的节点，则标识成功</li>
 </ul>
-</li>
-</ul>
 <p><img alt="front-end" src="../img/frontend.png" /></p>
-<ul>
+</li>
 <li>
 <p><strong>可能出现的问题</strong></p>
 <ul>
 <li>leveldbjni相关的错误，在windows下可能是没有c++环境导致的，装<a href="https://docs.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170#visual-studio-2010-vc-100-sp1-no-longer-supported">Microsoft Visual C++ 2010 x64 Redistributable</a>即可</li>
 <li>磁盘空间不足的错误，有如下两个可能的原因：<ul>
-<li>1.确实是磁盘空间不足，修改system.conf中的配置项<code>diskspaceManager.diskspacealarm</code></li>
-<li>2.用户权限不够，即用户不具有在所配置存储目录下的读写的权限。</li>
+<li>确实是磁盘空间不足，修改system.conf中的配置项<code>diskspaceManager.diskspacealarm</code></li>
+<li>用户权限不够，即用户不具有在所配置存储目录下的读写的权限</li>
 </ul>
 </li>
 </ul>
@@ -1876,8 +1890,6 @@
 <li>准备工作</li>
 </ul>
 <p>1.<code>jks/identity-net</code>或者<code>jks/credence-net</code>目录下相应的节点密钥对与证书应是6~N个，仿照原有jks文件放置新生成的jks文件即可，可使用<a href="https://keystore-explorer.org/">Kse</a>或者<a href="https://gitee.com/BTAJL/repchain-tpldevelop/blob/master/src/main/scala/rep/jks/genjks/GenerateJks.java">代码</a>来生成节点密钥对和自签名证书，并将证书导入mytruststore.jks中，注意Jks文件名，以及其中存储的密钥对或者证书的别名，<code>***.nodex</code>，下图是Kse的简单使用示例</p>
-</li>
-</ul>
 <p><img alt="new-jks-1" src="../img/new-jks-1.png" /></p>
 <p><img alt="new-jks-2" src="../img/new-jks-2.png" /></p>
 <blockquote>
@@ -1887,25 +1899,22 @@
 <p>2.conf目录下为节点配置文件，身份链新增节点仿照node1-node5进行配置，业务链新增节点仿照node6-node10进行配置。</p>
 <p>3.仿照node1-node5在主类<code>rep.app.RepChain</code>中增加节点实例。</p>
 <ul>
-<li>
-<p>启动方式</p>
-<ul>
-<li>在终端输入命令</li>
+<li>启动方式</li>
 </ul>
 <blockquote>
 <p>请查看源码<code>src/main/scala/rep/app/RepChain.scala</code></p>
 </blockquote>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a>  java -cp RepChain.jar rep.app.RepChain
+<div class="highlight"><pre><span></span><code><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a> java -cp RepChain.jar rep.app.RepChain
 </code></pre></div>
 </li>
 <li>
-<p><strong><font color=#FF0000>jar包部署后（单机5节点）的目录类似下图，6~N节点类似：</font></strong></p>
+<p><strong><font color=#FF0000>jar包部署后（单机10节点）的目录类似下图，新增节点类似：</font></strong></p>
 </li>
 </ul>
 <blockquote>
 <p>注：其中mytruststore.jks中存放了网络内所有节点的证书</p>
 </blockquote>
-<p><img alt="deploy-folder" src="../img/deploy-folder.jpg" /></p>
+<p><img alt="deploy-folder" src="../img/deploy-multichain-folder.png" /></p>
 <h4 id="_25">分布式多机多节点</h4>
 <blockquote>
 <p>分布式多机多节点与单机多节点部署的原理是相同的，区别在于多机多节点是分别在不同服务器上部署RepChain.jar，然后组网连接成为分布式区块链网络。同一个<code>Jvm</code>上启动2个节点分别参与身份链和业务链组网，启动主类为<code>rep.app.Repchain_Single</code></p>
@@ -1925,27 +1934,23 @@
 </ul>
 </li>
 </ul>
-</li>
-</ul>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-37-1" name="__codelineno-37-1" href="#__codelineno-37-1"></a>    java -jar RepChain.jar <span class="s2">&quot;121000005l35120456.node1&quot;</span> <span class="s2">&quot;330597659476689954.node6&quot;</span>
-<a id="__codelineno-37-2" name="__codelineno-37-2" href="#__codelineno-37-2"></a>    <span class="c1"># 或指定主类</span>
-<a id="__codelineno-37-3" name="__codelineno-37-3" href="#__codelineno-37-3"></a>    java -cp RepChain.jar rep.app.Repchain_Single <span class="s2">&quot;121000005l35120456.node1&quot;</span> <span class="s2">&quot;330597659476689954.node6&quot;</span> 
+<a id="__codelineno-37-2" name="__codelineno-37-2" href="#__codelineno-37-2"></a>      <span class="c1"># 或指定主类</span>
+<a id="__codelineno-37-3" name="__codelineno-37-3" href="#__codelineno-37-3"></a>     java -cp RepChain.jar rep.app.Repchain_Single <span class="s2">&quot;121000005l35120456.node1&quot;</span> <span class="s2">&quot;330597659476689954.node6&quot;</span> 
 </code></pre></div>
-<ul>
+</li>
 <li>
 <p>ip与port的配置</p>
 <ul>
 <li>非<strong>NAT</strong>或非<strong>docker</strong>环境下使用如下配置（hostname为主机IP，port为节点之间P2P通信端口），修改conf目录下对应节点的system.conf文件中如下：</li>
 </ul>
-</li>
-</ul>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-38-1" name="__codelineno-38-1" href="#__codelineno-38-1"></a><span class="w">  </span><span class="err">remo</span><span class="kc">te</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
 <a id="__codelineno-38-2" name="__codelineno-38-2" href="#__codelineno-38-2"></a><span class="w">      </span><span class="err">#ar</span><span class="kc">ter</span><span class="err">y模式下的配置，设置的是自己节点的地址和端口</span><span class="w"></span>
 <a id="__codelineno-38-3" name="__codelineno-38-3" href="#__codelineno-38-3"></a><span class="w">      </span><span class="err">ar</span><span class="kc">ter</span><span class="err">y</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<a id="__codelineno-38-4" name="__codelineno-38-4" href="#__codelineno-38-4"></a><span class="w">          </span><span class="err">ca</span><span class="kc">n</span><span class="err">o</span><span class="kc">n</span><span class="err">ical.hos</span><span class="kc">tna</span><span class="err">me</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="s2">&quot;192.168.2.136&quot;</span><span class="w">    </span><span class="err">#</span><span class="w"> </span><span class="err">局域网ip</span><span class="w"></span>
-<a id="__codelineno-38-5" name="__codelineno-38-5" href="#__codelineno-38-5"></a><span class="w">          </span><span class="err">ca</span><span class="kc">n</span><span class="err">o</span><span class="kc">n</span><span class="err">ical.por</span><span class="kc">t</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="mi">8082</span><span class="w">                   </span><span class="err">#</span><span class="w"> </span><span class="err">通信端口，可自由指定</span><span class="w"></span>
-<a id="__codelineno-38-6" name="__codelineno-38-6" href="#__codelineno-38-6"></a><span class="w">      </span><span class="p">}</span><span class="w"></span>
-<a id="__codelineno-38-7" name="__codelineno-38-7" href="#__codelineno-38-7"></a><span class="w">  </span><span class="p">}</span><span class="w"></span>
+<a id="__codelineno-38-4" name="__codelineno-38-4" href="#__codelineno-38-4"></a><span class="w">        </span><span class="err">ca</span><span class="kc">n</span><span class="err">o</span><span class="kc">n</span><span class="err">ical.hos</span><span class="kc">tna</span><span class="err">me</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="s2">&quot;192.168.2.136&quot;</span><span class="w">    </span><span class="err">#</span><span class="w"> </span><span class="err">局域网ip</span><span class="w"></span>
+<a id="__codelineno-38-5" name="__codelineno-38-5" href="#__codelineno-38-5"></a><span class="w">        </span><span class="err">ca</span><span class="kc">n</span><span class="err">o</span><span class="kc">n</span><span class="err">ical.por</span><span class="kc">t</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="mi">8082</span><span class="w">                   </span><span class="err">#</span><span class="w"> </span><span class="err">通信端口，可自由指定</span><span class="w"></span>
+<a id="__codelineno-38-6" name="__codelineno-38-6" href="#__codelineno-38-6"></a><span class="w">     </span><span class="p">}</span><span class="w"></span>
+<a id="__codelineno-38-7" name="__codelineno-38-7" href="#__codelineno-38-7"></a><span class="w"> </span><span class="p">}</span><span class="w"></span>
 </code></pre></div>
 <p>下面列举5节点身份链网络中的3个节点的端口配置情况（种子节点&lt;seed-nodes>处配置3个即可，注意对应种子节点所配置的通信端口），其他节点的端口配置类似（其他节点主要是修改自己的<code>hostname</code>与<code>port</code>）</p>
 <p><strong>注</strong>：种子节点指的是在网节点，如果创世节点启动，那么其种子节点配置项&lt;seed-nodes>配置自己的ip和port即可，如果是其他节点想要加入已经存在的网络，那么其种子节点的配置项&lt;seed-nodes>需要配置已经在网络中的节点的ip和端口</p>
@@ -1953,17 +1958,17 @@
 <p><img alt="ip-port-2" src="../img/ip-port-2.jpg" /></p>
 <p><img alt="ip-port-3" src="../img/ip-port-3.jpg" /></p>
 <ul>
-<li>
-<p><strong>NAT</strong>环境使用如下配置，针对上述图形中的artery部分修改即可，然后将种子节点设为相应节点的外部地址，修改conf目录下对应节点的system.conf文件中如下：</p>
+<li><strong>NAT</strong>环境使用如下配置，针对上述图形中的artery部分修改即可，然后将种子节点设为相应节点的外部地址，修改conf目录下对应节点的system.conf文件中如下：</li>
+</ul>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-39-1" name="__codelineno-39-1" href="#__codelineno-39-1"></a><span class="w">  </span><span class="err">remo</span><span class="kc">te</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<a id="__codelineno-39-2" name="__codelineno-39-2" href="#__codelineno-39-2"></a><span class="w">    </span><span class="err">#ar</span><span class="kc">ter</span><span class="err">y模式下的配置，设置的是自己节点的地址和端口</span><span class="w"></span>
+<a id="__codelineno-39-2" name="__codelineno-39-2" href="#__codelineno-39-2"></a><span class="w">      </span><span class="err">#ar</span><span class="kc">ter</span><span class="err">y模式下的配置，设置的是自己节点的地址和端口</span><span class="w"></span>
 <a id="__codelineno-39-3" name="__codelineno-39-3" href="#__codelineno-39-3"></a><span class="w">      </span><span class="err">ar</span><span class="kc">ter</span><span class="err">y</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<a id="__codelineno-39-4" name="__codelineno-39-4" href="#__codelineno-39-4"></a><span class="w">          </span><span class="err">ca</span><span class="kc">n</span><span class="err">o</span><span class="kc">n</span><span class="err">ical.hos</span><span class="kc">tna</span><span class="err">me</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="s2">&quot;139.10.1.3&quot;</span><span class="w">     </span><span class="err">#</span><span class="w"> </span><span class="err">外部地址</span><span class="w"></span>
-<a id="__codelineno-39-5" name="__codelineno-39-5" href="#__codelineno-39-5"></a><span class="w">          </span><span class="err">ca</span><span class="kc">n</span><span class="err">o</span><span class="kc">n</span><span class="err">ical.por</span><span class="kc">t</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="mi">8082</span><span class="w">                 </span><span class="err">#</span><span class="w"> </span><span class="err">外部端口</span><span class="w"></span>
-<a id="__codelineno-39-6" name="__codelineno-39-6" href="#__codelineno-39-6"></a><span class="w">          </span><span class="err">bi</span><span class="kc">n</span><span class="err">d.hos</span><span class="kc">tna</span><span class="err">me</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="s2">&quot;192.168.2.136&quot;</span><span class="w">       </span><span class="err">#</span><span class="w"> </span><span class="err">局域网地址</span><span class="w"></span>
-<a id="__codelineno-39-7" name="__codelineno-39-7" href="#__codelineno-39-7"></a><span class="w">          </span><span class="err">bi</span><span class="kc">n</span><span class="err">d.por</span><span class="kc">t</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="mi">8082</span><span class="w">                      </span><span class="err">#</span><span class="w"> </span><span class="err">局域网端口</span><span class="w"></span>
-<a id="__codelineno-39-8" name="__codelineno-39-8" href="#__codelineno-39-8"></a><span class="w">      </span><span class="p">}</span><span class="w"></span>
-<a id="__codelineno-39-9" name="__codelineno-39-9" href="#__codelineno-39-9"></a><span class="w">  </span><span class="p">}</span><span class="w"></span>
+<a id="__codelineno-39-4" name="__codelineno-39-4" href="#__codelineno-39-4"></a><span class="w">         </span><span class="err">ca</span><span class="kc">n</span><span class="err">o</span><span class="kc">n</span><span class="err">ical.hos</span><span class="kc">tna</span><span class="err">me</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="s2">&quot;139.10.1.3&quot;</span><span class="w">    </span><span class="err">#</span><span class="w"> </span><span class="err">外部地址</span><span class="w"></span>
+<a id="__codelineno-39-5" name="__codelineno-39-5" href="#__codelineno-39-5"></a><span class="w">         </span><span class="err">ca</span><span class="kc">n</span><span class="err">o</span><span class="kc">n</span><span class="err">ical.por</span><span class="kc">t</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="mi">8082</span><span class="w">                    </span><span class="err">#</span><span class="w"> </span><span class="err">外部端口</span><span class="w"></span>
+<a id="__codelineno-39-6" name="__codelineno-39-6" href="#__codelineno-39-6"></a><span class="w">          </span><span class="err">bi</span><span class="kc">n</span><span class="err">d.hos</span><span class="kc">tna</span><span class="err">me</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="s2">&quot;192.168.2.136&quot;</span><span class="w">     </span><span class="err">#</span><span class="w"> </span><span class="err">局域网地址</span><span class="w"></span>
+<a id="__codelineno-39-7" name="__codelineno-39-7" href="#__codelineno-39-7"></a><span class="w">         </span><span class="err">bi</span><span class="kc">n</span><span class="err">d.por</span><span class="kc">t</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="mi">8082</span><span class="w">                     </span><span class="err">#</span><span class="w"> </span><span class="err">局域网端口</span><span class="w"></span>
+<a id="__codelineno-39-8" name="__codelineno-39-8" href="#__codelineno-39-8"></a><span class="w">     </span><span class="p">}</span><span class="w"></span>
+<a id="__codelineno-39-9" name="__codelineno-39-9" href="#__codelineno-39-9"></a><span class="w"> </span><span class="p">}</span><span class="w"></span>
 </code></pre></div>
 <p>下面列举5节点身份链网络中的<strong>3</strong>个节点的端口配置情况（种子节点处这里配置了<strong>1</strong>个），其他节点的端口配置类似（其他节点主要是修改自己的<strong>内部或外部</strong>的<code>hostname</code>与<code>port</code>）</p>
 <p><img alt="ip-port-1" src="../img/ip-port-4.jpg" /></p>
@@ -1971,13 +1976,13 @@
 <p><img alt="ip-port-6" src="../img/ip-port-6.jpg" /></p>
 </li>
 <li>
-<p><strong><font color=#FF0000>jar包部署后（分布式多机多节点）的目录类似下图，以<code>node1</code>为例，其他节点类似：</font></strong></p>
+<p><strong><font color=#FF0000>jar包部署后（分布式多机多节点）的目录类似下图，以<code>node1</code>和<code>node6</code>为例，其他节点类似：</font></strong></p>
 </li>
 </ul>
 <blockquote>
 <p>注：其中mytruststore.jks中存放了网络内所有节点的证书，各个服务器节点部署目录下mytruststore.jks一致</p>
 </blockquote>
-<p><img alt="deploy-single-folder" src="../img/deploy-single-folder.jpg" /></p>
+<p><img alt="deploy-single-folder" src="../img/deploy-multichain-single-folder.png" /></p>
 <ul>
 <li><strong>可能出现的问题</strong><ul>
 <li>leveldbjni相关的错误，在windows下可能是没有c++环境导致的，装<a href="https://docs.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170#visual-studio-2010-vc-100-sp1-no-longer-supported">Microsoft Visual C++ 2010 x64 Redistributable</a>即可</li>
@@ -1988,7 +1993,7 @@
 </li>
 <li>磁盘空间不足的错误，有如下两个可能的原因<ul>
 <li>确实是磁盘空间不足，修改system.conf中的配置项<code>diskspaceManager.diskspacealarm</code></li>
-<li>用户权限不够，即用户不具有在所配置存储目录下的读写的权限。</li>
+<li>用户权限不够，即用户不具有在所配置存储目录下的读写的权限</li>
 </ul>
 </li>
 </ul>
@@ -1996,18 +2001,18 @@
 </ul>
 <h4 id="_26">节点管理服务</h4>
 <blockquote>
-<p>节点管理服务与单机多节点、分布式多机多节点部署的原理是相同的，可以在同一个<code>Jvm</code>上模拟启动10个节点，也可以分别在不同服务器上部署RepChain.jar，然后组网连接成为分布式区块链网络。满足一个进程中运行一个节点管理服务即可，启动主类为<code>rep.app.Repchain_Management</code></p>
+<p>节点管理服务与单机多节点、分布式多机多节点部署的原理是相同的，可以在同一个<code>Jvm</code>上模拟启动10个节点，也可以分别在不同服务器上部署RepChain.jar，然后组网连接成为分布式区块链网络。满足一个进程中运行一个节点管理服务即可，启动主类为<code>rep.app.RepChain_Management</code></p>
 </blockquote>
 <p><img alt="multi-single" src="../img/multi-single.jpg" /></p>
 <ul>
 <li>
-<p>网络部署及启动方式</p>
+<p>网络部署</p>
 <ul>
 <li>
-<p>1、单链模式下默认RepChain使用单机模拟身份链<strong>5</strong>节点和业务链<strong>5</strong>节点，一般在开发测试环境中使用该部署方式，主要目的是用来测试RepChain代码或者编写好的合约，在同一个<code>Jvm</code>上模拟启动10个节点，启动主类为<code>rep.app.Management</code></p>
+<p>单链模式下默认RepChain使用单机模拟身份链<strong>5</strong>节点和业务链<strong>5</strong>节点，一般在开发测试环境中使用该部署方式，主要目的是用来测试RepChain代码或者编写好的合约，在同一个<code>Jvm</code>上模拟启动10个节点</p>
 </li>
 <li>
-<p>2、可跨域、跨云进行去中心化部署，也可在专线、政务云上进行部署，单台服务器作为一个身份链节点和一个业务链节点，节点服务器被各个机构各自维护</p>
+<p>可跨域、跨云进行去中心化部署，也可在专线、政务云上进行部署，单台服务器作为一个身份链节点和一个业务链节点，节点服务器被各个机构各自维护</p>
 </li>
 </ul>
 </li>
@@ -2016,27 +2021,22 @@
 <ul>
 <li>一个进程中运行一个节点管理服务，假设在一个服务器上有node1和node6，在其所在主机的终端下输入命令：</li>
 </ul>
-</li>
-</ul>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-40-1" name="__codelineno-40-1" href="#__codelineno-40-1"></a>    java  -jar RepChain.jar <span class="m">8080</span> <span class="m">0</span> <span class="nb">false</span> <span class="s2">&quot;121000005l35120456.node1&quot;</span> <span class="s2">&quot;330597659476689954.node6&quot;</span> 
-<a id="__codelineno-40-2" name="__codelineno-40-2" href="#__codelineno-40-2"></a>    <span class="c1"># 或指定主类</span>
-<a id="__codelineno-40-3" name="__codelineno-40-3" href="#__codelineno-40-3"></a>    java -cp RepChain.jar rep.app.Repchain_Management <span class="m">8080</span> <span class="m">0</span> <span class="nb">false</span> <span class="s2">&quot;121000005l35120456.node1&quot;</span> <span class="s2">&quot;330597659476689954.node6&quot;</span> 
+<div class="highlight"><pre><span></span><code><a id="__codelineno-40-1" name="__codelineno-40-1" href="#__codelineno-40-1"></a>   java -jar RepChain.jar <span class="s2">&quot;121000005l35120456.node1&quot;</span> <span class="s2">&quot;330597659476689954.node6&quot;</span> 
+<a id="__codelineno-40-2" name="__codelineno-40-2" href="#__codelineno-40-2"></a>   <span class="c1"># 或指定主类</span>
+<a id="__codelineno-40-3" name="__codelineno-40-3" href="#__codelineno-40-3"></a>   java -cp RepChain.jar rep.app.RepChain_Management <span class="s2">&quot;121000005l35120456.node1&quot;</span> <span class="s2">&quot;330597659476689954.node6&quot;</span> 
 </code></pre></div>
-<p>上面的命令传入了三个参数，第一个8080为节点管理服务url端口，第二个0/1为是否开启SSL，第三个true/false为是否开启双向认证。</p>
-<ul>
+</li>
 <li>
 <p>ip与port的配置</p>
 <ul>
 <li>非<strong>NAT</strong>或非<strong>docker</strong>环境下使用如下配置（hostname为主机IP，port为节点之间P2P通信端口），修改conf目录下对应节点的system.conf文件中如下：</li>
 </ul>
-</li>
-</ul>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-41-1" name="__codelineno-41-1" href="#__codelineno-41-1"></a><span class="w">  </span><span class="err">remo</span><span class="kc">te</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<a id="__codelineno-41-2" name="__codelineno-41-2" href="#__codelineno-41-2"></a><span class="w">      </span><span class="err">#ar</span><span class="kc">ter</span><span class="err">y模式下的配置，设置的是自己节点的地址和端口</span><span class="w"></span>
+<a id="__codelineno-41-2" name="__codelineno-41-2" href="#__codelineno-41-2"></a><span class="w">    </span><span class="err">#ar</span><span class="kc">ter</span><span class="err">y模式下的配置，设置的是自己节点的地址和端口</span><span class="w"></span>
 <a id="__codelineno-41-3" name="__codelineno-41-3" href="#__codelineno-41-3"></a><span class="w">      </span><span class="err">ar</span><span class="kc">ter</span><span class="err">y</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
 <a id="__codelineno-41-4" name="__codelineno-41-4" href="#__codelineno-41-4"></a><span class="w">          </span><span class="err">ca</span><span class="kc">n</span><span class="err">o</span><span class="kc">n</span><span class="err">ical.hos</span><span class="kc">tna</span><span class="err">me</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="s2">&quot;192.168.2.136&quot;</span><span class="w">    </span><span class="err">#</span><span class="w"> </span><span class="err">局域网ip</span><span class="w"></span>
 <a id="__codelineno-41-5" name="__codelineno-41-5" href="#__codelineno-41-5"></a><span class="w">          </span><span class="err">ca</span><span class="kc">n</span><span class="err">o</span><span class="kc">n</span><span class="err">ical.por</span><span class="kc">t</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="mi">8082</span><span class="w">                   </span><span class="err">#</span><span class="w"> </span><span class="err">通信端口，可自由指定</span><span class="w"></span>
-<a id="__codelineno-41-6" name="__codelineno-41-6" href="#__codelineno-41-6"></a><span class="w">      </span><span class="p">}</span><span class="w"></span>
+<a id="__codelineno-41-6" name="__codelineno-41-6" href="#__codelineno-41-6"></a><span class="w">     </span><span class="p">}</span><span class="w"></span>
 <a id="__codelineno-41-7" name="__codelineno-41-7" href="#__codelineno-41-7"></a><span class="w">  </span><span class="p">}</span><span class="w"></span>
 </code></pre></div>
 <p>下面列举5节点身份链网络中的3个节点的端口配置情况（种子节点\&lt;seed-nodes>处配置3个即可，注意对应种子节点所配置的通信端口），其他节点的端口配置类似（其他节点主要是修改自己的<code>hostname</code>与<code>port</code>）</p>
@@ -2045,16 +2045,16 @@
 <p><img alt="ip-port-2" src="../img/ip-port-2.jpg" /></p>
 <p><img alt="ip-port-3" src="../img/ip-port-3.jpg" /></p>
 <ul>
-<li>
-<p><strong>NAT</strong>环境使用如下配置，针对上述图形中的artery部分修改即可，然后将种子节点设为相应节点的外部地址，修改conf目录下对应节点的system.conf文件中如下：</p>
+<li><strong>NAT</strong>环境使用如下配置，针对上述图形中的artery部分修改即可，然后将种子节点设为相应节点的外部地址，修改conf目录下对应节点的system.conf文件中如下：</li>
+</ul>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-42-1" name="__codelineno-42-1" href="#__codelineno-42-1"></a><span class="w">  </span><span class="err">remo</span><span class="kc">te</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<a id="__codelineno-42-2" name="__codelineno-42-2" href="#__codelineno-42-2"></a><span class="w">    </span><span class="err">#ar</span><span class="kc">ter</span><span class="err">y模式下的配置，设置的是自己节点的地址和端口</span><span class="w"></span>
+<a id="__codelineno-42-2" name="__codelineno-42-2" href="#__codelineno-42-2"></a><span class="w">      </span><span class="err">#ar</span><span class="kc">ter</span><span class="err">y模式下的配置，设置的是自己节点的地址和端口</span><span class="w"></span>
 <a id="__codelineno-42-3" name="__codelineno-42-3" href="#__codelineno-42-3"></a><span class="w">      </span><span class="err">ar</span><span class="kc">ter</span><span class="err">y</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<a id="__codelineno-42-4" name="__codelineno-42-4" href="#__codelineno-42-4"></a><span class="w">          </span><span class="err">ca</span><span class="kc">n</span><span class="err">o</span><span class="kc">n</span><span class="err">ical.hos</span><span class="kc">tna</span><span class="err">me</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="s2">&quot;139.10.1.3&quot;</span><span class="w">     </span><span class="err">#</span><span class="w"> </span><span class="err">外部地址</span><span class="w"></span>
-<a id="__codelineno-42-5" name="__codelineno-42-5" href="#__codelineno-42-5"></a><span class="w">          </span><span class="err">ca</span><span class="kc">n</span><span class="err">o</span><span class="kc">n</span><span class="err">ical.por</span><span class="kc">t</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="mi">8082</span><span class="w">                 </span><span class="err">#</span><span class="w"> </span><span class="err">外部端口</span><span class="w"></span>
-<a id="__codelineno-42-6" name="__codelineno-42-6" href="#__codelineno-42-6"></a><span class="w">          </span><span class="err">bi</span><span class="kc">n</span><span class="err">d.hos</span><span class="kc">tna</span><span class="err">me</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="s2">&quot;192.168.2.136&quot;</span><span class="w">       </span><span class="err">#</span><span class="w"> </span><span class="err">局域网地址</span><span class="w"></span>
-<a id="__codelineno-42-7" name="__codelineno-42-7" href="#__codelineno-42-7"></a><span class="w">          </span><span class="err">bi</span><span class="kc">n</span><span class="err">d.por</span><span class="kc">t</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="mi">8082</span><span class="w">                      </span><span class="err">#</span><span class="w"> </span><span class="err">局域网端口</span><span class="w"></span>
-<a id="__codelineno-42-8" name="__codelineno-42-8" href="#__codelineno-42-8"></a><span class="w">      </span><span class="p">}</span><span class="w"></span>
+<a id="__codelineno-42-4" name="__codelineno-42-4" href="#__codelineno-42-4"></a><span class="w">          </span><span class="err">ca</span><span class="kc">n</span><span class="err">o</span><span class="kc">n</span><span class="err">ical.hos</span><span class="kc">tna</span><span class="err">me</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="s2">&quot;139.10.1.3&quot;</span><span class="w">   </span><span class="err">#</span><span class="w"> </span><span class="err">外部地址</span><span class="w"></span>
+<a id="__codelineno-42-5" name="__codelineno-42-5" href="#__codelineno-42-5"></a><span class="w">          </span><span class="err">ca</span><span class="kc">n</span><span class="err">o</span><span class="kc">n</span><span class="err">ical.por</span><span class="kc">t</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="mi">8082</span><span class="w">                   </span><span class="err">#</span><span class="w"> </span><span class="err">外部端口</span><span class="w"></span>
+<a id="__codelineno-42-6" name="__codelineno-42-6" href="#__codelineno-42-6"></a><span class="w">           </span><span class="err">bi</span><span class="kc">n</span><span class="err">d.hos</span><span class="kc">tna</span><span class="err">me</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="s2">&quot;192.168.2.136&quot;</span><span class="w">        </span><span class="err">#</span><span class="w"> </span><span class="err">局域网地址</span><span class="w"></span>
+<a id="__codelineno-42-7" name="__codelineno-42-7" href="#__codelineno-42-7"></a><span class="w">           </span><span class="err">bi</span><span class="kc">n</span><span class="err">d.por</span><span class="kc">t</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="mi">8082</span><span class="w">                       </span><span class="err">#</span><span class="w"> </span><span class="err">局域网端口</span><span class="w"></span>
+<a id="__codelineno-42-8" name="__codelineno-42-8" href="#__codelineno-42-8"></a><span class="w">       </span><span class="p">}</span><span class="w"></span>
 <a id="__codelineno-42-9" name="__codelineno-42-9" href="#__codelineno-42-9"></a><span class="w">  </span><span class="p">}</span><span class="w"></span>
 </code></pre></div>
 <p>下面列举5节点身份链网络中的<strong>3</strong>个节点的端口配置情况（种子节点处这里配置了<strong>1</strong>个），其他节点的端口配置类似（其他节点主要是修改自己的<strong>内部或外部</strong>的<code>hostname</code>与<code>port</code>）</p>
@@ -2063,13 +2063,13 @@
 <p><img alt="ip-port-6" src="../img/ip-port-6.jpg" /></p>
 </li>
 <li>
-<p><strong><font color=#FF0000>jar包部署后（分布式多机多节点）的目录类似下图，以<code>node1</code>为例，其他节点类似：</font></strong></p>
+<p><strong><font color=#FF0000>jar包部署后（分布式多机多节点）的目录类似下图，以<code>node1</code>和<code>node6</code>为例，其他节点类似：</font></strong></p>
 </li>
 </ul>
 <blockquote>
 <p>注：其中mytruststore.jks中存放了网络内所有节点的证书，各个服务器节点部署目录下mytruststore.jks一致</p>
 </blockquote>
-<p><img alt="deploy-single-folder" src="../img/deploy-single-folder.jpg" /></p>
+<p><img alt="deploy-single-folder" src="../img/deploy-multichain-single-folder.png" /></p>
 <ul>
 <li><strong>可能出现的问题</strong><ul>
 <li>leveldbjni相关的错误，在windows下可能是没有c++环境导致的，装<a href="https://docs.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170#visual-studio-2010-vc-100-sp1-no-longer-supported">Microsoft Visual C++ 2010 x64 Redistributable</a>即可</li>
@@ -2080,7 +2080,7 @@
 </li>
 <li>磁盘空间不足的错误，有如下两个可能的原因：<ul>
 <li>确实是磁盘空间不足，修改system.conf中的配置项<code>diskspaceManager.diskspacealarm</code></li>
-<li>用户权限不够，即用户不具有在所配置存储目录下的读写的权限。</li>
+<li>用户权限不够，即用户不具有在所配置存储目录下的读写的权限 </li>
 </ul>
 </li>
 </ul>
@@ -2111,7 +2111,7 @@
 </ul>
 <h4 id="_30">新增节点</h4>
 <p>新增节点需要停机并重启网络</p>
-<p>假设现在想增加组网节点，则需要生成新的<code>jks</code>，并放到<code>jks/identity</code>以及<code>jks/credence</code>目录下，并且将证书导入到<code>mytrustStore.jks</code>中，所有节点的<code>mystruststore.jks</code>都需要更新；还可以在浏览器中输入<code>http://localhost:8080/management/swagger</code>，通过节点管理服务的API启动停止节点。</p>
+<p>假设现在想增加组网节点，则需要生成新的<code>jks</code>，并放到<code>jks/identity</code>以及<code>jks/credence</code>目录下，并且将证书导入到<code>mytrustStore.jks</code>中，所有节点的<code>mystruststore.jks</code>都需要更新；还可以在浏览器中输入<code>http://localhost:7081/swagger/index.html</code>，通过节点管理服务的API启动停止节点（默认http服务的端口号为7081）。</p>
 <ul>
 <li>增加的是共识节点</li>
 </ul>
