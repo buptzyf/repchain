@@ -11,14 +11,14 @@ import scala.util.control.Breaks._
 object PrimeTool {
   private val PRIME_CONST = 5
 
-  def getPrimeOfRandom(bitLength: Int): BigInt = {
+  def getPrimeOfRandom(bitLength: Int): BigInteger = {
     val random = new Random
-    BigInt.probablePrime(bitLength, random)
+    BigInteger.probablePrime(bitLength, random)
   }
 
-  def getPrimeOfRandom(bitLenght:Int,max:BigInt):BigInt = {
-    var p = getPrimeOfRandom(bitLenght)
-    while(p.compare(max) >= 0 ){
+  def getPrimeOfRandom(bitLenght:Int,max:BigInteger):BigInteger = {
+    var p : BigInteger = getPrimeOfRandom(bitLenght)
+    while(p.compareTo(max) >= 0 ){
       p = getPrimeOfRandom(bitLenght)
     }
     p
