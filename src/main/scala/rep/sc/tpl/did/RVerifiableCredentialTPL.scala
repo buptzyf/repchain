@@ -231,7 +231,7 @@ object RVerifiableCredentialTPL {
   final case class UpdateVCStatusParam(id: String, status: String)
   final case class RevokeVCClaimsParam(id: String, revokedClaimIndex: Seq[String])
 
-  val STATUS_CODE_OK             = 500200 // 合约方法调用成功
+  val STATUS_CODE_OK             = 0 // 合约方法调用成功
   val STATUS_CODE_NO_FUNCTION    = 500300 // 无对应合约方法
   val STATUS_CODE_BAD_REQUEST    = 500400 // 合约方法参数有误
   val STATUS_CODE_UNAUTHORIZED   = 500401 // 没有该合约方法调用权限
