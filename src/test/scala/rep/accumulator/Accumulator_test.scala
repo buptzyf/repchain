@@ -13,6 +13,8 @@ object Accumulator_test extends App {
   val chaincode = new ChaincodeId("ContractAssetsTPL",1)
   var acc : Accumulator = new Accumulator(null,null,null,ctx.getHashTool)
 
+
+
   for(i<-0 to 9){
     val t = getTransaction
     val tb = t.toByteArray
@@ -24,6 +26,14 @@ object Accumulator_test extends App {
       System.out.println(s"not equal:acc1.value=${acc1.getAccVaule},acc2.value=${acc2.getAccVaule}")
     }
     System.out.println(s"agg value:agg1.value=${acc1.acc_aggregate_value},agg2.value=${acc2.acc_aggregate_value}")
+
+    val wit = acc1.membershipWitness(tb)
+    if(acc1.verifyMembershipWitness(wit,tb)){
+      System.out.println("verify ok")
+    }else{
+      System.out.println("verify failed")
+    }
+
     acc = acc1
   }
 

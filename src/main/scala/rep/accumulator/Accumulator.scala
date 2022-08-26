@@ -1,7 +1,13 @@
 package rep.accumulator
 
+import rep.accumulator.Accumulator.{Witness}
 import rep.crypto.Sha256
+
 import java.math.BigInteger
+
+object Accumulator{
+  case class Witness(promise:BigInteger,acc_value:BigInteger)
+}
 
 class Accumulator(acc_base: BigInteger, last_acc: BigInteger, last_aggregate: BigInteger, hashTool: Sha256) {
   val bitLength = 256
@@ -89,14 +95,14 @@ class Accumulator(acc_base: BigInteger, last_acc: BigInteger, last_aggregate: Bi
     new_acc
   }
 
-  def membershipWitness(member: Array[Byte]): (BigInteger,BigInteger) = {
+  def membershipWitness(member: Array[Byte]): Witness = {
     val prime = PrimeTool.hash2Prime(member, bitLength, hashTool)
-    (Rsa2048.exp(this.acc_base_value, Rsa2048.div(this.acc_aggregate_value, prime)),this.acc_value)
+    Witness(Rsa2048.exp(this.acc_base_value, Rsa2048.div(this.acc_aggregate_value, prime)),this.acc_value)
   }
 
-  def verifyMembershipWitness(witness:BigInteger,member:Array[Byte],old_acc_value:BigInteger):Boolean={
+  def verifyMembershipWitness(witness:Witness,member:Array[Byte]):Boolean={
     val prime = PrimeTool.hash2Prime(member, bitLength, hashTool)
-    if(Rsa2048.exp(witness,prime).compareTo(old_acc_value) == 0)  true else false
+    if(Rsa2048.exp(witness.promise,prime).compareTo(witness.acc_value) == 0)  true else false
   }
 
   private def isAggregate(prime: BigInteger): Boolean = {
