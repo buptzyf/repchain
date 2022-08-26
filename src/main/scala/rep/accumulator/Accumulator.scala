@@ -1,8 +1,6 @@
 package rep.accumulator
 
 import rep.crypto.Sha256
-
-import java.io.File
 import java.math.BigInteger
 
 class Accumulator(acc_base: BigInteger, last_acc: BigInteger, last_aggregate: BigInteger, hashTool: Sha256) {
@@ -18,7 +16,7 @@ class Accumulator(acc_base: BigInteger, last_acc: BigInteger, last_aggregate: Bi
     //全局累加器的值存放在链上，因为全局累加器的值等于幂模，大小固定，计算量固定。
     //此处检查最后累加器的值是否为空，如果空需要对其进行初始化
     if (acc_base_value == null) {
-      this.acc_base_value = PrimeTool.getPrimeOfRandom(256, Rsa2048.getHalfModulus)
+      this.acc_base_value = PrimeTool.getPrimeOfRandom(bitLength, Rsa2048.getHalfModulus)
     }
 
     if (this.acc_value == null) {
@@ -73,10 +71,13 @@ class Accumulator(acc_base: BigInteger, last_acc: BigInteger, last_aggregate: Bi
     new_acc
   }
 
+  /**
+   * 建议使用add方法，add和add1方法的执行结果一致
+   * */
   def add1(value: Array[Byte]): Accumulator = {
     val prime = PrimeTool.hash2Prime(value, bitLength, hashTool)
     val agg = Rsa2048.mul(this.acc_aggregate_value, prime)
-    val new_acc_value = Rsa2048.exp(this.acc_value, agg)
+    val new_acc_value = Rsa2048.exp(this.acc_base_value, agg)
     new Accumulator(this.acc_base_value, new_acc_value, agg, this.hashTool)
   }
 
