@@ -10,7 +10,7 @@ object Accumulator{
 }
 
 class Accumulator(acc_base: BigInteger, last_acc: BigInteger, last_aggregate: BigInteger, hashTool: Sha256) {
-  val bitLength = 256
+  val bitLength = 1024
   var acc_value: BigInteger = last_acc
   var acc_aggregate_value: BigInteger = last_aggregate
   var acc_base_value: BigInteger = acc_base
