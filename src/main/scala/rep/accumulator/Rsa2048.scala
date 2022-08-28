@@ -28,7 +28,7 @@ object Rsa2048 {
     x.modInverse(RSA2048_MODULUS)
   }
 
-  def op(a:BigInteger,b:BigInteger)={
+  def op(a: BigInteger, b: BigInteger): BigInteger = {
     a.multiply(b).mod(RSA2048_MODULUS)
   }
 
