@@ -15,7 +15,71 @@ object Accumulator_test extends App {
 
 
   //functionalTesting
-  performanceTesting
+  //performanceTesting
+  delete2Testing
+  delete1Testing
+
+
+  private def delete2Testing: Unit = {
+    val t1 = getTransaction
+    val tb1 = t1.toByteArray
+    val acc1 = acc.addAndWitness(tb1)
+    System.out.println(s"acc add tb1,acc_value=${acc1._1.acc_value}")
+
+    acc = acc1._1
+    val t2 = getTransaction
+    val tb2 = t2.toByteArray
+    val acc2 = acc.addAndWitness(tb2)
+    System.out.println(s"acc add tb2,acc_value=${acc2._1.acc_value}")
+
+    acc = acc2._1
+    val t3 = getTransaction
+    val tb3 = t3.toByteArray
+    val acc3 = acc.addAndWitness(tb3)
+    acc = acc3._1
+    System.out.println(s"acc add tb3,acc_value=${acc3._1.acc_value}")
+
+    val start = System.currentTimeMillis()
+    val acc4 = acc.deleteWithWitness(tb3,acc3._2)
+    val end = System.currentTimeMillis()
+
+    System.out.println(s"acc delete tb3,time=${end-start}ms,acc_value=${acc4.acc_value}")
+
+    if(acc2._1.getAccVaule.compareTo(acc4.acc_value) == 0){
+      System.out.println(s"delete tb3 is ok! agg before=${acc2._1.getAccAgg},agg after=${acc4.getAccAgg}")
+    }
+  }
+  private def delete1Testing: Unit = {
+    val t1 = getTransaction
+    val tb1 = t1.toByteArray
+    val acc1 = acc.addAndWitness(tb1)
+    System.out.println(s"acc add tb1,acc_value=${acc1._1.acc_value}")
+
+    acc = acc1._1
+    val t2 = getTransaction
+    val tb2 = t2.toByteArray
+    val acc2 = acc.addAndWitness(tb2)
+    System.out.println(s"acc add tb2,acc_value=${acc2._1.acc_value}")
+
+    acc = acc2._1
+    val t3 = getTransaction
+    val tb3 = t3.toByteArray
+    val acc3 = acc.addAndWitness(tb3)
+    acc = acc3._1
+    System.out.println(s"acc add tb3,acc_value=${acc3._1.acc_value}")
+
+    val w2 = acc3._1.membershipWitness(tb2)
+
+    val start = System.currentTimeMillis()
+    val acc4 = acc.deleteOfBatchWithWitness(Array(Tuple2(tb2, w2),Tuple2(tb3, acc3._2)))
+    val end = System.currentTimeMillis()
+    System.out.println(s"acc delete tb2 tb3,time=${end-start}ms,acc_value=${acc4.acc_value}")
+
+    if (acc1._1.getAccVaule.compareTo(acc4.acc_value) == 0) {
+      System.out.println(s"delete tb3 is ok! agg before=${acc1._1.getAccAgg},agg after=${acc4.getAccAgg}")
+    }
+
+  }
 
   private def performanceTesting:Unit={
     val count = 100

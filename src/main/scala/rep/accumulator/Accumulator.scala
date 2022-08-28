@@ -11,7 +11,7 @@ object Accumulator{
 }
 
 class Accumulator(acc_base: BigInteger, last_acc: BigInteger, last_aggregate: BigInteger, hashTool: Sha256) {
-  val bitLength = 1024
+  val bitLength = 256
   var acc_value: BigInteger = last_acc
   var acc_aggregate_value: BigInteger = last_aggregate
   var acc_base_value: BigInteger = acc_base
@@ -109,11 +109,12 @@ class Accumulator(acc_base: BigInteger, last_acc: BigInteger, last_aggregate: Bi
   }
 
   def deleteOfBatchWithWitness(elements:Array[(Array[Byte], Witness)]): Accumulator = {
-    var buf : ArrayBuffer[(BigInteger,BigInteger)] = new ArrayBuffer[(BigInteger,BigInteger)]()
+    val buf : ArrayBuffer[(BigInteger,BigInteger)] = new ArrayBuffer[(BigInteger,BigInteger)]()
     elements.foreach(e=>{
       val prime = PrimeTool.hash2Prime(e._1, bitLength, hashTool)
       buf += Tuple2(prime,e._2.promise)
     })
+
     delete(buf.toArray)
   }
 
