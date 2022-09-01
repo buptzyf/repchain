@@ -11,16 +11,35 @@ object Accumulator_test extends App {
 
   val transactionContent = getTransactionContent
   val chaincode = new ChaincodeId("ContractAssetsTPL",1)
-  var acc : Accumulator = new Accumulator(null,null,null,ctx.getHashTool)
+  var acc : Accumulator = new Accumulator(null,null,ctx.getHashTool)
 
 
   //functionalTesting
   //performanceTesting
-  delete2Testing
-  delete1Testing
+  //delete2Testing
+  //delete1Testing
+  //memberWitnessTesting
+  /*private def memberWitnessTesting:Unit={
+    for (i <- 0 to 9) {
+      val t = getTransaction
+      val tb = t.toByteArray
+      val acc1 = acc.add(tb)
+
+      if(i > 1){
+        val w = acc1.membershipWitness(tb)
+        if(w.promise.compareTo(acc.acc_value) == 0){
+          System.out.println("verify ok")
+        }else{
+          System.err.println("verify failed")
+        }
+        System.out.println(s"比较：w.promise=${w.promise}\r\nprevious acc=${acc.getAccVaule}")
+      }
+      acc = acc1
+    }
+  }*/
 
 
-  private def delete2Testing: Unit = {
+  /*private def delete2Testing: Unit = {
     val t1 = getTransaction
     val tb1 = t1.toByteArray
     val acc1 = acc.addAndWitness(tb1)
@@ -80,8 +99,8 @@ object Accumulator_test extends App {
     }
 
   }
-
-  private def performanceTesting:Unit={
+*/
+  /*private def performanceTesting:Unit={
     val count = 100
     for (i <- 0 to count) {
       var start = System.currentTimeMillis()
@@ -125,7 +144,7 @@ object Accumulator_test extends App {
       }
       acc = acc1
     }
-  }
+  }*/
 
   private def getTransaction:Transaction={
     ctx.getTransactionBuilder.createTransaction4Invoke(ctx.getConfig.getChainNetworkId + IdTool.DIDPrefixSeparator + ctx.getSystemName,

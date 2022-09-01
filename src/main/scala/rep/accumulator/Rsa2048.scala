@@ -44,6 +44,10 @@ object Rsa2048 {
     a.mod(b)
   }
 
+  def mod(a: BigInteger): BigInteger = {
+    a.mod(RSA2048_MODULUS)
+  }
+
   def divideAndRemainder(a:BigInteger,b:BigInteger):(BigInteger,BigInteger)={
     val r = a.divideAndRemainder(b)
     (r(0),r(1))
