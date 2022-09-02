@@ -29,6 +29,7 @@ object CreateTestTransactionService{
       System.out.println("not read data")
     }
   }
+
 }
 
 
@@ -38,7 +39,7 @@ object CreateTestTransactionService{
 class CreateTestTransactionService {
   val test_transaction_prefix = "acc_test_tx_"
   val test_max_key = "acc_test_tx_max"
-  val max_tx_limited: Int = 1000000
+  val max_tx_limited: Int = 7000000
   var current_max_tx_number: AtomicInteger = new AtomicInteger(-1)
   var read_tx_number : AtomicInteger = new AtomicInteger(0)
   val ctx = new RepChainSystemContext("121000005l35120456.node1")
@@ -54,6 +55,9 @@ class CreateTestTransactionService {
   val db = DBFactory.getDBAccess(ctx.getConfig)
   checkTransactionContent
 
+  def getContext:RepChainSystemContext={
+    this.ctx
+  }
 
   private def checkTransactionContent:Unit={
     val v = db.getObject[Int](this.test_max_key)

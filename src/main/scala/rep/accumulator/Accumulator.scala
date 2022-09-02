@@ -24,8 +24,8 @@ object Accumulator{
 }
 
 class Accumulator (acc_base: BigInteger, last_acc: BigInteger, hashTool: Sha256) {
-  var acc_value: BigInteger = last_acc
-  var acc_base_value: BigInteger = acc_base
+  private var acc_value: BigInteger = last_acc
+  private var acc_base_value: BigInteger = acc_base
 
   InitChecked
 
@@ -94,6 +94,16 @@ class Accumulator (acc_base: BigInteger, last_acc: BigInteger, hashTool: Sha256)
     AccumulatorWithMembershipProof(new_acc, MembershipProof(proof, Witness(this.acc_value)))
   }
 
+  def addAndProof(elements: Array[BigInteger]): AccumulatorWithMembershipProof = {
+    val p = product(elements)
+    addAndProof(p)
+  }
+
+  def addAndProof(elements: Array[Array[Byte]]): AccumulatorWithMembershipProof = {
+    val primes = hash_primes(elements)
+    addAndProof(primes)
+  }
+
   def verifyMembershipProof(member: Array[Byte],proof:MembershipProof): Boolean = {
     val prime = PrimeTool.hash2Prime(member, bitLength, hashTool)
     verifyMembershipProof(prime, proof: MembershipProof)
@@ -101,6 +111,16 @@ class Accumulator (acc_base: BigInteger, last_acc: BigInteger, hashTool: Sha256)
 
   def verifyMembershipProof(member: BigInteger, proof: MembershipProof): Boolean = {
     Poe.verify(proof.witness.witness, member, this.acc_value, proof.proof, bitLength, hashTool)
+  }
+
+  def verifyMembershipProofOfBatch(members: Array[BigInteger], proof: MembershipProof): Boolean = {
+    val p = product(members)
+    verifyMembershipProof(p, proof)
+  }
+
+  def verifyMembershipProofOfBatch(members: Array[Array[Byte]], proof: MembershipProof): Boolean = {
+    val ps = hash_primes(members)
+    verifyMembershipProofOfBatch(ps, proof)
   }
 
   def verifyMembershipWitness(witness: Witness, member: Array[Byte]): Boolean = {
@@ -277,8 +297,8 @@ class Accumulator (acc_base: BigInteger, last_acc: BigInteger, hashTool: Sha256)
         if (zout.gcd.compareTo(BigInteger.ONE) == 0) {
           val acc_w = new Accumulator(this.acc_base_value, witness.witness, this.hashTool)
           val w = acc_w.addOfBatch(untracked_added)
-          val w_to_b = Rsa2048.exp(w.getAccVaule, zout.coefficient_b)
-          val acc_new_to_a = Rsa2048.exp(this.getAccVaule, zout.coefficient_a)
+          val w_to_b = if(zout.sign_b) Rsa2048.exp(Rsa2048.inv(w.getAccVaule), zout.coefficient_b) else Rsa2048.exp(w.getAccVaule, zout.coefficient_b)
+          val acc_new_to_a = if(zout.sign_a) Rsa2048.exp(Rsa2048.inv(this.getAccVaule), zout.coefficient_a) else Rsa2048.exp(this.getAccVaule, zout.coefficient_a)
           val promise = Rsa2048.op(w_to_b, acc_new_to_a)
           r = Witness(promise)
         }
@@ -320,7 +340,7 @@ class Accumulator (acc_base: BigInteger, last_acc: BigInteger, hashTool: Sha256)
   /////////////////////求当前累加器之上的所有累加元素的见证----结束/////////////////////////
 
   /////////////////////公共方法----开始/////////////////////////
-  private def hash_prime_product(elements:Array[Array[Byte]]):BigInteger={
+  def hash_prime_product(elements:Array[Array[Byte]]):BigInteger={
     var x: BigInteger = BigInteger.ONE
     for (i <- 0 to elements.length - 1) {
       x = Rsa2048.mul(x, PrimeTool.hash2Prime(elements(i), bitLength, hashTool))
@@ -328,7 +348,7 @@ class Accumulator (acc_base: BigInteger, last_acc: BigInteger, hashTool: Sha256)
     x
   }
 
-  private def product(elements: Array[BigInteger]): BigInteger = {
+  def product(elements: Array[BigInteger]): BigInteger = {
     var x: BigInteger = BigInteger.ONE
     elements.foreach(e=>{
       x = Rsa2048.mul(x, e)
@@ -336,7 +356,7 @@ class Accumulator (acc_base: BigInteger, last_acc: BigInteger, hashTool: Sha256)
     x
   }
 
-  private def hash_primes(elements:Array[Array[Byte]]):Array[BigInteger]={
+  def hash_primes(elements:Array[Array[Byte]]):Array[BigInteger]={
     val buf = new ArrayBuffer[BigInteger]()
     elements.foreach(e => {
       val prime = PrimeTool.hash2Prime(e, bitLength, hashTool)
