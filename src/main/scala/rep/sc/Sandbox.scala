@@ -18,6 +18,7 @@ package rep.sc
 
 import akka.actor.{Actor, actorRef2Scala}
 import com.google.protobuf.ByteString
+import rep.api.rest.ResultCode
 import rep.utils._
 import rep.network.tools.PeerExtension
 import rep.log.{RepLogger, RepTimeTracer}
@@ -147,7 +148,7 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
       case e: Exception =>
         RepLogger.except4Throwable(RepLogger.Sandbox_Logger,e.getMessage,e)
         RepLogger.except(RepLogger.Sandbox_Logger, dotrans.t.id, e)
-        new TransactionResult(dotrans.t.id, Map.empty,Map.empty,Map.empty,Option(ActionResult(101,e.getMessage)))
+        new TransactionResult(dotrans.t.id, Map.empty,Map.empty,Map.empty,Option(ActionResult(ResultCode.Transaction_Exception_In_Sandbox,e.getMessage)))
     }
   }
 
@@ -209,8 +210,8 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
   private def getStatusFromDB(txCid: String,oid:String,da:String):Option[Boolean]={
     var r : Option[Boolean] = None
 
-    val chainCodeName : String = if(txCid.indexOf(SplitChainCodeId)>0){
-      txCid.substring(0,txCid.indexOf(SplitChainCodeId))
+    val chainCodeName : String = if(txCid.lastIndexOf(SplitChainCodeId)>0){
+      txCid.substring(0,txCid.lastIndexOf(SplitChainCodeId))
     } else txCid
     val blockPreload = pe.getRepChainContext.getBlockPreload(da)
     val state = blockPreload.getObjectFromDB(KeyPrefixManager.getWorldStateKey(pe.getRepChainContext.getConfig,txCid+PRE_STATE,chainCodeName,oid))

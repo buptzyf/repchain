@@ -1,19 +1,17 @@
 package rep.crypto.cert
 
 import java.io.{ByteArrayInputStream, File, FileInputStream, StringReader}
-import java.security.KeyStore
+import java.security.{KeyStore}
 import java.security.cert.{Certificate, CertificateFactory, X509Certificate}
-
 import org.bouncycastle.util.io.pem.PemReader
 import rep.app.system.RepChainSystemContext
 import rep.crypto.nodedynamicmanagement.ReloadableTrustManager
+import rep.crypto.nodedynamicmanagement4gm.GMJsseContextHelper
 import rep.log.RepLogger
 import rep.storage.chain.KeyPrefixManager
 import rep.storage.db.factory.DBFactory
 import rep.utils.{IdTool, SerializeUtils}
-
 import scala.collection.mutable.HashMap
-
 
 object CertificateUtil {
 
@@ -59,15 +57,28 @@ object CertificateUtil {
     val tmpMap = new HashMap[String, Certificate]()
     val fis = new FileInputStream(new File(ctx.getConfig.getTrustStore))
     val pwd = ctx.getConfig.getTrustPassword.toCharArray()
-    val trustKeyStore = KeyStore.getInstance(KeyStore.getDefaultType())
-    trustKeyStore.load(fis, pwd)
+
+    var trustKeyStore : KeyStore = null
+    if(ctx.getConfig.isUseGM){
+      trustKeyStore = GMJsseContextHelper.loadKeystore(ctx.getConfig.getTrustStore,ctx.getConfig.getTrustPassword,ctx.getConfig.getGMProviderNameOfJCE)
+    }else{
+      trustKeyStore = KeyStore.getInstance(KeyStore.getDefaultType())
+      trustKeyStore.load(fis, pwd)
+    }
+
     val enums = trustKeyStore.aliases()
     while (enums.hasMoreElements) {
-      val alias = enums.nextElement()
+      var alias = enums.nextElement()
       val cert = trustKeyStore.getCertificate(alias)
+      ///todo 信任证书列表有问题，包含了文件名的后缀
+      if(alias.indexOf(".cer") > 0){
+        alias = alias.substring(0,alias.indexOf(".cer"))
+      }
+      //////////////////////////////////////////
       tmpMap(alias)=cert
     }
     RepLogger.trace(RepLogger.System_Logger, "CertificateUtil 在文件中装载信任证书="+tmpMap.mkString(","))
+
     if(!tmpMap.isEmpty){
       writeTrustCertificateToDB(tmpMap,ctx)
     }

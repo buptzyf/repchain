@@ -12,7 +12,7 @@ import scala.collection.mutable
 
 class ReloadableTrustManagerTest4Inner(ctx:RepChainSystemContext) {
   var scheduledExecutorService = Executors.newSingleThreadScheduledExecutor
-  private val testName = "921000006e0012v696.node5"
+  private val testName = "379552050023903168.node5"//"921000006e0012v696.node5"
   private val hm = getCertificates
   private val testNode = (testName,hm(testName))
 

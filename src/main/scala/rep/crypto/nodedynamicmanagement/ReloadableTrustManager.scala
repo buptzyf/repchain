@@ -3,16 +3,16 @@ package rep.crypto.nodedynamicmanagement
 import java.security.{KeyStore, KeyStoreException}
 import java.security.cert.Certificate
 import java.util.concurrent.ConcurrentHashMap
-
 import javax.net.ssl.{TrustManager, TrustManagerFactory, X509ExtendedTrustManager}
 import rep.app.system.RepChainSystemContext
-import rep.crypto.cert.CertificateUtil
+import rep.crypto.X509ExtendedTrustManagerProxy
+import rep.crypto.cert.{CertificateUtil, CryptoMgr}
 import rep.log.RepLogger
 import scala.collection.mutable.{ArrayBuffer, HashMap}
 import scala.util.control.Breaks.{break, breakable}
 
 class ReloadableTrustManager private(ctx: RepChainSystemContext){
-  private var proxy : X509TrustManagerProxy = null
+  private var proxy : X509ExtendedTrustManagerProxy = null
   private var trustCertificates: HashMap[String, Certificate] = new HashMap[String, Certificate]()
   private val lock: Object = new Object
   initializa
@@ -62,8 +62,6 @@ class ReloadableTrustManager private(ctx: RepChainSystemContext){
         else
           CertificateUtil.loadTrustCertificateFromBytes(updateCertInfo)
         val certsOfDeleted = findDeleteCerts(tmpTrustCerts, oldCertificates)
-        val keyStore = loadTrustStores(tmpTrustCerts)
-        val tm = loadTrustManager(keyStore)
 
         //发送更新给systemcertList和SignTool
         //ctx.getSystemCertList.updateCertList(tmpTrustCerts.keySet.toArray)
@@ -73,11 +71,15 @@ class ReloadableTrustManager private(ctx: RepChainSystemContext){
           ctx.shutDownNode(certsOfDeleted)
         }
         this.trustCertificates = tmpTrustCerts
+
+        val keyStore = loadTrustStores(tmpTrustCerts)
+        val tm = loadTrustManager(keyStore)
         if(this.proxy == null){
-          this.proxy = new X509TrustManagerProxy(ctx.getSystemName,tm)
+          this.proxy = new X509ExtendedTrustManagerProxy(ctx.getSystemName,tm)
         }else{
           this.proxy.setTarget(tm)
         }
+
         RepLogger.trace(RepLogger.System_Logger, "ReloadableTrustManager 装载更新数据，certs=" + tmpTrustCerts.mkString(","))
       } catch {
         case ex: Exception =>
@@ -100,11 +102,15 @@ class ReloadableTrustManager private(ctx: RepChainSystemContext){
 
   private def loadTrustStores(recentCerts: HashMap[String, Certificate]): KeyStore = {
     try {
-      val Store = KeyStore.getInstance(KeyStore.getDefaultType())
+      val Store = if(ctx.getConfig.isUseGM) KeyStore.getInstance(CryptoMgr.keyStoreTypeInGM,ctx.getConfig.getGMProviderNameOfJCE) else KeyStore.getInstance(KeyStore.getDefaultType())
       Store.load(null, null)
       recentCerts.foreach(f => {
-        val k = f._1
+        var k = f._1
         val cert = f._2
+
+        if(k.lastIndexOf(".cer") > 0){
+          k = k.substring(0,k.lastIndexOf(".cer"))
+        }
         Store.setCertificateEntry(k, cert);
       })
       Store
@@ -116,7 +122,7 @@ class ReloadableTrustManager private(ctx: RepChainSystemContext){
 
   private def loadTrustManager(recentStore: KeyStore): X509ExtendedTrustManager = {
     var rtm: X509ExtendedTrustManager = null
-    val tmf: TrustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+    val tmf: TrustManagerFactory = if(ctx.getConfig.isUseGM) TrustManagerFactory.getInstance("PKIX", ctx.getConfig.getGMJsseProviderName) else TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
     tmf.init(recentStore)
     val tm: Array[TrustManager] = tmf.getTrustManagers()
     if (tm != null) {
@@ -131,6 +137,7 @@ class ReloadableTrustManager private(ctx: RepChainSystemContext){
     }
     rtm
   }
+
   ///////////////////////信任证书装载--完成/////////////////////////////////////////////////////////////////////
 }
 object ReloadableTrustManager{

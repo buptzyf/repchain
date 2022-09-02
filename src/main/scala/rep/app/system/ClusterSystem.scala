@@ -65,14 +65,10 @@ object ClusterSystem {
  */
 class ClusterSystem(sysTag: String, isStartupClusterSystem: Boolean) {
   protected def log = LoggerFactory.getLogger(this.getClass)
-  //private val modulePrefix = "RepCluster"
-  //private val moduleName = modulePrefix + "_" + sysTag
-  //private var webSocket: ActorRef = null
-  //private var memberLis: ActorRef = null
-  //private var statistics: ActorRef = null
 
   val SYSTEM_NAME = "Repchain"
   private var ctx : RepChainSystemContext = new RepChainSystemContext(sysTag)
+  RepChainSystemContext.setCtx(sysTag,ctx)
   private var moduleManager: ActorRef = null
   private var sysConf: Config = ctx.getConfig.getSystemConf
   private var sysActor: ActorSystem = null
@@ -111,8 +107,8 @@ class ClusterSystem(sysTag: String, isStartupClusterSystem: Boolean) {
       RepLogger.info(RepLogger.System_Logger,  "集群已经启动...")
     }
     //在测试信任证书动态改变测试与跟踪时启用代码
-    /*val testTrustCertificate = new ReloadableTrustManagerTest4Inner(ctx)
-    testTrustCertificate.StartClusterStub*/
+    //val testTrustCertificate = new ReloadableTrustManagerTest4Inner(ctx)
+    //testTrustCertificate.StartClusterStub
     RepLogger.trace(RepLogger.System_Logger, sysTag + "~" + "System" + " ~ " + s"System(${sysTag}) init successfully" + " ~ ")
   }
 
@@ -138,8 +134,8 @@ class ClusterSystem(sysTag: String, isStartupClusterSystem: Boolean) {
 
   //停止之前处理
   private def handlerOfBeforeTerminate:Unit={
-    val txPool = ctx.getTransactionPool
-    txPool.saveCachePoolToDB
+    //val txPool = ctx.getTransactionPool
+    //txPool.saveCachePoolToDB
   }
 
   private def initConsensusNodeOfConfig = {

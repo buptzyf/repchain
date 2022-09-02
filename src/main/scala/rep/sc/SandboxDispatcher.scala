@@ -2,12 +2,14 @@ package rep.sc
 
 import akka.actor.{ActorRef, Props, actorRef2Scala}
 import rep.sc.Sandbox._
+
 import scala.concurrent.duration._
 import akka.util.Timeout
 import rep.sc.scalax.SandboxScala
 import rep.network.base.ModuleBase
 import rep.log.RepLogger
 import akka.routing._
+import rep.api.rest.ResultCode
 import rep.proto.rc2.{ActionResult, ChaincodeDeploy, ChaincodeId, Transaction, TransactionResult}
 import rep.storage.chain.KeyPrefixManager
 
@@ -114,8 +116,8 @@ class SandboxDispatcher(moduleName: String, cid: String) extends ModuleBase(modu
    */
   private def getTransOfContractFromLevelDB(da:String,oid:String): Option[Transaction] = {
     val bp = pe.getRepChainContext.getBlockPreload(da)
-    val chainCodeName : String = if(cid.indexOf(SplitChainCodeId)>0){
-      cid.substring(0,cid.indexOf(SplitChainCodeId))
+    val chainCodeName : String = if(cid.lastIndexOf(SplitChainCodeId)>0){
+      cid.substring(0,cid.lastIndexOf(SplitChainCodeId))
     } else cid
     val txId = bp.getObjectFromDB[String](KeyPrefixManager.getWorldStateKey(pe.getRepChainContext.getConfig,cid,chainCodeName,oid))
     txId match {
@@ -131,8 +133,8 @@ class SandboxDispatcher(moduleName: String, cid: String) extends ModuleBase(modu
    */
   private def IsContractInSnapshot(da: String,oid:String): Boolean = {
     val preload = pe.getRepChainContext.getBlockPreload(da)
-    val chainCodeName : String = if(cid.indexOf(SplitChainCodeId)>0){
-      cid.substring(0,cid.indexOf(SplitChainCodeId))
+    val chainCodeName : String = if(cid.lastIndexOf(SplitChainCodeId)>0){
+      cid.substring(0,cid.lastIndexOf(SplitChainCodeId))
     } else cid
     val txId = preload.get(KeyPrefixManager.getWorldStateKey(pe.getRepChainContext.getConfig,cid,chainCodeName,oid))
     txId match {
@@ -232,7 +234,7 @@ class SandboxDispatcher(moduleName: String, cid: String) extends ModuleBase(modu
       case ChaincodeDeploy.CodeType.CODE_JAVASCRIPT =>
         null
       case ChaincodeDeploy.CodeType.CODE_SCALA =>
-        context.actorOf(Props(new SandboxScala(cid)).withDispatcher("contract-dispatcher"), sandboxName)
+        context.actorOf(Props(new SandboxScala(cid)), sandboxName)
       case ChaincodeDeploy.CodeType.CODE_VCL_DLL =>
         null
       case ChaincodeDeploy.CodeType.CODE_VCL_EXE =>
@@ -254,7 +256,8 @@ class SandboxDispatcher(moduleName: String, cid: String) extends ModuleBase(modu
       RepLogger.debug(RepLogger.Sandbox_Logger, s"sandbox dispatcher ${cid},execute setcontractstate after , contract state ${this.ContractState},txid=${special_t.id},da=${da}.")
       if (this.ContractState == ContractStateType.ContractInLevelDB) {
         if(this.DeployTransactionCache.getSpec.rType == ChaincodeDeploy.RunType.RUN_PARALLEL){
-          this.createParallelRouter(this.DeployTransactionCache.cid.get, this.DeployTransactionCache.para.spec.get.cType)
+          this.createParallelRouter(this.DeployTransactionCache.cid.get,
+            this.DeployTransactionCache.para.spec.get.cType)
           RepLogger.debug(RepLogger.Sandbox_Logger, s"sandbox dispatcher ${cid},create parallel router after ,txid=${special_t.id},da=${da}.")
         }
 
@@ -273,6 +276,10 @@ class SandboxDispatcher(moduleName: String, cid: String) extends ModuleBase(modu
           typeOfSender match {
             case TypeOfSender.FromAPI =>
               RepLogger.debug(RepLogger.Sandbox_Logger, s"sandbox dispatcher ${cid},send msg to Parallel sandbox from api,txid=${special_t.id},da=${da}.")
+              if(this.RouterOfParallelSandboxs == null){
+                this.createParallelRouter(this.DeployTransactionCache.cid.get,
+                                      this.DeployTransactionCache.para.spec.get.cType)
+              }
               if(cacheIdentifier == null)
                 this.RouterOfParallelSandboxs.route(DoTransactionOfSandbox(ts, da, this.ContractState), sender)
               else
@@ -281,6 +288,10 @@ class SandboxDispatcher(moduleName: String, cid: String) extends ModuleBase(modu
               this.DeployTransactionCache.para.spec.get.rType match {
                 case ChaincodeDeploy.RunType.RUN_PARALLEL =>
                   RepLogger.debug(RepLogger.Sandbox_Logger, s"sandbox dispatcher ${cid},send msg to Parallel sandbox from parallel,txid=${special_t.id},da=${da}.")
+                  if(this.RouterOfParallelSandboxs == null){
+                    this.createParallelRouter(this.DeployTransactionCache.cid.get,
+                      this.DeployTransactionCache.para.spec.get.cType)
+                  }
                   if(cacheIdentifier == null)
                     this.RouterOfParallelSandboxs.route(DoTransactionOfSandbox(ts, da, this.ContractState), sender)
                   else
@@ -306,7 +317,7 @@ class SandboxDispatcher(moduleName: String, cid: String) extends ModuleBase(modu
   private def createErrorData(ts: scala.collection.Seq[Transaction], err: Option[akka.actor.Status.Failure]): Array[TransactionResult] = {
     var rs = scala.collection.mutable.ArrayBuffer[TransactionResult]()
     ts.foreach(t => {
-      rs += new TransactionResult(t.id, Map.empty,Map.empty,Map.empty, Option(ActionResult(105, err.get.cause.getMessage)))
+      rs += new TransactionResult(t.id, Map.empty,Map.empty,Map.empty, Option(ActionResult(ResultCode.Sandbox_Exception_In_Dispatch, err.get.cause.getMessage)))
     })
     rs.toArray
   }

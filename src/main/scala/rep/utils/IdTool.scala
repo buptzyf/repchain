@@ -18,8 +18,8 @@ package rep.utils
 
 
 
-import java.io.StringWriter
-import java.security.cert.X509Certificate
+import java.io.{BufferedWriter, File, FileInputStream, FileWriter, StringWriter}
+import java.security.cert.{CertificateFactory, X509Certificate}
 import java.util.UUID
 
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter
@@ -34,6 +34,34 @@ object IdTool {
 
   def getRandomUUID: String = {
     UUID.randomUUID().toString
+  }
+
+  def writePemStringToFile(fileName:String,content:String):Unit={
+    try{
+      val f = new File(fileName)
+      val w = new BufferedWriter(new FileWriter(f))
+      w.write(content)
+      w.close()
+    }catch {
+      case e:Exception=>
+        e.printStackTrace()
+    }
+  }
+
+  def readCert(fileName:String):X509Certificate = {
+    var x : X509Certificate = null
+    try{
+      val cf = CertificateFactory.getInstance("X.509")
+      val fis = new FileInputStream(fileName)
+      val tmp =  cf.generateCertificate(fis)
+      if(tmp.isInstanceOf[X509Certificate]){
+        x = tmp.asInstanceOf[X509Certificate]
+      }
+    }catch {
+      case e:Exception=>
+        e.printStackTrace()
+    }
+    x
   }
 
   def toPemString(x509: X509Certificate): String = {

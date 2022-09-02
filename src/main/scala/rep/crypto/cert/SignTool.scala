@@ -56,7 +56,8 @@ class SignTool(ctx: RepChainSystemContext) {
   }
 
   private def getPrivateKey(pkeyname: String): PrivateKey = {
-    val sk = keyStores(pkeyname).getKey(pkeyname, keyPassword(pkeyname).toCharArray())
+    val signKeyName = if(ctx.getConfig.isUseGM) ctx.getConfig.getGMSignKeyName  else  pkeyname
+    val sk = keyStores(pkeyname).getKey(signKeyName, keyPassword(pkeyname).toCharArray())
     sk.asInstanceOf[PrivateKey]
   }
 
@@ -88,15 +89,18 @@ class SignTool(ctx: RepChainSystemContext) {
     sign(pkeyname, message)
   }
 
-  //根据私钥实现签名
-  private def sign4PrivateKey(privateKey: PrivateKey, message: Array[Byte]): Array[Byte] = {
+  //根据私钥实现签名，不再调用该方法获取私钥
+  /*private def sign4PrivateKey(privateKey: PrivateKey, message: Array[Byte]): Array[Byte] = {
     this.signer.sign(privateKey, message)
-  }
+  }*/
 
   private def getVerifyCert(pubkeyname: String): PublicKey = {
     var pkcert: Certificate = null
 
-    pkcert = getTrustCertificate(pubkeyname)
+    val tmpName = if(pubkeyname.indexOf(IdTool.DIDPrefixSeparator)>=0)
+                      pubkeyname.substring(pubkeyname.indexOf(IdTool.DIDPrefixSeparator)+1)
+                  else pubkeyname
+    pkcert = getTrustCertificate(tmpName)
     if (pkcert == null) {
       val cache = ctx.getPermissionCacheManager.getCache(DidTplPrefix.certPrefix).asInstanceOf[CertificateCache]
       val cert = cache.get(pubkeyname, null)

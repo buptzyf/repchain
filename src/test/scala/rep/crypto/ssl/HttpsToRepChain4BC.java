@@ -1,5 +1,8 @@
 package rep.crypto.ssl;
 
+import rep.crypto.cert.CertificateUtil;
+import scala.collection.mutable.HashMap;
+
 import javax.net.ssl.*;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -8,9 +11,12 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.KeyStore;
 import java.security.Provider;
 import java.security.Security;
+import java.security.cert.Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -28,10 +34,10 @@ public class HttpsToRepChain4BC {
             Security.insertProviderAt((Provider)Class.forName("org.bouncycastle.jce.provider.BouncyCastleProvider").newInstance(), 1);
             Security.insertProviderAt((Provider)Class.forName("org.bouncycastle.jsse.provider.BouncyCastleJsseProvider").newInstance(), 2);
 
-            String pfxfile = "pfx/sm2.test_node1.both.pfx";
-            String pwd = "12345678";
+            String pfxfile = "pfx/identity-net/215159697776981712.node1.pfx";
+            String pwd = "123";
             KeyStore pfx = KeyStore.getInstance("PKCS12","BC");
-            pfx.load(new FileInputStream(pfxfile), pwd.toCharArray());
+            pfx.load(Files.newInputStream(Paths.get(pfxfile)), pwd.toCharArray());
 
             fact = createSocketFactory(pfx, pwd.toCharArray());
             SSLSocketFactory fact2 = new CipherSuiteOfSSLSocketFactory(fact);
@@ -47,6 +53,7 @@ public class HttpsToRepChain4BC {
                     return true;
                 }
             });
+
 
             conn.connect();
 
@@ -75,7 +82,7 @@ public class HttpsToRepChain4BC {
 
     public static SSLSocketFactory createSocketFactory(KeyStore kepair, char[] pwd) throws Exception
     {
-        TrustAllManager[] trust = { new TrustAllManager() };
+        //TrustAllManager[] trust = { new TrustAllManager() };
 
         KeyManager[] kms = null;
         if (kepair != null)
@@ -85,9 +92,27 @@ public class HttpsToRepChain4BC {
             kms = kmf.getKeyManagers();
         }
 
+        /*TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance("SunX509");
+        KeyStore tkeyStore = KeyStore.getInstance("PKCS12","BC");
+        InputStream fin = Files.newInputStream(Paths.get("pfx/identity-net/mytruststore.pfx"));
+        try {
+            tkeyStore.load(fin, "changeme".toCharArray());
+        } finally{
+            fin.close();
+        }
+
+        trustManagerFactory.init(tkeyStore);
+        TrustManager[] trusts = trustManagerFactory.getTrustManagers();*/
+
+        HashMap<String, Certificate> certs = TrustLoad.loadTrustCertificateFromTrustFile("pfx/identity-net/mytruststore.pfx","changeme","BC");
+        KeyStore ks = TrustLoad.loadTrustStores(certs);
+        X509ExtendedTrustManager xtm = TrustLoad.loadTrustManager(ks);
+        TrustManager[] trusts = new TrustManager[]{xtm};
+
+
         SSLContext ctx = SSLContext.getInstance("GMSSLv1.1", "BCJSSE");
         java.security.SecureRandom secureRandom = new java.security.SecureRandom();
-        ctx.init(kms, trust, secureRandom);
+        ctx.init(kms, trusts, secureRandom);
 
         ctx.getServerSessionContext().setSessionCacheSize(8192);
         ctx.getServerSessionContext().setSessionTimeout(3600);
@@ -134,6 +159,7 @@ class CipherSuiteOfSSLSocketFactory extends SSLSocketFactory
         ((SSLSocket) socket).setEnabledCipherSuites(cipherSuites);
         ArrayList<String> protocolList = new ArrayList<String>(Arrays.asList(new String[] {PREFERRED_PROTOCOL}));
         ((SSLSocket) socket).setEnabledProtocols(protocolList.toArray(new String[protocolList.size()]));
+        ((SSLSocket) socket).setNeedClientAuth(true);
 
         return socket;
     }
@@ -147,6 +173,7 @@ class CipherSuiteOfSSLSocketFactory extends SSLSocketFactory
         ((SSLSocket) socket).setEnabledCipherSuites(cipherSuites);
         ArrayList<String> protocolList = new ArrayList<String>(Arrays.asList(new String[] {PREFERRED_PROTOCOL}));
         ((SSLSocket) socket).setEnabledProtocols(protocolList.toArray(new String[protocolList.size()]));
+        ((SSLSocket) socket).setNeedClientAuth(true);
 
         return socket;
     }
@@ -160,6 +187,7 @@ class CipherSuiteOfSSLSocketFactory extends SSLSocketFactory
         ((SSLSocket) socket).setEnabledCipherSuites(cipherSuites);
         ArrayList<String> protocolList = new ArrayList<String>(Arrays.asList(new String[] {PREFERRED_PROTOCOL}));
         ((SSLSocket) socket).setEnabledProtocols(protocolList.toArray(new String[protocolList.size()]));
+        ((SSLSocket) socket).setNeedClientAuth(true);
 
         return socket;
     }
@@ -173,6 +201,7 @@ class CipherSuiteOfSSLSocketFactory extends SSLSocketFactory
         ((SSLSocket) socket).setEnabledCipherSuites(cipherSuites);
         ArrayList<String> protocolList = new ArrayList<String>(Arrays.asList(new String[] {PREFERRED_PROTOCOL}));
         ((SSLSocket) socket).setEnabledProtocols(protocolList.toArray(new String[protocolList.size()]));
+        ((SSLSocket) socket).setNeedClientAuth(true);
 
         return socket;
     }
@@ -186,7 +215,7 @@ class CipherSuiteOfSSLSocketFactory extends SSLSocketFactory
         ((SSLSocket) socket).setEnabledCipherSuites(cipherSuites);
         ArrayList<String> protocolList = new ArrayList<String>(Arrays.asList(new String[] {PREFERRED_PROTOCOL}));
         ((SSLSocket) socket).setEnabledProtocols(protocolList.toArray(new String[protocolList.size()]));
-
+        ((SSLSocket) socket).setNeedClientAuth(true);
         return socket;
     }
 

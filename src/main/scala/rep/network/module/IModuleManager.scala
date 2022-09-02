@@ -49,7 +49,7 @@ class IModuleManager(moduleName: String, isStartup: Boolean) extends ModuleBase(
     pe.register(ModuleActorType.ActorType.modulemanager,self)
     //loadSecurityInfo(conf)
     //pe.getRepChainContext.getTimePolicy.initTimePolicy(conf)
-    pe.getRepChainContext.getTransactionPool.restoreCachePoolFromDB
+    //pe.getRepChainContext.getTransactionPool.restoreCachePoolFromDB
     RepLogger.info(RepLogger.System_Logger,  "模块管理者初始化完成...")
   }
 
@@ -76,9 +76,9 @@ class IModuleManager(moduleName: String, isStartup: Boolean) extends ModuleBase(
 
   private def loadTransModule:Any={
     //if (this.isStartup) {
-      pe.register(ModuleActorType.ActorType.transactiondispatcher, context.actorOf(TransactionDispatcher.props("transactiondispatcher").withDispatcher("contract-dispatcher"), "transactiondispatcher"))
+      pe.register(ModuleActorType.ActorType.transactiondispatcher, context.actorOf(TransactionDispatcher.props("transactiondispatcher"), "transactiondispatcher"))
     //}
-    pe.register(ModuleActorType.ActorType.dispatchofpreload, context.actorOf(DispatchOfPreload.props("dispatchofpreload").withDispatcher("contract-dispatcher"), "dispatchofpreload"))
+    pe.register(ModuleActorType.ActorType.dispatchofpreload, context.actorOf(DispatchOfPreload.props("dispatchofpreload"), "dispatchofpreload"))
   }
 
   private def loadClusterModule = {

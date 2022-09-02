@@ -17,7 +17,10 @@
 package rep.api.rest
 
 import java.io.File
-
+import akka.actor.ActorRef
+import akka.pattern.ask
+import akka.util.ByteString
+import scala.concurrent.duration._
 import scala.util.{Failure, Success}
 import scala.concurrent.{ExecutionContext, Future}
 import akka.util.Timeout
@@ -58,17 +61,13 @@ import rep.log.RepLogger
  */
 @Tag(name = "chaininfo", description = "获得当前区块链信息")
 @Path("/chaininfo")
-class ChainService(ra: RestRouter)(implicit executionContext: ExecutionContext)
-  extends Directives {
+class ChainService(ra: ActorRef)(implicit executionContext: ExecutionContext) extends Directives {
 
-  import akka.pattern.ask
-  import scala.concurrent.duration._
   import Json4sSupport._
 
   implicit val serialization = jackson.Serialization // or native.Serialization
   implicit val formats = DefaultFormats
   implicit val timeout = Timeout(20.seconds)
-
 
   val route = getBlockChainInfo ~ getNodeNumber ~ getCacheTransNumber ~ getAcceptedTransNumber
 
@@ -81,7 +80,7 @@ class ChainService(ra: RestRouter)(implicit executionContext: ExecutionContext)
         extractClientIP { ip =>
           RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} get chaininfo")
           complete {
-            (ra.getRestActor ? ChainInfo).mapTo[QueryResult]
+            (ra ? ChainInfo).mapTo[QueryResult]
           }
         }
       }
@@ -99,7 +98,7 @@ class ChainService(ra: RestRouter)(implicit executionContext: ExecutionContext)
         extractClientIP { ip =>
           RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} get node number")
           complete {
-            (ra.getRestActor ? NodeNumber).mapTo[QueryResult]
+            (ra ? NodeNumber).mapTo[QueryResult]
           }
         }
       }
@@ -118,7 +117,7 @@ class ChainService(ra: RestRouter)(implicit executionContext: ExecutionContext)
         extractClientIP { ip =>
           RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} get number of cache")
           complete {
-            (ra.getRestActor ? TransNumber).mapTo[QueryResult]
+            (ra ? TransNumber).mapTo[QueryResult]
           }
         }
       }
@@ -136,7 +135,7 @@ class ChainService(ra: RestRouter)(implicit executionContext: ExecutionContext)
         extractClientIP { ip =>
           RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} get number of accepted")
           complete {
-            (ra.getRestActor ? AcceptedTransNumber).mapTo[QueryResult]
+            (ra ? AcceptedTransNumber).mapTo[QueryResult]
           }
         }
       }
@@ -151,16 +150,12 @@ class ChainService(ra: RestRouter)(implicit executionContext: ExecutionContext)
 
 @Tag(name = "block", description = "获得区块数据")
 @Path("/block")
-class BlockService(ra: RestRouter, repContext: RepChainSystemContext, isCheckClientPermission: Boolean)(implicit executionContext: ExecutionContext)
+class BlockService(ra: ActorRef, repContext: RepChainSystemContext, isCheckClientPermission: Boolean)(implicit executionContext: ExecutionContext)
   extends Directives {
-
-  import akka.pattern.ask
-  import scala.concurrent.duration._
-
-  implicit val timeout = Timeout(20.seconds)
 
   import Json4sSupport._
 
+  implicit val timeout = Timeout(20.seconds)
   implicit val serialization = jackson.Serialization // or native.Serialization
   implicit val formats = DefaultFormats
 
@@ -184,7 +179,7 @@ class BlockService(ra: RestRouter, repContext: RepChainSystemContext, isCheckCli
               try {
                 if (cert != null && repContext.getPermissionVerify.CheckPermissionOfX509Certificate(cert, "block.hash", null)) {
                   complete {
-                    (ra.getRestActor ? BlockId(blockId)).mapTo[QueryResult]
+                    (ra ? BlockId(blockId)).mapTo[QueryResult]
                   }
                 } else {
                   complete(QueryResult(Option(JsonMethods.parse(string2JsonInput(PermissionVerify.errorInfo_None_Permission)))))
@@ -196,7 +191,7 @@ class BlockService(ra: RestRouter, repContext: RepChainSystemContext, isCheckCli
             }
           } else {
             complete {
-              (ra.getRestActor ? BlockId(blockId)).mapTo[QueryResult]
+              (ra ? BlockId(blockId)).mapTo[QueryResult]
             }
           }
         }
@@ -222,7 +217,7 @@ class BlockService(ra: RestRouter, repContext: RepChainSystemContext, isCheckCli
               try {
                 if (cert != null && repContext.getPermissionVerify.CheckPermissionOfX509Certificate(cert, "block.blockHeight", null)) {
                   complete {
-                    (ra.getRestActor ? BlockHeight(blockHeight.toInt)).mapTo[QueryResult]
+                    (ra ? BlockHeight(blockHeight.toInt)).mapTo[QueryResult]
                   }
                 } else {
                   complete(QueryResult(Option(JsonMethods.parse(string2JsonInput(PermissionVerify.errorInfo_None_Permission)))))
@@ -234,7 +229,7 @@ class BlockService(ra: RestRouter, repContext: RepChainSystemContext, isCheckCli
             }
           } else {
             complete {
-              (ra.getRestActor ? BlockHeight(blockHeight.toInt)).mapTo[QueryResult]
+              (ra ? BlockHeight(blockHeight.toInt)).mapTo[QueryResult]
             }
           }
         }
@@ -257,7 +252,7 @@ class BlockService(ra: RestRouter, repContext: RepChainSystemContext, isCheckCli
       post {
         entity(as[Map[String, Long]]) { blockQuery =>
           complete {
-            (ra.getRestActor ? TransNumberOfBlock(blockQuery("height"))).mapTo[QueryResult]
+            (ra ? TransNumberOfBlock(blockQuery("height"))).mapTo[QueryResult]
           }
         }
       }
@@ -277,7 +272,7 @@ class BlockService(ra: RestRouter, repContext: RepChainSystemContext, isCheckCli
         extractClientIP { ip =>
           RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} get block time for Height,block height=${blockHeight}")
           complete {
-            (ra.getRestActor ? BlockTimeForHeight(blockHeight.toLong)).mapTo[QueryResult]
+            (ra ? BlockTimeForHeight(blockHeight.toLong)).mapTo[QueryResult]
           }
         }
       }
@@ -297,7 +292,7 @@ class BlockService(ra: RestRouter, repContext: RepChainSystemContext, isCheckCli
         extractClientIP { ip =>
           RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} get block time for txid,txid=${transid}")
           complete {
-            (ra.getRestActor ? BlockTimeForTxid(transid)).mapTo[QueryResult]
+            (ra ? BlockTimeForTxid(transid)).mapTo[QueryResult]
           }
         }
       }
@@ -321,7 +316,7 @@ class BlockService(ra: RestRouter, repContext: RepChainSystemContext, isCheckCli
               val cert = RepChainConfigFilePathMgr.getCert(sessionInfo)
               try {
                 if (cert != null && repContext.getPermissionVerify.CheckPermissionOfX509Certificate(cert, "block.stream", null)) {
-                  complete((ra.getRestActor ? BlockHeightStream(blockHeight.toInt)).mapTo[HttpResponse])
+                  complete((ra ? BlockHeightStream(blockHeight.toInt)).mapTo[HttpResponse])
                 } else {
                   complete(QueryResult(Option(JsonMethods.parse(string2JsonInput(PermissionVerify.errorInfo_None_Permission)))))
                 }
@@ -331,7 +326,7 @@ class BlockService(ra: RestRouter, repContext: RepChainSystemContext, isCheckCli
               }
             }
           } else {
-            complete((ra.getRestActor ? BlockHeightStream(blockHeight.toInt)).mapTo[HttpResponse])
+            complete((ra ? BlockHeightStream(blockHeight.toInt)).mapTo[HttpResponse])
           }
         }
       }
@@ -347,25 +342,15 @@ class BlockService(ra: RestRouter, repContext: RepChainSystemContext, isCheckCli
 @Consumes(Array(MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.MULTIPART_FORM_DATA))
 @Produces(Array(MediaType.APPLICATION_JSON))
 @Path("/transaction")
-class TransactionService(ra: RestRouter, repContext: RepChainSystemContext, isCheckClientPermission: Boolean)(implicit executionContext: ExecutionContext)
+class TransactionService(ra: ActorRef, repContext: RepChainSystemContext, isCheckClientPermission: Boolean)(implicit executionContext: ExecutionContext)
   extends Directives {
-
-  import akka.pattern.ask
-  import scala.concurrent.duration._
-  import java.io.FileInputStream
-
-  implicit val timeout = Timeout(20.seconds)
 
   import Json4sSupport._
   import ScalaXmlSupport._
-  import akka.stream.scaladsl.FileIO
-  import akka.util.ByteString
-  import java.nio.file.{Paths, Files}
-  import akka.stream.scaladsl.Framing
 
+  implicit val timeout = Timeout(20.seconds)
   implicit val serialization = jackson.Serialization // or native.Serialization
   implicit val formats = DefaultFormats
-
   implicit val specFormat = jsonFormat15(CSpec)
   implicit val specUnmarshaller: FromEntityUnmarshaller[CSpec] = Unmarshaller.firstOf(
     //只能处理application/xml
@@ -416,7 +401,7 @@ class TransactionService(ra: RestRouter, repContext: RepChainSystemContext, isCh
               try {
                 if (cert != null && repContext.getPermissionVerify.CheckPermissionOfX509Certificate(cert, "transaction", null)) {
                   complete {
-                    (ra.getRestActor ? TransactionId(transactionId)).mapTo[QueryResult]
+                    (ra ? TransactionId(transactionId)).mapTo[QueryResult]
                   }
                 } else {
                   complete(QueryResult(Option(JsonMethods.parse(string2JsonInput(PermissionVerify.errorInfo_None_Permission)))))
@@ -428,7 +413,7 @@ class TransactionService(ra: RestRouter, repContext: RepChainSystemContext, isCh
             }
           } else {
             complete {
-              (ra.getRestActor ? TransactionId(transactionId)).mapTo[QueryResult]
+              (ra ? TransactionId(transactionId)).mapTo[QueryResult]
             }
           }
         }
@@ -454,7 +439,7 @@ class TransactionService(ra: RestRouter, repContext: RepChainSystemContext, isCh
               val cert = RepChainConfigFilePathMgr.getCert(sessionInfo)
               try {
                 if (cert != null && repContext.getPermissionVerify.CheckPermissionOfX509Certificate(cert, "transaction.stream", null)) {
-                  complete((ra.getRestActor ? TransactionStreamId(transactionId)).mapTo[HttpResponse])
+                  complete((ra ? TransactionStreamId(transactionId)).mapTo[HttpResponse])
                 } else {
                   complete(QueryResult(Option(JsonMethods.parse(string2JsonInput(PermissionVerify.errorInfo_None_Permission)))))
                 }
@@ -464,7 +449,7 @@ class TransactionService(ra: RestRouter, repContext: RepChainSystemContext, isCh
               }
             }
           } else {
-            complete((ra.getRestActor ? TransactionStreamId(transactionId)).mapTo[HttpResponse])
+            complete((ra ? TransactionStreamId(transactionId)).mapTo[HttpResponse])
           }
         }
       }
@@ -489,7 +474,7 @@ class TransactionService(ra: RestRouter, repContext: RepChainSystemContext, isCh
               val cert = RepChainConfigFilePathMgr.getCert(sessionInfo)
               try {
                 if (cert != null && repContext.getPermissionVerify.CheckPermissionOfX509Certificate(cert, "transaction.tranInfoAndHeight", null)) {
-                  complete((ra.getRestActor ? TranInfoAndHeightId(transactionId)).mapTo[QueryResult])
+                  complete((ra ? TranInfoAndHeightId(transactionId)).mapTo[QueryResult])
                 } else {
                   complete(QueryResult(Option(JsonMethods.parse(string2JsonInput(PermissionVerify.errorInfo_None_Permission)))))
                 }
@@ -499,7 +484,7 @@ class TransactionService(ra: RestRouter, repContext: RepChainSystemContext, isCh
               }
             }
           } else {
-            complete((ra.getRestActor ? TranInfoAndHeightId(transactionId)).mapTo[QueryResult])
+            complete((ra ? TranInfoAndHeightId(transactionId)).mapTo[QueryResult])
           }
 
 
@@ -524,7 +509,7 @@ class TransactionService(ra: RestRouter, repContext: RepChainSystemContext, isCh
       post {
         entity(as[String]) { trans =>
           complete {
-            (ra.getRestActor ? tranSign(trans)).mapTo[PostResult]
+            (ra ? signedTran(trans)).mapTo[PostResult]
           }
           //          complete { (StatusCodes.Accepted, PostResult("hahhaha",None, Some("处理存在异常"))) }
         }
@@ -559,7 +544,7 @@ class TransactionService(ra: RestRouter, repContext: RepChainSystemContext, isCh
               onComplete(tranFuture) {
                 case Success(tranByteString) =>
                   complete {
-                    (ra.getRestActor ? Transaction.parseFrom(tranByteString.toArray)).mapTo[PostResult]
+                    (ra ? Transaction.parseFrom(tranByteString.toArray)).mapTo[PostResult]
                   }
                 case Failure(ex) =>
                   complete(StatusCodes.InternalServerError, ex.getMessage)
@@ -589,7 +574,7 @@ class TransactionService(ra: RestRouter, repContext: RepChainSystemContext, isCh
         import akka.http.scaladsl.marshallers.xml.ScalaXmlSupport._
         entity(as[CSpec]) { request =>
           complete {
-            (ra.getRestActor ? request).mapTo[PostResult]
+            (ra ? request).mapTo[PostResult]
           }
         }
       }
@@ -603,11 +588,9 @@ class TransactionService(ra: RestRouter, repContext: RepChainSystemContext, isCh
  */
 @Tag(name = "db", description = "查询合约存储在DB中的数据")
 @Path("/db")
-class DbService(ra: RestRouter, repContext: RepChainSystemContext, isCheckClientPermission: Boolean)(implicit executionContext: ExecutionContext)
+class DbService(ra: ActorRef, repContext: RepChainSystemContext, isCheckClientPermission: Boolean)(implicit executionContext: ExecutionContext)
   extends Directives {
 
-  import akka.pattern.ask
-  import scala.concurrent.duration._
   import Json4sSupport._
 
   implicit val serialization = jackson.Serialization // or native.Serialization
@@ -634,7 +617,7 @@ class DbService(ra: RestRouter, repContext: RepChainSystemContext, isCheckClient
                 if (cert != null && repContext.getPermissionVerify.CheckPermissionOfX509Certificate(cert, "db.query", null)) {
                   entity(as[QueryDB]) { query: QueryDB =>
                     complete {
-                      (ra.getRestActor ? query).mapTo[QueryResult]
+                      (ra ? query).mapTo[QueryResult]
                     }
                   }
                 } else {
@@ -648,7 +631,7 @@ class DbService(ra: RestRouter, repContext: RepChainSystemContext, isCheckClient
           } else {
             entity(as[QueryDB]) { query: QueryDB =>
               complete {
-                (ra.getRestActor ? query).mapTo[QueryResult]
+                (ra ? query).mapTo[QueryResult]
               }
             }
           }
@@ -664,7 +647,7 @@ class DbService(ra: RestRouter, repContext: RepChainSystemContext, isCheckClient
  */
 
 @Tag(name = "did", description = "去中心化身份标识解析")
-class DidService(ra: RestRouter)(implicit executionContext: ExecutionContext)
+class DidService(ra: ActorRef)(implicit executionContext: ExecutionContext)
   extends Directives {
 
   import akka.pattern.ask
@@ -728,7 +711,7 @@ class DidService(ra: RestRouter)(implicit executionContext: ExecutionContext)
           // 原始的did字符串下，DidDocumentReq(did)被JSON序列化会出现错误
           val didAlteredStr = s""""${did}""""
           complete {
-            (ra.getRestActor ? DidDocumentReq(didAlteredStr)).mapTo[HttpResponse]
+            (ra ? DidDocumentReq(didAlteredStr)).mapTo[HttpResponse]
           }
         }
       }
@@ -783,7 +766,39 @@ class DidService(ra: RestRouter)(implicit executionContext: ExecutionContext)
           // 原始的pubKeyId字符串下，DidPubKeyReq(did)被JSON序列化会出现错误
           val pubKeyIdAlteredStr = s""""${pubKeyId}""""
           complete {
-            (ra.getRestActor ? DidPubKeyReq(pubKeyIdAlteredStr)).mapTo[HttpResponse]
+            (ra ? DidPubKeyReq(pubKeyIdAlteredStr)).mapTo[HttpResponse]
+          }
+        }
+      }
+    }
+}
+
+/**
+ * 查询节点相关信息
+ *
+ * @author zyf
+ */
+@Tag(name = "nodeinfo", description = "获得当前节点信息")
+@Path("/nodeinfo")
+class NodeService(ra: ActorRef)(implicit executionContext: ExecutionContext) extends Directives {
+  import Json4sSupport._
+
+  implicit val serialization = jackson.Serialization // or native.Serialization
+  implicit val formats = DefaultFormats
+  implicit val timeout = Timeout(20.seconds)
+
+  val route = getNodeInfo
+
+  @GET
+  @Operation(tags = Array("nodeinfo"), summary = "返回节点信息", description = "getNodeInfo", method = "GET")
+  @ApiResponse(responseCode = "200", description = "返回节点信息", content = Array(new Content(mediaType = "application/json", schema = new Schema(implementation = classOf[QueryResult]))))
+  def getNodeInfo =
+    path("nodeinfo") {
+      get {
+        extractClientIP { ip =>
+          RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} get nodeinfo")
+          complete {
+            (ra ? NodeInfo).mapTo[QueryResult]
           }
         }
       }

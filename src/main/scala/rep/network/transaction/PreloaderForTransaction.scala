@@ -20,6 +20,7 @@ import akka.actor.Props
 import akka.pattern.{AskTimeoutException, ask}
 import akka.util.Timeout
 import com.google.protobuf.ByteString
+import rep.api.rest.ResultCode
 import rep.log.{RepLogger, RepTimeTracer}
 import rep.network.base.ModuleBase
 import rep.network.consensus.common.MsgOfConsensus.{PreTransBlock, PreTransBlockOfCache, PreTransBlockResult, preTransBlockResultOfCache}
@@ -28,6 +29,7 @@ import rep.sc.SandboxDispatcher.{DoTransaction, DoTransactionOfCache}
 import rep.sc.TypeOfSender
 import rep.network.module.ModuleActorType
 import rep.utils._
+
 import scala.util.control.Breaks.{break, breakable}
 import scala.collection.mutable
 import scala.concurrent._
@@ -90,7 +92,7 @@ class PreloaderForTransaction(moduleName: String) extends ModuleBase(moduleName)
   private def createErrorData(ts: scala.collection.Seq[Transaction], err: Option[akka.actor.Status.Failure]): Array[TransactionResult] = {
     var rs = scala.collection.mutable.ArrayBuffer[TransactionResult]()
     ts.foreach(t => {
-      rs += new TransactionResult(t.id, Map.empty,Map.empty,Map.empty, Option(ActionResult(103, err.get.cause.getMessage)))
+      rs += new TransactionResult(t.id, Map.empty,Map.empty,Map.empty, Option(ActionResult(ResultCode.Transaction_Exception_In_Preload, err.get.cause.getMessage)))
     })
     rs.toArray
   }

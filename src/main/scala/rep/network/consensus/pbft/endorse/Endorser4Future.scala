@@ -91,7 +91,7 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
   private def asyncVerifyTransaction(t: Transaction): Future[Boolean] = Future {
     var result = false
 
-    if (pe.getRepChainContext.getTransactionPool.isExist(t.id)) {
+    if (pe.getRepChainContext.getTransactionPool.isExistInCache(t.id)) {
       result = true
     } else {
       val tmp = BlockVerify.VerifyOneSignOfTrans(t, pe.getRepChainContext.getSignTool)

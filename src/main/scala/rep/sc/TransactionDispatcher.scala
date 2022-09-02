@@ -29,7 +29,7 @@ class TransactionDispatcher(moduleName: String) extends ModuleBase(moduleName) {
       RepLogger.debug(RepLogger.Sandbox_Logger, s"transaction dispatcher for ${cid} is exist.")
       this.TransActors(cid)
     } else {
-      val sd = context.actorOf(SandboxDispatcher.props("sandbox_dispatcher_" + cid, cid).withDispatcher("contract-dispatcher"), "sandbox_dispatcher_" + cid)
+      val sd = context.actorOf(SandboxDispatcher.props("sandbox_dispatcher_" + cid, cid), "sandbox_dispatcher_" + cid)
       this.TransActors += cid -> sd
       RepLogger.debug(RepLogger.Sandbox_Logger, s"create transaction dispatcher for ${cid} .")
       sd

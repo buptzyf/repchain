@@ -8,7 +8,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class X509TrustManagerProxy implements InvocationHandler {
+public class X509TrustManagerProxy  implements InvocationHandler {
     private TrustManager  manager  =  null;
     private X509ExtendedTrustManager target = null;
     private X509ExtendedTrustManager update = null;

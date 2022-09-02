@@ -4,6 +4,7 @@ package rep.app.system
 import java.util.concurrent.ConcurrentHashMap
 
 import akka.actor.Address
+import javax.net.ssl.SSLContext
 import rep.app.conf.{RepChainConfig, SystemCertList, TimePolicy}
 import rep.app.management.{ReasonOfStop, RepChainMgr}
 import rep.authority.cache.PermissionCacheManager
@@ -24,15 +25,15 @@ import rep.storage.chain.preload.BlockPreload
 import rep.storage.db.factory.DBFactory
 import rep.storage.filesystem.FileOperate
 
-class RepChainSystemContext(systemName:String){//},cs:ClusterSystem) {
+class RepChainSystemContext (systemName:String){//},cs:ClusterSystem) {
   private val config : RepChainConfig = new RepChainConfig(systemName)
   private val timePolicy : TimePolicy = new TimePolicy(config.getSystemConf)
-  private val poolOfTransaction : PoolOfTransaction =  new PoolOfTransaction(this)
   private val cryptoManager : CryptoMgr = new  CryptoMgr(this)
   private val signer : ISigner = new ImpECDSASigner(this)
   private val signTool:SignTool = new SignTool(this)
   private val blockStorager : BlockStorager = new BlockStorager(this)
   private val blockPreloads : ConcurrentHashMap[String,BlockPreload] = new ConcurrentHashMap[String,BlockPreload]()
+  private val poolOfTransaction : PoolOfTransaction =  new PoolOfTransaction(this)
   private val systemCertList : SystemCertList = new SystemCertList(this)
   private val httpLogger = new HttpLogger(config.getChainNetworkId, config.getOuputAlertThreads,config.getOutputMaxThreads,config.getOutputAlertAliveTime,
                                           config.isOutputAlert,config.getOutputAlertPrismaUrl)
@@ -201,6 +202,20 @@ class RepChainSystemContext(systemName:String){//},cs:ClusterSystem) {
   def getBlockStorager:BlockStorager={
     this.blockStorager
   }
+}
 
+object RepChainSystemContext{
+  private val ctxs = new ConcurrentHashMap[String,RepChainSystemContext]()
 
+  def setCtx(name:String,ctx:RepChainSystemContext):Unit={
+    this.ctxs.put(name,ctx)
+  }
+
+  def getCtx(name:String):RepChainSystemContext={
+    if(this.ctxs.containsKey(name)){
+      this.ctxs.get(name)
+    }else{
+      null
+    }
+  }
 }

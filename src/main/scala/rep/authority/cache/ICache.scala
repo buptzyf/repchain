@@ -137,7 +137,8 @@ abstract class ICache(cd:CommonDataOfCache,mgr:PermissionCacheManager) {
         pk = key.substring(idx + splitString.length)
       if(this.getCacheType.equalsIgnoreCase(DidTplPrefix.authIdxPrefix)){
         val signer = mgr.getCache(DidTplPrefix.signerPrefix)
-        signer.updateCache(key.substring(0,idx+1)+DidTplPrefix.signerPrefix+pk.substring(0,pk.indexOf(DidTplPrefix.authIdxSuffix)))
+        signer.updateCache(key.substring(0,idx+1)+DidTplPrefix.signerPrefix+
+          pk.substring(0,pk.indexOf(DidTplPrefix.authIdxSuffix)))
         RepLogger.Permission_Logger.trace(s"ICache.updateCache update cache data,key=${key},pk=${pk},signer=${DidTplPrefix.signerPrefix+pk.substring(0,pk.indexOf(DidTplPrefix.authIdxSuffix))}")
       }
 
