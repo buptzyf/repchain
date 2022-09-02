@@ -1,21 +1,31 @@
 package rep.accumulator
 
-import rep.accumulator.Accumulator.Witness
-import rep.crypto.Sha256
 import java.math.BigInteger
 import scala.collection.mutable.ArrayBuffer
 import scala.util.control.Breaks.{break, breakable}
-
-object Accumulator{
-  case class Witness(promise:BigInteger,acc_value:BigInteger)
+import rep.crypto.Sha256
+import rep.accumulator.Accumulator.{
+  AccumulatorWithMembershipProof, MembershipProof,
+  NonWitness, NonMembershipProof, Witness, bitLength
 }
 
-class Accumulator(acc_base: BigInteger, last_acc: BigInteger, last_aggregate: BigInteger, hashTool: Sha256) {
+object Accumulator{
   val bitLength = 256
-  var acc_value: BigInteger = last_acc
-  var acc_aggregate_value: BigInteger = last_aggregate
-  var acc_base_value: BigInteger = acc_base
 
+  case class NonWitness(d_coefficient: BigInteger, v_coefficient: BigInteger, gv_inv: BigInteger)
+
+  case class Witness(witness: BigInteger)
+
+  case class MembershipProof(proof: BigInteger, witness: Witness)
+
+  case class AccumulatorWithMembershipProof(acc: Accumulator, proof: MembershipProof)
+
+  case class NonMembershipProof(nonWitness: NonWitness, proof_poe: BigInteger, proof_poke2: Poke2.proofStruct)
+}
+
+class Accumulator (acc_base: BigInteger, last_acc: BigInteger, hashTool: Sha256) {
+  var acc_value: BigInteger = last_acc
+  var acc_base_value: BigInteger = acc_base
 
   InitChecked
 
@@ -30,21 +40,10 @@ class Accumulator(acc_base: BigInteger, last_acc: BigInteger, last_aggregate: Bi
       this.acc_value = BigInteger.ZERO
     }
 
-    if (this.acc_aggregate_value == null) {
-      this.acc_aggregate_value = BigInteger.ONE
-    }
-
-    /*//装入累加器成员的乘积，由于累加器的乘积随着元素的增加会越来越大，该乘积放在外面的文件系统，以文件方式存储,该方法要放到外部装入
-    val file = new File(last_aggregate_value_file_name)
-    if(file.isFile && file.exists()){
-      val s1 = scala.io.Source.fromFile(last_aggregate_value_file_name, "UTF-8")
-      val l1 = try s1.mkString finally s1.close()
-      this.acc_aggregate_value = new BigInteger(l1, 10)
-    }*/
   }
 
   def copy: Accumulator = {
-    new Accumulator(this.acc_base_value, this.acc_value, this.acc_aggregate_value, this.hashTool)
+    new Accumulator(this.acc_base_value, this.acc_value, this.hashTool)
   }
 
   def getAccVaule: BigInteger = {
@@ -55,98 +54,125 @@ class Accumulator(acc_base: BigInteger, last_acc: BigInteger, last_aggregate: Bi
     this.acc_base_value
   }
 
-  def getAccAgg: BigInteger = {
-    this.acc_aggregate_value
-  }
-
+  /////////////////////累加器的累加操作（累加，累加之后输出证明）、验证证明----开始/////////////////////////
   def add(element: Array[Byte]): Accumulator = {
     val prime = PrimeTool.hash2Prime(element, bitLength, hashTool)
-    val new_acc_value = if (this.acc_value.compareTo(BigInteger.ZERO) == 0) {
-      Rsa2048.exp(this.acc_base_value, prime)
-    } else {
-      Rsa2048.exp(this.acc_value, prime)
-    }
-    val agg = Rsa2048.mul(this.acc_aggregate_value, prime)
-    new Accumulator(this.acc_base_value, new_acc_value, agg, this.hashTool)
+    add(prime)
   }
 
-  def addAndWitness(element: Array[Byte]): (Accumulator,Witness) = {
-    val n_acc = this.add(element)
-    (n_acc,Witness(this.acc_value,n_acc.getAccVaule))
+  def add(element: BigInteger): Accumulator = {
+    val new_acc_value = if (this.acc_value.compareTo(BigInteger.ZERO) == 0) {
+      Rsa2048.exp(this.acc_base_value, element)
+    } else {
+      Rsa2048.exp(this.acc_value, element)
+    }
+    new Accumulator(this.acc_base_value, new_acc_value, this.hashTool)
   }
 
   def addOfBatch(elements: Array[Array[Byte]]): Accumulator = {
-    var new_acc = copy
+    var acc : Accumulator = null
+    val buf = hash_primes(elements)
+    addOfBatch(buf.toArray)
+  }
+
+  def addOfBatch(elements: Array[BigInteger]): Accumulator = {
+    var agg = BigInteger.ONE
     elements.foreach(e => {
-      new_acc = new_acc.add(e)
+      agg = Rsa2048.mul(agg,e)
     })
-    new_acc
+    add(agg)
   }
 
-  /**
-   * 建议使用add方法，add和add1方法的执行结果一致
-   * */
-  def add1(element: Array[Byte]): Accumulator = {
+  def addAndProof(element: Array[Byte]):AccumulatorWithMembershipProof = {
     val prime = PrimeTool.hash2Prime(element, bitLength, hashTool)
-    val agg = Rsa2048.mul(this.acc_aggregate_value, prime)
-    val new_acc_value = Rsa2048.exp(this.acc_base_value, agg)
-    new Accumulator(this.acc_base_value, new_acc_value, agg, this.hashTool)
+    addAndProof(prime)
   }
 
-  def addOfBatch1(elements: Array[Array[Byte]]): Accumulator = {
-    var new_acc = copy
-    elements.foreach(e => {
-      new_acc = new_acc.add1(e)
-    })
-    new_acc
+  def addAndProof(element: BigInteger): AccumulatorWithMembershipProof = {
+    val new_acc = add(element)
+    val proof = Poe.prove(this.acc_value, element, new_acc.getAccVaule, bitLength, hashTool)
+    AccumulatorWithMembershipProof(new_acc, MembershipProof(proof, Witness(this.acc_value)))
   }
 
-  def deleteWithWitness(element:Array[Byte],witness: Witness):Accumulator = {
+  def verifyMembershipProof(member: Array[Byte],proof:MembershipProof): Boolean = {
+    val prime = PrimeTool.hash2Prime(member, bitLength, hashTool)
+    verifyMembershipProof(prime, proof: MembershipProof)
+  }
+
+  def verifyMembershipProof(member: BigInteger, proof: MembershipProof): Boolean = {
+    Poe.verify(proof.witness.witness, member, this.acc_value, proof.proof, bitLength, hashTool)
+  }
+
+  def verifyMembershipWitness(witness: Witness, member: Array[Byte]): Boolean = {
+    val prime = PrimeTool.hash2Prime(member, bitLength, hashTool)
+    if (Rsa2048.exp(witness.witness, prime).compareTo(this.getAccVaule) == 0) true else false
+  }
+
+  def membershipWitness(member: Array[Byte],witness: Witness): Witness = {
+    val prime = PrimeTool.hash2Prime(member, bitLength, hashTool)
+    membershipWitness(prime, witness)
+  }
+
+  def membershipWitness(member: BigInteger, witness: Witness): Witness = {
+    val acc = deleteWithWitness(member,witness)
+    Witness(acc.getAccVaule)
+  }
+  /////////////////////累加器的累加操作（累加，累加之后输出证明）、验证证明----结束/////////////////////////
+
+
+  /////////////////////累加器的带证明的删除操作（带见证的删除、删除之后输出证明）----开始/////////////////////////
+  def deleteWithWitness(element: Array[Byte], witness: Witness): Accumulator = {
     val prime = PrimeTool.hash2Prime(element, bitLength, hashTool)
-    val buf : ArrayBuffer[(BigInteger,BigInteger)] = new ArrayBuffer[(BigInteger,BigInteger)]()
-    buf += Tuple2(prime,witness.promise)
+    deleteWithWitness(prime, witness: Witness)
+  }
+
+  def deleteWithWitness(element: BigInteger, witness: Witness): Accumulator = {
+    val buf: ArrayBuffer[(BigInteger, BigInteger)] = new ArrayBuffer[(BigInteger, BigInteger)]()
+    buf += Tuple2(element, witness.witness)
     delete(buf.toArray)
   }
 
-  def deleteOfBatchWithWitness(elements:Array[(Array[Byte], Witness)]): Accumulator = {
-    val buf : ArrayBuffer[(BigInteger,BigInteger)] = new ArrayBuffer[(BigInteger,BigInteger)]()
-    elements.foreach(e=>{
-      val prime = PrimeTool.hash2Prime(e._1, bitLength, hashTool)
-      buf += Tuple2(prime,e._2.promise)
-    })
-
-    delete(buf.toArray)
+  def deleteWithWitnessToProof(element: Array[Byte], witness: Witness): AccumulatorWithMembershipProof = {
+    val prime = PrimeTool.hash2Prime(element, bitLength, hashTool)
+    deleteWithWitnessToProof(prime, witness)
   }
 
-  private def delete(elements:Array[(BigInteger,BigInteger)]):Accumulator={
-    var r : Accumulator = null
+  def deleteWithWitnessToProof(element: BigInteger, witness: Witness): AccumulatorWithMembershipProof = {
+    val buf: ArrayBuffer[(BigInteger, BigInteger)] = new ArrayBuffer[(BigInteger, BigInteger)]()
+    buf += Tuple2(element, witness.witness)
+    val acc = delete(buf.toArray)
+    val proof = Poe.prove(acc.getAccVaule, element, this.acc_value, bitLength, hashTool)
+    AccumulatorWithMembershipProof(acc, MembershipProof(proof, Witness(acc.getAccVaule)))
+  }
+
+  private def delete(elements: Array[(BigInteger, BigInteger)]): Accumulator = {
+    var r: Accumulator = null
     var isExcept = false
     breakable({
-      elements.foreach(e=>{
-        if(Rsa2048.exp(e._2,e._1).compareTo(this.acc_value) != 0){
+      elements.foreach(e => {
+        if (Rsa2048.exp(e._2, e._1).compareTo(this.acc_value) != 0) {
           isExcept = true
           break
         }
       })
     })
-    if(!isExcept){
-      val buf : ArrayBuffer[(BigInteger,BigInteger)] = new ArrayBuffer[(BigInteger,BigInteger)]()
+    if (!isExcept) {
+      val buf: ArrayBuffer[(BigInteger, BigInteger)] = new ArrayBuffer[(BigInteger, BigInteger)]()
       buf ++= elements
-      buf += Tuple2(BigInteger.ONE,this.acc_value)
+      buf += Tuple2(BigInteger.ONE, this.acc_value)
       val st = divide_and_conquer(buf.toArray)
-      if(st != null){
-        var agg = Rsa2048.div(this.acc_aggregate_value,st._1)
-        r = new Accumulator(this.acc_base_value, st._2, agg, this.hashTool)
+      if (st != null) {
+        r = new Accumulator(this.acc_base_value, st._2, this.hashTool)
       }
     }
     r
   }
 
-  private def divide_and_conquer(elements:Array[(BigInteger,BigInteger)]):(BigInteger,BigInteger)={
-    var r : (BigInteger,BigInteger) = null
-    if(elements.length > 1){
+  private def divide_and_conquer(elements: Array[(BigInteger, BigInteger)]): (BigInteger, BigInteger) = {
+    var r: (BigInteger, BigInteger) = null
+    if (elements.length > 1) {
       var loop = 0
-      while(loop < elements.length){
+      while (loop < elements.length) {
         var p1: BigInteger = null
         var p2: BigInteger = null
         var v1: BigInteger = null
@@ -154,8 +180,8 @@ class Accumulator(acc_base: BigInteger, last_acc: BigInteger, last_aggregate: Bi
         if (r == null) {
           p1 = elements(loop)._1
           v1 = elements(loop)._2
-          p2 = elements(loop+1)._1
-          v2 = elements(loop+1)._2
+          p2 = elements(loop + 1)._1
+          v2 = elements(loop + 1)._2
           loop += 2
         } else {
           p1 = r._1
@@ -164,39 +190,161 @@ class Accumulator(acc_base: BigInteger, last_acc: BigInteger, last_aggregate: Bi
           v2 = elements(loop)._2
           loop += 1
         }
-        val st = Util.ShamirTrick(v1,v2,p1,p2)
-        if(st == None){
+        val st = Util.ShamirTrick(v1, v2, p1, p2)
+        if (st == None) {
           r = null
           break
-        }else{
-          r = (Rsa2048.mul(p1,p2),st.get)
+        } else {
+          r = (Rsa2048.mul(p1, p2), st.get)
         }
+      }
+    }
+    r
+  }
+  /////////////////////累加器的带证明的删除操作（带证明的删除、删除之后输出证明）----结束/////////////////////////
+
+
+  /////////////////////累加器的非成员证明与验证操作----开始/////////////////////////
+  def nonmemberShipProof(nonElements: Array[Array[Byte]],elementAgg:BigInteger): NonMembershipProof ={
+    val x : Array[BigInteger] = hash_primes(nonElements)
+    nonmemberShipProof(x, elementAgg)
+  }
+
+  def nonmemberShipProof(nonElements: Array[BigInteger], elementAgg: BigInteger): NonMembershipProof = {
+    var r: NonMembershipProof = null
+    var x: BigInteger = product(nonElements)
+    val s = elementAgg
+    val beZout = Util.Bezout(x, s)
+    if (beZout != None) {
+      val zout = beZout.get
+      if (zout.gcd.compareTo(BigInteger.ONE) == 0) {
+        val d = Rsa2048.exp(this.acc_base_value, zout.coefficient_a)
+        val v = Rsa2048.exp(this.acc_value, zout.coefficient_b)
+        val gv_inv = Rsa2048.op(this.acc_base_value, Rsa2048.inv(v))
+        val w = NonWitness(d, v, gv_inv)
+        val poke2_proof = Poke2.prove(this.acc_value, zout.coefficient_b, v, bitLength, hashTool)
+        val poe_proof = Poe.prove(d, x, gv_inv, bitLength, hashTool)
+        r = NonMembershipProof(w, poe_proof, poke2_proof)
       }
     }
     r
   }
 
 
-  def membershipWitness(member: Array[Byte]): Witness = {
-    val prime = PrimeTool.hash2Prime(member, bitLength, hashTool)
-    Witness(Rsa2048.exp(this.acc_base_value, Rsa2048.div(this.acc_aggregate_value, prime)),this.acc_value)
+  def nonmemberShipVerify(elements: Array[Array[Byte]],proof:NonMembershipProof):Boolean  ={
+    val x = hash_primes(elements)
+    nonmemberShipVerify(x, proof)
   }
 
-  def verifyMembershipWitness(witness:Witness,member:Array[Byte]):Boolean={
-    val prime = PrimeTool.hash2Prime(member, bitLength, hashTool)
-    if(Rsa2048.exp(witness.promise,prime).compareTo(witness.acc_value) == 0)  true else false
+  def nonmemberShipVerify(elements: Array[BigInteger], proof: NonMembershipProof): Boolean = {
+    val x: BigInteger = product(elements)
+    Poke2.verify(this.acc_value, proof.nonWitness.v_coefficient, proof.proof_poke2, bitLength, hashTool) &&
+      Poe.verify(proof.nonWitness.d_coefficient, x, proof.nonWitness.gv_inv, proof.proof_poe, bitLength, hashTool)
+  }
+  /////////////////////累加器的非成员证明操作----结束/////////////////////////
+
+  /////////////////////累加器的成员证明更新操作，更新到当前累加----开始/////////////////////////
+  def updateMembershipWitness(tracked_element:Array[Array[Byte]],witness:Witness,
+                              untracked_added:Array[Array[Byte]],
+                              untracked_deleted:Array[Array[Byte]]):Witness={
+    val tracked_elements = hash_primes(tracked_element)
+    val untracked_addeds = hash_primes(untracked_added)
+    val untracked_deleteds = hash_primes(untracked_deleted)
+    updateMembershipWitness(tracked_elements, witness: Witness, untracked_addeds, untracked_deleteds)
   }
 
-  private def isAggregate(prime: BigInteger): Boolean = {
-    val agg = Rsa2048.divideAndRemainder(this.acc_aggregate_value, prime)
-    if (agg._2.compareTo(BigInteger.ZERO) == 0) {
-      true
+  def updateMembershipWitness(tracked_element: Array[BigInteger], witness: Witness,
+                              untracked_added: Array[BigInteger],
+                              untracked_deleted: Array[BigInteger]): Witness = {
+    var r: Witness = null
+    val x = product(tracked_element)
+    val x_hat = product(untracked_deleted);
+
+    var isExcept: Boolean = false
+    breakable(
+      tracked_element.foreach(e => {
+        if (untracked_added.contains(e) || untracked_deleted.contains(e)) {
+          isExcept = true
+          break
+        }
+      })
+    )
+
+    if (!isExcept) {
+      val bzout = Util.Bezout(x, x_hat)
+      if (bzout != None) {
+        val zout = bzout.get
+        if (zout.gcd.compareTo(BigInteger.ONE) == 0) {
+          val acc_w = new Accumulator(this.acc_base_value, witness.witness, this.hashTool)
+          val w = acc_w.addOfBatch(untracked_added)
+          val w_to_b = Rsa2048.exp(w.getAccVaule, zout.coefficient_b)
+          val acc_new_to_a = Rsa2048.exp(this.getAccVaule, zout.coefficient_a)
+          val promise = Rsa2048.op(w_to_b, acc_new_to_a)
+          r = Witness(promise)
+        }
+      }
+    }
+    r
+  }
+
+  /////////////////////累加器的成员证明更新操作，更新到当前累加----结束/////////////////////////
+
+  /////////////////////求当前累加器之上的所有累加元素的见证----开始/////////////////////////
+  def root_factor(g: BigInteger, elems: Array[Array[Byte]]): Array[BigInteger] = {
+    val es = hash_primes(elems)
+    root_factor(g, es)
+  }
+
+  def root_factor(g: BigInteger, elems: Array[BigInteger]): Array[BigInteger] = {
+    if (elems.length == 1) {
+      val ab = new ArrayBuffer[BigInteger]()
+      ab += g
+      ab.toArray
     } else {
-      false
+      val half = elems.length / 2
+
+      var g_left = g
+      for (i <- 0 to half - 1) {
+        g_left = Rsa2048.exp(g_left, elems(i))
+      }
+
+      var g_right = g
+      for (i <- half to elems.length - 1) {
+        g_right = Rsa2048.exp(g_right, elems(i))
+      }
+      val left = root_factor(g_right, elems.slice(0, half))
+      val right = root_factor(g_left, elems.slice(half, elems.length))
+      left ++ right
     }
   }
+  /////////////////////求当前累加器之上的所有累加元素的见证----结束/////////////////////////
 
+  /////////////////////公共方法----开始/////////////////////////
+  private def hash_prime_product(elements:Array[Array[Byte]]):BigInteger={
+    var x: BigInteger = BigInteger.ONE
+    for (i <- 0 to elements.length - 1) {
+      x = Rsa2048.mul(x, PrimeTool.hash2Prime(elements(i), bitLength, hashTool))
+    }
+    x
+  }
 
+  private def product(elements: Array[BigInteger]): BigInteger = {
+    var x: BigInteger = BigInteger.ONE
+    elements.foreach(e=>{
+      x = Rsa2048.mul(x, e)
+    })
+    x
+  }
 
+  private def hash_primes(elements:Array[Array[Byte]]):Array[BigInteger]={
+    val buf = new ArrayBuffer[BigInteger]()
+    elements.foreach(e => {
+      val prime = PrimeTool.hash2Prime(e, bitLength, hashTool)
+      buf += prime
+    })
+    buf.toArray
+  }
+  /////////////////////公共方法----结束/////////////////////////
 
 }
+
