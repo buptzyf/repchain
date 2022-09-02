@@ -231,7 +231,7 @@ object RVerifiableCredentialTPL {
   final case class UpdateVCStatusParam(id: String, status: String)
   final case class RevokeVCClaimsParam(id: String, revokedClaimIndex: Seq[String])
 
-  val STATUS_CODE_OK             = 500200 // 合约方法调用成功
+  val STATUS_CODE_OK             = 0 // 合约方法调用成功
   val STATUS_CODE_NO_FUNCTION    = 500300 // 无对应合约方法
   val STATUS_CODE_BAD_REQUEST    = 500400 // 合约方法参数有误
   val STATUS_CODE_UNAUTHORIZED   = 500401 // 没有该合约方法调用权限
@@ -337,8 +337,8 @@ object RVerifiableCredentialTPL {
   def assertInvokerIsCreator(ctx: ContractContext, worldstate: Any, message: String) = {
     var creator = ""
     worldstate match {
-      case ccs: CreClaStruct => creator = ccs.creator.split(":").last
-      case vcs: VerCreStatus => creator = vcs.creator.split(":").last
+      case ccs: CreClaStruct => creator = s"""${ccs.creator.split(":")(2)}:${ccs.creator.split(":").last}"""
+      case vcs: VerCreStatus => creator = s"""${vcs.creator.split(":")(2)}:${vcs.creator.split(":").last}"""
     }
     if(creator != ctx.t.signature.get.certId.get.creditCode) {
       throw ContractException(

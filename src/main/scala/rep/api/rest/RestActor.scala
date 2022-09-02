@@ -16,6 +16,7 @@
 
 package rep.api.rest
 
+import akka.util.{ByteString, Timeout}
 import akka.util.Timeout
 
 import scala.concurrent.duration._
@@ -45,7 +46,7 @@ import rep.sc.SandboxDispatcher.DoTransaction
  * 以及用于建立Tranaction，检索Tranaction的静态方法
  *
  * @author c4w created
- *
+ * @author jayTsang modified
  */
 
 object RestActor {
@@ -97,7 +98,28 @@ object RestActor {
 
   case class signedTran(tran: String)
 
-
+  case class DidDocumentReq(id: String)
+  case class DidPubKey(
+                     id: String,
+                     `type`: String,
+                     controller: String,
+                     publicKeyPEM: String
+                   )
+  case class SerEnd(id: String, `type`: String, serviceEndpoint: String)
+  case class DidDocument(
+                        `@context`: String = "https://www.w3.org/ns/did/v1",
+                        id: String,
+                        controller: Seq[String],
+                        created: String,
+                        updated: String,
+                        verificationMethod: Seq[DidPubKey],
+                        authentication: Seq[Any],
+                        assertionMethod: Seq[Any],
+                        capabilityInvocation: Seq[Any],
+                        service: Seq[SerEnd]
+                        )
+  case class DidPubKeyReq(didPubKeyId: String)
+  val DELIMITER = "#"
 }
 
 /**
@@ -409,7 +431,206 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
       val pkey = netId + "_" + cName + "_" + tran_oid + "_" + key
       val pvalue = dataAccess.getBytes(pkey)
       val jsonString = SerializeUtils.compactJson(SerializeUtils.deserialise(pvalue))
-      sender ! QueryResult(Option(JsonMethods.parse(jsonString)))
+      sender ! QueryResult(Option(JsonMethods.parse(string2JsonInput(jsonString))))
+
+    // resolve the did to get the did document
+    case DidDocumentReq(did) =>
+      import rep.sc.tpl.did.DidTplPrefix.{ signerPrefix, certPrefix }
+      import org.joda.time.DateTime
+      import org.joda.time.format.ISODateTimeFormat
+      import rep.proto.rc2.Certificate
+      import rep.proto.rc2.Certificate.CertType
+      import rep.proto.rc2.Signer
+      import akka.http.scaladsl.model.StatusCodes
+      import org.json4s.jackson.Serialization.write
+
+      implicit val fomats = DefaultFormats
+
+      val didOrigin = did.replaceAll("\"", "")
+
+      // check the did format
+      if (!didOrigin.startsWith("did:rep:")) {
+        sender ! HttpResponse(
+          StatusCodes.BadRequest,
+          entity = "Bad did format, which should start with \"did:rep:\""
+        )
+      }
+
+      // To retrieve the signer for the did document
+      // The did is like "did:rep:<network>:<oid>:<specific_user_id>" or "did:rep:<network>:<specific_user_id>"
+      val info = didOrigin.split(":");
+      var oid = "_";
+      if (info.length == 5) {
+        oid = info(3) match {
+          case ""  => "_"
+          case _ => info(3)
+        }
+      }
+      val signerStateKey = s"""${info(2)}_${config.getAccountContractName}_${oid}_${signerPrefix}${info(2)}:${info(4)}"""
+      val signerBytes = DBFactory.getDBAccess(config).getBytes(signerStateKey)
+      if (signerBytes == null) {
+          sender ! HttpResponse(
+            StatusCodes.NotFound,
+            entity = s"""Not fount the did document for the did: "$didOrigin""""
+          )
+      }
+      val signer = SerializeUtils.deserialise(signerBytes).asInstanceOf[Signer]
+
+      // to get the created time string (ISO8601 UTC format) for the did document
+      val createdTime = new DateTime(signer.createTime.get.seconds * 1000 +
+        signer.createTime.get.nanos / 1000000)
+      val createdTimeStr = ISODateTimeFormat.dateTime()
+        .withZoneUTC().print(createdTime)
+
+      //  to get the verificationMethod, authentication,
+      //  assertMethod and capabilityInvocation for the did document
+      var verficationMethod: Seq[DidPubKey] = Seq()
+      var authentication: Seq[Any] = Seq()
+      var assertionMethod: Seq[Any] = Seq()
+      var capabilityInvocation: Seq[Any] = Seq()
+      signer.certNames.foreach( certName => {
+        // to retrieve a certificate for the signer
+        val certStateKey = s"""${info(2)}_${config.getAccountContractName}_${oid}_${certPrefix}${certName}"""
+        val cert = SerializeUtils.deserialise(
+          DBFactory.getDBAccess(config).getBytes(certStateKey)
+        ).asInstanceOf[Certificate]
+
+        val pubKeyId = didOrigin + DELIMITER + cert.id.get.certName
+
+        verficationMethod = verficationMethod :+
+          constructDidPubKey(cert.certificate, pubKeyId, didOrigin)
+
+        cert.certType match {
+          case CertType.CERT_AUTHENTICATION => {
+            authentication = authentication :+ pubKeyId
+            assertionMethod = assertionMethod :+ pubKeyId
+          }
+          case CertType.CERT_CUSTOM => assertionMethod = assertionMethod :+ pubKeyId
+        }
+      } )
+
+      val didDocument = DidDocument(
+        id = didOrigin,
+        controller = Seq(didOrigin),
+        created = createdTimeStr,
+        // TODO: use the real updated time
+        updated = createdTimeStr,
+        verificationMethod = verficationMethod,
+        authentication = authentication,
+        assertionMethod = assertionMethod,
+        // TODO: use the real capabilityInvocation info
+        capabilityInvocation = capabilityInvocation,
+        // TODO: use the real service info
+        service = Seq()
+      )
+      sender ! HttpResponse(
+        StatusCodes.OK,
+        entity = HttpEntity.Strict(
+          MediaTypes.`application/json`,
+          ByteString(write(didDocument))
+        )
+      )
+
+    // resolve the didPubKeyId to get the did PubKey
+    case DidPubKeyReq(didPubKeyId) =>
+      import rep.sc.tpl.did.DidTplPrefix.{ signerPrefix, certPrefix }
+      import rep.proto.rc2.Certificate
+      import akka.http.scaladsl.model.StatusCodes
+      import org.json4s.jackson.Serialization.write
+
+      implicit val fomats = DefaultFormats
+
+      val pubKeyId = didPubKeyId.replaceAll("\"", "")
+
+      // check the did pubKeyId format
+      if (!pubKeyId.startsWith("did:rep:") ||
+        !pubKeyId.contains("#")
+      ) {
+        sender ! HttpResponse(
+          StatusCodes.BadRequest,
+          entity = "Bad did PubKeyId format, which should be like: \"did:rep:<str1>#<str2>\""
+        )
+      }
+
+      // to retrieve the certificate for the did pubKeyId
+      // The pubKeyId is like "did:rep:<network>:<oid>:<specific_user_id>#<cert_name>"
+      // or "did:rep:<network>:<specific_user_id>#<cert_name>"
+      val info = pubKeyId.split(":");
+      var oid = "_";
+      if (info.length == 5) {
+        oid = info(3) match {
+          case "" => "_"
+          case _ => info(3)
+        }
+      }
+      val certName = s"""${info(2)}:${info.last.replace(DELIMITER, ".")}"""
+      val certStateKey = s"""${info(2)}_${config.getAccountContractName}_${oid}_${certPrefix}${certName}"""
+      val certBytes = DBFactory.getDBAccess(config).getBytes(certStateKey)
+      if (certBytes == null) {
+          sender ! HttpResponse(
+            StatusCodes.NotFound,
+            entity = s"""Not fount the did PubKey for the did pubKeyId: "$pubKeyId""""
+          )
+      }
+      val cert = SerializeUtils.deserialise(certBytes).asInstanceOf[Certificate]
+
+      val didPubKey = constructDidPubKey(cert.certificate, pubKeyId, pubKeyId.split(DELIMITER)(0))
+      sender ! HttpResponse(
+        StatusCodes.OK,
+        entity = HttpEntity.Strict(
+          MediaTypes.`application/json`,
+          ByteString(write(didPubKey))
+        )
+      )
   }
 
+  private def constructDidPubKey(
+                               certPemStr: String,
+                               pubKeyId: String,
+                               did: String
+                             ): DidPubKey = {
+    import org.bouncycastle.util.io.pem.{ PemReader, PemWriter, PemObject }
+    import java.io.{ ByteArrayInputStream, StringReader, StringWriter }
+    import org.bouncycastle.asn1.x509
+    import java.security.cert.CertificateFactory
+
+    // to get the public key type
+    val pemReader = new PemReader(new StringReader(certPemStr))
+    val certBytes = pemReader.readPemObject().getContent
+    val pubKeyInfo = x509.Certificate.getInstance(certBytes).getSubjectPublicKeyInfo
+    val oid2MyDidPubKeyTypeName = Map(
+      "1.2.840.10045.2.1" -> "Ecdsa",
+      "1.2.840.10045.3.1.7" -> "Prime256v1",
+      "1.3.132.0.10" -> "Secp256k1",
+      "1.2.840.113549.1.1.1" -> "Rsa"
+    )
+    var pubKeyType = oid2MyDidPubKeyTypeName.getOrElse(
+      pubKeyInfo.getAlgorithm.getAlgorithm.toASN1Primitive.toString,
+      "Unknown"
+    )
+    pubKeyType += oid2MyDidPubKeyTypeName.getOrElse(
+      pubKeyInfo.getAlgorithm.getParameters.toASN1Primitive.toString,
+      ""
+    )
+    pubKeyType += "VerificationKey"
+    pubKeyType = pubKeyType match {
+      case "EcdsaSecp256k1VerificationKey" => pubKeyType + "2019"
+      case "RsaVerificationKey" => pubKeyType + "2018"
+      case _ => pubKeyType
+    }
+
+    // to get the public key pem format string
+    val pubKeyPemStrWriter = new StringWriter()
+    val pubKeyPemWriter = new PemWriter(pubKeyPemStrWriter)
+    val cf = CertificateFactory.getInstance("X.509")
+    val certificate = cf.generateCertificate(new ByteArrayInputStream(certBytes))
+    pubKeyPemWriter.writeObject(new PemObject("PUBLIC KEY", certificate.getPublicKey.getEncoded))
+    pubKeyPemWriter.flush()
+    val pubKeyPem = pubKeyPemStrWriter.toString
+    //        val pemReader2 = new PemReader(new StringReader(pubKeyPem))
+    //        val pubKeyBytes = pemReader2.readPemObject().getContent
+    //        val hh = KeyFactory.getInstance("EC").generatePublic(new X509EncodedKeySpec(pubKeyBytes)).getAlgorithm
+
+    DidPubKey(pubKeyId, pubKeyType, did, pubKeyPem)
+  }
 }

@@ -34,6 +34,7 @@ object SwaggerDocService extends SwaggerHttpService {
     classOf[BlockService],
     classOf[TransactionService],
     classOf[DbService],
+    classOf[DidService],
     classOf[NodeService],
   )
   override val info = Info(

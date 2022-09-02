@@ -343,7 +343,8 @@ class Shim {
 
   def getDIDURIPrefix: String = {
     if (isDidContract) {
-      s"did:rep:${this.getChainNetId}:"
+//      s"did:rep:${this.getChainNetId}:"
+      "did:rep:"
     } else {
       ""
     }
