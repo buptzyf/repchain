@@ -21,7 +21,57 @@ object testTxAccumulator extends App {
   //test_delete_bad_witness
   //test_update_membership_witness
   //test_update_membership_witness_failure
-  test_prove_nonmembership
+  //test_prove_nonmembership
+  //test_compute_sub_witness
+  //test_compute_sub_witness_failure
+  test_compute_individual_witnesses
+
+  def test_compute_individual_witnesses:Unit={
+    val root_acc = new Accumulator(null, null, hash_tool)
+    val a = block1(0).prime
+    val b = block1(1).prime
+    val c = block1(2).prime
+    val acc = root_acc.addOfBatch(Array(a,b,c))
+
+    val witness_multiple = root_acc.add(a)
+    val witnesses = witness_multiple.compute_individual_witnesses(Array(b,c))
+    var i = 0
+    witnesses.foreach(elem=>{
+      val e = elem._1
+      val w = elem._2
+      if(acc.getAccVaule.compareTo(Rsa2048.exp(w.witness,e)) == 0){
+        System.out.println(s"verify individual witness success,index=${i},ok")
+        i += 1
+      }
+    })
+  }
+
+  def test_compute_sub_witness_failure:Unit={
+    val root_acc = new Accumulator(null, null, hash_tool)
+    val a = block1(0).prime
+    val b = block1(1).prime
+    val c = block1(2).prime
+    val acc = root_acc.compute_subset_witness(Array(a,b),Array(c))
+    if(acc == null){
+      System.out.println("verify bad sub witness success,ok")
+    }
+  }
+
+  def test_compute_sub_witness:Unit={
+    val root_acc = new Accumulator(null, null, hash_tool)
+    val a = block1(0).prime
+    val b = block1(1).prime
+    val acc_set = Array(a, b)
+    val acc = root_acc.compute_subset_witness(acc_set,Array(a))
+
+    val acc1 = root_acc.add(b)
+
+    if(acc.getAccVaule.compareTo(acc1.getAccVaule) == 0){
+      System.out.println("verify sub witness success,ok")
+    }else{
+      System.out.println("verify sub witness failed,ok")
+    }
+  }
 
   def test_prove_nonmembership:Unit={
     val root_acc = new Accumulator(null, null, hash_tool)

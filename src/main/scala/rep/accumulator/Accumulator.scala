@@ -345,6 +345,54 @@ class Accumulator (acc_base: BigInteger, last_acc: BigInteger, hashTool: Sha256)
   }
   /////////////////////求当前累加器之上的所有累加元素的见证----结束/////////////////////////
 
+  /////////////////////求批见证中的单个见证----开始/////////////////////////////////////
+
+  def compute_subset_witness(witness_set:Array[Array[Byte]],witness_subset:Array[Array[Byte]]):Accumulator={
+    compute_subset_witness(hash_primes(witness_set),hash_primes(witness_subset))
+  }
+  def compute_subset_witness(witness_set:Array[BigInteger],witness_subset:Array[BigInteger]):Accumulator={
+    var r : Accumulator = null
+    var isExcept : Boolean = false
+    breakable(
+      witness_subset.foreach(w=>{
+        if(!witness_set.contains(w)){
+          isExcept = true
+          break
+        }
+      })
+    )
+
+    if(!isExcept){
+      val numerator = product(witness_set)
+      val denominator = product(witness_subset)
+      val div = Rsa2048.divideAndRemainder(numerator,denominator)
+      val quotient = div._1
+      val remainder = div._2
+      if(remainder.compareTo(BigInteger.ZERO) == 0){
+        val acc = if (this.acc_value.compareTo(BigInteger.ZERO) == 0) this.acc_base_value else this.acc_value
+        r = new Accumulator(acc,Rsa2048.exp(acc,quotient),hashTool)
+      }
+    }
+    r
+  }
+
+  def compute_individual_witnesses(elems:Array[Array[Byte]]):Array[(BigInteger,Witness)]={
+    compute_individual_witnesses(hash_primes(elems))
+  }
+
+  def compute_individual_witnesses(elems:Array[BigInteger]):Array[(BigInteger,Witness)]={
+    val bf = new ArrayBuffer[(BigInteger,Witness)]()
+    val acc = if (this.acc_value.compareTo(BigInteger.ZERO) == 0) this.acc_base_value else this.acc_value
+    val ws = root_factor(acc,elems)
+    for(i<-0 to elems.length-1){
+      val w = (elems(i),Witness(ws(i)))
+      bf += w
+    }
+    bf.toArray
+  }
+  /////////////////////求批见证中的单个见证----结束/////////////////////////////////////
+
+
   /////////////////////公共方法----开始/////////////////////////
   def hash_prime_product(elements:Array[Array[Byte]]):BigInteger={
     var x: BigInteger = BigInteger.ONE
