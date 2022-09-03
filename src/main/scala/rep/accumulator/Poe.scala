@@ -1,7 +1,6 @@
 package rep.accumulator
 
 import rep.crypto.Sha256
-
 import java.math.BigInteger
 
 

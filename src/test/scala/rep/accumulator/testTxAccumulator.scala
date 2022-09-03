@@ -19,7 +19,46 @@ object testTxAccumulator extends App {
   //test_add
   //test_delete
   //test_delete_bad_witness
-  test_update_membership_witness
+  //test_update_membership_witness
+  //test_update_membership_witness_failure
+  test_prove_nonmembership
+
+  def test_prove_nonmembership:Unit={
+    val root_acc = new Accumulator(null, null, hash_tool)
+    val a = block1(0).prime
+    val b = block1(1).prime
+    val acc_set = Array(a, b)
+
+    val acc = root_acc.addOfBatch(acc_set)
+    val c = block1(2).prime
+    val d = block1(3).prime
+    val non_members = Array(c,d)
+    val proof = acc.nonmemberShipProof(acc_set,non_members)
+    if(proof != null){
+      if(acc.nonmemberShipVerify(non_members,proof)){
+        System.out.println("verify nonmember prove success,ok")
+      }
+    }else{
+      System.out.println("get prove failed,error!!")
+    }
+  }
+
+  def test_update_membership_witness_failure:Unit={
+    var root_acc = new Accumulator(null, null, hash_tool)
+    val a = block1(0).prime
+    val b = block1(1).prime
+    val c = block1(2).prime
+    val d = block1(3).prime
+    val acc1 = root_acc.addOfBatch(Array(a, b, c))
+    val acc2 = root_acc.addOfBatch(Array(c, d))
+    val acc2_wit = Witness(acc2.getAccVaule)
+
+    val wit_new = acc1.updateMembershipWitness(Array(a), acc2_wit, Array(b),
+      Array(a))
+    if(wit_new == null){
+      System.out.println("update witness failed,ok")
+    }
+  }
 
   def test_update_membership_witness:Unit={
     var root_acc = new Accumulator(null, null, hash_tool)

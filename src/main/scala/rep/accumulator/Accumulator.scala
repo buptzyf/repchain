@@ -76,10 +76,7 @@ class Accumulator (acc_base: BigInteger, last_acc: BigInteger, hashTool: Sha256)
   }
 
   def addOfBatch(elements: Array[BigInteger]): Accumulator = {
-    var agg = BigInteger.ONE
-    elements.foreach(e => {
-      agg = Rsa2048.mul(agg,e)
-    })
+    var agg = product(elements)
     add(agg)
   }
 
@@ -225,23 +222,32 @@ class Accumulator (acc_base: BigInteger, last_acc: BigInteger, hashTool: Sha256)
 
 
   /////////////////////累加器的非成员证明与验证操作----开始/////////////////////////
-  def nonmemberShipProof(nonElements: Array[Array[Byte]],elementAgg:BigInteger): NonMembershipProof ={
-    val x : Array[BigInteger] = hash_primes(nonElements)
-    nonmemberShipProof(x, elementAgg)
+  def nonmemberShipProof(acc_set: Array[BigInteger],nonElements: Array[BigInteger] ): NonMembershipProof = {
+    val a_s: BigInteger = product(acc_set)
+    val n_e : BigInteger = product(nonElements)
+    nonmemberShipProof(a_s, n_e)
   }
 
-  def nonmemberShipProof(nonElements: Array[BigInteger], elementAgg: BigInteger): NonMembershipProof = {
+  def nonmemberShipProof(acc_set: Array[Array[Byte]], nonElements: Array[Array[Byte]]): NonMembershipProof = {
+    val acc_set_ps = hash_primes(acc_set)
+    val n_e_ps = hash_primes(nonElements)
+    nonmemberShipProof(acc_set_ps,n_e_ps)
+  }
+
+  def nonmemberShipProof(acc: BigInteger, non: BigInteger): NonMembershipProof = {
     var r: NonMembershipProof = null
-    var x: BigInteger = product(nonElements)
-    val s = elementAgg
-    val beZout = Util.Bezout(x, s)
+    val x = non
+    val s = acc
+    val beZout = Util.Bezout(x,s)
     if (beZout != None) {
       val zout = beZout.get
       if (zout.gcd.compareTo(BigInteger.ONE) == 0) {
-        val d = Rsa2048.exp(this.acc_base_value, zout.coefficient_a)
-        val v = Rsa2048.exp(this.acc_value, zout.coefficient_b)
-        val gv_inv = Rsa2048.op(this.acc_base_value, Rsa2048.inv(v))
+        val g =  this.acc_base_value
+        val d = if(zout.sign_a) Rsa2048.exp( Rsa2048.inv(g), zout.coefficient_a) else Rsa2048.exp(g, zout.coefficient_a)
+        val v = if(zout.sign_b) Rsa2048.exp( Rsa2048.inv(this.acc_value), zout.coefficient_b) else Rsa2048.exp(this.acc_value, zout.coefficient_b)
+        val gv_inv = Rsa2048.op(g, Rsa2048.inv(v))
         val w = NonWitness(d, v, gv_inv)
+        val tr = Rsa2048.exp(d,x)
         val poke2_proof = Poke2.prove(this.acc_value, zout.coefficient_b, v, bitLength, hashTool)
         val poe_proof = Poe.prove(d, x, gv_inv, bitLength, hashTool)
         r = NonMembershipProof(w, poe_proof, poke2_proof)
@@ -251,15 +257,15 @@ class Accumulator (acc_base: BigInteger, last_acc: BigInteger, hashTool: Sha256)
   }
 
 
-  def nonmemberShipVerify(elements: Array[Array[Byte]],proof:NonMembershipProof):Boolean  ={
-    val x = hash_primes(elements)
+  def nonmemberShipVerify(nonElements: Array[Array[Byte]],proof:NonMembershipProof):Boolean  ={
+    val x = hash_primes(nonElements)
     nonmemberShipVerify(x, proof)
   }
 
-  def nonmemberShipVerify(elements: Array[BigInteger], proof: NonMembershipProof): Boolean = {
-    val x: BigInteger = product(elements)
-    Poke2.verify(this.acc_value, proof.nonWitness.v_coefficient, proof.proof_poke2, bitLength, hashTool) &&
-      Poe.verify(proof.nonWitness.d_coefficient, x, proof.nonWitness.gv_inv, proof.proof_poe, bitLength, hashTool)
+  def nonmemberShipVerify(nonElements: Array[BigInteger], proof: NonMembershipProof): Boolean = {
+    val x: BigInteger = product(nonElements)
+    Poe.verify(proof.nonWitness.d_coefficient, x, proof.nonWitness.gv_inv, proof.proof_poe, bitLength, hashTool) &&
+    Poke2.verify(this.acc_value, proof.nonWitness.v_coefficient, proof.proof_poke2, bitLength, hashTool)
   }
   /////////////////////累加器的非成员证明操作----结束/////////////////////////
 

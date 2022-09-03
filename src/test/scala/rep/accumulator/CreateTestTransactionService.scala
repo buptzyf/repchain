@@ -39,7 +39,7 @@ object CreateTestTransactionService{
 class CreateTestTransactionService {
   val test_transaction_prefix = "acc_test_tx_"
   val test_max_key = "acc_test_tx_max"
-  val max_tx_limited: Int = 7000000
+  val max_tx_limited: Int = 10000000
   var current_max_tx_number: AtomicInteger = new AtomicInteger(-1)
   var read_tx_number : AtomicInteger = new AtomicInteger(0)
   val ctx = new RepChainSystemContext("121000005l35120456.node1")
