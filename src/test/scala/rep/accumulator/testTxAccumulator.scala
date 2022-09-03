@@ -27,7 +27,7 @@ object testTxAccumulator extends App {
   test_compute_individual_witnesses
 
   def test_compute_individual_witnesses:Unit={
-    val root_acc = new Accumulator(null, null, hash_tool)
+    val root_acc = new Accumulator(tx_service.ctx.getTxAccBase, null, hash_tool)
     val a = block1(0).prime
     val b = block1(1).prime
     val c = block1(2).prime

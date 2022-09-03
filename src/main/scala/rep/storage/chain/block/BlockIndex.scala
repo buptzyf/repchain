@@ -1,6 +1,8 @@
 package rep.storage.chain.block
 
-import rep.proto.rc2.{Block}
+import rep.proto.rc2.Block
+
+import java.math.BigInteger
 import scala.collection.mutable.ArrayBuffer
 
 /**
@@ -13,6 +15,9 @@ class BlockIndex {
   private var height:Long = 0
   private var hash : String = ""
   private var preHash: String = ""
+
+  private var tx_acc_value : BigInteger= BigInteger.ZERO
+  private var state_acc_value : BigInteger = BigInteger.ZERO
 
   private var txIds : Array[String] = null
 
@@ -40,7 +45,8 @@ class BlockIndex {
     this.height = header.height
     this.hash = header.hashPresent.toStringUtf8
     this.preHash = header.hashPrevious.toStringUtf8
-
+    //this.tx_acc_value = new BigInteger(header.commitTx.toStringUtf8)
+    //this.state_acc_value = new BigInteger(header.commitStateGlobal.toStringUtf8)
     this.txIds = {
       val trs = block.transactions
       val txs = if(trs.isEmpty) null else new ArrayBuffer[String]

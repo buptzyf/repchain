@@ -2,9 +2,9 @@ package rep.app.system
 
 
 import java.util.concurrent.ConcurrentHashMap
-
 import akka.actor.Address
-import javax.net.ssl.SSLContext
+import rep.accumulator.Accumulator.bitLength
+import rep.accumulator.{ PrimeTool, Rsa2048}
 import rep.app.conf.{RepChainConfig, SystemCertList, TimePolicy}
 import rep.app.management.{ReasonOfStop, RepChainMgr}
 import rep.authority.cache.PermissionCacheManager
@@ -20,12 +20,18 @@ import rep.network.cluster.management.ConsensusNodeConfig
 import rep.network.tools.NodeMgr
 import rep.network.tools.transpool.PoolOfTransaction
 import rep.proto.rc2.ChaincodeId
+import rep.storage.chain.KeyPrefixManager
 import rep.storage.chain.block.{BlockSearcher, BlockStorager}
 import rep.storage.chain.preload.BlockPreload
 import rep.storage.db.factory.DBFactory
 import rep.storage.filesystem.FileOperate
+import rep.utils.SerializeUtils
+
+import java.math.BigInteger
 
 class RepChainSystemContext (systemName:String){//},cs:ClusterSystem) {
+  private val tx_acc_base_key = "tx_acc_base"
+  private val state_acc_base_key = "state_acc_base"
   private val config : RepChainConfig = new RepChainConfig(systemName)
   private val timePolicy : TimePolicy = new TimePolicy(config.getSystemConf)
   private val cryptoManager : CryptoMgr = new  CryptoMgr(this)
@@ -51,6 +57,35 @@ class RepChainSystemContext (systemName:String){//},cs:ClusterSystem) {
   private val consensusNodeConfig : ConsensusNodeConfig = new ConsensusNodeConfig(this)
   private val registerClusterNode:ConcurrentHashMap[String,Address] = new ConcurrentHashMap[String,Address]()
   private val nodemgr = new NodeMgr
+
+  private val tx_acc_base : BigInteger = getAccBase(tx_acc_base_key)
+  private val state_acc_base : BigInteger = getAccBase(state_acc_base_key)
+
+  def getTxAccBase:BigInteger={
+    this.tx_acc_base
+  }
+
+  def getStateAccBase:BigInteger={
+    this.state_acc_base
+  }
+
+  private def getAccBase(key:String):BigInteger={
+    var r = PrimeTool.getPrimeOfRandom(bitLength, Rsa2048.getHalfModulus)
+    val db = DBFactory.getDBAccess(this.getConfig)
+
+    val v = db.getObject[String](KeyPrefixManager.getWorldStateKey(this.getConfig, key, "_"))
+    if (v != None) {
+      val vs = if(v.get.isInstanceOf[String]) v.get.asInstanceOf[String] else ""
+      if(vs.equals("")){
+        db.putBytes(KeyPrefixManager.getWorldStateKey(this.getConfig, key, "_"),SerializeUtils.serialise(r.toString()))
+      }else{
+        r = new BigInteger(vs)
+      }
+    }else{
+      db.putBytes(KeyPrefixManager.getWorldStateKey(this.getConfig, key, "_"),SerializeUtils.serialise(r.toString()))
+    }
+    r
+  }
 
   def getNodeMgr: NodeMgr = {
     this.nodemgr
