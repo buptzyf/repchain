@@ -36,7 +36,7 @@ object vectorCommitment_test extends App {
       val start = System.currentTimeMillis()
 
       if(isUseBlock){
-        val tx_wits = vc.getTransactionWitnesses(block, old_acc_value)
+        val tx_wits = vc.getTransactionWitnessesWithBlock(block, old_acc_value)
         if (tx_wits != null) {
           old_acc_value = tx_wits.tx_acc_value
         }

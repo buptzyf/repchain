@@ -19,7 +19,7 @@ object VectorCommitment{
 
 class VectorCommitment(ctx:RepChainSystemContext) {
 
-  def getTransactionWitnesses(block:Block,tx_acc_value:BigInteger,isCreateWitness:Boolean=false):TxWitnessesOfBlock={
+  def getTransactionWitnessesWithBlock(block:Block,tx_acc_value:BigInteger,isCreateWitness:Boolean=false):TxWitnessesOfBlock={
     var r : TxWitnessesOfBlock = null
     if(block != null){
       val txs = block.transactions.toArray
@@ -27,7 +27,7 @@ class VectorCommitment(ctx:RepChainSystemContext) {
       for(i<-0 to tps.length-1){
         tps(i) = TxAndPrime(txs(i).id,PrimeTool.hash2Prime(txs(i).toByteArray,Accumulator.bitLength,ctx.getHashTool))
       }
-      r = getTransactionWitnesses(tps,block.getHeader.height,tx_acc_value)
+      r = getTransactionWitnesses(tps,block.getHeader.height,tx_acc_value,isCreateWitness)
     }
     r
   }
