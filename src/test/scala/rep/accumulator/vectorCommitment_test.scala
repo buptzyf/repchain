@@ -5,10 +5,12 @@ import rep.accumulator.chain.VectorCommitment
 import rep.accumulator.chain.VectorCommitment.TxAndPrime
 import rep.crypto.Sha256
 import rep.network.consensus.util.BlockHelp
-import rep.proto.rc2.Transaction
+import rep.proto.rc2.{Block, Transaction}
 
 import java.io.PrintWriter
 import java.math.BigInteger
+import scala.math.abs
+import scala.util.Random
 
 object vectorCommitment_test extends App {
   val tx_service = new CreateTestTransactionService
@@ -16,7 +18,34 @@ object vectorCommitment_test extends App {
   val hash_tool = new Sha256(ctx.getCryptoMgr.getInstance)
 
   //product_test
-  TransactionOfBlockVectorCommitment_test
+  //TransactionOfBlockVectorCommitment_test
+  TransactionOfBlockVectorCommitmentProve_test
+
+
+
+  def TransactionOfBlockVectorCommitmentProve_test:Unit={
+    val vc: VectorCommitment = new VectorCommitment(ctx)
+    var old_acc_value :BigInteger = null
+    val isUseBlock = true
+
+    val number = 10
+    val block1 = getBlock(number,1)
+    val block2 = getBlock(number,2)
+    val block3 = getBlock(number,3)
+    val vc1 = vc.getTransactionWitnessesWithBlock(block1._1,old_acc_value,isUseBlock)
+    val vc2 = vc.getTransactionWitnessesWithBlock(block2._1,vc1.tx_acc_value,true)
+    val vc3 = vc.getTransactionWitnessesWithBlock(block3._1,vc2.tx_acc_value,true)
+
+    val acc3 = new Accumulator(ctx.getTxAccBase,vc3.tx_acc_value,ctx.getHashTool)
+    val ri = abs(new Random().nextInt(10))
+    val wi = vc3.txWitnesses(ri)
+    val proof = acc3.getMemberProof4Witness(wi.prime,wi.witnessInBlock)
+    if(acc3.verifyMembershipProof(wi.prime,proof.proof)){
+      System.out.println("verify member proof,is success,ok")
+    }else{
+      System.out.println("verify member proof,is failed,ok")
+    }
+  }
 
   def TransactionOfBlockVectorCommitment_test:Unit={
     val vc : VectorCommitment = new VectorCommitment(ctx)
@@ -88,5 +117,19 @@ object vectorCommitment_test extends App {
       }*/
     }
     r
+  }
+
+  def getBlock(count:Int,height:Long):(Block,Array[String],Array[BigInteger])={
+    val block_tx = getTransaction(count: Int): Array[tx_data]
+    val txs = for (tx <- block_tx) yield {
+      Transaction.parseFrom(tx.tx)
+    }
+    val tids = for(t <- txs) yield {
+      t.id.toString
+    }
+    val tps = for(t <- block_tx) yield {
+      t.prime
+    }
+    Tuple3(BlockHelp.buildBlock("", height, txs.toSeq),tids,tps)
   }
 }

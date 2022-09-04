@@ -91,6 +91,11 @@ class Accumulator (acc_base: BigInteger, last_acc: BigInteger, hashTool: Sha256)
     AccumulatorWithMembershipProof(new_acc, MembershipProof(proof, Witness(this.acc_value)))
   }
 
+  def getMemberProof4Witness(element:BigInteger,witness: Witness):AccumulatorWithMembershipProof={
+    val proof = Poe.prove(witness.witness, element, this.acc_value, bitLength, hashTool)
+    AccumulatorWithMembershipProof(this, MembershipProof(proof, witness))
+  }
+
   def addAndProof(elements: Array[BigInteger]): AccumulatorWithMembershipProof = {
     val p = product(elements)
     addAndProof(p)
