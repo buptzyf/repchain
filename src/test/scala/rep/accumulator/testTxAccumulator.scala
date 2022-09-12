@@ -204,14 +204,14 @@ object testTxAccumulator extends App {
     primes(1) = block1(1).prime
     primes(2) = block1(2).prime
     primes(3) = block1(3).prime
-    val exp = root3.product(primes)
+    val exp = Accumulator.product(primes)
 
     val primes_ = new Array[Array[Byte]](4)
     primes_(0) = block1(0).tx
     primes_(1) = block1(1).tx
     primes_(2) = block1(2).tx
     primes_(3) = block1(3).tx
-    val exp_ = root3_.product(primes)
+    val exp_ = Accumulator.product(primes)
 
     if(root3.getAccVaule.compareTo(Rsa2048.exp(root3.getAccBase,exp))==0){
       System.out.println("BigInteger,result equal")

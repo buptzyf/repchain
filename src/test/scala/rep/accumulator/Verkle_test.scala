@@ -1,14 +1,11 @@
 package rep.accumulator
 
+
 import rep.accumulator.CreateTestTransactionService.tx_data
-import rep.accumulator.vectorCommitment_test.tx_service
-import rep.accumulator.verkle.util
 import rep.accumulator.verkle.util.verkleTool
 import rep.crypto.Sha256
-
-import java.io.PrintWriter
+import rep.utils.SerializeUtils
 import java.math.BigInteger
-import java.util
 import scala.collection.mutable.ArrayBuffer
 
 object Verkle_test extends App {
@@ -18,25 +15,50 @@ object Verkle_test extends App {
 
   test_Tree
 
-  def test_Tree:Unit={
-    val t = getTransaction(50)
+  def test_Tree: Unit = {
+    val t = getTransaction(60)
     val ts = handleTransaction(t)
     val root = ctx.getVerkleNodeBuffer.readMiddleNode(null)
-    for(i<-0 to ts.length-1){
-      System.out.println(s"id=${verkleTool.getKey(ts(i)._1)},prime=${ts(i)._3}")
-      root.addState(ts(i)._1,ts(i)._2,ts(i)._3)
+    for (i <- 0 to 49) {
+      System.out.println(s"serial=${i} id=${verkleTool.getKey(ts(i)._1)},prime=${ts(i)._3}")
+      root.addState(ts(i)._1, ts(i)._2, ts(i)._3)
     }
-    val str = root.middleToString
+
+    for (i <- 40 to 49) {
+      val d = ts(i)
+      val proofs = root.getProofs(d._1, d._2, d._3)
+      System.out.println("proof length=" + SerializeUtils.serialise(proofs).length)
+      val b = root.verifyProofs(d._3, proofs)
+      if (b) {
+        System.out.println(s"serial=${i} id=${verkleTool.getKey(d._1)},verify member proof ok")
+      } else {
+        System.out.println(s"serial=${i} id=${verkleTool.getKey(d._1)},verify member proof ok")
+      }
+    }
+
+    for (i <- 50 to 59) {
+      val d = ts(i)
+      val proofs = root.getProofs(d._1, d._2, d._3)
+      System.out.println("proof length=" + SerializeUtils.serialise(proofs).length)
+      val b = root.verifyProofs(d._3, proofs)
+      if (b) {
+        System.out.println(s"serial=${i} id=${verkleTool.getKey(d._1)},verify Nonmember proof ok")
+      } else {
+        System.out.println(s"serial=${i} id=${verkleTool.getKey(d._1)},verify Nonmember proof ok")
+      }
+    }
+
+    /*val str = root.middleToString
     val pw = new PrintWriter(s"repchaindata/verkle-tree.txt", "UTF-8")
     pw.write(str)
     pw.flush()
-    pw.close()
+    pw.close()*/
   }
 
-  private def handleTransaction(data:Array[tx_data]):Array[(Array[Int],Array[Byte],BigInteger)]={
-    val sb = new ArrayBuffer[(Array[Int],Array[Byte],BigInteger)]()
-    data.foreach(d=>{
-      sb += Tuple3(verkle.util.verkleTool.getIndex(hash_tool.hash(d.tx)),d.tx,d.prime)
+  private def handleTransaction(data: Array[tx_data]): Array[(Array[Int], Array[Byte], BigInteger)] = {
+    val sb = new ArrayBuffer[(Array[Int], Array[Byte], BigInteger)]()
+    data.foreach(d => {
+      sb += Tuple3(verkle.util.verkleTool.getIndex(hash_tool.hash(d.tx)), d.tx, d.prime)
     })
     sb.toArray
   }
