@@ -4,7 +4,8 @@ package rep.app.system
 import java.util.concurrent.ConcurrentHashMap
 import akka.actor.Address
 import rep.accumulator.Accumulator.bitLength
-import rep.accumulator.{ PrimeTool, Rsa2048}
+import rep.accumulator.verkle.VerkleNodeBuffer
+import rep.accumulator.{PrimeTool, Rsa2048}
 import rep.app.conf.{RepChainConfig, SystemCertList, TimePolicy}
 import rep.app.management.{ReasonOfStop, RepChainMgr}
 import rep.authority.cache.PermissionCacheManager
@@ -60,6 +61,7 @@ class RepChainSystemContext (systemName:String){//},cs:ClusterSystem) {
 
   private val tx_acc_base : BigInteger = getAccBase(tx_acc_base_key)
   private val state_acc_base : BigInteger = getAccBase(state_acc_base_key)
+  private val vb : VerkleNodeBuffer = new VerkleNodeBuffer(this)
 
   def getTxAccBase:BigInteger={
     this.tx_acc_base
@@ -67,6 +69,10 @@ class RepChainSystemContext (systemName:String){//},cs:ClusterSystem) {
 
   def getStateAccBase:BigInteger={
     this.state_acc_base
+  }
+
+  def getVerkleNodeBuffer:VerkleNodeBuffer={
+    this.vb
   }
 
   private def getAccBase(key:String):BigInteger={

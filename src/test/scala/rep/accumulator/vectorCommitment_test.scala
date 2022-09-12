@@ -11,6 +11,7 @@ import java.io.PrintWriter
 import java.math.BigInteger
 import scala.math.abs
 import scala.util.Random
+import org.apache.commons.codec.binary.{Base32, Base64, BinaryCodec, Hex}
 
 object vectorCommitment_test extends App {
   val tx_service = new CreateTestTransactionService
@@ -19,9 +20,43 @@ object vectorCommitment_test extends App {
 
   //product_test
   //TransactionOfBlockVectorCommitment_test
-  TransactionOfBlockVectorCommitmentProve_test
+  //TransactionOfBlockVectorCommitmentProve_test
+  toHexString_test
 
 
+
+  def toHexString_test:Unit={
+    val ht = ctx.getHashTool
+    val t = getTransaction(100)
+    for(i<-0 to t.length-1){
+      val t_hash = ht.hash(t(i).tx)
+      val b32 = new Base32(false)
+      val a = b32.encode(t_hash)
+      val asc = String.valueOf(BinaryCodec.toAsciiChars(t_hash))
+      //val hex = ByteToString(t_hash)
+
+
+      System.out.println(s"i:${i},bytelength:${t_hash.length},hexlength:${asc.length}, hex:${asc}")
+    }
+  }
+
+  def ByteToChar(bs:Array[Byte]):Array[Char]={
+    var r : Array[Char] = null
+    if(bs != null && bs.length>0) {
+      r = new Array[Char](bs.length)
+      for(i<-0 to bs.length-1){
+        r(i) = (bs(i).toInt + 128).toChar
+        System.out.print(s"int=${bs(i).toInt},int+128=${bs(i).toInt + 128},char=${r(i)};")
+      }
+      System.out.println("")
+    }
+    r
+  }
+
+  def ByteToString(bs:Array[Byte]):String={
+    val cs = ByteToChar(bs:Array[Byte])
+    String.valueOf(cs)
+  }
 
   def TransactionOfBlockVectorCommitmentProve_test:Unit={
     val vc: VectorCommitment = new VectorCommitment(ctx)
