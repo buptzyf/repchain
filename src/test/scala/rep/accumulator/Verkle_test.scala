@@ -1,10 +1,12 @@
 package rep.accumulator
 
 
+import org.apache.commons.codec.BinaryEncoder
 import rep.accumulator.CreateTestTransactionService.tx_data
 import rep.accumulator.verkle.util.verkleTool
 import rep.crypto.Sha256
 import rep.utils.SerializeUtils
+
 import java.math.BigInteger
 import scala.collection.mutable.ArrayBuffer
 
@@ -13,7 +15,17 @@ object Verkle_test extends App {
   val ctx = tx_service.ctx
   val hash_tool = new Sha256(ctx.getCryptoMgr.getInstance)
 
-  test_Tree
+  //test_Tree
+  test_sha
+  def test_sha:Unit={
+    val str = "adf-sle-"
+    val str1 = "adf-sle-"+"sdd"
+    //val str_h = ctx.getHashTool.hashstr(str.getBytes)
+    //val str1_h = ctx.getHashTool.hashstr(str1.getBytes)
+    val str_h = org.apache.commons.codec.binary.BinaryCodec.toAsciiString(str.getBytes)
+    val str1_h = org.apache.commons.codec.binary.BinaryCodec.toAsciiString(str1.getBytes)
+    System.out.println(s"str=${str},str_h=${str_h},str1=${str1},str1_h=${str1_h}")
+  }
 
   def test_Tree: Unit = {
     val t = getTransaction(60)

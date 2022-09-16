@@ -93,7 +93,14 @@ class SystemInfo(nodeName: String) {
       } else {
         this.systemStatus match {
           case SystemStatus.Stopped => resultInfo = "系统已经停止"
-          case SystemStatus.Starting => resultInfo = "系统正在启动，不能停止"
+          case SystemStatus.Starting =>
+              if(killSystem){
+                this.clusterSystem = null
+                this.systemStatus = SystemStatus.Stopped
+                resultInfo = "系统已经停止"
+              }else{
+                resultInfo = "系统正在启动，请稍后再试"
+              }
           case SystemStatus.None => resultInfo = "系统没有启动，不需要停止"
         }
       }
