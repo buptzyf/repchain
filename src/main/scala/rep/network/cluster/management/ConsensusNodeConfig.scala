@@ -44,7 +44,7 @@ class ConsensusNodeConfig(ctx:RepChainSystemContext) {
         updateVoteList(updateInfo)
         val ml: ActorRef = ctx.getMemberList
         if (ml != null) {
-          ml ! voteListOfConfig
+          ml ! getVoteListOfConfig
         }
       } catch {
         case ex: Exception =>
