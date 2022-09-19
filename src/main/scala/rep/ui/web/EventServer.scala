@@ -86,7 +86,7 @@ object EventServer {
     implicit val materializer = ActorMaterializer()
     implicit val executionContext = system.dispatcher
 
-    val evtActor = system.actorOf(Props[RecvEventActor],"RecvEventActor")
+    val evtActor = system.actorOf(RecvEventActor.props("RecvEventActor"),"RecvEventActor")
 
     val port = repContext.getConfig.getHttpServicePort
     val actorNumber = repContext.getConfig.getHttpServiceActorNumber
