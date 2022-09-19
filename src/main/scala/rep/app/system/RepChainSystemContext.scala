@@ -2,7 +2,7 @@ package rep.app.system
 
 
 import java.util.concurrent.ConcurrentHashMap
-import akka.actor.Address
+import akka.actor.{ActorRef, Address}
 import rep.accumulator.Accumulator.bitLength
 import rep.accumulator.verkle.VerkleNodeBuffer
 import rep.accumulator.{PrimeTool, Rsa2048}
@@ -62,6 +62,16 @@ class RepChainSystemContext (systemName:String){//},cs:ClusterSystem) {
   private val tx_acc_base : BigInteger = getAccBase(tx_acc_base_key)
   private val state_acc_base : BigInteger = getAccBase(state_acc_base_key)
   private val vb : VerkleNodeBuffer = new VerkleNodeBuffer(this)
+
+  private var ml : ActorRef = null
+
+  def registerMemberList(ml:ActorRef):Unit={
+    this.ml = ml
+  }
+
+  def getMemberList: ActorRef = {
+    this.ml
+  }
 
   def getTxAccBase:BigInteger={
     this.tx_acc_base

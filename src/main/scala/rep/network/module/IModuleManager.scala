@@ -82,7 +82,9 @@ class IModuleManager(moduleName: String, isStartup: Boolean) extends ModuleBase(
   }
 
   private def loadClusterModule = {
-    context.actorOf(MemberListener.props("memberlistener"), "memberlistener")
+    val ml = context.actorOf(MemberListener.props("memberlistener"), "memberlistener")
+    //pe.register(ModuleActorType.ActorType.memberlistener, context.actorOf(MemberListener.props("memberlistener"), "memberlistener"))
+    pe.getRepChainContext.registerMemberList(ml)
   }
 
   private def loadGensisModule:Any={

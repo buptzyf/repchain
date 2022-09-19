@@ -3,6 +3,7 @@ package rep.network.cluster.management
 import java.util.concurrent.atomic.AtomicBoolean
 import rep.app.system.RepChainSystemContext
 import rep.log.RepLogger
+import akka.actor.{Actor, ActorRef}
 
 class ConsensusNodeConfig(ctx:RepChainSystemContext) {
   private var voteListOfConfig : Array[String] = ConsensusNodeUtil.loadVoteList(ctx)
@@ -41,6 +42,10 @@ class ConsensusNodeConfig(ctx:RepChainSystemContext) {
     override def run(): Unit = {
       try {
         updateVoteList(updateInfo)
+        val ml: ActorRef = ctx.getMemberList
+        if (ml != null) {
+          ml ! voteListOfConfig
+        }
       } catch {
         case ex: Exception =>
           RepLogger.trace(RepLogger.System_Logger, "ConsensusMgr 接收更新共识节点名称列表线程异常，msg=" + ex.getMessage)

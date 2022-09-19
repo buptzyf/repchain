@@ -134,8 +134,20 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
   override def postStop(): Unit =
     cluster unsubscribe self
 
-  def receive = {
 
+
+  def receive = {
+    case voteListChange:Array[String] =>
+      val state = cluster.state
+      state.members.foreach(m =>{
+        val nn = NodeHelp.getNodeName(m.roles)
+        if(!voteListChange.contains(nn)){
+          RepLogger.trace(RepLogger.System_Logger, this.getLogMsgPrefix(s"remove not vote node,name=${nn}"))
+          sendEvent(EventType.PUBLISH_INFO, mediator, NodeHelp.getNodeName(m.roles), Topic.Event, Event.Action.MEMBER_DOWN)
+        }else{
+          RepLogger.trace(RepLogger.System_Logger, this.getLogMsgPrefix(s"print vote node,name=${nn}"))
+        }
+      })
 
     //系统初始化时状态
     case state: CurrentClusterState =>

@@ -28,6 +28,8 @@ object ModuleActorType {
     val transactioncollectioner = 108
 
     val transactionPreloadInStream = 901
+
+    //val memberlistener = 801
   }
 
 }
