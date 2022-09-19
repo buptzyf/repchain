@@ -102,7 +102,7 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
     preloadNodesMap.remove(member.address)
     pe.getRepChainContext.getNodeMgr.removeNode(member.address)
     pe.getRepChainContext.getNodeMgr.removeStableNode(member.address)
-    sendEvent(EventType.PUBLISH_INFO, mediator, NodeHelp.getNodeName(member.roles), Topic.Event, Event.Action.MEMBER_DOWN)
+    sendEvent(EventType.PUBLISH_INFO, mediator, NodeHelp.getNodeNameFromRoles(member.roles), Topic.Event, Event.Action.MEMBER_DOWN)
   }
 
   def memberLeaveHandler(member: Member): Unit = {
@@ -114,7 +114,7 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
       preloadNodesMap.remove(member.address)
       pe.getRepChainContext.getNodeMgr.removeNode(member.address)
       pe.getRepChainContext.getNodeMgr.removeStableNode(member.address)
-      sendEvent(EventType.PUBLISH_INFO, mediator, NodeHelp.getNodeName(member.roles), Topic.Event, Event.Action.MEMBER_DOWN)
+      sendEvent(EventType.PUBLISH_INFO, mediator, NodeHelp.getNodeNameFromRoles(member.roles), Topic.Event, Event.Action.MEMBER_DOWN)
       val result = RepChainMgr.shutdown(pe.getSysTag, ReasonOfStop.Manual)
       RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}发起shutdown命令（因为信任证书被删除），启动结果=${result}"))
     }
@@ -140,14 +140,14 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
     case voteListChange:Array[String] =>
       val state = cluster.state
       state.members.foreach(m =>{
-        val nn = NodeHelp.getNodeName(m.roles)
+        val nn = NodeHelp.getNodeNameFromRoles(m.roles)
         if(!voteListChange.contains(nn) && m.status == MemberStatus.Up){
           pe.getRepChainContext.getNodeMgr.removeStableNode(m.address)
           RepLogger.trace(RepLogger.System_Logger, this.getLogMsgPrefix(s"remove not vote node,name=${nn}"))
-          sendEvent(EventType.PUBLISH_INFO, mediator, NodeHelp.getNodeName(m.roles), Topic.Event, Event.Action.MEMBER_DOWN)
+          sendEvent(EventType.PUBLISH_INFO, mediator, nn, Topic.Event, Event.Action.MEMBER_DOWN)
         }else if(voteListChange.contains(nn) && m.status == MemberStatus.Up){
-          pe.getRepChainContext.getNodeMgr.putStableNode(m.address, NodeHelp.getNodeName(m.roles))
-          sendEvent(EventType.PUBLISH_INFO, mediator, NodeHelp.getNodeName(m.roles), Topic.Event, Event.Action.MEMBER_UP)
+          pe.getRepChainContext.getNodeMgr.putStableNode(m.address, nn)
+          sendEvent(EventType.PUBLISH_INFO, mediator, nn, Topic.Event, Event.Action.MEMBER_UP)
           RepLogger.trace(RepLogger.System_Logger, this.getLogMsgPrefix(s"add vote node,name=${nn}"))
         }else{
           RepLogger.trace(RepLogger.System_Logger, this.getLogMsgPrefix(s"print vote node,name=${nn},status=${m.status}"))
@@ -162,10 +162,10 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
       state.members.foreach(m => {
         if (m.status == MemberStatus.Up) {
           nodes += m.address
-          if (NodeHelp.isCandidatorNode(m.roles)) {
-            snodes.append((m.address, NodeHelp.getNodeName(m.roles)))
-            RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"CurrentClusterState: nodes is candidator,node name =${NodeHelp.getNodeName(m.roles)}"))
-            sendEvent(EventType.PUBLISH_INFO, mediator, NodeHelp.getNodeName(m.roles), Topic.Event, Event.Action.MEMBER_UP)
+          if (NodeHelp.isCandidateNow(NodeHelp.getNodeNameFromRoles(m.roles),pe.getRepChainContext.getConsensusNodeConfig.getVoteListOfConfig.toSet)) {
+            snodes.append((m.address, NodeHelp.getNodeNameFromRoles(m.roles)))
+            RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"CurrentClusterState: nodes is candidator,node name =${NodeHelp.getNodeNameFromRoles(m.roles)}"))
+            sendEvent(EventType.PUBLISH_INFO, mediator, NodeHelp.getNodeNameFromRoles(m.roles), Topic.Event, Event.Action.MEMBER_UP)
           } else {
             RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"CurrentClusterState: nodes is candidator,node name =${m.address.toString}"))
           }
@@ -184,11 +184,11 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
     case MemberUp(member) =>
       RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("Member is Up: {}. {} nodes in cluster" + "~" + member.address + "~" + pe.getRepChainContext.getNodeMgr.getNodes.mkString("|")))
       pe.getRepChainContext.getNodeMgr.putNode(member.address)
-      if (member.roles != null && !member.roles.isEmpty && NodeHelp.isCandidatorNode(member.roles)) {
-        RepLogger.sendAlertToDB(pe.getRepChainContext.getHttpLogger(), new AlertInfo("NETWORK", 4, s"Node Name=${NodeHelp.getNodeName(member.roles)},Node Address=${member.address.toString},is up."))
-        preloadNodesMap.put(member.address, (TimeUtils.getCurrentTime(), NodeHelp.getNodeName(member.roles)))
-        RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"Member is Up:  nodes is condidator,node name=${NodeHelp.getNodeName(member.roles)}"))
-        sendEvent(EventType.PUBLISH_INFO, mediator, NodeHelp.getNodeName(member.roles), Topic.Event, Event.Action.MEMBER_UP)
+      if (member.roles != null && !member.roles.isEmpty && NodeHelp.isCandidateNow(NodeHelp.getNodeNameFromRoles(member.roles),pe.getRepChainContext.getConsensusNodeConfig.getVoteListOfConfig.toSet)) {
+        RepLogger.sendAlertToDB(pe.getRepChainContext.getHttpLogger(), new AlertInfo("NETWORK", 4, s"Node Name=${NodeHelp.getNodeNameFromRoles(member.roles)},Node Address=${member.address.toString},is up."))
+        preloadNodesMap.put(member.address, (TimeUtils.getCurrentTime(), NodeHelp.getNodeNameFromRoles(member.roles)))
+        RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"Member is Up:  nodes is condidator,node name=${NodeHelp.getNodeNameFromRoles(member.roles)}"))
+        sendEvent(EventType.PUBLISH_INFO, mediator, NodeHelp.getNodeNameFromRoles(member.roles), Topic.Event, Event.Action.MEMBER_UP)
       } else {
         RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"Member is Up:  nodes is not condidator,node address=${member.address.toString}"))
       }
@@ -265,13 +265,13 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
       preloadNodesMap.remove(member.address)
       pe.getRepChainContext.getNodeMgr.removeNode(member.address)
       pe.getRepChainContext.getNodeMgr.removeStableNode(member.address)
-      sendEvent(EventType.PUBLISH_INFO, mediator, NodeHelp.getNodeName(member.roles), Topic.Event, Event.Action.MEMBER_DOWN)
+      sendEvent(EventType.PUBLISH_INFO, mediator, NodeHelp.getNodeNameFromRoles(member.roles), Topic.Event, Event.Action.MEMBER_DOWN)
     case ReachableMember(member) =>
       RepLogger.trace(RepLogger.System_Logger, this.getLogMsgPrefix(" ReachableMember recollection"))
       val addr = member.address
       if (member.status == MemberStatus.up) {
-        if (member.roles != null && !member.roles.isEmpty && NodeHelp.isCandidatorNode(member.roles)) {
-          val name = NodeHelp.getNodeName(member.roles)
+        if (member.roles != null && !member.roles.isEmpty && NodeHelp.isCandidateNow(NodeHelp.getNodeNameFromRoles(member.roles),pe.getRepChainContext.getConsensusNodeConfig.getVoteListOfConfig.toSet)) {
+          val name = NodeHelp.getNodeNameFromRoles(member.roles)
           pe.getRepChainContext.getNodeMgr.putNode(addr)
           pe.getRepChainContext.getNodeMgr.putStableNode(addr, name)
           sendEvent(EventType.PUBLISH_INFO, mediator, name, Topic.Event, Event.Action.MEMBER_UP)

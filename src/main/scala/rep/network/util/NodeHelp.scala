@@ -76,7 +76,7 @@ object NodeHelp {
     genenisNode.equals(nodeName)
   }
 
-  def isCandidatorNode(roles: Set[String]): Boolean = {
+  /*def isCandidatorNode(roles: Set[String]): Boolean = {
     var r = false
     breakable(
       roles.foreach(f => {
@@ -86,9 +86,9 @@ object NodeHelp {
         }
       }))
     r
-  }
+  }*/
 
-  def getNodeName(roles: Set[String]): String = {
+  /*def getNodeName(roles: Set[String]): String = {
     var r = ""
     breakable(
       roles.foreach(f => {
@@ -98,7 +98,7 @@ object NodeHelp {
         }
       }))
     r
-  }
+  }*/
 
   def getNodeNameFromRoles(roles: Set[String]): String = {
     var r = ""

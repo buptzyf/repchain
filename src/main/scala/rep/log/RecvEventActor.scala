@@ -18,24 +18,27 @@ package rep.log
 
 import akka.actor.{Actor, ActorRef, Props, Terminated}
 import akka.cluster.pubsub.DistributedPubSub
-import akka.cluster.pubsub.DistributedPubSubMediator.{ Subscribe}
+import akka.cluster.pubsub.DistributedPubSubMediator.Subscribe
 import akka.cluster.Cluster
 import akka.cluster.MemberStatus
 import rep.network.tools.PeerExtension
-import scala.collection.mutable.{HashSet}
+
+import scala.collection.mutable.HashSet
 import rep.log.RecvEventActor.Register
 import rep.network.autotransaction.Topic
+import rep.network.base.ModuleBase
+import rep.network.cluster.ClusterActor
 import rep.network.util.NodeHelp
 import rep.proto.rc2.Event
 
 object RecvEventActor {
-  def props: Props = Props[RecvEventActor]
+  def props(name: String): Props = Props(classOf[RecvEventActor], name)
 
   final case class Register(actorRef: ActorRef)
 
 }
 
-class RecvEventActor extends Actor {
+class RecvEventActor(MoudleName: String)  extends ModuleBase(MoudleName) with ClusterActor {
   var stageActor: ActorRef = null
   var stageActors: HashSet[ActorRef] = HashSet[ActorRef]()
   val cluster = Cluster(context.system)
@@ -47,8 +50,8 @@ class RecvEventActor extends Actor {
 
   private def clusterInfo(stageActor: ActorRef) = {
     cluster.state.members.foreach(m => {
-      if (m.status == MemberStatus.Up && NodeHelp.isCandidatorNode(m.roles)) {
-        stageActor ! new Event(NodeHelp.getNodeName(m.roles), Topic.Event, Event.Action.MEMBER_UP)
+      if (m.status == MemberStatus.Up && NodeHelp.isCandidateNow(NodeHelp.getNodeNameFromRoles(m.roles),pe.getRepChainContext.getConsensusNodeConfig.getVoteListOfConfig.toSet)) {
+        stageActor ! new Event(NodeHelp.getNodeNameFromRoles(m.roles), Topic.Event, Event.Action.MEMBER_UP)
       }
     })
   }
