@@ -141,11 +141,16 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
       val state = cluster.state
       state.members.foreach(m =>{
         val nn = NodeHelp.getNodeName(m.roles)
-        if(!voteListChange.contains(nn)){
+        if(!voteListChange.contains(nn) && m.status == MemberStatus.Up){
+          pe.getRepChainContext.getNodeMgr.removeStableNode(m.address)
           RepLogger.trace(RepLogger.System_Logger, this.getLogMsgPrefix(s"remove not vote node,name=${nn}"))
           sendEvent(EventType.PUBLISH_INFO, mediator, NodeHelp.getNodeName(m.roles), Topic.Event, Event.Action.MEMBER_DOWN)
+        }else if(voteListChange.contains(nn) && m.status == MemberStatus.Up){
+          pe.getRepChainContext.getNodeMgr.putStableNode(m.address, NodeHelp.getNodeName(m.roles))
+          sendEvent(EventType.PUBLISH_INFO, mediator, NodeHelp.getNodeName(m.roles), Topic.Event, Event.Action.MEMBER_UP)
+          RepLogger.trace(RepLogger.System_Logger, this.getLogMsgPrefix(s"add vote node,name=${nn}"))
         }else{
-          RepLogger.trace(RepLogger.System_Logger, this.getLogMsgPrefix(s"print vote node,name=${nn}"))
+          RepLogger.trace(RepLogger.System_Logger, this.getLogMsgPrefix(s"print vote node,name=${nn},status=${m.status}"))
         }
       })
 
