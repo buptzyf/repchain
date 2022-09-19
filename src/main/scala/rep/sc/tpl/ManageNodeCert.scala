@@ -54,8 +54,8 @@ class ManageNodeCert extends IContract {
    * @param voteList 抽签列表
    * @return
    */
-  def updateVoleList(ctx: ContractContext, voteList: List[String]): ActionResult = {
-    if (voteList.size >= 4) {
+  def updateVoleList(ctx: ContractContext, voteList: Array[String]): ActionResult = {
+    if (voteList.length >= 4) {
       ctx.api.setVal(vote_list, voteList)
     } else {
       throw ContractException("抽签列表长度至少为4")
@@ -75,7 +75,7 @@ class ManageNodeCert extends IContract {
       case "updateNodeCert" =>
         updateNodeCert(ctx, json.extract[Map[String, String]])
       case "updateVoteList" =>
-        updateVoleList(ctx, json.extract[List[String]])
+        updateVoleList(ctx, json.extract[Array[String]])
     }
   }
 
