@@ -666,46 +666,21 @@ public class Test {
 
 使用[KeyStoreExplorer](https://keystore-explorer.org/)（或者使用[代码](https://gitee.com/BTAJL/ToolCollection/blob/master/src/main/java/repchain/genjks/GenerateJks.java)）即可生成密钥对，导出证书
 
-
-## 动态管理组网节点
-
-在RepChain2.0.0之前，基于TLS1.2组网的RepChain的各个节点默认使用`mytruststore.jks`来保存信任证书列表（包含参与组网的所有节点证书），如果想要加入新的组网节点，有两种方案：
-
-* 方案一：将网络里现有的所有节点的`mytruststore.jks`都更新（将新的节点的证书到如到该存储库），然后重启所有节点
-* 方案二：在`mytruststore.jks`中预置多一些节点证书，这样无需重启网络，但是也无法预估预置多少合适
-
-从上面两个方案可以看出，方式二比方式一稍微好一些，但是也不是一劳永逸
-
-RepChain2.0.0实现了通过合约来管理组网节点的信任证书列表，调用合约对存放在链上的信任证书列表更新时，会触发RepChain重构TrustKeyStore（依据链上的信任证书列表），合约可以实现新增或删除节点证书：
-
-* 对链上的信任证书列表增加新的节点证书，之后加入新的节点到现有网络时，网络里的所有节点会重构TrustKeyStore，新的节点就可以成功的与其他节点建立TLS连接
-
-  > 测试用例：[https://gitee.com/BTAJL/RCJava-core/blob/master/src/test/java/com/rcjava/multi_chain/ManageNodeCertTest.java#L128](https://gitee.com/BTAJL/RCJava-core/blob/master/src/test/java/com/rcjava/multi_chain/ManageNodeCertTest.java#L128)
-
-* 对链上的信任证书列表删除某个节点证书，网络里的所有节点会重构TrustKeyStore，并将相应的节点down掉
-
-  > 测试用例：[https://gitee.com/BTAJL/RCJava-core/blob/master/src/test/java/com/rcjava/multi_chain/ManageNodeCertTest.java#L148](https://gitee.com/BTAJL/RCJava-core/blob/master/src/test/java/com/rcjava/multi_chain/ManageNodeCertTest.java#L148)
-
-从上面方案可以真正的实现动态管理组网节点信任证书列表，以及动态管理组网节点
-
-
-## 动态管理共识列表
-
-RepChain2.0.0之前，基于配置里的抽签列表进行抽签选择出块人，如果想要修改抽签列表（共识节点列表），需要修改所有节点的配置，并重启整个网络
-
-RepChain2.0.0实现了通过合约管理RepChain的共识抽签列表，无需再修改配置并重启整个网络了。
-
-测试用例：[https://gitee.com/BTAJL/RCJava-core/blob/master/src/test/java/com/rcjava/multi_chain/ManageNodeCertTest.java#L149](https://gitee.com/BTAJL/RCJava-core/blob/master/src/test/java/com/rcjava/multi_chain/ManageNodeCertTest.java#L149)
-
 ## RepChain启动方式
+
+RepChain是运行在JVM上的，因此编译打包RepChain并安装了jdk13后，即可使用如下命令启动RepChain，如果打包时指定了启动主类，可以不使用`-cp`参数来指定启动主类
 
 ### 单机多节点
 
+> 常用来模拟测试
+
 ```java
-java -cp RepChain.jar rep.app.Repchain "***.nodex"
+java -cp RepChain.jar rep.app.Repchain
 ```
 
-### 单机单节点
+### 分布式单机单节点
+
+> 分布式部署单机单节点的时候常用到
 
 ```java
 // 可以设置多参数，分别为节点名
@@ -715,11 +690,397 @@ java -cp RepChain.jar rep.app.Repchain_Single "***.nodex"
 ### 节点管理服务
 
 ```java
-// 第一个参数为管理服务的端口，第二个参数为是否开启ssl，第三个参数为是否开启ssl双向认证，之后的参数都为节点名
-java -cp RepChain.jar rep.app.RepChain_Management 8080 0 false "***.node1"
+// 参数都为节点名
+java -cp RepChain.jar rep.app.RepChain_Management "***.node1" "***.node2"
+// 也可以不加参数
+java -cp RepChain.jar rep.app.RepChain_Management
 ```
 
+## RepChainManagement
 
+RepChainManagement为RepChain的**扩展服务**，是用来管理RepChain节点启停的服务，该服务提供了管理节点的API接口，如：上传节点配置文件、启动或停止节点的命令以及查询节点的状态，接口描述文档如下图Swagger-UI所示（默认为：[http://localhost:7081/swagger/index.html](http://localhost:7081/swagger/index.html)）
+
+![RepChainManagement-swagger](img/RepChainManagement-swagger.png)
+
+### 配置说明
+
+为了适应配置类读取框架，management的配置文件看起来和节点的配置文件几乎一样，**但是用到的配置项只是其中的若干**，配置文件为conf/management/system.conf，其中用到的配置项有如下：
+
+1.API服务相关配置
+
+   ```yaml
+   #api是否开启
+   api{
+     http_mode = 0 #http协议模式 0:http; 1:https 默认使用http
+     is_need_client_auth = 0 #当http的模式设置为https时有效，该配置指https时是否需要客户端验证;0=不验证；1=验证
+     http_service_port = 7081#http服务的端口号，默认为7081
+   }
+   ```
+
+2.如果开启https的话，这里配置https相关密钥库
+
+   ```yaml
+   remote {
+     #artery模式下的配置
+     artery {
+       ssl {
+         #节点的ssl配置,主要设置密码，密钥、证书、信任证书路径在程序中动态设置
+         config-ssl-engine {
+           key-password = "123"
+           key-store-password = "123"
+           trust-store-password = "changeme"
+         }
+       }
+     }
+   }
+   ```
+
+3.是否使用国密https(暂时未开源)
+
+   ```yaml
+   gm {
+     #是否使用国密算法，默认为false，使用java国际标准密码体系；true使用中国国家密码算法
+     is_use_gm = false
+     #jce密码算法提供者的类名
+     gm_jce_provider = "org.bouncycastle.jce.provider.BouncyCastleProvider"
+     #密码算法提供者注册时的注册名称
+     gm_jce_provider_name = "BC"
+     gm_jsse_provider = "org.bouncycastle.jsse.provider.BouncyCastleJsseProvider"
+     gm_jsse_provider_name = "BCJSSE"
+     gm_pfx_sign_key_name = "Sig"
+   }
+   ```
+
+### 使用说明
+
+本小节主要介绍如何使用节点管理服务来管理节点，最常使用的三个接口是SystemStartUp、SystemStatus、SystemStop
+
+1.SystemStartUp
+
+   > 启动节点（**前提是节点的配置都已经通过API或者手动上传成功**）
+
+   | url            | http://ip:port/management/system/SystemStartup/${nodeName} |
+   | -------------- | ---------------------------------------------------------- |
+   | method         | get                                                        |
+   | path parameter | nodeName（节点名）                                         |
+
+2.SystemStatus
+
+   > 查看节点状态，可用来查看节点是否启动成功或是否关停成功
+
+   | url            | http://ip:port/management/system/SystemStatus/${nodeName} |
+   | -------------- | --------------------------------------------------------- |
+   | method         | get                                                       |
+   | path parameter | nodeName（节点名）                                        |
+
+3.SystemStop
+
+   > 关停节点
+
+   | url            | http://ip:port/management/system/SystemStop/${nodeName} |
+   | -------------- | ------------------------------------------------------- |
+   | method         | get                                                     |
+   | path parameter | nodeName（节点名）                                      |
+
+使用RepChainManagement能成功启动一个节点的前提是：在部署RepChainManagement服务的目录下有对应节点的配置文件、jks文件等节点运行相关文件，因此可以通过两种方式来上传对应的配置文件
+
+1.通过RepChainManagement的API接口上传
+
+   | url          | http://ip:port/management/system/postConfigFile              |
+   | ------------ | ------------------------------------------------------------ |
+   | method       | post                                                         |
+   | Content-Type | multipart/form-data                                          |
+   | request-body | 4个参数(分别为String, String, String, Binary类型)：<br>node_name<br>file_type<br>network_name<br>upload_file |
+
+   request-body：
+
+   | node_name    | 节点名字，如：121000005l35120456.node1                       |
+   | ------------ | ------------------------------------------------------------ |
+   | file_type    | pfx_key<br>jks_key<br>pfx_cert<br>jks_key<br>config<br>pfx_trust<br>jks_trust<br>genesis |
+   | network_name | 网络名，如：identity-net、credence-net                       |
+   | upload_file  | 具体的文件：如：121000005l35120456.node1.jks、genesis.json   |
+
+   file_type：
+
+   | pfx_key   | 国密的节点私钥（国密组网时使用），如：pfx/identity-net/215159697776981712.node1.pfx |
+   | --------- | ------------------------------------------------------------ |
+   | jks_key   | 节点私钥，如：121000005l35120456.node1.jks                   |
+   | config    | 节点的配置文件，如：conf/identity-net/121000005l35120456.node1/system.conf |
+   | pfx_trust | 节点的国密的信任列表（国密组网时使用），如：pfx/identity-net/mytruststore.pfx |
+   | jks_trust | 节点的信任列表，如：jks/identity-net/mytruststore.jks        |
+   | genesis   | 创世快配置文件（新组建网络），如：json/identity-net/genesis.json |
+
+2.手动上传
+
+   将所需文件配置到management服务的目录下，可参考RepChain项目的目录配置
+   
+   成功将启动节点所需文件都上传到对应目录后，就可以通过接口[http://ip:port/management/system/SystemStartup/${nodeName}](http://ip:port/management/system/SystemStartup/${nodeName})来启动节点了，启动之后记得查询节点状态，可以从对应的实时图或者接口确认是否启动成功(<u>请参考下一章节</u>)
+
+## 动态管理组网节点
+
+### 管理方案
+
+RepChain默认是基于TLSv1.2组网的，因此节点是否拥有可加入网络的权限，是受网络中其他各个节点所维护的信任列表来控制的
+
+* **在RepChain2.0.0之前的版本**，RepChain的各个节点默认使用`mytruststore.jks`来保存信任证书列表（包含参与组网的所有节点证书），如果想要加入新的组网节点，有两种方案：
+
+    * 方案一：将网络里现有的所有节点的`mytruststore.jks`都更新（将新的节点的证书加到该存储库），然后重启所有节点
+
+    * 方案二：在`mytruststore.jks`中预置多一些节点证书，这样无需重启网络，但是也无法预估预置多少合适
+
+
+​		从上面两个方案可以看出，方式二比方式一稍微好一些，但也不是一劳永逸
+
+* **RepChain2.0.0及之后**，RepChain的各个节点首次组建网络时，使用`mytruststore.jks`来保存信任证书列表（包含参与组网的所有节点证书的集合），在组建网络成功之后，各节点会将信任证书列表写到leveldb中。之后，不论重启网络还是新增或删除节点后，再建立TLSv1.2连接时，仍读取保存在leveldb中的信任证书列表，因此，2.0.0版本实现了通过合约来管理（新增或删除）存放在leveldb中的组网节点的信任证书列表。如果想引入新节点到现有网络，需由具有权限的用户先调用对应的节点管理合约来更新信任证书列表。
+
+    * 对链上的信任证书列表增加新的节点证书，之后加入新的节点到现有网络时，网络里的所有节点会重构TrustKeyStore，新的节点就可以成功的与其他节点建立TLS连接
+
+      > 测试用例：[https://gitee.com/BTAJL/RCJava-core/blob/master/src/test/java/com/rcjava/multi_chain/ManageNodeCertTest.java#L183](https://gitee.com/BTAJL/RCJava-core/blob/master/src/test/java/com/rcjava/multi_chain/ManageNodeCertTest.java#L183)
+
+
+    * 对链上的信任证书列表删除某个节点证书，网络里的所有节点会重构TrustKeyStore，节点down掉之后，就再也加入不到网络里了
+
+      > 测试用例：[https://gitee.com/BTAJL/RCJava-core/blob/master/src/test/java/com/rcjava/multi_chain/ManageNodeCertTest.java#L162](https://gitee.com/BTAJL/RCJava-core/blob/master/src/test/java/com/rcjava/multi_chain/ManageNodeCertTest.java#L162)
+
+### 使用流程
+
+下面对在RepChain2.0.0动态管理（加入或退出）组网节点做介绍（可参考rcjava-core中的测试用例），使用合约的详细步骤如下：
+
+> 注：目前节点管理合约并未内置到创世块中，因此需要先部署合约
+
+1.首先明确，要管理的网络是哪个网络
+
+   假设要管理的是credence-net
+
+2.获得可以部署管理合约（ManageNodeCert）到该网络的权限
+
+   ```java
+   @Test
+   @DisplayName("superAdmin注册Operate-可以部署合约credence-net:*.deploy的操作")
+   @Order(1)
+   void signUpOperate() throws InterruptedException, IOException {
+   
+       // superAdmin注册部署合约credence-net:ManageNodeCert.deploy的操作，向<身份链>提交
+       long millis_1 = System.currentTimeMillis();
+       Peer.Operate operate = Peer.Operate.newBuilder()
+               // 也可以是credence-net:ManageNodeCert.deploy
+               .setOpId(DigestUtils.sha256Hex("credence-net:*.deploy"))
+               .setDescription("部署存证合约-任意合约的权限")
+               .setRegister("identity-net:951002007l78123233")
+               .setIsPublish(false)
+               .setOperateType(Peer.Operate.OperateType.OPERATE_CONTRACT)
+               .setAuthFullName("credence-net:*.deploy")
+               .setCreateTime(Timestamp.newBuilder().setSeconds(millis_1 / 1000).setNanos((int) ((millis_1 % 1000) * 1000000)).build())
+               .setOpValid(true)
+               .setVersion("1.0")
+               .build();
+       String tranId_2 = UUID.randomUUID().toString();
+       // 调用身份管理合约
+       Peer.Transaction tran_2 = superCreator.createInvokeTran(tranId_2, superCertId, didChaincodeId, signUpOperate, JsonFormat.printer().print(operate), 0, "");
+       postClient.postSignedTran(tran_2);
+   
+   }
+   ```
+
+3.部署管理合约，并注册对应的操作
+
+   ```java
+   @Test
+   @DisplayName("SuperAdmin部署节点证书管理合约")
+   @Order(2)
+   void deployContractTest() throws InterruptedException, IOException {
+       String tplString = FileUtils.readFileToString(new File("jks/test/tpl/ManageNodeCert.scala"), StandardCharsets.UTF_8);
+       Peer.ChaincodeDeploy chaincodeDeploy = Peer.ChaincodeDeploy.newBuilder()
+               .setTimeout(5000)
+               .setCodePackage(tplString)
+               .setLegalProse("")
+               .setCType(Peer.ChaincodeDeploy.CodeType.CODE_SCALA)
+               .setRType(Peer.ChaincodeDeploy.RunType.RUN_SERIAL)
+               .setSType(Peer.ChaincodeDeploy.StateType.STATE_BLOCK)
+               .setInitParameter("")
+               .setCclassification(Peer.ChaincodeDeploy.ContractClassification.CONTRACT_CUSTOM)
+               .build();
+       DeployTran deployTran = DeployTran.newBuilder()
+               .setTxid(UUID.randomUUID().toString())
+               .setCertId(superCertId)
+               .setChaincodeId(manageNodeCertId)
+               .setChaincodeDeploy(chaincodeDeploy)
+               .build();
+       deployTran = deployTran.toBuilder().setTxid(UUID.randomUUID().toString()).build();
+       Peer.Transaction signedDeployTran = credenceSuperCreator.createDeployTran(deployTran);
+       postCredenceClient.postSignedTran(signedDeployTran);
+       TimeUnit.SECONDS.sleep(5);
+       Peer.TransactionResult tranResult = infoCredenceClient.getTranResultByTranId(signedDeployTran.getId());
+       Peer.ActionResult actionResult = tranResult.getErr();
+       Assertions.assertEquals(0, actionResult.getCode(), "没有错误，部署合约成功");
+   
+   }
+   
+   @Test
+   @DisplayName("注册Operate-注册合约的某个方法---updateNodeCert")
+   @Order(3)
+   void testSignUpOperate() throws InterruptedException, InvalidProtocolBufferException {
+   
+       long millis = System.currentTimeMillis();
+       Peer.Operate operate = Peer.Operate.newBuilder()
+               .setOpId(DigestUtils.sha256Hex("credence-net:ManageNodeCert.updateNodeCert"))
+               .setDescription("管理节点证书")
+               .setRegister(super_creditCode)
+               .setIsPublish(false)
+               .setOperateType(Peer.Operate.OperateType.OPERATE_CONTRACT)
+               .setAuthFullName("credence-net:ManageNodeCert.updateNodeCert")
+               .setCreateTime(Timestamp.newBuilder().setSeconds(millis / 1000).setNanos((int) ((millis % 1000) * 1000000)).build())
+               .setOpValid(true)
+               .setVersion("1.0")
+               .build();
+       String tranId = UUID.randomUUID().toString();
+       Peer.Transaction tran = superCreator.createInvokeTran(tranId, superCertId, didChaincodeId, signUpOperate, JsonFormat.printer().print(operate), 0, "");
+       postClient.postSignedTran(tran);
+       TimeUnit.SECONDS.sleep(5);
+       Peer.TransactionResult tranResult = infoClient.getTranResultByTranId(tranId);
+       Peer.ActionResult actionResult = tranResult.getErr();
+       Assertions.assertEquals(0, actionResult.getCode(), "没有错误，操作注册成功");
+   }
+   ```
+
+4.调用合约中的方法来添加或者删除响应节点的证书，具体的使用细节，交易构造，合约方法以及合约参数如下：
+
+   ```java
+   @Test
+   @DisplayName("提交交易，增加证书")
+   @Order(5)
+   void testAddCert() throws IOException, InterruptedException {
+       String tranId = UUID.randomUUID().toString();
+       HashMap<String, String> certMap = new HashMap<>();
+       // 读取pem字符串
+       certMap.put("node11Name", FileUtils.readFileToString(new File("jks/test/multi_chain/" + node11Name + ".cer"), StandardCharsets.UTF_8));
+       Peer.Transaction tran = credenceSuperCreator.createInvokeTran(tranId, superCertId, manageNodeCertId, "updateNodeCert", JSON.toJSONString(certMap), 0, "");
+       postCredenceClient.postSignedTran(tran);
+   }
+   
+   
+   @Test
+   @DisplayName("提交交易，删除证书")
+   @Order(4)
+   void testDeleteCert() throws IOException, InterruptedException {
+       String tranId = UUID.randomUUID().toString();
+       HashMap<String, String> certMap = new HashMap<>();
+     	// 置空即可
+       certMap.put("node11Name", "");
+       Peer.Transaction tran = credenceSuperCreator.createInvokeTran(tranId, superCertId, manageNodeCertId, "updateNodeCert", JSON.toJSONString(certMap), 0, "");
+       postCredenceClient.postSignedTran(tran);
+   }
+   ```
+
+除了上面说的要提交交易调用合约之外，还可以配合管理服务（RepChainManagement）来启停节点
+
+1.调用合约删除节点证书后，通过对应的RepChainManagement来ShutDown对应的节点
+
+   > 如果该节点是通过RepChainManagement启动的，则通过RepChainManagement来ShutDown；如果是作为单独的进程启动的，则手动shutdown即可
+
+2.调用合约新增节点证书后，通过对应的RepChainManagement来StartUp对应的节点
+
+   > 该节点可以通过RepChainManagement启动，也可手动来StartUp
+
+### 验证方式
+
+可以按如下方式来验证新增节点是否成功
+
+* 通过接口查询节点数
+
+    1.向网络中原有的节点API查询网络节点总数是否增加，同时向新增的节点API查询返回结果是否和网络原有节点一致
+
+     > 查询节点数：[http://ip:port/chaininfo/node](http://ip:port/chaininfo/node)
+
+* 同时可查询新增节点的chaininfo是否有变化
+
+    1.正常是会同步区块的，因此其chaininfo中显示的高度逐渐变高，并最终和其他节点一致
+
+     > 查询链信息：[http://ip:port/chaininfo](http://ip:port/chaininfo)
+
+* 可以通过查看对应节点的实时图
+
+    1.如果新增节点可以正常显示与网络内其他节点一致的实时图，那么是没问题的
+
+     > 前端实时图：[http://ip:port/web/g1.html](http://ip:port/web/g1.html)
+
+## 动态管理共识列表
+
+### 管理方案
+
+* **RepChain2.0.0之前的版本**，基于配置里的抽签列表进行抽签选择出块人，如果想要修改抽签列表（共识节点列表），需要修改所有节点的配置，并重启整个集群网络
+
+* **RepChain2.0.0及之后**，实现了通过合约管理RepChain的共识抽签列表，无需再修改配置并重启整个网络了，即可以在线动态修改抽签列表
+
+    测试用例：[https://gitee.com/BTAJL/RCJava-core/blob/master/src/test/java/com/rcjava/multi_chain/ManageNodeCertTest.java#L230](https://gitee.com/BTAJL/RCJava-core/blob/master/src/test/java/com/rcjava/multi_chain/ManageNodeCertTest.java#L230)
+
+### 使用流程
+
+> 在上一章节(ManageNodeCert的合约已经部署)的基础上
+
+1.首先superAdmin为自己注册updateVoteList操作
+
+   ```java
+   @Test
+   @DisplayName("注册Operate-注册合约的某个方法---updateVoteList")
+   @Order(6)
+   void testSignUpOperate_1() throws InterruptedException, InvalidProtocolBufferException {
+       long millis = System.currentTimeMillis();
+       Peer.Operate operate = Peer.Operate.newBuilder()
+               .setOpId(DigestUtils.sha256Hex("credence-net:ManageNodeCert.updateVoteList"))
+               .setDescription("管理抽签列表")
+               .setRegister(super_creditCode)
+               .setIsPublish(false)
+               .setOperateType(Peer.Operate.OperateType.OPERATE_CONTRACT)
+               .setAuthFullName("credence-net:ManageNodeCert.updateVoteList")
+               .setCreateTime(Timestamp.newBuilder().setSeconds(millis / 1000).setNanos((int) ((millis % 1000) * 1000000)).build())
+               .setOpValid(true)
+               .setVersion("1.0")
+               .build();
+       String tranId = UUID.randomUUID().toString();
+       Peer.Transaction tran = superCreator.createInvokeTran(tranId, superCertId, didChaincodeId, signUpOperate, JsonFormat.printer().print(operate), 0, "");
+       postClient.postSignedTran(tran);
+   }
+   ```
+
+2.superAdmin调用该方法("updateVoteList")来修改共识列表
+
+   > 交易参数为参与共识的节点名列表
+
+   ```java
+   @Test
+   @DisplayName("提交交易，更新抽签列表")
+   @Order(7)
+   void testUpdateVoteList() throws InterruptedException {
+       String tranId = UUID.randomUUID().toString();
+       // 最新的共识列表
+       List<String> voteList = Arrays.asList("330597659476689954.node6", "044934755127708189.node7",
+   //                "201353514191149590.node8",
+               "734747416095474396.node9", "710341838996249513.node10");
+       Peer.Transaction tran = credenceSuperCreator.createInvokeTran(tranId, superCertId, manageNodeCertId, "updateVoteList", JSON.toJSONString(voteList), 0, "");
+       postCredenceClient.postSignedTran(tran);
+   }
+   ```
+
+### 验证方式
+
+* 通过接口查询节点数
+
+    1.向网络中的节点API查询网络共识节点数是否发生变化
+
+     > 查询节点数：[http://ip:port/chaininfo/node](http://ip:port/chaininfo/node)
+
+* 提交修改共识列表的交易并入块之后，可以在前端实时图上看到改变，下面以例子进行说明：
+
+      1.假设原来具有5个共识节点，分别为<u>"330597659476689954.node6", "044934755127708189.node7", "201353514191149590.node8", "734747416095474396.node9", "710341838996249513.node10"</u>，可以从实时图看到下图(主要关注圈上的节点数，其他数据为模拟的非重点数据)：
+
+     ![update-vote-list-5](img/update-vote-list-5.png)
+
+      2.提交修改共识列表的交易，将node8踢出共识列表，实时图变为如下(主要关注圈上的节点数，其他数据为模拟的非重点数据)：
+
+     ![update-vote-list-4](img/update-vote-list-4.png)
+
+    3.通过实时图上节点的变化，可以看出共识节点数少了节点8，共识列表修改成功
 
 ## Q&A
 
