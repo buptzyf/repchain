@@ -405,28 +405,6 @@
 2. 使用`kse`将各个节点的证书导入到`mytrustStore.jks`中
 3. 运行`src/main/scala`目录下`rep.utils.CreateGenesisInfo`，重新生成的创世块文件在`json/identity-net/genesis.json`（身份链）
 
-#### 新增节点
-
-新增节点需要停机并重启网络
-
-假设现在想增加组网节点，则需要生成新的`jks`，并放到`jks/identity`目录下，并且将证书导入到`mytrustStore.jks`中，所有节点的`mystruststore.jks`都需要更新；还可以在浏览器中输入`http://localhost:7081/swagger/index.html`，通过节点管理服务的API启动停止节点（默认http服务的端口号为7081）。
-
-* 增加的是共识节点
-
-  > 需要在配置文件中，将该节点配置到共识列表中，网络内所有节点需要**修改配置项**：`system.vote.vote_node_list`（配置项在conf目录下对应节点的system.conf文件中）
-
-* 增加的是同步节点
-
-  > 更新网络内所有节点的`mytruststore.jks`，不用修改配置
-
-<font color=#FF0000>需要注意的地方</font>：
-
-1. 如果现在没有历史区块数据，则重构`genesis.json`，将新节点的账户与证书注册
-
-2. 如果现在有历史数据，则无需重构`genesis.json`，可根据实际情况调用**账户证书管理合约**来注册账户或证书
-
-   > 如果业务逻辑不涉及到新节点的账户，则该步骤非必须，因为默认`RepChain`会从`mytrustStore.jks`中加载所有节点的证书，可以保证新增节点所提交的签名交易能够被接受
-
 ## ——多链模式，业务链只负责业务
 
 身份链管理账户、证书以及操作权限，业务链只负责业务
@@ -843,28 +821,6 @@
     - 1.为每个节点替换密钥，假设有5个节点，则使用**kse**生成5个包含密钥对（默认使用`secp256r1`）的`jks`并导出证书，更换`jks/credence-net`目录下的密钥与证书
     - 2.使用`kse`将各个节点的证书导入到`mytrustStore.jks`中
     - 3.运行`src/main/scala`目录下`rep.utils.CreateGenesisInfo4NoTransaction`，重新生成的业务链创世块文件在`json/credence-net/genesis.json`（业务链）
-
-#### 新增节点
-
-新增节点需要停机并重启网络
-
-假设现在想增加组网节点，则需要生成新的`jks`，并放到`jks/identity`以及`jks/credence`目录下，并且将证书导入到`mytrustStore.jks`中，所有节点的`mystruststore.jks`都需要更新；还可以在浏览器中输入`http://localhost:7081/swagger/index.html`，通过节点管理服务的API启动停止节点（默认http服务的端口号为7081）。
-
-* 增加的是共识节点
-
-  > 需要在配置文件中，将该节点配置到共识列表中，网络内所有节点需要**修改配置项**：`system.vote.vote_node_list`（配置项在conf目录下对应节点的system.conf文件中）
-
-* 增加的是同步节点
-
-  > 更新网络内所有节点的`mytruststore.jks`，不用修改配置
-
-<font color=#FF0000>需要注意的地方</font>：
-
-1. 如果现在没有历史区块数据，则重构`genesis.json`，将新节点的账户与证书注册
-
-2. 如果现在有历史数据，则无需重构`genesis.json`，可根据实际情况调用**账户证书管理合约**来注册账户或证书
-
-   > 如果业务逻辑不涉及到新节点的账户，则该步骤非必须，因为默认`RepChain`会从`mytrustStore.jks`中加载所有节点的证书，可以保证新增节点所提交的签名交易能够被接受
 
 ## ——多链模式，业务链管理操作权限并负责业务
 
@@ -1283,24 +1239,3 @@
     - 2.使用`kse`将各个节点的证书导入到`mytrustStore.jks`中
     - 3.运行`src/main/scala`目录下`rep.utils.credence.CreateCredenceGenesisInfo`，重新生成的业务链创世块文件在`json/credence-net/genesis.json`（业务链）
 
-#### 新增节点
-
-新增节点需要停机并重启网络
-
-假设现在想增加组网节点，则需要生成新的`jks`，并放到`jks/identity`以及`jks/credence`目录下，并且将证书导入到`mytrustStore.jks`中，所有节点的`mystruststore.jks`都需要更新；还可以在浏览器中输入`http://localhost:7081/swagger/index.html`，通过节点管理服务的API启动停止节点（默认http服务的端口号为7081）。
-
-* 增加的是共识节点
-
-  > 需要在配置文件中，将该节点配置到共识列表中，网络内所有节点需要**修改配置项**：`system.vote.vote_node_list`（配置项在conf目录下对应节点的system.conf文件中）
-
-* 增加的是同步节点
-
-  > 更新网络内所有节点的`mytruststore.jks`，不用修改配置
-
-<font color=#FF0000>需要注意的地方</font>：
-
-1. 如果现在没有历史区块数据，则重构`genesis.json`，将新节点的账户与证书注册
-
-2. 如果现在有历史数据，则无需重构`genesis.json`，可根据实际情况调用**账户证书管理合约**来注册账户或证书
-
-   > 如果业务逻辑不涉及到新节点的账户，则该步骤非必须，因为默认`RepChain`会从`mytrustStore.jks`中加载所有节点的证书，可以保证新增节点所提交的签名交易能够被接受
