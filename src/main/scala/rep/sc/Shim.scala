@@ -74,6 +74,7 @@ class Shim {
   //不再直接使用区块预执行对象，后面采用交易预执行对象，可以更细粒度到控制交易事务
   private var srOfTransaction: TransactionPreload = null
   private var config: RepChainConfig = null
+  private var msg : String = ""
 
   //记录状态修改日志
   private var stateGet: HashMap[String, ByteString] = new HashMap[String, ByteString]()
@@ -95,8 +96,16 @@ class Shim {
     this.pre_key = KeyPrefixManager.getWorldStateKeyPrefix(ctx.getConfig, t.getCid.chaincodeName, t.oid)
     this.srOfTransaction = ctx.getBlockPreload(identifier).getTransactionPreload(t.id)
     this.config = ctx.getConfig
+    this.msg = ""
   }
 
+  def getMessage:String={
+    this.msg
+  }
+
+  def setMessage(m: String): Unit = {
+    this.msg = m
+  }
 
   def getStateGet: HashMap[String, ByteString] = {
     this.stateGet
@@ -139,6 +148,11 @@ class Shim {
       null
     else
       deserialise(v)
+  }
+
+  def getValForBytes(key: Key): Array[Byte] = {
+    checkKeyName(key)
+    getState(key)
   }
 
   private def delState(key: Key): Unit = {

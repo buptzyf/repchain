@@ -91,8 +91,43 @@ libraryDependencies ++= Seq(
   "joda-time" % "joda-time" % "2.10.14"
 )
 
+System.getProperty("os.name").toLowerCase match {
+  case mac if mac.contains("mac") =>
+    Compile / unmanagedJars ++= {
+      val base = baseDirectory.value
+      System.out.println("########base="+base)
+      val baseDirectories = (base / "custom_lib") //+++ (base / "b" / "lib") +++ (base / "libC")
+      System.out.println("########baseDirectories="+baseDirectories)
+      val customJars = (baseDirectories ** "wasmer-jni-amd64-darwin-0.3.0.jar")// +++ (base / "d" / "my.jar")
+      System.out.println("########customJars="+customJars)
+      System.out.println("########classpath=" + customJars.classpath)
+      customJars.classpath
+    }
 
-
+  case win if win.contains("win") =>
+    Compile / unmanagedJars ++= {
+      val base = baseDirectory.value
+      System.out.println("########base=" + base)
+      val baseDirectories = (base / "custom_lib") //+++ (base / "b" / "lib") +++ (base / "libC")
+      System.out.println("########baseDirectories=" + baseDirectories)
+      val customJars = (baseDirectories ** "wasmer-jni-amd64-windows-0.3.0.jar") // +++ (base / "d" / "my.jar")
+      System.out.println("########customJars=" + customJars)
+      System.out.println("########classpath=" + customJars.classpath)
+      customJars.classpath
+    }
+  case linux if linux.contains("linux") =>
+    Compile / unmanagedJars ++= {
+      val base = baseDirectory.value
+      System.out.println("########base=" + base)
+      val baseDirectories = (base / "custom_lib") //+++ (base / "b" / "lib") +++ (base / "libC")
+      System.out.println("########baseDirectories=" + baseDirectories)
+      val customJars = (baseDirectories ** "wasmer-jni-amd64-linux-0.3.0.jar") // +++ (base / "d" / "my.jar")
+      System.out.println("########customJars=" + customJars)
+      System.out.println("########classpath=" + customJars.classpath)
+      customJars.classpath
+    }
+  case osName => throw new RuntimeException(s"Unknown operating system $osName")
+}
 
 javacOptions ++= Seq("-encoding", "UTF-8")
 

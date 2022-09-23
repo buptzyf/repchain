@@ -79,6 +79,7 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
   import SandboxDispatcher._
   import Sandbox._
   import spray.json._
+  protected val PRE_STATE = "_STATE"
   //与存储交互的实例
   val pe = PeerExtension(context.system)
   val sTag = pe.getSysTag
@@ -285,5 +286,25 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
         }
       case _ => throw SandboxException(ERR_UNKNOWN_TRANSACTION_TYPE)
     }
+  }
+
+  protected def DoDeploy(tx_cid: String, t: Transaction) = {
+    //deploy返回chancode.name
+    //新部署合约利用kv记住cid对应的txid,并增加kv操作日志,以便恢复deploy时能根据cid找到当时deploy的tx及其代码内容
+    //部署合法性在外围TransProcessor中检查
+    val key_tx = tx_cid
+    val cn = cid.chaincodeName
+    val key_coder = cn
+    val coder = t.signature.get.certId.get.creditCode
+    shim.setVal(key_tx, t.id)
+
+    //写入初始状态
+    val key_tx_state = tx_cid + PRE_STATE //KeyPrefixManager.getWorldStateKey(pe.getRepChainContext.getConfig,tx_cid + PRE_STATE,tx_cid,t.oid)
+    this.ContractStatus = Some(true)
+    this.ContractStatusSource = Some(2)
+
+    shim.setVal(key_tx_state, true)
+    //利用kv记住合约的开发者
+    shim.setVal(key_coder, coder)
   }
 }

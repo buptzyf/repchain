@@ -33,7 +33,7 @@ import rep.utils.SerializeUtils.serialise
  */
 class SandboxScala(cid: ChaincodeId) extends Sandbox(cid) {
   var cobj: IContract = null
-  val PRE_STATE = "_STATE"
+
 
   private def LoadClass(ctx: ContractContext, txcid: String, t: Transaction) = {
     val code = t.para.spec.get.codePackage
@@ -48,7 +48,7 @@ class SandboxScala(cid: ChaincodeId) extends Sandbox(cid) {
     cobj.init(ctx)
   }
 
-  private def DoDeploy(tx_cid: String, t: Transaction) = {
+  /*private def DoDeploy(tx_cid: String, t: Transaction) = {
     //deploy返回chancode.name
     //新部署合约利用kv记住cid对应的txid,并增加kv操作日志,以便恢复deploy时能根据cid找到当时deploy的tx及其代码内容
     //部署合法性在外围TransProcessor中检查
@@ -77,7 +77,7 @@ class SandboxScala(cid: ChaincodeId) extends Sandbox(cid) {
     shim.setVal(key_coder,coder)
     //shim.srOfTransaction.put(key_coder, coder_bytes)
     //shim.stateSet += key_coder -> ByteString.copyFrom(coder_bytes)
-  }
+  }*/
 
   def doTransaction(dotrans: DoTransactionOfSandboxInSingle): TransactionResult = {
     //上下文可获得交易
@@ -115,13 +115,6 @@ class SandboxScala(cid: ChaincodeId) extends Sandbox(cid) {
         case Transaction.Type.CHAINCODE_SET_STATE =>
           val key_tx_state = tx_cid + PRE_STATE//KeyPrefixManager.getWorldStateKey(pe.getRepChainContext.getConfig,tx_cid+PRE_STATE,t.getCid.chaincodeName,t.oid)
           shim.setVal(key_tx_state,t.para.state.get)
-          //val state_bytes = serialise(t.para.state.get)
-          //val oldState = shim.srOfTransaction.get(key_tx_state)
-          //var oldByteString = if(oldState != null) ByteString.copyFrom(serialise(oldState.get))
-          //shim.srOfTransaction.put(key_tx_state, state_bytes)
-          //shim.stateGet += key_tx_state -> oldByteString
-          //shim.stateSet += key_tx_state -> ByteString.copyFrom(state_bytes)
-
           this.ContractStatus = Some(t.para.state.get)
           this.ContractStatusSource = Some(2)
           null
