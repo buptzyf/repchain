@@ -202,22 +202,8 @@ class SandboxDispatcher(moduleName: String, cid: String) extends ModuleBase(modu
    */
   private def createSerialSandbox(chaincodeid: ChaincodeId, cType: ChaincodeDeploy.CodeType) = {
     if (this.SerialSandbox == null) {
-      cType match {
-        case ChaincodeDeploy.CodeType.CODE_JAVASCRIPT =>
-        case ChaincodeDeploy.CodeType.CODE_SCALA =>
-          SerialSandbox = CreateSandbox(cType, chaincodeid, "sandbox_for_Serial_" + cid)
-          context.watch(SerialSandbox)
-        case ChaincodeDeploy.CodeType.CODE_VCL_DLL =>
-          null
-        case ChaincodeDeploy.CodeType.CODE_VCL_EXE =>
-          null
-        case ChaincodeDeploy.CodeType.CODE_VCL_WASM =>
-          null
-        case ChaincodeDeploy.CodeType.CODE_WASM =>
-          null
-        case _=>
-          null
-      }
+      SerialSandbox = CreateSandbox(cType, chaincodeid, "sandbox_for_Serial_" + cid)
+      context.watch(SerialSandbox)
     }
   }
 

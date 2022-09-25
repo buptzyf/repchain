@@ -1,5 +1,7 @@
 package rep.sc.wasmer
 
+import org.json4s.DefaultFormats
+import org.json4s.jackson.JsonMethods.parse
 import rep.proto.rc2.{ActionResult, ChaincodeId, Transaction, TransactionResult}
 import rep.sc.{Sandbox, SandboxDispatcher}
 import org.wasmer.Module
@@ -11,23 +13,24 @@ import rep.sc.SandboxDispatcher.ERR_INVOKE_CHAINCODE_NOT_EXIST
 import rep.sc.scalax.ContractContext
 import rep.utils.IdTool
 
-class SandboxWasmer(cid: ChaincodeId)  extends Sandbox(cid){
+class SandboxWasmer(cid: ChaincodeId) extends Sandbox(cid) {
+  implicit val formats = DefaultFormats
   var cobj: Module = null
 
-  private def LoadClass(ctx: ContractContext, txcid: String, t: Transaction,isInit:Boolean=false) = {
-    val fn = ctx.api.getChainNetId+IdTool.WorldStateKeySeparator+txcid+".wasm"
-    if(CompileOfWasmer.isCompiled(fn)){
+  private def LoadClass(ctx: ContractContext, txcid: String, t: Transaction) = {
+    val fn = ctx.api.getChainNetId + IdTool.WorldStateKeySeparator + txcid + ".wasm"
+    if (CompileOfWasmer.isCompiled(fn)) {
       cobj = CompileOfWasmer.CompileFromFile(fn)
-    }else{
+    } else {
       val code = t.para.spec.get.codePackage
       cobj = CompileOfWasmer.CompileAndSave(code, fn)
     }
-    if(isInit){
-      invokerOfWasmer.invokeOfInit(cobj,ctx)
+
+    if (t.`type` == Transaction.Type.CHAINCODE_DEPLOY) {
+      val json = parse(ctx.t.para.spec.get.initParameter)
+      InvokerOfWasmer.invokeOfInit(cobj, ctx.api, json.extract[java.util.ArrayList[String]])
     }
   }
-
-
 
   /**
    * 交易处理抽象方法，接受待处理交易，返回处理结果
@@ -47,7 +50,7 @@ class SandboxWasmer(cid: ChaincodeId)  extends Sandbox(cid){
         //如果cid对应的合约class不存在，根据code生成并加载该class
         case Transaction.Type.CHAINCODE_DEPLOY =>
           //热加载code对应的class
-          LoadClass(ctx, tx_cid, t,true)
+          LoadClass(ctx, tx_cid, t)
           DoDeploy(tx_cid, t)
           null
         //由于Invoke为最频繁调用，因此应尽量避免在处理中I/O读写,比如合约状态的检查就最好在内存中处理
@@ -60,9 +63,9 @@ class SandboxWasmer(cid: ChaincodeId)  extends Sandbox(cid){
             val deployTransaction = pe.getRepChainContext.getBlockSearch.getTransactionByTxId(tds.toString)
             if (deployTransaction == None)
               throw new SandboxException(ERR_INVOKE_CHAINCODE_NOT_EXIST)
-            this.LoadClass(ctx, tx_cid, deployTransaction.get,false)
+            this.LoadClass(ctx, tx_cid, deployTransaction.get)
           }
-          invokerOfWasmer.onAction(cobj,ctx)
+          InvokerOfWasmer.onAction(cobj, ctx)
         case Transaction.Type.CHAINCODE_SET_STATE =>
           val key_tx_state = tx_cid + PRE_STATE //KeyPrefixManager.getWorldStateKey(pe.getRepChainContext.getConfig,tx_cid+PRE_STATE,t.getCid.chaincodeName,t.oid)
           shim.setVal(key_tx_state, t.para.state.get)

@@ -7,7 +7,6 @@ scalaVersion := "2.12.10"
 lazy val akkaVersion = "2.6.1"
 val akkaHttpVersion   = "10.1.11"
 
-
 dependencyOverrides ++= Seq(
   "org.json4s" % "json4s-jackson" % "3.6.7",
   "com.google.guava" % "guava" % "21.0",
@@ -119,15 +118,17 @@ System.getProperty("os.name").toLowerCase match {
     Compile / unmanagedJars ++= {
       val base = baseDirectory.value
       System.out.println("########base=" + base)
-      val baseDirectories = (base / "custom_lib") //+++ (base / "b" / "lib") +++ (base / "libC")
+      val baseDirectories = (base / "custom_lib")
       System.out.println("########baseDirectories=" + baseDirectories)
-      val customJars = (baseDirectories ** "wasmer-jni-amd64-linux-0.3.0.jar") // +++ (base / "d" / "my.jar")
+      val customJars = (baseDirectories ** "wasmer-jni-amd64-linux-0.3.0.jar")
       System.out.println("########customJars=" + customJars)
       System.out.println("########classpath=" + customJars.classpath)
       customJars.classpath
     }
   case osName => throw new RuntimeException(s"Unknown operating system $osName")
 }
+
+
 
 javacOptions ++= Seq("-encoding", "UTF-8")
 
