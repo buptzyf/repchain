@@ -40,6 +40,7 @@ object InvokerOfWasmer {
   private def invoke(module: Module, shim: Shim, action: String, functionArgs: java.util.List[String]): ActionResult = {
     var result: ActionResult = null
     val arInstance: AtomicReference[Instance] = new AtomicReference[Instance]()
+    //val imports = CallbackWrapperOfWasmer.create(module, shim, arInstance)
     val imports = CallbackWrapperOfWasmer.create(module, shim, arInstance)
     val instance: Instance = module.instantiate(imports)
     arInstance.set(instance)
@@ -78,6 +79,13 @@ object InvokerOfWasmer {
             Integer.valueOf(functionArgs.get(index).length() + 1)
           )
         })
+      }
+      if(instance != null){
+        try{
+          instance.close()
+        }catch {
+          case em:Exception=>em.printStackTrace()
+        }
       }
     }
     new ActionResult(0, "")

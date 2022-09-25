@@ -64,10 +64,11 @@ object CallbackWrapperOfWasmer {
           val keyPtr = argv.get(0).intValue()
           val mbf = memory.buffer()
           val key = getStringFromByteBuffer(keyPtr, mbf)
-          val vb = context.getValForBytes(key)
-          if (vb == null) {
-            argv.set(0, FAILED)
+          val o = context.getVal(key)
+          if (o == null) {
+            argv.set(0, 0)
           } else {
+            val vb = o.asInstanceOf[Array[Byte]]
             val valueSize = vb.length
             argv.set(0, valueSize)
           }
@@ -90,10 +91,11 @@ object CallbackWrapperOfWasmer {
           val valuePtr = argv.get(1).intValue()
           val mbf = memory.buffer()
           val key = getStringFromByteBuffer(keyPtr, mbf)
-          val value = context.getValForBytes(key)
-          if (value == null) {
+          val o = context.getVal(key)
+          if (0 == null) {
             argv.set(0, FAILED)
           } else {
+            val value = o.asInstanceOf[Array[Byte]]
             mbf.position(valuePtr)
             mbf.put(value)
             argv.set(0, SUCCESS)

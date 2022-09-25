@@ -107,6 +107,81 @@ class ContractTestForWasmer(_system: ActorSystem) extends TestKit(_system) with 
     assert(msg_recv.head.err.get.reason.equals("存在重复的合约Id"))
   }
 
+  test("调用wasm容器的合约的转账方法=transfer 成功") {
+    // 部署账户管理合约
+    //部署是调用init函数，初始化两个账户的初始余额
+    val list = new util.ArrayList[String]()
+    //Array[String]("121000005l35120456.node1","100000","12110107bi45jh675g.node2","100000")
+    list.add("121000005l35120456.node1")
+    list.add("12110107bi45jh675g.node2")
+    list.add("1")
+    val t = transactionTool.createTransaction4Invoke(superAdmin, cid, chaincodeInputFunc = "transfer",
+      Seq("121000005l35120456.node1","12110107bi45jh675g.node2","1"))
+
+    val msg_send = DoTransaction(Seq(t), "dbnumber", TypeOfSender.FromAPI)
+    probe.send(sandbox, msg_send)
+    val msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
+    System.out.println(msg_recv.head.err.get.reason)
+    assert(msg_recv.head.err.get.reason.isEmpty)
+  }
+
+  test("禁用wasm容器的合约 成功") {
+    //建立禁用合约交易
+    val t = transactionTool.createTransaction4State(superAdmin, cid, false)
+
+    val msg_send = DoTransaction(Seq(t), "dbnumber", TypeOfSender.FromAPI)
+    probe.send(sandbox, msg_send)
+    val msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
+    System.out.println(msg_recv.head.err.get.reason)
+    assert(msg_recv.head.err.get.reason.isEmpty)
+  }
+
+  test("合约已经禁用，无法调用合约方法，调用wasm容器的合约的转账方法=transfer 失败") {
+    // 部署账户管理合约
+    //部署是调用init函数，初始化两个账户的初始余额
+    val list = new util.ArrayList[String]()
+    //Array[String]("121000005l35120456.node1","100000","12110107bi45jh675g.node2","100000")
+    list.add("121000005l35120456.node1")
+    list.add("12110107bi45jh675g.node2")
+    list.add("1")
+    val t = transactionTool.createTransaction4Invoke(superAdmin, cid, chaincodeInputFunc = "transfer",
+      Seq("121000005l35120456.node1", "12110107bi45jh675g.node2", "1"))
+
+    val msg_send = DoTransaction(Seq(t), "dbnumber", TypeOfSender.FromAPI)
+    probe.send(sandbox, msg_send)
+    val msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
+    System.out.println(msg_recv.head.err.get.reason)
+    assert(!msg_recv.head.err.get.reason.isEmpty)
+  }
+
+  test("重新启用wasm容器的合约 成功") {
+    //建立禁用合约交易
+    val t = transactionTool.createTransaction4State(superAdmin, cid, true)
+    val msg_send = DoTransaction(Seq(t), "dbnumber", TypeOfSender.FromAPI)
+    probe.send(sandbox, msg_send)
+    val msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
+    System.out.println(msg_recv.head.err.get.reason)
+    assert(msg_recv.head.err.get.reason.isEmpty)
+  }
+
+  test("合约重新启用，调用wasm容器的合约的转账方法=transfer 成功") {
+    // 部署账户管理合约
+    //部署是调用init函数，初始化两个账户的初始余额
+    val list = new util.ArrayList[String]()
+    //Array[String]("121000005l35120456.node1","100000","12110107bi45jh675g.node2","100000")
+    list.add("121000005l35120456.node1")
+    list.add("12110107bi45jh675g.node2")
+    list.add("1")
+    val t = transactionTool.createTransaction4Invoke(superAdmin, cid, chaincodeInputFunc = "transfer",
+      Seq("121000005l35120456.node1", "12110107bi45jh675g.node2", "1"))
+
+    val msg_send = DoTransaction(Seq(t), "dbnumber", TypeOfSender.FromAPI)
+    probe.send(sandbox, msg_send)
+    val msg_recv = probe.expectMsgType[Seq[TransactionResult]](1000.seconds)
+    System.out.println(msg_recv.head.err.get.reason)
+    assert(msg_recv.head.err.get.reason.isEmpty)
+  }
+
   private def getContractCode(fn:String):String={
     val fb = Files.readAllBytes(Paths.get(fn))
     BinaryCodec.toAsciiString(fb)
