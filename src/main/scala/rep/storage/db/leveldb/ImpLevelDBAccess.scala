@@ -63,6 +63,7 @@ class ImpLevelDBAccess private extends IDBAccess{
     try{
       this.opts = new Options().createIfMissing(true)
       this.opts.cacheSize(this.cacheSize);
+      this.opts.maxOpenFiles(this.maxOpenFiles)
       this.db = this.levelDBFactory.open(new File(this.DBPath), opts)
       RepLogger.trace(RepLogger.Storager_Logger,s"DB create success, dbType=LevelDB,dbPath=${DBPath}")
     }catch{
@@ -83,25 +84,34 @@ class ImpLevelDBAccess private extends IDBAccess{
    **/
   override def getBytes(key: String): Array[Byte] = {
     var r: Array[Byte] = null
-    try {
-      if(key != null){
-        RepLogger.trace(RepLogger.Storager_Logger,s"DB operate getBytes, key=${key},dbName=${this.getDBName}")
-        var b = this.db.get(key.getBytes())
-        if(b != null){
-          r = if(this.isEncrypt) this.cipherTool.decrypt(b) else b
-        }else{
-          RepLogger.trace(RepLogger.Storager_Logger,s"DB operate getBytes, data is null key=${key},dbName=${this.getDBName}")
+    var isRepeat : Boolean = false
+    var count : Int = 0
+    do{
+      isRepeat = false
+      count += 1
+      try {
+        if (key != null) {
+          RepLogger.trace(RepLogger.Storager_Logger, s"DB operate getBytes, key=${key},dbName=${this.getDBName}")
+          val b = this.db.get(key.getBytes())
+          if (b != null) {
+            r = if (this.isEncrypt) this.cipherTool.decrypt(b) else b
+          } else {
+            RepLogger.trace(RepLogger.Storager_Logger, s"DB operate getBytes, data is null key=${key},dbName=${this.getDBName}")
+          }
+        } else {
+          throw new Exception(s"input key is null")
         }
-      }else{
-        throw new Exception(s"input key is null")
+      } catch {
+        case e: Exception =>
+          if(e.getMessage.indexOf("Could not create random access file") > 0){
+            isRepeat = true
+          }else{
+            RepLogger.error(RepLogger.Storager_Logger, "ImpLevelDBAccess error:getBytes error," +
+              s"dbpath=${this.DBPath},msg=${e.getCause}")
+            throw e
+          }
       }
-    } catch {
-      case e: Exception => {
-        RepLogger.error(RepLogger.Storager_Logger,  "ImpLevelDBAccess error:getBytes error," +
-          s"dbpath=${this.DBPath},msg=${e.getCause}")
-        throw e
-      }
-    }
+    }while(isRepeat && count <= this.repeatTimes)
     r
   }
 
@@ -115,30 +125,39 @@ class ImpLevelDBAccess private extends IDBAccess{
    **/
   override def putBytes(key: String, bb: Array[Byte]): Boolean = {
     var r: Boolean = false
-    try {
-      if(key != null){
-        if(bb != null){
-          val b = if(this.isEncrypt) this.cipherTool.encrypt(bb) else bb
-          RepLogger.trace(RepLogger.Storager_Logger,s"DB operate putBytes, key=${key}")
-          if(this.isTransaction){
-            this.batch.put(key.getBytes(), b);
-          }else{
-            this.db.put(key.getBytes(), b)
+    var isRepeat: Boolean = false
+    var count: Int = 0
+    do {
+      isRepeat = false
+      count += 1
+      try {
+        if (key != null) {
+          if (bb != null) {
+            val b = if (this.isEncrypt) this.cipherTool.encrypt(bb) else bb
+            RepLogger.trace(RepLogger.Storager_Logger, s"DB operate putBytes, key=${key}")
+            if (this.isTransaction) {
+              this.batch.put(key.getBytes(), b);
+            } else {
+              this.db.put(key.getBytes(), b)
+            }
+            r = true
+          } else {
+            throw new Exception(s"input value is null,key=${key},dbName=${this.getDBName}")
           }
-          r = true
-        }else{
-          throw new Exception(s"input value is null,key=${key},dbName=${this.getDBName}")
+        } else {
+          throw new Exception(s"input key is null")
         }
-      }else{
-        throw new Exception(s"input key is null")
+      } catch {
+        case e: Exception =>
+          if (e.getMessage.indexOf("Could not create random access file") > 0) {
+            isRepeat = true
+          } else {
+            RepLogger.error(RepLogger.Storager_Logger, "ImpLevelDBAccess error:putBytes error," +
+              s"dbpath=${this.DBPath},msg=${e.getCause}")
+            throw e
+          }
       }
-    } catch {
-      case e: Exception => {
-        RepLogger.error(RepLogger.Storager_Logger,  "ImpLevelDBAccess error:putBytes error," +
-          s"dbpath=${this.DBPath},msg=${e.getCause}")
-        throw e
-      }
-    }
+    }while(isRepeat && count <= this.repeatTimes)
     r
   }
 
@@ -152,25 +171,33 @@ class ImpLevelDBAccess private extends IDBAccess{
    **/
   override def delete(key: String): Boolean = {
     var r: Boolean = false;
-
-      try{
-        if(key != null){
-          if(this.isTransaction){
+    var isRepeat: Boolean = false
+    var count: Int = 0
+    do {
+      isRepeat = false
+      count += 1
+      try {
+        if (key != null) {
+          if (this.isTransaction) {
             this.batch.delete(key.getBytes());
-          }else{
+          } else {
             this.db.delete(key.getBytes());
           }
           r = true
-        }else{
+        } else {
           throw new Exception(s"input key is null")
         }
-      }catch{
-        case e:Exception =>{
-          RepLogger.error(RepLogger.Storager_Logger,  "ImpLevelDBAccess error:Delete error," +
-            s"dbpath=${this.DBPath},msg=${e.getCause}")
-          throw e
-        }
+      } catch {
+        case e: Exception =>
+          if (e.getMessage.indexOf("Could not create random access file") > 0) {
+            isRepeat = true
+          } else {
+            RepLogger.error(RepLogger.Storager_Logger, "ImpLevelDBAccess error:Delete error," +
+              s"dbpath=${this.DBPath},msg=${e.getCause}")
+            throw e
+          }
       }
+    }while(isRepeat && count <= this.repeatTimes)
     r
   }
 

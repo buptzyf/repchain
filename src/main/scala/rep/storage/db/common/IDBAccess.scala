@@ -15,6 +15,8 @@ abstract class IDBAccess {
   protected var isTransaction = false //是否开启事务
   private val lock : Object = new Object()
   protected val cipherTool = EncryptFactory.getEncrypt
+  protected val maxOpenFiles = 4096
+  protected val repeatTimes = 50
   /**
    * @author jiangbuyun
    * @version	2.0
