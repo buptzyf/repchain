@@ -15,7 +15,6 @@ import rep.app.system.RepChainSystemContext
 class ConsensusCondition(ctx:RepChainSystemContext){
 
   private def byzantineExamination(input:Int):Boolean={
-    if(input >= ctx.getConfig.getMinVoteNumber){
       var mode = ctx.getConfig.getEndorsementNumberMode
       if(mode == 1) {
         mode = 2
@@ -30,9 +29,6 @@ class ConsensusCondition(ctx:RepChainSystemContext){
       }else{
         false
       }
-    }else{
-      false
-    }
   }
 
   //提供一致性判断方法
