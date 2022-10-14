@@ -124,10 +124,16 @@ class SandboxScala(cid: ChaincodeId) extends Sandbox(cid) {
       //shim.srOfTransaction.commit
       if(r == null){
         new TransactionResult(t.id, shim.getStateGet,shim.getStateSet,shim.getStateDel,Option(new ActionResult(ResultCode.Sandbox_Success,"")))
-      }else{
-        new TransactionResult(t.id, shim.getStateGet,shim.getStateSet,shim.getStateDel,Option(r))
+      }else {
+        if(r.code == 0){
+          new TransactionResult(t.id, shim.getStateGet,shim.getStateSet,shim.getStateDel,
+            Option(new ActionResult(ResultCode.Sandbox_Success,"")))
+        }else{
+          pe.getRepChainContext.getBlockPreload(dotrans.da).getTransactionPreload(dotrans.t.id).rollback
+          RepLogger.sendAlertToDB(pe.getRepChainContext.getHttpLogger(), new AlertInfo("CONTRACT", 4, s"Node Name=${pe.getSysTag},txid=${t.id},erroInfo=${r.reason},Transaction Exception."))
+          new TransactionResult(t.id, Map.empty,Map.empty,Map.empty, Option(r))
+        }
       }
-
     } catch {
       case e: Throwable =>
         RepLogger.except4Throwable(RepLogger.Sandbox_Logger, t.id, e)
