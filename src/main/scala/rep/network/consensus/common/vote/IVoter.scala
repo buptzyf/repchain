@@ -55,10 +55,12 @@ abstract class IVoter(moduleName: String) extends ModuleBase(moduleName) {
   }
 
   protected def resetBlocker(idx: Int, currentblockhash: String, currentheight: Long) = {
-    RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},votelist=${candidator.toArray[String].mkString("|")},idx=${idx}"))
-    this.Blocker = BlockerInfo(algorithmInVoted.blocker(candidator.toArray[String], idx), idx, System.currentTimeMillis(), currentblockhash, currentheight)
-    pe.resetBlocker(this.Blocker)
-    NoticeBlockerMsg
+    if(!candidator.isEmpty){
+      RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},votelist=${candidator.mkString("|")},idx=${idx}"))
+      this.Blocker = BlockerInfo(algorithmInVoted.blocker(candidator, idx), idx, System.currentTimeMillis(), currentblockhash, currentheight)
+      pe.resetBlocker(this.Blocker)
+      NoticeBlockerMsg
+    }
   }
 
   protected def NoticeBlockerMsg:Unit

@@ -272,7 +272,9 @@ class RepChainConfig {
   }
 
   def getMinVoteNumber:Int={
-    this.sysConf.getInt("system.vote.vote_node_min")
+    val min_number = this.sysConf.getInt("system.vote.vote_node_min")
+    //配置最小节点数小于4，设置为4，最小节点数是系统启动的最低配置
+    if(min_number < 4) 4 else min_number
   }
 
   def getAutoCreateTransactionInterval:Int={

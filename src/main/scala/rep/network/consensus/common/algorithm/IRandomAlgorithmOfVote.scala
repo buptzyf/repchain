@@ -52,12 +52,10 @@ class IRandomAlgorithmOfVote extends IAlgorithmOfVote {
     len = if(len<min_len){
       if(nodes.size < min_len) nodes.size
       else min_len
-    }
-    else len
+    } else len
     if(len<4){
-      null
-    }
-    else{
+      Array.empty[String]
+    } else{
       var candidate = new Array[String](len)
       var hashSeed:Long = pathUtil.bytesToInt(seed)
       var randomList = getRandomList(hashSeed,nodes.size)
