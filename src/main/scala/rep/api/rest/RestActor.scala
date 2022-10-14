@@ -233,7 +233,10 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
   // 先检查交易大小，然后再检查交易是否已存在，再去验证签名，如果没有问题，则广播
   private def doTransaction(t: Transaction): Unit = {
     val tranLimitSize = config.getBlockMaxLength / 3
-    if (t.toByteArray.length > tranLimitSize) {
+    val pool = pe.getRepChainContext.getTransactionPool
+    if(!pool.transactionChecked(t)){
+      sender ! PostResult(t.id, Option(ErrMessage(TransactionCheckedError, s"交易检查错误，可能的问题：交易ID为空，链码为空，链码版本号不对，交易类型不对。")))
+    }else if (t.toByteArray.length > tranLimitSize) {
       sender ! PostResult(t.id, Option(ErrMessage(TranSizeExceed, s"交易大小超出限制： ${tranLimitSize}，请重新检查")))
     } else if (!this.consensusCondition.CheckWorkConditionOfSystem(pe.getRepChainContext.getNodeMgr.getStableNodes.size)) {
       sender ! PostResult(t.id, Option(ErrMessage(ConsensusNodesNotEnough, "共识节点数目太少，暂时无法处理交易")))

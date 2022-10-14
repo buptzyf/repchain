@@ -10,6 +10,7 @@ object ResultCode {
   val TranParseError = 1006
   val SignatureVerifyFailed = 2001
   val UnkonwFailure = 5001
+  val TransactionCheckedError = 5002
 
   val Transaction_Exception_In_Sandbox = 101
   val Transaction_Exception_In_SandboxOfScala = 102

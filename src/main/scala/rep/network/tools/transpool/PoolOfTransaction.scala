@@ -131,12 +131,14 @@ class PoolOfTransaction(ctx: RepChainSystemContext) {
    * @return
    **/
   def addTransactionToCache(t: Transaction, isStore: Boolean = true): Unit = {
-    val v = this.transactionCaches.putIfAbsent(t.id, t)
-    if (v == null) {
-      this.transactionCount.increment()
-      this.transactionOrder.offer(t.id)
-      if (isStore)
-        this.toLocalStore(t)
+    if(transactionChecked(t)){
+      val v = this.transactionCaches.putIfAbsent(t.id, t)
+      if (v == null) {
+        this.transactionCount.increment()
+        this.transactionOrder.offer(t.id)
+        if (isStore)
+          this.toLocalStore(t)
+      }
     }
   }
 
@@ -154,6 +156,39 @@ class PoolOfTransaction(ctx: RepChainSystemContext) {
     })
   }
 
+  def transactionChecked(t:Transaction):Boolean={
+    var r : Boolean = true
+    if(!assertString(t.id)){
+      r = false
+    }else if(t.cid == None){
+      r = false
+    }else{
+      if(!assertString(t.cid.get.chaincodeName)){
+        r = false
+      }else if (t.cid.get.version < 0) {
+        r = false
+      }else{
+        if(t.`type`!=rep.proto.rc2.Transaction.Type.CHAINCODE_DEPLOY &&
+          t.`type`!=rep.proto.rc2.Transaction.Type.CHAINCODE_INVOKE &&
+          t.`type`!=rep.proto.rc2.Transaction.Type.CHAINCODE_SET_STATE){
+          r = false
+        }
+      }
+    }
+    r
+  }
+
+  private def assertString(src:String):Boolean={
+    if(src == null){
+      false
+    }else if(src.isEmpty){
+      false
+    }else if(src.equalsIgnoreCase("null")){
+      false
+    }else{
+      true
+    }
+  }
   /**
    * @author jiangbuyun
    * @version 2.0
