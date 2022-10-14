@@ -79,9 +79,16 @@ class SandboxWasmer(cid: ChaincodeId) extends Sandbox(cid) {
       if (r == null) {
         new TransactionResult(t.id, shim.getStateGet, shim.getStateSet, shim.getStateDel, Option(new ActionResult(ResultCode.Sandbox_Success, "")))
       } else {
-        new TransactionResult(t.id, shim.getStateGet, shim.getStateSet, shim.getStateDel, Option(r))
+        if(r.code == 0){
+          new TransactionResult(t.id, shim.getStateGet, shim.getStateSet, shim.getStateDel, Option(r))
+        }else{
+          pe.getRepChainContext.getBlockPreload(dotrans.da).getTransactionPreload(dotrans.t.id).rollback
+          RepLogger.sendAlertToDB(pe.getRepChainContext.getHttpLogger(),
+            new AlertInfo("CONTRACT", 4, s"Node Name=${pe.getSysTag},txid=${t.id}," +
+              s"erroInfo=${r.reason},Transaction Exception."))
+          new TransactionResult(t.id, Map.empty, Map.empty, Map.empty, Option(ActionResult(ResultCode.Transaction_Exception_In_SandboxOfScala, r.reason)))
+        }
       }
-
     } catch {
       case e: Throwable =>
         RepLogger.except4Throwable(RepLogger.Sandbox_Logger, t.id, e)

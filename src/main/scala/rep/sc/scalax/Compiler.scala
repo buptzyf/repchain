@@ -129,14 +129,14 @@ class Compiler(targetDir: Option[File], bDebug:Boolean,sha256: Sha256) {
    */
   def getSourcePath()={
     //工程根路径,自动获取项目名称
-    val projectName = System.getProperty("user.dir");
+    val projectName = System.getProperty("user.dir")
     val path_source_root = projectName.substring(projectName.lastIndexOf(File.separatorChar) + 1, projectName.length)
     //val path_source_root = "repchain"
 
     //获得class路径
     val rpath = getClass.getResource("").getPath
     //获得source路径
-    val p0 = rpath.indexOf(path_source_root)
+    val p0 = rpath.lastIndexOf(path_source_root)
     val sr = Array(rpath.substring(0,p0+ path_source_root.length()),"src","main","scala")
     val spath = sr.mkString(File.separator)
     spath
