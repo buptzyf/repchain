@@ -65,7 +65,7 @@ class SandboxWasmer(cid: ChaincodeId) extends Sandbox(cid) {
               throw new SandboxException(ERR_INVOKE_CHAINCODE_NOT_EXIST)
             this.LoadClass(ctx, tx_cid, deployTransaction.get)
           }
-          InvokerOfWasmer.onAction(cobj, ctx)
+          this.ExecutionInTimeoutManagement(timeout)(InvokerOfWasmer.onAction(cobj, ctx))
         case Transaction.Type.CHAINCODE_SET_STATE =>
           val key_tx_state = tx_cid + PRE_STATE //KeyPrefixManager.getWorldStateKey(pe.getRepChainContext.getConfig,tx_cid+PRE_STATE,t.getCid.chaincodeName,t.oid)
           shim.setVal(key_tx_state, t.para.state.get)

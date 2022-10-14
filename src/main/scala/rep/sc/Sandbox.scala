@@ -23,11 +23,10 @@ import rep.utils._
 import rep.network.tools.PeerExtension
 import rep.log.{RepLogger, RepTimeTracer}
 import rep.proto.rc2.{ActionResult, ChaincodeId, Transaction, TransactionResult}
-import rep.sc.Sandbox.SandboxException
 import rep.storage.chain.KeyPrefixManager
-
 import scala.collection.immutable.HashMap
-
+import scala.concurrent.{Await, Future}
+import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
  * 合约容器的抽象类伴生对象,定义了交易执行结果的case类
@@ -78,16 +77,21 @@ object Sandbox {
 abstract class Sandbox(cid: ChaincodeId) extends Actor {
   import SandboxDispatcher._
   import Sandbox._
-  import spray.json._
+  import scala.concurrent.duration._
   protected val PRE_STATE = "_STATE"
   //与存储交互的实例
   val pe = PeerExtension(context.system)
   val sTag = pe.getSysTag
+  protected val timeout = pe.getRepChainContext.getTimePolicy.getTimeoutPreload / 4 * 1000  //单位是毫秒
 
   //与底层交互的api实例,不同版本的合约KV空间重叠
   var shim : Shim = null //new Shim(context.system, cid.chaincodeName,)
   val addr_self = akka.serialization.Serialization.serializedActorPath(self)
   val permissioncheck = pe.getRepChainContext.getPermissionVerify
+
+  def ExecutionInTimeoutManagement[T](timeoutWithMS: Long)(f: => T): T = {
+    Await.result(Future(f), timeoutWithMS milliseconds)
+  }
 
   def errAction(errCode: Int): ActionResult = {
     errCode match {

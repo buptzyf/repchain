@@ -24,16 +24,13 @@ import rep.proto.rc2.{ActionResult, ChaincodeId, Transaction, TransactionResult}
 import rep.sc.Sandbox
 import rep.sc.Sandbox._
 import rep.sc.SandboxDispatcher.{DoTransactionOfSandboxInSingle, ERR_INVOKE_CHAINCODE_NOT_EXIST}
-import rep.storage.chain.KeyPrefixManager
 import rep.utils.IdTool
-import rep.utils.SerializeUtils.serialise
 
 /**
  * @author c4w
  */
 class SandboxScala(cid: ChaincodeId) extends Sandbox(cid) {
   var cobj: IContract = null
-
 
   private def LoadClass(ctx: ContractContext, txcid: String, t: Transaction) = {
     val code = t.para.spec.get.codePackage
@@ -47,37 +44,6 @@ class SandboxScala(cid: ChaincodeId) extends Sandbox(cid) {
     
     cobj.init(ctx)
   }
-
-  /*private def DoDeploy(tx_cid: String, t: Transaction) = {
-    //deploy返回chancode.name
-    //新部署合约利用kv记住cid对应的txid,并增加kv操作日志,以便恢复deploy时能根据cid找到当时deploy的tx及其代码内容
-    //部署合法性在外围TransProcessor中检查
-    val key_tx = tx_cid //KeyPrefixManager.getWorldStateKey(pe.getRepChainContext.getConfig,tx_cid,tx_cid,t.oid)
-    val cn = cid.chaincodeName
-    val key_coder = cn //KeyPrefixManager.getWorldStateKey(pe.getRepChainContext.getConfig,cn,tx_cid,t.oid)
-    val coder = t.signature.get.certId.get.creditCode
-    //val txId = serialise(t.id)
-    shim.setVal(key_tx,t.id)
-    //shim.srOfTransaction.put(key_tx, txId)
-    //shim.stateSet += key_tx -> ByteString.copyFrom(txId)
-
-    //写入初始状态
-    val key_tx_state = tx_cid + PRE_STATE //KeyPrefixManager.getWorldStateKey(pe.getRepChainContext.getConfig,tx_cid + PRE_STATE,tx_cid,t.oid)
-    //val state_enable = serialise(true)
-    this.ContractStatus = Some(true)
-    this.ContractStatusSource = Some(2)
-
-    shim.setVal(key_tx_state,true)
-    //shim.srOfTransaction.put(key_tx_state, state_enable)
-    //shim.stateSet += key_tx_state -> ByteString.copyFrom(state_enable)
-
-
-    //利用kv记住合约的开发者
-    //val coder_bytes = serialise(coder)
-    shim.setVal(key_coder,coder)
-    //shim.srOfTransaction.put(key_coder, coder_bytes)
-    //shim.stateSet += key_coder -> ByteString.copyFrom(coder_bytes)
-  }*/
 
   def doTransaction(dotrans: DoTransactionOfSandboxInSingle): TransactionResult = {
     //上下文可获得交易
@@ -111,7 +77,7 @@ class SandboxScala(cid: ChaincodeId) extends Sandbox(cid) {
           val action = ipt.function
           //获得传入参数
           val data = ipt.args
-          cobj.onAction(ctx, action, data.head)
+          this.ExecutionInTimeoutManagement(timeout)(cobj.onAction(ctx, action, data.head))
         case Transaction.Type.CHAINCODE_SET_STATE =>
           val key_tx_state = tx_cid + PRE_STATE//KeyPrefixManager.getWorldStateKey(pe.getRepChainContext.getConfig,tx_cid+PRE_STATE,t.getCid.chaincodeName,t.oid)
           shim.setVal(key_tx_state,t.para.state.get)
