@@ -183,6 +183,8 @@ class PoolOfTransaction(ctx: RepChainSystemContext) {
       false
     }else if(src.isEmpty){
       false
+    }else if(src.length != src.trim.length){
+      false
     }else if(src.equalsIgnoreCase("null")){
       false
     }else{
