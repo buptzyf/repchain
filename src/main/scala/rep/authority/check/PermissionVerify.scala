@@ -50,7 +50,7 @@ class PermissionVerify(ctx: RepChainSystemContext) {
       if (sd == None) {
         //实体账户不存在
         RepLogger.Permission_Logger.trace(s"System=${ctx.getSystemName},PermissionVerify.CheckPermission signer is not exist,did=${did},opname=${opname}")
-        throw new SandboxException(ERR_NO_OPERATE)
+        throw new SandboxException(ERR_NO_SIGNER)
       } else if (sd.get.signer_valid) {
         //实体账户有效
         RepLogger.Permission_Logger.trace(s"System=${ctx.getSystemName},PermissionVerify.CheckPermission signer valid,did=${did},opname=${opname}")
