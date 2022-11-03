@@ -53,7 +53,7 @@ class RepChainSystemContext (systemName:String){//},cs:ClusterSystem) {
   )
   permissionCacheManager.registerBusinessNet(config.getChainNetworkId)
   private val permissionVerify : PermissionVerify =  new PermissionVerify(this)
-  private val hashTool : Sha256 = new Sha256(this.cryptoManager.getInstance)
+  //private val hashTool : Sha256 = new Sha256(this.cryptoManager.getInstance)
   private val reloadTrustStore : ReloadableTrustManager = ReloadableTrustManager.createReloadableTrustManager(this)
   private val consensusNodeConfig : ConsensusNodeConfig = new ConsensusNodeConfig(this)
   private val registerClusterNode:ConcurrentHashMap[String,Address] = new ConcurrentHashMap[String,Address]()
@@ -149,7 +149,8 @@ class RepChainSystemContext (systemName:String){//},cs:ClusterSystem) {
   }
 
   def getHashTool:Sha256={
-    this.hashTool
+    //this.hashTool
+    new Sha256(this.cryptoManager.getInstance)
   }
 
   def getPermissionVerify:PermissionVerify={

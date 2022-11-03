@@ -35,7 +35,6 @@ class Sha256(digest:MessageDigest) extends CryptographicHash{
         digest.reset()
         digest.digest(input)
     }
-
   }
 
   def hashstr(input: Array[Byte]):String ={
