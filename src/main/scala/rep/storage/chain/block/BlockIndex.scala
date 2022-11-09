@@ -16,8 +16,8 @@ class BlockIndex {
   private var hash : String = ""
   private var preHash: String = ""
 
-  private var tx_acc_value : BigInteger= BigInteger.ZERO
-  private var state_acc_value : BigInteger = BigInteger.ZERO
+  //private var tx_acc_value : BigInteger= BigInteger.ZERO
+  //private var state_acc_value : BigInteger = BigInteger.ZERO
 
   private var txIds : Array[String] = null
 
