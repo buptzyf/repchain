@@ -191,9 +191,18 @@ class RepChainConfig {
   def getVoteNodeList:List[String]={
     val temp = this.sysConf.getStringList("system.vote.vote_node_list")
       if(temp != null){
-        val r = new Array[String](temp.size())
-        temp.toArray(r)
-        r.toList
+        val ls:Array[String] = temp.toArray(new Array[String](0))
+        val uni_list = ls.toList.distinct
+        if(uni_list.length != temp.size()){
+          System.err.println(s"Node configuration error, duplicate node name， " +
+            s"please check the configuration item，item name = system.vote.vote_node_list")
+        }
+        if(uni_list.length < 4){
+          System.err.println(s"NThe number of consensus nodes must be greater than or equal to 4， " +
+            s"please check the configuration item，item name = system.vote.vote_node_list")
+          throw new Exception("共识节点数必须大于等于4，请检查配置项，system.vote.vote_node_list")
+        }
+        uni_list
       }else{
         null
       }

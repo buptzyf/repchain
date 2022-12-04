@@ -55,10 +55,15 @@ class ManageNodeCert extends IContract {
    * @return
    */
   def updateVoleList(ctx: ContractContext, voteList: Array[String]): ActionResult = {
-    if (voteList.length >= 4) {
-      ctx.api.setVal(vote_list, voteList)
-    } else {
-      throw ContractException("抽签列表长度至少为4")
+    val vls = voteList.distinct
+    if(vls.length == voteList.length){
+      if (vls.length >= 4) {
+        ctx.api.setVal(vote_list, vls)
+      } else {
+        throw ContractException("抽签列表长度至少为4")
+      }
+    }else{
+      throw ContractException("抽签列表中包含重复的节点名称")
     }
     null
   }

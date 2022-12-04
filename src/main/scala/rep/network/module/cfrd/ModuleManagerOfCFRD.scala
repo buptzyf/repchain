@@ -38,7 +38,7 @@ class ModuleManagerOfCFRD(moduleName: String, isStartup: Boolean) extends IModul
 
   override def loadConsensusModule = {
     //pe.register(ModuleActorType.ActorType.transactionpool, context.actorOf(TransactionPoolOfCFRD.props("transactionpool"), "transactionpool"))
-    if (pe.getRepChainContext.getConfig.getVoteNodeList.contains(pe.getSysTag)) {
+    if (pe.getRepChainContext.getConsensusNodeConfig.getVoteListOfConfig.contains(pe.getSysTag)) {
       pe.register(ModuleActorType.ActorType.transactioncollectioner, context.actorOf(TransactionOfCollectioner.props("transactioncollectioner"), "transactioncollectioner"))
     }
     pe.register(ModuleActorType.ActorType.storager,context.actorOf(StoragerOfCFRD.props("storager"), "storager"))

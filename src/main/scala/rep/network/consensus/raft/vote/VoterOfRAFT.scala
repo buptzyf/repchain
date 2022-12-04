@@ -35,7 +35,7 @@ class VoterOfRAFT (moduleName: String) extends IVoter(moduleName: String) {
 
   override def preStart(): Unit = {
     RepLogger.info(RepLogger.Vote_Logger, this.getLogMsgPrefix("VoterOfRAFT  module start"))
-    if(config.getVoteNodeList.contains(pe.getSysTag)){
+    if(pe.getRepChainContext.getConsensusNodeConfig.getVoteListOfConfig.contains(pe.getSysTag)){
       //共识节点可以订阅交易的广播事件
       SubscribeTopic(mediator, self, selfAddr, Topic.VoteTransform, true)
     }

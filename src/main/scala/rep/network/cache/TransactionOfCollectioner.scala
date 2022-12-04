@@ -20,7 +20,7 @@ class TransactionOfCollectioner  (moduleName: String) extends ModuleBase(moduleN
   private val config = pe.getRepChainContext.getConfig
   override def preStart(): Unit = {
     //注册接收交易的广播
-    if(config.getVoteNodeList.contains(pe.getSysTag)){
+    if(pe.getRepChainContext.getConsensusNodeConfig.getVoteListOfConfig.contains(pe.getSysTag)){
       //共识节点可以订阅交易的广播事件
       SubscribeTopic(mediator, self, selfAddr, Topic.Transaction, true)
     }
@@ -31,8 +31,8 @@ class TransactionOfCollectioner  (moduleName: String) extends ModuleBase(moduleN
 
   private def createRouter = {
     if (router == null) {
-      var list: Array[Routee] = new Array[Routee](config.getVoteNodeList.length)
-      for (i <- 0 to config.getVoteNodeList.length - 1) {
+      var list: Array[Routee] = new Array[Routee](pe.getRepChainContext.getConsensusNodeConfig.getVoteListOfConfig.length)
+      for (i <- 0 to pe.getRepChainContext.getConsensusNodeConfig.getVoteListOfConfig.length - 1) {
         var ca = context.actorOf(TransactionChecker.props("transactionchecker" + i), "transactionchecker" + i)
         context.watch(ca)
         list(i) = new ActorRefRoutee(ca)

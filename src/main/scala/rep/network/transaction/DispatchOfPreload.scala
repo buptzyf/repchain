@@ -44,7 +44,7 @@ class DispatchOfPreload(moduleName: String) extends ModuleBase(moduleName) {
 
   private def createRouter = {
     if (router == null) {
-      var len = pe.getRepChainContext.getConfig.getVoteNodeList.length
+      var len = pe.getRepChainContext.getConsensusNodeConfig.getVoteListOfConfig.length
       if(len <= 0){
         len  = 1
       }
