@@ -29,6 +29,8 @@ object ModuleActorType {
 
     val transactionPreloadInStream = 901
 
+    val  syncSaveBlock = 109
+
     //val memberlistener = 801
   }
 

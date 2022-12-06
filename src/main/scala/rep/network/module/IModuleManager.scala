@@ -10,6 +10,7 @@ import rep.network.transaction.DispatchOfPreload
 import rep.sc.TransactionDispatcher
 import rep.ui.web.EventServer
 import rep.network.genesis.GenesisBlocker
+import rep.network.sync.SyncSaveBlock
 
 /**
  * Created by jiangbuyun on 2020/03/15.
@@ -58,6 +59,7 @@ class IModuleManager(moduleName: String, isStartup: Boolean) extends ModuleBase(
     loadTransModule
     loadGensisModule
     loadClusterModule
+    loadSyncSaveModule
     RepLogger.info(RepLogger.System_Logger,  "公共模块装载完成...")
   }
 
@@ -90,6 +92,15 @@ class IModuleManager(moduleName: String, isStartup: Boolean) extends ModuleBase(
   private def loadGensisModule:Any={
     pe.register(CFRDActorType.ActorType.gensisblock,context.actorOf(GenesisBlocker.props("gensisblock"), "gensisblock"))
 
+  }
+
+  /**
+   * 如果是同步模式，则启动该模块
+   */
+  private def loadSyncSaveModule(): Unit = {
+    if (pe.getRepChainContext.getConfig.getSyncMode) {
+      pe.register(ModuleActorType.ActorType.syncSaveBlock, context.actorOf(SyncSaveBlock.props("syncSaveBlock"), "syncSaveBlock"))
+    }
   }
 
   //启动共识模块，不同的共识方式启动的actor也不相同，继承模块需要重载此方法

@@ -147,6 +147,7 @@ abstract class ISynchRequester(moduleName: String) extends ModuleBase(moduleName
     RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"current stableNode，node content=${nodes.mkString("|")}"))
     RepLogger.trace(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"current stableNode，node name content=${pe.getRepChainContext.getNodeMgr.getStableNodeNames.mkString("|")}"))
     sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, BlockEvent.CHAIN_INFO_SYNC, Event.Action.BLOCK_SYNC)
+    // 向各个节点去查询指定高度的chaininfo信息
     val res = AsyncGetNodeOfChainInfos(nodes, lh)
 
     var analyzerInSynch = getAnalyzerInSynch

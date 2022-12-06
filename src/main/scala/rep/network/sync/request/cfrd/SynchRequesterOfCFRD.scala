@@ -33,7 +33,7 @@ class SynchRequesterOfCFRD(moduleName: String) extends ISynchRequester(moduleNam
 
 
   override def receive: Receive = {
-    case StartSync(isNoticeModuleMgr: Boolean) =>
+    case StartSync(isNoticeModuleMgr: Boolean) => // 同步器接收同步指令，向其他节点发送同步请求
       schedulerLink = clearSched()
       var rb = true
       initSystemChainInfo

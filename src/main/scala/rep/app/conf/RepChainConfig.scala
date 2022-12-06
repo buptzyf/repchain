@@ -500,6 +500,27 @@ class RepChainConfig {
   def getGMSignKeyName:String={
     this.sysConf.getString("system.gm.gm_pfx_sign_key_name")
   }
+
+  def getSyncMode: Boolean = {
+    this.sysConf.getBoolean("system.mode.sync")
+  }
+
+  def getSyncHost: String = {
+    this.sysConf.getString("system.mode.host")
+  }
+
+  def isSyncUseHttps: Boolean = {
+    this.sysConf.getInt("system.mode.http_mode") match {
+      case 0 => false
+      case 1 => true
+    }
+  }
+
+  def getSyncSslConfig: Config = {
+    this.sysConf.getConfig("system.mode.ssl")
+  }
+
+
 }
 
 /**

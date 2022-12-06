@@ -34,6 +34,8 @@ libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2"
 
 libraryDependencies += "com.thesamet.scalapb" %% "scalapb-json4s" % "0.10.1-M1"
 
+resolvers += "jitpack" at "https://jitpack.io"
+libraryDependencies += ("com.gitee.BTAJL" % "RCJava-core" % "v2.0.0").exclude("org.bouncycastle", "bcprov-jdk15on")
 
 libraryDependencies += "org.iq80.leveldb" % "leveldb" % "0.12"
 libraryDependencies += "org.fusesource.leveldbjni" % "leveldbjni-all" % "1.8"
@@ -54,7 +56,7 @@ libraryDependencies += "io.spray" %%  "spray-json" % "1.3.5"
 //libraryDependencies += "com.gilt" %% "gfc-timeuuid" % "0.0.8"
 libraryDependencies += "io.netty" % "netty" % "3.10.6.Final"
 
-libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.3"
+libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.3.0"
 
 libraryDependencies += "org.codehaus.janino" % "janino" % "3.0.12"
 
@@ -66,7 +68,7 @@ libraryDependencies += "org.apache.hadoop" % "hadoop-common" % "3.2.0"
 //libraryDependencies += "org.python" % "jython" % "2.7.2"
 libraryDependencies += "org.javatuples" % "javatuples" % "1.2"
 //add java encrpto for bc
-//libraryDependencies += "org.bouncycastle" % "bcpkix-jdk15on" % "1.67"
+libraryDependencies += "org.bouncycastle" % "bcpkix-jdk15on" % "1.67"
 libraryDependencies += "cglib" % "cglib" % "3.3.0"
 
 libraryDependencies ++= Seq(
