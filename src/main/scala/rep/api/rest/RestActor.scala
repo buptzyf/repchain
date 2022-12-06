@@ -22,7 +22,7 @@ import akka.util.Timeout
 import scala.concurrent.duration._
 import rep.crypto._
 import org.json4s._
-import org.json4s.jackson.JsonMethods
+import org.json4s.jackson.{JsonMethods, Serialization}
 import akka.actor.Props
 import rep.log.RepLogger
 import rep.network.base.ModuleBase
@@ -38,8 +38,15 @@ import rep.utils.{MessageToJson, SerializeUtils}
 
 import scala.concurrent.Await
 import akka.pattern.ask
+import com.alibaba.fastjson2.JSONObject
+import com.rcjava.client.TranPostClient
+import com.typesafe.config.Config
+import org.apache.http.conn.ssl.TrustSelfSignedStrategy
+import org.apache.http.ssl.SSLContexts
 import rep.api.rest.ResultCode._
 import rep.sc.SandboxDispatcher.DoTransaction
+
+import java.io.File
 
 /**
  * RestActor伴生object，包含可接受的传入消息定义，以及处理的返回结果定义。
@@ -140,6 +147,23 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
   implicit val timeout = Timeout(1000.seconds)
   val sr: BlockSearcher = new BlockSearcher(pe.getRepChainContext)
   private val consensusCondition = new ConsensusCondition(pe.getRepChainContext)
+
+  val syncSslConfig: Config = config.getSyncSslConfig
+  val tranPostClient: TranPostClient = config.isSyncUseHttps match {
+    case true =>
+      val sslContext = SSLContexts.custom
+        .loadTrustMaterial(
+          new File(syncSslConfig.getString("trust-store")),
+          syncSslConfig.getString("trust-store-password").toCharArray,
+          new TrustSelfSignedStrategy)
+        .loadKeyMaterial(
+          new File(syncSslConfig.getString("key-store")),
+          syncSslConfig.getString("key-store-password").toCharArray,
+          syncSslConfig.getString("key-password").toCharArray)
+        .build
+      new TranPostClient(config.getSyncHost, sslContext)
+    case false => new TranPostClient(config.getSyncHost)
+  }
 
   /**
    * 根据节点名称和chainCode定义建立交易实例
@@ -278,12 +302,19 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
   def receive: Receive = {
 
     case signedTran(tranHexString: String) =>
+      implicit val formats = DefaultFormats
       val tmpstart = System.currentTimeMillis()
       val tr1 = BytesHex.hex2bytes(tranHexString) // 解析交易编码后的16进制字符串,进行解码16进制反解码decode
       var txr = Transaction.defaultInstance
       try {
         txr = Transaction.parseFrom(tr1)
-        doTransaction(txr)
+        config.getSyncMode match {
+          case true =>
+            val jsonObject = tranPostClient.postSignedTran(tranHexString)
+            val postResult = Serialization.read[PostResult](jsonObject.toJSONString())
+            sender ! postResult
+          case false => doTransaction(txr)
+        }
       } catch {
         case e: Exception =>
           sender ! PostResult(txr.id, Option(ErrMessage(TranParseError, s"transaction parser error! + ${e.getMessage}")))
@@ -304,7 +335,15 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
       }
 
     // 流式提交交易
-    case tran: Transaction => doTransaction(tran)
+    case tran: Transaction =>
+      implicit val formats = DefaultFormats
+      config.getSyncMode match {
+        case true =>
+          val jsonObject = tranPostClient.postSignedTran(BytesHex.bytes2hex(tran.toByteArray))
+          val postResult = Serialization.read[PostResult](jsonObject.toJSONString())
+          sender ! postResult
+        case false => doTransaction(tran)
+      }
 
     // 根据高度检索块
     case BlockHeight(height) =>
