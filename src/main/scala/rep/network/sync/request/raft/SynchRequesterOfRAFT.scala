@@ -124,7 +124,7 @@ class SynchRequesterOfRAFT (moduleName: String) extends ISynchRequester(moduleNa
         pe.setSynching(true)
         try {
           val ssize = pe.getRepChainContext.getNodeMgr.getStableNodes.size
-          if(pe.getRepChainContext.getConfig.getVoteNodeList.length == ssize){
+          if(pe.getRepChainContext.getConsensusNodeConfig.getVoteListOfConfig.length == ssize){
             rb = Handler(isNoticeModuleMgr)
           }
         } catch {

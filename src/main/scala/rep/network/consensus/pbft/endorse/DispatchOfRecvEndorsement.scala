@@ -40,8 +40,8 @@ class DispatchOfRecvEndorsement(moduleName: String) extends ModuleBase(moduleNam
 
   private def createRouter = {
     if (router == null) {
-      var list: Array[Routee] = new Array[Routee](config.getVoteNodeList.length)
-      for (i <- 0 to config.getVoteNodeList.length - 1) {
+      var list: Array[Routee] = new Array[Routee](pe.getRepChainContext.getConsensusNodeConfig.getVoteListOfConfig.length)
+      for (i <- 0 to pe.getRepChainContext.getConsensusNodeConfig.getVoteListOfConfig.length - 1) {
         var ca = context.actorOf(Endorser4Future.props("endorser" + i), "endorser" + i)
         context.watch(ca)
         list(i) = new ActorRefRoutee(ca)

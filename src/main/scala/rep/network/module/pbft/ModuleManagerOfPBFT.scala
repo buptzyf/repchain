@@ -36,7 +36,7 @@ class ModuleManagerOfPBFT(moduleName: String,  isStartup: Boolean) extends IModu
   }
 
   override def loadConsensusModule = {
-    if (pe.getRepChainContext.getConfig.getVoteNodeList.contains(pe.getSysTag)) {
+    if (pe.getRepChainContext.getConsensusNodeConfig.getVoteListOfConfig.contains(pe.getSysTag)) {
       pe.register(ModuleActorType.ActorType.transactionpool, context.actorOf(TransactionPoolOfPBFT.props("transactionpool"), "transactionpool")) //zhj
     }
     //pe.register(ModuleActorType.ActorType.transactioncollectioner, context.actorOf(TransactionOfCollectioner.props("transactioncollectioner"), "transactioncollectioner"))

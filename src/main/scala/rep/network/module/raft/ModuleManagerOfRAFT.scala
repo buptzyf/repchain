@@ -36,7 +36,7 @@ class ModuleManagerOfRAFT(moduleName: String,  isStartup: Boolean) extends IModu
 
   override def loadConsensusModule = {
 
-    if (pe.getRepChainContext.getConfig.getVoteNodeList.contains(pe.getSysTag)) {
+    if (pe.getRepChainContext.getConsensusNodeConfig.getVoteListOfConfig.contains(pe.getSysTag)) {
       pe.register(ModuleActorType.ActorType.transactionpool, context.actorOf(TransactionPoolOfRAFT.props("transactionpool"), "transactionpool"))
     }
     //pe.register(ModuleActorType.ActorType.transactioncollectioner, context.actorOf(TransactionOfCollectioner.props("transactioncollectioner"), "transactioncollectioner"))

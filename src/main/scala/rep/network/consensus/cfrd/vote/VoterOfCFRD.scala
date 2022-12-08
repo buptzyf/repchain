@@ -38,7 +38,7 @@ class VoterOfCFRD(moduleName: String) extends IVoter(moduleName: String) {
 
   override def preStart(): Unit = {
     //注册接收交易为空的广播
-    if (pe.getRepChainContext.getConfig.getVoteNodeList.contains(pe.getSysTag)) {
+    if (pe.getRepChainContext.getConsensusNodeConfig.getVoteListOfConfig.contains(pe.getSysTag)) {
       //共识节点可以订阅交易为空的广播事件
       SubscribeTopic(mediator, self, selfAddr, Topic.MessageWithZeroTransaction, true)
     }

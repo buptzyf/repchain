@@ -50,8 +50,8 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
 
   private def createRouter = {
     if (router == null) {
-      var list: Array[Routee] = new Array[Routee](config.getVoteNodeList.length*2)
-      for (i <- 0 to config.getVoteNodeList.length*2 - 1) {
+      var list: Array[Routee] = new Array[Routee](pe.getRepChainContext.getConsensusNodeConfig.getVoteListOfConfig.length*2)
+      for (i <- 0 to pe.getRepChainContext.getConsensusNodeConfig.getVoteListOfConfig.length*2 - 1) {
         var ca = context.actorOf(EndorsementRequest4Future.props("endorsementrequester" + i), "endorsementrequester" + i)
         context.watch(ca)
         list(i) = new ActorRefRoutee(ca)
