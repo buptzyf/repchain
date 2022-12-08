@@ -48,6 +48,7 @@ class RdidOperateAuthorizeTPL extends IContract {
 
     object Operate {
       val signUpOperate = "signUpOperate"
+      val updateOperate = "updateOperate"
       val updateOperateStatus = "updateOperateStatus"
     }
 
@@ -91,6 +92,9 @@ class RdidOperateAuthorizeTPL extends IContract {
 
       case ACTION.Operate.signUpOperate =>
         OperOperation.signUpOperate(ctx, parser.fromJsonString(sdata)(Operate))
+
+      case ACTION.Operate.updateOperate =>
+        OperOperation.updateOperate(ctx, parser.fromJsonString(sdata)(Operate))
 
       case ACTION.Operate.updateOperateStatus =>
         OperOperation.updateOperateStatus(ctx, param.extract[OperateStatus])
