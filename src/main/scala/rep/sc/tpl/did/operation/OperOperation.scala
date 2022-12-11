@@ -10,10 +10,10 @@ import rep.sc.tpl.did.DidTplPrefix.{operIdxPrefix, operIdxSuffix, operPrefix, si
 import rep.utils.IdTool
 
 /**
-  * 注册操作，禁用启用操作
-  *
-  * @author zyf
-  */
+ * 注册操作，禁用启用操作
+ *
+ * @author zyf
+ */
 object OperOperation extends DidOperation {
 
   val operateExists = ActionResult(14001, "operate已存在")
@@ -29,14 +29,14 @@ object OperOperation extends DidOperation {
 
 
   /**
-    * 注册Operate
-    * 公开，无需授权，链密钥对为自己注册service，为自己注册deploy与setState，以及did合约相关操作，因此可以公开
-    * 普通合约拥有者（操作拥有者）给自己注册合约相关的操作
-    *
-    * @param ctx
-    * @param operate
-    * @return
-    */
+   * 注册Operate
+   * 公开，无需授权，链密钥对为自己注册service，为自己注册deploy与setState，以及did合约相关操作，因此可以公开
+   * 普通合约拥有者（操作拥有者）给自己注册合约相关的操作
+   *
+   * @param ctx
+   * @param operate
+   * @return
+   */
   def signUpOperate(ctx: ContractContext, operate: Operate): ActionResult = {
     val isAdmin = ctx.api.isAdminCert(ctx.t.getSignature.getCertId.creditCode)
     // 检查是否为链密钥对，检查是否为合约部署者
@@ -45,7 +45,7 @@ object OperOperation extends DidOperation {
         if (!isAdmin) {
           throw ContractException(toJsonErrMsg(onlyAdminCanManageServiceOperate))
         }
-        // TODO 判断hash是否匹配
+      // TODO 判断hash是否匹配
       case OperateType.OPERATE_CONTRACT =>
         if (operate.authFullName.endsWith(".deploy") || operate.authFullName.endsWith(".setState")) {
           if (!isAdmin) {
@@ -55,14 +55,14 @@ object OperOperation extends DidOperation {
           // 非deploy与setState以及"RdidOperateAuthorizeTPL.function"的，则必须是合约部署者
           val cert = ctx.t.getSignature.certId.get
           //val contractName = operate.authFullName.split("\\.")(0)
-          val contractName = operate.authFullName.substring(0,operate.authFullName.lastIndexOf("."))//.split("\\.")(0)
+          val contractName = operate.authFullName.substring(0, operate.authFullName.lastIndexOf(".")) //.split("\\.")(0)
           try {
             ctx.api.permissionCheck(cert.creditCode, cert.certName, contractName + ".deploy")
           } catch {
             case se: SandboxException =>
               try {
-                val netid = operate.authFullName.substring(0,operate.authFullName.indexOf(IdTool.DIDPrefixSeparator))
-                ctx.api.permissionCheck(cert.creditCode, cert.certName, netid+s"${IdTool.DIDPrefixSeparator}*.deploy")
+                val netid = operate.authFullName.substring(0, operate.authFullName.indexOf(IdTool.DIDPrefixSeparator))
+                ctx.api.permissionCheck(cert.creditCode, cert.certName, netid + s"${IdTool.DIDPrefixSeparator}*.deploy")
               } catch {
                 case se: SandboxException =>
                   throw ContractException(toJsonErrMsg(canNotDeployContract), se)
@@ -100,13 +100,39 @@ object OperOperation extends DidOperation {
   }
 
   /**
-    * 更新操作状态
-    * 公开，无需授权，操作注册者禁用或启用Operate，自己 禁用/启用 自己的操作，或者管理员 禁用/启用 其他用户的操作
-    *
-    * @param ctx
-    * @param status
-    * @return
-    */
+   * 更新操作
+   *
+   * @param ctx
+   * @param operate
+   * @return
+   */
+  def updateOperate(ctx: ContractContext, operate: Operate): ActionResult = {
+    // 判断operate是否存在
+    val operIndex = operPrefix + operate.opId
+    val oldOperate = ctx.api.getVal(operIndex).asInstanceOf[Operate]
+    if (oldOperate != null) {
+      // 只允许自己给自己修改，拿出来旧的，判断旧的register是否是本次交易提交者，是否等于本次register
+      val certId = ctx.t.getSignature.getCertId
+      if (oldOperate.register.equals(operate.register) && operate.register.equals(certId.creditCode)) {
+        // 保存新的operate
+        ctx.api.setVal(operIndex, operate)
+      } else {
+        throw ContractException(toJsonErrMsg(registerNotTranPoster))
+      }
+    } else {
+      throw ContractException(toJsonErrMsg(operateNotExists))
+    }
+    null
+  }
+
+  /**
+   * 更新操作状态
+   * 公开，无需授权，操作注册者禁用或启用Operate，自己 禁用/启用 自己的操作，或者管理员 禁用/启用 其他用户的操作
+   *
+   * @param ctx
+   * @param status
+   * @return
+   */
   def updateOperateStatus(ctx: ContractContext, status: OperateStatus): ActionResult = {
     val oldOperate = ctx.api.getVal(operPrefix + status.opId)
     if (oldOperate != null) {
