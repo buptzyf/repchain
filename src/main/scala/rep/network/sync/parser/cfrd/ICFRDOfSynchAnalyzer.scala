@@ -1,9 +1,7 @@
 package rep.network.sync.parser.cfrd
 
-import rep.app.conf.RepChainConfig
 import rep.app.system.RepChainSystemContext
 import rep.log.RepLogger
-import rep.network.consensus.byzantium.ConsensusCondition
 import rep.network.sync.SyncMsg.AnalysisResult
 import rep.network.sync.SyncMsg
 import rep.network.sync.parser.ISynchAnalyzer
@@ -26,7 +24,7 @@ class ICFRDOfSynchAnalyzer(ctx:RepChainSystemContext, lchaininfo: BlockchainInfo
       //获取返回的chaininfo信息中，大多数节点的相同高度的最大值
       val heightStatis = reslist.groupBy(x => x.response.height).map(x => (x._1, x._2.length)).toList.sortBy(x => -x._2)
       val maxheight = heightStatis.head._1
-      var nodesOfmaxHeight = heightStatis.head._2
+      val nodesOfmaxHeight = heightStatis.head._2
 
       RepLogger.debug(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"--------Info,获取同步的返回信息，结果=${reslist.mkString("|")}"))
 
@@ -57,12 +55,14 @@ class ICFRDOfSynchAnalyzer(ctx:RepChainSystemContext, lchaininfo: BlockchainInfo
       } else {
         //最多数量的高度，达不到共识的要求，输出错误信息停止同步
         this.aresult = AnalysisResult(2, s"最多数量的高度，达不到共识的要求，输出错误信息停止同步 response size=${reslist.size}")
-        RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"--------error,最多数量的高度，达不到共识的要求，输出错误信息停止同步 response size=${reslist.size}"))
+        RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"--------error,最多数量的高度，达不到共识的要求，输出错误信息停止同步 response size=${reslist.size}," +
+          s"maxNodesOfHeigh=${nodesOfmaxHeight},maxHeight=${maxheight},nodesOfConsensus=${ctx.getConsensusNodeConfig.getVoteListOfConfig.length}"))
       }
     } else {
       //获取到到chaininfo信息的数量，没有得到大多数节点的响应，输出错误信息停止同步
       this.aresult = AnalysisResult(0, s"获取到到chaininfo信息的数量，没有得到大多数节点的响应，输出错误信息停止同步 response size=${reslist.size}")
-      RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"--------error,获取到到chaininfo信息的数量，没有得到大多数节点的响应，输出错误信息停止同步 response size=${reslist.size}"))
+      RepLogger.error(RepLogger.BlockSyncher_Logger, this.getLogMsgPrefix(s"--------error,获取到到chaininfo信息的数量，没有得到大多数节点的响应，输出错误信息停止同步 response size=${reslist.size}," +
+        s"nodesOfConsensus=${ctx.getConsensusNodeConfig.getVoteListOfConfig.length}"))
     }
   }
 
