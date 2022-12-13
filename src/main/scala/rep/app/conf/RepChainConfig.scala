@@ -472,6 +472,17 @@ class RepChainConfig {
     }
   }
 
+  def useCustomBroadcast:Boolean={
+    try{
+      this.sysConf.getInt("system.use_custom_broadcast") match {
+        case 0 => false
+        case 1 => true
+      }
+    }catch {
+      case e:Exception => false
+    }
+  }
+
   def isUseGM:Boolean={
     this.sysConf.getBoolean("system.gm.is_use_gm")
   }

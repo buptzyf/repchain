@@ -197,7 +197,8 @@ class VoterOfCFRD(moduleName: String) extends IVoter(moduleName: String) {
         if (t != null) {
           RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag}," +
             s"recv RequestWithZeroTransaction,get transaction ,broadcast transaction,tid=${t.id},requester=${zt.systemName}" + "~" + selfAddr))
-          mediator ! Publish(Topic.Transaction, t)
+          //mediator ! Publish(Topic.Transaction, t)
+          pe.getRepChainContext.getCustomBroadcastHandler.BroadcastTransaction(context,mediator,t)
         }
       }
     }

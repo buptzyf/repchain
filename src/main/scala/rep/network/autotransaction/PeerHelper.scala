@@ -107,7 +107,8 @@ class PeerHelper(name: String) extends ModuleBase(name) {
 
         if(!pe.getRepChainContext.getTransactionPool.hasOverflowed)pe.getRepChainContext.getTransactionPool.addTransactionToCache(t3)
         if(pe.getRepChainContext.getConfig.isBroadcastTransaction)
-          mediator ! Publish(Topic.Transaction, t3)
+          //mediator ! Publish(Topic.Transaction, t3)
+          pe.getRepChainContext.getCustomBroadcastHandler.BroadcastTransaction(context,mediator,t3)
          RepLogger.trace(RepLogger.System_Logger,this.getLogMsgPrefix(s"########################create transaction id =${t3.id}"))
       } catch {
         case e: RuntimeException => throw e

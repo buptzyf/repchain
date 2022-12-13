@@ -105,6 +105,7 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
               sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Endorsement, Event.Action.ENDORSEMENT)
               //this.block = this.block.withReplies(block.replies)
               mediator ! Publish(Topic.Block, new MsgOfPBFT.ConfirmedBlock(this.block, sender, replies))
+              //pe.getRepChainContext.getCustomBroadcastHandler.BroadcastConfirmBlock(context,mediator,new MsgOfPBFT.ConfirmedBlock(this.block, sender, replies))
               clearEndorseInfo
         }
       } else{

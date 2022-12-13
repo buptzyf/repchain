@@ -17,6 +17,7 @@ import rep.crypto.nodedynamicmanagement.ReloadableTrustManager
 import rep.log.RepLogger
 import rep.log.httplog.HttpLogger
 import rep.network.autotransaction.TransactionBuilder
+import rep.network.boardcast.BroadcastOfCustom
 import rep.network.cluster.management.ConsensusNodeConfig
 import rep.network.tools.NodeMgr
 import rep.network.tools.transpool.PoolOfTransaction
@@ -34,6 +35,7 @@ class RepChainSystemContext (systemName:String){//},cs:ClusterSystem) {
   private val tx_acc_base_key = "tx_acc_base"
   private val state_acc_base_key = "state_acc_base"
   private val config : RepChainConfig = new RepChainConfig(systemName)
+  private val customBroadcast : BroadcastOfCustom = new BroadcastOfCustom(this)
   private val timePolicy : TimePolicy = new TimePolicy(config.getSystemConf)
   private val cryptoManager : CryptoMgr = new  CryptoMgr(this)
   private val signer : ISigner = new ImpECDSASigner(this)
@@ -64,6 +66,10 @@ class RepChainSystemContext (systemName:String){//},cs:ClusterSystem) {
   private val vb : VerkleNodeBuffer = new VerkleNodeBuffer(this)
 
   private var ml : ActorRef = null
+
+  def getCustomBroadcastHandler:BroadcastOfCustom = {
+    this.customBroadcast
+  }
 
   def registerMemberList(ml:ActorRef):Unit={
     this.ml = ml

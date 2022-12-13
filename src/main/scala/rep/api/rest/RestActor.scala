@@ -221,7 +221,8 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
       //优先加入本地交易池
       pool.addTransactionToCache(t)
       if (config.isBroadcastTransaction) {
-        mediator ! Publish(Topic.Transaction, t)
+        //mediator ! Publish(Topic.Transaction, t)
+        pe.getRepChainContext.getCustomBroadcastHandler.BroadcastTransaction(context,mediator,t)
       }
       sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)
       sender ! PostResult(t.id, None)

@@ -108,7 +108,8 @@ class BlockOfRaftInStram(moduleName: String) extends IBlocker(moduleName) {
     RepTimeTracer.setEndTime(pe.getSysTag, "createBlock", System.currentTimeMillis(), this.preblock.getHeader.height, this.preblock.transactions.size)
     this.isPublish = true
     if(!pe.getZeroOfTransNumFlag) {
-      mediator ! Publish(Topic.Block, ConfirmedBlock(this.preblock, self))
+      //mediator ! Publish(Topic.Block, ConfirmedBlock(this.preblock, self))
+      pe.getRepChainContext.getCustomBroadcastHandler.BroadcastConfirmBlock(context,mediator,ConfirmedBlock(this.preblock, self))
     }else{
       this.resetStatus
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("blocker transform error" + "~" + selfAddr))
