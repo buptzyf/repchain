@@ -111,7 +111,7 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
       this.block = this.block.withHeader(this.block.getHeader.withEndorsements(consensus))
       RepTimeTracer.setEndTime(pe.getSysTag, "Endorsement", System.currentTimeMillis(),this.block.getHeader.height,this.block.transactions.size)
       //mediator ! Publish(Topic.Block, new ConfirmedBlock(this.block, sender))
-      pe.getRepChainContext.getCustomBroadcastHandler.BroadcastConfirmBlock(context,mediator,new ConfirmedBlock(this.block, sender))
+      pe.getRepChainContext.getCustomBroadcastHandler.PublishOfCustom(context,mediator,Topic.Block,new ConfirmedBlock(this.block, sender))
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( "collectioner endorsementt finish"))
       clearEndorseInfo
     } else {

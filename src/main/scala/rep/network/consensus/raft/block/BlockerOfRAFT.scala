@@ -126,7 +126,7 @@ class BlockerOfRAFT (moduleName: String) extends IBlocker(moduleName){
       pe.setCreateHeight(preblock.getHeader.height)
       if(!pe.getZeroOfTransNumFlag)
         //mediator ! Publish(Topic.Block, ConfirmedBlock(preblock, self))
-      pe.getRepChainContext.getCustomBroadcastHandler.BroadcastConfirmBlock(context,mediator,ConfirmedBlock(preblock, self))
+      pe.getRepChainContext.getCustomBroadcastHandler.PublishOfCustom(context,mediator,Topic.Block,ConfirmedBlock(preblock, self))
     } else {
       RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("create new block error,CreateBlock is null" + "~" + selfAddr))
       if(pe.getRepChainContext.getTransactionPool.getCachePoolSize > config.getMinTransactionNumberOfBlock)

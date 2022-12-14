@@ -8,10 +8,28 @@ import rep.network.autotransaction.Topic
 import rep.network.consensus.common.MsgOfConsensus.ConfirmedBlock
 import rep.proto.rc2.{Block, Transaction}
 
+import scala.collection.mutable
+
 class BroadcastOfCustom(ctx:RepChainSystemContext) {
+  case class SubscribeInfo(topicName:String,path:String)
+  private val hm : mutable.HashMap[String,String] = new mutable.HashMap[String,String]()
+  init
+  private def init:Unit={
+    hm += Topic.Transaction -> "/user/modulemanager/transactioncollectioner"
+    hm += Topic.Block -> "/user/modulemanager/confirmerofblock"
+
+    /*val Transaction = "Transaction"
+    val Block = "Block"
+    val Event = "Event"
+    val Endorsement = "Endorsement"
+    val SyncOfTransaction = "SyncOfTransaction"
+    val SyncOfBlock = "SyncOfBlock"
+    val VoteTransform = "VoteTransform"
+    val VoteSynchronized = "VoteSynchronized"
+    val MessageWithZeroTransaction = "MessageWithZeroTransaction"*/
+  }
+
   private val useCustomBroadcast = ctx.getConfig.useCustomBroadcast
-  private val actorPathInTransaction = "/user/modulemanager/transactioncollectioner"
-  private val actorPathInConfirmBlock = "/user/modulemanager/confirmerofblock"
 
   private def toAkkaUrl(addr: String, actorName: String): String = {
     addr + "/" + actorName;
@@ -27,56 +45,33 @@ class BroadcastOfCustom(ctx:RepChainSystemContext) {
     }
   }
 
-  private def BroadcastTransaction4Custom(context:ActorContext,nodes:Set[Address],t:Transaction):Unit={
+  private def Send(context:ActorContext,nodes:Set[Address],path:String,data:Any):Unit={
     nodes.foreach(addr => {
-      try {
-        val dest = getDestActorService(context,addr,actorPathInTransaction)
-        if(dest != null){
-          dest ! t
-        }else{
-          RepLogger.error(RepLogger.System_Logger, s"BroadcastOfCustom transaction,dest is null," +
-            s"dest=${addr.toString},t=${t.id}")
-        }
-      } catch {
-        case e: Exception =>
-          RepLogger.error(RepLogger.System_Logger, s"BroadcastOfCustom transaction," +
-            s"dest is null,dest=${addr.toString},t=${t.id},msg=${e.getMessage}")
+      val dest = getDestActorService(context, addr, path)
+      if (dest != null) {
+        dest ! data
+      } else {
+        RepLogger.error(RepLogger.System_Logger, s"Send,dest is null," +
+          s"dest=${addr.toString},data=${data}")
       }
     })
   }
-
-  private def BroadcastConfirmBlock4Custom(context: ActorContext, nodes: Set[Address], cb: ConfirmedBlock): Unit = {
-    nodes.foreach(addr => {
-      try {
-        val dest = getDestActorService(context, addr, actorPathInConfirmBlock)
-        if (dest != null) {
-          dest ! cb
-        } else {
-          RepLogger.error(RepLogger.System_Logger, s"BroadcastOfCustom confirm block,dest is null," +
-            s"dest=${addr.toString},block height=${cb.blc.getHeader.height}")
-        }
-      } catch {
-        case e: Exception =>
-          RepLogger.error(RepLogger.System_Logger, s"BroadcastOfCustom confirm block," +
-            s"dest is null,dest=${addr.toString},block height=${cb.blc.getHeader.height},msg=${e.getMessage}")
+  def PublishOfCustom(context:ActorContext,mediator:ActorRef,topic:String,data:Any):Unit={
+    if(this.useCustomBroadcast){
+      topic match {
+        case Topic.Transaction =>
+          val path = hm(Topic.Transaction)
+          val nodes = ctx.getNodeMgr.getStableNodes
+          Send(context, nodes, path, data)
+        case Topic.Block =>
+          val path = hm(Topic.Block)
+          val nodes = ctx.getNodeMgr.getNodes
+          Send(context, nodes, path, data)
       }
-    })
-  }
-
-  def BroadcastTransaction(context:ActorContext, mediator:ActorRef, t:Transaction):Unit={
-    if(useCustomBroadcast){
-      BroadcastTransaction4Custom(context,ctx.getNodeMgr.getStableNodes,t)
     }else{
-      mediator ! Publish(Topic.Transaction, t)
+      mediator ! Publish(topic, data)
     }
   }
 
-  def BroadcastConfirmBlock(context: ActorContext, mediator: ActorRef, cb: ConfirmedBlock): Unit = {
-    if (useCustomBroadcast) {
-      BroadcastConfirmBlock4Custom(context, ctx.getNodeMgr.getStableNodes, cb)
-    } else {
-      mediator ! Publish(Topic.Block, cb)
-    }
-  }
 
 }

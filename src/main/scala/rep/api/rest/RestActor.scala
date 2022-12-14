@@ -222,7 +222,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
       pool.addTransactionToCache(t)
       if (config.isBroadcastTransaction) {
         //mediator ! Publish(Topic.Transaction, t)
-        pe.getRepChainContext.getCustomBroadcastHandler.BroadcastTransaction(context,mediator,t)
+        pe.getRepChainContext.getCustomBroadcastHandler.PublishOfCustom(context,mediator,Topic.Transaction,t)
       }
       sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)
       sender ! PostResult(t.id, None)
