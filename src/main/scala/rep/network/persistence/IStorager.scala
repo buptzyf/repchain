@@ -12,6 +12,8 @@ import rep.network.util.NodeHelp
 import rep.network.consensus.common.MsgOfConsensus.{BatchStore, BlockRestore}
 import rep.proto.rc2.{BlockchainInfo, Event}
 import rep.storage.chain.block.{BlockSearcher, BlockStorager}
+import rep.utils.GlobalUtils.EventType
+
 import scala.util.control.Breaks.{break, breakable}
 
 /**
@@ -71,6 +73,7 @@ abstract class IStorager (moduleName: String) extends ModuleBase(moduleName) {
 
         if (blkRestore.SourceOfBlock == SourceOfBlock.CONFIRMED_BLOCK && NodeHelp.checkBlocker(selfAddr, akka.serialization.Serialization.serializedActorPath(blkRestore.blker))) {
           mediator ! Publish(Topic.Event, new Event(selfAddr, Topic.Block, Event.Action.BLOCK_NEW, Some(blkRestore.blk)))
+
         }
 
         RepLogger.trace(RepLogger.Storager_Logger, this.getLogMsgPrefix( s"CurrentHash(After presistence): ${pe.getCurrentBlockHash}" + "~" + selfAddr))

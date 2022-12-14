@@ -40,7 +40,13 @@ class VoterOfCFRD(moduleName: String) extends IVoter(moduleName: String) {
     //注册接收交易为空的广播
     if (pe.getRepChainContext.getConsensusNodeConfig.getVoteListOfConfig.contains(pe.getSysTag)) {
       //共识节点可以订阅交易为空的广播事件
-      SubscribeTopic(mediator, self, selfAddr, Topic.MessageWithZeroTransaction, true)
+      if (pe.getRepChainContext.getConfig.useCustomBroadcast) {
+        pe.getRepChainContext.getCustomBroadcastHandler.SubscribeTopic(Topic.MessageWithZeroTransaction, "/user/modulemanager/voter")
+        RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("Subscribe custom broadcast,/user/modulemanager/voter"))
+      } else {
+        SubscribeTopic(mediator, self, selfAddr, Topic.MessageWithZeroTransaction, false)
+        RepLogger.info(RepLogger.System_Logger,this.getLogMsgPrefix("Subscribe system broadcast,/user/modulemanager/voter"))
+      }
     }
     RepLogger.info(RepLogger.Consensus_Logger, this.getLogMsgPrefix("VoterOfCFRD module start"))
     super.preStart()
@@ -178,7 +184,8 @@ class VoterOfCFRD(moduleName: String) extends IVoter(moduleName: String) {
           } else {
             RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag}," +
               s"CheckZero ,broadcast RequestWithZeroTransaction " + "~" + selfAddr))
-            mediator ! Publish(Topic.MessageWithZeroTransaction, RequestWithZeroTransaction(pe.getCurrentHeight, pe.getSysTag))
+            pe.getRepChainContext.getCustomBroadcastHandler.PublishOfCustom(context,mediator,Topic.MessageWithZeroTransaction,RequestWithZeroTransaction(pe.getCurrentHeight, pe.getSysTag))
+            //mediator ! Publish(Topic.MessageWithZeroTransaction, RequestWithZeroTransaction(pe.getCurrentHeight, pe.getSysTag))
           }
         }
       }

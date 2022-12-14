@@ -5,19 +5,18 @@ import akka.cluster.pubsub.DistributedPubSubMediator.Publish
 import rep.app.system.RepChainSystemContext
 import rep.log.RepLogger
 import rep.network.autotransaction.Topic
-import rep.network.consensus.common.MsgOfConsensus.ConfirmedBlock
-import rep.proto.rc2.{Block, Transaction}
-
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 
 class BroadcastOfCustom(ctx:RepChainSystemContext) {
   case class SubscribeInfo(topicName:String,path:String)
-  private val hm : mutable.HashMap[String,String] = new mutable.HashMap[String,String]()
+  private val hm : mutable.HashMap[String,ArrayBuffer[String]] = new mutable.HashMap[String,ArrayBuffer[String]]()
   init
   private def init:Unit={
-    hm += Topic.Transaction -> "/user/modulemanager/transactioncollectioner"
-    hm += Topic.Block -> "/user/modulemanager/confirmerofblock"
-
+    hm += Topic.Transaction -> new ArrayBuffer[String]()
+    hm += Topic.Block -> new ArrayBuffer[String]()
+    hm += Topic.MessageWithZeroTransaction -> new ArrayBuffer[String]()
+    hm += Topic.VoteTransform -> new ArrayBuffer[String]()
     /*val Transaction = "Transaction"
     val Block = "Block"
     val Event = "Event"
@@ -27,6 +26,13 @@ class BroadcastOfCustom(ctx:RepChainSystemContext) {
     val VoteTransform = "VoteTransform"
     val VoteSynchronized = "VoteSynchronized"
     val MessageWithZeroTransaction = "MessageWithZeroTransaction"*/
+  }
+
+  def SubscribeTopic(topic:String,path:String):Unit={
+    val ls = hm(topic)
+    if(ls != null && !ls.contains(path)){
+       ls += path
+    }
   }
 
   private val useCustomBroadcast = ctx.getConfig.useCustomBroadcast
@@ -62,11 +68,16 @@ class BroadcastOfCustom(ctx:RepChainSystemContext) {
         case Topic.Transaction =>
           val path = hm(Topic.Transaction)
           val nodes = ctx.getNodeMgr.getStableNodes
-          Send(context, nodes, path, data)
+          path.foreach(p=>{
+            Send(context, nodes, p, data)
+          })
         case Topic.Block =>
           val path = hm(Topic.Block)
           val nodes = ctx.getNodeMgr.getNodes
-          Send(context, nodes, path, data)
+          path.foreach(p=>{
+            Send(context, nodes, p, data)
+          })
+
       }
     }else{
       mediator ! Publish(topic, data)

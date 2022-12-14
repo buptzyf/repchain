@@ -1,7 +1,6 @@
 package rep.network.consensus.raft.vote
 
 import akka.actor.Props
-import akka.cluster.pubsub.DistributedPubSubMediator.Publish
 import rep.log.RepLogger
 import rep.network.autotransaction.Topic
 import rep.network.consensus.cfrd.MsgOfCFRD.{CreateBlock, ForceVoteInfo, TransformBlocker, VoteOfBlocker, VoteOfForce}
@@ -37,7 +36,14 @@ class VoterOfRAFT (moduleName: String) extends IVoter(moduleName: String) {
     RepLogger.info(RepLogger.Vote_Logger, this.getLogMsgPrefix("VoterOfRAFT  module start"))
     if(pe.getRepChainContext.getConsensusNodeConfig.getVoteListOfConfig.contains(pe.getSysTag)){
       //共识节点可以订阅交易的广播事件
-      SubscribeTopic(mediator, self, selfAddr, Topic.VoteTransform, true)
+      if (pe.getRepChainContext.getConfig.useCustomBroadcast) {
+        pe.getRepChainContext.getCustomBroadcastHandler.SubscribeTopic(Topic.VoteTransform, "/user/modulemanager/voter")
+        RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("Subscribe custom broadcast,/user/modulemanager/voter"))
+      } else {
+        SubscribeTopic(mediator, self, selfAddr, Topic.VoteTransform, false)
+        RepLogger.info(RepLogger.System_Logger,this.getLogMsgPrefix("Subscribe system broadcast,/user/modulemanager/voter"))
+      }
+
     }
   }
 
@@ -127,7 +133,8 @@ class VoterOfRAFT (moduleName: String) extends IVoter(moduleName: String) {
             this.zeroOfTransNumTimeout = -1
             pe.resetTimeoutOfRaft
             this.blockTimeout = false
-            mediator ! Publish(Topic.VoteTransform,  TransformBlocker(pe.getSysTag,pe.getCurrentHeight,pe.getCurrentBlockHash,this.voteIndex))
+            //mediator ! Publish(Topic.VoteTransform,  TransformBlocker(pe.getSysTag,pe.getCurrentHeight,pe.getCurrentBlockHash,this.voteIndex))
+            pe.getRepChainContext.getCustomBroadcastHandler.PublishOfCustom(context,mediator,Topic.VoteTransform,TransformBlocker(pe.getSysTag,pe.getCurrentHeight,pe.getCurrentBlockHash,this.voteIndex))
             this.cleanVoteInfo
             this.resetCandidator(pe.getCurrentBlockHash)
             this.resetBlocker(getVoteIndex, pe.getCurrentBlockHash, pe.getCurrentHeight)

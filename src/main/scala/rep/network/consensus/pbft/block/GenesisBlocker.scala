@@ -62,7 +62,6 @@ class GenesisBlocker(moduleName: String) extends ModuleBase(moduleName) {
 
   override def preStart(): Unit = {
     RepLogger.info(RepLogger.Consensus_Logger, this.getLogMsgPrefix( "Block module start"))
-    SubscribeTopic(mediator, self, selfAddr, Topic.Block, true)
   }
 
   
@@ -88,8 +87,8 @@ class GenesisBlocker(moduleName: String) extends ModuleBase(moduleName) {
       RepLogger.debug(RepLogger.zLogger,"R: " + ConfirmOfBlockOfPBFT.nn(sender) + "->" + ConfirmOfBlockOfPBFT.nn(pe.getSysTag) + ", GenesisBlock: ")
       if(searcher.getChainInfo.height == 0 && NodeHelp.isSeedNode(pe.getSysTag,pe.getRepChainContext.getConfig.getGenesisNodeName)  ){
         if(this.preblock != null){
-          mediator ! Publish(Topic.Block, MsgOfPBFT.ConfirmedBlock(preblock, sender, Seq.empty))
-          //pe.getRepChainContext.getCustomBroadcastHandler.BroadcastConfirmBlock(context,mediator,MsgOfPBFT.ConfirmedBlock(preblock, sender, Seq.empty))
+          //mediator ! Publish(Topic.Block, MsgOfPBFT.ConfirmedBlock(preblock, sender, Seq.empty))
+          pe.getRepChainContext.getCustomBroadcastHandler.PublishOfCustom(context,mediator,Topic.Block,MsgOfPBFT.ConfirmedBlock(preblock, sender, Seq.empty))
         }else{
           RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( "Create genesis block"))
           preblock = BlockHelp.CreateGenesisBlock(pe.getRepChainContext.getConfig)
@@ -98,8 +97,8 @@ class GenesisBlocker(moduleName: String) extends ModuleBase(moduleName) {
             preblock = BlockHelp.AddBlockHeaderHash(preblock,pe.getRepChainContext.getHashTool)
             preblock = preblock.withHeader(BlockHelp.AddHeaderSignToBlock(preblock.getHeader, pe.getSysTag,pe.getRepChainContext.getSignTool))
             //sendEvent(EventType.RECEIVE_INFO, mediator, selfAddr, Topic.Block, Event.Action.BLOCK_NEW)
-            mediator ! Publish(Topic.Block, ConfirmedBlock(preblock, self, Seq.empty))
-            //pe.getRepChainContext.getCustomBroadcastHandler.BroadcastConfirmBlock(context,mediator,ConfirmedBlock(preblock, self, Seq.empty))
+            //mediator ! Publish(Topic.Block, ConfirmedBlock(preblock, self, Seq.empty))
+            pe.getRepChainContext.getCustomBroadcastHandler.PublishOfCustom(context,mediator,Topic.Block,ConfirmedBlock(preblock, self, Seq.empty))
             //getActorRef(pe.getSysTag, ActorType.PERSISTENCE_MODULE) ! BlockRestore(blc, SourceOfBlock.CONFIRMED_BLOCK, self)
           } 
         }

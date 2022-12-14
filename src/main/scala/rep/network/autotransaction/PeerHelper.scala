@@ -77,7 +77,6 @@ class PeerHelper(name: String) extends ModuleBase(name) {
 
   override def preStart(): Unit = {
     //注册接收交易的广播
-    //SubscribeTopic(mediator, self, selfAddr, Topic.Transaction, true)
     RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("Transaction Creator Start"))
     scheduler.scheduleOnce(15.seconds, self, Tick)
   }
