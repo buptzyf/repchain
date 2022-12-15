@@ -87,9 +87,6 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
   cluster.subscribe(self, classOf[ClusterDomainEvent])
   //context.system.eventStream.subscribe(self, classOf[akka.remote.DisassociatedEvent])
 
-
-  //SubscribeTopic(mediator, self, addr_self, Topic.Event, false)
-
   def memberRemovedHandler(member: Member): Unit = {
     RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("Member is Removed: {}. {} nodes cluster" + "~" + member.address))
     System.err.println(s"MemberRemoved:printer=${pe.getSysTag} ~~ removed=${pe.getRepChainContext.getNodeMgr.getNodeName4AddrString(member.address.toString)}")

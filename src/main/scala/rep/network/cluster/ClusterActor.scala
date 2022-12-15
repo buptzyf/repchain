@@ -61,12 +61,14 @@ import rep.proto.rc2.Event
           //publish event(send message)
           val evt = new Event(addr, topic,
             action)
-          mediator ! Publish(Topic.Event, evt)
+          //mediator ! Publish(Topic.Event, evt)
+          pe.getRepChainContext.getCustomBroadcastHandler.PublishOfCustom(context,mediator,Topic.Event,evt)
         case EventType.RECEIVE_INFO =>
           //receive event
           val evt = new Event(topic, addr,
             action)
-          mediator ! Publish(Topic.Event, evt)
+          //mediator ! Publish(Topic.Event, evt)
+          pe.getRepChainContext.getCustomBroadcastHandler.PublishOfCustom(context,mediator,Topic.Event,evt)
       }
     }
   }

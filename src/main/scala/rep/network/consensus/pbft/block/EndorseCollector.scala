@@ -104,7 +104,8 @@ class EndorseCollector(moduleName: String) extends ModuleBase(moduleName) {
             if (this.block.getHeader.hashPresent.toStringUtf8 == block.getHeader.hashPresent.toStringUtf8) {
               sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Endorsement, Event.Action.ENDORSEMENT)
               //this.block = this.block.withReplies(block.replies)
-              mediator ! Publish(Topic.Block, new MsgOfPBFT.ConfirmedBlock(this.block, sender, replies))
+              //mediator ! Publish(Topic.Block, new MsgOfPBFT.ConfirmedBlock(this.block, sender, replies))
+              pe.getRepChainContext.getCustomBroadcastHandler.PublishOfCustom(context,mediator,Topic.Block,new MsgOfPBFT.ConfirmedBlock(this.block, sender, replies))
               clearEndorseInfo
         }
       } else{

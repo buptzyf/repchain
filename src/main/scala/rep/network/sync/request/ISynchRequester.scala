@@ -35,14 +35,14 @@ abstract class ISynchRequester(moduleName: String) extends ModuleBase(moduleName
   protected val consensusCondition = new ConsensusCondition(pe.getRepChainContext)
 
   protected def toAkkaUrl(addr: String, actorName: String): String = {
-    return addr + "/" + actorName;
+    addr + "/" + actorName;
   }
 
   protected def AsyncGetNodeOfChainInfo(addr: Address, lh: Long): Future[ResponseInfo] = Future {
     var result: ResponseInfo = null
 
     try {
-      val selection: ActorSelection = context.actorSelection(toAkkaUrl(addr.toString, responseActorName));
+      val selection: ActorSelection = context.actorSelection(toAkkaUrl(addr.toString, responseActorName))
       val future1 = selection ? ChainInfoOfRequest(lh)
       result = Await.result(future1, timeout.duration).asInstanceOf[ResponseInfo]
     } catch {

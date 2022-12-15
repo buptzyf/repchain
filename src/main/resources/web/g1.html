@@ -373,6 +373,10 @@
                         var dt = new Date(blk.header.endorsements[0].tmLocal.seconds * 1000 - 8 * 3600 * 1000);
                         var blk_hash = bufferToBase64(blk.header.hashPrevious);
                         var ts = blk.transactions;
+                        if(graph.cout_trans==0 && graph.cout_blocks==1){
+                            graph.cout_trans = ts.length;
+                            graph.updateNodeSta('Transaction', graph.cout_trans);
+                        }
                         var tstr = "<li>本块交易数: " + ts.length + "<ul>";
                         for (var i = 0; i < ts.length; i++) {
                             var t = ts[i];

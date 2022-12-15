@@ -50,7 +50,6 @@ class GenesisBlocker(moduleName: String) extends ModuleBase(moduleName) {
 
   override def preStart(): Unit = {
     RepLogger.info(RepLogger.Consensus_Logger, this.getLogMsgPrefix( "Block module start"))
-    //SubscribeTopic(mediator, self, selfAddr, Topic.Block, true)
   }
 
   
@@ -77,7 +76,8 @@ class GenesisBlocker(moduleName: String) extends ModuleBase(moduleName) {
     case GenesisBlock =>
       if(searcher.getChainInfo.height == 0 && NodeHelp.isSeedNode(pe.getSysTag,pe.getRepChainContext.getConfig.getGenesisNodeName)  ){
         if(this.preblock != null){
-          mediator ! Publish(Topic.Block, ConfirmedBlock(preblock, sender))
+          //mediator ! Publish(Topic.Block, ConfirmedBlock(preblock, sender))
+          pe.getRepChainContext.getCustomBroadcastHandler.PublishOfCustom(context,mediator,Topic.Block,ConfirmedBlock(preblock, sender))
         }else{
           RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix( "Create genesis block"))
           preblock = BlockHelp.CreateGenesisBlock(pe.getRepChainContext.getConfig)
@@ -86,11 +86,11 @@ class GenesisBlocker(moduleName: String) extends ModuleBase(moduleName) {
             //preblock = BlockHelp.AddBlockHash(preblock)
             preblock = preblock.withHeader(BlockHelp.AddHeaderSignToBlock(preblock.getHeader, pe.getSysTag,pe.getRepChainContext.getSignTool))
             //sendEvent(EventType.RECEIVE_INFO, mediator, selfAddr, Topic.Block, Event.Action.BLOCK_NEW)
-            mediator ! Publish(Topic.Block, ConfirmedBlock(preblock, self))
+            //mediator ! Publish(Topic.Block, ConfirmedBlock(preblock, self))
+            pe.getRepChainContext.getCustomBroadcastHandler.PublishOfCustom(context,mediator,Topic.Block,ConfirmedBlock(preblock, self))
             //getActorRef(pe.getSysTag, ActorType.PERSISTENCE_MODULE) ! BlockRestore(blc, SourceOfBlock.CONFIRMED_BLOCK, self)
           }
         }
-        
       }
 
     case _ => //ignore

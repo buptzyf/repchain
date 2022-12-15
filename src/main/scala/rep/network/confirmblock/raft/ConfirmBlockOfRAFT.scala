@@ -23,7 +23,13 @@ object ConfirmBlockOfRAFT{
 class ConfirmBlockOfRAFT(moduleName: String) extends IConfirmOfBlock(moduleName: String) {
   override def preStart(): Unit = {
     RepLogger.info(RepLogger.Consensus_Logger, this.getLogMsgPrefix("ConfirmBlockOfRAFT module start"))
-    SubscribeTopic(mediator, self, selfAddr, Topic.Block, false)
+    if (pe.getRepChainContext.getConfig.useCustomBroadcast) {
+      pe.getRepChainContext.getCustomBroadcastHandler.SubscribeTopic(Topic.Block, "/user/modulemanager/confirmerofblock")
+      RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("Subscribe custom broadcast,/user/modulemanager/confirmerofblock"))
+    } else {
+      SubscribeTopic(mediator, self, selfAddr, Topic.Block, false)
+      RepLogger.info(RepLogger.System_Logger,this.getLogMsgPrefix("Subscribe system broadcast,/user/modulemanager/confirmerofblock"))
+    }
   }
 
   override protected def handler(block: Block, actRefOfBlock: ActorRef) = {
