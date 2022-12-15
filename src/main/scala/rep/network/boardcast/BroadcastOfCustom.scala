@@ -9,7 +9,6 @@ import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 class BroadcastOfCustom(ctx:RepChainSystemContext) {
-  case class SubscribeInfo(topicName:String,path:String)
   private val hm : mutable.HashMap[String,ArrayBuffer[String]] = new mutable.HashMap[String,ArrayBuffer[String]]()
   init
   private def init:Unit={
@@ -17,15 +16,7 @@ class BroadcastOfCustom(ctx:RepChainSystemContext) {
     hm += Topic.Block -> new ArrayBuffer[String]()
     hm += Topic.MessageWithZeroTransaction -> new ArrayBuffer[String]()
     hm += Topic.VoteTransform -> new ArrayBuffer[String]()
-    /*val Transaction = "Transaction"
-    val Block = "Block"
-    val Event = "Event"
-    val Endorsement = "Endorsement"
-    val SyncOfTransaction = "SyncOfTransaction"
-    val SyncOfBlock = "SyncOfBlock"
-    val VoteTransform = "VoteTransform"
-    val VoteSynchronized = "VoteSynchronized"
-    val MessageWithZeroTransaction = "MessageWithZeroTransaction"*/
+    hm += Topic.Event -> new ArrayBuffer[String]()
   }
 
   def SubscribeTopic(topic:String,path:String):Unit={
@@ -77,7 +68,24 @@ class BroadcastOfCustom(ctx:RepChainSystemContext) {
           path.foreach(p=>{
             Send(context, nodes, p, data)
           })
-
+        case Topic.MessageWithZeroTransaction=>
+          val path = hm(Topic.MessageWithZeroTransaction)
+          val nodes = ctx.getNodeMgr.getStableNodes
+          path.foreach(p => {
+            Send(context, nodes, p, data)
+          })
+        case Topic.VoteTransform=>
+          val path = hm(Topic.VoteTransform)
+          val nodes = ctx.getNodeMgr.getStableNodes
+          path.foreach(p => {
+            Send(context, nodes, p, data)
+          })
+        case Topic.Event =>
+          val path = hm(Topic.Event)
+          val nodes = ctx.getNodeMgr.getStableNodes
+          path.foreach(p => {
+            Send(context, nodes, p, data)
+          })
       }
     }else{
       mediator ! Publish(topic, data)

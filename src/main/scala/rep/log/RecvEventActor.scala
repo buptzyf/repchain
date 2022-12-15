@@ -44,8 +44,17 @@ class RecvEventActor(MoudleName: String)  extends ModuleBase(MoudleName) with Cl
   val cluster = Cluster(context.system)
 
   override def preStart(): Unit = {
-    val mediator = DistributedPubSub(context.system).mediator
-    mediator ! Subscribe(Topic.Event, self)
+    if (pe.getRepChainContext.getConsensusNodeConfig.getVoteListOfConfig.contains(pe.getSysTag)) {
+      //共识节点可以订阅交易的广播事件
+      if (pe.getRepChainContext.getConfig.useCustomBroadcast) {
+        pe.getRepChainContext.getCustomBroadcastHandler.SubscribeTopic(Topic.Event, "/user/RecvEventActor")
+        RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("Subscribe custom broadcast,/user/RecvEventActor"))
+      } else {
+        val mediator = DistributedPubSub(context.system).mediator
+        mediator ! Subscribe(Topic.Event, self)
+        RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("Subscribe system broadcast,/user/RecvEventActor"))
+      }
+    }
   }
 
   private def clusterInfo(stageActor: ActorRef) = {
