@@ -43,10 +43,11 @@ class VoterOfCFRD(moduleName: String) extends IVoter(moduleName: String) {
       if (pe.getRepChainContext.getConfig.useCustomBroadcast) {
         pe.getRepChainContext.getCustomBroadcastHandler.SubscribeTopic(Topic.MessageWithZeroTransaction, "/user/modulemanager/voter")
         RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("Subscribe custom broadcast,/user/modulemanager/voter"))
-      } else {
+      }
+      //else {
         SubscribeTopic(mediator, self, selfAddr, Topic.MessageWithZeroTransaction, false)
         RepLogger.info(RepLogger.System_Logger,this.getLogMsgPrefix("Subscribe system broadcast,/user/modulemanager/voter"))
-      }
+      //}
     }
     RepLogger.info(RepLogger.Consensus_Logger, this.getLogMsgPrefix("VoterOfCFRD module start"))
     super.preStart()

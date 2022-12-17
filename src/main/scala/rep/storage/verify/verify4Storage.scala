@@ -83,7 +83,8 @@ class verify4Storage(ctx:RepChainSystemContext) {
     if(VerfiyBlock(end,sr.getSystemName)){
       if(start != null){
         if(VerfiyBlock(start,sr.getSystemName)){
-          val prehash = BlockHelp.GetBlockHeaderHash(start.getHeader,ctx.getHashTool)
+          //val prehash = BlockHelp.GetBlockHeaderHash(start.getHeader,ctx.getHashTool)
+          val prehash = BlockHelp.GetBlockHeaderHash(start,ctx.getHashTool)
           if(prehash == end.getHeader.hashPrevious.toStringUtf8()){
             r = true
           }
@@ -99,7 +100,8 @@ class verify4Storage(ctx:RepChainSystemContext) {
     var vr = false
     val r = BlockVerify.VerifyAllEndorseOfBlock(block, ctx.getSignTool)
     if(r._1){
-      val hash = BlockHelp.GetBlockHeaderHash(block.getHeader,ctx.getHashTool)
+      //val hash = BlockHelp.GetBlockHeaderHash(block.getHeader,ctx.getHashTool)
+      val hash = BlockHelp.GetBlockHeaderHash(block,ctx.getHashTool)
       if(hash == block.getHeader.hashPresent.toStringUtf8()){
         vr = true
       }

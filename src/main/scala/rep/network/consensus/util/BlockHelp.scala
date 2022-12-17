@@ -21,10 +21,9 @@ import com.google.protobuf.timestamp.Timestamp
 import scalapb.json4s.JsonFormat
 import rep.app.conf.RepChainConfig
 import rep.crypto.{BytesHex, Sha256}
-import rep.utils.TimeUtils
+import rep.utils.{IdTool, SerializeUtils, TimeUtils}
 import rep.crypto.cert.SignTool
 import rep.proto.rc2.{Block, BlockHeader, Signature, Transaction}
-import rep.utils.IdTool
 
 object BlockHelp {
 
@@ -79,7 +78,8 @@ object BlockHelp {
   //该方法在预执行结束之后才能调用
   def AddBlockHeaderHash(block: Block,sha256: Sha256): Block = {
     try {
-      val hash = GetBlockHeaderHash(block.getHeader,sha256)
+      //val hash = GetBlockHeaderHash(block.getHeader,sha256)
+      val hash = GetBlockHeaderHash(block,sha256)
       val header = block.getHeader.withHashPresent(ByteString.copyFromUtf8(hash))
       block.withHeader(header)
     } catch {
@@ -87,11 +87,13 @@ object BlockHelp {
     }
   }
 
-  def GetBlockHeaderHash(header: BlockHeader,sha256: Sha256): String = {
+  def GetBlockHeaderHash(block: Block,sha256: Sha256): String = {
     try {
+      val header = block.getHeader
       val headerOutEndorse = header.clearEndorsements
       val headerOutBlockHash = headerOutEndorse.withHashPresent(ByteString.EMPTY)
-      sha256.hashstr(headerOutBlockHash.toByteArray)
+      val byteOfHash = Array.concat(headerOutBlockHash.toByteArray, SerializeUtils.serialise(block.transactions))
+      sha256.hashstr(byteOfHash)
     } catch {
       case e: RuntimeException => throw e
     }

@@ -74,10 +74,11 @@ class ConfirmOfBlockOfPBFT(moduleName: String) extends IConfirmOfBlock(moduleNam
     if (pe.getRepChainContext.getConfig.useCustomBroadcast) {
       pe.getRepChainContext.getCustomBroadcastHandler.SubscribeTopic(Topic.Block, "/user/modulemanager/confirmerofblock")
       RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("Subscribe custom broadcast,/user/modulemanager/confirmerofblock"))
-    } else {
+    }
+    //else {
       SubscribeTopic(mediator, self, selfAddr, Topic.Block, false)
       RepLogger.info(RepLogger.System_Logger,this.getLogMsgPrefix("Subscribe system broadcast,/user/modulemanager/confirmerofblock"))
-    }
+    //}
   }
 
   import scala.concurrent.duration._

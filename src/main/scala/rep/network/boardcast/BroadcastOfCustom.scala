@@ -1,10 +1,12 @@
 package rep.network.boardcast
 
-import akka.actor.{ActorContext, ActorRef, ActorSelection, Address}
+import akka.actor.{ActorContext, ActorPath, ActorRef, ActorSelection, Address}
 import akka.cluster.pubsub.DistributedPubSubMediator.Publish
 import rep.app.system.RepChainSystemContext
 import rep.log.RepLogger
 import rep.network.autotransaction.Topic
+import rep.network.util.NodeHelp
+
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
@@ -32,9 +34,9 @@ class BroadcastOfCustom(ctx:RepChainSystemContext) {
     addr + "/" + actorName;
   }
 
-  private def getDestActorService(context:ActorContext,sn: Address,actorName:String):ActorSelection = {
+  private def getDestActorService(context:ActorContext,sn: String,actorName:String):ActorSelection = {
     try {
-      context.actorSelection(toAkkaUrl(sn.toString, actorName))
+      context.actorSelection(toAkkaUrl(sn, actorName))
     } catch {
       case e: Exception =>
         RepLogger.error(RepLogger.System_Logger, s"BroadcastOfCustom transaction,dest=${sn.toString}")
@@ -44,7 +46,7 @@ class BroadcastOfCustom(ctx:RepChainSystemContext) {
 
   private def Send(context:ActorContext,nodes:Set[Address],path:String,data:Any):Unit={
     nodes.foreach(addr => {
-      val dest = getDestActorService(context, addr, path)
+      val dest = getDestActorService(context, addr.toString, path)
       if (dest != null) {
         dest ! data
       } else {
@@ -53,6 +55,26 @@ class BroadcastOfCustom(ctx:RepChainSystemContext) {
       }
     })
   }
+
+  private def SendToSelf(context:ActorContext,path:String,data:Any):Unit={
+    val url = NodeHelp.getNodeAddress(context.self)
+    if(!url.equalsIgnoreCase("")){
+      //System.out.println(s"send to self,url=${url},-----from system name=${ctx.getSystemName}")
+      val dest = getDestActorService(context, url, path)
+      //System.out.println(s"send to self,dest url =${dest.pathString},-----from system name=${ctx.getSystemName}")
+      if (dest != null) {
+        dest ! data
+      } else {
+        RepLogger.error(RepLogger.System_Logger, s"Send to self,dest is null," +
+          s"dest=${url.toString},data=${data}")
+      }
+    }
+    /*else{
+      System.out.println(s"Send to self,self address is null," +
+        s"dest=${url.toString},data=${data}")
+    }*/
+  }
+
   def PublishOfCustom(context:ActorContext,mediator:ActorRef,topic:String,data:Any):Unit={
     if(this.useCustomBroadcast){
       topic match {
@@ -60,36 +82,42 @@ class BroadcastOfCustom(ctx:RepChainSystemContext) {
           val path = hm(Topic.Transaction)
           val nodes = ctx.getNodeMgr.getStableNodes
           path.foreach(p=>{
-            Send(context, nodes, p, data)
+            //Send(context, nodes, p, data)
+            SendToSelf(context,p,data)
           })
         case Topic.Block =>
           val path = hm(Topic.Block)
           val nodes = ctx.getNodeMgr.getNodes
           path.foreach(p=>{
-            Send(context, nodes, p, data)
+            //Send(context, nodes, p, data)
+            SendToSelf(context,p,data)
           })
         case Topic.MessageWithZeroTransaction=>
           val path = hm(Topic.MessageWithZeroTransaction)
           val nodes = ctx.getNodeMgr.getStableNodes
           path.foreach(p => {
-            Send(context, nodes, p, data)
+            //Send(context, nodes, p, data)
+            SendToSelf(context,p,data)
           })
         case Topic.VoteTransform=>
           val path = hm(Topic.VoteTransform)
           val nodes = ctx.getNodeMgr.getStableNodes
           path.foreach(p => {
-            Send(context, nodes, p, data)
+            //Send(context, nodes, p, data)
+            SendToSelf(context,p,data)
           })
         case Topic.Event =>
           val path = hm(Topic.Event)
           val nodes = ctx.getNodeMgr.getStableNodes
           path.foreach(p => {
-            Send(context, nodes, p, data)
+            //Send(context, nodes, p, data)
+            SendToSelf(context,p,data)
           })
       }
-    }else{
-      mediator ! Publish(topic, data)
     }
+    //else{
+      mediator ! Publish(topic, data)
+    //}
   }
 
 

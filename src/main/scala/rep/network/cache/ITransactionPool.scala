@@ -36,10 +36,11 @@ abstract class ITransactionPool (moduleName: String) extends ModuleBase(moduleNa
       if (config.useCustomBroadcast) {
         pe.getRepChainContext.getCustomBroadcastHandler.SubscribeTopic(Topic.Transaction, transPoolActorName)
         RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"Subscribe custom broadcast,${transPoolActorName}"))
-      } else {
+      }
+      //else {
         SubscribeTopic(mediator, self, selfAddr, Topic.Transaction, true)
         RepLogger.info(RepLogger.System_Logger,this.getLogMsgPrefix(s"Subscribe system broadcast,${transPoolActorName}"))
-      }
+      //}
     }
   }
 

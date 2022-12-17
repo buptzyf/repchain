@@ -124,9 +124,7 @@ object BlockVerify {
     var result = false
     try {
       val oldhash = block.getHeader.hashPresent.toStringUtf8()
-      val blkOutEndorse = block.getHeader.clearEndorsements
-      val blkOutBlockHash = blkOutEndorse.withHashPresent(ByteString.EMPTY)
-      val hash = sha256.hashstr(blkOutBlockHash.toByteArray)
+      val hash = BlockHelp.GetBlockHeaderHash(block,sha256)
       if (oldhash.equals(hash)) {
         result = true
       }

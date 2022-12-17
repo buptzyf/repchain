@@ -25,10 +25,11 @@ class TransactionOfCollectioner  (moduleName: String) extends ModuleBase(moduleN
       if(config.useCustomBroadcast){
         pe.getRepChainContext.getCustomBroadcastHandler.SubscribeTopic(Topic.Transaction,"/user/modulemanager/transactioncollectioner")
         RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("Subscribe custom broadcast,/user/modulemanager/transactioncollectioner"))
-      }else{
+      }
+      //else{
         SubscribeTopic(mediator, self, selfAddr, Topic.Transaction, true)
         RepLogger.info(RepLogger.System_Logger,this.getLogMsgPrefix("Subscribe system broadcast,/user/modulemanager/transactioncollectioner"))
-      }
+      //}
     }
     createRouter
     RepLogger.info(RepLogger.Consensus_Logger, this.getLogMsgPrefix("TransactionOfCollectioner module start"))

@@ -39,10 +39,11 @@ class VoterOfRAFT (moduleName: String) extends IVoter(moduleName: String) {
       if (pe.getRepChainContext.getConfig.useCustomBroadcast) {
         pe.getRepChainContext.getCustomBroadcastHandler.SubscribeTopic(Topic.VoteTransform, "/user/modulemanager/voter")
         RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("Subscribe custom broadcast,/user/modulemanager/voter"))
-      } else {
+      }
+      //else {
         SubscribeTopic(mediator, self, selfAddr, Topic.VoteTransform, false)
         RepLogger.info(RepLogger.System_Logger,this.getLogMsgPrefix("Subscribe system broadcast,/user/modulemanager/voter"))
-      }
+      //}
 
     }
   }

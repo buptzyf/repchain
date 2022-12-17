@@ -49,11 +49,12 @@ class RecvEventActor(MoudleName: String)  extends ModuleBase(MoudleName) with Cl
       if (pe.getRepChainContext.getConfig.useCustomBroadcast) {
         pe.getRepChainContext.getCustomBroadcastHandler.SubscribeTopic(Topic.Event, "/user/RecvEventActor")
         RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("Subscribe custom broadcast,/user/RecvEventActor"))
-      } else {
+      }
+      //else {
         val mediator = DistributedPubSub(context.system).mediator
         mediator ! Subscribe(Topic.Event, self)
         RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix("Subscribe system broadcast,/user/RecvEventActor"))
-      }
+      //}
     }
   }
 
