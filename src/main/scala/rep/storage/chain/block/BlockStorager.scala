@@ -66,6 +66,10 @@ class BlockStorager(ctx: RepChainSystemContext, isEncrypt: Boolean = false) exte
       for (i: Int <- 0 to result.size - 1) {
         val r = result(i)
         val t = trs(i)
+        if(t.`type` == Transaction.Type.CHAINCODE_SET_STATE){
+          ctx.setStateChanged(IdTool.getTXCId(t))
+        }
+
         //val chainCodeId = IdTool.getCid(t.getCid)
         //val oid = if(t.oid.isEmpty) "_" else t.oid.toString
         val accountContractName = ctx.getConfig.getAccountContractName
@@ -293,6 +297,10 @@ class BlockStorager(ctx: RepChainSystemContext, isEncrypt: Boolean = false) exte
         val r = result(i)
         val t = trs(i)
         val accountContractName = ctx.getConfig.getAccountContractName
+
+        if (t.`type` == Transaction.Type.CHAINCODE_SET_STATE) {
+          ctx.setStateChanged(IdTool.getTXCId(t))
+        }
 
         val memberContractName = ctx.getConfig.getMemberManagementContractName
         val memberContractMethod = ctx.getConfig.getMemberManagementContractMethod

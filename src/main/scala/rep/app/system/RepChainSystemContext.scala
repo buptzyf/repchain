@@ -67,6 +67,21 @@ class RepChainSystemContext (systemName:String){//},cs:ClusterSystem) {
 
   private var ml : ActorRef = null
 
+  private val ContractStateChanged:ConcurrentHashMap[String,String] = new ConcurrentHashMap[String,String]()
+
+  def setStateChanged(cid:String):Unit={
+    this.ContractStateChanged.put(cid,"")
+  }
+
+  def getStateChange(cid:String):Boolean={
+    if(this.ContractStateChanged.containsKey(cid)){
+      this.ContractStateChanged.remove(cid)
+      true
+    }else{
+      false
+    }
+  }
+
   def getCustomBroadcastHandler:BroadcastOfCustom = {
     this.customBroadcast
   }
