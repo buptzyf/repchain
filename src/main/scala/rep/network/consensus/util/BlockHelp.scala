@@ -101,6 +101,16 @@ object BlockHelp {
     }
   }
 
+  def GetOnlyBlockHeaderHash(header: BlockHeader, sha256: Sha256): String = {
+    try {
+      val headerOutEndorse = header.clearEndorsements
+      val headerOutBlockHash = headerOutEndorse.withHashPresent(ByteString.EMPTY)
+      sha256.hashstr(headerOutBlockHash.toByteArray)
+    } catch {
+      case e: RuntimeException => throw e
+    }
+  }
+
   /**
    * @author jiangbuyun
    * @version	2.0

@@ -483,6 +483,14 @@ class RepChainConfig {
     }
   }
 
+  def heightOfOldBlockHashAlgorithm: Long = {
+    try {
+      this.sysConf.getLong("akka.system.height_of_old_block_hash_algorithm")
+    } catch {
+      case e: Exception => 0l
+    }
+  }
+
   def isUseGM:Boolean={
     this.sysConf.getBoolean("system.gm.is_use_gm")
   }

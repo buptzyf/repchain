@@ -134,6 +134,22 @@ object BlockVerify {
     }
     result
   }
+
+  def VerifyHashOfOnlyBlockHeader(block: Block, sha256: Sha256): Boolean = {
+    var result = false
+    try {
+      val oldhash = block.getHeader.hashPresent.toStringUtf8()
+      val hash = BlockHelp.GetOnlyBlockHeaderHash(block.getHeader,sha256)
+      if (oldhash.equals(hash)) {
+        result = true
+      }
+    } catch {
+      case e: RuntimeException =>
+        result = false
+    }
+    result
+  }
+
 /****************************验证区块hash相关的操作结束**********************************************************/
 
 /****************************检查背书是否完成开始**********************************************************/
