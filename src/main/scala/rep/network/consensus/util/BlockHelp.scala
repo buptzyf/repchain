@@ -92,7 +92,9 @@ object BlockHelp {
       val header = block.getHeader
       val headerOutEndorse = header.clearEndorsements
       val headerOutBlockHash = headerOutEndorse.withHashPresent(ByteString.EMPTY)
-      val byteOfHash = Array.concat(headerOutBlockHash.toByteArray, SerializeUtils.serialise(block.transactions))
+      val blockOfHash = block.withHeader(headerOutBlockHash)
+      val byteOfHash = blockOfHash.toByteArray
+      //val byteOfHash = Array.concat(headerOutBlockHash.toByteArray, SerializeUtils.serialise(block.transactions))
       sha256.hashstr(byteOfHash)
     } catch {
       case e: RuntimeException => throw e

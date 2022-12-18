@@ -62,10 +62,24 @@ class Endorser4Future(moduleName: String) extends ModuleBase(moduleName) {
     try {
       val future1 = pe.getActorRef(ModuleActorType.ActorType.dispatchofpreload).ask(PreTransBlock(block, "endors_"+block.transactions(0).id))
       val result = Await.result(future1, timeout.duration).asInstanceOf[PreTransBlockResult]
-      var tmpblock = result.blc.withHeader(result.blc.getHeader.withHashPresent(block.getHeader.hashPresent))
+      val tmpblock = result.blc.withHeader(result.blc.getHeader.withHashPresent(block.getHeader.hashPresent))
       if (BlockVerify.VerifyHashOfBlock(tmpblock,pe.getRepChainContext.getHashTool)) {
         b = true
-      }
+      }/*else{
+        val bbyte = pe.getRepChainContext.getHashTool.hashstr(block.toByteArray)
+        val tbyte = pe.getRepChainContext.getHashTool.hashstr(tmpblock.toByteArray)
+        val bheader = pe.getRepChainContext.getHashTool.hashstr(block.getHeader.toByteArray)
+        val theader = pe.getRepChainContext.getHashTool.hashstr(tmpblock.getHeader.toByteArray)
+        val btrans = pe.getRepChainContext.getHashTool.hashstr(block.clearHeader.clearTransactionResults.toByteArray)
+        val ttrans = pe.getRepChainContext.getHashTool.hashstr(tmpblock.clearHeader.clearTransactionResults.toByteArray)
+        val bresult = pe.getRepChainContext.getHashTool.hashstr(block.clearHeader.clearTransactions.toByteArray)
+        val tresullt = pe.getRepChainContext.getHashTool.hashstr(tmpblock.clearHeader.clearTransactions.toByteArray)
+        RepLogger.error(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry AskPreloadTransactionOfBlock " +
+          s"error=verify hash error,height=${block.getHeader.height},prevhash=${block.getHeader.hashPrevious.toStringUtf8}," +
+          s"currenthash=${block.getHeader.hashPresent.toStringUtf8}," +
+          s"verifyhash=${BlockHelp.GetBlockHeaderHash(tmpblock,pe.getRepChainContext.getHashTool)}," +
+          s"oldhash=${BlockHelp.GetBlockHeaderHash(block,pe.getRepChainContext.getHashTool)}"))
+      }*/
     } catch {
       case e: AskTimeoutException =>
         RepLogger.error(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"${pe.getSysTag}:entry AskPreloadTransactionOfBlock error=AskTimeoutException"))

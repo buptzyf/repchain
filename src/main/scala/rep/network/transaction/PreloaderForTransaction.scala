@@ -29,7 +29,6 @@ import rep.sc.SandboxDispatcher.{DoTransaction, DoTransactionOfCache}
 import rep.sc.TypeOfSender
 import rep.network.module.ModuleActorType
 import rep.utils._
-
 import scala.util.control.Breaks.{break, breakable}
 import scala.collection.mutable
 import scala.concurrent._
@@ -167,10 +166,10 @@ class PreloaderForTransaction(moduleName: String) extends ModuleBase(moduleName)
         var preLoadTrans = mutable.HashMap.empty[String, Transaction]
         var transResult : Seq[TransactionResult] = Seq.empty[TransactionResult]
         val dbtag = prefixOfDbTag
-        var curBlockHash = "temp_" + Random.nextInt(100)
+        /*var curBlockHash = "temp_" + Random.nextInt(100)
         if (block.getHeader.hashPresent != ByteString.EMPTY) {
           curBlockHash = block.getHeader.hashPresent.toStringUtf8
-        }
+        }*/
         RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s" preload db instance name, name: ${dbtag},height:${block.getHeader.height}"))
         //确保提交的时候顺序执行
         RepTimeTracer.setStartTime(pe.getSysTag, "PreloadTrans-exe", System.currentTimeMillis(), pe.getBlocker.VoteHeight + 1, 0)
@@ -221,10 +220,10 @@ class PreloaderForTransaction(moduleName: String) extends ModuleBase(moduleName)
           var preLoadTrans = mutable.HashMap.empty[String, Transaction]
           var transResult : Seq[TransactionResult] = Seq.empty[TransactionResult]
           val dbtag = prefixOfDbTag //prefixOfDbTag+"_"+moduleName+"_"+block.transactions.head.id
-          var curBlockHash = "temp_" + Random.nextInt(100)
+          /*var curBlockHash = "temp_" + Random.nextInt(100)
           if (block.getHeader.hashPresent != _root_.com.google.protobuf.ByteString.EMPTY) {
             curBlockHash = block.getHeader.hashPresent.toStringUtf8
-          }
+          }*/
           RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s" preload db instance name, name: ${dbtag},height:${block.getHeader.height}"))
           //确保提交的时候顺序执行
           RepTimeTracer.setStartTime(pe.getSysTag, "PreloadTrans-exe", System.currentTimeMillis(), pe.getBlocker.VoteHeight + 1, 0)

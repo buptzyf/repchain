@@ -55,13 +55,13 @@ class ConfirmOfBlock(moduleName: String) extends IConfirmOfBlock(moduleName) {
   override protected def handler(block: Block, actRefOfBlock: ActorRef) = {
     RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"confirm verify endorsement start,height=${block.getHeader.height}"))
     if (pe.getRepChainContext.getConfig.isVerifyOfEndorsement) {
-      if (asyncVerifyEndorses(block)) {
+      if (asyncVerifyEndorses(block) && BlockVerify.VerifyHashOfBlock(block,pe.getRepChainContext.getHashTool)) {
         RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"confirm verify endorsement end,height=${block.getHeader.height}"))
         //背书人的签名一致
         if (BlockVerify.verifySort(block.getHeader.endorsements.toArray[Signature]) == 1 || (block.getHeader.height == 1 && pe.getCurrentBlockHash == "" && block.getHeader.hashPrevious.isEmpty())) {
           //背书信息排序正确
           pe.setConfirmHeight(block.getHeader.height)
-          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"confirm verify endorsement sort,height=${block.getHeader.height}"))
+          RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"confirm verify endorsement sort,height=${block.getHeader.height},blockhash=${block.getHeader.hashPresent.toStringUtf8}"))
           pe.getBlockCacheMgr.addToCache(BlockRestore(block, SourceOfBlock.CONFIRMED_BLOCK, actRefOfBlock))
           //pe.getTransPoolMgr.cleanPreloadCache("identifier-"+block.height)
           pe.getActorRef(ModuleActorType.ActorType.storager) ! BatchStore
