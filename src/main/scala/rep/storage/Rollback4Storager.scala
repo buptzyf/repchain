@@ -39,7 +39,7 @@ class Rollback4Storager(val dbop: ImpDataAccess,val filemgr: BlockFileMgr) {
           } else {
             RepLogger.trace(
               RepLogger.Storager_Logger,
-              "system_name=" + dbop.getSystemName + s"\t current rollback block happend error ,happend pos height=${loop},contract administrator!")
+              "system_name=" + dbop.getSystemName + s"\t current rollback block happened error ,happened pos height=${loop},contract administrator!")
             bv = false
             break
           }
