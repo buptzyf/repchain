@@ -3,6 +3,7 @@ package rep.storage.chain.preload
 
 import java.util.concurrent.ConcurrentHashMap
 import rep.log.RepLogger
+import rep.utils.SerializeUtils.deserialise
 
 /**
  * @author jiangbuyun
@@ -52,6 +53,14 @@ class TransactionPreload(txId:String,blockPreload: BlockPreload) {
       }
     }
     ro
+  }
+
+  def getVal(key: String): Any = {
+    val v = get(key)
+    if (v == null)
+      null
+    else
+      deserialise(v)
   }
 
   /**

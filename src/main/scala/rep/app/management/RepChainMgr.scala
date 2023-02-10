@@ -177,7 +177,7 @@ class SystemInfo(nodeName: String) {
     if (cluster != null) {
       breakable {
         for (i <- 1 to 3) {
-          Thread.sleep(5000)
+          Thread.sleep(8000)
           if (isUpOfClusterStatus(cluster)) {
             r = true
             break

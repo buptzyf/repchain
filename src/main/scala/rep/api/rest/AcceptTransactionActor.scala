@@ -23,7 +23,8 @@ class AcceptTransactionActor(moduleName: String) extends ModuleBase(moduleName) 
         pe.getRepChainContext.getTransactionPool.addTransactionToCache(t)
 
         if(config.isBroadcastTransaction)
-          mediator ! Publish(Topic.Transaction, t)
+          //mediator ! Publish(Topic.Transaction, t)
+          pe.getRepChainContext.getCustomBroadcastHandler.PublishOfCustom(context,mediator,Topic.Transaction,t)
         sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Transaction, Event.Action.TRANSACTION)
         //sender ! PostResult(t.id, None, None)
         /*} else {

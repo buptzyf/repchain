@@ -16,7 +16,6 @@
 
 package rep.sc.scalax
 
-
 import rep.api.rest.ResultCode
 import rep.log.RepLogger
 import rep.log.httplog.AlertInfo
@@ -24,6 +23,7 @@ import rep.proto.rc2.{ActionResult, ChaincodeId, Transaction, TransactionResult}
 import rep.sc.Sandbox
 import rep.sc.Sandbox._
 import rep.sc.SandboxDispatcher.{DoTransactionOfSandboxInSingle, ERR_INVOKE_CHAINCODE_NOT_EXIST}
+import rep.storage.chain.KeyPrefixManager
 import rep.utils.IdTool
 
 /**
@@ -51,6 +51,7 @@ class SandboxScala(cid: ChaincodeId) extends Sandbox(cid) {
     val t = dotrans.t
     val da = dotrans.da
     val ctx = new ContractContext(shim, t)
+    //System.err.println(s"nodename=${pe.getRepChainContext.getSystemName},txid=${t.id},before:"+shim.getStateGet.keySet.mkString("#"))
     //如果执行中出现异常,返回异常
     try {
       val tx_cid = IdTool.getTXCId(t)
@@ -65,7 +66,10 @@ class SandboxScala(cid: ChaincodeId) extends Sandbox(cid) {
         //TODO case  Transaction.Type.CHAINCODE_DESC 增加对合约描述的处理
         case Transaction.Type.CHAINCODE_INVOKE =>
           if (this.cobj == null) {
-            val tds = shim.getVal(tx_cid)
+            //val tds = shim.getVal(tx_cid)
+            val sr = pe.getRepChainContext.getBlockPreload(dotrans.da).getTransactionPreload(t.id)
+            val pre = KeyPrefixManager.getWorldStateKeyPrefix(pe.getRepChainContext.getConfig, t.getCid.chaincodeName, t.oid) + SplitChainCodeId
+            val tds = sr.getVal(pre+tx_cid)
             if (tds == null)
               throw new SandboxException(ERR_INVOKE_CHAINCODE_NOT_EXIST)
             val deployTransaction = pe.getRepChainContext.getBlockSearch.getTransactionByTxId(tds.toString)
@@ -88,6 +92,7 @@ class SandboxScala(cid: ChaincodeId) extends Sandbox(cid) {
       }
       pe.getRepChainContext.getBlockPreload(dotrans.da).getTransactionPreload(dotrans.t.id).commit
       //shim.srOfTransaction.commit
+      //System.err.println(s"nodename=${pe.getRepChainContext.getSystemName},txid=${t.id},after:"+shim.getStateGet.keySet.mkString("#"))
       if(r == null){
         new TransactionResult(t.id, shim.getStateGet,shim.getStateSet,shim.getStateDel,Option(new ActionResult(ResultCode.Sandbox_Success,"")))
       }else {

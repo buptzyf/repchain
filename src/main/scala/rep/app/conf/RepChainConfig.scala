@@ -472,6 +472,25 @@ class RepChainConfig {
     }
   }
 
+  def useCustomBroadcast:Boolean={
+    try{
+      this.sysConf.getInt("system.use_custom_broadcast") match {
+        case 0 => false
+        case 1 => true
+      }
+    }catch {
+      case e:Exception => false
+    }
+  }
+
+  def heightOfOldBlockHashAlgorithm: Long = {
+    try {
+      this.sysConf.getLong("akka.system.height_of_old_block_hash_algorithm")
+    } catch {
+      case e: Exception => 0l
+    }
+  }
+
   def isUseGM:Boolean={
     this.sysConf.getBoolean("system.gm.is_use_gm")
   }

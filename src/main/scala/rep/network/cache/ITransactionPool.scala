@@ -31,7 +31,17 @@ abstract class ITransactionPool (moduleName: String) extends ModuleBase(moduleNa
 
   override def preStart(): Unit = {
     //注册接收交易的广播
-    SubscribeTopic(mediator, self, selfAddr, Topic.Transaction, true)
+    if (pe.getRepChainContext.getConsensusNodeConfig.getVoteListOfConfig.contains(pe.getSysTag)) {
+      //共识节点可以订阅交易的广播事件
+      if (config.useCustomBroadcast) {
+        pe.getRepChainContext.getCustomBroadcastHandler.SubscribeTopic(Topic.Transaction, transPoolActorName)
+        RepLogger.info(RepLogger.System_Logger, this.getLogMsgPrefix(s"Subscribe custom broadcast,${transPoolActorName}"))
+      }
+      //else {
+        SubscribeTopic(mediator, self, selfAddr, Topic.Transaction, true)
+        RepLogger.info(RepLogger.System_Logger,this.getLogMsgPrefix(s"Subscribe system broadcast,${transPoolActorName}"))
+      //}
+    }
   }
 
   def toAkkaUrl(sn: Address, actorName: String): String = {
