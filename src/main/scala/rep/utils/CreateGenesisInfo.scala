@@ -74,7 +74,7 @@ object CreateGenesisInfo {
     }
     //注册操作
     //权限管理合约操作注册
-    val opsOfContract: Array[(String, String, String)] = new Array[(String, String, String)](14)
+    val opsOfContract: Array[(String, String, String)] = new Array[(String, String, String)](15)
     opsOfContract(0) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.signUpSigner"), "注册RDID", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.signUpSigner")
     opsOfContract(1) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.updateSignerStatus"), "禁用或启用RDID", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.updateSignerStatus")
     opsOfContract(2) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.updateSigner"), "更新信息", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.updateSigner")
@@ -83,14 +83,15 @@ object CreateGenesisInfo {
     opsOfContract(5) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.signUpAllTypeCertificate"), "用户可为所有人注册证书，需授权", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.signUpAllTypeCertificate")
     opsOfContract(6) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.updateAllTypeCertificateStatus"), "用户可为所有人禁用或启用证书，需授权，super_admin特殊处理", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.updateAllTypeCertificateStatus")
     opsOfContract(7) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.signUpOperate"), "注册操作，自己注册自己", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.signUpOperate")
-    opsOfContract(8) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.updateOperateStatus"), "禁用或启用操作，自己更新自己名下的操作", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.updateOperateStatus")
-    opsOfContract(9) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.grantOperate"), "授权操作", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.grantOperate")
-    opsOfContract(10) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.updateGrantOperateStatus"), "禁用或启用授权", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.updateGrantOperateStatus")
-    opsOfContract(11) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.bindCertToAuthorize"), "绑定证书到授权操作", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.bindCertToAuthorize")
-    opsOfContract(12) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}*.deploy"), "发布合约操作", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}*.deploy") //*表示可以发布任意合约
-    opsOfContract(13) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}*.setState"), "改变合约状态操作", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}*.setState") //*表示可以设置任意合约状态
+    opsOfContract(8) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.updateOperate"), "更新操作，自己更新自己名下的操作", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.updateOperate")
+    opsOfContract(9) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.updateOperateStatus"), "禁用或启用操作，自己更新自己名下的操作", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.updateOperateStatus")
+    opsOfContract(10) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.grantOperate"), "授权操作", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.grantOperate")
+    opsOfContract(11) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.updateGrantOperateStatus"), "禁用或启用授权", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.updateGrantOperateStatus")
+    opsOfContract(12) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.bindCertToAuthorize"), "绑定证书到授权操作", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}RdidOperateAuthorizeTPL.bindCertToAuthorize")
+    opsOfContract(13) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}*.deploy"), "发布合约操作", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}*.deploy") //*表示可以发布任意合约
+    opsOfContract(14) = (ctx.getHashTool.hashstr(s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}*.setState"), "改变合约状态操作", s"${ctx.getConfig.getChainNetworkId}${IdTool.DIDPrefixSeparator}*.setState") //*表示可以设置任意合约状态
 
-    for (i <- 0 to 13) {
+    for (i <- 0 to 14) {
       val millis = System.currentTimeMillis()
       val snls = List("transaction.stream", "transaction.postTranByString", "transaction.postTranStream", "transaction.postTran")
       //生成Operate
@@ -149,7 +150,7 @@ object CreateGenesisInfo {
 
     // 授权节点所有合约相关的操作
     val opids = new ArrayBuffer[String]
-    for (i <- 0 to 13) {
+    for (i <- 0 to 14) {
       opids += opsOfContract(i)._1
     }
 
