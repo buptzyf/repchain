@@ -4,7 +4,9 @@ package rep.app.management
 import java.io.File
 import scala.concurrent.ExecutionContext
 import akka.actor.ActorRef
+import akka.http.scaladsl.model.{HttpEntity, MediaTypes}
 import akka.util.Timeout
+
 import javax.ws.rs._
 import javax.ws.rs.Path
 import org.json4s.{DefaultFormats, jackson}
@@ -16,6 +18,8 @@ import io.swagger.v3.oas.annotations.{Operation, Parameter, Parameters}
 import io.swagger.v3.oas.annotations.media.{Content, Schema}
 import io.swagger.v3.oas.annotations.parameters.RequestBody
 import io.swagger.v3.oas.annotations.responses.{ApiResponse, ApiResponses}
+
+import java.nio.file.Paths
 import javax.ws.rs.core.MediaType
 import scala.util.{Failure, Success}
 
@@ -32,7 +36,7 @@ class ManagementService(handler: ActorRef, isCheckPeerCertificate: Boolean)(impl
   implicit val timeout = Timeout(20.seconds)
 
 
-  val route = SystemStartup ~ QuerySystemStatus ~ SystemShutdown ~ QuerySystemNetwork ~ postConfigOfNode
+  val route = SystemStartup ~ QuerySystemStatus ~ SystemShutdown ~ QuerySystemNetwork ~ postConfigOfNode ~ getConfigOfNode
 
   @GET
   @Path("system/SystemStartup/{nodeName}")
@@ -248,4 +252,42 @@ class ManagementService(handler: ActorRef, isCheckPeerCertificate: Boolean)(impl
         }
       }
     }
+
+  //获取节点的配置文件
+  @GET
+  @Path("system/getConfigFile/{networkName}/{nodeName}")
+  @Operation(tags = Array("GetConfigFile"), summary = "获取节点配置文件", description = "getConfigOfNode", method = "GET",
+    parameters = Array(
+      new Parameter(name = "networkName", description = "网络名", required = true, in = ParameterIn.PATH),
+      new Parameter(name = "nodeName", description = "节点名", required = true, in = ParameterIn.PATH),
+      new Parameter(name = "file_type", description = "配置文件类型", required = true, in = ParameterIn.QUERY),
+      new Parameter(name = "file_name", description = "配置文件名称", required = true, in = ParameterIn.QUERY)
+    ),
+    responses = Array(new ApiResponse(responseCode = "200", description = "返回节点配置文件", content = Array(new Content(mediaType = "application/octet-stream"))))
+  )
+  def getConfigOfNode =
+    path("management" / "system" / "getConfigFile" / Segment / Segment) { (networkName, nodeName) =>
+      get {
+        parameters("file_type", "file_name") { (fileType, fileName) => {
+          if (isCheckPeerCertificate) {
+            headerValueByType[`Tls-Session-Info`]() { sessionInfo =>
+              val cert = RepChainConfigFilePathMgr.getCert(sessionInfo)
+              if (cert == null) {
+                complete("Failed to get client certificate")
+              } else {
+                getConfigOfNodeCore(networkName, nodeName, fileType, fileName)
+              }
+            }
+          } else {
+            getConfigOfNodeCore(networkName, nodeName, fileType, fileName)
+          }
+        }}
+      }
+    }
+  def getConfigOfNodeCore(networkName: String, nodeName: String, fileType: String, fileName: String) = extractRequestContext { ctx =>
+    implicit val materializer = ctx.materializer
+
+    val path = RepChainConfigFilePathMgr.getSavePath(networkName, nodeName, fileType, fileName)
+    complete(HttpEntity.fromFile(MediaTypes.`application/octet-stream`, new File(path.toString)))
+  }
 }
