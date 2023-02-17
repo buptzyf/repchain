@@ -43,7 +43,7 @@
 - 查看实时图 http://localhost:8081/web/g1.html
 ![实时状态图](https://images.gitee.com/uploads/images/2020/0114/174424_b02748a4_1598833.gif) 
 - 查看API  http://localhost:8081/swagger/index.html
-![Swagger-UI](![输入图片说明](swagger-ui.png))
+![Swagger-UI](swagger-ui.png)
 
 ## 修改配置
 - 生成RepChain节点密钥对及信任证书列表（见[《RepChain开发者指南》](https://gitee.com/BTAJL/repchain/attach_files/235993/download) 2.1.5）
