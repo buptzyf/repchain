@@ -1,14 +1,19 @@
 {
-  "stype": 2,
-  "chaincodename": "ContractAssetsTPL",
-  "chaincodeversion": 1,
+  "methodType": 2,
+  "chainCodeName": "ContractAssetsTPL",
+  "chainCodeVersion": 1,
   "iptFunc": "transfer",
   "iptArgs": [
-    "{\"from\" : \"121000005l35120456\",\"to\" : \"12110107bi45jh675g\",\"amount\" : 5}"
+    "{\"from\" : \"identity-net:121000005l35120456\",\"to\" : \"identity-net:12110107bi45jh675g\",\"amount\" : 5}"
   ],
   "timeout": 0,
   "legal_prose": "",
   "code": "",
-  "ctype": 2,
-  "state": true
+  "codeType": 2,
+  "state": true,
+  "gasLimited": 0,
+  "oid": "",
+  "runType": 0,
+  "stateType": 0,
+  "contractLevel": 1
 }

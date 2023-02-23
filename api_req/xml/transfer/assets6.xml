@@ -18,20 +18,25 @@
 <!--该用例主要是测试正确转账（并且未超出余额），并验证返回值-->
 
 <CSpec>
-    <stype>2</stype>
-    <chaincodename>ContractAssetsTPL</chaincodename>
-    <chaincodeversion>1</chaincodeversion>
+    <methodType>2</methodType>
+    <chainCodeName>ContractAssetsTPL</chainCodeName>
+    <chainCodeVersion>1</chainCodeVersion>
     <iptFunc>transfer</iptFunc>
     <iptArgs>
         {
-            "from" : "121000005l35120456",
-            "to" : "12110107bi45jh675g",
-            "amount" : 5
+        "from" : "identity-net:121000005l35120456",
+        "to" : "identity-net:12110107bi45jh675g",
+        "amount" : 5
         }
     </iptArgs>
     <timeout>0</timeout>
-    <legal_prose></legal_prose>
-    <code></code>
-    <ctype>2</ctype>
+    <legal_prose>""</legal_prose>
+    <code>""</code>
+    <codeType>2</codeType>
     <state>true</state>
+    <gasLimited>0</gasLimited>
+    <oid>""</oid>
+    <runType>0</runType>
+    <stateType>0</stateType>
+    <contractLevel>1</contractLevel>
 </CSpec>
