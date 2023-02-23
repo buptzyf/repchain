@@ -18,20 +18,25 @@
 <!--该用例主要是测试错误转账（目标账户不存在），并验证返回值-->
 
 <CSpec>
-    <stype>2</stype>
-    <chaincodename>ContractAssetsTPL</chaincodename>
-    <chaincodeversion>1</chaincodeversion>
+    <methodType>2</methodType>
+    <chainCodeName>ContractAssetsTPL</chainCodeName>
+    <chainCodeVersion>1</chainCodeVersion>
     <iptFunc>transfer</iptFunc>
     <iptArgs>
         {
-        "from" : "121000005l35120456",
-        "to" : "121000005l35120457",
+        "from" : "identity-net:121000005l35120456",
+        "to" : "identity-net:121000005l35120457",
         "amount" : 5
         }
     </iptArgs>
     <timeout>0</timeout>
     <legal_prose></legal_prose>
     <code></code>
-    <ctype>2</ctype>
+    <codeType>2</codeType>
     <state>true</state>
+    <gasLimited>0</gasLimited>
+    <oid></oid>
+    <runType>0</runType>
+    <stateType>0</stateType>
+    <contractLevel>1</contractLevel>
 </CSpec>

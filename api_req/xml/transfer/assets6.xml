@@ -30,12 +30,12 @@
         }
     </iptArgs>
     <timeout>0</timeout>
-    <legal_prose>""</legal_prose>
-    <code>""</code>
+    <legal_prose></legal_prose>
+    <code></code>
     <codeType>2</codeType>
     <state>true</state>
     <gasLimited>0</gasLimited>
-    <oid>""</oid>
+    <oid></oid>
     <runType>0</runType>
     <stateType>0</stateType>
     <contractLevel>1</contractLevel>
