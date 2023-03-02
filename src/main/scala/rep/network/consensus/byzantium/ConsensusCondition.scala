@@ -1,8 +1,6 @@
 package rep.network.consensus.byzantium
 
-import java.util.concurrent.atomic.AtomicInteger
 
-import rep.app.conf.RepChainConfig
 import rep.app.system.RepChainSystemContext
 
 

@@ -175,7 +175,20 @@ class BlockStorager(ctx: RepChainSystemContext, isEncrypt: Boolean = false) exte
                   if (block.get.getHeader.height == lastChainInfo.get.height &&
                     block.get.getHeader.hashPresent.toStringUtf8 == lastChainInfo.get.bHash &&
                     block.get.getHeader.hashPrevious.toStringUtf8 == lastChainInfo.get.previousHash) {
+                    //待存储的区块高度等于当前的最后区块高度，并且hash都可以对应成功，不需要存储，直接返回真
                     r = true
+                  }else if(block.get.getHeader.height < lastChainInfo.get.height ){
+                    //待存储区块的高度小于当前的最后区块高度，检查已经存在的区块的hash是否可以对应
+                    //获取该高度的区块索引信息
+                    val bIdx = getObjectForClass[BlockIndex](KeyPrefixManager.getBlockIndexKey4Height(ctx.getConfig,block.get.getHeader.height))
+                    if(bIdx != None && block.get.getHeader.hashPresent.toStringUtf8 == bIdx.get.getHash &&
+                      block.get.getHeader.hashPrevious.toStringUtf8 == bIdx.get.getPreHash){
+                      //找到对应的区块，并且完全相等，不需要在存储，直接返回真
+                      r = true
+                    }else{
+                      //已经存在的区块不能对应，不能存储，返回false，打印日志信息
+                      RepLogger.info(RepLogger.Storager_Logger, s"info=Less than the last height,hash not equal,saving block's(height=${block.get.getHeader.height}) ，last height=${lastChainInfo.get.height}")
+                    }
                   } else if (lastChainInfo.get.bHash.equalsIgnoreCase(block.get.header.get.hashPrevious.toStringUtf8)) {
                     val opLog = getOperateLog(block)
                     val setHm = opLog._1
@@ -221,8 +234,9 @@ class BlockStorager(ctx: RepChainSystemContext, isEncrypt: Boolean = false) exte
                     })
                     writer.writeData(bIndex.getFilePos - 8, pathUtil.longToByte(bLength) ++ bb)
                     r = true
+                  }else{
+                    RepLogger.info(RepLogger.Storager_Logger, s"info=Greater than the last height,hashPrevious not equal,saving block's(height=${block.get.getHeader.height}) ，last height=${lastChainInfo.get.height}")
                   }
-
                 } catch {
                   case e: Exception =>
                     RepLogger.error(RepLogger.Storager_Logger, s"saving block's(height=${block.get.getHeader.height}) " +
