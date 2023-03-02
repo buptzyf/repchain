@@ -359,15 +359,15 @@ class TransactionService(ra: ActorRef, repContext: RepChainSystemContext, isChec
         throw Unmarshaller.NoContentException
       case x =>
         CSpec(
-          (x \ "stype").text.toInt,
-          (x \ "chaincodename").text,
-          (x \ "chaincodeversion").text.toInt,
+          (x \ "methodType").text.toInt,
+          (x \ "chainCodeName").text,
+          (x \ "chainCodeVersion").text.toInt,
           (x \ "iptFunc").text,
           Seq((x \ "iptArgs").text),
           (x \ "timeout").text.toInt,
           (x \ "legal_prose").text,
           (x \ "code").text,
-          (x \ "ctype").text.toInt,
+          (x \ "codeType").text.toInt,
           (x \ "state").text.toBoolean,
 
           (x \ "gasLimited").text.toInt,

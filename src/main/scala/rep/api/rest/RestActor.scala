@@ -34,7 +34,7 @@ import rep.sc.TypeOfSender
 import rep.storage.chain.block.BlockSearcher
 import rep.storage.db.factory.DBFactory
 import rep.utils.GlobalUtils.EventType
-import rep.utils.{MessageToJson, SerializeUtils}
+import rep.utils.{IdTool, MessageToJson, SerializeUtils}
 
 import scala.concurrent.Await
 import akka.pattern.ask
@@ -298,7 +298,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
       //debug状态才动用节点密钥签名
       if (contractOperationMode == 0) {
         //构建transaction并通过peer预执行广播
-        txr = buildTranaction(pe.getSysTag, cspec)
+        txr = buildTranaction(pe.getRepChainContext.getConfig.getChainNetworkId+IdTool.DIDPrefixSeparator + pe.getSysTag, cspec)
         doTransaction(txr)
       } else {
         sender ! PostResult(txr.id, Option(ErrMessage(NotValidInDebug, "非Debug状态下此调用无效")))
