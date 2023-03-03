@@ -1,0 +1,4 @@
+[debug] "not up to date. inChanged = true, force = false
+[debug] Updating ProjectRef(uri("file:/D:/Idea/repchain-dev_jdk13_2.0.0.0/project/"), "repchain-dev_jdk13_2-0-0-0-build")...
+[warn] Unrecognized repository Scala Plugin Bundled Repository, ignoring it
+[debug] Done updating ProjectRef(uri("file:/D:/Idea/repchain-dev_jdk13_2.0.0.0/project/"), "repchain-dev_jdk13_2-0-0-0-build")

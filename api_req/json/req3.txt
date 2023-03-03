@@ -1,0 +1,10 @@
+{
+  "stype": 2,
+  "idPath": "",
+  "idName": "1add8db6a80ea8c2da96a766918a245e7e51c642da57c90277be3ad24497c75e",
+  "iptFunc": "put_proof('1MH9xedPTkWThJUgT8ZYehiGCM7bEZTVGN44','json content');read('1MH9xedPTkWThJUgT8ZYehiGCM7bEZTVGN44');",
+  "iptArgs": [],
+  "timeout": 0,
+  "secureContext": "string",
+  "code": "string"
+}

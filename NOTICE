@@ -1,0 +1,9 @@
+RepChain - Responsive BlockChain with Permission
+Copyright 2017 .
+
+This product includes  the following softwares,their licenses is located under  "/licenses" directory:
+
+[protobufjs](https://github.com/dcodeIO/ProtoBuf.js/)
+[d3.js-force layout](https://github.com/d3/d3-3.x-api-reference/blob/master/Force-Layout.md)
+[jquery-ui](https://github.com/jquery/jquery-ui)
+[jquery](https://github.com/jquery/jquery)

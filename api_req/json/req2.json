@@ -1,0 +1,21 @@
+{
+  "stype": 1,
+  "idPath": "",
+  "iptFunc": "",
+  "iptArgs": [],
+  "timeout": 0,
+  "secureContext": "string",
+  "code": "function write(pn,pv){ shim.setVal(pn,pv);}  function read(pn){ return shim.getVal(pn);} function put_proof(pn,pv){var pv0=read(pn); if(pv0) throw '['+pn+']已存在，当前值['+pv0+']'; shim.setVal(pn,pv); print('putProof:'+pn+':'+pv);}"
+}
+
+{
+  "stype": 2,
+  "idPath": "",
+  "idName": "0edfabbf2fd46aab31d19685e9768ffc6e4c16772cf8495a8a9e47659619255c",
+  "iptFunc": "put_proof('1MH9xedPTkWThJUgT8ZYehiGCM7bEZTVGN','json content');read('1MH9xedPTkWThJUgT8ZYehiGCM7bEZTVGN');",
+  "iptArgs": [],
+  "timeout": 0,
+  "secureContext": "string",
+  "code": "string"
+}
+

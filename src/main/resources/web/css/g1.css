@@ -1,0 +1,19 @@
+.ui-accordion {
+    color: #333333;
+}
+
+.ui-accordion-header.ui-corner-top.ui-accordion-header-collapsed.ui-corner-all.ui-state-default.ui-accordion-icons {
+    /*color: #3c763a;*/
+    color: #50e3c2;
+    background-color: #333333
+}
+
+.textClass {
+    stroke: #50e3c2;
+    font-family: "Lucida Grande", "Droid Sans", Arial, Helvetica, sans-serif;
+    font-weight: normal;
+    stroke-width: .8;
+    opacity: 0.8;
+    font-size: 14px;
+    color: #50e3c2;
+}
