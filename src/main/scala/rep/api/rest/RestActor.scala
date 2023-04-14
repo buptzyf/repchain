@@ -39,6 +39,7 @@ import rep.utils.{IdTool, MessageToJson, SerializeUtils}
 import scala.concurrent.Await
 import akka.pattern.ask
 import rep.api.rest.ResultCode._
+import rep.censor.DataFilter
 import rep.sc.SandboxDispatcher.DoTransaction
 
 /**
@@ -140,6 +141,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
   implicit val timeout = Timeout(1000.seconds)
   val sr: BlockSearcher = new BlockSearcher(pe.getRepChainContext)
   private val consensusCondition = new ConsensusCondition(pe.getRepChainContext)
+  private val df = new DataFilter(pe.getRepChainContext)
 
   /**
    * 根据节点名称和chainCode定义建立交易实例
@@ -313,7 +315,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
       val r = bb match {
         case None => QueryResult(None)
         case _ =>
-          val bl = bb.get
+          val bl = df.filterBlock( bb.get)
           QueryResult(Option(MessageToJson.toJson(bl)))
       }
       sender ! r
@@ -342,7 +344,8 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
       if (bb.isEmpty) {
         sender ! HttpResponse(entity = HttpEntity.Strict(MediaTypes.`application/octet-stream`, akka.util.ByteString.empty))
       } else {
-        val body = akka.util.ByteString(bb.get.toByteArray)
+        val block = df.filterBlock(bb.get)
+        val body = akka.util.ByteString(block.toByteArray)
         val entity = HttpEntity.Strict(MediaTypes.`application/octet-stream`, body)
         val httpResponse = HttpResponse(entity = entity)
         sender ! httpResponse
@@ -354,7 +357,8 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
       val r = bb match {
         case None => QueryResult(None)
         case _ =>
-          QueryResult(Option(MessageToJson.toJson(bb.get)))
+          val blk = df.filterBlock(bb.get)
+          QueryResult(Option(MessageToJson.toJson(blk)))
       }
       sender ! r
 
@@ -364,7 +368,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
         case None =>
           QueryResult(None)
         case t: Some[Transaction] =>
-          QueryResult(Option(MessageToJson.toJson(t.get)))
+          QueryResult(Option(MessageToJson.toJson(df.filterTransaction(t.get))))
       }
       sender ! r
 
@@ -374,7 +378,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
       if (r.isEmpty) {
         sender ! HttpResponse(entity = HttpEntity.Strict(MediaTypes.`application/octet-stream`, akka.util.ByteString.empty))
       } else {
-        val t = r.get
+        val t = df.filterTransaction(r.get)
         val body = akka.util.ByteString(t.toByteArray)
         val entity = HttpEntity.Strict(MediaTypes.`application/octet-stream`, body)
         val httpResponse = HttpResponse(entity = entity)
@@ -387,7 +391,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
         case None =>
           QueryResult(None)
         case t: Some[Transaction] =>
-          val txr = t.get
+          val txr = df.filterTransaction(t.get)
           val tranInfoHeight = TranInfoHeight(MessageToJson.toJson(txr), sr.getBlockIndexByTxId(txr.id).get.getHeight)
           QueryResult(Option(Extraction.decompose(tranInfoHeight)))
       }

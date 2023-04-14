@@ -181,6 +181,10 @@ class RepChainConfig {
     this.sysConf.getString("system.member_management.contract_vote_method")
   }
 
+  def isEnableFilter: Boolean = {
+    this.sysConf.getBoolean("system.censor.filter")
+  }
+
   /**
    * @author jiangbuyun
    * @version	2.0
