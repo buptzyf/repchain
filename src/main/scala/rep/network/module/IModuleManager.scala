@@ -1,6 +1,7 @@
 package rep.network.module
 
 import akka.actor.Props
+import rep.censor.AICensor
 import rep.log.{RepLogger, RepTimeTracer}
 import rep.network.autotransaction.PeerHelper
 import rep.network.base.ModuleBase
@@ -92,6 +93,12 @@ class IModuleManager(moduleName: String, isStartup: Boolean) extends ModuleBase(
 
   }
 
+  private def loadAICensor = {
+    if (pe.getRepChainContext.getConfig.isCensor) {
+      context.actorOf(AICensor.props("aicensor"), "aicensor")
+    }
+  }
+
   //启动共识模块，不同的共识方式启动的actor也不相同，继承模块需要重载此方法
   override def startupConsensus: Unit = ???
 
@@ -103,6 +110,7 @@ class IModuleManager(moduleName: String, isStartup: Boolean) extends ModuleBase(
     case IModuleManager.startup_Consensus =>
       RepLogger.trace(RepLogger.System_Logger, this.getLogMsgPrefix(s"recv startup command,systemname=${pe.getSysTag}"))
       loadAutoTestStub
+      loadAICensor
       startupConsensus
     case _ => //ignore
       RepLogger.trace(RepLogger.System_Logger, this.getLogMsgPrefix(s"recv unknow command,it is not startup command,systemname=${pe.getSysTag}"))

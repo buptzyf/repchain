@@ -185,6 +185,30 @@ class RepChainConfig {
     this.sysConf.getBoolean("system.censor.filter")
   }
 
+  def isCensor: Boolean = {
+    this.sysConf.getBoolean("system.censor.is_censor")
+  }
+
+  def censorInterval: Int = {
+    this.sysConf.getInt("system.censor.interval")
+  }
+
+  def getCensorHeight: Long = {
+    this.sysConf.getLong("system.censor.censor_height")
+  }
+
+  def getAppId: String = {
+    this.sysConf.getString("system.censor.app_id")
+  }
+
+  def getApiKey: String = {
+    this.sysConf.getString("system.censor.api_key")
+  }
+
+  def getSecretKey: String = {
+    this.sysConf.getString("system.censor.secret_key")
+  }
+
   /**
    * @author jiangbuyun
    * @version	2.0
