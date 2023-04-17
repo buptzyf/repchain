@@ -182,11 +182,25 @@ class RepChainConfig {
   }
 
   def isEnableFilter: Boolean = {
-    this.sysConf.getBoolean("system.censor.filter")
+    try {
+      this.sysConf.getInt("system.censor.filter") match {
+        case 0 => false
+        case 1 => true
+      }
+    } catch {
+      case e: Exception => false
+    }
   }
 
   def isCensor: Boolean = {
-    this.sysConf.getBoolean("system.censor.is_censor")
+    try {
+      this.sysConf.getInt("system.censor.is_censor") match {
+        case 0 => false
+        case 1 => true
+      }
+    } catch {
+      case e: Exception => false
+    }
   }
 
   def censorInterval: Int = {

@@ -104,8 +104,10 @@ class AICensor(name: String) extends ModuleBase(name: String) {
         "regBlocks", Seq(SerializeUtils.toJson(Seq(c))))
       if (checkTransactionPool()) {
         ctx.getTransactionPool.addTransactionToCache(transaction)
-        ctx.getCustomBroadcastHandler.PublishOfCustom(context, mediator, Topic.Transaction, transaction)
-        RepLogger.System_Logger.info(s"addTransactionToCache:${transaction.id}")
+        if (config.isBroadcastTransaction){
+          ctx.getCustomBroadcastHandler.PublishOfCustom(context, mediator, Topic.Transaction, transaction)
+          RepLogger.System_Logger.info(s"addTransactionToCache:${transaction.id}")
+        }
       } else {
         return 6
       }
