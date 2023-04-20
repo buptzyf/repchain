@@ -1,6 +1,7 @@
 package rep.storage.encrypt
 
-import rep.storage.encrypt.imp.{ImpEncryptWithAES, ImpEncryptWithAESTest}
+import rep.storage.encrypt.imp.{ImpEncryptWithAES, ImpEncryptWithAESTest, ImpEncryptWithSM4}
+
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -19,7 +20,7 @@ object EncryptFactory {
     if (EncryptInstances.containsKey(encryptName)) {
       instance = EncryptInstances.get(encryptName)
     } else {
-      instance = if(!isUseGM) new ImpEncryptWithAES(enKey,keyServer) else null
+      instance = if(!isUseGM) new ImpEncryptWithAES(enKey,keyServer) else new ImpEncryptWithSM4(enKey,keyServer)
       val old = EncryptInstances.putIfAbsent(encryptName, instance)
       if (old != null) {
         instance = old

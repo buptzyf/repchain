@@ -11,9 +11,9 @@ class ImpEncryptWithAES(enKey:String,keyServer:String) extends IEncrypt{
   private var key : Key = null
   private var cipher_en : Cipher = null
   private var cipher_de : Cipher = null
-  this.InitSecurity()
+  this.InitSecurity
 
-  private def InitSecurity():Unit={
+  private def InitSecurity:Unit={
     val generator = KeyGenerator.getInstance("AES")
     generator.init(128)
     val keyValue : String = KeyServer.getKey(enKey,keyServer)
