@@ -479,6 +479,30 @@ class RepChainConfig {
     this.sysConf.getString("system.storage.block_file_type")
   }
 
+  def isEncryptedStorage:Boolean={
+    try {
+      this.sysConf.getBoolean("system.storage.is_encrypted")
+    } catch {
+      case e: Exception => false
+    }
+  }
+
+  def getEncryptedKey: String = {
+    try {
+      this.sysConf.getString("system.storage.encrypted_cipher_key")
+    } catch {
+      case e: Exception => ""
+    }
+  }
+
+  def getKeyServer:String = {
+    try {
+      this.sysConf.getString("system.storage.key_server")
+    } catch {
+      case e: Exception => ""
+    }
+  }
+
   def isOutputAlert:Boolean={
     this.sysConf.getBoolean("system.output_alert.is_output_alert")
   }
