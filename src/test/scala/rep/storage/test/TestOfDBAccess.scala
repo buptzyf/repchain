@@ -12,7 +12,7 @@ import scala.collection.immutable.HashMap
 import scala.util.Random
 
 object TestOfDBAccess extends App {
-  val systemName = "215159697776981712.node1"
+  val systemName = "121000005l35120456.node1"
   val config = new RepChainConfig(systemName)
   var testCount = 0
   var errorCount = 0
@@ -120,6 +120,13 @@ object TestOfDBAccess extends App {
     }
 
     val db = DBFactory.getDBAccess(config)
+
+    val t = "sdflksjf234sf"
+    db.putBytes("k1",t.getBytes())
+    val t1 = new String(db.getBytes("k1"))
+    if(t.equalsIgnoreCase(t1)){
+      System.out.println("ok")
+    }
     //test put object
 
 

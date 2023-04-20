@@ -40,7 +40,9 @@ class RepChainSystemContext (systemName:String){//},cs:ClusterSystem) {
   private val cryptoManager : CryptoMgr = new  CryptoMgr(this)
   private val signer : ISigner = new ImpECDSASigner(this)
   private val signTool:SignTool = new SignTool(this)
-  private val blockStorager : BlockStorager = new BlockStorager(this)
+  private val blockStorager : BlockStorager = new BlockStorager(this,
+    config.isEncryptedStorage,
+    config.isUseGM,config.getEncryptedKey,config.getKeyServer)
   private val blockPreloads : ConcurrentHashMap[String,BlockPreload] = new ConcurrentHashMap[String,BlockPreload]()
   private val poolOfTransaction : PoolOfTransaction =  new PoolOfTransaction(this)
   private val systemCertList : SystemCertList = new SystemCertList(this)

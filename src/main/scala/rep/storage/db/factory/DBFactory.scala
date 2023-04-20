@@ -21,13 +21,16 @@ object DBFactory {
       config.getStorageDBType match{
         case "LevelDB"=>
           RepLogger.trace(RepLogger.Storager_Logger,s"system=${config.getSystemName},dbType=LevelDB,dbPath=${dbPath}")
-          ImpLevelDBAccess.getDBAccess(dbPath,cacheSize)
+          ImpLevelDBAccess.getDBAccess(dbPath,cacheSize,config.isEncryptedStorage,
+            config.isUseGM,config.getEncryptedKey,config.getKeyServer)
         case "RocksDB"=>
           RepLogger.trace(RepLogger.Storager_Logger,s"system=${config.getSystemName},dbType=LevelDB,dbPath=${dbPath}")
-          ImpRocksDBAccess.getDBAccess(dbPath,cacheSize)
+          ImpRocksDBAccess.getDBAccess(dbPath,cacheSize, config.isEncryptedStorage,
+            config.isUseGM, config.getEncryptedKey, config.getKeyServer)
         case _ =>
           RepLogger.trace(RepLogger.Storager_Logger,s"system=${config.getSystemName},dbType=LevelDB,dbPath=${dbPath}")
-          ImpLevelDBAccess.getDBAccess(dbPath,cacheSize)
+          ImpLevelDBAccess.getDBAccess(dbPath,cacheSize, config.isEncryptedStorage,
+            config.isUseGM, config.getEncryptedKey, config.getKeyServer)
       }
   }
 }

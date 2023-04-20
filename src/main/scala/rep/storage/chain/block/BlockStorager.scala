@@ -24,9 +24,10 @@ import scala.util.control.Breaks.{break, breakable}
  * @since 2022-04-13
  * @category 区块存储，继承区块查询器，复用存储器的查询方法。
  **/
-class BlockStorager(ctx: RepChainSystemContext, isEncrypt: Boolean = false) extends BlockSearcher(ctx, isEncrypt) {
+class BlockStorager(ctx: RepChainSystemContext, isEncrypt: Boolean = false,
+                    isUseGM: Boolean, enKey: String, keyServer: String) extends BlockSearcher(ctx) {
   //private val db : IDBAccess = DBFactory.getDBAccess(this.systemName)
-  private val cipherTool: IEncrypt = EncryptFactory.getEncrypt
+  private val cipherTool: IEncrypt = if(isEncrypt)EncryptFactory.getEncrypt(isUseGM, enKey, keyServer) else null
   private val blockFileMaxLength = ctx.getConfig.getStorageBlockFileMaxLength * 1024 * 1024
   //private var lastChainInfo : Option[KeyPrefixManager.ChainInfo] = None
   private val lock: Object = new Object()

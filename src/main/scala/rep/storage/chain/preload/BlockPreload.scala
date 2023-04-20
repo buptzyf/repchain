@@ -18,7 +18,7 @@ import scala.reflect.ClassTag
  * @category	区块预执行。
  * */
 class BlockPreload(preloadId:String,ctx:RepChainSystemContext,isEncrypt:Boolean=false)
-                                      extends BlockSearcher(ctx,isEncrypt){
+                                      extends BlockSearcher(ctx){
   private val update :ConcurrentHashMap[String,Array[Byte]] = new ConcurrentHashMap[String,Array[Byte]]
   private val delete :ConcurrentHashMap[String,Array[Byte]] = new ConcurrentHashMap[String,Array[Byte]]
   private val readCache  :ConcurrentHashMap[String,Array[Byte]] = new ConcurrentHashMap[String,Array[Byte]]

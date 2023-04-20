@@ -1,8 +1,9 @@
 package rep.storage.db.common
 
 
+import rep.app.conf.RepChainConfig
 import rep.log.RepLogger
-import rep.storage.encrypt.EncryptFactory
+import rep.storage.encrypt.IEncrypt
 import rep.utils.SerializeUtils
 
 /**
@@ -14,7 +15,8 @@ import rep.utils.SerializeUtils
 abstract class IDBAccess {
   protected var isTransaction = false //是否开启事务
   private val lock : Object = new Object()
-  protected val cipherTool = EncryptFactory.getEncrypt
+  protected var isEncrypt : Boolean = false
+  protected var cipherTool : IEncrypt = null
   protected val maxOpenFiles = 4096
   protected val repeatTimes = 50
   /**

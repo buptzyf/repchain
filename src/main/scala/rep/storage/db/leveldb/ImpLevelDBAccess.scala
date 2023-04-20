@@ -4,8 +4,10 @@ import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 import org.fusesource.leveldbjni.JniDBFactory
 import org.iq80.leveldb.{DB, Options, WriteBatch}
+import rep.app.conf.RepChainConfig
 import rep.log.RepLogger
 import rep.storage.db.common.IDBAccess
+import rep.storage.encrypt.EncryptFactory
 import rep.storage.filesystem.FileOperate
 
 /**
@@ -21,7 +23,7 @@ class ImpLevelDBAccess private extends IDBAccess{
   private val levelDBFactory: JniDBFactory = JniDBFactory.factory
   private var db: DB = null
   private var batch: WriteBatch = null
-  private var isEncrypt : Boolean = false
+
 
   /**
    * @author jiangbuyun
@@ -31,11 +33,13 @@ class ImpLevelDBAccess private extends IDBAccess{
    * @param DBPath 数据库存放路径,cacheSize 设置数据库的缓存,isEncrypt 是否加密
    * @return
    **/
-  private def this(DBPath:String,cacheSize:Long,isEncrypt:Boolean=false){
+  private def this(DBPath:String,cacheSize:Long,isEncrypt:Boolean,
+                   isUseGM:Boolean,enKey:String,keyServer:String){
     this()
     this.isEncrypt = isEncrypt
     this.DBPath = DBPath
     this.cacheSize = cacheSize
+    this.cipherTool = if(isEncrypt)EncryptFactory.getEncrypt(isUseGM,enKey,keyServer) else null
     InitDB
   }
 
@@ -310,7 +314,8 @@ object ImpLevelDBAccess {
    * @param	DBPath String 数据库路径;cacheSize 缓存大小，isEncrypt 是否需要加密
    * @return	如果成功返回ImpLevelDBAccess实例，否则为null
    */
-  def getDBAccess(DBPath: String,cacheSize:Long,isEncrypt:Boolean=false): ImpLevelDBAccess = {
+  def getDBAccess(DBPath: String,cacheSize:Long,isEncrypt:Boolean,
+                  isUseGM: Boolean, enKey: String, keyServer: String): ImpLevelDBAccess = {
     var instance: ImpLevelDBAccess = null
 
     if (LevelDBInstances.containsKey(DBPath)) {
@@ -318,7 +323,7 @@ object ImpLevelDBAccess {
       instance = LevelDBInstances.get(DBPath)
     } else {
       RepLogger.trace(RepLogger.Storager_Logger,s"DBInstance not exist,create new Instance, dbType=LevelDB,dbPath=${DBPath}")
-      instance = new ImpLevelDBAccess(DBPath,cacheSize,isEncrypt)
+      instance = new ImpLevelDBAccess(DBPath,cacheSize,isEncrypt,isUseGM, enKey, keyServer)
       val old = LevelDBInstances.putIfAbsent(DBPath,instance)
       if(old != null){
         instance = old

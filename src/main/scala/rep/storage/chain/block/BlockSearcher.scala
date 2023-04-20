@@ -9,8 +9,10 @@ import rep.proto.rc2.{Block, BlockchainInfo, Transaction}
 import rep.storage.chain.KeyPrefixManager
 import rep.storage.db.common.IDBAccess
 import rep.storage.db.factory.DBFactory
+import rep.storage.encrypt.{EncryptFactory, IEncrypt}
 import rep.storage.filesystem.factory.FileFactory
 import rep.utils.SerializeUtils
+
 import scala.collection.mutable.HashMap
 import scala.util.control.Breaks.{break, breakable}
 
@@ -20,9 +22,11 @@ import scala.util.control.Breaks.{break, breakable}
  * @since	2022-04-13
  * @category	区块查询器，定义所有可以查询方法。
  * */
-class BlockSearcher(ctx:RepChainSystemContext,isEncrypt:Boolean=false) {
+class BlockSearcher(ctx:RepChainSystemContext) {
   protected val db : IDBAccess = DBFactory.getDBAccess(ctx.getConfig)
-
+  val isEncrypt:Boolean = ctx.getConfig.isEncryptedStorage
+  private val cipherTool: IEncrypt = if(isEncrypt)EncryptFactory.getEncrypt(ctx.getConfig.isUseGM,
+    ctx.getConfig.getEncryptedKey, ctx.getConfig.getKeyServer) else null
   /**
    * @author jiangbuyun
    * @version	2.0
@@ -370,7 +374,8 @@ class BlockSearcher(ctx:RepChainSystemContext,isEncrypt:Boolean=false) {
     else{
       val reader = FileFactory.getReader(ctx.getConfig,bIndex.get.getFileNo)
       val bData = reader.readData(bIndex.get.getFilePos,bIndex.get.getLength)
-      Some(Block.parseFrom(bData))
+      val data = if(isEncrypt) cipherTool.decrypt(bData) else bData
+      Some(Block.parseFrom(data))
     }
   }
 }

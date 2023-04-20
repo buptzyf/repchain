@@ -1,10 +1,10 @@
 package rep.storage.db.rocksdb
 
 import java.util.concurrent.ConcurrentHashMap
-
 import rep.storage.db.common.IDBAccess
 import org.rocksdb.{Options, RocksDB, WriteBatch, WriteOptions}
 import rep.log.RepLogger
+import rep.storage.encrypt.EncryptFactory
 import rep.storage.filesystem.FileOperate
 
 import scala.collection.mutable
@@ -22,7 +22,7 @@ class ImpRocksDBAccess private extends IDBAccess{
   private var opts: Options = null
   private var batch: WriteBatch = null
   private var writeOpts:WriteOptions = null
-  private var isEncrypt:Boolean = false
+
 
   /**
    * @author jiangbuyun
@@ -32,11 +32,13 @@ class ImpRocksDBAccess private extends IDBAccess{
    * @param DBPath 数据库存放路径,cacheSize 设置数据库的缓存,isEncrypt 是否加密数据u
    * @return
    **/
-  private def this(DBPath:String,cacheSize:Long,isEncrypt:Boolean=false){
+  private def this(DBPath:String,cacheSize:Long,isEncrypt:Boolean,
+                   isUseGM: Boolean, enKey: String, keyServer: String){
     this()
     this.isEncrypt = isEncrypt
     this.DBPath = DBPath
     this.cacheSize = cacheSize
+    this.cipherTool = if(isEncrypt)EncryptFactory.getEncrypt(isUseGM,enKey,keyServer) else null
     InitDB
   }
 
@@ -280,13 +282,14 @@ object ImpRocksDBAccess{
    * @param	DBPath String 数据库路径;cacheSize 缓存大小,isEncrypt 是否需要加密
    * @return	如果成功返回ImpRocksDBAccess实例，否则为null
    */
-  def getDBAccess(DBPath: String,cacheSize:Long,isEncrypt:Boolean=false): ImpRocksDBAccess = {
+  def getDBAccess(DBPath: String,cacheSize:Long,isEncrypt:Boolean,
+                  isUseGM: Boolean, enKey: String, keyServer: String): ImpRocksDBAccess = {
     var instance: ImpRocksDBAccess = null
 
     if (RocksDBInstances.containsKey(DBPath)) {
       instance = RocksDBInstances.get(DBPath)
     } else {
-      instance = new ImpRocksDBAccess(DBPath,cacheSize,isEncrypt)
+      instance = new ImpRocksDBAccess(DBPath,cacheSize,isEncrypt,isUseGM, enKey, keyServer)
       val old = RocksDBInstances.putIfAbsent(DBPath,instance)
       if(old != null){
         instance = old
