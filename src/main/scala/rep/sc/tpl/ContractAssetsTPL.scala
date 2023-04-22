@@ -60,9 +60,13 @@ class ContractAssetsTPL extends IContract {
     //System.err.println(s"ctx.t.getSignature.getCertId.creditCode=${ctx.t.getSignature.getCertId.creditCode}")
     //val tmp = ctx.t.getSignature.getCertId.creditCode
     //val creditCode = tmp.substring(tmp.indexOf(IdTool.DIDPrefixSeparator)+1)
-    if (!data.from.equals(ctx.t.getSignature.getCertId.creditCode))
+    if (!data.from.equals(ctx.t.getSignature.getCertId.creditCode)) {
       throw ContractException("只允许从本人账户转出")
+    }
+
     val signerKey = signerPrefix + data.to
+    ctx.api.sendContractEventToLog("{\"signerKey\":\""+signerKey+"\"}")
+    ctx.api.sendContractEventToSubscribe("{\"signerKey\":\""+signerKey+"\"}")
     // 跨合约读账户，该处已经反序列化
     if (ctx.api.getStateEx(ctx.api.getChainNetId, chaincodeName, signerKey) == null)
       throw ContractException("目标账户不存在")

@@ -17,25 +17,33 @@
 package rep.sc
 
 
-import akka.actor.ActorSystem
+import akka.actor.{ActorContext, ActorRef, ActorSystem}
 import rep.network.tools.PeerExtension
 import rep.utils.IdTool
 import rep.utils.SerializeUtils.deserialise
 import rep.utils.SerializeUtils.serialise
 import _root_.com.google.protobuf.ByteString
+import akka.pattern.AskTimeoutException
+import akka.util.Timeout
 import rep.log.RepLogger
 import org.slf4j.Logger
+import rep.api.rest.ResultCode
 import rep.app.conf.RepChainConfig
 import rep.app.system.RepChainSystemContext
 import rep.crypto.Sha256
-import rep.proto.rc2.{CertId, Certificate, Signer, Transaction}
+import rep.network.autotransaction.Topic
+import rep.network.module.ModuleActorType
+import rep.proto.rc2.{ActionResult, Block, CertId, Certificate, Event, Signer, Transaction, TransactionResult}
+import rep.sc.SandboxDispatcher.DoTransaction
 import rep.sc.scalax.ContractException
 import rep.sc.tpl.did.DidTplPrefix.{certPrefix, signerPrefix}
 import rep.sc.tpl.did.operation.SignerOperation.{signerNotExists, toJsonErrMsg}
 import rep.storage.chain.KeyPrefixManager
 import rep.storage.chain.preload.TransactionPreload
+import rep.utils.GlobalUtils.EventType
 
 import scala.collection.immutable.HashMap
+import scala.concurrent.{Await, TimeoutException}
 
 
 /** Shim伴生对象
@@ -62,10 +70,12 @@ class Shim {
 
   import Shim._
 
+  private var context:ActorContext = null
   private var system: ActorSystem = null
   private var t: Transaction = null
   private var identifier: String = null
   private var ctx: RepChainSystemContext = null
+  private var mediator:ActorRef = null
 
   private val PRE_SPLIT = "_"
   //本chaincode的 key前缀
@@ -87,9 +97,11 @@ class Shim {
    * @param t          合约执行的交易
    * @param identifier 合约执行的交易
    */
-  def this(system: ActorSystem, t: Transaction, identifier: String) {
+  def this(context:ActorContext,mediator:ActorRef, t: Transaction, identifier: String) {
     this()
-    this.system = system
+    this.context = context
+    this.mediator = mediator
+    this.system = context.system
     this.t = t
     this.identifier = identifier
     this.ctx = PeerExtension(system).getRepChainContext
@@ -388,4 +400,92 @@ class Shim {
   def permissionCheck(did: String, certName: String, op: String): Boolean = {
     this.ctx.getPermissionVerify.CheckPermission(did, certName, op, this.srOfTransaction.getBlockPreload)
   }
-}
+
+  /**
+   * @author jiangbuyun
+   * @version 2.0
+   * @since 2023-04-22
+   * @category 发送合约事件到Sandbox_logger日志文件，供合约开负者调用
+   * @param content : 合约开发者需要输出的事件内容，json字符串
+   * @return
+   * */
+  def sendContractEventToLog(content: String): Unit = {
+    RepLogger.info(RepLogger.Sandbox_Logger, "CONTRACT_EVENT:"+getContractEvent(content))
+  }
+
+  /**
+   * @author jiangbuyun
+   * @version 2.0
+   * @since 2023-04-22
+   * @category 发送合约事件到消息订阅通道（websocket），供合约开负者调用
+   * @param content : 合约开发者需要输出的事件内容，json字符串
+   * @return
+   * */
+  def sendContractEventToSubscribe(content: String): Unit = {
+    val pe = PeerExtension(system)
+    val evt = new Event(pe.getSysTag, Topic.CONTRACT_EVENT,
+      Event.Action.CONTRACT_EVENT,None,getContractEvent(content))
+    pe.getRepChainContext.getCustomBroadcastHandler.PublishOfCustom(this.context,mediator,Topic.Event,evt)
+  }
+
+  /**
+   * @author jiangbuyun
+   * @version 2.0
+   * @since 2023-04-22
+   * @category 合约消息定义模板
+   * @param content : 合约开发者需要输出的事件内容，json字符串
+   * @return 返回String，为json字符串，增加了事件是哪个节点发起，执行的是哪条交易，哪个合约。
+   * */
+  private def getContractEvent(content:String):String={
+    val sb = new StringBuffer()
+    sb.append("{")
+      .append("\"").append("from").append("\"").append(":")
+      .append("\"").append(ctx.getSystemName).append("\"").append(",")
+      .append("\"").append("txID").append("\"").append(":")
+      .append("\"").append(this.t.id).append("\"").append(",")
+      .append("\"").append("chaincode").append("\"").append(":")
+      .append("\"").append(IdTool.getCid(this.t.getCid)).append("\"").append(",")
+      .append("\"").append("content").append("\"").append(":")
+      .append(content)
+    sb.toString
+  }
+
+    /**
+     * @author jiangbuyun
+     * @version 2.0
+     * @since 2023-04-22
+     * @category 跨合约调用方法，支持合于开发者在合约中通过调用该方法实现跨合约之间的调用
+     * @param crossContractTransaction : 跨合约调用的交易
+     * @return TransactionResult 返回跨合约方法调用的返回值，没有错误，err==None;否则包含错误信息
+     * */
+    def crossContractCall(crossContractTransaction: Transaction): TransactionResult = {
+      var result: TransactionResult = null
+      if (crossContractTransaction == null) {
+        throw new Exception("The transaction called across contracts is empty")
+      } else if (crossContractTransaction.id == null || crossContractTransaction.id.isEmpty) {
+        throw new Exception("The transaction id called across contracts is empty")
+      } else if (crossContractTransaction.cid == None) {
+        throw new Exception("The contract name for cross contract calls is empty")
+      } else if (crossContractTransaction.getCid.chaincodeName == this.t.getCid.chaincodeName) {
+        throw new Exception("Equal contract names for cross contract calls")
+      }
+      result
+    }
+
+    private def ExecuteTransaction(ts: Seq[Transaction], db_identifier: String): Seq[TransactionResult] = {
+      import akka.pattern.{AskTimeoutException, ask}
+      import scala.concurrent.duration._
+      val pe = PeerExtension(system)
+      implicit val timeout = Timeout((pe.getRepChainContext.getTimePolicy.getTimeoutPreload).seconds)
+      try {
+        val future2 = pe.getActorRef(ModuleActorType.ActorType.transactiondispatcher) ? new DoTransaction(ts, db_identifier, TypeOfSender.FromPreloader)
+        val result = Await.result(future2, timeout.duration).asInstanceOf[Seq[TransactionResult]]
+        result
+      } catch {
+        case e: Exception =>
+          Seq(new TransactionResult(t.id, Map.empty, Map.empty, Map.empty, Option(ActionResult(ResultCode.Transaction_Exception_In_SandboxOfScala, e.getMessage))))
+      }
+    }
+
+
+  }

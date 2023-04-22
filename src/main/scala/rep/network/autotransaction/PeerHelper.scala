@@ -42,6 +42,7 @@ object Topic {
   val VoteTransform = "VoteTransform"
   val VoteSynchronized = "VoteSynchronized"
   val MessageWithZeroTransaction = "MessageWithZeroTransaction"
+  val CONTRACT_EVENT = "CONTRACT_EVENT"
 }
 
 object InnerTopic {

@@ -22,8 +22,10 @@ import rep.api.rest.ResultCode
 import rep.utils._
 import rep.network.tools.PeerExtension
 import rep.log.{RepLogger, RepTimeTracer}
+import rep.network.cluster.ClusterActor
 import rep.proto.rc2.{ActionResult, ChaincodeId, Transaction, TransactionResult}
 import rep.storage.chain.KeyPrefixManager
+
 import scala.collection.immutable.HashMap
 import scala.concurrent.{Await, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -78,6 +80,10 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
   import SandboxDispatcher._
   import Sandbox._
   import scala.concurrent.duration._
+  import akka.cluster.pubsub.DistributedPubSub
+
+  val mediator = DistributedPubSub(context.system).mediator
+
   protected val PRE_STATE = "_STATE"
   //与存储交互的实例
   val pe = PeerExtension(context.system)
@@ -146,7 +152,7 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
       /*if(dotrans.t.`type` == Transaction.Type.CHAINCODE_DEPLOY){
         System.out.println("sss")
       }*/
-      shim = new Shim(context.system,dotrans.t,dotrans.da)
+      shim = new Shim(context,mediator,dotrans.t,dotrans.da)
       checkTransaction(dotrans)
       doTransaction(dotrans)
     } catch {

@@ -40,9 +40,11 @@ message Event {
         BLOCK_SYNC = 9;
         BLOCK_SYNC_DATA = 10;
         BLOCK_SYNC_SUC = 11;
+        CONTRACT_EVENT = 12;
     }
     Action action = 3;
     Block blk = 4;
+    string contract_event_content = 5;
 }
 
 //账户
@@ -325,6 +327,7 @@ message ChaincodeDeploy {
         CONTRACT_CUSTOM = 2;
     }
     ContractClassification  cclassification = 8;
+    bool is_called_by_other_contracts = 9; //true 本合约可以被其他合约调用；false 不可以被其他合约调用。默认值是false
 }
 //合约方法返回
 message ActionResult{

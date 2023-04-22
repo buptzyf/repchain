@@ -443,7 +443,9 @@
                 } else if (msg.action == 10) {//同步blockdata
                 		graph.addDLink(sfrom,sto);
                     console.log("Received: " + msg.action + " from:" + msg.from + " to:" + msg.to + "\n");
-                } 
+                } else if (msg.action == 12) {//合约发出的事件
+                    console.log("Received: " + msg.to + " from:" + msg.from + " content:" + msg.contract_event_content + "\n");
+                }
                 
                 /*//同步完成
                 else if (msg.action == 10) {
