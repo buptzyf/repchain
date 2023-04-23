@@ -33,8 +33,8 @@ import rep.app.system.RepChainSystemContext
 import rep.crypto.Sha256
 import rep.network.autotransaction.Topic
 import rep.network.module.ModuleActorType
-import rep.proto.rc2.{ActionResult, Block, CertId, Certificate, Event, Signer, Transaction, TransactionResult}
-import rep.sc.SandboxDispatcher.DoTransaction
+import rep.proto.rc2.{ActionResult, Block, CertId, Certificate, ChaincodeId, ChaincodeInput, Event, Signer, Transaction, TransactionResult}
+import rep.sc.SandboxDispatcher.{DoTransaction, DoTransactionOfCrossContract}
 import rep.sc.scalax.ContractException
 import rep.sc.tpl.did.DidTplPrefix.{certPrefix, signerPrefix}
 import rep.sc.tpl.did.operation.SignerOperation.{signerNotExists, toJsonErrMsg}
@@ -248,6 +248,10 @@ class Shim {
       deserialise(v)
   }
 
+  def getCrossKey(chainId: String, chainCodeName: String, key: Key):String = {
+    chainId + PRE_SPLIT + chainCodeName + PRE_SPLIT + PRE_SPLIT + PRE_SPLIT + key
+  }
+
   /**
    * @author jiangbuyun
    * @version 2.0
@@ -455,21 +459,50 @@ class Shim {
      * @version 2.0
      * @since 2023-04-22
      * @category 跨合约调用方法，支持合于开发者在合约中通过调用该方法实现跨合约之间的调用
-     * @param crossContractTransaction : 跨合约调用的交易
+     * @param cid : ChaincodeId 跨链调用的合约id
+     * @param chaincodeInputFunc : String 跨链调用的合约方法名称
+     * @param params : Seq[String]跨链调用的参数
      * @return TransactionResult 返回跨合约方法调用的返回值，没有错误，err==None;否则包含错误信息
      * */
-    def crossContractCall(crossContractTransaction: Transaction): TransactionResult = {
+    def crossContractCall(cid: ChaincodeId,
+                          chaincodeInputFunc: String,
+                          params: Seq[String]): TransactionResult = {
       var result: TransactionResult = null
-      if (crossContractTransaction == null) {
-        throw new Exception("The transaction called across contracts is empty")
-      } else if (crossContractTransaction.id == null || crossContractTransaction.id.isEmpty) {
-        throw new Exception("The transaction id called across contracts is empty")
-      } else if (crossContractTransaction.cid == None) {
-        throw new Exception("The contract name for cross contract calls is empty")
-      } else if (crossContractTransaction.getCid.chaincodeName == this.t.getCid.chaincodeName) {
+      if (cid == null ) {
+        throw new Exception("The chaincodeId called across contracts is empty")
+      } else if (chaincodeInputFunc == null || chaincodeInputFunc.isEmpty) {
+        throw new Exception("The method called across contracts is empty")
+      }  else if (cid.chaincodeName == this.t.getCid.chaincodeName) {
         throw new Exception("Equal contract names for cross contract calls")
       }
+      val rs = ExecuteTransaction(Seq(createTransactionForCrossContractCalled(
+        cid, chaincodeInputFunc, params)), this.identifier)
+      if(rs.isEmpty){
+        throw new Exception("No execution result returned")
+      }else{
+        result = rs(0)
+      }
+      if(result == null){
+        throw new Exception("Unknown exception occurred during call")
+      }
+      if(result.err != None && result.err.get.code > 0){
+        throw new Exception(result.err.get.reason)
+      }
       result
+    }
+
+    private def  createTransactionForCrossContractCalled(cid: ChaincodeId,
+                                                         chaincodeInputFunc: String,
+                                                         params: Seq[String]):Transaction={
+      var t1: Transaction = new Transaction()
+      val txid1 = IdTool.getRandomUUID
+      val cip = new ChaincodeInput(chaincodeInputFunc, params)
+      t1 = t1.withId(txid1)
+      t1 = t1.withCid(cid)
+      t1 = t1.withIpt(cip)
+      t1 = t1.withType(rep.proto.rc2.Transaction.Type.CHAINCODE_INVOKE)
+      t1 = t1.clearSignature
+      t1
     }
 
     private def ExecuteTransaction(ts: Seq[Transaction], db_identifier: String): Seq[TransactionResult] = {
@@ -478,7 +511,7 @@ class Shim {
       val pe = PeerExtension(system)
       implicit val timeout = Timeout((pe.getRepChainContext.getTimePolicy.getTimeoutPreload).seconds)
       try {
-        val future2 = pe.getActorRef(ModuleActorType.ActorType.transactiondispatcher) ? new DoTransaction(ts, db_identifier, TypeOfSender.FromPreloader)
+        val future2 = pe.getActorRef(ModuleActorType.ActorType.transactiondispatcher) ? new DoTransactionOfCrossContract(ts, db_identifier, TypeOfSender.FromPreloader)
         val result = Await.result(future2, timeout.duration).asInstanceOf[Seq[TransactionResult]]
         result
       } catch {
@@ -486,6 +519,5 @@ class Shim {
           Seq(new TransactionResult(t.id, Map.empty, Map.empty, Map.empty, Option(ActionResult(ResultCode.Transaction_Exception_In_SandboxOfScala, e.getMessage))))
       }
     }
-
 
   }

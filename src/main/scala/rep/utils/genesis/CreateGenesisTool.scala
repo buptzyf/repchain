@@ -135,7 +135,13 @@ class CreateGenesisTool(file:File)  {
         val version = c.getInt("contract-version")
         val code = c.getString("contract-code-path")
         val signer = c.getString("transaction-signer")
-        this.builder = this.builder.buildDeploy(code,name,version,signer)
+        var isCalledByOtherContracts : Boolean = false
+        try{
+          isCalledByOtherContracts = c.getBoolean("is-called-by-other-contracts")
+        }catch {
+          case e:Exception => isCalledByOtherContracts = false
+        }
+        this.builder = this.builder.buildDeploy(code,name,version,signer,isCalledByOtherContracts)
       }
     }
 

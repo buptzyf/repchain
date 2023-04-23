@@ -3,7 +3,7 @@ package rep.sc
 
 import akka.actor.{ActorRef, Props}
 import rep.network.base.ModuleBase
-import rep.sc.SandboxDispatcher.{DoTransaction, DoTransactionOfCache}
+import rep.sc.SandboxDispatcher.{DoTransaction, DoTransactionOfCache, DoTransactionOfCrossContract}
 import rep.log.{RepLogger, RepTimeTracer}
 
 object TransactionDispatcher {
@@ -39,6 +39,14 @@ class TransactionDispatcher(moduleName: String) extends ModuleBase(moduleName) {
   override def receive = {
     case tr: DoTransaction =>
       RepTimeTracer.setStartTime(pe.getSysTag, "transaction-dispatcher", System.currentTimeMillis(), pe.getCurrentHeight+1, tr.ts.length)
+      if (tr.ts != null && tr.ts.length > 0) {
+        val ref: ActorRef = CheckTransActor(IdTool.getTXCId(tr.ts(0)))
+        ref.forward(tr)
+      } else {
+        RepLogger.error(RepLogger.Business_Logger, this.getLogMsgPrefix("recv DoTransaction is null"))
+      }
+    case tr:DoTransactionOfCrossContract =>
+      RepTimeTracer.setStartTime(pe.getSysTag, "transaction-dispatcher", System.currentTimeMillis(), pe.getCurrentHeight + 1, tr.ts.length)
       if (tr.ts != null && tr.ts.length > 0) {
         val ref: ActorRef = CheckTransActor(IdTool.getTXCId(tr.ts(0)))
         ref.forward(tr)

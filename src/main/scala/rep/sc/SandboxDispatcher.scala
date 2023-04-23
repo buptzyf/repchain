@@ -32,6 +32,7 @@ object SandboxDispatcher {
   val ERR_CODER = "合约只能由部署者升级更新"
   val ERR_DISABLE_CID = "合约处于禁用状态"
   val ERR_NONDID_CONTRACT = "系统不支持非DID账户管理合约"
+  val ERR_NO_CROSS_CONTRACT = "调用了不支持跨链的合约"
 
   //权限检查异常消息预定义
   val ERR_NO_PERMISSION_OF_DEPLOY = "没有合约部署的权限"
@@ -65,7 +66,7 @@ object SandboxDispatcher {
    *  @param typeOfSender 请求执行交易者的类型，类型定义请参看TypeOfSender
    */
   final case class DoTransaction(ts: Seq[Transaction], da: String, typeOfSender: TypeOfSender.Value)
-
+  final case class DoTransactionOfCrossContract(ts: Seq[Transaction], da: String, typeOfSender: TypeOfSender.Value)
   final case class DoTransactionOfCache(cacheIdentifier:String, da: String, typeOfSender: TypeOfSender.Value)
   /**
    * 发送给Sandbox的执行交易请求
@@ -74,10 +75,10 @@ object SandboxDispatcher {
    *  @param da 数据访问标识，实际上是LevelDB在某个时刻的快照
    *  @param contractStateType 当前合约的状态，类型定义请参看ContractStateType
    */
-  final case class DoTransactionOfSandbox(ts: Seq[Transaction], da: String, contractStateType: ContractStateType.Value)
+  final case class DoTransactionOfSandbox(ts: Seq[Transaction], da: String, contractStateType: ContractStateType.Value,isCrossContract:Boolean)
   final case class DoTransactionOfSandboxOfCache(cacheIdentifier:String, da: String, contractStateType: ContractStateType.Value)
 
-  final case class DoTransactionOfSandboxInSingle(t: Transaction, da: String, contractStateType: ContractStateType.Value)
+  final case class DoTransactionOfSandboxInSingle(t: Transaction, da: String, contractStateType: ContractStateType.Value,isCrossContract:Boolean)
 
   /**
    * 本消息用于从存储恢复合约对应的sandbox
@@ -235,7 +236,7 @@ class SandboxDispatcher(moduleName: String, cid: String) extends ModuleBase(modu
     }
   }
 
-  private def Dispatch(ts:Seq[Transaction], da: String, typeOfSender: TypeOfSender.Value,cacheIdentifier:String) = {
+  private def Dispatch(ts:Seq[Transaction], da: String, typeOfSender: TypeOfSender.Value,cacheIdentifier:String,isCrossContract:Boolean) = {
     try {
       val special_t = ts(0)
       RepLogger.debug(RepLogger.Sandbox_Logger, s"entry sandbox dispatcher for ${cid} , contract state ${this.ContractState},txid=${special_t.id},da=${da}.")
@@ -256,7 +257,7 @@ class SandboxDispatcher(moduleName: String, cid: String) extends ModuleBase(modu
         case ContractStateType.ContractInSnapshot =>
           RepLogger.debug(RepLogger.Sandbox_Logger, s"sandbox dispatcher ${cid},send msg to serial sandbox from preload or endorse,txid=${special_t.id},da=${da}.")
           if(cacheIdentifier == null)
-            this.SerialSandbox.forward(DoTransactionOfSandbox(ts, da, this.ContractState))
+            this.SerialSandbox.forward(DoTransactionOfSandbox(ts, da, this.ContractState,isCrossContract))
           else
             this.SerialSandbox.forward(DoTransactionOfSandboxOfCache(cacheIdentifier,da, this.ContractState))
         case ContractStateType.ContractInLevelDB =>
@@ -268,7 +269,7 @@ class SandboxDispatcher(moduleName: String, cid: String) extends ModuleBase(modu
                                       this.DeployTransactionCache.para.spec.get.cType)
               }
               if(cacheIdentifier == null)
-                this.RouterOfParallelSandboxs.route(DoTransactionOfSandbox(ts, da, this.ContractState), sender)
+                this.RouterOfParallelSandboxs.route(DoTransactionOfSandbox(ts, da, this.ContractState,isCrossContract), sender)
               else
                 this.RouterOfParallelSandboxs.route(DoTransactionOfSandboxOfCache(cacheIdentifier, da, this.ContractState), sender)
             case _ =>
@@ -280,13 +281,13 @@ class SandboxDispatcher(moduleName: String, cid: String) extends ModuleBase(modu
                       this.DeployTransactionCache.para.spec.get.cType)
                   }
                   if(cacheIdentifier == null)
-                    this.RouterOfParallelSandboxs.route(DoTransactionOfSandbox(ts, da, this.ContractState), sender)
+                    this.RouterOfParallelSandboxs.route(DoTransactionOfSandbox(ts, da, this.ContractState,isCrossContract), sender)
                   else
                     this.RouterOfParallelSandboxs.route(DoTransactionOfSandboxOfCache(cacheIdentifier, da, this.ContractState), sender)
                 case _ => 
                   RepLogger.debug(RepLogger.Sandbox_Logger, s"sandbox dispatcher ${cid},send msg to serial sandbox from other reason,txid=${special_t.id},da=${da}.")
                   if(cacheIdentifier == null)
-                    this.SerialSandbox.forward(DoTransactionOfSandbox(ts, da, this.ContractState))
+                    this.SerialSandbox.forward(DoTransactionOfSandbox(ts, da, this.ContractState,isCrossContract))
                   else
                     this.SerialSandbox.forward(DoTransactionOfSandboxOfCache(cacheIdentifier,da, this.ContractState))
               }
@@ -315,11 +316,13 @@ class SandboxDispatcher(moduleName: String, cid: String) extends ModuleBase(modu
   def receive = {
     //执行交易请求
     case ti: DoTransaction =>
-      Dispatch(ti.ts.asInstanceOf[Seq[Transaction]] ,ti.da,ti.typeOfSender,null)
+      Dispatch(ti.ts.asInstanceOf[Seq[Transaction]] ,ti.da,ti.typeOfSender,null,false)
+    case ti:DoTransactionOfCrossContract =>
+      Dispatch(ti.ts.asInstanceOf[Seq[Transaction]] ,ti.da,ti.typeOfSender,null,true)
     case tiOfCache:DoTransactionOfCache =>
       val ts = pe.getTrans(tiOfCache.cacheIdentifier)
       if(ts != null){
-        Dispatch(ts.asInstanceOf[Seq[Transaction]],tiOfCache.da,tiOfCache.typeOfSender,tiOfCache.cacheIdentifier)
+        Dispatch(ts.asInstanceOf[Seq[Transaction]],tiOfCache.da,tiOfCache.typeOfSender,tiOfCache.cacheIdentifier,false)
       }
   }
 

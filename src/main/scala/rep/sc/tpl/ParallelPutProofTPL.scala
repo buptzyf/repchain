@@ -20,6 +20,7 @@ import org.json4s.DefaultFormats
 import org.json4s.jackson.JsonMethods.parse
 import rep.proto.rc2.ActionResult
 import rep.sc.scalax.{ContractContext, IContract}
+import scalapb.GeneratedMessage
 
 final case class ProofDataSingle(key: String, value: String)
 class ParallelPutProofTPL extends IContract{
@@ -54,7 +55,7 @@ class ParallelPutProofTPL extends IContract{
     * @return
     */
   def putProof(ctx: ContractContext, data: ProofDataSingle): ActionResult = {
-    ctx.api.setVal(ctx.t.id + split + data.key, data.value)
+    ctx.api.setVal(data.key, data.value)
     print("putProof:"+ data.key + ":" + data.value)
     null
   }

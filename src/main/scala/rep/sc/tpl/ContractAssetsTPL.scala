@@ -19,12 +19,15 @@ package rep.sc.tpl
 
 import org.json4s._
 import org.json4s.jackson.JsonMethods._
-import rep.proto.rc2.ActionResult
+import rep.proto.rc2.{ActionResult, ChaincodeId}
 import rep.sc.scalax.IContract
 import rep.sc.scalax.ContractContext
 import rep.sc.scalax.ContractException
 import rep.sc.tpl.did.DidTplPrefix.signerPrefix
-import rep.utils.IdTool
+import rep.sc.tpl.ProofDataSingle
+import org.json4s.native.Serialization.write
+import org.json4s.{DefaultFormats, jackson}
+import rep.utils.SerializeUtils
 
 /**
   * 资产管理合约
@@ -65,8 +68,9 @@ class ContractAssetsTPL extends IContract {
     }
 
     val signerKey = signerPrefix + data.to
-    ctx.api.sendContractEventToLog("{\"signerKey\":\""+signerKey+"\"}")
-    ctx.api.sendContractEventToSubscribe("{\"signerKey\":\""+signerKey+"\"}")
+    //发送合约事件到订阅和发送合约事件到日志文件的样例代码
+    //ctx.api.sendContractEventToLog("{\"signerKey\":\""+signerKey+"\"}")
+    //ctx.api.sendContractEventToSubscribe("{\"signerKey\":\""+signerKey+"\"}")
     // 跨合约读账户，该处已经反序列化
     if (ctx.api.getStateEx(ctx.api.getChainNetId, chaincodeName, signerKey) == null)
       throw ContractException("目标账户不存在")
@@ -74,6 +78,23 @@ class ContractAssetsTPL extends IContract {
     val dfrom = sfrom.asInstanceOf[Int]
     if (dfrom < data.amount)
       throw ContractException("余额不足")
+
+    ////跨合约调用样例
+    /*val cid = ChaincodeId("ParallelPutProofTPL", 1)
+    val cdata = ProofDataSingle("cky1", dfrom.toString)
+    implicit val serialization = jackson.Serialization
+    implicit val formats = DefaultFormats
+    val tmp : String = write(cdata)
+    val crs = ctx.api.crossContractCall(cid, "putProofSingle", Seq(tmp))
+    if(crs.err != None && crs.err.get.code == 0){
+      val k1 = ctx.api.getCrossKey(ctx.api.getChainNetId, cid.chaincodeName,"cky1")
+      //可以从返回值中直接读取
+      System.out.println("cross result1="+SerializeUtils.deserialise(crs.statesSet.get(k1).get.toByteArray))
+      //也可以从跨合约状态中读取，建议在这里读
+      System.out.println("cross result2="+ctx.api.getStateEx(ctx.api.getChainNetId, cid.chaincodeName, "cky1"))
+    }
+    */
+
     ctx.api.setVal(data.from, dfrom - data.amount)
     val dto = ctx.api.getVal(data.to).toString.toInt
     ctx.api.setVal(data.to, dto + data.amount)

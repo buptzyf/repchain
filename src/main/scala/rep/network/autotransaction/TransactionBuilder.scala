@@ -69,7 +69,7 @@ class TransactionBuilder(signTool: SignTool) {
                                rtype: rep.proto.rc2.ChaincodeDeploy.RunType,//default RUN_SERIAL
                                stype: rep.proto.rc2.ChaincodeDeploy.StateType,//default STATE_BLOCK
                                cclassfiction:rep.proto.rc2.ChaincodeDeploy.ContractClassification,//default CONTRACT_CUSTOM
-                               gasLimited:Int,initParam:String=""): Transaction = {
+                               gasLimited:Int,initParam:String="",isCrossByOtherContract:Boolean=false): Transaction = {
     var t: Transaction = new Transaction()
     val millis = TimeUtils.getCurrentTime()
     if (chaincodeId == null) t
@@ -90,6 +90,7 @@ class TransactionBuilder(signTool: SignTool) {
     //add contract level
     cip = cip.withCclassification(cclassfiction)
     cip = cip.withInitParameter(initParam)
+    cip = cip.withIsCalledByOtherContracts(isCrossByOtherContract)
     //*************create deploy content************************
 
     //*************create transaction content************************

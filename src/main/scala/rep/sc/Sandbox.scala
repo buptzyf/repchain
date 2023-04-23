@@ -85,6 +85,8 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
   val mediator = DistributedPubSub(context.system).mediator
 
   protected val PRE_STATE = "_STATE"
+  protected val PRE_CROSS = "_CROSS"
+
   //与存储交互的实例
   val pe = PeerExtension(context.system)
   val sTag = pe.getSysTag
@@ -132,7 +134,7 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
   private def onTransactions(dotrans: DoTransactionOfSandbox): Array[TransactionResult] = {
     var rs = scala.collection.mutable.ArrayBuffer[TransactionResult]()
     dotrans.ts.foreach(t=>{
-      rs += onTransaction(DoTransactionOfSandboxInSingle(t,dotrans.da,dotrans.contractStateType))
+      rs += onTransaction(DoTransactionOfSandboxInSingle(t,dotrans.da,dotrans.contractStateType,dotrans.isCrossContract))
     })
     RepTimeTracer.setEndTime(pe.getSysTag, "transaction-dispatcher", System.currentTimeMillis(), pe.getCurrentHeight+1, dotrans.ts.length)
     rs.toArray
@@ -141,7 +143,7 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
   private def onTransactionsOfCache(dotrans: DoTransactionOfSandboxOfCache,ts:Seq[Transaction]): Array[TransactionResult] = {
     var rs = scala.collection.mutable.ArrayBuffer[TransactionResult]()
     ts.foreach(t=>{
-      rs += onTransaction(DoTransactionOfSandboxInSingle(t,dotrans.da,dotrans.contractStateType))
+      rs += onTransaction(DoTransactionOfSandboxInSingle(t,dotrans.da,dotrans.contractStateType,false))
     })
     RepTimeTracer.setEndTime(pe.getSysTag, "transaction-dispatcher", System.currentTimeMillis(), pe.getCurrentHeight+1, ts.length)
     rs.toArray
@@ -249,6 +251,24 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
     r
   }
 
+  private def checkIsCrossedOfContract(txCid: String,oid:String,da:String):Option[Boolean]={
+    var r : Option[Boolean] = Some(false)
+    val cross = shim.getVal(txCid + PRE_CROSS)
+    if (cross != null) {
+      r = Some(cross.asInstanceOf[Boolean])
+    } else {
+      val chainCodeName: String = if (txCid.lastIndexOf(SplitChainCodeId) > 0) {
+        txCid.substring(0, txCid.lastIndexOf(SplitChainCodeId))
+      } else txCid
+      val blockPreload = pe.getRepChainContext.getBlockPreload(da)
+      val cross1 = blockPreload.getObjectFromDB(KeyPrefixManager.getWorldStateKey(pe.getRepChainContext.getConfig, txCid + PRE_CROSS, chainCodeName, oid))
+      if (cross1 != None) {
+        r = Some(cross1.get.asInstanceOf[Boolean])
+      }
+    }
+    r
+  }
+
   private def IsCurrentSigner(dotrans: DoTransactionOfSandboxInSingle) {
     val cn = dotrans.t.cid.get.chaincodeName
     //val srOfTransaction = pe.getRepChainContext.getBlockPreload(dotrans.da)
@@ -294,7 +314,13 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
           throw new SandboxException(ERR_DISABLE_CID)
         }else{
           if(IdTool.isDidContract(pe.getRepChainContext.getConfig.getAccountContractName)) {
-            permissioncheck.CheckPermissionOfInvokeContract(dotrans)
+            if(!dotrans.isCrossContract) {
+              permissioncheck.CheckPermissionOfInvokeContract(dotrans)
+            }else{
+              if(!checkIsCrossedOfContract(txcid,dotrans.t.oid,dotrans.da).get){
+                throw SandboxException(ERR_NO_CROSS_CONTRACT)
+              }
+            }
           }else{
             throw SandboxException(ERR_NONDID_CONTRACT)
           }
@@ -317,8 +343,12 @@ abstract class Sandbox(cid: ChaincodeId) extends Actor {
     val key_tx_state = tx_cid + PRE_STATE //KeyPrefixManager.getWorldStateKey(pe.getRepChainContext.getConfig,tx_cid + PRE_STATE,tx_cid,t.oid)
     this.ContractStatus = Some(true)
     this.ContractStatusSource = Some(2)
-
     shim.setVal(key_tx_state, true)
+
+    val key_tx_cross = tx_cid + PRE_CROSS
+    val isCross = if(t.getSpec.isCalledByOtherContracts) true else false
+    shim.setVal(key_tx_cross,isCross)
+
     //利用kv记住合约的开发者
     shim.setVal(key_coder, coder)
   }

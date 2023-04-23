@@ -288,7 +288,7 @@ class GenesisBuilder {
    * @param SignerName         :String 合约部署交易的签名者的名称，样例：121000005l35120456.node1
    * @return 返回自身实例
    **/
-  def buildDeploy(ContractFileName: String, ContractName: String, Version: Int, SignerName: String): GenesisBuilder = {
+  def buildDeploy(ContractFileName: String, ContractName: String, Version: Int, SignerName: String,isCalledByOtherContracts:Boolean): GenesisBuilder = {
     try {
       val s1 = scala.io.Source.fromFile(ContractFileName, "UTF-8")
       val l1 = try s1.mkString finally s1.close()
@@ -296,7 +296,7 @@ class GenesisBuilder {
       val tran = ctx.getTransactionBuilder.createTransaction4Deploy(this.hmOfTransactionSigner(SignerName).fullName, cid, l1,
         "", 5000,
         CodeType.CODE_SCALA, RunType.RUN_SERIAL, StateType.STATE_BLOCK,
-        ChaincodeDeploy.ContractClassification.CONTRACT_SYSTEM, 0)
+        ChaincodeDeploy.ContractClassification.CONTRACT_SYSTEM, 0,"",isCalledByOtherContracts)
       this.translist += tran
     } catch {
       case e: Exception => e.printStackTrace()
