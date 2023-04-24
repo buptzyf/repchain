@@ -179,7 +179,7 @@ class BlockService(ra: ActorRef, repContext: RepChainSystemContext, isCheckClien
               try {
                 if (cert != null && repContext.getPermissionVerify.CheckPermissionOfX509Certificate(cert, "block.hash", null)) {
                   complete {
-                    (ra ? BlockId(blockId)).mapTo[QueryResult]
+                    (ra ? BlockId(blockId,ip.toString())).mapTo[QueryResult]
                   }
                 } else {
                   complete(QueryResult(Option(JsonMethods.parse(string2JsonInput(PermissionVerify.errorInfo_None_Permission)))))
@@ -191,7 +191,7 @@ class BlockService(ra: ActorRef, repContext: RepChainSystemContext, isCheckClien
             }
           } else {
             complete {
-              (ra ? BlockId(blockId)).mapTo[QueryResult]
+              (ra ? BlockId(blockId,ip.toString())).mapTo[QueryResult]
             }
           }
         }
@@ -217,7 +217,7 @@ class BlockService(ra: ActorRef, repContext: RepChainSystemContext, isCheckClien
               try {
                 if (cert != null && repContext.getPermissionVerify.CheckPermissionOfX509Certificate(cert, "block.blockHeight", null)) {
                   complete {
-                    (ra ? BlockHeight(blockHeight.toInt)).mapTo[QueryResult]
+                    (ra ? BlockHeight(blockHeight.toInt,ip.toString())).mapTo[QueryResult]
                   }
                 } else {
                   complete(QueryResult(Option(JsonMethods.parse(string2JsonInput(PermissionVerify.errorInfo_None_Permission)))))
@@ -229,7 +229,7 @@ class BlockService(ra: ActorRef, repContext: RepChainSystemContext, isCheckClien
             }
           } else {
             complete {
-              (ra ? BlockHeight(blockHeight.toInt)).mapTo[QueryResult]
+              (ra ? BlockHeight(blockHeight.toInt,ip.toString())).mapTo[QueryResult]
             }
           }
         }
@@ -316,7 +316,7 @@ class BlockService(ra: ActorRef, repContext: RepChainSystemContext, isCheckClien
               val cert = RepChainConfigFilePathMgr.getCert(sessionInfo)
               try {
                 if (cert != null && repContext.getPermissionVerify.CheckPermissionOfX509Certificate(cert, "block.stream", null)) {
-                  complete((ra ? BlockHeightStream(blockHeight.toInt)).mapTo[HttpResponse])
+                  complete((ra ? BlockHeightStream(blockHeight.toInt,ip.toString())).mapTo[HttpResponse])
                 } else {
                   complete(QueryResult(Option(JsonMethods.parse(string2JsonInput(PermissionVerify.errorInfo_None_Permission)))))
                 }
@@ -326,7 +326,7 @@ class BlockService(ra: ActorRef, repContext: RepChainSystemContext, isCheckClien
               }
             }
           } else {
-            complete((ra ? BlockHeightStream(blockHeight.toInt)).mapTo[HttpResponse])
+            complete((ra ? BlockHeightStream(blockHeight.toInt,ip.toString())).mapTo[HttpResponse])
           }
         }
       }
@@ -507,11 +507,13 @@ class TransactionService(ra: ActorRef, repContext: RepChainSystemContext, isChec
   def postSignTransaction =
     path("transaction" / "postTranByString") {
       post {
-        entity(as[String]) { trans =>
-          complete {
-            (ra ? signedTran(trans)).mapTo[PostResult]
-          }
-          //          complete { (StatusCodes.Accepted, PostResult("hahhaha",None, Some("处理存在异常"))) }
+        extractClientIP { ip =>
+          entity(as[String]) { trans =>
+              complete {
+                (ra ? signedTran(trans,ip.toString())).mapTo[PostResult]
+              }
+            }
+            //          complete { (StatusCodes.Accepted, PostResult("hahhaha",None, Some("处理存在异常"))) }
         }
       }
     }
@@ -534,21 +536,23 @@ class TransactionService(ra: ActorRef, repContext: RepChainSystemContext, isChec
   def postSignTransactionStream =
     path("transaction" / "postTranStream") {
       post {
-        extractRequestContext { ctx =>
-          implicit val materializer = ctx.materializer
+        extractClientIP { ip =>
+          extractRequestContext { ctx =>
+            implicit val materializer = ctx.materializer
 
-          fileUpload("signedTrans") {
-            case (fileInfo, fileStream) =>
-              RepLogger.debug(RepLogger.APIAccess_Logger, s"流式提交交易，fileInfo=$fileInfo")
-              val tranFuture: Future[ByteString] = fileStream.runFold(ByteString.empty)(_ ++ _)
-              onComplete(tranFuture) {
-                case Success(tranByteString) =>
-                  complete {
-                    (ra ? Transaction.parseFrom(tranByteString.toArray)).mapTo[PostResult]
-                  }
-                case Failure(ex) =>
-                  complete(StatusCodes.InternalServerError, ex.getMessage)
-              }
+            fileUpload("signedTrans") {
+              case (fileInfo, fileStream) =>
+                RepLogger.debug(RepLogger.APIAccess_Logger, s"流式提交交易，fileInfo=$fileInfo")
+                val tranFuture: Future[ByteString] = fileStream.runFold(ByteString.empty)(_ ++ _)
+                onComplete(tranFuture) {
+                  case Success(tranByteString) =>
+                    complete {
+                      (ra ? streamTran(Transaction.parseFrom(tranByteString.toArray), ip.toString())).mapTo[PostResult]
+                    }
+                  case Failure(ex) =>
+                    complete(StatusCodes.InternalServerError, ex.getMessage)
+                }
+            }
           }
         }
       }
@@ -572,9 +576,11 @@ class TransactionService(ra: ActorRef, repContext: RepChainSystemContext, isChec
     path("transaction" / "postTran") {
       post {
         import akka.http.scaladsl.marshallers.xml.ScalaXmlSupport._
-        entity(as[CSpec]) { request =>
-          complete {
-            (ra ? request).mapTo[PostResult]
+        extractClientIP { ip =>
+          entity(as[CSpec]) { request =>
+            complete {
+              (ra ? CSpecTran(request,ip.toString())).mapTo[PostResult]
+            }
           }
         }
       }

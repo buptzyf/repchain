@@ -65,9 +65,9 @@ object RestActor {
 
   case object AcceptedTransNumber
 
-  case class BlockId(id: String)
+  case class BlockId(id: String,ip:String)
 
-  case class BlockHeight(height: Long)
+  case class BlockHeight(height: Long,ip:String)
 
   case class BlockTime(createTime: String, createTimeUtc: String)
 
@@ -75,7 +75,7 @@ object RestActor {
 
   case class BlockTimeForTxid(txid: String)
 
-  case class BlockHeightStream(height: Int)
+  case class BlockHeightStream(height: Int,ip:String)
 
   case class TransactionId(txid: String)
 
@@ -97,7 +97,10 @@ object RestActor {
                    iptFunc: String, iptArgs: Seq[String], timeout: Int, legal_prose: String,
                    code: String, codeType: Int, state: Boolean, gasLimited: Int, oid: String, runType: Int, stateType: Int, contractLevel: Int)
 
-  case class signedTran(tran: String)
+  case class signedTran(tran: String,ip:String)
+  case class streamTran(tran:Transaction,ip:String)
+
+  case class CSpecTran(spec:CSpec,ip:String)
 
   case class DidDocumentReq(id: String)
   case class DidPubKey(
@@ -234,16 +237,19 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
   }
 
   // 先检查交易大小，然后再检查交易是否已存在，再去验证签名，如果没有问题，则广播
-  private def doTransaction(t: Transaction): Unit = {
+  private def doTransaction(t: Transaction,ip:String): Unit = {
     val tranLimitSize = config.getBlockMaxLength / 3
     val pool = pe.getRepChainContext.getTransactionPool
     if(!pool.transactionChecked(t)){
+      pe.getRepChainContext.getProblemAnalysis.AddProblemTrading(ip)
       sender ! PostResult(t.id, Option(ErrMessage(TransactionCheckedError, s"交易检查错误，可能的问题：交易ID为空，链码为空，链码版本号不对，交易类型不对。")))
     }else if (t.toByteArray.length > tranLimitSize) {
+      pe.getRepChainContext.getProblemAnalysis.AddProblemTrading(ip)
       sender ! PostResult(t.id, Option(ErrMessage(TranSizeExceed, s"交易大小超出限制： ${tranLimitSize}，请重新检查")))
     } else if (!this.consensusCondition.CheckWorkConditionOfSystem(pe.getRepChainContext.getNodeMgr.getStableNodes.size)) {
       sender ! PostResult(t.id, Option(ErrMessage(ConsensusNodesNotEnough, "共识节点数目太少，暂时无法处理交易")))
     } else if (pe.getRepChainContext.getTransactionPool.isExistInCache(t.id) || sr.isExistTransactionByTxId(t.id)) {
+      pe.getRepChainContext.getProblemAnalysis.AddProblemTrading(ip)
       sender ! PostResult(t.id, Option(ErrMessage(TranIdDuplicate, s"交易ID重复, ID为：${t.id}")))
     } else {
       try {
@@ -267,6 +273,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
             sendTransaction(t)
           }
         } else {
+          pe.getRepChainContext.getProblemAnalysis.AddProblemTrading(ip)
           RepLogger.info(RepLogger.Business_Logger, s"验证签名出错，txid: ${t.id},creditCode: ${t.signature.get.getCertId.creditCode}, certName: ${t.signature.get.getCertId.certName}")
           sender ! PostResult(t.id, Option(ErrMessage(SignatureVerifyFailed, "验证签名出错")))
         }
@@ -280,13 +287,13 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
 
   def receive: Receive = {
 
-    case signedTran(tranHexString: String) =>
+    case signedTran(tranHexString: String,ip:String) =>
       val tmpstart = System.currentTimeMillis()
       val tr1 = BytesHex.hex2bytes(tranHexString) // 解析交易编码后的16进制字符串,进行解码16进制反解码decode
       var txr = Transaction.defaultInstance
       try {
         txr = Transaction.parseFrom(tr1)
-        doTransaction(txr)
+        doTransaction(txr,ip)
       } catch {
         case e: Exception =>
           sender ! PostResult(txr.id, Option(ErrMessage(TranParseError, s"transaction parser error! + ${e.getMessage}")))
@@ -295,23 +302,24 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
       RepLogger.trace(RepLogger.OutputTime_Logger, this.getLogMsgPrefix(s"API recv trans time,thread-id=${Thread.currentThread().getName + "-" + Thread.currentThread().getId},spent time=${(tmpend - tmpstart)}" + "~" + selfAddr))
 
     //处理post CSpec构造交易的请求
-    case cspec: CSpec =>
+    case cspec: CSpecTran =>
       var txr = Transaction.defaultInstance
       //debug状态才动用节点密钥签名
       if (contractOperationMode == 0) {
         //构建transaction并通过peer预执行广播
-        txr = buildTranaction(pe.getRepChainContext.getConfig.getChainNetworkId+IdTool.DIDPrefixSeparator + pe.getSysTag, cspec)
-        doTransaction(txr)
+        txr = buildTranaction(pe.getRepChainContext.getConfig.getChainNetworkId+IdTool.DIDPrefixSeparator + pe.getSysTag, cspec.spec)
+        doTransaction(txr,cspec.ip)
       } else {
         sender ! PostResult(txr.id, Option(ErrMessage(NotValidInDebug, "非Debug状态下此调用无效")))
       }
 
     // 流式提交交易
-    case tran: Transaction => doTransaction(tran)
+    case tran: streamTran => doTransaction(tran.tran,tran.ip)
 
     // 根据高度检索块
-    case BlockHeight(height) =>
+    case BlockHeight(height,ip) =>
       val bb = sr.getBlockByHeight(height)
+      pe.getRepChainContext.getProblemAnalysis.AddMaliciousDownloadOfBlocks(ip)
       val r = bb match {
         case None => QueryResult(None)
         case _ =>
@@ -339,8 +347,9 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
       sender ! r
 
     // 根据高度检索块的子节流
-    case BlockHeightStream(height) =>
+    case BlockHeightStream(height,ip) =>
       val bb = sr.getBlockByHeight(height)
+      pe.getRepChainContext.getProblemAnalysis.AddMaliciousDownloadOfBlocks(ip)
       if (bb.isEmpty) {
         sender ! HttpResponse(entity = HttpEntity.Strict(MediaTypes.`application/octet-stream`, akka.util.ByteString.empty))
       } else {
@@ -352,8 +361,9 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
       }
 
     //根据block hash检索
-    case BlockId(id) =>
+    case BlockId(id,ip) =>
       val bb = sr.getBlockByBase64Hash(id)
+      pe.getRepChainContext.getProblemAnalysis.AddMaliciousDownloadOfBlocks(ip)
       val r = bb match {
         case None => QueryResult(None)
         case _ =>

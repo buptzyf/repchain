@@ -145,7 +145,8 @@ class VoterOfCFRD(moduleName: String) extends IVoter(moduleName: String) {
             } else {
               if ((System.currentTimeMillis() - this.Blocker.voteTime) / 1000 > pe.getRepChainContext.getTimePolicy.getTimeOutBlock) {
                 //说明出块超时
-                RepLogger.sendAlertToDB(pe.getRepChainContext.getHttpLogger(), AlertInfo("CONSENSUS", 5, s"block timeout,reset voter,height=${currentheight},blocker=${this.Blocker.blocker},voteidx=${this.Blocker.VoteIndex}."))
+                pe.getRepChainContext.getProblemAnalysis.AddBlockFailure(pe.getSysTag,this.Blocker.blocker)
+                //RepLogger.sendAlertToDB(pe.getRepChainContext.getHttpLogger(), AlertInfo("CONSENSUS", 5, s"block timeout,reset voter,height=${currentheight},blocker=${this.Blocker.blocker},voteidx=${this.Blocker.VoteIndex}."))
                 this.voteCount = 0
                 this.resetBlocker(this.Blocker.VoteIndex + 1, currentblockhash, currentheight)
                 RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},block timeout,reset voter,height=${currentheight},blocker=${this.Blocker.blocker},voteidx=${this.Blocker.VoteIndex}" + "~" + selfAddr))

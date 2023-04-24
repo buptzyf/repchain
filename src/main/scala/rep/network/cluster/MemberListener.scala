@@ -99,6 +99,7 @@ class MemberListener(MoudleName: String) extends ModuleBase(MoudleName) with Clu
     preloadNodesMap.remove(member.address)
     pe.getRepChainContext.getNodeMgr.removeNode(member.address)
     pe.getRepChainContext.getNodeMgr.removeStableNode(member.address)
+    pe.getRepChainContext.getProblemAnalysis.AddNodeFailure(pe.getSysTag,member.address.toString)
     sendEvent(EventType.PUBLISH_INFO, mediator, NodeHelp.getNodeNameFromRoles(member.roles), Topic.Event, Event.Action.MEMBER_DOWN)
   }
 

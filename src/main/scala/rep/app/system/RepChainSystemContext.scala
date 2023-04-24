@@ -15,6 +15,7 @@ import rep.crypto.Sha256
 import rep.crypto.cert.{CryptoMgr, ISigner, ImpECDSASigner, SignTool}
 import rep.crypto.nodedynamicmanagement.ReloadableTrustManager
 import rep.log.RepLogger
+import rep.log.analysis.ProblemAnalysis
 import rep.log.httplog.HttpLogger
 import rep.network.autotransaction.TransactionBuilder
 import rep.network.boardcast.BroadcastOfCustom
@@ -70,6 +71,12 @@ class RepChainSystemContext (systemName:String){//},cs:ClusterSystem) {
   private var ml : ActorRef = null
 
   private val ContractStateChanged:ConcurrentHashMap[String,String] = new ConcurrentHashMap[String,String]()
+
+  private val pa : ProblemAnalysis = new ProblemAnalysis(this)
+
+  def getProblemAnalysis:ProblemAnalysis={
+    this.pa
+  }
 
   def setStateChanged(cid:String):Unit={
     this.ContractStateChanged.put(cid,"")
