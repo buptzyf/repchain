@@ -25,6 +25,8 @@ import rep.utils.SerializeUtils.serialise
 import _root_.com.google.protobuf.ByteString
 import akka.pattern.AskTimeoutException
 import akka.util.Timeout
+import org.json4s.native.JsonParser
+import org.json4s.{DefaultFormats, jackson}
 import rep.log.RepLogger
 import org.slf4j.Logger
 import rep.api.rest.ResultCode
@@ -41,6 +43,8 @@ import rep.sc.tpl.did.operation.SignerOperation.{signerNotExists, toJsonErrMsg}
 import rep.storage.chain.KeyPrefixManager
 import rep.storage.chain.preload.TransactionPreload
 import rep.utils.GlobalUtils.EventType
+import org.json4s.native.Serialization.write
+import scalapb.json4s.JsonFormat
 
 import scala.collection.immutable.HashMap
 import scala.concurrent.{Await, TimeoutException}
@@ -69,6 +73,9 @@ object Shim {
 class Shim {
 
   import Shim._
+
+  private implicit val serialization = jackson.Serialization
+  private implicit val formats = DefaultFormats
 
   private var context:ActorContext = null
   private var system: ActorSystem = null
@@ -441,17 +448,17 @@ class Shim {
    * @return 返回String，为json字符串，增加了事件是哪个节点发起，执行的是哪条交易，哪个合约。
    * */
   private def getContractEvent(content:String):String={
-    val sb = new StringBuffer()
-    sb.append("{")
-      .append("\"").append("from").append("\"").append(":")
-      .append("\"").append(ctx.getSystemName).append("\"").append(",")
-      .append("\"").append("txID").append("\"").append(":")
-      .append("\"").append(this.t.id).append("\"").append(",")
-      .append("\"").append("chaincode").append("\"").append(":")
-      .append("\"").append(IdTool.getCid(this.t.getCid)).append("\"").append(",")
-      .append("\"").append("content").append("\"").append(":")
-      .append(content)
-    sb.toString
+    val jv = try{
+      JsonParser.parse(content)
+    }catch {
+      case e:Exception=>content
+    }
+    var map:HashMap[String,Any] = new HashMap[String,Any]
+    map += "from"->ctx.getSystemName
+    map += "txID"->this.t.id
+    map += "chaincode"->IdTool.getCid(this.t.getCid)
+    map += "content"->jv //content
+    write(map)
   }
 
     /**

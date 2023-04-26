@@ -29,6 +29,9 @@ import org.json4s.native.Serialization.write
 import org.json4s.{DefaultFormats, jackson}
 import rep.utils.SerializeUtils
 
+import scala.collection.immutable.HashMap
+import scala.collection.mutable
+
 /**
   * 资产管理合约
   */
@@ -69,8 +72,15 @@ class ContractAssetsTPL extends IContract {
 
     val signerKey = signerPrefix + data.to
     //发送合约事件到订阅和发送合约事件到日志文件的样例代码
-    //ctx.api.sendContractEventToLog("{\"signerKey\":\""+signerKey+"\"}")
-    //ctx.api.sendContractEventToSubscribe("{\"signerKey\":\""+signerKey+"\"}")
+    //implicit val serialization = jackson.Serialization
+    //implicit val formats = DefaultFormats
+    //var map:Map[String,String] = new HashMap[String,String]()
+    //map += "signerKey"-> signerKey
+    //val eventString = write(map)
+    //ctx.api.sendContractEventToLog("eventString____________")
+    //ctx.api.sendContractEventToSubscribe("eventString____________")
+    //ctx.api.sendContractEventToLog(eventString)
+    //ctx.api.sendContractEventToSubscribe(eventString)
     // 跨合约读账户，该处已经反序列化
     if (ctx.api.getStateEx(ctx.api.getChainNetId, chaincodeName, signerKey) == null)
       throw ContractException("目标账户不存在")
@@ -82,8 +92,7 @@ class ContractAssetsTPL extends IContract {
     ////跨合约调用样例
     /*val cid = ChaincodeId("ParallelPutProofTPL", 1)
     val cdata = ProofDataSingle("cky1", dfrom.toString)
-    implicit val serialization = jackson.Serialization
-    implicit val formats = DefaultFormats
+
     val tmp : String = write(cdata)
     val crs = ctx.api.crossContractCall(cid, "putProofSingle", Seq(tmp))
     if(crs.err != None && crs.err.get.code == 0){
