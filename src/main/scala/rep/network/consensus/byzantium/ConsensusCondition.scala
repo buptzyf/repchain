@@ -13,7 +13,7 @@ import rep.app.system.RepChainSystemContext
 class ConsensusCondition(ctx:RepChainSystemContext){
 
   private def byzantineExamination(input:Int):Boolean={
-      var mode = ctx.getConfig.getEndorsementNumberMode
+      var mode = ctx.getConfig.getEndorsementNumberMode(ctx)
       if(mode == 1) {
         mode = 2
       }

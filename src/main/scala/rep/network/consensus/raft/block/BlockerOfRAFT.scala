@@ -142,7 +142,7 @@ class BlockerOfRAFT (moduleName: String) extends IBlocker(moduleName){
           sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Block, Event.Action.CANDIDATOR)
           if (preblock == null || (preblock.getHeader.hashPrevious.toStringUtf8() != pe.getCurrentBlockHash)) {
             //是出块节点
-            if((pe.getMaxHeight4SimpleRaft - pe.getBlocker.VoteHeight ) <= config.getBlockNumberOfRaft && !pe.getZeroOfTransNumFlag) {
+            if((pe.getMaxHeight4SimpleRaft - pe.getBlocker.VoteHeight ) <= config.getBlockNumberOfRaft(pe.getRepChainContext) && !pe.getZeroOfTransNumFlag) {
               CreateBlockHandler
             }
           }

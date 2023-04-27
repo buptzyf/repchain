@@ -6,6 +6,7 @@ import akka.actor.{ActorRef, Address}
 import rep.accumulator.Accumulator.bitLength
 import rep.accumulator.verkle.VerkleNodeBuffer
 import rep.accumulator.{PrimeTool, Rsa2048}
+import rep.app.conf.consensus.ConsensusParameterConfig
 import rep.app.conf.{RepChainConfig, SystemCertList, TimePolicy}
 import rep.app.management.{ReasonOfStop, RepChainMgr}
 import rep.authority.cache.PermissionCacheManager
@@ -73,6 +74,12 @@ class RepChainSystemContext (systemName:String){//},cs:ClusterSystem) {
   private val ContractStateChanged:ConcurrentHashMap[String,String] = new ConcurrentHashMap[String,String]()
 
   private val pa : ProblemAnalysis = new ProblemAnalysis(this)
+
+  private val cpc : ConsensusParameterConfig = new ConsensusParameterConfig(this)
+
+  def getConsensusParameterConfig:ConsensusParameterConfig={
+    this.cpc
+  }
 
   def getProblemAnalysis:ProblemAnalysis={
     this.pa

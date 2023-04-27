@@ -2,9 +2,9 @@ package rep.app.conf
 
 import java.io.File
 import java.security.{Provider, Security}
-
 import akka.japi.Util.immutableSeq
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
+import rep.app.system.RepChainSystemContext
 import rep.log.RepLogger
 
 import scala.collection.mutable
@@ -169,6 +169,14 @@ class RepChainConfig {
     this.sysConf
   }
 
+  def getConsensusParameterContractName: String = {
+    this.sysConf.getString("system.consensus_parameter.contract_name")
+  }
+
+  def getConsensusParameterContractMethod: String = {
+    this.sysConf.getString("system.consensus_parameter.contract_method")
+  }
+
   def getMemberManagementContractName:String={
     this.sysConf.getString("system.member_management.contract_name")
   }
@@ -318,8 +326,9 @@ class RepChainConfig {
     this.sysConf.getInt("system.block.trans_num_min")
   }
 
-  def getBlockMaxLength:Int={
-    this.sysConf.getInt("system.block.block_length")
+  def getBlockMaxLength(ctx:RepChainSystemContext):Int={
+    ctx.getConsensusParameterConfig.getBlockSize
+    //this.sysConf.getInt("system.block.block_length")
   }
 
   def getMinVoteNumber:Int={
@@ -417,12 +426,14 @@ class RepChainConfig {
     this.sysConf.getBoolean("system.is_verify_of_endorsement")
   }
 
-  def getEndorsementNumberMode:Int={
-    this.sysConf.getInt("system.number_of_endorsement")
+  def getEndorsementNumberMode(ctx:RepChainSystemContext):Int={
+    ctx.getConsensusParameterConfig.getEndorsementStrategy
+    //this.sysConf.getInt("system.number_of_endorsement")
   }
 
-  def getBlockNumberOfRaft:Int={
-    this.sysConf.getInt("system.consensus.block_number_of_raft")
+  def getBlockNumberOfRaft(ctx:RepChainSystemContext):Int={
+    //this.sysConf.getInt("system.consensus.block_number_of_raft")
+    ctx.getConsensusParameterConfig.getBlockNumberOfPer
   }
 
   def getConsensustype:String={

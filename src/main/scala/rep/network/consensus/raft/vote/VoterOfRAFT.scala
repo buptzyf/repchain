@@ -150,24 +150,24 @@ class VoterOfRAFT (moduleName: String) extends IVoter(moduleName: String) {
       if(NodeHelp.isBlocker(this.Blocker.blocker, pe.getSysTag)){
         this.zeroOfTransNumTimeout = -1
       }
-      if((this.Blocker.VoteHeight +config.getBlockNumberOfRaft) <= pe.getMaxHeight4SimpleRaft){
+      if((this.Blocker.VoteHeight +config.getBlockNumberOfRaft(pe.getRepChainContext)) <= pe.getMaxHeight4SimpleRaft){
         RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},second voter,prevheight=${this.Blocker.VoteHeight},prevvoteindex=${this.voteIndex},lh=${pe.getCurrentHeight},currentHeight=${pe.getMaxHeight4SimpleRaft}" + "~" + selfAddr))
         //val block = dataaccess.getBlock4ObjectByHeight(this.Blocker.VoteHeight +SystemProfile.getBlockNumberOfRaft)
-        val blockHash = searcher.getBlockHashByHeight(this.Blocker.VoteHeight +config.getBlockNumberOfRaft)
+        val blockHash = searcher.getBlockHashByHeight(this.Blocker.VoteHeight +config.getBlockNumberOfRaft(pe.getRepChainContext))
         //if(block != null){
         if(blockHash != ""){
           //val currentblockhash = block.hashOfBlock.toStringUtf8()
           //val currentheight = block.height
           val currentblockhash = blockHash
-          val currentheight = this.Blocker.VoteHeight +config.getBlockNumberOfRaft
+          val currentheight = this.Blocker.VoteHeight +config.getBlockNumberOfRaft(pe.getRepChainContext)
           pe.resetTimeoutOfRaft
           this.blockTimeout = false
           this.cleanVoteInfo
           this.resetCandidator(currentblockhash)
           this.resetBlocker(getVoteIndex, currentblockhash, currentheight)
-          RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},read block voter,currentHeight=${this.Blocker.VoteHeight +config.getBlockNumberOfRaft},lh=${pe.getCurrentHeight},currentHash=${currentblockhash}" + "~" + selfAddr))
+          RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},read block voter,currentHeight=${this.Blocker.VoteHeight +config.getBlockNumberOfRaft(pe.getRepChainContext)},lh=${pe.getCurrentHeight},currentHash=${currentblockhash}" + "~" + selfAddr))
         }else{
-          RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},second voter in synch,lh=${pe.getCurrentHeight},currentHeight=${this.Blocker.VoteHeight +config.getBlockNumberOfRaft}" + "~" + selfAddr))
+          RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},second voter in synch,lh=${pe.getCurrentHeight},currentHeight=${this.Blocker.VoteHeight +config.getBlockNumberOfRaft(pe.getRepChainContext)}" + "~" + selfAddr))
           pe.getActorRef(CFRDActorType.ActorType.synchrequester) ! StartSync(false)
         }
       }else{
@@ -190,9 +190,9 @@ class VoterOfRAFT (moduleName: String) extends IVoter(moduleName: String) {
       this.cleanVoteInfo
       this.resetCandidator(currentblockhash)
       this.resetBlocker(getVoteIndex, currentblockhash, currentheight)
-      RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},transform read block voter,currentHeight=${this.Blocker.VoteHeight + config.getBlockNumberOfRaft},currentHash=${currentblockhash}" + "~" + selfAddr))
+      RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},transform read block voter,currentHeight=${this.Blocker.VoteHeight + config.getBlockNumberOfRaft(pe.getRepChainContext)},currentHash=${currentblockhash}" + "~" + selfAddr))
     }else{
-      RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},transform second voter in synch,currentHeight=${this.Blocker.VoteHeight +config.getBlockNumberOfRaft}" + "~" + selfAddr))
+      RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},transform second voter in synch,currentHeight=${this.Blocker.VoteHeight +config.getBlockNumberOfRaft(pe.getRepChainContext)}" + "~" + selfAddr))
       //pe.getActorRef(CFRDActorType.ActorType.synchrequester) ! SyncPreblocker(this.Blocker.blocker)
       pe.getActorRef(CFRDActorType.ActorType.synchrequester) ! StartSync(false)
     }
@@ -207,7 +207,7 @@ class VoterOfRAFT (moduleName: String) extends IVoter(moduleName: String) {
       this.cleanVoteInfo
       this.resetCandidator(currentblockhash)
       this.resetBlocker(getVoteIndex, currentblockhash, currentheight)
-      RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},read block voter,currentHeight=${this.Blocker.VoteHeight +config.getBlockNumberOfRaft},currentHash=${currentblockhash}" + "~" + selfAddr))
+      RepLogger.trace(RepLogger.Vote_Logger, this.getLogMsgPrefix(s"sysname=${pe.getSysTag},read block voter,currentHeight=${this.Blocker.VoteHeight +config.getBlockNumberOfRaft(pe.getRepChainContext)},currentHash=${currentblockhash}" + "~" + selfAddr))
   }
 
   override protected def vote(isForce: Boolean,forceInfo:ForceVoteInfo): Unit = {

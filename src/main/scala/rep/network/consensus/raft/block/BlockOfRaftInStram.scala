@@ -123,7 +123,7 @@ class BlockOfRaftInStram(moduleName: String) extends IBlocker(moduleName) {
         if (NodeHelp.isBlocker(pe.getBlocker.blocker, pe.getSysTag) && !pe.getZeroOfTransNumFlag) {
           sendEvent(EventType.PUBLISH_INFO, mediator, pe.getSysTag, Topic.Block, Event.Action.CANDIDATOR)
           if(this.checkedStatus){
-            if((pe.getMaxHeight4SimpleRaft - pe.getBlocker.VoteHeight ) <= config.getBlockNumberOfRaft  && !pe.getZeroOfTransNumFlag) {
+            if((pe.getMaxHeight4SimpleRaft - pe.getBlocker.VoteHeight ) <= config.getBlockNumberOfRaft(pe.getRepChainContext)  && !pe.getZeroOfTransNumFlag) {
               this.NewBlock
             }else{
               RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"do not create new block,height=${pe.getCurrentHeight},voteheight-${pe.getBlocker.VoteHeight}" + "~" + selfAddr))

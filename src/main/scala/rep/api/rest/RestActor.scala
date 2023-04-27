@@ -238,7 +238,7 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
 
   // 先检查交易大小，然后再检查交易是否已存在，再去验证签名，如果没有问题，则广播
   private def doTransaction(t: Transaction,ip:String): Unit = {
-    val tranLimitSize = config.getBlockMaxLength / 3
+    val tranLimitSize = config.getBlockMaxLength(pe.getRepChainContext) / 3
     val pool = pe.getRepChainContext.getTransactionPool
     if(!pool.transactionChecked(t)){
       pe.getRepChainContext.getProblemAnalysis.AddProblemTrading(ip)
