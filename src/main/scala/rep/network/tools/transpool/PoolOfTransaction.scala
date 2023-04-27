@@ -221,6 +221,7 @@ class PoolOfTransaction(ctx: RepChainSystemContext) {
   private def getTransactionFromQueue(ts: ConcurrentLinkedQueue[String], limited: Int): ArrayBuffer[Transaction] = {
     val rts = new ArrayBuffer[Transaction]()
     val rts_ids = new util.ArrayList[String]()
+    var trans_size = 0
     var count = 0
     breakable(while (!ts.isEmpty) {
       if (count < limited) {
@@ -232,10 +233,15 @@ class PoolOfTransaction(ctx: RepChainSystemContext) {
             if (isExist(t.id)) {
               this.removeTransactionFromCache(t)
             } else {
-              rts += t
-              rts_ids.add(tid)
+              trans_size += t.toByteArray.length
+              if(trans_size > ctx.getConfig.getBlockMaxLength(ctx)*0.9){
+                break
+              }else{
+                rts += t
+                rts_ids.add(tid)
+                count += 1
+              }
             }
-            count += 1
           }
         }
       } else {
