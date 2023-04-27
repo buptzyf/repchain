@@ -1,15 +1,20 @@
 package rep.app.conf.consensus
 
+import rep.app.conf.consensus.ConsensusParameterConfig.{blockNumberKey, blockSizeKey, endorsementKey}
 import rep.app.system.RepChainSystemContext
 import rep.storage.chain.KeyPrefixManager
 import rep.storage.db.factory.DBFactory
 import rep.utils.SerializeUtils
 import java.util.concurrent.atomic.AtomicInteger
 
+object ConsensusParameterConfig{
+  val endorsementKey = "db-cfrd-endorsement-strategy"
+  val blockSizeKey = "db-cfrd-block-size"
+  val blockNumberKey = "db-cfrd-blocker-rotation-frequency"
+}
+
 class ConsensusParameterConfig(ctx:RepChainSystemContext) {
-  private val  endorsementKey = "db-cfrd-endorsement-strategy"
-  private val  blockSizeKey = "db-cfrd-block-size"
-  private val  blockNumberKey = "db-cfrd-blocker-rotation-frequency"
+
 
   //每个出块人连续出块的数量，默认情况是1
   private var numberOfBlocksProduced = new AtomicInteger(InitParameter(

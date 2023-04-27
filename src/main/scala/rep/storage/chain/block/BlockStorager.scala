@@ -1,6 +1,7 @@
 package rep.storage.chain.block
 
 import com.google.protobuf.ByteString
+import rep.app.conf.consensus.ConsensusParameterConfig
 import rep.app.system.RepChainSystemContext
 import rep.crypto.nodedynamicmanagement.ReloadableTrustManager
 import rep.log.RepLogger
@@ -79,6 +80,9 @@ class BlockStorager(ctx: RepChainSystemContext, isEncrypt: Boolean = false,
         val memberContractMethod = ctx.getConfig.getMemberManagementContractMethod
         val memberVoteMethod = ctx.getConfig.getMemberManagementContractVoteMethod
 
+        val consensusContractName = ctx.getConfig.getConsensusParameterContractName
+        val consensusContractMethod = ctx.getConfig.getConsensusParameterContractMethod
+
         r.statesSet.foreach(f => {
           val k = f._1
           val v = f._2
@@ -113,6 +117,18 @@ class BlockStorager(ctx: RepChainSystemContext, isEncrypt: Boolean = false,
               RepLogger.trace(RepLogger.Storager_Logger, s"update vote list, entry key find")
             }
             RepLogger.trace(RepLogger.Storager_Logger, s"update vote list, entry contract find")
+          }else if (t.getCid.chaincodeName.equalsIgnoreCase(consensusContractName) &&
+            t.`type` == Transaction.Type.CHAINCODE_INVOKE && t.para.ipt.get.function.equalsIgnoreCase(consensusContractMethod)) {
+            val obj1 = SerializeUtils.deserialise(f._2.toByteArray)
+            if(obj1 != null){
+              if (k.indexOf(ConsensusParameterConfig.blockSizeKey) > 0) {
+                ctx.getConsensusParameterConfig.setBlockSize(obj1.toString)
+              } else if (k.indexOf(ConsensusParameterConfig.blockNumberKey) > 0) {
+                ctx.getConsensusParameterConfig.setBlockNumberOfPer(obj1.toString)
+              } else if (k.indexOf(ConsensusParameterConfig.endorsementKey) > 0) {
+                ctx.getConsensusParameterConfig.setEndorsementStrategy(obj1.toString)
+              }
+            }
           }
         })
 
