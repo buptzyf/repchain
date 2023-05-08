@@ -1,0 +1,79 @@
+{
+  "variables": {
+    "s1": {
+      "type": "struct",
+      "struct": "S1",
+      "name": "s1"
+    }
+  },
+  "structures": {
+    "_string": [
+      {
+        "type": "int",
+        "name": "_len"
+      },
+      {
+        "type": "char*",
+        "name": "_data"
+      }
+    ],
+    "S1": [
+      {
+        "type": "int",
+        "name": "a"
+      },
+      {
+        "type": "struct",
+        "struct": "_string",
+        "name": "b"
+      }
+    ],
+    "_list_int": [
+      {
+        "type": "int",
+        "name": "_capacity"
+      },
+      {
+        "type": "int",
+        "name": "_len"
+      },
+      {
+        "type": "int*",
+        "name": "_data"
+      }
+    ]
+  },
+  "functions": {
+    "get_from_list": {
+      "name": "get_from_list",
+      "params": [
+        {
+          "type": "struct*",
+          "struct": "_list_int",
+          "name": "_list",
+          "isUsed": true
+        },
+        {
+          "type": "int",
+          "name": "_index",
+          "isUsed": true
+        },
+        {
+          "type": "int*",
+          "name": "_out",
+          "isUsed": true
+        }
+      ]
+    },
+    "g": {
+      "name": "g",
+      "params": [
+        {
+          "type": "int",
+          "name": "_index",
+          "isUsed": true
+        }
+      ]
+    }
+  }
+}

@@ -46,6 +46,7 @@ libraryDependencies += "org.scalacheck" %% "scalacheck" % "1.14.0" % "test"
 
 libraryDependencies += "org.scalactic" %% "scalactic" % "3.0.8"
 libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.8" % "test"
+libraryDependencies += "org.mockito" % "mockito-core" % "3.12.4" % Test
 
 libraryDependencies += "org.javadelight" % "delight-nashorn-sandbox" % "0.1.27"
 

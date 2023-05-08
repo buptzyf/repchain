@@ -1,0 +1,9 @@
+storage proof: Map[String, String];
+
+func putProof(key: String, value: String) = {
+    proof = proof + ("a" -> "b");
+    //if (!proof.get(key).isEmpty()) {
+    //    return;
+    //}
+    proof = proof + (key -> value);
+}

@@ -1,0 +1,113 @@
+{
+  "variables": {
+    "_int": {
+      "type": "int",
+      "name": "none"
+    },
+    "_double": {
+      "type": "double",
+      "name": "none"
+    },
+    "_bool": {
+      "type": "bool",
+      "name": "none"
+    },
+    "_char": {
+      "type": "char",
+      "name": "none"
+    },
+    "_string": {
+      "type": "struct",
+      "struct": "_string",
+      "name": "none"
+    },
+    "_list_int":  {
+      "type": "struct",
+      "struct": "_list_int",
+      "name": "none"
+    },
+    "_map_string_string": {
+      "type": "struct",
+      "struct": "_map_string_string",
+      "name": "none"
+    },
+    "custom_type": {
+      "type": "struct",
+      "struct": "custom_type",
+      "name": "none"
+    }
+  },
+  "structures": {
+    "_string": [
+      {
+        "type": "int",
+        "name": "_len"
+      },
+      {
+        "type": "char*",
+        "name": "_data"
+      }
+    ],
+    "_list_int": [
+      {
+        "type": "int",
+        "name": "_capacity"
+      },
+      {
+        "type": "int",
+        "name": "_len"
+      },
+      {
+        "type": "int*",
+        "name": "_data"
+      }
+    ],
+    "_map_string_string": [
+      {
+        "type": "int",
+        "name": "_capacity"
+      },
+      {
+        "type": "int",
+        "name": "_len"
+      },
+      {
+        "type": "struct*",
+        "struct": "_string",
+        "name": "_key"
+      },
+      {
+        "type": "struct*",
+        "struct": "_string",
+        "name": "_value"
+      }
+    ],
+    "custom_type": [
+      {
+        "type": "char",
+        "name": "c1"
+      },
+      {
+        "type": "int",
+        "name": "i"
+      },
+      {
+        "type": "double",
+        "name": "d"
+      },
+      {
+        "type": "char",
+        "name": "c2"
+      },
+      {
+        "type": "bool",
+        "name": "b"
+      },
+      {
+        "type": "struct",
+        "struct": "_string",
+        "name": "str"
+      }
+    ]
+  }
+}

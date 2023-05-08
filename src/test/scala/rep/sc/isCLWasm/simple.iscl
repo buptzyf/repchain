@@ -1,0 +1,12 @@
+struct S1 {a: Int, b :String};
+
+storage s1: S1;
+
+func get_from_list (list: List[Int], index: Int): Int = {
+  return list.get(index);
+}
+
+func g (index: Int) = {
+  list: List[Int] = [1, 2, 3];
+  s1 = S1 {get_from_list(list, index), "abc"};
+}

@@ -1,0 +1,27 @@
+context sender: String;
+
+storage ledger: Map[String, Int];
+
+func init(balance: Int) = {
+    ledger = ledger + (sender -> balance);
+}
+
+func transfer(recipient: String, amount: Int) = {
+    balanceOfSpender: Int = 0;
+    newBalanceOfSpender: Int = 0;
+    balanceOfRecipient: Int = 0;
+    newBalanceOfRecipient: Int = 0;
+    balanceOfSpenderOption: Option[Int] = ledger.get(sender);
+    if (!balanceOfSpenderOption.isEmpty()) {
+        balanceOfSpender =  balanceOfSpenderOption.get();
+    }
+    if (balanceOfSpender >= amount) {
+        newBalanceOfSpender = balanceOfSpender - amount;
+        newBalanceOfRecipient = balanceOfRecipient + amount;
+    }
+
+    ledger = ledger + (sender -> newBalanceOfSpender);
+    ledger = ledger + (recipient -> newBalanceOfRecipient);
+}
+
+// TODO: add more erc20 methods
