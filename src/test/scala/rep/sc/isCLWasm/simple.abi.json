@@ -55,7 +55,7 @@
         },
         {
           "type": "int",
-          "name": "_index",
+          "name": "index",
           "isUsed": true
         },
         {
@@ -70,7 +70,7 @@
       "params": [
         {
           "type": "int",
-          "name": "_index",
+          "name": "index",
           "isUsed": true
         }
       ]

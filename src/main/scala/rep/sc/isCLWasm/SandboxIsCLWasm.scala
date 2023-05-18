@@ -14,32 +14,28 @@ import rep.sc.{Sandbox, SandboxDispatcher}
 import rep.utils.IdTool
 import rep.sc.isCLWasm.Utils
 
-class SandboxIsCLWasm(cid: ChaincodeId, invokerOfIsCLWasm: InvokerOfIsCLWasm = new InvokerOfIsCLWasm(new Utils), utils: Utils = new Utils) extends Sandbox(cid) {
-  protected val PRE_ABI = "_ABI"
+class SandboxIsCLWasm(
+                       cid: ChaincodeId,
+                       invokerOfIsCLWasm: InvokerOfIsCLWasm = new InvokerOfIsCLWasm(new Utils),
+                       utils: Utils = new Utils
+                     ) extends Sandbox(cid) {
   implicit val formats = DefaultFormats
-  var cobj: Module = null
+  var module: Module = null
   var abi: JObject = null
 
-  // TODO: 分离编译和执行init方法的逻辑
-  private def LoadClass(ctx: ContractContext, txcid: String, t: Transaction) = {
-    val fn = ctx.api.getChainNetId + IdTool.WorldStateKeySeparator + txcid + ".wasm"
-    if (CompilerOfIsCLWasm.isCompiled(fn)) {
-      cobj = CompilerOfIsCLWasm.CompileFromFile(fn)
+  private def loadModule(ctx: ContractContext, txcid: String, code: Array[Byte]) = {
+    val fileName = ctx.api.getChainNetId + IdTool.WorldStateKeySeparator + txcid + ".wasmbinary"
+    if (CompilerOfIsCLWasm.existedCompiledWasm(fileName)) {
+      module = CompilerOfIsCLWasm.loadCompiledWasmFromFile(fileName)
     } else {
-      val code = t.para.spec.get.codePackage
-      cobj = CompilerOfIsCLWasm.CompileAndSave(code, fn)
-    }
-
-    if (t.`type` == Transaction.Type.CHAINCODE_DEPLOY) {
-      val json = parse(ctx.t.para.spec.get.initParameter)
-      invokerOfIsCLWasm.invokeOfInit(cobj, abi, ctx, json.extract[java.util.ArrayList[String]])
+      module = CompilerOfIsCLWasm.compileAndSave(code, fileName)
     }
   }
 
   /**
-   * 交易处理抽象方法，接受待处理交易，返回处理结果
+   * 交易处理方法，接受待处理交易，返回处理结果
    *
-   * @return 交易执行结果
+   * @return 交易处理结果
    */
   override def doTransaction(dotrans: SandboxDispatcher.DoTransactionOfSandboxInSingle): TransactionResult = {
     val t = dotrans.t
@@ -50,28 +46,25 @@ class SandboxIsCLWasm(cid: ChaincodeId, invokerOfIsCLWasm: InvokerOfIsCLWasm = n
       val r: ActionResult = t.`type` match {
         case Transaction.Type.CHAINCODE_DEPLOY =>
           val sc = utils.parseSmartContract(t.para.spec.get.codePackage)
-          //热加载code对应的class
-          LoadClass(ctx, tx_cid, t)
-          DoDeploy(tx_cid, t, sc.abi)
+          loadModule(ctx, tx_cid, sc.code)
           this.abi = parse(sc.abi).asInstanceOf[JObject]
+          // 调用合约初始化方法
+          this.ExecutionInTimeoutManagement(timeout)(invokerOfIsCLWasm.onAction(module, abi, ctx))
+          doDeploy(tx_cid, t)
           null
-        //由于Invoke为最频繁调用，因此应尽量避免在处理中I/O读写,比如合约状态的检查就最好在内存中处理
-        //TODO case  Transaction.Type.CHAINCODE_DESC 增加对合约描述的处理
         case Transaction.Type.CHAINCODE_INVOKE =>
-          if (this.cobj == null) {
+          if (this.module == null) {
             val deployTxid = shim.getVal(tx_cid)
             if (deployTxid == null)
               throw SandboxException(ERR_INVOKE_CHAINCODE_NOT_EXIST)
             val deployTransaction = pe.getRepChainContext.getBlockSearch.getTransactionByTxId(deployTxid.toString)
             if (deployTransaction == None)
               throw SandboxException(ERR_INVOKE_CHAINCODE_NOT_EXIST)
-            val abiJson = shim.getVal(PRE_ABI + tx_cid);
-            if (abiJson == null)
-              throw SandboxException(ERR_INVOKE_CHAINCODE_NOT_EXIST)
-            this.abi = parse(abiJson.asInstanceOf[String]).asInstanceOf[JObject]
-            this.LoadClass(ctx, tx_cid, deployTransaction.get)
+            val sc = utils.parseSmartContract(deployTransaction.get.para.spec.get.codePackage)
+            loadModule(ctx, tx_cid, sc.code)
+            this.abi = parse(sc.abi).asInstanceOf[JObject]
           }
-          this.ExecutionInTimeoutManagement(timeout)(invokerOfIsCLWasm.onAction(cobj, abi, ctx))
+          this.ExecutionInTimeoutManagement(timeout)(invokerOfIsCLWasm.onAction(module, abi, ctx))
         case Transaction.Type.CHAINCODE_SET_STATE =>
           val key_tx_state = tx_cid + PRE_STATE
           shim.setVal(key_tx_state, t.para.state.get)
@@ -108,26 +101,26 @@ class SandboxIsCLWasm(cid: ChaincodeId, invokerOfIsCLWasm: InvokerOfIsCLWasm = n
   }
 
   /**
-   * 重载部署合约时记录数据的逻辑
+   * 部署合约时记录数据的逻辑
    * @param tx_cid 字符串表示的合约id
    * @param t 部署合约交易
    */
-  def DoDeploy(tx_cid: String, t: Transaction, abi: String) = {
+  def doDeploy(tx_cid: String, t: Transaction): Unit = {
     // 记录合约的部署交易id
     shim.setVal(tx_cid, t.id)
 
-    // 记录合约的开发者id(以合约名为key，相当于只记录了某合约的最新版本的部署者，是否应当记录每个版本的部署者信息？)
+    // 记录合约的部署者id(以合约名为key，相当于只记录了某合约的最新版本的部署者，是否应当记录每个版本的部署者信息？)
     val cn = cid.chaincodeName
     val coder = t.signature.get.certId.get.creditCode
     shim.setVal(cn, coder)
 
-    // 记录合约初始状态
+    // 记录合约初始状态:启用
     shim.setVal(tx_cid + PRE_STATE, true)
     this.ContractStatus = Some(true)
     this.ContractStatusSource = Some(2)
 
-    // 记录合约abi信息，包括：world states变量数据结构信息，以及合约方法signature
-    // 便于在后续调用合约时利用该信息反序列化合约方法参数及序列化/反序列化world states
-    shim.setVal(tx_cid + PRE_ABI, abi)
+    // 记录本合约是否可被其他合约调用
+    val canBeCalledByOtherContracts = t.getSpec.isCalledByOtherContracts
+    shim.setVal(tx_cid + PRE_CROSS, canBeCalledByOtherContracts)
   }
 }

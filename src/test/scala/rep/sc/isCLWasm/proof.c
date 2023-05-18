@@ -39,13 +39,11 @@ _string _msg;
 Export
 _map_string_string proof;
 
-signed char __p_tmp1[1] = { 97, };
+signed char __p_tmp1[31] = { 65, 108, 114, 101, 97, 100, 121, 32, 101, 120,
+  105, 115, 116, 101, 100, 32, 118, 97, 108, 117, 101, 32, 102, 111, 114, 32,
+  107, 101, 121, 58, 32, };
 
-_string _p_tmp1 = { 1, __p_tmp1, };
-
-signed char __p_tmp2[1] = { 98, };
-
-_string _p_tmp2 = { 1, __p_tmp2, };
+_string _p_tmp1 = { 31, __p_tmp1, };
 
 signed char __out_of_bounds[19] = { 105, 110, 100, 101, 120, 32, 111, 117,
   116, 32, 111, 102, 32, 98, 111, 117, 110, 100, 115, };
@@ -74,18 +72,13 @@ signed char __malloc_failed[13] = { 109, 97, 108, 108, 111, 99, 32, 102, 97,
 
 _string _malloc_failed = { 13, __malloc_failed, };
 
-void _init_string(_string *_out)
-{
-  (*_out)._len = 0;
-}
-
 void _assign_string(_string *_a1, _string *_out)
 {
   int _i;
-  register signed char *$65;
+  register signed char *$56;
   (*_out)._len = (*_a1)._len;
-  $65 = malloc(sizeof(signed char) * (*_out)._len);
-  (*_out)._data = $65;
+  $56 = malloc(sizeof(signed char) * (*_out)._len);
+  (*_out)._data = $56;
   if ((*_out)._data == 0) {
     _success = 0;
     _msg = _malloc_failed;
@@ -122,10 +115,10 @@ void _equals_string(_string *_a1, _string *_a2, _Bool *_out)
 void _concat_string(_string *_a1, _string *_a2, _string *_out)
 {
   int _i;
-  register signed char *$65;
+  register signed char *$56;
   (*_out)._len = (*_a1)._len + (*_a2)._len;
-  $65 = malloc(sizeof(signed char) * (*_out)._len);
-  (*_out)._data = $65;
+  $56 = malloc(sizeof(signed char) * (*_out)._len);
+  (*_out)._data = $56;
   if ((*_out)._data == 0) {
     _success = 0;
     _msg = _malloc_failed;
@@ -150,10 +143,10 @@ void _concat_string(_string *_a1, _string *_a2, _string *_out)
 void _substring_string(_string *_a1, int _a2, int _a3, _string *_out)
 {
   int _i;
-  register signed char *$65;
+  register signed char *$56;
   (*_out)._len = _a3 - _a2;
-  $65 = malloc(sizeof(signed char) * (*_out)._len);
-  (*_out)._data = $65;
+  $56 = malloc(sizeof(signed char) * (*_out)._len);
+  (*_out)._data = $56;
   if ((*_out)._data == 0) {
     _success = 0;
     _msg = _malloc_failed;
@@ -168,77 +161,22 @@ void _substring_string(_string *_a1, int _a2, int _a3, _string *_out)
   }
 }
 
-void _init_option_string(_option_string *_out)
-{
-  (*_out)._some = 0;
-  _init_string(&(*_out)._data);
-  if (_success == 0) {
-    return;
-  }
-}
-
-void _assign_option_string(_option_string *_a1, _option_string *_out)
-{
-  (*_out)._some = (*_a1)._some;
-  _assign_string(&(*_a1)._data, &(*_out)._data);
-  if (_success == 0) {
-    return;
-  }
-}
-
-void _init_map_string_string(_map_string_string *_out)
-{
-  int _i;
-  register _string *$65;
-  register _string *$66;
-  (*_out)._capacity = 4;
-  (*_out)._len = 0;
-  $65 = malloc(sizeof(_string) * (*_out)._capacity);
-  (*_out)._key = $65;
-  if ((*_out)._key == 0) {
-    _success = 0;
-    _msg = _malloc_failed;
-    return;
-  }
-  $66 = malloc(sizeof(_string) * (*_out)._capacity);
-  (*_out)._value = $66;
-  if ((*_out)._value == 0) {
-    _success = 0;
-    _msg = _malloc_failed;
-    return;
-  }
-  _i = 0;
-  for (; 1; _i = _i + 1) {
-    if (! (_i < (*_out)._capacity)) {
-      break;
-    }
-    _init_string((*_out)._key + _i);
-    if (_success == 0) {
-      return;
-    }
-    _init_string((*_out)._value + _i);
-    if (_success == 0) {
-      return;
-    }
-  }
-}
-
 void _assign_map_string_string(_map_string_string *_a1, _map_string_string *_out)
 {
   int _i;
-  register _string *$65;
-  register _string *$66;
+  register _string *$56;
+  register _string *$57;
   (*_out)._capacity = (*_a1)._capacity;
   (*_out)._len = (*_a1)._len;
-  $65 = malloc(sizeof(_string) * (*_out)._capacity);
-  (*_out)._key = $65;
+  $56 = malloc(sizeof(_string) * (*_out)._capacity);
+  (*_out)._key = $56;
   if ((*_out)._key == 0) {
     _success = 0;
     _msg = _malloc_failed;
     return;
   }
-  $66 = malloc(sizeof(_string) * (*_out)._capacity);
-  (*_out)._value = $66;
+  $57 = malloc(sizeof(_string) * (*_out)._capacity);
+  (*_out)._value = $57;
   if ((*_out)._value == 0) {
     _success = 0;
     _msg = _malloc_failed;
@@ -246,7 +184,7 @@ void _assign_map_string_string(_map_string_string *_a1, _map_string_string *_out
   }
   _i = 0;
   for (; 1; _i = _i + 1) {
-    if (! (_i < (*_out)._capacity)) {
+    if (! (_i < (*_out)._len)) {
       break;
     }
     _assign_string((*_a1)._key + _i, (*_out)._key + _i);
@@ -264,10 +202,7 @@ void _get_map_string_string(_map_string_string *_a1, _string *_a2, _option_strin
 {
   int _i;
   _Bool _v1;
-  _init_option_string(_out);
-  if (_success == 0) {
-    return;
-  }
+  (*_out)._some = 0;
   _i = 0;
   for (; 1; _i = _i + 1) {
     if (! (_i < (*_a1)._len)) {
@@ -283,7 +218,6 @@ void _get_map_string_string(_map_string_string *_a1, _string *_a2, _option_strin
       if (_success == 0) {
         return;
       }
-      return;
     }
   }
 }
@@ -294,8 +228,8 @@ void _set_map_string_string(_string *_a1, _string *_a2, _map_string_string *_out
   _Bool _v1;
   _string *_t1;
   _string *_t2;
-  register _string *$65;
-  register _string *$66;
+  register _string *$56;
+  register _string *$57;
   _i = 0;
   for (; 1; _i = _i + 1) {
     if (! (_i < (*_out)._len)) {
@@ -314,34 +248,20 @@ void _set_map_string_string(_string *_a1, _string *_a2, _map_string_string *_out
     }
   }
   if ((*_out)._len == (*_out)._capacity) {
-    (*_out)._capacity = (*_out)._capacity * 2;
-    $65 = malloc(sizeof(_string) * (*_out)._capacity);
-    _t1 = $65;
+    (*_out)._capacity = (*_out)._capacity * 2 + 4;
+    $56 = malloc(sizeof(_string) * (*_out)._capacity);
+    _t1 = $56;
     if (_t1 == 0) {
       _success = 0;
       _msg = _malloc_failed;
       return;
     }
-    $66 = malloc(sizeof(_string) * (*_out)._capacity);
-    _t2 = $66;
+    $57 = malloc(sizeof(_string) * (*_out)._capacity);
+    _t2 = $57;
     if (_t2 == 0) {
       _success = 0;
       _msg = _malloc_failed;
       return;
-    }
-    _i = 0;
-    for (; 1; _i = _i + 1) {
-      if (! (_i < (*_out)._capacity)) {
-        break;
-      }
-      _init_string(_t1 + _i);
-      if (_success == 0) {
-        return;
-      }
-      _init_string(_t2 + _i);
-      if (_success == 0) {
-        return;
-      }
     }
     _i = 0;
     for (; 1; _i = _i + 1) {
@@ -372,32 +292,28 @@ void _set_map_string_string(_string *_a1, _string *_a2, _map_string_string *_out
 }
 
 Export
+void _init(_Bool __success, _string *__msg, _map_string_string *_proof)
+{
+  _success = __success;
+  _msg = *__msg;
+  proof = *_proof;
+}
+
+Export
+void _terminate(_Bool *__success, _string *__msg, _map_string_string *_proof)
+{
+  *__success = _success;
+  *__msg = _msg;
+  *_proof = proof;
+}
+
+Export
 void putProof(_string *_key, _string *_value)
 {
-  _map_string_string _f_tmp1;
-  int _f_tmp2;
-  _map_string_string _f_tmp3;
-  int _f_tmp4;
   _string key;
   _string value;
-  _init_map_string_string(&_f_tmp1);
-  if (_success == 0) {
-    return;
-  }
-  _f_tmp2 = 0;
-  _init_map_string_string(&_f_tmp3);
-  if (_success == 0) {
-    return;
-  }
-  _f_tmp4 = 0;
-  _init_string(&key);
-  if (_success == 0) {
-    return;
-  }
-  _init_string(&value);
-  if (_success == 0) {
-    return;
-  }
+  _option_string proofOption;
+  _string _f_tmp1;
   _assign_string(_key, &key);
   if (_success == 0) {
     return;
@@ -406,66 +322,25 @@ void putProof(_string *_key, _string *_value)
   if (_success == 0) {
     return;
   }
-  /*skip*/;
-  _set_map_string_string(&_p_tmp1, &_p_tmp2, &_f_tmp1);
+  _get_map_string_string(&proof, &key, &proofOption);
   if (_success == 0) {
     return;
-  }
-  _f_tmp2 = 0;
-  for (; 1; _f_tmp2 = _f_tmp2 + 1) {
-    if (! (_f_tmp2 < _f_tmp1._len)) {
-      break;
-    }
-    _set_map_string_string
-      (_f_tmp1._key + _f_tmp2, _f_tmp1._value + _f_tmp2, &proof);
-    if (_success == 0) {
-      return;
-    }
   }
   /*skip*/;
-  _set_map_string_string(&key, &value, &_f_tmp3);
+  _concat_string(&_p_tmp1, &key, &_f_tmp1);
   if (_success == 0) {
     return;
   }
-  _f_tmp4 = 0;
-  for (; 1; _f_tmp4 = _f_tmp4 + 1) {
-    if (! (_f_tmp4 < _f_tmp3._len)) {
-      break;
-    }
-    _set_map_string_string
-      (_f_tmp3._key + _f_tmp4, _f_tmp3._value + _f_tmp4, &proof);
-    if (_success == 0) {
-      return;
-    }
+  if (!!proofOption._some) {
+    _success = 0;
+    _msg = _f_tmp1;
+    return;
   }
-}
-
-Export
-void _init(_Bool *__success, _string *__msg, _map_string_string *_proof)
-{
-  _success = *__success;
-  _assign_string(__msg, &_msg);
+  _set_map_string_string(&key, &value, &proof);
   if (_success == 0) {
     return;
   }
-  _assign_map_string_string(_proof, &proof);
-  if (_success == 0) {
-    return;
-  }
-}
-
-Export
-void _terminate(_Bool *__success, _string *__msg, _map_string_string *_proof)
-{
-  *__success = _success;
-  _assign_string(&_msg, __msg);
-  if (_success == 0) {
-    return;
-  }
-  _assign_map_string_string(&proof, _proof);
-  if (_success == 0) {
-    return;
-  }
+  /*skip*/;
 }
 
 

@@ -1,0 +1,88 @@
+{
+  "variables": {
+    "sender": {
+      "type": "struct",
+      "struct": "_string",
+      "name": "sender"
+    },
+    "ledger": {
+      "type": "struct",
+      "struct": "_map_string_int",
+      "name": "ledger"
+    },
+    "owner": {
+      "type": "struct",
+      "struct": "_string",
+      "name": "owner"
+    }
+  },
+  "structures": {
+    "_string": [
+      {
+        "type": "int",
+        "name": "_len"
+      },
+      {
+        "type": "char*",
+        "name": "_data"
+      }
+    ],
+    "_map_string_int": [
+      {
+        "type": "int",
+        "name": "_capacity"
+      },
+      {
+        "type": "int",
+        "name": "_len"
+      },
+      {
+        "type": "struct*",
+        "struct": "_string",
+        "name": "_key"
+      },
+      {
+        "type": "int*",
+        "name": "_value"
+      }
+    ]
+  },
+  "functions": {
+    "init": {
+      "name": "init",
+      "params": [
+        {
+          "type": "int",
+          "name": "balance",
+          "isUsed": true
+        }
+      ]
+    },
+    "mint": {
+      "name": "mint",
+      "params": [
+        {
+          "type": "int",
+          "name": "amount",
+          "isUsed": true
+        }
+      ]
+    },
+    "transfer": {
+      "name": "transfer",
+      "params": [
+        {
+          "type": "struct*",
+          "struct": "_string",
+          "name": "_recipient",
+          "isUsed": true
+        },
+        {
+          "type": "int",
+          "name": "amount",
+          "isUsed": true
+        }
+      ]
+    }
+  }
+}

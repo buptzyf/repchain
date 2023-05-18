@@ -11,6 +11,7 @@ import rep.log.RepLogger
 import akka.routing._
 import rep.api.rest.ResultCode
 import rep.proto.rc2.{ActionResult, ChaincodeDeploy, ChaincodeId, Transaction, TransactionResult}
+import rep.sc.isCLWasm.SandboxIsCLWasm
 import rep.sc.wasmer.SandboxWasmer
 import rep.storage.chain.KeyPrefixManager
 
@@ -228,7 +229,7 @@ class SandboxDispatcher(moduleName: String, cid: String) extends ModuleBase(modu
       case ChaincodeDeploy.CodeType.CODE_VCL_EXE =>
         null
       case ChaincodeDeploy.CodeType.CODE_VCL_WASM =>
-        null
+        context.actorOf(Props(new SandboxIsCLWasm(cid)), sandboxName)
       case ChaincodeDeploy.CodeType.CODE_WASM =>
         context.actorOf(Props(new SandboxWasmer(cid)), sandboxName)
       case _=>
