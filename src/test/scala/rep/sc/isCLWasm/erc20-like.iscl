@@ -1,0 +1,46 @@
+context sender: String;
+
+storage ledger: Map[String, Int];
+storage owner: String;
+
+func init(balance: Int) = {
+    require(owner == "", "Error: the init function already be called");
+    ledger[sender] = balance;
+    owner = sender;
+}
+
+func mint(amount: Int) = {
+    newBalance: Int;
+    balanceOption: Option[Int];
+    require(owner == sender, "Error: the mint function must be called by the owner");
+    balanceOption = ledger[sender];
+    newBalance = balanceOption.get() + amount;
+    ledger[sender] = newBalance;
+}
+
+func transfer(recipient: String, amount: Int) = {
+    balanceOfSpender: Int;
+    newBalanceOfSpender: Int;
+    balanceOfSpenderOption: Option[Int] = ledger[sender];
+
+    balanceOfRecipient: Int;
+    newBalanceOfRecipient: Int;
+    balanceOfRecipientOption: Option[Int];
+
+    require(!balanceOfSpenderOption.isEmpty(), "Error: the account " + sender + " has no balance.");
+    balanceOfSpender = balanceOfSpenderOption.get();
+    require(balanceOfSpender >= amount, "Error: the account " + sender + " has no enough balance.");
+
+    balanceOfRecipientOption = ledger[recipient];
+    if (!balanceOfRecipientOption.isEmpty()) {
+        balanceOfRecipient = balanceOfRecipientOption.get();
+    }
+
+    newBalanceOfSpender = balanceOfSpender - amount;
+    newBalanceOfRecipient = balanceOfRecipient + amount;
+
+    ledger[sender] = newBalanceOfSpender;
+    ledger[recipient] = newBalanceOfRecipient;
+}
+
+// TODO: add more erc20 methods

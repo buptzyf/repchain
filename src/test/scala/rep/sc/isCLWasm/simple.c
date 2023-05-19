@@ -72,10 +72,10 @@ _string _malloc_failed = { 13, __malloc_failed, };
 void _assign_string(_string *_a1, _string *_out)
 {
   int _i;
-  register signed char *$62;
+  register signed char *$60;
   (*_out)._len = (*_a1)._len;
-  $62 = malloc(sizeof(signed char) * (*_out)._len);
-  (*_out)._data = $62;
+  $60 = malloc(sizeof(signed char) * (*_out)._len);
+  (*_out)._data = $60;
   if ((*_out)._data == 0) {
     _success = 0;
     _msg = _malloc_failed;
@@ -112,10 +112,10 @@ void _equals_string(_string *_a1, _string *_a2, _Bool *_out)
 void _concat_string(_string *_a1, _string *_a2, _string *_out)
 {
   int _i;
-  register signed char *$62;
+  register signed char *$60;
   (*_out)._len = (*_a1)._len + (*_a2)._len;
-  $62 = malloc(sizeof(signed char) * (*_out)._len);
-  (*_out)._data = $62;
+  $60 = malloc(sizeof(signed char) * (*_out)._len);
+  (*_out)._data = $60;
   if ((*_out)._data == 0) {
     _success = 0;
     _msg = _malloc_failed;
@@ -140,10 +140,10 @@ void _concat_string(_string *_a1, _string *_a2, _string *_out)
 void _substring_string(_string *_a1, int _a2, int _a3, _string *_out)
 {
   int _i;
-  register signed char *$62;
+  register signed char *$60;
   (*_out)._len = _a3 - _a2;
-  $62 = malloc(sizeof(signed char) * (*_out)._len);
-  (*_out)._data = $62;
+  $60 = malloc(sizeof(signed char) * (*_out)._len);
+  (*_out)._data = $60;
   if ((*_out)._data == 0) {
     _success = 0;
     _msg = _malloc_failed;
@@ -158,23 +158,14 @@ void _substring_string(_string *_a1, int _a2, int _a3, _string *_out)
   }
 }
 
-void _assign_S1(S1 *_a1, S1 *_out)
-{
-  (*_out).a = (*_a1).a;
-  _assign_string(&(*_a1).b, &(*_out).b);
-  if (_success == 0) {
-    return;
-  }
-}
-
 void _assign_list_int(_list_int *_a1, _list_int *_out)
 {
   int _i;
-  register int *$62;
+  register int *$60;
   (*_out)._capacity = (*_a1)._capacity;
   (*_out)._len = (*_a1)._len;
-  $62 = malloc(sizeof(int) * (*_out)._capacity);
-  (*_out)._data = $62;
+  $60 = malloc(sizeof(int) * (*_out)._capacity);
+  (*_out)._data = $60;
   if ((*_out)._data == 0) {
     _success = 0;
     _msg = _malloc_failed;
@@ -193,11 +184,11 @@ void _add_list_int(int _a1, _list_int *_out)
 {
   int _i;
   int *_t1;
-  register int *$62;
+  register int *$60;
   if ((*_out)._len == (*_out)._capacity) {
     (*_out)._capacity = (*_out)._capacity * 2 + 4;
-    $62 = malloc(sizeof(int) * (*_out)._capacity);
-    _t1 = $62;
+    $60 = malloc(sizeof(int) * (*_out)._capacity);
+    _t1 = $60;
     if (_t1 == 0) {
       _success = 0;
       _msg = _malloc_failed;
@@ -214,6 +205,22 @@ void _add_list_int(int _a1, _list_int *_out)
   }
   (*_out)._data[(*_out)._len] = _a1;
   (*_out)._len = (*_out)._len + 1;
+}
+
+Export
+void _init(_Bool __success, _string *__msg, S1 *_s1)
+{
+  _success = __success;
+  _msg = *__msg;
+  s1 = *_s1;
+}
+
+Export
+void _terminate(_Bool *__success, _string *__msg, S1 *_s1)
+{
+  *__success = _success;
+  *__msg = _msg;
+  *_s1 = s1;
 }
 
 Export
@@ -264,23 +271,6 @@ void g(int index)
   if (_success == 0) {
     return;
   }
-}
-
-Export
-void _init(_Bool __success, _string *__msg, S1 *_s1)
-{
-  _success = __success;
-  _msg = *__msg;
-  s1 = *_s1;
-  /*skip*/;
-}
-
-Export
-void _terminate(_Bool *__success, _string *__msg, S1 *_s1)
-{
-  *__success = _success;
-  *__msg = _msg;
-  *_s1 = s1;
 }
 
 
