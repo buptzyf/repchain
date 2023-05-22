@@ -115,7 +115,7 @@ class InvokerOfIsCLWasm(utils: Utils) {
         (hasReturnParam && args.length + 1 != params.length)
           || (!hasReturnParam && args.length != params.length)
       ) {
-        throw new Exception(s"Wrong input parameters to call the chaincode function:${action}, which requires ${params.length - 1} parameters, but got ${args.length}")
+        throw new Exception(s"Wrong input parameters to call the chaincode function:${action}, which requires ${ if (hasReturnParam) params.length - 1 else params.length} parameters, but got ${args.length}")
       }
       if (hasReturnParam) {
         // 添加返回值/输出参数占位
