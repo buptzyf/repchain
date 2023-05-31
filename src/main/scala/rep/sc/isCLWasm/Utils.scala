@@ -1,6 +1,6 @@
 package rep.sc.isCLWasm
 
-import org.json4s.{DefaultFormats, Extraction, JArray, JString, JInt, JDouble, JBool}
+import org.json4s.{DefaultFormats, Extraction, JArray, JBool, JDouble, JInt, JString}
 import org.json4s.JsonAST.{JObject, JValue}
 
 import java.nio.charset.StandardCharsets.UTF_8
@@ -82,10 +82,15 @@ class Utils {
   private val MapDataTypePrefix = "_map_"
 
   def isComplexDataType(dataType: String): Boolean = dataType != null && dataType.startsWith(ComplexDataTypePrefix)
+
   def isPointerDataType(dataType: String): Boolean = dataType != null && dataType.endsWith(PointerDataTypeSuffix)
+
   def dePointerDataType(dataType: String): String = dataType.trim.dropRight(1)
+
   def isStringDataType(dataType: String): Boolean = dataType != null && dataType.startsWith(StringDataTypePrefix)
+
   def isListDataType(dataType: String): Boolean = dataType != null && dataType.startsWith(ListDataTypePrefix)
+
   def isMapDataType(dataType: String): Boolean = dataType != null && dataType.startsWith(MapDataTypePrefix)
 
   case class BasicType(dataType: String, name: String)
@@ -282,10 +287,11 @@ class Utils {
 
   /**
    * 根据Json格式的数据结构描述，生成其对应的已序列化的默认值数据
+   *
    * @param parentStructureName 当前数据结构的父数据结构的名称，如_string {int _len; char *_data;}中属性`_len`的parentStructureName为`_string`
-   * @param structure 当前数据类型的Json格式描述，如{ "type": "int", "name": "_capacity" }, { "type": "struct", "struct": "_map_string_string", "name": "mss" }
-   * @param structuresMap 当前已知所有复合数据结构的Json描述
-   * @param capacity 针对isCL中的List及Map类型数据，需要指定容量属性`_capacity`，默认为0
+   * @param structure           当前数据类型的Json格式描述，如{ "type": "int", "name": "_capacity" }, { "type": "struct", "struct": "_map_string_string", "name": "mss" }
+   * @param structuresMap       当前已知所有复合数据结构的Json描述
+   * @param capacity            针对isCL中的List及Map类型数据，需要指定容量属性`_capacity`，默认为0
    * @return 已序列化的默认值数据，字节数组
    */
   def genDefaultSerializedData(parentStructureName: String, structure: JObject, structuresMap: mutable.HashMap[String, JArray], capacity: Int = 0): Array[Byte] = {
@@ -354,8 +360,8 @@ class Utils {
    * @param structuresMap 已知复合类型数据结构Json描述，示例：
    *                      { "_string": [ { "type": "int", "name": "_len" }, { "type": "char*", "name": "_data" } ] } 描述结构体：
    *                      typedef struct {
-   *                        int _len;
-   *                        char *_data;
+   *                      int _len;
+   *                      char *_data;
    *                      } _string;
    * @return 满足地址对齐要求的数据类型字节大小
    */
@@ -441,7 +447,7 @@ class Utils {
    * 对从WebAssembly内存申请空间的方法的封装
    *
    * @param malloc WebAssembly实例中定义的内存空间申请方法
-   * @param size 欲申请的内存空间大小，字节数
+   * @param size   欲申请的内存空间大小，字节数
    * @return 已申请内存空间的起始地址
    */
   def mallocWrap(malloc: Function, size: Int): Integer = {
@@ -453,7 +459,7 @@ class Utils {
   /**
    * 从WebAssembly中读取isCL的String类型数据实例
    *
-   * @param memBuffer WebAssembly内存
+   * @param memBuffer     WebAssembly内存
    * @param stringPointer 欲读取的String数据实例的指针地址
    */
   def readString(memBuffer: ByteBuffer, stringPointer: Integer): String = {
@@ -473,9 +479,9 @@ class Utils {
    * 向WebAssembly内存中写入isCL的String类型数据实例
    * c version: struct _string { int _len; char *_data; }
    *
-   * @param malloc 从WebAssembly内存申请空间的方法
+   * @param malloc    从WebAssembly内存申请空间的方法
    * @param memBuffer WebAssembly内存
-   * @param str 欲写入的String值
+   * @param str       欲写入的String值
    * @return 写入值所在指针地址
    */
   def writeString(malloc: Function, memBuffer: ByteBuffer, str: String): Integer = {
@@ -491,7 +497,7 @@ class Utils {
   /**
    * 从WebAssembly内存中读取isCL的Bool类型数据实例
    *
-   * @param memBuffer WebAssembly内存
+   * @param memBuffer   WebAssembly内存
    * @param boolPointer 欲读取的Bool数据实例的指针地址
    * @return 读取的Bool值
    */
@@ -505,9 +511,9 @@ class Utils {
   /**
    * 向WebAssembly内存中写入isCL的Bool类型数据实例
    *
-   * @param malloc 从WebAssembly内存申请空间的方法
+   * @param malloc    从WebAssembly内存申请空间的方法
    * @param memBuffer WebAssembly内存
-   * @param b 欲写入的Bool值
+   * @param b         欲写入的Bool值
    * @return 写入值所在指针地址
    */
   def writeBool(malloc: Function, memBuffer: ByteBuffer, b: Boolean): Integer = {
@@ -517,6 +523,15 @@ class Utils {
     boolPointer
   }
 
+  /**
+   * 将json格式字面值转为对应isCL编译为C数据结构已序列化后的二进制数据，
+   * 主要用于将调用合约时输入的json字符串参数转为已序列化数据，方便写入WebAssembly内存
+   *
+   * @param jv json格式输入值
+   * @param structure json格式输入值所对应的isCL编译为C的数据结构描述
+   * @param structuresMap 合约中已知的所有复合类型的数据结构描述
+   * @return 对应已序列化二进制数据
+   */
   def json2Binary(jv: JValue, structure: JObject, structuresMap: mutable.HashMap[String, JArray]): Array[Byte] = {
     jv match {
       case JInt(num) =>
@@ -546,21 +561,55 @@ class Utils {
         if (arr.groupBy(_.getClass).size > 1) {
           throw new Exception("Wrong Json array input, only support the same type items in an array")
         }
-        if (arr.length == 0) {
-          // TODO: _list_?
-//          arr(0).getClass
-          return genDefaultSerializedData(null, Extraction.decompose(ComplexType("struct", "_list_", "")).asInstanceOf[JObject], structuresMap)
+        // 对于空数组，生成其在isCL中对应的C结构体默认二进制数据
+        if (arr.isEmpty) {
+          return genDefaultSerializedData(null, structure, structuresMap)
         }
-        val res = arr.map(element => json2Binary(element, null, null))
+        val elementStructure = structuresMap(
+          structure.obj.find { case (key, _) => key.equals("struct") }.get._2.asInstanceOf[JString].s
+        ).arr.asInstanceOf[List[JObject]].find(
+          ele => ele.obj.exists { case (_key, _value) => _key.equals("name") && _value.asInstanceOf[JString].s.equals("_data") }
+        ).get
+        val res = arr.map(element => json2Binary(element, elementStructure, structuresMap))
         val arrCapacityBytes = ByteBuffer.allocate(basicDataTypeSize.get("int").get)
           .order(ByteOrder.LITTLE_ENDIAN)
           .putInt(arr.length)
           .array()
         val arrLengthBytes = arrCapacityBytes
         // for _capacity, _len, _data
-        Array.concat(arrCapacityBytes :: arrLengthBytes :: res: _*)
-      // TODO: convert json object to serialized binary
-      //      case JObject(obj) =>
+        Array.concat(arrCapacityBytes :: arrLengthBytes :: res : _*)
+      case JObject(obj) =>
+        // 对于空对象，生成其在isCL中对应的C结构体默认二进制数据
+        if (obj.isEmpty) {
+          return genDefaultSerializedData(null, structure, structuresMap)
+        }
+        val structName = structure.obj.find { case (key, _) => key.equals("struct") }.get._2.asInstanceOf[JString].s
+        val propertyStructures = structuresMap(structName).arr.asInstanceOf[List[JObject]]
+        // 对于isCL中的Map结构，需特殊考虑_capacity, _len, _key, _value以构建对应二进制数据
+        if (isMapDataType(structName)) {
+          val capacity = obj.length
+          val capacityBytes = ByteBuffer.allocate(basicDataTypeSize.get("int").get)
+            .order(ByteOrder.LITTLE_ENDIAN)
+            .putInt(capacity)
+            .array()
+          val lenBytes = capacityBytes
+          val keysBytes = List.tabulate(capacity)(i => json2Binary(
+            JString(obj(i)._1),
+            propertyStructures.find { case o => o.obj.exists { case (k, v) => k.equals("name") && v.asInstanceOf[JString].s.equals("_key") } }.get,
+            structuresMap
+          ))
+          val valuesBytes = List.tabulate(capacity)(i => json2Binary(
+            obj(i)._2,
+            propertyStructures.find { case o => o.obj.exists { case (k, v) => k.equals("name") && v.asInstanceOf[JString].s.equals("_value") } }.get,
+            structuresMap
+          ))
+          return Array.concat(capacityBytes :: lenBytes :: keysBytes++valuesBytes :  _*)
+        }
+        // 对于isCL中的一般复合类型，遍历每个property依次构建二进制数据
+        val res = obj.zipWithIndex.map { case (property, index) =>
+          json2Binary(property._2, propertyStructures(index), structuresMap)
+        }
+        Array.concat(res: _*)
       case _ => throw new Exception(s"Wrong Json input, not support the type")
     }
   }

@@ -35,7 +35,7 @@ object InvokerOfIsCLWasm {
 }
 
 /**
- * 在wasmer中执行交易
+ * 在wasmer中执行合约方法
  *
  * @author JayTsang
  * @since 2023-04-01
@@ -124,7 +124,7 @@ class InvokerOfIsCLWasm(utils: Utils) {
       // 变换合约方法参数形式，输入参数为json字符串形式，需要对其进行转换，同时输出/返回值参数需要被初始化为指针类型，
       // 1. 针对复合类型输入参数，将json字符串形式的输入参数转为已序列化的二进制形式，再将其反序列化解析为WebAssembly内的C数据结构，写入WebAssembly内存，得到参数指针
       // 2. 针对输出/返回值参数，使用与针对复合类型参数相同的方法
-      // 3. 针对基础类型输入参数（Int, Double, Bool），将json字符串形式的输入参数转为WebAssembly可接受的Int,Double,Int类型
+      // 3. 针对基础类型输入参数（Int, Double, Bool），将json字符串形式的输入参数转为wasmer可接受的Int,Double,Int类型
       val convertedArgs = args.zipWithIndex.map { case (arg, index) =>
         var param = params(index).asInstanceOf[JObject]
         // 针对指针类型的合约方法输入参数，将其转为非指针类型以便于申请内存
@@ -182,7 +182,7 @@ class InvokerOfIsCLWasm(utils: Utils) {
       // 构建全局变量（world state + context）合约环境初始化方法参数及合约环境收集方法参数：
       // 1. 相应变量若是复合类型，则在WebAssembly内存中申请空间并反序列化相应变量数据到该地址空间，返回该地址指针
       // 2. 相应变量若是基础类型(Int,Double,Bool)，则
-      //    a)对于合约环境初始化方法，直接将该变量数据转为WebAssembly可接受的Int,Double,Bool值;
+      //    a)对于合约环境初始化方法，直接将该变量数据转为wasmer可接受的Int,Double,Bool值;
       //    b)对于合约环境收集方法，在WebAssembly内存中为相应变量申请空间，返回该地址指针
       // 3. 合约上下文变量需要特殊处理
       val variableArgs = storageVariables.obj.map { case (name, structure) =>
