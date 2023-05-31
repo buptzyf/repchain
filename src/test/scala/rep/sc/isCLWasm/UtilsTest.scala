@@ -126,18 +126,78 @@ class UtilsTest extends FunSpec with Matchers with BeforeAndAfterAll {
       result.sameElements(stringInputBinary) should be(true)
     }
 
-    it("Should work well to generate serialized binary data of List data of isCL in little-endian from well input json string") {
+    it("Should work well to generate serialized binary data of List data of isCL in little-endian from well input json string representing simple data type") {
       val listIntInputString = "[1,2,3,4]"
-      val result = utils.json2Binary(parse(listIntInputString), null, null)
+      val listInputStructureString = "{ \"type\": \"struct\", \"struct\": \"_list_int\", \"name\": \"li\" }"
+      val structuresMap = mutable.HashMap[String, JArray]()
+      parse("{\"_list_int\": [{\"type\": \"int\", \"name\": \"_capacity\"}, {\"type\": \"int\", \"name\": \"_len\"}, {\"type\": \"int*\", \"name\": \"_data\"}]}")
+        .asInstanceOf[JObject].obj.foreach { case (name, structure) => structuresMap(name) = structure.asInstanceOf[JArray] }
+      val result = utils.json2Binary(parse(listIntInputString), parse(listInputStructureString).asInstanceOf[JObject], structuresMap)
       val stringInputBinary = Array(4,0,0,0,4,0,0,0,1,0,0,0,2,0,0,0,3,0,0,0,4,0,0,0).map(_.toByte)
       result.sameElements(stringInputBinary) should be(true)
     }
+
+    it("Should work well to generate serialized binary data of List data of isCL in little-endian from well input json string representing complex data type") {
+      val listInputString = "[{ \"a\": 1 }, { \"a\": 2 }, { \"a\": 3 }, { \"a\": 4 }]"
+      val listInputStructureString = "{ \"type\": \"struct\", \"struct\": \"_list_A\", \"name\": \"la\" }"
+      val structuresMap = mutable.HashMap[String, JArray]()
+      parse("{\"_list_A\": [{\"type\": \"int\", \"name\": \"_capacity\"}, {\"type\": \"int\", \"name\": \"_len\"}, {\"type\": \"struct*\", \"struct\": \"A\", \"name\": \"_data\"}], \"A\": [{\"type\": \"int\", \"name\": \"a\"}]}")
+        .asInstanceOf[JObject].obj.foreach { case (name, structure) => structuresMap(name) = structure.asInstanceOf[JArray] }
+      val result = utils.json2Binary(parse(listInputString), parse(listInputStructureString).asInstanceOf[JObject], structuresMap)
+      val listInputBinary = Array(4,0,0,0,4,0,0,0,1,0,0,0,2,0,0,0,3,0,0,0,4,0,0,0).map(_.toByte)
+      result.sameElements(listInputBinary) should be(true)
+    }
+
+    it("Should work well to generate serialized binary data of empty List data of isCL in little-endian") {
+      val listInputString = "[]"
+      val listInputStructureString = "{ \"type\": \"struct\", \"struct\": \"_list_A\", \"name\": \"la\" }"
+      val structuresMap = mutable.HashMap[String, JArray]()
+      parse("{\"_list_A\": [{\"type\": \"int\", \"name\": \"_capacity\"}, {\"type\": \"int\", \"name\": \"_len\"}, {\"type\": \"struct*\", \"struct\": \"A\", \"name\": \"_data\"}], \"A\": [{\"type\": \"int\", \"name\": \"a\"}]}")
+        .asInstanceOf[JObject].obj.foreach { case (name, structure) => structuresMap(name) = structure.asInstanceOf[JArray] }
+      val result = utils.json2Binary(parse(listInputString), parse(listInputStructureString).asInstanceOf[JObject], structuresMap)
+      val listInputBinary = Array(4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0).map(_.toByte)
+      result.sameElements(listInputBinary) should be(true)
+    }
+
     it("Should throw exception when generating serialized binary data of List data of isCL in little-endian from bad input json string") {
       val listIntInputString = "[1,2,3.14,\"4\"]"
       val exception = intercept[Exception] {
         utils.json2Binary(parse(listIntInputString), null, null)
       }
       exception.getMessage should include("Wrong Json array input, only support the same type items in an array")
+    }
+
+    it("Should work well to generate serialized binary data of Map data of isCL in little-endian from well input json string") {
+      val mapInputString = "{\"a\": \"123\", \"b\": \"456\", \"c\": \"789\"}"
+      val mapInputStructure = "{ \"type\": \"struct\", \"struct\": \"_map_string_string\", \"name\": \"mss\" }"
+      val structuresMap = mutable.HashMap[String, JArray]()
+      parse("{\"_map_string_string\": [{\"type\": \"int\", \"name\": \"_capacity\"}, {\"type\": \"int\", \"name\": \"_len\"}, {\"type\": \"struct*\", \"struct\": \"_string\", \"name\": \"_key\"}, {\"type\": \"struct*\", \"struct\": \"_string\", \"name\": \"_value\"}], \"_string\": [{\"type\": \"int\", \"name\": \"_len\"}, {\"type\": \"char*\", \"name\": \"_data\"}]}")
+        .asInstanceOf[JObject].obj.foreach { case (name, structure) => structuresMap(name) = structure.asInstanceOf[JArray] }
+      val result = utils.json2Binary(parse(mapInputString), parse(mapInputStructure).asInstanceOf[JObject], structuresMap)
+      val mapInputBinary = Array(3,0,0,0,3,0,0,0,1,0,0,0,97,1,0,0,0,98,1,0,0,0,99,3,0,0,0,49,50,51,3,0,0,0,52,53,54,3,0,0,0,55,56,57).map(_.toByte)
+      result.sameElements(mapInputBinary) should be(true)
+    }
+
+    it("Should work well to generate serialized binary data of custom Struct data of isCL in little-endian from well input json string") {
+      val mapInputString = "{\"a\": \"123\", \"b\": \"456\", \"c\": \"789\"}"
+      val mapInputStructure = "{ \"type\": \"struct\", \"struct\": \"S\", \"name\": \"s\" }"
+      val structuresMap = mutable.HashMap[String, JArray]()
+      parse("{\"S\": [{\"type\": \"struct\", \"struct\": \"_string\", \"name\": \"a\"}, {\"type\": \"struct\", \"struct\": \"_string\", \"name\": \"b\"}, {\"type\": \"struct\", \"struct\": \"_string\", \"name\": \"c\"}], \"_string\": [{\"type\": \"int\", \"name\": \"_len\"}, {\"type\": \"char*\", \"name\": \"_data\"}]}")
+        .asInstanceOf[JObject].obj.foreach { case (name, structure) => structuresMap(name) = structure.asInstanceOf[JArray] }
+      val result = utils.json2Binary(parse(mapInputString), parse(mapInputStructure).asInstanceOf[JObject], structuresMap)
+      val mapInputBinary = Array(3,0,0,0,49,50,51,3,0,0,0,52,53,54,3,0,0,0,55,56,57).map(_.toByte)
+      result.sameElements(mapInputBinary) should be(true)
+    }
+
+    it("Should work well to generate serialized binary data of empty Struct data of isCL in little-endian from well input json string") {
+      val mapInputString = "{}"
+      val mapInputStructure = "{ \"type\": \"struct\", \"struct\": \"S\", \"name\": \"s\" }"
+      val structuresMap = mutable.HashMap[String, JArray]()
+      parse("{\"S\": [{\"type\": \"struct\", \"struct\": \"_string\", \"name\": \"a\"}, {\"type\": \"struct\", \"struct\": \"_string\", \"name\": \"b\"}, {\"type\": \"struct\", \"struct\": \"_string\", \"name\": \"c\"}], \"_string\": [{\"type\": \"int\", \"name\": \"_len\"}, {\"type\": \"char*\", \"name\": \"_data\"}]}")
+        .asInstanceOf[JObject].obj.foreach { case (name, structure) => structuresMap(name) = structure.asInstanceOf[JArray] }
+      val result = utils.json2Binary(parse(mapInputString), parse(mapInputStructure).asInstanceOf[JObject], structuresMap)
+      val mapInputBinary = Array(0,0,0,0,0,0,0,0,0,0,0,0).map(_.toByte)
+      result.sameElements(mapInputBinary) should be(true)
     }
   }
 }
