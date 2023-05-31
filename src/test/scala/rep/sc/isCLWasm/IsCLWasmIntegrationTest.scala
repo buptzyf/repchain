@@ -33,10 +33,10 @@ class IsCLWasmIntegrationTest(_system: ActorSystem) extends TestKit(_system) wit
 
   override def afterAll: Unit = {
     shutdown(system)
-    deleteCompiledChaincodeFile("simple_1.wasmbinary")
-    deleteCompiledChaincodeFile("proof_1.wasmbinary")
-    deleteCompiledChaincodeFile("erc20-like_1.wasmbinary")
-    deleteCompiledChaincodeFile("erc20-like_2.wasmbinary")
+    deleteCompiledChaincodeFile("simple_1.wasmnative")
+    deleteCompiledChaincodeFile("proof_1.wasmnative")
+    deleteCompiledChaincodeFile("erc20-like_1.wasmnative")
+    deleteCompiledChaincodeFile("erc20-like_2.wasmnative")
   }
 
   implicit val serialization: Serialization.type = jackson.Serialization
@@ -108,7 +108,7 @@ class IsCLWasmIntegrationTest(_system: ActorSystem) extends TestKit(_system) wit
         msg_recv.head.statesSet.get(msg_recv.head.statesSet.keys.find(key => key.endsWith("simple_1")).get)
           .get.toByteArray()
       ).asInstanceOf[String] should include(t.id)
-      Files.exists(Paths.get(chaincodeCompiledPathPrefix + s"${ctx.getConfig.getIdentityNetName}${IdTool.WorldStateKeySeparator}simple_1.wasmbinary")) should be(true)
+      Files.exists(Paths.get(chaincodeCompiledPathPrefix + s"${ctx.getConfig.getIdentityNetName}${IdTool.WorldStateKeySeparator}simple_1.wasmnative")) should be(true)
     }
 
     it("重复部署已部署合约应失败") {

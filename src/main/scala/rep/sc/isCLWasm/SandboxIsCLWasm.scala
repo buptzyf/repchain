@@ -24,7 +24,7 @@ class SandboxIsCLWasm(
   var abi: JObject = null
 
   private def loadModule(ctx: ContractContext, txcid: String, code: Array[Byte]) = {
-    val fileName = ctx.api.getChainNetId + IdTool.WorldStateKeySeparator + txcid + ".wasmbinary"
+    val fileName = ctx.api.getChainNetId + IdTool.WorldStateKeySeparator + txcid + ".wasmnative"
     if (CompilerOfIsCLWasm.existedCompiledWasm(fileName)) {
       module = CompilerOfIsCLWasm.loadCompiledWasmFromFile(fileName)
     } else {
