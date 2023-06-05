@@ -31,8 +31,10 @@ class VoteProof extends IContract {
    * @return
    */
   def readAdminKey(): GroupAdminPublicKey = {
+    logger.info("开始读取群管理员秘钥...")
     val gf = new GroupKeyFactory("f")
     val pubKey = new GroupAdminPublicKey(gf.getPairing, adminKeyPath)
+    logger.info("群管理员秘钥: {}", pubKey.toString)
     pubKey
   }
 
@@ -45,9 +47,11 @@ class VoteProof extends IContract {
    * @return
    */
   def verifySign(signatureResultStr: String, message: String, adminPubKey: GroupAdminPublicKey): Boolean = {
+    logger.info("开始验证群签名...")
     val gs = new GroupSignature("f")
     val gr = new GroupSignatureResult(gs.getPairing, signatureResultStr)
     val vr = gs.VerifyGroupSignature(message, gr, adminPubKey)
+    logger.info("群签验证结果: ", vr)
     vr
   }
 
@@ -66,6 +70,7 @@ class VoteProof extends IContract {
       ctx.api.getLogger.error(s"验证失败, 非群成员: ${data}")
       throw ContractException("验证失败, 非群成员")
     } else {
+      ctx.api.getLogger.error(s"验证成功, 为群成员: ${data}")
       ctx.api.setVal(voteKey, data)
     }
     ActionResult()

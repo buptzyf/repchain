@@ -69,6 +69,7 @@ class ZkpProof extends IContract {
    */
   def publishTask(ctx: ContractContext, data: String): ActionResult = {
     val task = parse(data).extract[ZkpTask]
+    logger.info("发布零知识证明的任务: {}", data)
     ctx.api.setVal(taskPrefix + task.id, data)
     ActionResult()
   }
@@ -82,6 +83,7 @@ class ZkpProof extends IContract {
    */
   def publishData(ctx: ContractContext, data: String): ActionResult = {
     val encryptData = parse(data).extract[EncryptData]
+    logger.info("发布需要证明的数据: {}", data)
     ctx.api.setVal(encryptPrefix + encryptData.taskId + "-" + encryptData.memberId, data)
     ActionResult()
   }
@@ -94,24 +96,33 @@ class ZkpProof extends IContract {
    * @return
    */
   def verifyProof(ctx: ContractContext, data: String): ActionResult = {
+    logger.info("触发证明: {}", data)
     val proof = new ZeroKonwledgeProofGorV
     val verifyProof = parse(data).extract[VerifyProof]
+    logger.info("根据任务ID获取任务...")
     val task = parse(ctx.api.getVal(taskPrefix + verifyProof.taskId).asInstanceOf[String]).extract[ZkpTask]
+    logger.info("任务ID获取到的任务: {}", write(task))
     if (task.taskType.contentEquals("equalproof")) {
       val data1 = parse(ctx.api.getVal(encryptPrefix + verifyProof.taskId + "-" + verifyProof.mId1).asInstanceOf[String]).extract[EncryptData]
       val data2 = parse(ctx.api.getVal(encryptPrefix + verifyProof.taskId + "-" + verifyProof.mId2).asInstanceOf[String]).extract[EncryptData]
+      logger.info("开始获取成员公钥...")
       val key1 = getPublicKey(s"key/${verifyProof.mId1}")
       val key2 = getPublicKey(s"key/${verifyProof.mId2}")
+      logger.info(s"获取成员公钥: ${key1.toString}, ${key2.toString}")
+      logger.info("开始根据任务做对应的证明...")
       val proofRes = proof.VerifyEqualityProof(
         key1,
         key2,
         parse(data1.data).extract[ElGamal_Ciphertext],
         parse(data2.data).extract[ElGamal_Ciphertext],
         parse(verifyProof.proofData).extract[LinearEquationProof])
-      if (proofRes)
+      if (proofRes) {
+        logger.info("证明结果为正确, 任务为: {}", write(task))
         ctx.api.setVal(proofResPrefix + task.id, "0")
-      else
+      } else {
+        logger.error("证明结果为错误, 任务为: {}", write(task))
         ctx.api.setVal(proofResPrefix + task.id, "1")
+      }
     }
     ActionResult()
   }

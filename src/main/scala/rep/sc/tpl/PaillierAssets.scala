@@ -41,7 +41,9 @@ class PaillierAssets extends IContract {
    */
   def set(ctx: ContractContext, data: Map[String, String]): ActionResult = {
     println(s"set data:$data")
+    logger.info("账户赋初值: ", write(data))
     for ((k, v) <- data) {
+      logger.info(s"账户: $k, 赋初值: $v")
       ctx.api.setVal(k, v)
     }
     null
@@ -55,11 +57,14 @@ class PaillierAssets extends IContract {
    * @return
    */
   def transfer(ctx: ContractContext, data: PaillierTransfer): ActionResult = {
+    logger.info("为对应账户做转账: ", write(data))
     val dfrom = ctx.api.getVal(data.from).asInstanceOf[String]
     val dfromRemain = PaillierCipher.ciphertextAdd(dfrom, data.min)
+    logger.info("初值: {}, 减的: {}, 最终: {}", dfrom, data.min, dfromRemain)
     ctx.api.setVal(data.from, dfromRemain)
     val dto = ctx.api.getVal(data.to).asInstanceOf[String]
     val dtoRemain = PaillierCipher.ciphertextAdd(dto, data.add)
+    logger.info("初值: {}, 加的: {}, 最终: {}", dto, data.add, dtoRemain)
     ctx.api.setVal(data.to, dtoRemain)
     null
   }
