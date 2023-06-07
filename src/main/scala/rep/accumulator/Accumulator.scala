@@ -4,24 +4,21 @@ import java.math.BigInteger
 import scala.collection.mutable.ArrayBuffer
 import scala.util.control.Breaks.{break, breakable}
 import rep.crypto.Sha256
-import rep.accumulator.Accumulator.{
-  AccumulatorWithMembershipProof, MembershipProof,
-  NonMembershipProof, NonWitness, Witness, bitLength, product
-}
-import rep.accumulator.verkle.MiddleNode.{VerkleProofOfMembership, VerkleProofOfNonMembership}
+import rep.accumulator.Accumulator.{AccumulatorWithMembershipProof, bitLength, product}
+import rep.accumulator.verkle.util.{MembershipProof, NonMembershipProof, NonWitness, VerkleProofOfMembership, VerkleProofOfNonMembership, Witness}
 
 object Accumulator {
   val bitLength = 256
 
-  case class NonWitness(d_coefficient: BigInteger, v_coefficient: BigInteger, gv_inv: BigInteger)
+  //case class NonWitness(d_coefficient: BigInteger, v_coefficient: BigInteger, gv_inv: BigInteger)
 
-  case class Witness(witness: BigInteger)
+  //case class Witness(witness: BigInteger)
 
-  case class MembershipProof(proof: BigInteger, witness: Witness)
+  //case class MembershipProof(proof: BigInteger, witness: Witness)
 
   case class AccumulatorWithMembershipProof(acc: Accumulator, proof: MembershipProof)
 
-  case class NonMembershipProof(nonWitness: NonWitness, proof_poe: BigInteger, proof_poke2: Poke2.proofStruct)
+  //case class NonMembershipProof(nonWitness: NonWitness, proof_poe: BigInteger, proof_poke2: Poke2.proofStruct)
 
   def verifyMembershipProof(member: BigInteger, proof: VerkleProofOfMembership, hashTool: Sha256): Boolean = {
     Poe.verify(proof.proof.witness.witness, member, proof.acc_value, proof.proof.proof, bitLength, hashTool)
@@ -109,12 +106,12 @@ class Accumulator(acc_base: BigInteger, last_acc: BigInteger, hashTool: Sha256) 
   def addAndProof(element: BigInteger): AccumulatorWithMembershipProof = {
     val new_acc = add(element)
     val proof = Poe.prove(this.acc_value, element, new_acc.getAccVaule, bitLength, hashTool)
-    AccumulatorWithMembershipProof(new_acc, MembershipProof(proof, Witness(this.acc_value)))
+    AccumulatorWithMembershipProof(new_acc, new MembershipProof(proof, new Witness(this.acc_value)))
   }
 
   def getMemberProof4Witness(element: BigInteger, witness: Witness): AccumulatorWithMembershipProof = {
     val proof = Poe.prove(witness.witness, element, this.acc_value, bitLength, hashTool)
-    AccumulatorWithMembershipProof(this, MembershipProof(proof, witness))
+    AccumulatorWithMembershipProof(this, new MembershipProof(proof, witness))
   }
 
   def addAndProof(elements: Array[BigInteger]): AccumulatorWithMembershipProof = {
@@ -158,7 +155,7 @@ class Accumulator(acc_base: BigInteger, last_acc: BigInteger, hashTool: Sha256) 
 
   def membershipWitness(member: BigInteger, witness: Witness): Witness = {
     val acc = deleteWithWitness(member, witness)
-    Witness(acc.getAccVaule)
+    new Witness(acc.getAccVaule)
   }
   /////////////////////累加器的累加操作（累加，累加之后输出证明）、验证证明----结束/////////////////////////
 
@@ -185,7 +182,7 @@ class Accumulator(acc_base: BigInteger, last_acc: BigInteger, hashTool: Sha256) 
     buf += Tuple2(element, witness.witness)
     val acc = delete(buf.toArray)
     val proof = Poe.prove(acc.getAccVaule, element, this.acc_value, bitLength, hashTool)
-    AccumulatorWithMembershipProof(acc, MembershipProof(proof, Witness(acc.getAccVaule)))
+    AccumulatorWithMembershipProof(acc, new MembershipProof(proof, new Witness(acc.getAccVaule)))
   }
 
   private def delete(elements: Array[(BigInteger, BigInteger)]): Accumulator = {
@@ -272,11 +269,11 @@ class Accumulator(acc_base: BigInteger, last_acc: BigInteger, hashTool: Sha256) 
         val d = if (zout.sign_a) Rsa2048.exp(Rsa2048.inv(g), zout.coefficient_a) else Rsa2048.exp(g, zout.coefficient_a)
         val v = if (zout.sign_b) Rsa2048.exp(Rsa2048.inv(this.acc_value), zout.coefficient_b) else Rsa2048.exp(this.acc_value, zout.coefficient_b)
         val gv_inv = Rsa2048.op(g, Rsa2048.inv(v))
-        val w = NonWitness(d, v, gv_inv)
+        val w = new NonWitness(d, v, gv_inv)
         val tr = Rsa2048.exp(d, x)
         val poke2_proof = Poke2.prove(this.acc_value, zout.coefficient_b, v, bitLength, hashTool)
         val poe_proof = Poe.prove(d, x, gv_inv, bitLength, hashTool)
-        r = NonMembershipProof(w, poe_proof, poke2_proof)
+        r = new NonMembershipProof(w, poe_proof, poke2_proof)
       }
     }
     r
@@ -332,7 +329,7 @@ class Accumulator(acc_base: BigInteger, last_acc: BigInteger, hashTool: Sha256) 
           val w_to_b = if (zout.sign_b) Rsa2048.exp(Rsa2048.inv(w.getAccVaule), zout.coefficient_b) else Rsa2048.exp(w.getAccVaule, zout.coefficient_b)
           val acc_new_to_a = if (zout.sign_a) Rsa2048.exp(Rsa2048.inv(this.getAccVaule), zout.coefficient_a) else Rsa2048.exp(this.getAccVaule, zout.coefficient_a)
           val promise = Rsa2048.op(w_to_b, acc_new_to_a)
-          r = Witness(promise)
+          r = new Witness(promise)
         }
       }
     }
@@ -412,7 +409,7 @@ class Accumulator(acc_base: BigInteger, last_acc: BigInteger, hashTool: Sha256) 
     val acc = if (this.acc_value.compareTo(BigInteger.ZERO) == 0) this.acc_base_value else this.acc_value
     val ws = root_factor(acc, elems)
     for (i <- 0 to elems.length - 1) {
-      val w = (elems(i), Witness(ws(i)))
+      val w = (elems(i), new Witness(ws(i)))
       bf += w
     }
     bf.toArray

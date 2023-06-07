@@ -1,8 +1,9 @@
 package rep.accumulator.chain
 
 import rep.accumulator.{Accumulator, PrimeTool}
-import rep.accumulator.Accumulator.Witness
 import rep.accumulator.chain.VectorCommitment.{BlockVectorCommitment, TxAndPrime, TxWitness, TxWitnessesOfBlock}
+import rep.accumulator.verkle.VerkleTreeType
+import rep.accumulator.verkle.util.Witness
 import rep.app.system.RepChainSystemContext
 import rep.proto.rc2.{Block, Transaction}
 
@@ -35,7 +36,7 @@ class VectorCommitment(ctx:RepChainSystemContext) {
   def getTransactionWitnesses(txs:Array[TxAndPrime],height:Long,tx_acc_value:BigInteger,isCreateWitness:Boolean=false):TxWitnessesOfBlock={
     var r : TxWitnessesOfBlock = null
     if(txs != null && txs.length > 0){
-      val old_acc = new Accumulator(ctx.getTxAccBase, tx_acc_value, ctx.getHashTool)
+      val old_acc = new Accumulator(ctx.getVerkleTreeAccRoot(VerkleTreeType.TransactionTree), tx_acc_value, ctx.getHashTool)
       val tx_primes = for(tx<-txs) yield {
         tx.prime
       }

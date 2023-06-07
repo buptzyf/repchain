@@ -89,7 +89,7 @@ class ContractAssetsTPL extends IContract {
     if (dfrom < data.amount)
       throw ContractException("余额不足")
 
-    ////跨合约调用样例
+    ////跨合约调用
     /*val cid = ChaincodeId("ParallelPutProofTPL", 1)
     val cdata = ProofDataSingle("cky1", dfrom.toString)
 

@@ -1,12 +1,14 @@
 package rep.accumulator
 
 
+import rep.accumulator.verkle.util.proofStruct
 import rep.crypto.Sha256
+
 import java.math.BigInteger
 
 
 object Poke2 {
-  case class proofStruct(z:BigInteger,Q:BigInteger,r:BigInteger)
+  //case class proofStruct(z:BigInteger,Q:BigInteger,r:BigInteger)
   private var bg : BigInteger = null
 
   def get_g(bitLength:Int):BigInteger={
@@ -27,7 +29,7 @@ object Poke2 {
     val q = div._1
     val r = div._2
     val Q = Rsa2048.exp(Rsa2048.op(base,Rsa2048.exp(g,alpha)),q)
-    proofStruct(z,Q,r)
+    new proofStruct(z,Q,r)
   }
 
   def verify(base:BigInteger, result:BigInteger, proof:proofStruct,bitLength:Int,hash:Sha256):Boolean={

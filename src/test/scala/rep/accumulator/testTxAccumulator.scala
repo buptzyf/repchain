@@ -1,8 +1,9 @@
 package rep.accumulator
 
 
-import rep.accumulator.Accumulator.Witness
 import rep.accumulator.CreateTestTransactionService.tx_data
+import rep.accumulator.verkle.VerkleTreeType
+import rep.accumulator.verkle.util.Witness
 import rep.crypto.Sha256
 
 import java.math.BigInteger
@@ -27,7 +28,7 @@ object testTxAccumulator extends App {
   test_compute_individual_witnesses
 
   def test_compute_individual_witnesses:Unit={
-    val root_acc = new Accumulator(tx_service.ctx.getTxAccBase, null, hash_tool)
+    val root_acc = new Accumulator(tx_service.ctx.getVerkleTreeAccRoot(VerkleTreeType.TransactionTree), null, hash_tool)
     val a = block1(0).prime
     val b = block1(1).prime
     val c = block1(2).prime
@@ -101,7 +102,7 @@ object testTxAccumulator extends App {
     val d = block1(3).prime
     val acc1 = root_acc.addOfBatch(Array(a, b, c))
     val acc2 = root_acc.addOfBatch(Array(c, d))
-    val acc2_wit = Witness(acc2.getAccVaule)
+    val acc2_wit = new Witness(acc2.getAccVaule)
 
     val wit_new = acc1.updateMembershipWitness(Array(a), acc2_wit, Array(b),
       Array(a))
@@ -118,7 +119,7 @@ object testTxAccumulator extends App {
     val d = block1(3).prime
     val acc1 = root_acc.addOfBatch(Array(a,b,c))
     val acc2 = root_acc.addOfBatch(Array(c,d))
-    val acc2_wit = Witness(acc2.getAccVaule)
+    val acc2_wit = new Witness(acc2.getAccVaule)
 
     val wit_new = acc1.updateMembershipWitness(Array(a),acc2_wit,Array(b),
                         Array(d))

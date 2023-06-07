@@ -18,12 +18,19 @@ package rep.network.consensus.util
 
 import com.google.protobuf.ByteString
 import com.google.protobuf.timestamp.Timestamp
+import rep.accumulator.verkle.VerkleTreeType
+import rep.accumulator.verkle.util.verkleTool
+import rep.accumulator.{Accumulator, PrimeTool, verkle}
 import scalapb.json4s.JsonFormat
 import rep.app.conf.RepChainConfig
+import rep.app.system.RepChainSystemContext
 import rep.crypto.{BytesHex, Sha256}
 import rep.utils.{IdTool, SerializeUtils, TimeUtils}
 import rep.crypto.cert.SignTool
-import rep.proto.rc2.{Block, BlockHeader, Signature, Transaction}
+import rep.proto.rc2.{Block, BlockHeader, Signature, Transaction, TransactionResult}
+
+import java.math.BigInteger
+import scala.collection.mutable.ArrayBuffer
 
 object BlockHelp {
 
@@ -100,6 +107,42 @@ object BlockHelp {
       case e: RuntimeException => throw e
     }
   }
+
+  //计算交易字节所对应的素数，返回交易的字节hash，素数和交易字节
+  private def handleTransaction(data: Array[Transaction],sha256: Sha256): Array[(Array[Int], Array[Byte], BigInteger)] = {
+    val sb = new ArrayBuffer[(Array[Int], Array[Byte], BigInteger)]()
+    data.foreach(t => {
+      val tb = t.toByteArray
+      val prime = PrimeTool.hash2Prime(tb, Accumulator.bitLength, sha256)
+      sb += Tuple3(verkle.util.verkleTool.getIndex(sha256.hash(tb)), tb, prime)
+    })
+    sb.toArray
+  }
+
+  def addTransactionToVerkleTree(block:Block,ctx:RepChainSystemContext):Block = {
+    val Root:String = ""
+    if(ctx.getConfig.getEnableTxAccumulator){
+      val root = ctx.getVerkleTreeNodeBuffer(VerkleTreeType.TransactionTree).readMiddleNode(null)
+      val ts = handleTransaction(block.transactions.toArray,ctx.getHashTool)
+      ts.foreach(t=>{
+        System.out.println(s"serial=${t._1} id=${verkleTool.getKey(t._1)},prime=${t._3}")
+        root.addState(t._1, t._2, t._3)
+      })
+      val txAccRoot = root.getAccValue().toString()
+      val head = block.getHeader.withCommitTx(_root_.com.google.protobuf.ByteString.copyFrom(txAccRoot,"UTF-8"))
+      block.withHeader(head)
+    }else{
+      block
+    }
+  }
+
+  /*def addWorldStateToVerkleTree(block: Block, cfg: RepChainConfig): Unit = {
+    val Root: String = "";
+    if (cfg.getEnableWtAccumulator) {
+
+    }
+
+  }*/
 
   def GetOnlyBlockHeaderHash(header: BlockHeader, sha256: Sha256): String = {
     try {

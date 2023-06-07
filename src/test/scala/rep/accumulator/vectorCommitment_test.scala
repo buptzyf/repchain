@@ -12,6 +12,7 @@ import java.math.BigInteger
 import scala.math.abs
 import scala.util.Random
 import org.apache.commons.codec.binary.{Base32, Base64, BinaryCodec, Hex}
+import rep.accumulator.verkle.VerkleTreeType
 
 object vectorCommitment_test extends App {
   val tx_service = new CreateTestTransactionService
@@ -71,7 +72,7 @@ object vectorCommitment_test extends App {
     val vc2 = vc.getTransactionWitnessesWithBlock(block2._1,vc1.tx_acc_value,true)
     val vc3 = vc.getTransactionWitnessesWithBlock(block3._1,vc2.tx_acc_value,true)
 
-    val acc3 = new Accumulator(ctx.getTxAccBase,vc3.tx_acc_value,ctx.getHashTool)
+    val acc3 = new Accumulator(ctx.getVerkleTreeAccRoot(VerkleTreeType.TransactionTree),vc3.tx_acc_value,ctx.getHashTool)
     val ri = abs(new Random().nextInt(10))
     val wi = vc3.txWitnesses(ri)
     val proof = acc3.getMemberProof4Witness(wi.prime,wi.witnessInBlock)

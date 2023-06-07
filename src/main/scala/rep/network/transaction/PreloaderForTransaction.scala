@@ -104,7 +104,9 @@ class PreloaderForTransaction(moduleName: String) extends ModuleBase(moduleName)
       //RepLogger.error(RepLogger.Business_Logger, this.getLogMsgPrefix( s" current block height=${block.height},trans create serial: ${outputTransSerialOfBlock(block,rblock)}"))
       if (rBlock.getHeader.hashPresent == _root_.com.google.protobuf.ByteString.EMPTY) {
         //如果没有当前块的hash在这里生成，如果是背书已经有了hash不再进行计算
-        rBlock = BlockHelp.AddBlockHeaderHash(rBlock,pe.getRepChainContext.getHashTool)
+        //这两行代码放到出块人模块执行
+        //rBlock = BlockHelp.addTransactionToVerkleTree(rBlock,pe.getRepChainContext)
+        //rBlock = BlockHelp.AddBlockHeaderHash(rBlock,pe.getRepChainContext.getHashTool)
       }
       Some(rBlock)
     } catch {

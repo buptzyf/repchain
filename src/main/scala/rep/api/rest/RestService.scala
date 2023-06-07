@@ -380,7 +380,69 @@ class TransactionService(ra: ActorRef, repContext: RepChainSystemContext, isChec
     //只能处理application/json
     unmarshaller[CSpec].forContentTypes(MediaTypes.`application/json`))
 
-  val route = getTransaction ~ getTransactionStream ~ tranInfoAndHeightOfTranId ~ postSignTransaction ~ postTransaction ~ postSignTransactionStream
+  val route = getTransaction ~ getTransactionStream ~ tranInfoAndHeightOfTranId ~ postSignTransaction ~ postTransaction ~ postSignTransactionStream ~ proofOfTransaction ~ verifyTransactionProof
+
+  @POST
+  @Path("/verifyTransactionProof")
+  @Operation(tags = Array("transaction"), summary = "验证交易证明", description = "verifyTransactionProof", method = "POST",
+    requestBody = new RequestBody(description = "交易证明文件字符串", required = true,
+      content = Array(new Content(mediaType = MediaType.APPLICATION_JSON, schema = new Schema(name = "交易证明文件字符串", description = "交易证明文件字符串", implementation = classOf[ProofOfOutput])))))
+  @ApiResponses(Array(
+    new ApiResponse(responseCode = "200", description = "返回交易证明的验证结果", content = Array(new Content(mediaType = "application/json", schema = new Schema(implementation = classOf[PostResult])))),
+    new ApiResponse(responseCode = "202", description = "处理存在异常", content = Array(new Content(mediaType = "application/json", schema = new Schema(implementation = classOf[PostResult])))))
+  )
+  def verifyTransactionProof =
+    path("transaction" / "verifyTransactionProof") {
+      post {
+        extractClientIP { ip =>
+          entity(as[ProofOfOutput]) { proofOfOutput =>
+            complete {
+              (ra ? proofOfOutput).mapTo[QueryResult]
+            }
+          }
+          //          complete { (StatusCodes.Accepted, PostResult("hahhaha",None, Some("处理存在异常"))) }
+        }
+      }
+    }
+
+  @GET
+  @Path("/proofOfTransaction/{transactionId}")
+  @Operation(tags = Array("transaction"), summary = "返回指定id的交易证明", description = "proofOfTransaction", method = "GET")
+  @Parameters(Array(
+    new Parameter(name = "transactionId", description = "交易id", required = false, schema = new Schema(`type` = "string"), in = ParameterIn.PATH)))
+  @ApiResponses(Array(
+    new ApiResponse(responseCode = "200", description = "返回交易证明的json字符串", content = Array(new Content(mediaType = "application/json", schema = new Schema(implementation = classOf[QueryResult])))))
+  )
+  def proofOfTransaction =
+    path("transaction" / "proofOfTransaction" / Segment) { transactionId =>
+      get {
+        extractClientIP { ip =>
+          RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} get transaction for txid,txid=${transactionId}")
+          if (isCheckClientPermission) {
+            headerValueByType[`Tls-Session-Info`]() { sessionInfo =>
+              val cert = RepChainConfigFilePathMgr.getCert(sessionInfo)
+              try {
+                if (cert != null && repContext.getPermissionVerify.CheckPermissionOfX509Certificate(cert, "transaction", null)) {
+                  complete {
+                    (ra ? ProofOfTransaction(transactionId)).mapTo[QueryResult]
+                  }
+                } else {
+                  complete(QueryResult(Option(JsonMethods.parse(string2JsonInput(PermissionVerify.errorInfo_None_Permission)))))
+                }
+              } catch {
+                case e: Exception =>
+                  complete(QueryResult(Option(JsonMethods.parse(string2JsonInput(PermissionVerify.errorInfo_Cert_or_permission)))))
+              }
+            }
+          } else {
+            complete {
+              (ra ? ProofOfTransaction(transactionId)).mapTo[QueryResult]
+            }
+          }
+        }
+      }
+    }
+
 
   @GET
   @Path("/{transactionId}")

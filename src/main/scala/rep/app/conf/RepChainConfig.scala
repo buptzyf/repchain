@@ -490,6 +490,22 @@ class RepChainConfig {
     this.sysConf.getString("system.storage.block_file_type")
   }
 
+  def getEnableTxAccumulator: Boolean = {
+    try {
+      this.sysConf.getBoolean("system.accumulator.enable_transaction_accumulator")
+    } catch {
+      case e: Exception => false
+    }
+  }
+
+  def getEnableWtAccumulator: Boolean = {
+    try {
+      this.sysConf.getBoolean("system.accumulator.enable_world_state_accumulator")
+    } catch {
+      case e: Exception => false
+    }
+  }
+
   def isEncryptedStorage:Boolean={
     try {
       this.sysConf.getBoolean("system.storage.is_encrypted")

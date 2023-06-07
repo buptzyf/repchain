@@ -5,10 +5,8 @@ import java.math.BigInteger
 import scala.collection.mutable.ArrayBuffer
 import scala.util.control.Breaks.{break, breakable}
 import rep.crypto.Sha256
-import rep.accumulator.Accumulator4Aggregate.{
-  AccumulatorWithMembershipProof, MembershipProof,
-  NonWitness, NonmembershipProof, Witness, bitLength
-}
+import rep.accumulator.Accumulator4Aggregate.{AccumulatorWithMembershipProof, MembershipProof, NonWitness, NonmembershipProof, Witness, bitLength}
+import rep.accumulator.verkle.util.proofStruct
 
 object Accumulator4Aggregate{
   val bitLength = 256
@@ -16,7 +14,7 @@ object Accumulator4Aggregate{
   case class Witness(promise:BigInteger,agg:BigInteger)
   case class MembershipProof(proof:BigInteger,witness:Witness)
   case class AccumulatorWithMembershipProof(acc:Accumulator4Aggregate,proof: MembershipProof)
-  case class NonmembershipProof(nonWitness:NonWitness,proof_poe:BigInteger,proof_poke2:Poke2.proofStruct)
+  case class NonmembershipProof(nonWitness:NonWitness,proof_poe:BigInteger,proof_poke2:proofStruct)
 }
 
 class Accumulator4Aggregate(acc_base: BigInteger, last_acc: BigInteger, last_aggregate: BigInteger, hashTool: Sha256) {

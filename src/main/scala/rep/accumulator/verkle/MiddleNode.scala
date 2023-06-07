@@ -1,12 +1,13 @@
 package rep.accumulator.verkle
 
-import rep.accumulator.Accumulator.{MembershipProof, NonMembershipProof, Witness}
 import rep.accumulator.{Accumulator, PrimeTool, Rsa2048}
-import rep.accumulator.verkle.MiddleNode.{ChildIdentifier, MiddleNodeAccValuesPrefix, MiddleNodePrimeValuesPrefix, MiddleNodeValuesPrefix, VerkleProofOfMembership, VerkleProofOfNonMembership, degree}
-import rep.accumulator.verkle.util.verkleTool
+import rep.accumulator.verkle.MiddleNode.{ChildIdentifier, MiddleNodeAccValuesPrefix, MiddleNodePrimeValuesPrefix, MiddleNodeValuesPrefix, degree}
+import rep.accumulator.verkle.VerkleTreeType.VerkleTreeType
+import rep.accumulator.verkle.util.{VerkleProofOfMembership, VerkleProofOfNonMembership, Witness, verkleTool}
 import rep.app.system.RepChainSystemContext
 import rep.storage.db.factory.DBFactory
 import rep.utils.SerializeUtils
+
 import java.math.BigInteger
 import scala.collection.mutable.ArrayBuffer
 import scala.util.control.Breaks.{break, breakable}
@@ -14,9 +15,9 @@ import scala.util.control.Breaks.{break, breakable}
 object MiddleNode {
   case class ChildIdentifier(id: Array[Int], childType: Int, acc_value: BigInteger, prime: BigInteger) //childType 0=leafnode;1=middlenode
 
-  case class VerkleProofOfMembership(nodeId: String, acc_value: BigInteger, proof: MembershipProof)
+  //case class VerkleProofOfMembership(nodeId: String, acc_value: BigInteger, proof: MembershipProof)
 
-  case class VerkleProofOfNonMembership(nodeId: String, acc_value: BigInteger, proof: NonMembershipProof)
+  //case class VerkleProofOfNonMembership(nodeId: String, acc_value: BigInteger, proof: NonMembershipProof)
 
   val degree = 256
   val MiddleNodeValuesPrefix = "m_n_v_"
@@ -24,12 +25,19 @@ object MiddleNode {
   val MiddleNodePrimeValuesPrefix = "m_n_p_v_"
 }
 
-class MiddleNode(ctx: RepChainSystemContext, keyPrefix: Array[Int]) {
+class MiddleNode(ctx: RepChainSystemContext, keyPrefix: Array[Int],verkleTreeType: VerkleTreeType) {
   private val db = DBFactory.getDBAccess(ctx.getConfig)
   private var children: Array[ChildIdentifier] = null
   private var acc_value: BigInteger = null
   private var prime_value: BigInteger = BigInteger.ONE
 
+  private def getTypePrefix: String = {
+    if (verkleTreeType == VerkleTreeType.TransactionTree) {
+      "t-"
+    } else {
+      "w-"
+    }
+  }
   loader
 
   private def getKeyPrefixLength: Int = {
@@ -49,18 +57,18 @@ class MiddleNode(ctx: RepChainSystemContext, keyPrefix: Array[Int]) {
   }
 
   def loader: Unit = {
-    val v = db.getObject[Array[ChildIdentifier]](MiddleNodeValuesPrefix + verkleTool.getKey(keyPrefix))
+    val v = db.getObject[Array[ChildIdentifier]](getTypePrefix+MiddleNodeValuesPrefix + verkleTool.getKey(keyPrefix))
     this.children = if (v != None) v.get else new Array[ChildIdentifier](degree)
-    val av = db.getObject[BigInteger](MiddleNodeAccValuesPrefix + verkleTool.getKey(keyPrefix))
+    val av = db.getObject[BigInteger](getTypePrefix+MiddleNodeAccValuesPrefix + verkleTool.getKey(keyPrefix))
     if (av != None) this.acc_value = av.get
-    val pv = db.getObject[BigInteger](MiddleNodePrimeValuesPrefix + verkleTool.getKey(keyPrefix))
+    val pv = db.getObject[BigInteger](getTypePrefix+MiddleNodePrimeValuesPrefix + verkleTool.getKey(keyPrefix))
     if (pv != None) this.prime_value = pv.get
   }
 
   private def updateToDB: Unit = {
-    db.putBytes(MiddleNodeValuesPrefix + verkleTool.getKey(keyPrefix), SerializeUtils.serialise(this.children))
-    db.putBytes(MiddleNodeAccValuesPrefix + verkleTool.getKey(keyPrefix), SerializeUtils.serialise(this.acc_value))
-    db.putBytes(MiddleNodePrimeValuesPrefix + verkleTool.getKey(keyPrefix), SerializeUtils.serialise(this.prime_value))
+    db.putBytes(getTypePrefix+MiddleNodeValuesPrefix + verkleTool.getKey(keyPrefix), SerializeUtils.serialise(this.children))
+    db.putBytes(getTypePrefix+MiddleNodeAccValuesPrefix + verkleTool.getKey(keyPrefix), SerializeUtils.serialise(this.acc_value))
+    db.putBytes(getTypePrefix+MiddleNodePrimeValuesPrefix + verkleTool.getKey(keyPrefix), SerializeUtils.serialise(this.prime_value))
   }
 
   def addState(key: Array[Int], data: Array[Byte], prime: BigInteger): Unit = {
@@ -70,7 +78,7 @@ class MiddleNode(ctx: RepChainSystemContext, keyPrefix: Array[Int]) {
       //存在节点
       if (obj.childType == 0) {
         //已经存在叶子节点，继续添加
-        val leaf = this.ctx.getVerkleNodeBuffer.readLeafNode(obj.id)
+        val leaf = this.ctx.getVerkleTreeNodeBuffer(this.verkleTreeType).readLeafNode(obj.id)
         if (!leaf.isExist(prime)) {
           val md = this.addMiddleNode(idx)
           md.addLeafNode(key, data, prime)
@@ -80,7 +88,7 @@ class MiddleNode(ctx: RepChainSystemContext, keyPrefix: Array[Int]) {
         }
       } else if (obj.childType == 1) {
         //属于中间节点，继续递归
-        val child = this.ctx.getVerkleNodeBuffer.readMiddleNode(obj.id)
+        val child = this.ctx.getVerkleTreeNodeBuffer(this.verkleTreeType).readMiddleNode(obj.id)
         child.addState(key, data, prime)
       }
     } else {
@@ -90,7 +98,7 @@ class MiddleNode(ctx: RepChainSystemContext, keyPrefix: Array[Int]) {
   }
 
   private def addMiddleNode(idx: Int): MiddleNode = {
-    val vb = this.ctx.getVerkleNodeBuffer
+    val vb = this.ctx.getVerkleTreeNodeBuffer(this.verkleTreeType)
     val md = vb.readMiddleNode(this.linkKeyPrefix(Array(idx)))
     md
   }
@@ -101,7 +109,7 @@ class MiddleNode(ctx: RepChainSystemContext, keyPrefix: Array[Int]) {
   }
 
   private def addLeafNode(key: Array[Int], data: Array[Byte], prime: BigInteger): LeafNode = {
-    val vb = this.ctx.getVerkleNodeBuffer
+    val vb = this.ctx.getVerkleTreeNodeBuffer(this.verkleTreeType)
     val leaf = vb.readLeafNode(key)
     val acc_value = leaf.add(data, prime)
     val identifier = ChildIdentifier(key, 0, acc_value,
@@ -128,7 +136,7 @@ class MiddleNode(ctx: RepChainSystemContext, keyPrefix: Array[Int]) {
       //当前是根节点
       null
     } else {
-      val vb = this.ctx.getVerkleNodeBuffer
+      val vb = this.ctx.getVerkleTreeNodeBuffer(this.verkleTreeType)
       if (this.keyPrefix.length == 1) {
         vb.readMiddleNode(null)
       } else if (this.keyPrefix.length > 1) {
@@ -179,7 +187,7 @@ class MiddleNode(ctx: RepChainSystemContext, keyPrefix: Array[Int]) {
       v_primes = this.prime_value
     }
     v_primes = Rsa2048.mul(v_primes, new_prime)
-    val new_acc = Rsa2048.exp(this.ctx.getStateAccBase, v_primes)
+    val new_acc = Rsa2048.exp(this.ctx.getVerkleTreeAccRoot(verkleTreeType), v_primes)
     System.out.println(s"updateAccValue:id=${verkleTool.getKey(this.keyPrefix)},prime=${v_primes}")
     new Tuple2[BigInteger, BigInteger](v_primes, new_acc)
   }
@@ -193,10 +201,10 @@ class MiddleNode(ctx: RepChainSystemContext, keyPrefix: Array[Int]) {
       if (this.children(i) != null) {
         sb.append(s"son(${i})\t")
         if (this.children(i).childType == 0) {
-          val l = this.ctx.getVerkleNodeBuffer.readLeafNode(this.children(i).id)
+          val l = this.ctx.getVerkleTreeNodeBuffer(this.verkleTreeType).readLeafNode(this.children(i).id)
           sb.append(l.leafToString)
         } else {
-          val m = this.ctx.getVerkleNodeBuffer.readMiddleNode(this.children(i).id)
+          val m = this.ctx.getVerkleTreeNodeBuffer(this.verkleTreeType).readMiddleNode(this.children(i).id)
           sb.append("\r")
           val tmp = m.middleToString
           sb.append(tmp)
@@ -212,7 +220,7 @@ class MiddleNode(ctx: RepChainSystemContext, keyPrefix: Array[Int]) {
     val obj = this.children(idx)
     if (obj != null) {
       //存在节点
-      val vb = this.ctx.getVerkleNodeBuffer
+      val vb = this.ctx.getVerkleTreeNodeBuffer(this.verkleTreeType)
       val p = getMembershipProof(obj.prime)
       proofs += p
       if (obj.childType == 0) {
@@ -231,7 +239,7 @@ class MiddleNode(ctx: RepChainSystemContext, keyPrefix: Array[Int]) {
         //属于中间节点，输出中间证明，继续递归
         val p = getMembershipProof(obj.prime)
         proofs += p
-        val child = this.ctx.getVerkleNodeBuffer.readMiddleNode(obj.id)
+        val child = this.ctx.getVerkleTreeNodeBuffer(this.verkleTreeType).readMiddleNode(obj.id)
         val ps = child.getProofs(key, data, prime)
         proofs += ps.toArray
       }
@@ -278,15 +286,19 @@ class MiddleNode(ctx: RepChainSystemContext, keyPrefix: Array[Int]) {
   }
 
   def getMembershipProof(prime: BigInteger): VerkleProofOfMembership = {
-    val acc = new Accumulator(ctx.getStateAccBase, this.acc_value, ctx.getHashTool)
+    val acc = new Accumulator(ctx.getVerkleTreeAccRoot(verkleTreeType), this.acc_value, ctx.getHashTool)
     val p = Rsa2048.div(this.prime_value, prime)
-    val wit = Rsa2048.exp(ctx.getStateAccBase, p)
-    val proof = acc.getMemberProof4Witness(prime, Witness(wit))
-    VerkleProofOfMembership(verkleTool.getKey(this.keyPrefix), this.acc_value, proof.proof)
+    val wit = Rsa2048.exp(ctx.getVerkleTreeAccRoot(verkleTreeType), p)
+    val proof = acc.getMemberProof4Witness(prime, new Witness(wit))
+    new VerkleProofOfMembership(verkleTool.getKey(this.keyPrefix), this.acc_value, proof.proof)
   }
 
   def getNonMembershipProof(prime: BigInteger): VerkleProofOfNonMembership = {
-    val acc = new Accumulator(ctx.getStateAccBase, this.acc_value, ctx.getHashTool)
-    VerkleProofOfNonMembership(verkleTool.getKey(this.keyPrefix), this.acc_value, acc.nonmemberShipProof(Array(this.prime_value), Array(prime)))
+    val acc = new Accumulator(ctx.getVerkleTreeAccRoot(verkleTreeType), this.acc_value, ctx.getHashTool)
+    new VerkleProofOfNonMembership(verkleTool.getKey(this.keyPrefix), this.acc_value, acc.nonmemberShipProof(Array(this.prime_value), Array(prime)))
+  }
+
+  def getAccValue():BigInteger={
+    this.acc_value
   }
 }

@@ -4,7 +4,8 @@ package rep.app.system
 import java.util.concurrent.ConcurrentHashMap
 import akka.actor.{ActorRef, Address}
 import rep.accumulator.Accumulator.bitLength
-import rep.accumulator.verkle.VerkleNodeBuffer
+import rep.accumulator.verkle.{VerkleNodeBuffer, VerkleTreeType}
+import rep.accumulator.verkle.VerkleTreeType.VerkleTreeType
 import rep.accumulator.{PrimeTool, Rsa2048}
 import rep.app.conf.consensus.ConsensusParameterConfig
 import rep.app.conf.{RepChainConfig, SystemCertList, TimePolicy}
@@ -34,8 +35,8 @@ import rep.utils.SerializeUtils
 import java.math.BigInteger
 
 class RepChainSystemContext (systemName:String){//},cs:ClusterSystem) {
-  private val tx_acc_base_key = "tx_acc_base"
-  private val state_acc_base_key = "state_acc_base"
+  //private val tx_acc_base_key = "tx_acc_base"
+  //private val state_acc_base_key = "state_acc_base"
   private val config : RepChainConfig = new RepChainConfig(systemName)
   private val customBroadcast : BroadcastOfCustom = new BroadcastOfCustom(this)
   private val timePolicy : TimePolicy = new TimePolicy(config.getSystemConf)
@@ -65,10 +66,11 @@ class RepChainSystemContext (systemName:String){//},cs:ClusterSystem) {
   private val registerClusterNode:ConcurrentHashMap[String,Address] = new ConcurrentHashMap[String,Address]()
   private val nodemgr = new NodeMgr
 
-  private val tx_acc_base : BigInteger = getAccBase(tx_acc_base_key)
-  private val state_acc_base : BigInteger = getAccBase(state_acc_base_key)
-  private val vb : VerkleNodeBuffer = new VerkleNodeBuffer(this)
-
+  //private val tx_acc_base : BigInteger = getAccBase(tx_acc_base_key)
+  //private val state_acc_base : BigInteger = getAccBase(state_acc_base_key)
+  private val tx_vb : VerkleNodeBuffer = new VerkleNodeBuffer(this,VerkleTreeType.TransactionTree)
+  private val wt_vb : VerkleNodeBuffer = new VerkleNodeBuffer(this,VerkleTreeType.WorldStateTree)
+  private val tx_r_vb: VerkleNodeBuffer = new VerkleNodeBuffer(this,VerkleTreeType.TransactionResultTree)
   private var ml : ActorRef = null
 
   private val ContractStateChanged:ConcurrentHashMap[String,String] = new ConcurrentHashMap[String,String]()
@@ -110,19 +112,40 @@ class RepChainSystemContext (systemName:String){//},cs:ClusterSystem) {
     this.ml
   }
 
-  def getTxAccBase:BigInteger={
+  /*def getTxAccBase:BigInteger={
     this.tx_acc_base
   }
 
   def getStateAccBase:BigInteger={
     this.state_acc_base
+  }*/
+
+  def getVerkleTreeAccRoot(verkleTreeType: VerkleTreeType):BigInteger={
+    val nodeBuffer = this.getVerkleTreeNodeBuffer(verkleTreeType)
+    val root = nodeBuffer.readMiddleNode(null)
+    if(root != null){
+      val tmp = root.getAccValue()
+      if(tmp == null){
+        PrimeTool.getPrimeOfRandom(bitLength, Rsa2048.getHalfModulus)
+      }else{
+        tmp
+      }
+    }else{
+      PrimeTool.getPrimeOfRandom(bitLength, Rsa2048.getHalfModulus)
+    }
   }
 
-  def getVerkleNodeBuffer:VerkleNodeBuffer={
-    this.vb
+  def getVerkleTreeNodeBuffer(verkleTreeType: VerkleTreeType):VerkleNodeBuffer={
+    if(verkleTreeType == VerkleTreeType.TransactionTree){
+      this.tx_vb
+    }else if(verkleTreeType == VerkleTreeType.TransactionResultTree){
+      this.tx_r_vb
+    }else{
+      this.wt_vb
+    }
   }
 
-  private def getAccBase(key:String):BigInteger={
+  /*private def getAccBase(key:String):BigInteger={
     var r = PrimeTool.getPrimeOfRandom(bitLength, Rsa2048.getHalfModulus)
     val db = DBFactory.getDBAccess(this.getConfig)
 
@@ -138,7 +161,7 @@ class RepChainSystemContext (systemName:String){//},cs:ClusterSystem) {
       db.putBytes(KeyPrefixManager.getWorldStateKey(this.getConfig, key, "_"),SerializeUtils.serialise(r.toString()))
     }
     r
-  }
+  }*/
 
   def getNodeMgr: NodeMgr = {
     this.nodemgr

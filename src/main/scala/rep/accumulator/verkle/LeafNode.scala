@@ -1,14 +1,14 @@
 package rep.accumulator.verkle
 
 
-import rep.accumulator.Accumulator.{ Witness}
 import rep.accumulator.{Accumulator, PrimeTool}
 import rep.accumulator.verkle.LeafNode.{LeafNodeAccValuePrefix, LeafNodeAccWitPrefix, LeafNodePrimesPrefix, LeafNodeValuesPrefix}
-import rep.accumulator.verkle.MiddleNode.{VerkleProofOfMembership, VerkleProofOfNonMembership}
-import rep.accumulator.verkle.util.verkleTool
+import rep.accumulator.verkle.VerkleTreeType.VerkleTreeType
+import rep.accumulator.verkle.util.{VerkleProofOfMembership, VerkleProofOfNonMembership, Witness, verkleTool}
 import rep.app.system.RepChainSystemContext
 import rep.storage.db.factory.DBFactory
 import rep.utils.SerializeUtils
+
 import java.math.BigInteger
 import scala.collection.mutable.ArrayBuffer
 
@@ -19,7 +19,7 @@ object LeafNode {
   val LeafNodeAccWitPrefix = "a_l_w_"
 }
 
-class LeafNode(ctx: RepChainSystemContext, nodeId: Array[Int]) {
+class LeafNode(ctx: RepChainSystemContext, nodeId: Array[Int],verkleTreeType: VerkleTreeType) {
   private val db = DBFactory.getDBAccess(ctx.getConfig)
   private var values: ArrayBuffer[Array[Byte]] = null
   private var primes: ArrayBuffer[BigInteger] = null
@@ -28,6 +28,14 @@ class LeafNode(ctx: RepChainSystemContext, nodeId: Array[Int]) {
   private val node_name = verkleTool.getKey(nodeId)
 
   loader
+
+  private def getTypePrefix: String = {
+    if (verkleTreeType == VerkleTreeType.TransactionTree) {
+      "t-"
+    } else {
+      "w-"
+    }
+  }
 
   def leafToString: String = {
     val sb = new StringBuffer()
@@ -41,21 +49,21 @@ class LeafNode(ctx: RepChainSystemContext, nodeId: Array[Int]) {
   }
 
   private def loader: Unit = {
-    val v = db.getObject[ArrayBuffer[Array[Byte]]](LeafNodeValuesPrefix + node_name)
+    val v = db.getObject[ArrayBuffer[Array[Byte]]](getTypePrefix+LeafNodeValuesPrefix + node_name)
     if (v != None) this.values = v.get else this.values = new ArrayBuffer[Array[Byte]]()
-    val p = db.getObject[ArrayBuffer[BigInteger]](LeafNodePrimesPrefix + node_name)
+    val p = db.getObject[ArrayBuffer[BigInteger]](getTypePrefix+LeafNodePrimesPrefix + node_name)
     if (p != None) this.primes = p.get else this.primes = new ArrayBuffer[BigInteger]()
-    val av = db.getObject[BigInteger](LeafNodeAccValuePrefix + node_name)
+    val av = db.getObject[BigInteger](getTypePrefix+LeafNodeAccValuePrefix + node_name)
     if (av != None) this.acc_value = av.get
-    val lw = db.getObject[BigInteger](LeafNodeAccWitPrefix + node_name)
+    val lw = db.getObject[BigInteger](getTypePrefix+LeafNodeAccWitPrefix + node_name)
     if (lw != None) this.last_witness = lw.get
   }
 
   private def update: Unit = {
-    db.putBytes(LeafNodeValuesPrefix + node_name, SerializeUtils.serialise(this.values))
-    db.putBytes(LeafNodePrimesPrefix + node_name, SerializeUtils.serialise(this.primes))
-    db.putBytes(LeafNodeAccValuePrefix + node_name, SerializeUtils.serialise(this.acc_value))
-    db.putBytes(LeafNodeAccWitPrefix + node_name, SerializeUtils.serialise(this.last_witness))
+    db.putBytes(getTypePrefix+LeafNodeValuesPrefix + node_name, SerializeUtils.serialise(this.values))
+    db.putBytes(getTypePrefix+LeafNodePrimesPrefix + node_name, SerializeUtils.serialise(this.primes))
+    db.putBytes(getTypePrefix+LeafNodeAccValuePrefix + node_name, SerializeUtils.serialise(this.acc_value))
+    db.putBytes(getTypePrefix+LeafNodeAccWitPrefix + node_name, SerializeUtils.serialise(this.last_witness))
   }
 
   def add(v: Array[Byte]): BigInteger = {
@@ -65,13 +73,13 @@ class LeafNode(ctx: RepChainSystemContext, nodeId: Array[Int]) {
 
   def add(v: Array[Byte], p: BigInteger): BigInteger = {
     if (!this.primes.contains(p)) {
-      val acc = new Accumulator(ctx.getStateAccBase, this.acc_value, ctx.getHashTool)
+      val acc = new Accumulator(ctx.getVerkleTreeAccRoot(verkleTreeType), this.acc_value, ctx.getHashTool)
       val new_acc = acc.add(p)
       if (new_acc != null) {
         this.primes += p
         this.values += v
         if (this.acc_value == null) {
-          this.last_witness = ctx.getStateAccBase
+          this.last_witness = ctx.getVerkleTreeAccRoot(verkleTreeType)
         } else {
           this.last_witness = this.acc_value
         }
@@ -101,14 +109,14 @@ class LeafNode(ctx: RepChainSystemContext, nodeId: Array[Int]) {
   }
 
   def getMembershipProof(prime: BigInteger): VerkleProofOfMembership = {
-    val acc = new Accumulator(ctx.getStateAccBase, this.acc_value, ctx.getHashTool)
-    val proof = acc.getMemberProof4Witness(prime, Witness(this.last_witness))
-    VerkleProofOfMembership(node_name, this.acc_value, proof.proof)
+    val acc = new Accumulator(ctx.getVerkleTreeAccRoot(verkleTreeType), this.acc_value, ctx.getHashTool)
+    val proof = acc.getMemberProof4Witness(prime, new Witness(this.last_witness))
+    new VerkleProofOfMembership(node_name, this.acc_value, proof.proof)
   }
 
   def getNonMembershipProof(prime: BigInteger): VerkleProofOfNonMembership = {
-    val acc = new Accumulator(ctx.getStateAccBase, this.acc_value, ctx.getHashTool)
-    VerkleProofOfNonMembership(node_name, this.acc_value, acc.nonmemberShipProof(this.primes.toArray, Array(prime)))
+    val acc = new Accumulator(ctx.getVerkleTreeAccRoot(verkleTreeType), this.acc_value, ctx.getHashTool)
+    new VerkleProofOfNonMembership(node_name, this.acc_value, acc.nonmemberShipProof(this.primes.toArray, Array(prime)))
   }
 
 }

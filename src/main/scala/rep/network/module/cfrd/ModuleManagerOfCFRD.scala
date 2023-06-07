@@ -4,13 +4,13 @@ import akka.actor.Props
 import rep.log.RepLogger
 import rep.network.cache.TransactionOfCollectioner
 import rep.network.confirmblock.common.ConfirmOfBlock
-import rep.network.consensus.cfrd.block.{BlockerOfCFRD, BlockerOfCFRDInMultipleBlocks, EndorseCollector}
+import rep.network.consensus.cfrd.block.{BlockerOfCFRD, EndorseCollector}
 import rep.network.consensus.cfrd.endorse.DispatchOfRecvEndorsement
 import rep.network.consensus.cfrd.MsgOfCFRD.VoteOfBlocker
 import rep.network.module.{IModuleManager, ModuleActorType}
 import rep.network.sync.response.SynchronizeResponser
 import rep.network.sync.request.cfrd.SynchRequesterOfCFRD
-import rep.network.consensus.cfrd.vote.{VoterOfCFRD, VoterOfCFRDInMultipleBlocks}
+import rep.network.consensus.cfrd.vote.{VoterOfCFRD}
 import rep.network.persistence.cfrd.StoragerOfCFRD
 import rep.network.sync.request.raft.SynchRequesterOfRAFT
 
@@ -42,16 +42,16 @@ class ModuleManagerOfCFRD(moduleName: String, isStartup: Boolean) extends IModul
     }
     pe.register(ModuleActorType.ActorType.storager,context.actorOf(StoragerOfCFRD.props("storager"), "storager"))
 
-    //pe.register(CFRDActorType.ActorType.blocker,context.actorOf(BlockerOfCFRD.props("blocker"), "blocker"))
-    pe.register(CFRDActorType.ActorType.blocker, context.actorOf(BlockerOfCFRDInMultipleBlocks.props("blocker"), "blocker"))
+    pe.register(CFRDActorType.ActorType.blocker,context.actorOf(BlockerOfCFRD.props("blocker"), "blocker"))
+    //pe.register(CFRDActorType.ActorType.blocker, context.actorOf(BlockerOfCFRDInMultipleBlocks.props("blocker"), "blocker"))
 
 
     pe.register(CFRDActorType.ActorType.confirmerofblock,context.actorOf(ConfirmOfBlock.props("confirmerofblock"), "confirmerofblock"))
     pe.register(CFRDActorType.ActorType.endorsementcollectioner,context.actorOf(EndorseCollector.props("endorsementcollectioner"), "endorsementcollectioner"))
     pe.register(CFRDActorType.ActorType.dispatchofRecvendorsement,context.actorOf(DispatchOfRecvEndorsement.props("dispatchofRecvendorsement"), "dispatchofRecvendorsement"))
 
-    //pe.register(CFRDActorType.ActorType.voter,context.actorOf(VoterOfCFRD.props("voter"), "voter"))
-    pe.register(CFRDActorType.ActorType.voter,context.actorOf(VoterOfCFRDInMultipleBlocks.props("voter"), "voter"))
+    pe.register(CFRDActorType.ActorType.voter,context.actorOf(VoterOfCFRD.props("voter"), "voter"))
+    //pe.register(CFRDActorType.ActorType.voter,context.actorOf(VoterOfCFRDInMultipleBlocks.props("voter"), "voter"))
 
     if(pe.getRepChainContext.getConfig.getConsensusSynchType == "CFRD"){
       pe.register(CFRDActorType.ActorType.synchrequester,context.actorOf(SynchRequesterOfCFRD.props("synchrequester"), "synchrequester"))

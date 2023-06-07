@@ -84,6 +84,8 @@ class GenesisBlocker(moduleName: String) extends ModuleBase(moduleName) {
           preblock = ExecuteTransactionOfBlock(preblock)
           if (preblock != null) {
             //preblock = BlockHelp.AddBlockHash(preblock)
+            preblock = BlockHelp.addTransactionToVerkleTree(preblock,pe.getRepChainContext)
+            preblock = BlockHelp.AddBlockHeaderHash(preblock,pe.getRepChainContext.getHashTool)
             preblock = preblock.withHeader(BlockHelp.AddHeaderSignToBlock(preblock.getHeader, pe.getSysTag,pe.getRepChainContext.getSignTool))
             //sendEvent(EventType.RECEIVE_INFO, mediator, selfAddr, Topic.Block, Event.Action.BLOCK_NEW)
             //mediator ! Publish(Topic.Block, ConfirmedBlock(preblock, self))

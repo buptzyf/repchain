@@ -3,6 +3,7 @@ package rep.accumulator
 
 import org.apache.commons.codec.BinaryEncoder
 import rep.accumulator.CreateTestTransactionService.tx_data
+import rep.accumulator.verkle.VerkleTreeType
 import rep.accumulator.verkle.util.verkleTool
 import rep.crypto.Sha256
 import rep.utils.SerializeUtils
@@ -15,8 +16,8 @@ object Verkle_test extends App {
   val ctx = tx_service.ctx
   val hash_tool = new Sha256(ctx.getCryptoMgr.getInstance)
 
-  //test_Tree
-  test_sha
+  test_Tree
+  //test_sha
   def test_sha:Unit={
     val str = "adf-sle-"
     val str1 = "adf-sle-"+"sdd"
@@ -30,13 +31,15 @@ object Verkle_test extends App {
   def test_Tree: Unit = {
     val t = getTransaction(60)
     val ts = handleTransaction(t)
-    val root = ctx.getVerkleNodeBuffer.readMiddleNode(null)
-    for (i <- 0 to 49) {
+    val root = ctx.getVerkleTreeNodeBuffer(VerkleTreeType.TransactionTree).readMiddleNode(null)
+    for (i <- 0 to 10) {
       System.out.println(s"serial=${i} id=${verkleTool.getKey(ts(i)._1)},prime=${ts(i)._3}")
       root.addState(ts(i)._1, ts(i)._2, ts(i)._3)
+      val tmpNode = ctx.getVerkleTreeNodeBuffer(VerkleTreeType.TransactionTree).readMiddleNode(null)
+      System.out.println(tmpNode.middleToString)
     }
 
-    for (i <- 40 to 49) {
+    for (i <- 3 to 6) {
       val d = ts(i)
       val proofs = root.getProofs(d._1, d._2, d._3)
       System.out.println("proof length=" + SerializeUtils.serialise(proofs).length)
@@ -44,11 +47,11 @@ object Verkle_test extends App {
       if (b) {
         System.out.println(s"serial=${i} id=${verkleTool.getKey(d._1)},verify member proof ok")
       } else {
-        System.out.println(s"serial=${i} id=${verkleTool.getKey(d._1)},verify member proof ok")
+        System.out.println(s"serial=${i} id=${verkleTool.getKey(d._1)},verify member proof false")
       }
     }
 
-    for (i <- 50 to 59) {
+    for (i <- 7 to 10) {
       val d = ts(i)
       val proofs = root.getProofs(d._1, d._2, d._3)
       System.out.println("proof length=" + SerializeUtils.serialise(proofs).length)
@@ -56,7 +59,7 @@ object Verkle_test extends App {
       if (b) {
         System.out.println(s"serial=${i} id=${verkleTool.getKey(d._1)},verify Nonmember proof ok")
       } else {
-        System.out.println(s"serial=${i} id=${verkleTool.getKey(d._1)},verify Nonmember proof ok")
+        System.out.println(s"serial=${i} id=${verkleTool.getKey(d._1)},verify Nonmember proof false")
       }
     }
 

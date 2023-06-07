@@ -18,6 +18,8 @@ package rep.api.rest
 
 import akka.util.{ByteString, Timeout}
 import akka.util.Timeout
+import org.json4s.jackson.JsonMethods.{pretty, render}
+import org.json4s.DefaultFormats
 
 import scala.concurrent.duration._
 import rep.crypto._
@@ -29,7 +31,7 @@ import rep.network.base.ModuleBase
 import rep.network.consensus.byzantium.ConsensusCondition
 import rep.network.module.ModuleActorType
 import rep.proto.rc2.{ActionResult, ChaincodeId, Event, Transaction, TransactionResult}
-import rep.sc.Sandbox.DoTransactionResult
+import scalapb.json4s.JsonFormat
 import rep.sc.TypeOfSender
 import rep.storage.chain.block.BlockSearcher
 import rep.storage.db.factory.DBFactory
@@ -38,6 +40,10 @@ import rep.utils.{IdTool, MessageToJson, SerializeUtils}
 
 import scala.concurrent.Await
 import akka.pattern.ask
+import com.fasterxml.jackson.databind.ObjectMapper
+import rep.accumulator.verkle.VerkleTreeType
+import rep.accumulator.verkle.util.ProofSerialize
+import rep.accumulator.{Accumulator, PrimeTool, verkle}
 import rep.api.rest.ResultCode._
 import rep.censor.DataFilter
 import rep.sc.SandboxDispatcher.DoTransaction
@@ -78,6 +84,9 @@ object RestActor {
   case class BlockHeightStream(height: Int,ip:String)
 
   case class TransactionId(txid: String)
+
+  case class ProofOfTransaction(txid:String)
+  case class ProofOfOutput(proof:String,txid:String)
 
   case class TransactionStreamId(txid: String)
 
@@ -379,6 +388,50 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
           QueryResult(None)
         case t: Some[Transaction] =>
           QueryResult(Option(MessageToJson.toJson(df.filterTransaction(t.get))))
+      }
+      sender ! r
+
+    case ProofOfTransaction(txId) =>
+      val r = sr.getTransactionByTxId(txId) match {
+        case None =>
+          QueryResult(None)
+        case t: Some[Transaction] =>
+          val tg = t.get
+          val tgb = tg.toByteArray
+          val idx = verkle.util.verkleTool.getIndex(pe.getRepChainContext.getHashTool.hash(tgb))
+          val prime = PrimeTool.hash2Prime(tgb, Accumulator.bitLength, pe.getRepChainContext.getHashTool)
+          val root = pe.getRepChainContext.getVerkleTreeNodeBuffer(VerkleTreeType.TransactionTree).readMiddleNode(null)
+          val proofs = root.getProofs(idx, tgb, prime)
+          //val objectMapper = new ObjectMapper()
+          //val json = objectMapper.writeValueAsString(proofs)
+          //val hJson = new String(org.apache.commons.codec.binary.Hex.encodeHex(json.getBytes))
+          val hJson = ProofSerialize.SerialProof(proofs)
+          val rs = s"""{"proof": "${hJson}", "txid": "${txId}"}"""
+          QueryResult(Option(JsonMethods.parse(rs)))
+      }
+      sender ! r
+
+    case ProofOfOutput(proof,txId) =>
+      /*val json = new String(org.apache.commons.codec.binary.Hex.decodeHex(proof))
+      val objectMapper = new ObjectMapper()
+      val proofs = objectMapper.readValue(json, classOf[Array[Any]])*/
+      val proofs = ProofSerialize.DeserialProof(proof)
+      val r = sr.getTransactionByTxId(txId) match {
+        case None =>
+          QueryResult(Option(JsonMethods.parse(s"""{"result": "验证失败,没有找到交易", "txid": "${txId}"}""")))
+        case t: Some[Transaction] =>
+          val tg = t.get
+          val tgb = tg.toByteArray
+          val idx = verkle.util.verkleTool.getIndex(pe.getRepChainContext.getHashTool.hash(tgb))
+          val prime = PrimeTool.hash2Prime(tgb, Accumulator.bitLength, pe.getRepChainContext.getHashTool)
+          val root = pe.getRepChainContext.getVerkleTreeNodeBuffer(VerkleTreeType.TransactionTree).readMiddleNode(null)
+          val b = root.verifyProofs(prime, proofs)
+          var rs = if(b){
+            s"""{"result": "验证成功", "txid": "${txId}"}"""
+          }else{
+            s"""{"result": "验证失败", "txid": "${txId}"}"""
+          }
+          QueryResult(Option(JsonMethods.parse(rs)))
       }
       sender ! r
 

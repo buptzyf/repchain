@@ -80,7 +80,10 @@ abstract class IBlocker(moduleName: String) extends ModuleBase(moduleName) {
         //块hash在预执行中生成
         //blc = BlockHelp.AddBlockHash(blc)
         RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,AddBlockHash success,height=${blc.getHeader.height},local height=${pe.getBlocker.VoteHeight}" + "~" + selfAddr))
-        blc.withHeader(BlockHelp.AddHeaderSignToBlock(blc.getHeader, pe.getSysTag,pe.getRepChainContext.getSignTool))
+        //区块hash的计算放到出块人打包区块模块
+        var rBlock = BlockHelp.addTransactionToVerkleTree(blc, pe.getRepChainContext)
+        rBlock = BlockHelp.AddBlockHeaderHash(rBlock, pe.getRepChainContext.getHashTool)
+        blc.withHeader(BlockHelp.AddHeaderSignToBlock(rBlock.getHeader, pe.getSysTag,pe.getRepChainContext.getSignTool))
       } else {
         RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("create new block error,preload error" + "~" + selfAddr))
         //PackedBlock(start + trans.size)
