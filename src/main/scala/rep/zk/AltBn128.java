@@ -25,13 +25,13 @@ public class AltBn128 {
     static {
       //if (!loadEmbeddedLibrary()) {
         String osName = System.getProperty("os.name").toLowerCase();
-        String libName = "bn_jni";
+        String libName = "";
         if (osName.contains("win")) {
-            libName += ".dll";
+            libName += "bn_jni.dll";
 //        } //else if (osName.contains("mac")) {
 //            return ".dylib";
         } else if (osName.contains("nix") || osName.contains("nux") || osName.contains("sunos")) {
-            libName += ".so";
+            libName += "libbn_jni.so";
         } else {
             throw new UnsupportedOperationException("Unsupported operating system: " + osName);
         }
