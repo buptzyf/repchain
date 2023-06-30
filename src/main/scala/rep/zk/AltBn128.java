@@ -1,5 +1,7 @@
 package rep.zk;
 
+import org.jboss.netty.util.internal.NativeLibraryLoader;
+
 import java.math.BigInteger;
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -8,6 +10,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /**
  * Java wrapper for alt-bn128 curve implemented here: https://github.com/paritytech/bn
@@ -19,14 +24,42 @@ public class AltBn128 {
 
     static {
       //if (!loadEmbeddedLibrary()) {
-        StringBuilder url = new StringBuilder();
-        url.append(System.getProperty("user.dir"));
-        String sep = System.getProperty("file.separator");
-        url.append(sep).append("src").append(sep).append("main").append(sep).append("scala").append(sep).append("rep").append(sep).append("zk").append(sep).append("native").append(sep).append("bn_jni.dll");
-//
-        System.load("D:\\Idea\\repchain-dev_jdk13_2.0.0.0\\src\\main\\scala\\rep\\zk\\native\\bn_jni.dll");
-            //System.loadLibrary("bn_jni");
-        //}
+        String osName = System.getProperty("os.name").toLowerCase();
+        String libName = "bn_jni";
+        if (osName.contains("win")) {
+            libName += ".dll";
+//        } //else if (osName.contains("mac")) {
+//            return ".dylib";
+        } else if (osName.contains("nix") || osName.contains("nux") || osName.contains("sunos")) {
+            libName += ".so";
+        } else {
+            throw new UnsupportedOperationException("Unsupported operating system: " + osName);
+        }
+        String resourcePath = "/zk/native/" + libName;
+        InputStream inputStream = NativeLibraryLoader.class.getResourceAsStream(resourcePath);
+        String tempDirectory = System.getProperty("java.io.tmpdir");
+        String libraryPath = tempDirectory + libName;
+        Path libraryFile = Paths.get(libraryPath);
+        try (OutputStream outputStream = Files.newOutputStream(libraryFile)) {
+            byte[] buffer = new byte[8192];
+            int bytesRead;
+
+            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                outputStream.write(buffer, 0, bytesRead);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        System.load(libraryFile.toAbsolutePath().toString());
+//        StringBuilder url = new StringBuilder();
+//        url.append(System.getProperty("user.dir"));
+//        String sep = System.getProperty("file.separator");
+//        url.append(sep).append("src").append(sep).append("main").append(sep).append("scala").append(sep).append("rep").append(sep).append("zk").append(sep).append("native").append(sep).append("bn_jni.dll");
+////
+//        System.load("D:\\Idea\\repchain-dev_jdk13_2.0.0.0\\src\\main\\scala\\rep\\zk\\native\\bn_jni.dll");
+//            //System.loadLibrary("bn_jni");
+//        //}
     }
 
     private static final class Holder {
