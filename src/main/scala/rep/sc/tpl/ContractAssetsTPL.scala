@@ -90,7 +90,7 @@ class ContractAssetsTPL extends IContract {
       throw ContractException("余额不足")
 
     ////跨合约调用
-    /*val cid = ChaincodeId("ParallelPutProofTPL", 1)
+    val cid = ChaincodeId("ParallelPutProofTPL", 1)
     val cdata = ProofDataSingle("cky1", dfrom.toString)
 
     val tmp : String = write(cdata)
@@ -102,7 +102,7 @@ class ContractAssetsTPL extends IContract {
       //也可以从跨合约状态中读取，建议在这里读
       System.out.println("cross result2="+ctx.api.getStateEx(ctx.api.getChainNetId, cid.chaincodeName, "cky1"))
     }
-    */
+
 
     ctx.api.setVal(data.from, dfrom - data.amount)
     val dto = ctx.api.getVal(data.to).toString.toInt
