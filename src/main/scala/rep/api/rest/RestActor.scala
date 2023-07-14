@@ -72,8 +72,10 @@ object RestActor {
   case object AcceptedTransNumber
 
   case class BlockId(id: String,ip:String)
+  case class BlockHeaderId(id: String,ip:String)
 
   case class BlockHeight(height: Long,ip:String)
+  case class BlockHeaderHeight(height: Long,ip:String)
 
   case class BlockTime(createTime: String, createTimeUtc: String)
 
@@ -336,6 +338,18 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
           QueryResult(Option(MessageToJson.toJson(bl)))
       }
       sender ! r
+    // 根据高度检索区块头
+    case BlockHeaderHeight(height, ip) =>
+      val bb = sr.getBlockByHeight(height)
+      pe.getRepChainContext.getProblemAnalysis.AddMaliciousDownloadOfBlocks(ip)
+      val r = bb match {
+        case None => QueryResult(None)
+        case _ =>
+          val bl = df.filterBlock(bb.get)
+          QueryResult(Option(MessageToJson.toJson(bl.getHeader)))
+      }
+      sender ! r
+
 
     case BlockTimeForHeight(height) =>
       val bb = sr.getBlockCreateTimeByHeight(height)
@@ -378,6 +392,18 @@ class RestActor(moduleName: String) extends ModuleBase(moduleName) {
         case _ =>
           val blk = df.filterBlock(bb.get)
           QueryResult(Option(MessageToJson.toJson(blk)))
+      }
+      sender ! r
+
+    //根据block hash检索区块头
+    case BlockHeaderId(id, ip) =>
+      val bb = sr.getBlockByBase64Hash(id)
+      pe.getRepChainContext.getProblemAnalysis.AddMaliciousDownloadOfBlocks(ip)
+      val r = bb match {
+        case None => QueryResult(None)
+        case _ =>
+          val blk = df.filterBlock(bb.get)
+          QueryResult(Option(MessageToJson.toJson(blk.getHeader)))
       }
       sender ! r
 
