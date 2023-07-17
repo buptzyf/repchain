@@ -111,13 +111,14 @@ class CreateGenesisTool(file:File)  {
     if(isExistConfigNode(config,path)){
       val list = config.getConfigList(path)
       if(list != null){
-        val signers : ArrayBuffer[(String,String,String,String)] = new ArrayBuffer[(String,String,String,String)]()
+        val signers : ArrayBuffer[(String, String, String, String, String)] = new ArrayBuffer[(String, String, String, String, String)]()
         list.forEach(account=>{
           val certName = account.getString("account-cert-name")
           val accountName = account.getString("account-name")
           val phoneCode = account.getString("phone-code")
           val signer = account.getString("transaction-signer")
-          signers += Tuple4(certName,accountName,phoneCode,signer)
+          val signerInfo = account.getString("signer-info")
+          signers += Tuple5(certName,accountName,phoneCode,signer,signerInfo)
           //this.builder = this.builder.buildSigner((certName,accountName,phoneCode),signer)
         })
         if(signers.length > 0){

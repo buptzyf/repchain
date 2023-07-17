@@ -342,6 +342,14 @@ class Shim {
     config.getChainNetworkId
   }
 
+  def getIdentityNetName: String = {
+    config.getIdentityNetName
+  }
+
+  def getAccountContractName: String = {
+    config.getAccountContractName
+  }
+
   def getAccountContractCodeName: String = {
     config.getAccountContractName
   }

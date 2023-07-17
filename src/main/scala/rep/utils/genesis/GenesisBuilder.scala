@@ -129,7 +129,7 @@ class GenesisBuilder {
    *                   账户的证书需要存放在指定的位置
    * @return 返回自身实例
    **/
-  def buildSigner(signer: (String, String, String, String)): GenesisBuilder = {
+  def buildSigner(signer: (String, String, String, String, String)): GenesisBuilder = {
     try {
       val id = s"${ctx.getConfig.getIdentityNetName}${IdTool.DIDPrefixSeparator}${signer._2}"
 
@@ -145,7 +145,7 @@ class GenesisBuilder {
         _root_.scala.None, CertType.CERT_AUTHENTICATION, Option(certId), certStrHash, "1.0")
       //生成Did账户
       val signer_tmp = Signer(signer._1, id, signer._3, _root_.scala.Seq.empty,
-        _root_.scala.Seq.empty, _root_.scala.Seq.empty, _root_.scala.Seq.empty, List(authCert), "",
+        _root_.scala.Seq.empty, _root_.scala.Seq.empty, _root_.scala.Seq.empty, List(authCert), signer._5,
         Option(Timestamp(millis / 1000, ((millis % 1000) * 1000000).toInt)), _root_.scala.None, true, "1.0")
 
       this.buildInvokeTransaction(cidOfDID, "signUpSigner", JsonFormat.toJsonString(signer_tmp), signer._4)
@@ -165,7 +165,7 @@ class GenesisBuilder {
    *                   账户的证书需要存放在指定的位置
    * @return 返回自身实例
    **/
-  def buildSigners(signers: Array[(String, String, String,String)]): GenesisBuilder = {
+  def buildSigners(signers: Array[ (String, String, String, String, String)]): GenesisBuilder = {
     try {
       if (signers != null) {
         signers.foreach(s => {
