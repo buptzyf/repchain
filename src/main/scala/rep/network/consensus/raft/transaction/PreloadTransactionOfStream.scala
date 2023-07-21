@@ -174,7 +174,7 @@ class PreloadTransactionOfStream(moduleName: String) extends ModuleBase(moduleNa
           this.curBlock = block
           this.preloadStartTime = System.currentTimeMillis()
           this.transactionCacheIdentifier = "preloadCache_" + Random.nextInt(10000)
-          pe.addTrans(this.transactionCacheIdentifier, this.curBlock.transactions)
+          pe.addTrans(this.transactionCacheIdentifier, this.curBlock.transactions.toSet.toSeq)
           pe.getActorRef(ModuleActorType.ActorType.transactiondispatcher) ! new DoTransactionOfCache(this.transactionCacheIdentifier, this.dbIdentifier, TypeOfSender.FromPreloader)
         }
       }

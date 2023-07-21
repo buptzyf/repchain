@@ -1,6 +1,6 @@
 package rep.sc.tpl.cross
 
-import CrossManage.{chainInfoPrefix, contractInfoPrefix, crossTranPrefix, crossTranReceiptPrefix, routeInfoPrefix, userPermitRoutePrefix}
+import rep.sc.tpl.cross.CrossManage.{chainInfoPrefix, contractInfoPrefix, crossTranPrefix, crossTranReceiptPrefix, routeInfoPrefix, userPermitRoutePrefix}
 import org.json4s.DefaultFormats
 import org.json4s.jackson.JsonMethods.parse
 import org.json4s.jackson.Serialization.{read, write}

@@ -103,8 +103,14 @@ class BlockerOfRAFT (moduleName: String) extends IBlocker(moduleName){
         RepTimeTracer.setEndTime(pe.getSysTag, "PreloadTrans", System.currentTimeMillis(), blc.getHeader.height, blc.transactions.size)
         RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,prelaod success,height=${blc.getHeader.height},local height=${pe.getBlocker.VoteHeight}" + "~" + selfAddr))
         //blc = BlockHelp.AddBlockHash(blc)
+
+        //区块hash的计算放到出块人打包区块模块
+        var rBlock = BlockHelp.addTransactionToVerkleTree(blc, pe.getRepChainContext)
+        rBlock = BlockHelp.AddBlockHeaderHash(rBlock, pe.getRepChainContext.getHashTool)
+        blc = blc.withHeader(BlockHelp.AddHeaderSignToBlock(rBlock.getHeader, pe.getSysTag, pe.getRepChainContext.getSignTool))
         RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix(s"create new block,AddBlockHash success,height=${blc.getHeader.height},local height=${pe.getBlocker.VoteHeight}" + "~" + selfAddr))
-        blc.withHeader(BlockHelp.AddHeaderSignToBlock(blc.getHeader, pe.getSysTag,pe.getRepChainContext.getSignTool))
+        blc
+        //blc.withHeader(BlockHelp.AddHeaderSignToBlock(blc.getHeader, pe.getSysTag,pe.getRepChainContext.getSignTool))
       } else {
         RepLogger.trace(RepLogger.Consensus_Logger, this.getLogMsgPrefix("create new block error,preload error" + "~" + selfAddr))
         null

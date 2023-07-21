@@ -159,20 +159,20 @@ class BlockService(ra: ActorRef, repContext: RepChainSystemContext, isCheckClien
   implicit val serialization = jackson.Serialization // or native.Serialization
   implicit val formats = DefaultFormats
 
-  val route = getBlockById ~ getBlockByHeightToo ~ getTransNumberOfBlock ~ getBlockStreamByHeight ~ getBlockTimeOfCreate ~ getBlockTimeOfTransaction
+  val route = getBlockById ~ getBlockHeaderById ~ getBlockByHeight ~ getBlockHeaderByHeight ~ getTransNumberOfBlock ~ getBlockStreamByHeight ~ getBlockTimeOfCreate ~ getBlockTimeOfTransaction
 
   @GET
   @Path("/hash/{blockId}")
   @Produces(Array(MediaType.APPLICATION_JSON))
-  @Operation(tags = Array("block"), summary = "返回指定id的区块", description = "getBlockById", method = "GET",
-    parameters = Array(new Parameter(name = "blockId", description = "区块id", required = true, in = ParameterIn.PATH)),
+  @Operation(tags = Array("block"), summary = "返回指定hash的区块", description = "getBlockByHash", method = "GET",
+    parameters = Array(new Parameter(name = "blockId", description = "区块hash", required = true, in = ParameterIn.PATH)),
     responses = Array(new ApiResponse(responseCode = "200", description = "返回区块json内容", content = Array(new Content(mediaType = "application/json", schema = new Schema(implementation = classOf[QueryResult])))))
   )
   def getBlockById =
     path("block" / "hash" / Segment) { blockId =>
       get {
         extractClientIP { ip =>
-          RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} get block for id,block id=${blockId}")
+          RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} get block for hash,block hash=${blockId}")
           if (isCheckClientPermission) {
             headerValueByType[`Tls-Session-Info`]() { sessionInfo =>
               val cert = RepChainConfigFilePathMgr.getCert(sessionInfo)
@@ -199,6 +199,43 @@ class BlockService(ra: ActorRef, repContext: RepChainSystemContext, isCheckClien
     }
 
   @GET
+  @Path("/header/hash/{blockId}")
+  @Produces(Array(MediaType.APPLICATION_JSON))
+  @Operation(tags = Array("block"), summary = "返回指定hash的区块头", description = "getBlockHeaderByHash", method = "GET",
+    parameters = Array(new Parameter(name = "blockId", description = "区块Hash", required = true, in = ParameterIn.PATH)),
+    responses = Array(new ApiResponse(responseCode = "200", description = "返回区块头json内容", content = Array(new Content(mediaType = "application/json", schema = new Schema(implementation = classOf[QueryResult])))))
+  )
+  def getBlockHeaderById =
+    path("block" / "header" / "hash" / Segment) { blockId =>
+      get {
+        extractClientIP { ip =>
+          RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} get blockHeader for hash,block hash=${blockId}")
+          if (isCheckClientPermission) {
+            headerValueByType[`Tls-Session-Info`]() { sessionInfo =>
+              val cert = RepChainConfigFilePathMgr.getCert(sessionInfo)
+              try {
+                if (cert != null && repContext.getPermissionVerify.CheckPermissionOfX509Certificate(cert, "block.hash", null)) {
+                  complete {
+                    (ra ? BlockHeaderId(blockId, ip.toString())).mapTo[QueryResult]
+                  }
+                } else {
+                  complete(QueryResult(Option(JsonMethods.parse(string2JsonInput(PermissionVerify.errorInfo_None_Permission)))))
+                }
+              } catch {
+                case e: Exception =>
+                  complete(QueryResult(Option(JsonMethods.parse(string2JsonInput(PermissionVerify.errorInfo_Cert_or_permission)))))
+              }
+            }
+          } else {
+            complete {
+              (ra ? BlockHeaderId(blockId, ip.toString())).mapTo[QueryResult]
+            }
+          }
+        }
+      }
+    }
+
+  @GET
   @Path("/{blockHeight}")
   @Operation(tags = Array("block"), summary = "返回指定高度的区块", description = "getBlockByHeight", method = "GET")
   @Parameters(Array(
@@ -206,7 +243,7 @@ class BlockService(ra: ActorRef, repContext: RepChainSystemContext, isCheckClien
   @ApiResponses(Array(
     new ApiResponse(responseCode = "200", description = "返回区块json内容", content = Array(new Content(mediaType = "application/json", schema = new Schema(implementation = classOf[QueryResult])))))
   )
-  def getBlockByHeightToo =
+  def getBlockByHeight =
     path("block" / Segment) { blockHeight =>
       get {
         extractClientIP { ip =>
@@ -230,6 +267,44 @@ class BlockService(ra: ActorRef, repContext: RepChainSystemContext, isCheckClien
           } else {
             complete {
               (ra ? BlockHeight(blockHeight.toInt,ip.toString())).mapTo[QueryResult]
+            }
+          }
+        }
+      }
+    }
+
+  @GET
+  @Path("header/{blockHeight}")
+  @Operation(tags = Array("block"), summary = "返回指定高度的区块头", description = "getBlockHeaderByHeight", method = "GET")
+  @Parameters(Array(
+    new Parameter(name = "blockHeight", description = "区块高度", required = true, schema = new Schema(implementation = classOf[Int]), in = ParameterIn.PATH, example = "1")))
+  @ApiResponses(Array(
+    new ApiResponse(responseCode = "200", description = "返回区块头json内容", content = Array(new Content(mediaType = "application/json", schema = new Schema(implementation = classOf[QueryResult])))))
+  )
+  def getBlockHeaderByHeight =
+    path("block" / "header" / Segment) { blockHeight =>
+      get {
+        extractClientIP { ip =>
+          RepLogger.debug(RepLogger.APIAccess_Logger, s"remoteAddr=${ip} get blockHeader for Height,block height=${blockHeight}")
+          if (isCheckClientPermission) {
+            headerValueByType[`Tls-Session-Info`]() { sessionInfo =>
+              val cert = RepChainConfigFilePathMgr.getCert(sessionInfo)
+              try {
+                if (cert != null && repContext.getPermissionVerify.CheckPermissionOfX509Certificate(cert, "block.blockHeight", null)) {
+                  complete {
+                    (ra ? BlockHeaderHeight(blockHeight.toInt, ip.toString())).mapTo[QueryResult]
+                  }
+                } else {
+                  complete(QueryResult(Option(JsonMethods.parse(string2JsonInput(PermissionVerify.errorInfo_None_Permission)))))
+                }
+              } catch {
+                case e: Exception =>
+                  complete(QueryResult(Option(JsonMethods.parse(string2JsonInput(PermissionVerify.errorInfo_Cert_or_permission)))))
+              }
+            }
+          } else {
+            complete {
+              (ra ? BlockHeaderHeight(blockHeight.toInt, ip.toString())).mapTo[QueryResult]
             }
           }
         }
